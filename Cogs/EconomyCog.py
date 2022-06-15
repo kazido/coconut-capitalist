@@ -3,6 +3,7 @@ from typing import Union
 from random import shuffle
 from PIL import Image, ImageFont, ImageDraw
 from io import BytesIO
+import pathlib
 from discord.ext import commands
 from Cogs.ErrorHandler import registered
 from ClassLibrary import *
@@ -145,12 +146,11 @@ class EconomyCog(commands.Cog, name='Economy'):
             gender = user_avatar.split('.')[0]
             number = user_avatar.split('.')[1]
 
-            project_files = 'C:\\Users\\beege\\Documents\\GitHub\\EconomyDiscordBot\\EconomyBotProjectFiles'
+            project_files = pathlib.Path.cwd() / 'EconomyBotProjectFiles'
 
-            image1 = Image.open(f'{project_files}\\Templates\\blank_template.png')
-            font = ImageFont.truetype(f'{project_files}\\Fonts\\StaatlichesRegular.TTF', 25)
-            bitsfont = ImageFont.truetype(f'{project_files}\\Fonts\\StaatlichesRegular.ttf',
-                                          25)
+            image1 = Image.open(project_files / 'Templates' / 'blank_template.png')
+            font = ImageFont.truetype(str(project_files / 'Fonts' / 'StaatlichesRegular.TTF'), 25)
+
             user = User(ctx=ctx)
             rank = f'{get_role(ctx).name}'
             name = f'{ctx.author.name} #{ctx.author.discriminator} - {rank}'
@@ -166,7 +166,7 @@ class EconomyCog(commands.Cog, name='Economy'):
             # image1.paste(pet, (626, 84), pet)
 
             # Draw avatar
-            avatar_to_draw = Image.open(f'{project_files}\\Sprites\\{gender}_avatar_{number}.png')
+            avatar_to_draw = Image.open(project_files / 'Sprites' / f'{gender}_avatar_{number}.png')
             image1.paste(avatar_to_draw, (85, 45), avatar_to_draw)
 
             image_editable = ImageDraw.Draw(image1)
@@ -175,8 +175,8 @@ class EconomyCog(commands.Cog, name='Economy'):
             image_editable.text((203, 317), name, (255, 255, 255), font=font, anchor='mm')
 
             # Draw bits
-            image_editable.text((396, 108), '{:,}'.format(bits), (255, 241, 138), font=bitsfont, anchor='lt')
-            image_editable.text((396, 177), '{:,}'.format(bank), (255, 241, 138), font=bitsfont, anchor='lt')
+            image_editable.text((396, 108), '{:,}'.format(bits), (255, 241, 138), font=font, anchor='lt')
+            image_editable.text((396, 177), '{:,}'.format(bank), (255, 241, 138), font=font, anchor='lt')
 
             # Draw levels
             image_editable.text((116, 410), f"Rank {'{:,}'.format(digging_level)}", (197, 255, 176), font=font,
@@ -241,9 +241,9 @@ class EconomyCog(commands.Cog, name='Economy'):
                         return
                     await set_avatar('female', '3', interaction)
 
-            project_files = 'C:\\Users\\beege\\Documents\\GitHub\\EconomyDiscordBot\\EconomyBotProjectFiles'
+            project_files = pathlib.Path.cwd() / 'EconomyBotProjectFiles'
             message = await ctx.send(
-                file=discord.File(f'{project_files}\\Templates\\CharacterSelect.png'),
+                file=discord.File(project_files / 'Templates' / 'CharacterSelect.png'),
                 view=CharacterSelectButtons())
             return
         else:
