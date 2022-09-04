@@ -46,7 +46,11 @@ async def main():
                 except commands.ExtensionNotFound:
                     await ctx.send(f"{cog} could not be located.")
 
-    @commands.is_owner()
+    def owner_perms_check(ctx):
+        authorized = [326903703422500866, 730955069201317999]
+        return ctx.message.author.id in authorized
+
+    @commands.check(owner_perms_check)
     @bot.command(hidden=True, aliases=['rl'])
     async def reload(ctx, want_sync: str = "no"):
         cogs = []

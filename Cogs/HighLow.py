@@ -15,8 +15,7 @@ class HighLow(commands.Cog, name="HighLow"):
     @in_game()
     @registered()
     @commands.command(aliases=["hl", "highlow"], name="High Low", description="Guess if the number will be high (6-10) "
-                                                                              "or low (1-5).",
-                      brief="-highlow (bet)")
+                                                                              "or low (1-5).", brief="-highlow (bet)")
     async def high_low(self, ctx, bet: int | typing.Literal['max']):
         user = User(ctx)
         if bet == 'max':
@@ -99,7 +98,7 @@ class HighLow(commands.Cog, name="HighLow"):
                     await ctx.send(embed=losing_embed)
                     await user.game_status_to_false()
                     # This line adds the lost money to the house.
-                    await self.bot.db.update_one({"isBot": True}, {"$inc": {"money": bet}})
+                    await self.bot.db.update_one({"_id": 956000805578768425}, {"$inc": {"money": bet}})
                     break
 
         message, passed = await user.bet_checks(bet)
@@ -110,8 +109,8 @@ class HighLow(commands.Cog, name="HighLow"):
             await high_low_game()
         lucky_drop = randint(0, 5000)
         if lucky_drop == 1:
-            await user.update_coconuts(1)
-            await ctx.reply("**RARE** You just found a coconut!")
+            await user.update_tokens(1)
+            await ctx.reply("**RARE** You just found a token!")
         elif lucky_drop in range(2, 10):
             bits = randint(250, 750)
             await user.update_balance(bits)

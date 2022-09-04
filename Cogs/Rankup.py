@@ -6,7 +6,7 @@ from Cogs.ErrorHandler import registered
 
 
 def get_role_color(ctx):
-    roles = ["Peasant", "Farmer", "Citizen", "Educated", "Wise", "Expert"]
+    roles = ["Peasant", "Farmer", "Citizen", "Educated", "Cultured", "Weathered", "Wise", "Expert"]
     for role in roles:
         retrieve_role = discord.utils.get(ctx.guild.roles, name=role)
         if retrieve_role in ctx.author.roles:
@@ -17,7 +17,7 @@ def get_role_color(ctx):
 
 async def price_check(ctx, rank):
     user = User(ctx)
-    if await user.check_balance('coconuts') < rank.price:
+    if await user.check_balance('tokens') < rank.price:
         return False
     else:
         return True
@@ -31,7 +31,7 @@ class Ranks(commands.Cog):
     @registered()
     @commands.command(name="Rank", description="Check your current rank and it's perks.")
     async def rank(self, ctx):
-        ranks = [peasant, farmer, citizen, educated, wise, expert]
+        ranks = [peasant, farmer, citizen, educated, cultured, weathered, wise, expert]
         user_role = get_role(ctx)
         embed = discord.Embed(
             title=f"Current Rank: *{user_role.name}* {user_role.emoji}",
@@ -48,17 +48,18 @@ class Ranks(commands.Cog):
             if x.name.capitalize() == user_role.name:
                 rank = index
         embed.add_field(name="Next Rank", value=f"{ranks[rank + 1].name} {ranks[rank + 1].emoji}"
-                                                f" | Cost: **{ranks[rank + 1].price}** coconuts",
+                                                f" | Cost: **{ranks[rank + 1].price}** tokens",
                         inline=False)
         embed.set_footer(text=f"User: {ctx.author.name}")
+        embed.set_thumbnail(url=ctx.author.display_avatar)
         await ctx.send(embed=embed)
 
     @registered()
-    @commands.command(name="Rankup", description="Spend coconuts to move on to the next rank!", brief="-rankup")
+    @commands.command(name="Rankup", description="Spend tokens to move on to the next rank!", brief="-rankup")
     async def rankup(self, ctx):
         user = User(ctx)
         # Checking to see what the highest role they have is
-        classes = [peasant, farmer, citizen, educated, wise, expert]
+        classes = [peasant, farmer, citizen, educated, cultured, weathered, wise, expert]
         next_role = None
         for index, role in enumerate(classes):
             retrieve_role = discord.utils.get(ctx.guild.roles, name=role.name.capitalize())
@@ -84,14 +85,14 @@ class Ranks(commands.Cog):
                 def __init__(self, *, timeout=180):
                     super().__init__(timeout=timeout)
 
-                @discord.ui.button(label=f"{'{:,}'.format(role_to_add.price)} coconuts", style=discord.ButtonStyle.green)
+                @discord.ui.button(label=f"{'{:,}'.format(next_role.price)} tokens", style=discord.ButtonStyle.green)
                 async def green_button(self, interaction: discord.Interaction, button: discord.ui.Button):
                     if interaction.user != ctx.author:
                         return
                     else:
                         await ctx.author.add_roles(role_to_add)
                         await ctx.author.remove_roles(role_to_remove)
-                        await user.update_coconuts(-next_role.price)
+                        await user.update_tokens(-next_role.price)
                         purchased_embed = discord.Embed(
                             title="Purchased!",
                             description=f"You are now rank: **{next_role.name}** {next_role.emoji}!",
@@ -122,7 +123,7 @@ class Ranks(commands.Cog):
                 def __init__(self, *, timeout=180):
                     super().__init__(timeout=timeout)
 
-                @discord.ui.button(label=f"{'{:,}'.format(next_role.price)} coconuts",
+                @discord.ui.button(label=f"{'{:,}'.format(next_role.price)} tokens",
                                    style=discord.ButtonStyle.red, disabled=True)
                 async def red_button(self, interaction: discord.Interaction, button: discord.ui.Button):
                     pass

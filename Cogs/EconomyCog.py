@@ -48,8 +48,8 @@ class EconomyCog(commands.Cog, name='Economy'):
             await ctx.send(embed=embed)
         lucky_drop = randint(0, 7000)
         if lucky_drop == 1:
-            await user.update_coconuts(1)
-            await ctx.reply("**RARE** You just found a coconut!")
+            await user.update_tokens(1)
+            await ctx.reply("**RARE** You just found a token!")
         elif lucky_drop in range(2, 10):
             bits = randint(250, 750)
             await user.update_balance(bits)
@@ -114,8 +114,8 @@ class EconomyCog(commands.Cog, name='Economy'):
                 await user.update_balance(reward)
                 lucky_drop = randint(0, 500)
                 if lucky_drop == 1:
-                    await user.update_coconuts(1)
-                    await ctx.reply("**RARE** You just found a coconut!")
+                    await user.update_tokens(1)
+                    await ctx.reply("**RARE** You just found a token!")
                 elif lucky_drop in range(2, 10):
                     bits = randint(250, 1000)
                     await user.update_balance(bits)
@@ -149,34 +149,46 @@ class EconomyCog(commands.Cog, name='Economy'):
             project_files = pathlib.Path.cwd() / 'EconomyBotProjectFiles'
 
             image1 = Image.open(project_files / 'Templates' / 'blank_template.png')
-            font = ImageFont.truetype(str(project_files / 'Fonts' / 'StaatlichesRegular.TTF'), 25)
+            font = ImageFont.truetype('/usr/local/share/fonts/StaatlichesRegular.ttf', 25)
+            smallerfont = ImageFont.truetype('/usr/local/share/fonts/StaatlichesRegular.ttf', 18)
 
             user = User(ctx=ctx)
             rank = f'{get_role(ctx).name}'
-            name = f'{ctx.author.name} #{ctx.author.discriminator} - {rank}'
+            name = f'{ctx.author.name} #{ctx.author.discriminator}'
             bits = await user.check_balance('bits')
+            tokens = await user.check_balance('tokens')
             bank = (await self.bot.db.find_one({'_id': ctx.author.id}))['bank']
             digging_level = 0
             fishing_level = 0
             mining_level = 0
             combat_level = 0
 
-            # Draw pet
-            # pet = Image.open(f'{project_files}\\Sprites\\dog_sprite.png')
-            # image1.paste(pet, (626, 84), pet)
+            image_editable = ImageDraw.Draw(image1)
+            # # Draw pet
+            # pet = await ctx.bot.dbpets.find_one({"owner_id": ctx.author.id, "active": True})
+            # if pet:
+            #     pet_sprite = Image.open(project_files / 'Sprites' / f'{pet["species"]}_sprite.png')
+            #     pet_name = pet["name"]
+            #     image1.paste(pet_sprite, (636, 70), pet_sprite)
+            #     if len(pet_name) > 8:
+            #         image_editable.text((677, 187), pet_name, (238, 131, 255), font=smallerfont, anchor='mm')
+            #     else:
+            #         image_editable.text((677, 187), pet_name, (238, 131, 255), font=font, anchor='mm')
 
             # Draw avatar
             avatar_to_draw = Image.open(project_files / 'Sprites' / f'{gender}_avatar_{number}.png')
             image1.paste(avatar_to_draw, (85, 45), avatar_to_draw)
 
-            image_editable = ImageDraw.Draw(image1)
-
             # Draw Name
             image_editable.text((203, 317), name, (255, 255, 255), font=font, anchor='mm')
 
+            # Draw rank and tokens
+            image_editable.text((678, 293), rank, (44, 255, 174), font=font, anchor='mm')
+            image_editable.text((678, 370), '{:,}'.format(tokens), (44, 255, 174), font=font, anchor='mm')
+
             # Draw bits
-            image_editable.text((396, 108), '{:,}'.format(bits), (255, 241, 138), font=font, anchor='lt')
-            image_editable.text((396, 177), '{:,}'.format(bank), (255, 241, 138), font=font, anchor='lt')
+            image_editable.text((489, 120), '{:,}'.format(bits), (255, 241, 138), font=font, anchor='mm')
+            image_editable.text((489, 186), '{:,}'.format(bank), (255, 241, 138), font=font, anchor='mm')
 
             # Draw levels
             image_editable.text((116, 410), f"Rank {'{:,}'.format(digging_level)}", (197, 255, 176), font=font,

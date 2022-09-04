@@ -4,7 +4,7 @@ from random import randint
 from discord.ext import commands
 from ClassLibrary import *
 from Cogs.EconomyCog import get_role
-from Cogs.ErrorHandler import registered
+from Cogs.ErrorHandler import registered, missing_perks
 
 
 class Crop:
@@ -89,9 +89,10 @@ class FarmingCog(commands.Cog, name="Farming"):
         pass
 
     @registered()
+    @missing_perks("Farmer")
     @commands.command(name="Farm", description="Grow some crops to fill your barn!", brief="-farm")
     async def farm(self, ctx):
-        user_id = f"{ctx.author.id}"
+        user_id = ctx.author.id
         users_farm = await self.bot.dbfarms.find_one({"_id": user_id})
         if await embed_out_check(ctx, users_farm):
             return
@@ -219,9 +220,10 @@ class FarmingCog(commands.Cog, name="Farming"):
         message = await ctx.send(embed=embed, view=FarmButtons())
 
     @registered()
+    @missing_perks("Farmer")
     @commands.command(name="Plant", description="Plant some seeds and grow some crops!", brief="-plant")
     async def plant(self, ctx):
-        user_id = f"{ctx.author.id}"
+        user_id = ctx.author.id
         users_farm = await self.bot.dbfarms.find_one({"_id": user_id})
         if users_farm['plot1'] != "Empty!" and users_farm['plot2'] != "Empty!" and users_farm['plot3'] != "Empty!":
             embed = discord.Embed(
@@ -304,9 +306,10 @@ class FarmingCog(commands.Cog, name="Farming"):
         plant_message = await ctx.send(embed=plant_embed, view=PlantButtons())
 
     @registered()
+    @missing_perks("Farmer")
     @commands.command(name="Barn", description="Check your stock of crops and seeds.", brief="-bard")
     async def barn(self, ctx):
-        user_id = f"{ctx.author.id}"
+        user_id = ctx.author.id
         users_farm = await self.bot.dbfarms.find_one({"_id": user_id})
         embed = discord.Embed(
             title=f"{ctx.author.name}'s Barn",
@@ -350,64 +353,6 @@ class FarmingCog(commands.Cog, name="Farming"):
                                                         f"*`({barn['cacao seeds']['count']} seeds)`*")
             mobile_embed.set_footer(text="Use -plant and -farm to plant and view your crops!")
             await ctx.send(embed=mobile_embed)
-
-    @registered()
-    @commands.command(name="Exchange", description="Trade in your crops for some bits. Cannot be reversed.",
-                      brief="-exchange (amount) coconuts")
-    async def exchange(self, ctx, amount: int, exchange_type):
-        user = User(ctx)
-        confirm_embed = discord.Embed(
-            title="Confirm exchange",
-            description=f"Are you sure you want to exchange:\n"
-                        f"**{'{:,}'.format(amount)}** coconuts for **{'{:,}'.format(amount * 5000)}** bits?",
-            color=discord.Color.light_grey())
-        confirm_embed.set_footer(text="You cannot convert bits back into coconuts.")
-
-        timeout_embed = discord.Embed(
-            title="Confirm cancelled",
-            description=f"Confirmation was either cancelled or timed out.",
-            color=0xff0000)
-
-        success_embed = discord.Embed(
-            title="Exchange successful!",
-            color=discord.Color.green())
-        exchangeables = ['coconut', 'almond', 'cacao']
-        for x in exchangeables:
-            exchangeables.append(x + 's')
-        if exchange_type not in exchangeables:
-            await ctx.send("That's not something you can exchange.")
-            return
-        if await user.check_balance('coconuts') < amount:
-            await ctx.send("You can't exchange more than you have.")
-            return
-        elif await user.check_balance('coconuts') <= 0:
-            await ctx.send("You can't exchange 0 or a negative amount of coconuts.")
-            return
-
-        class Buttons(discord.ui.View):
-            def __init__(self, *, timeout=180):
-                super().__init__(timeout=timeout)
-
-            @discord.ui.button(label="Confirm", style=discord.ButtonStyle.green)
-            async def green_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                if interaction.user != ctx.author:
-                    return
-                await user.update_balance(amount * 5000)
-                await user.update_coconuts(-amount)
-                success_embed.add_field(name="Traded",
-                                        value=f"**{'{:,}'.format(amount)}** {exchange_type}", inline=True)
-                success_embed.add_field(name="Received", value=f"**{'{:,}'.format(amount * 5000)}** bits", inline=True)
-                await interaction.response.edit_message(embed=success_embed, view=None)
-
-            @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
-            async def red_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                if interaction.user != ctx.author:
-                    return
-                await interaction.response.edit_message(embed=timeout_embed, view=None)
-                await asyncio.sleep(3)
-                await interaction.delete_original_message()
-
-        await ctx.send(embed=confirm_embed, view=Buttons())
 
 
 async def setup(bot):

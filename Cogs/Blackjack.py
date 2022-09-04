@@ -306,8 +306,8 @@ class BlackJack(commands.Cog, name="Blackjack"):
 
         lucky_drop = randint(0, 3500)
         if lucky_drop == 1:
-            await user.update_coconuts(1)
-            await ctx.reply("**RARE** You just found a coconut!")
+            await user.update_tokens(1)
+            await ctx.reply("**RARE** You just found a token!")
         elif lucky_drop in range(2, 10):
             bits = randint(250, 750)
             await user.update_balance(bits)

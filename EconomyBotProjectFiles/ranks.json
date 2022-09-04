@@ -1,0 +1,57 @@
+{
+  "peasant": {
+    "responses": ["You actually manage to scrape up some bits. How wonderful.",
+      "Someone donated a little more than normal. How kind.",
+      "You are a peasant. Feel bad."],
+    "description": "Born into the lower class, destined for the upper class.",
+    "perks": ["-beg"]
+  },
+  "farmer": {
+    "responses": ["You toiled hard in the fields, picking... bits?",
+     "Your spouse hasn't seen you all day, since you've been farming bits.",
+     "You harvested a plentiful amount of bits."],
+    "description": "A hard working farmer.\n Those coconuts aren't going to farm themselves.",
+    "perks": ["-farm"]
+  },
+  "citizen": {
+    "responses": ["You spend the day being a slave to the system.",
+     "Work, work, work. 9-5, just killing time.",
+     "When is your lunch break?"],
+    "description": "The beginning of a new chapter. Welcome to the real world.",
+    "perks": ["-pay"]
+  },
+  "educated": {
+    "responses": ["Your dad owns a boat.",
+     "Yeah, you finished college.",
+     "Your dad also owns Microsoft."],
+    "description": "Why not get a 31 on your ACT and get into a pretty nice college?",
+    "perks": ["-research"]
+  },
+  "cultured": {
+    "responses": ["You've settled into the ways of a classic American. A 9-5.",
+     "Nice car! You'll own it soon if you keep this up!",
+     "You could probably get a job coding for the guy who made this bot. I heard he pays lots of bits..."],
+    "description": "It's been a while since college. Things are less fun, but more... real? Anyway, bigger paycheck!",
+    "perks": []
+  },
+  "weathered": {
+    "responses": ["The walk through life is full of wonderful experiences.",
+      "Wrinkles are starting to form in various places.", "Be proud that you've come this far."],
+    "description": "Once you were a peasant. Now, you can look back and smile!",
+    "perks": []
+  },
+  "wise": {
+    "responses": ["You exit the cave. Look at the sun!.",
+     "You preach your dumb philosophy; Plato smiles from above.",
+     "You discover that it takes 10,000 bits to get to the center of a lollipop."],
+    "description": "I farm, therefore I am.",
+    "perks": ["-meditate"]
+  },
+  "expert": {
+    "responses": ["You deserve this.",
+     "Only the finest of people can work this hard.",
+     "There's no shot you've been outside lately."],
+    "description": "Master to all. Servant to none. Coconut expert.",
+    "perks": []
+  }
+}
