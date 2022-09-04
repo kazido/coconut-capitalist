@@ -1,0 +1,27 @@
+aiohttp==3.8.1
+aiopyston==1.2.1
+aiosignal==1.2.0
+async-timeout==4.0.2
+attrs=21.4.0
+beautifulsoup4==4.11.1
+charset-normalizer==2.0.12
+cycler==0.11.0
+discord.py @ git+https://github.com/Rapptz/discord.py@9648986028a9721e1ba733750eb8c30e163dcb2c
+fonttools==4.33.3
+frozenlist==1.3.0
+idna==3.3
+kiwisolver==1.4.3
+matplotlib==3.5.2
+motor==3.0.0
+multidict==6.0.2
+numpy==1.22.4
+packaging==21.3
+Pillow==9.1.1
+pymongo==4.1.1
+pyparsing==3.0.9
+python-dateutil==2.8.2
+randfacts==0.15.1
+six==1.16.0
+soupsieve==2.3.2.post1
+typing-extensions==4.2.0
+yarl==1.7.2
