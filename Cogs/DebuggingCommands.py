@@ -70,6 +70,28 @@ class DebuggingCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+
+    @commands.is_owner()
+    @commands.command()
+    async def itest(self, ctx, type, amount):
+        user = User(ctx)
+        
+
+    @commands.is_owner()
+    @commands.command()
+    async def use(self, ctx, item):
+        inventory = Inventory(ctx)
+        usable_items = [golden_ticket, robber_token]
+        for x in usable_items:
+            if item == x.name:
+                if await inventory.get(item):
+                    await x.use(ctx)
+                    await inventory.remove_item(x.name, 1)
+                    await ctx.send("Item used!")
+                    return
+            else:
+                await ctx.send("You don't own this item!")
+
     # Sends the path of the bot. Mainly to check for more than one instance, not sure if this works yet
     @commands.is_owner()
     @commands.command(name='Ping')
