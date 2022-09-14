@@ -31,8 +31,9 @@ class HighLow(commands.Cog, name="HighLow"):
             multiplier = 0
             await ctx.send("Guess if the number is **-high** or **-low**.")
             # Loop through the game. Only stopped if the user loses or uses the -stop command
-            user_in_database = await self.bot.db.find_one({"_id": user.user_id})
-            while user_in_database["in_game"] is True:
+            user.cursor.execute("""SELECT in_game FROM users WHERE user_id = ?""", [user.user_id])
+            user_in_game = user.cursor.fetchall()[0][0]
+            while user_in_game is True:
                 updated_money = await user.check_balance('bits')
                 num = randint(1, 10)
                 responses = ['-stop', '-high', '-low', '-h', '-l']
@@ -98,7 +99,9 @@ class HighLow(commands.Cog, name="HighLow"):
                     await ctx.send(embed=losing_embed)
                     await user.game_status_to_false()
                     # This line adds the lost money to the house.
-                    await self.bot.db.update_one({"_id": 956000805578768425}, {"$inc": {"money": bet}})
+                    update_bot_balance_statement = """UPDATE users SET bits = bits + ? WHERE user_id = ?"""
+                    user.cursor.execute(update_bot_balance_statement, [956000805578768425, bet])
+                    user.sqliteConnection.commit()
                     break
 
         message, passed = await user.bet_checks(bet)

@@ -35,7 +35,7 @@ class ShopCog(commands.Cog, name='Shop'):
                 if self.item.name.endswith('seed'):
                     await ctx.bot.dbfarms.update_one({"_id": user.user_id}, {"$inc": {self.item.name + 's': 1}})
                 else:
-                    await inventory.add_item(self.item.name, 1, self.item.durability)
+                    await inventory.add_item(self.item, 1)
                 await user.update_balance(-self.item.price)
                 new_balance = await user.check_balance('bits')
                 for x in self.shop_view.children:
@@ -73,10 +73,12 @@ class ShopCog(commands.Cog, name='Shop'):
                 if interaction.user != ctx.author:
                     return
                 await interaction.response.edit_message(embed=menu_page, view=ShopSectionSelect())
+
         go_back_button = GoBackButton(ctx, "Go back", discord.ButtonStyle.blurple, 2)
 
         # Function to add all items as buttons to each page
         buttons = {}
+
         async def add_buttons(view, items):
             balance = await user.check_balance('bits')
             for x in items:
@@ -112,7 +114,6 @@ class ShopCog(commands.Cog, name='Shop'):
         class SeedSelection(discord.ui.View):
             def __init__(self, *, timeout=180):
                 super().__init__(timeout=timeout)
-
 
         # Class to select what type of shop you want to open!
         class ShopSectionSelect(discord.ui.View):
@@ -154,6 +155,7 @@ class ShopCog(commands.Cog, name='Shop'):
             color=discord.Color.teal()
         )
         menu_message = await ctx.send(embed=menu_page, view=ShopSectionSelect())
+
 
 async def setup(bot):
     await bot.add_cog(ShopCog(bot))

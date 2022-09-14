@@ -25,31 +25,36 @@ async def price_check(ctx, rank):
 
 class Ranks(commands.Cog):
     """Rank up for a higher wage!"""
+
     def __init__(self, bot):
         self.bot = bot
 
     @registered()
     @commands.command(name="Rank", description="Check your current rank and it's perks.")
     async def rank(self, ctx):
+        # Grabs the ranks from the class library and determines which discord role the user has
         ranks = [peasant, farmer, citizen, educated, cultured, weathered, wise, expert]
         user_role = get_role(ctx)
-        embed = discord.Embed(
-            title=f"Current Rank: *{user_role.name}* {user_role.emoji}",
-            color=get_role_color(ctx)
-        )
-        if user_role.perms[0] is not None:
+        embed = discord.Embed(title=f"Current Rank: *{user_role.name}* {user_role.emoji}",
+                              color=get_role_color(ctx))
+        # If the role has permissions, display them
+        if user_role.perms:
             perms = ', '.join(user_role.perms)
         else:
             perms = "This rank has no special perks."
         embed.add_field(name="Perks", value=perms)
         embed.add_field(name="Wage", value=f"{'{:,}'.format(user_role.wage)} bits")
+        # Finds the next rank in the list and displays the price of the next rank in the embed
         rank = 0
-        for index, x in enumerate(ranks):
-            if x.name.capitalize() == user_role.name:
-                rank = index
-        embed.add_field(name="Next Rank", value=f"{ranks[rank + 1].name} {ranks[rank + 1].emoji}"
-                                                f" | Cost: **{ranks[rank + 1].price}** tokens",
-                        inline=False)
+        try:
+            for index, x in enumerate(ranks):
+                if x.name.capitalize() == user_role.name:
+                    rank = index
+            embed.add_field(name="Next Rank", value=f"{ranks[rank + 1].name} {ranks[rank + 1].emoji}"
+                                                    f" | Cost: **{ranks[rank + 1].price}** tokens",
+                            inline=False)
+        except IndexError:
+            embed.add_field(name="Max rank achieved", value="You've reached the max rank! Nice job!", inline=False)
         embed.set_footer(text=f"User: {ctx.author.name}")
         embed.set_thumbnail(url=ctx.author.display_avatar)
         await ctx.send(embed=embed)
@@ -61,6 +66,7 @@ class Ranks(commands.Cog):
         # Checking to see what the highest role they have is
         classes = [peasant, farmer, citizen, educated, cultured, weathered, wise, expert]
         next_role = None
+        role_to_add = None
         for index, role in enumerate(classes):
             retrieve_role = discord.utils.get(ctx.guild.roles, name=role.name.capitalize())
             if retrieve_role in ctx.author.roles:
@@ -73,7 +79,7 @@ class Ranks(commands.Cog):
                     )
                     await ctx.send(embed=embed)
                     return
-                next_role = classes[index+1]
+                next_role = classes[index + 1]
                 role_to_remove = retrieve_role
                 role_to_add = discord.utils.get(ctx.guild.roles, name=str(next_role.name).capitalize())
                 break

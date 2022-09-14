@@ -133,14 +133,17 @@ class EconomyCog(commands.Cog, name='Economy'):
     @registered()
     @commands.command(name="Balance", aliases=["money", "bal", "credits"], description="Check your balance!")
     async def bits(self, ctx):
-        avatar = (await self.bot.db.find_one({'_id': ctx.author.id}))['avatar']
+        user = User(ctx=ctx)
+        select_avatar_statement = """SELECT avatar FROM users WHERE user_id = ?"""
+        user.cursor.execute(select_avatar_statement, [user.user_id])
+        avatar = user.cursor.fetchall()[0][0]
 
         async def set_avatar(selected_gender, selected_number, interaction):
-            await ctx.bot.db.update_one({"_id": ctx.author.id},
-                                        {"$set": {"avatar": f'{selected_gender}.{selected_number}'}})
-            updated_avatar = (await self.bot.db.find_one({'_id': ctx.author.id}))['avatar']
+            update_avatar_statement = """UPDATE users SET avatar = ? WHERE user_id = ?"""
+            user.cursor.execute(update_avatar_statement, [f'{selected_gender}.{selected_number}', user.user_id])
+            user.sqliteConnection.commit()
             await interaction.response.edit_message(view=None)
-            await bal_command(updated_avatar)
+            await bal_command(f'{selected_gender}.{selected_number}')
 
         async def bal_command(user_avatar):
             gender = user_avatar.split('.')[0]
@@ -149,15 +152,15 @@ class EconomyCog(commands.Cog, name='Economy'):
             project_files = pathlib.Path.cwd() / 'EconomyBotProjectFiles'
 
             image1 = Image.open(project_files / 'Templates' / 'blank_template.png')
-            font = ImageFont.truetype('/usr/local/share/fonts/StaatlichesRegular.ttf', 25)
-            smallerfont = ImageFont.truetype('/usr/local/share/fonts/StaatlichesRegular.ttf', 18)
+            font = ImageFont.truetype(str(project_files / 'Fonts' / 'StaatlichesRegular.ttf'), 25)
+            smallerfont = ImageFont.truetype(str(project_files / 'Fonts' / 'StaatlichesRegular.ttf'), 18)
 
-            user = User(ctx=ctx)
             rank = f'{get_role(ctx).name}'
             name = f'{ctx.author.name} #{ctx.author.discriminator}'
             bits = await user.check_balance('bits')
             tokens = await user.check_balance('tokens')
-            bank = (await self.bot.db.find_one({'_id': ctx.author.id}))['bank']
+            user.cursor.execute("""SELECT bank FROM users WHERE user_id = ?""", [user.user_id])
+            bank = user.cursor.fetchall()[0][0]
             digging_level = 0
             fishing_level = 0
             mining_level = 0
@@ -377,12 +380,14 @@ class EconomyCog(commands.Cog, name='Economy'):
                       brief="-deposit (amount to deposit)")
     async def deposit(self, ctx, amount: Union[int, str]):
         user1 = User(ctx)
-        user_in_database = await self.bot.db.find_one({"_id": ctx.author.id})
+        select_user_money_statement = """SELECT bits FROM users WHERE user_id = ?"""
+        user1.cursor.execute(select_user_money_statement, [user1.user_id])
+        money = user1.cursor.fetchall()[0][0]
         if amount == 'max':
             amount = await user1.check_balance('bits')
-        if int(amount) > user_in_database['money']:
+        if int(amount) > money:
             await ctx.send(f"You don't have enough bits to deposit. "
-                           f"Balance: {'{:,}'.format(user_in_database['money'])} bits")
+                           f"Balance: {'{:,}'.format(money)} bits")
             return
         elif int(amount) == 0:
             await ctx.send("You cannot deposit **0** bits...")
@@ -397,7 +402,7 @@ class EconomyCog(commands.Cog, name='Economy'):
             await ctx.send("Please input an amount to deposit.")
         else:
             await user1.update_balance(-int(amount))
-            await self.bot.db.update_one({"_id": ctx.author.id}, {"$inc": {"bank": int(amount)}})
+            await user1.update_balance(int(amount), bank=True)
             embed = discord.Embed(colour=discord.Color.dark_blue())
             embed.add_field(name="Deposit made!", value=f"You have deposited **{'{:,}'.format(amount)}** bits")
             await ctx.send(embed=embed)
@@ -406,7 +411,9 @@ class EconomyCog(commands.Cog, name='Economy'):
     @commands.command(name="Withdraw", description="Withdraw bits from the bank.", brief="-withdraw (amount)")
     async def withdraw(self, ctx, amount: int | typing.Literal['all']):
         user = User(ctx)
-        user_in_database = await self.bot.db.find_one({"_id": ctx.author.id})
+        select_user_bank_statement = """SELECT bank FROM users WHERE user_id = ?"""
+        user.cursor.execute(select_user_bank_statement, [user.user_id])
+        bank = user.cursor.fetchall()[0][0]
 
         warning_embed = discord.Embed(title="Are you sure?",
                                       description="Withdrawing just to gamble more might not be a good idea.",
@@ -422,7 +429,7 @@ class EconomyCog(commands.Cog, name='Economy'):
                 if interaction.user != ctx.author:
                     return
                 await user.update_balance(int(amount))
-                await ctx.bot.db.update_one({"_id": ctx.author.id}, {"$inc": {"bank": int(-amount)}})
+                await user.update_balance(-int(amount), bank=True)
                 withdraw_embed = discord.Embed(colour=discord.Color.dark_blue())
                 withdraw_embed.add_field(name="Withdrawal made!",
                                          value=f"You withdrew **{'{:,}'.format(amount)}** bits")
@@ -439,9 +446,9 @@ class EconomyCog(commands.Cog, name='Economy'):
                 await interaction.response.edit_message(embed=cancel_embed, view=None)
                 await asyncio.sleep(3)
 
-        if int(amount) > user_in_database['bank']:
+        if int(amount) > bank:
             await ctx.send(f"You don't have that many bits in your account. "
-                           f"Bank Balance: {'{:,}'.format(user_in_database['bank'])} bits")
+                           f"Bank Balance: {'{:,}'.format(bank)} bits")
             return
         elif int(amount) == 0:
             await ctx.send("You cannot withdraw **0** bits...")
@@ -455,9 +462,9 @@ class EconomyCog(commands.Cog, name='Economy'):
     @registered()
     @commands.command(name="Pay", description="Pay someone else some bits, if you're feeling nice!",
                       brief="-pay @user amount")
-    async def pay(self, ctx, user: discord.Member, amount):
-        user1 = User(ctx)
-        accepted_roles = ["Citizen", "Educated", "Wise", "Expert"]
+    async def pay(self, ctx, user_to_pay: discord.Member, amount):
+        user = User(ctx)
+        accepted_roles = ["Citizen", "Educated", "Cultured", "Weathered", "Wise", "Expert"]
         role = get_role(ctx)
         if role.name not in accepted_roles:
             embed = discord.Embed(
@@ -468,7 +475,9 @@ class EconomyCog(commands.Cog, name='Economy'):
             embed.set_footer(text=f"User: {ctx.author.name}")
             await ctx.send(embed=embed)
             return
-        user_in_database = await self.bot.db.find_one({"_id": ctx.author.id})
+        select_user_money_statement = """SELECT bits FROM users WHERE user_id = ?"""
+        user.cursor.execute(select_user_money_statement, [user.user_id])
+        money = user.cursor.fetchall()[0][0]
         # If they try to bet more than they have in their account.
         if int(amount) < 100:
             titles = ["Pyramid schemes are not allowed",
@@ -481,9 +490,9 @@ class EconomyCog(commands.Cog, name='Economy'):
             )
             await ctx.send(embed=embed)
             return
-        elif int(amount) > user_in_database['money']:
+        elif int(amount) > money:
             await ctx.send(f"You don't have enough bits to send. Balance: "
-                           f"{'{:,}'.format(user_in_database['money'])} bits")
+                           f"{'{:,}'.format(money)} bits")
             return
         elif int(amount) == 0:
             await ctx.send("You cannot send someone **0** bits...")
@@ -491,17 +500,17 @@ class EconomyCog(commands.Cog, name='Economy'):
         elif int(amount) < 0:
             await ctx.send("You cannot send someone negative bits either!")
             return
-        try:
-            await self.bot.db.find_one({"_id": user.id})
-        except KeyError:
+        user.cursor.execute("""SELECT * FROM users WHERE user_id = ?""", [user_to_pay.id])
+        if len(user.cursor.fetchall()) == 0:
             embed = discord.Embed(title="This user is not yet registered.")
             await ctx.send(embed=embed)
         else:
-            await user1.update_balance(-int(amount))
-            await self.bot.db.update_one({"_id": user.id}, {"$inc": {"money": int(amount)}})
+            await user.update_balance(-int(amount))
+            user.cursor.execute("""UPDATE users SET bits = bits + ? WHERE user_id = ?""", [int(amount), user_to_pay.id])
+            user.sqliteConnection.commit()
             embed = discord.Embed(colour=discord.Color.purple())
             embed.add_field(name="Payment sent!",
-                            value=f"You have sent {user.mention} **{'{:,}'.format(int(amount))}** bits")
+                            value=f"You have sent {user_to_pay.mention} **{'{:,}'.format(int(amount))}** bits")
             await ctx.send(embed=embed)
 
     @registered()

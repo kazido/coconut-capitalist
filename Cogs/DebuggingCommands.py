@@ -70,12 +70,10 @@ class DebuggingCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-
-    @commands.is_owner()
     @commands.command()
-    async def itest(self, ctx, type, amount):
-        user = User(ctx)
-        
+    async def itest(self, ctx):
+        inventory = Inventory(ctx=ctx)
+        print(inventory.get())
 
     @commands.is_owner()
     @commands.command()

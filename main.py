@@ -16,16 +16,12 @@ bot.remove_command('help')
 
 
 async def main():
-    with open('./data.json', 'r') as file:
-        data = json.load(file)
+    with open('./data.json', 'r') as f:
+        data = json.load(f)
 
     async def hook():
         bot.mongo_client = AsyncIOMotorClient(data['mongo_url'])
         bot.db = bot.mongo_client['discordbot']['users']
-        bot.dbpets = bot.mongo_client['discordbot']['pets']
-        bot.dbfarms = bot.mongo_client['discordbot']['farms']
-        bot.dbcooldowns = bot.mongo_client['discordbot']['user cooldowns']
-        bot.dbitems = bot.mongo_client['discordbot']['items']
 
     bot.setup_hook = hook
 
@@ -82,11 +78,12 @@ async def main():
                 if want_sync.lower() == "yes":
                     synced_commands = []
                     sync = await bot.tree.sync(guild=discord.Object(id=856915776345866240))
+                    sync = await bot.tree.sync(guild=discord.Object(id=977351545966432306)) # REMOVE THIS LINE
                     for command in sync:
                         synced_commands.append(command.name)
                     await interaction.response.edit_message(content=f"{select.values[0][:-3]} has successfully been reloaded.\n"
                                                             f"Synced {', '.join(synced_commands)}.",
-                                                            ephemeral=True, view=None)
+                                                            view=None)
                 else:
                     await interaction.response.edit_message(content=f"{select.values[0][:-3]} has successfully been reloaded.",
                                                             view=None)
