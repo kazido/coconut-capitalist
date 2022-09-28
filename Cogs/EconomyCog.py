@@ -79,9 +79,9 @@ class EconomyCog(commands.Cog, name='Economy'):
                 shuffled_word = ''.join(shuffle_word_list)
             return unshuffled_word, shuffled_word
 
-        uns_word, s_word = get_word()
-        time_limit = 1.4 ** len(uns_word)
-        reward = len(uns_word) * 70
+        unscrambled_word, scrambled_word = get_word()
+        time_limit = 1.4 ** len(unscrambled_word)
+        reward = len(unscrambled_word) * 70
         embed = discord.Embed(
             title="Unscramble!",
             description=f"You will have {time_limit.__round__()} seconds to unscramble the following word!",
@@ -90,7 +90,7 @@ class EconomyCog(commands.Cog, name='Economy'):
         word_embed = discord.Embed(
             title="Unscramble!",
             description=f"You will have {time_limit.__round__()} seconds to unscramble the following word!\n"
-                        f"***{s_word}***",
+                        f"***{scrambled_word}***",
             color=0xa0a39d
         )
         message = await ctx.send(embed=embed)
@@ -98,16 +98,16 @@ class EconomyCog(commands.Cog, name='Economy'):
         await message.edit(embed=word_embed)
 
         def check(m):
-            return m.content.lower() == uns_word and m.author == ctx.author and m.channel == ctx.channel
+            return m.content.lower() == unscrambled_word and m.author == ctx.author and m.channel == ctx.channel
 
         # Waits for a response after asking for high or low. Can be high, low, or stop
         try:
             guess = await self.bot.wait_for("message", timeout=time_limit.__round__(), check=check)
-            if guess.content.lower() == uns_word:
+            if guess.content.lower() == unscrambled_word:
                 embed = discord.Embed(
                     title="Unscramble!",
                     description=f"Correct!\n"
-                                f"***{s_word}*** - {uns_word}",
+                                f"***{scrambled_word}*** - {unscrambled_word}",
                     color=0xa0f09c
                 )
                 embed.add_field(name="Reward", value=f"**{reward}** bits")
@@ -124,7 +124,7 @@ class EconomyCog(commands.Cog, name='Economy'):
             embed = discord.Embed(
                 title="Unscramble!",
                 description=f"Too slow!\n"
-                            f"***{s_word}*** - {uns_word}",
+                            f"***{scrambled_word}*** - {unscrambled_word}",
                 color=0xa8332f
             )
         embed.set_footer(text=f"User: {ctx.author.name}")
@@ -146,8 +146,7 @@ class EconomyCog(commands.Cog, name='Economy'):
             await bal_command(f'{selected_gender}.{selected_number}')
 
         async def bal_command(user_avatar):
-            gender = user_avatar.split('.')[0]
-            number = user_avatar.split('.')[1]
+            gender, number = user_avatar.split('.')[0], user_avatar.split('.')[1]
 
             project_files = pathlib.Path.cwd() / 'EconomyBotProjectFiles'
 

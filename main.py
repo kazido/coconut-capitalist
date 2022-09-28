@@ -77,8 +77,8 @@ async def main():
                 last_reloaded = f"Cogs.{last_cog_name}"
                 if want_sync.lower() == "yes":
                     synced_commands = []
-                    sync = await bot.tree.sync(guild=discord.Object(id=856915776345866240))
-                    sync = await bot.tree.sync(guild=discord.Object(id=977351545966432306)) # REMOVE THIS LINE
+                    # sync = await bot.tree.sync(guild=discord.Object(id=856915776345866240))
+                    sync = await bot.tree.sync(guild=discord.Object(id=977351545966432306))  # REMOVE THIS LINE
                     for command in sync:
                         synced_commands.append(command.name)
                     await interaction.response.edit_message(content=f"{select.values[0][:-3]} has successfully been reloaded.\n"

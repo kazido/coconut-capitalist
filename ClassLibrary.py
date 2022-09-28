@@ -1,6 +1,8 @@
 import datetime
 import random
 from random import randint
+
+import numpy
 import randfacts
 import discord
 from dataclasses import dataclass
@@ -389,3 +391,42 @@ robber_token = Item('robber_token', durability=1)
 almond_seeds = Item("almond_seed", price=10000, durability=1)
 coconut_seeds = Item("coconut_seed", price=80000, durability=1)
 cacao_seeds = Item("cacao_seed", price=500000, durability=1)
+
+# Tree Drops
+fine_bark = Item("fine_bark", rarity='legendary')
+
+
+class Tree:
+    rare_drops = [fine_bark]
+    tree_heights = [randint(20, 40), randint(40, 50), randint(50, 60), randint(90, 100)]
+
+    def __init__(self, user1):
+        self.height = numpy.random.choice(Tree.tree_heights, p=[0.499, 0.300, 0.200, 0.001])
+        self.hitpoints = round(self.height/2)
+        self.rare_drops = Tree.rare_drops
+        self.embed = None
+        self.user1, self.user2 = user1, None
+
+    @property
+    def hitpoints(self):
+        return self._hitpoints
+
+    @hitpoints.setter
+    def hitpoints(self, new_hitpoints):
+        if new_hitpoints <= 0:
+            self._hitpoints = 0
+            self.embed = self.on_chopped_down()
+        else:
+            self._hitpoints = new_hitpoints
+
+    def on_chopped_down(self):
+        chopped_embed = discord.Embed(
+            title="Tree chopped! :evergreen_tree:",
+            description=f"{self.user1.display_name} and {self.user2.display_name} successfully chopped down a **{self.height}ft** tree!",
+            color=0x573a26
+        )
+        return chopped_embed
+
+
+
+
