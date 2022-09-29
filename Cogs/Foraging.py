@@ -84,7 +84,12 @@ class ForagingCog(commands.Cog, name='Foraging'):
 
         class JoinTreeButton(discord.ui.View):
             async def on_timeout(self) -> None:
-                await interaction.delete_original_message()
+                nobody_joined_embed = discord.Embed(
+                    title="Nobody else wanted to chop this tree.",
+                    description="Maybe a friendly bear will help you! JK.",
+                    color=discord.Color.red()
+                )
+                await interaction.response.edit_message(embed=nobody_joined_embed, view=None)
 
             bot = self.bot
 

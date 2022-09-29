@@ -9,7 +9,8 @@ from Cogs.ErrorHandler import registered
 from ClassLibrary import *
 import asyncio
 
-with open('words.txt', 'r') as f:
+project_files = pathlib.Path.cwd() / 'EconomyBotProjectFiles'
+with open(project_files / 'words.txt', 'r') as f:
     words = f.readlines()
 
 
@@ -147,8 +148,6 @@ class EconomyCog(commands.Cog, name='Economy'):
 
         async def bal_command(user_avatar):
             gender, number = user_avatar.split('.')[0], user_avatar.split('.')[1]
-
-            project_files = pathlib.Path.cwd() / 'EconomyBotProjectFiles'
 
             image1 = Image.open(project_files / 'Templates' / 'blank_template.png')
             font = ImageFont.truetype(str(project_files / 'Fonts' / 'StaatlichesRegular.ttf'), 25)
