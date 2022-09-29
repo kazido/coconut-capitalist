@@ -66,6 +66,10 @@ wise = Rank("Wise", 375000, ranks['wise']['responses'], ":trident:", 1000, ranks
 expert = Rank("Expert", 1000000, ranks['expert']['responses'], ":gem:", 10000, ranks['expert']['description'], ranks['expert']['perks'])
 
 
+class SQLDatabase:
+    def __init__(self) -> None:
+        pass
+
 # This class will have methods to update the user's money, statuses, and id.
 class User:
     def __init__(self, ctx: discord.ext.commands.Context = None, interaction: discord.Interaction = None):
