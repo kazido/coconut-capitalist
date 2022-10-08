@@ -64,7 +64,7 @@ cultured = Rank("Cultured", 130000, ranks['cultured']['responses'], ":money_with
 weathered = Rank("Weathered", 240000, ranks['weathered']['responses'], ":mountain:", 500, ranks['weathered']['description'], ranks['weathered']['perks'])
 wise = Rank("Wise", 375000, ranks['wise']['responses'], ":trident:", 1000, ranks['wise']['description'], ranks['wise']['perks'])
 expert = Rank("Expert", 1000000, ranks['expert']['responses'], ":gem:", 10000, ranks['expert']['description'], ranks['expert']['perks'])
-
+  
 
 class SQLDatabase:
     def __init__(self) -> None:

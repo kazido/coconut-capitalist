@@ -22,8 +22,10 @@ pets = {
                                "dolphin": {"emoji": '🐬'}, "dodo": {"emoji": '🦤'}, "flamingo": {"emoji": '🦩'}},
                    "health": 50, "color": 0x6e3ade},
     "legendary": {"animals": {"lion_face": {"emoji": '🦁'}, "dragon": {"emoji": '🐉'}, "unicorn": {"emoji": '🦄'},
-                              "elephant": {"emoji": '🐘'}, "bee": {"emoji": '🐝'}},
-                  "health": 100, "color": 0xe3a019}
+                              "elephant": {"emoji": '🐘'}},
+                  "health": 100, "color": 0xe3a019},
+    "premium": {"animals": {"bee": {"emoji": '🐝'}},
+                "health": 1000, "color": 0xff0000}
 }
 
 pet_multipliers = {
@@ -32,6 +34,7 @@ pet_multipliers = {
     "rare": {"work": .1, "daily": 2, "gambling": .1},
     "super_rare": {"work": .25, "daily": 2, "gambling": .25},
     "legendary": {"work": .50, "daily": 3, "gambling": .50},
+    "premium": {"work": 2, "daily": 10, "gambling": 2}
 }
 
 
@@ -61,12 +64,15 @@ embed4 = discord.Embed(title=embed_title, description=embed_description, color=0
     .add_field(name="Random Super Rare Pet", value="**5,000,000** bits")
 embed5 = discord.Embed(title=embed_title, description=embed_description, color=0x7300ff) \
     .add_field(name="Random Legendary Pet", value="**10,000,000** bits")
+embed6 = discord.Embed(title=embed_title, description=embed_description, color=0xff0000) \
+    .add_field(name="The Premium Pet", value="**250,000,000** bits")
 page1 = Page(1, embed1, 100000, "common")
 page2 = Page(2, embed2, 500000, "uncommon")
 page3 = Page(3, embed3, 1000000, "rare")
 page4 = Page(4, embed4, 5000000, "super_rare")
 page5 = Page(5, embed5, 10000000, "legendary")
-pages = [page1, page2, page3, page4, page5]
+page6 = Page(6, embed6, 250000000, "premium")
+pages = [page1, page2, page3, page4, page5, page6]
 
 
 class Pet:
