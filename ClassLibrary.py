@@ -1,26 +1,37 @@
+# General python imports
 import datetime
 import random
 from random import randint
-
+from tkinter import E
 import numpy
-import randfacts
-import discord
 from dataclasses import dataclass
-from discord.ext import commands
 from typing import Callable
 import asyncio
-from Cogs.Pets import pet_multipliers
 import json
 import sqlite3
+# Discord imports
+import discord
+from discord.ext import commands
+# Database imports
+import psycopg2
+import sqlalchemy
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+# File import
+from Cogs.Pets import pet_multipliers
+# Other imports
+import randfacts
 
+"""This file is used for storing classes that I use for the different aspects of the bot."""
 
-# Class library for storing all classes necessary for the Economy Bot
+# function to get the discord role from a user: takes in context
 def get_role(ctx):
-    classes = [peasant, farmer, citizen, educated, cultured, weathered, wise, expert]
-    for role in classes:
-        retrieve_role = discord.utils.get(ctx.guild.roles, name=role.name.capitalize())
-        if retrieve_role in ctx.author.roles:
-            return role
+    for rank in list_of_ranks:
+        # grabs the corresponding role from discord and returns it
+        role_in_discord = discord.utils.get(ctx.guild.roles, name=rank.name.capitalize())
+        if role_in_discord in ctx.author.roles:
+            return rank
 
 
 # The primary function of this embed is to calculate the time remaining until command is off cooldown
@@ -46,7 +57,7 @@ with open('./EconomyBotProjectFiles/ranks.json', 'r') as file:
 class Rank:
     name: str
     wage: int
-    work_dialogue: list
+    work_dialogue: list 
     emoji: str
     price: int
     description: str
@@ -64,11 +75,35 @@ cultured = Rank("Cultured", 130000, ranks['cultured']['responses'], ":money_with
 weathered = Rank("Weathered", 240000, ranks['weathered']['responses'], ":mountain:", 500, ranks['weathered']['description'], ranks['weathered']['perks'])
 wise = Rank("Wise", 375000, ranks['wise']['responses'], ":trident:", 1000, ranks['wise']['description'], ranks['wise']['perks'])
 expert = Rank("Expert", 1000000, ranks['expert']['responses'], ":gem:", 10000, ranks['expert']['description'], ranks['expert']['perks'])
+
+list_of_ranks = [peasant, farmer, citizen, educated, cultured, weathered, wise, expert]
   
 
-class SQLDatabase:
+class PostgreSQLDB:
+    conn = None
+    # Upon initialization, create a cursor object and print connection log
     def __init__(self) -> None:
-        pass
+        """ Connect to the PostgreSQL database server """
+        try:
+            # read connection parameters
+            params = config()
+
+            # connect to the PostgreSQL server
+            print('Connecting to the PostgreSQL database...') 
+            PostgreSQLDB.conn = psycopg2.connect(**params)
+            
+            # create a cursor
+            self.cur = PostgreSQLDB.conn.cursor()
+            
+        except (Exception, psycopg2.DatabaseError) as error:
+            print(error)
+    
+    # Code to run on deletion of the database object
+    def __del__(self):
+        if PostgreSQLDB.conn is not None:
+            PostgreSQLDB.conn.close()
+            print('Database connection closed.')
+            
 
 # This class will have methods to update the user's money, statuses, and id.
 class User:

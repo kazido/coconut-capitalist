@@ -1,4 +1,5 @@
 import asyncio
+from cgi import test
 from PIL import Image, ImageFont, ImageDraw
 from io import BytesIO
 import discord
@@ -9,48 +10,9 @@ import os
 from pyston import PystonClient, File
 from ClassLibrary import *
 import pathlib
-
-
-def rps_comparison(author_choice, challenged_choice, author, challenged):
-    result = None
-    win_embed = f"**{author}** wins! {challenged} loses!"
-    lose_embed = f"**{challenged}** wins! {author} loses!"
-    if author_choice == challenged_choice:
-        result = f"It's a tie!"
-    elif challenged_choice == "paper":
-        if author_choice == "rock":
-            result = lose_embed
-        else:
-            result = win_embed
-    elif challenged_choice == "rock":
-        if author_choice == "scissors":
-            result = lose_embed
-        else:
-            result = win_embed
-    elif challenged_choice == "scissors":
-        if author_choice == "paper":
-            result = lose_embed
-        else:
-            result = win_embed
-    return challenged_choice, author_choice, result
-
-
-async def rps_dialogue(interaction):
-    embed_dict = {"embed1": None,
-                  "embed2": None,
-                  "embed3": None,
-                  "embed4": None}
-    for x in embed_dict:
-        pass
-    message = await interaction.followup.send(content="Rock!")
-    await asyncio.sleep(0.5)
-    await interaction.followup.edit_message(message_id=message.id, content="Rock! Paper!")
-    await asyncio.sleep(0.5)
-    await interaction.followup.edit_message(message_id=message.id, content="Rock! Paper! Scissors!")
-    await asyncio.sleep(0.5)
-    await interaction.followup.edit_message(message_id=message.id, content="Rock! Paper! Scissors! **Shoot!**")
-    await asyncio.sleep(0.5)
-    return message
+from ClassLibrary2 import User2
+import mymodels as mm
+import peewee
 
 
 class EmbedModal(discord.ui.Modal, title="Embed Creation"):
@@ -70,11 +32,12 @@ class DebuggingCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
+    # Testing command
     @commands.command()
     async def itest(self, ctx):
-        inventory = Inventory(ctx=ctx)
-        print(inventory.get())
-
+        user = User2(ctx.author.id)
+        print(user.dbinstance.money)
+        
     @commands.is_owner()
     @commands.command()
     async def use(self, ctx, item):
@@ -95,120 +58,10 @@ class DebuggingCommands(commands.Cog):
     @commands.command(name='Ping')
     async def ping(self, ctx):
         path = pathlib.Path('main.py').parent.resolve()
-        await ctx.send(path)
         await ctx.send(f"`{os.path.abspath(__file__)}`")
         await ctx.send(f'Pong! {round(self.bot.latency * 1000)}ms')
         sync = await self.bot.tree.sync(guild=discord.Object(id=856915776345866240))
 
-    # @app_commands.command(name="rps", description="Challenge someone to Rock Paper Scissors!")
-    # @app_commands.guilds(856915776345866240)
-    # @app_commands.choices(choice=[
-    #     Choice(name="rock", value=1),
-    #     Choice(name="paper", value=2),
-    #     Choice(name="scissors", value=3)]
-    # )
-    # async def rps(self, interaction: discord.Interaction, user: discord.User, choice: Choice[int]):
-    #
-    #     class AcceptChallenge(discord.ui.View):
-    #         def __init__(self, challenged_user, *, timeout=180):
-    #             self.author = interaction.user
-    #             self.challenged_user = challenged_user
-    #             super().__init__(timeout=timeout)
-    #
-    #         async def on_timeout(self) -> None:
-    #             self.clear_items()
-    #             await interaction.edit_original_message(embed=timed_out, view=self)
-    #
-    #         @discord.ui.button(label=f"Accept?", style=discord.ButtonStyle.green)
-    #         async def challenger_accept(self, interaction: discord.Interaction, button: discord.ui.Button):
-    #             if interaction.user != self.challenged_user:
-    #                 return
-    #             button.style = discord.ButtonStyle.grey
-    #             button.label = "Accepted"
-    #             button.disabled = True
-    #             choice_embed = discord.Embed(
-    #                 title="Choose!",
-    #                 description=f"{self.challenged_user.name}, would you like Rock, Paper, or Scissors?",
-    #                 color=discord.Color.dark_theme()
-    #             )
-    #             await interaction.response.edit_message(embed=accepted, view=self)
-    #            await interaction.followup.send(embed=choice_embed, view=RPSButtons(entitled_user=self.challenged_user,
-    #                                                                                 author=self.author))
-    #
-    #     class RPSButtons(discord.ui.View):
-    #         def __init__(self, entitled_user, author, *, timeout=180):
-    #             self.entitled_user = entitled_user
-    #             self.author = author
-    #             super().__init__(timeout=timeout)
-    #
-    #         async def on_timeout(self) -> None:
-    #             self.clear_items()
-    #             await interaction.edit_original_message(embed=timed_out, view=self)
-    #
-    #         @discord.ui.button(label="Rock", style=discord.ButtonStyle.green)
-    #         async def rock(self, interaction: discord.Interaction, button: discord.ui.Button):
-    #             if interaction.user != self.entitled_user:
-    #                 return
-    #             self.clear_items()
-    #             await interaction.response.edit_message(embed=chosen, view=self)
-    #             b_choice, a_choice, embed = rps_comparison("rock", choice.name, self.author.name, self.entitled_user.name)
-    #             message = await rps_dialogue(interaction)
-    #             await message.edit(content=f"Rock! Paper! Scissors! **Shoot!**\n"
-    #                                                                       f"{self.author.name} chose **{a_choice}**\n"
-    #                                                                       f"{self.entitled_user.name} chose **{b_choice}**\n"
-    #                                                                       f"{embed}")
-    #
-    #         @discord.ui.button(label="Paper", style=discord.ButtonStyle.green)
-    #         async def paper(self, interaction: discord.Interaction, button: discord.ui.Button):
-    #             if interaction.user != self.entitled_user:
-    #                 return
-    #             self.clear_items()
-    #             await interaction.response.edit_message(embed=chosen, view=self)
-    #             b_choice, a_choice, embed = rps_comparison("rock", choice.name, self.author.name, self.entitled_user.name)
-    #             message = await rps_dialogue(interaction)
-    #             await message.edit(content=f"Rock! Paper! Scissors! **Shoot!**\n"
-    #                                                                       f"{self.author.name} chose **{a_choice}**\n"
-    #                                                                       f"{self.entitled_user.name} chose **{b_choice}**\n"
-    #                                                                       f"{embed}")
-    #
-    #         @discord.ui.button(label="Scissors", style=discord.ButtonStyle.green)
-    #         async def scissors(self, interaction: discord.Interaction, button: discord.ui.Button):
-    #             if interaction.user != self.entitled_user:
-    #                 return
-    #             self.clear_items()
-    #             await interaction.response.edit_message(embed=chosen, view=self)
-    #             b_choice, a_choice, embed = rps_comparison("rock", choice.name, self.author.name, self.entitled_user.name)
-    #             message = await rps_dialogue(interaction)
-    #             await message.edit(content=f"Rock! Paper! Scissors! **Shoot!**\n"
-    #                                                                       f"{self.author.name} chose **{a_choice}**\n"
-    #                                                                       f"{self.entitled_user.name} chose **{b_choice}**\n"
-    #                                                                       f"{embed}")
-    #     challenge_embed = discord.Embed(
-    #         title="Rock Paper Scissors!",
-    #         description=f"{interaction.user.mention} challenges {user.mention} "
-    #                     f"to a game of Rock Paper Scissors!",
-    #         color=discord.Color.blurple()
-    #     )
-    #     challenge_embed.set_footer(text=f"{user.name} must click the button below to begin.")
-    #
-    #     accepted = discord.Embed(
-    #         title="Challenge Accepted!",
-    #         description=f"{user.mention} has accepted {interaction.user.mention}'s "
-    #                     f"challenge to a game of Rock Paper Scissors!",
-    #         color=discord.Color.green()
-    #     )
-    #     chosen = discord.Embed(
-    #         title="Choice selected!",
-    #         description=f"{user.name} has chosen! Who will win?",
-    #         color=discord.Color.dark_green()
-    #     )
-    #     timed_out = discord.Embed(
-    #         title="Timed out.",
-    #         description="You waited too long to interact with this embed.",
-    #         color=discord.Color.red()
-    #     )
-    #
-    #     await interaction.response.send_message(embed=challenge_embed, view=AcceptChallenge(challenged_user=user))
 
     @commands.command()
     @commands.has_permissions(kick_members=True)

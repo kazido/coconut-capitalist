@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
 
 # C extensions
 *.so
@@ -130,3 +131,4 @@ dmypy.json
 
 # OTHER FILES
 data.json
+database.ini
