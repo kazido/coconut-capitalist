@@ -131,4 +131,6 @@ dmypy.json
 
 # OTHER FILES
 ./data.json
+data.json
+.data.json
 database.ini
