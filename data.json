@@ -1,6 +1,0 @@
-{
-  "mongo_url": "mongodb+srv://brysonel:Epick778!@cluster0.q2gnr.mongodb.net/myFirstDatabase?retryWrites=true&w=majority",
-  "token": "MTAxNjA1NDU1OTU4MTQxMzQ1Nw.G9KHUO.bGVjE8tBLON2Any5tMYoGq4hFfzdt2zMMjdt8Q",
-  "postgreSQLparams": {"host": "127.0.0.1", "user": "postgres", "password": "Epick778!"
-  }
-}
