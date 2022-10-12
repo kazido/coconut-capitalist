@@ -426,6 +426,10 @@ class EconomyCog(commands.Cog, name='Economy'):
             async def green_button(self, interaction: discord.Interaction, button: discord.ui.Button):
                 if interaction.user != ctx.author:
                     return
+                if int(amount) > bank:
+                    await ctx.send(f"You don't have that many bits in your account. "
+                                    f"Bank Balance: {'{:,}'.format(bank)} bits")
+                    return
                 await user.update_balance(int(amount))
                 await user.update_balance(-int(amount), bank=True)
                 withdraw_embed = discord.Embed(colour=discord.Color.dark_blue())

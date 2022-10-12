@@ -11,34 +11,38 @@ pets = {
         {"animals": {"dog": {"emoji": '🐶'}, "cat": {"emoji": '🐱'}, "mouse": {"emoji": '🐭'},
                      "rabbit": {"emoji": '🐰'},
                      "bat": {"emoji": '🦇'}, "goat": {"emoji": '🐐'}, "chicken": {"emoji": '🐔'}},
-         "health": 10, "color": 0x99f7a7},
+         "health": 10, 
+         "color": 0x99f7a7,
+         "multipliers": {"work": 0, "daily": 1, "gambling": .001}},
     "uncommon": {"animals": {"frog": {"emoji": '🐸'}, "pig": {"emoji": '🐷'}, "snake": {"emoji": '🐍'},
                              "turtle": {"emoji": '🐢'}, "penguin": {"emoji": '🐧'}},
-                 "health": 15, "color": 0x63efff},
+                 "health": 15, 
+                 "color": 0x63efff,
+                 "multipliers": {"work": 0.01, "daily": 1, "gambling": .01}},
     "rare": {"animals": {"giraffe": {"emoji": '🦒'}, "fox": {"emoji": '🦊'}, "panda_face": {"emoji": '🐼'},
                          "raccoon": {"emoji": '🦝'}, "koala": {"emoji": '🐨'}, "monkey": {"emoji": '🐒'}},
-             "health": 25, "color": 0x0c61cf},
+             "health": 25, 
+             "color": 0x0c61cf,
+             "multipliers":{"work": .1, "daily": 2, "gambling": .1}},
     "super_rare": {"animals": {"polar_bear": {"emoji": '🐻‍❄️'}, "octopus": {"emoji": '🐙'}, "eagle": {"emoji": '🦅'},
                                "dolphin": {"emoji": '🐬'}, "dodo": {"emoji": '🦤'}, "flamingo": {"emoji": '🦩'}},
-                   "health": 50, "color": 0x6e3ade},
+                   "health": 50, 
+                   "color": 0x6e3ade,
+                   "multipliers": {"work": .25, "daily": 2, "gambling": .25}},
     "legendary": {"animals": {"lion_face": {"emoji": '🦁'}, "dragon": {"emoji": '🐉'}, "unicorn": {"emoji": '🦄'},
                               "elephant": {"emoji": '🐘'}},
-                  "health": 100, "color": 0xe3a019},
+                  "health": 100, 
+                  "color": 0xe3a019,
+                  "multipliers": {"work": .50, "daily": 3, "gambling": .50}},
     "premium": {"animals": {"bee": {"emoji": '🐝'}},
-                "health": 1000, "color": 0xff0000}
-}
-
-pet_multipliers = {
-    "common": {"work": 0, "daily": 1, "gambling": .001},
-    "uncommon": {"work": 0.01, "daily": 1, "gambling": .01},
-    "rare": {"work": .1, "daily": 2, "gambling": .1},
-    "super_rare": {"work": .25, "daily": 2, "gambling": .25},
-    "legendary": {"work": .50, "daily": 3, "gambling": .50},
-    "premium": {"work": 2, "daily": 10, "gambling": 2}
+                "health": 1000, 
+                "color": 0xff0000,
+                "multipliers": {"work": 2, "daily": 10, "gambling": 2}}
 }
 
 
 class Page:
+    pages = []
     def __init__(self, number, embed, cost, rarity):
         self.number = number
         self.embed = embed
@@ -48,6 +52,8 @@ class Page:
         self.can_buy = False
         self.emoji = None
         self.label = "Can't afford"
+        self.pages.append(self)
+        
 
 
 embed_title = "Welcome to the pet shop!"
@@ -72,7 +78,6 @@ page3 = Page(3, embed3, 1000000, "rare")
 page4 = Page(4, embed4, 5000000, "super_rare")
 page5 = Page(5, embed5, 10000000, "legendary")
 page6 = Page(6, embed6, 250000000, "premium")
-pages = [page1, page2, page3, page4, page5, page6]
 
 
 class Pet:
@@ -95,7 +100,7 @@ class PetsCog(commands.Cog, name='Pets'):
                       description="Buy a pet egg and see what you get!", brief="-buypet")
     async def purchase_pet(self, ctx):
         user = User(ctx)
-        for x in pages:
+        for x in Page.pages:
             if await user.check_balance("bits") >= x.cost:
                 x.can_buy = True
                 x.emoji = "💰"
@@ -125,29 +130,29 @@ class PetsCog(commands.Cog, name='Pets'):
                 await message.edit(embed=embed, view=self)
 
             def next_page(self):
-                current_page = pages.index(self.page)
+                current_page = Page.pages.index(self.page)
                 try:
-                    self.page = pages[current_page + 1]
+                    self.page = Page.pages[current_page + 1]
                 except IndexError:
                     return
 
                 return self.page
 
             def back_page(self):
-                current_page = pages.index(self.page)
+                current_page = Page.pages.index(self.page)
                 if current_page == 0:
                     return
-                self.page = pages[current_page - 1]
+                self.page = Page.pages[current_page - 1]
                 return self.page
 
             @discord.ui.button(emoji="⬅️", style=discord.ButtonStyle.blurple, disabled=True, custom_id="back")
             async def back_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
                 if interaction.user != ctx.author:
                     return
-                if self.page.number == len(pages):
+                if self.page.number == len(Page.pages):
                     self.children[2].disabled = False
                 self.back_page()
-                if self.page == pages[0]:
+                if self.page == Page.pages[0]:
                     button.disabled = True
                 else:
                     button.disabled = False
@@ -196,10 +201,10 @@ class PetsCog(commands.Cog, name='Pets'):
             async def next_page_button(self, interaction: discord.Interaction, button: discord.ui.Button):
                 if interaction.user != ctx.author:
                     return
-                if self.page == pages[0]:
+                if self.page == Page.pages[0]:
                     self.children[0].disabled = False
                 self.next_page()
-                if self.page.number == len(pages):
+                if self.page.number == len(Page.pages):
                     button.disabled = True
                 else:
                     button.disabled = False
@@ -217,7 +222,7 @@ class PetsCog(commands.Cog, name='Pets'):
                 await ctx.message.delete()
                 self.stop()
 
-        message = await ctx.send(embed=pages[0].embed, view=PetPaginatorButtons(pages[0]))
+        message = await ctx.send(embed=Page.pages[0].embed, view=PetPaginatorButtons(Page.pages[0]))
 
     @registered()
     @own_pet()

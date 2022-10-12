@@ -1,13 +1,31 @@
+import peewee
 from peewee import *
+from playhouse.pool import PooledPostgresqlDatabase
 import json
 
 with open('./data.json', 'r') as f:
-    data = json.load(f)
-    
-database = PostgresqlDatabase('discordbotPGDB', **data['postgreSQLparams'])
+            data = json.load(f)
+            
+database = peewee.PostgresqlDatabase(database='discordbotPGDB', autorollback=True, **data['postgreSQLparams'])
+database.connect()
+
+class PGSQLDatabase:
+    database = peewee.PostgresqlDatabase(database='discordbotPGDB', autorollback=True, **data['postgreSQLparams'])
+    def __init__(self) -> None:
+        try:
+            print("Attempting to connect to PGSQL Database...")
+            self.database.connect()
+            print("Successfully connected!")
+        except peewee.DatabaseError as error:
+            print(f"Error connecting to PGSQL Database.\nError: {error}")
+        
+    def __del__(self):
+        self.database.close()
+        print("Closed connection to PGSQL Database.")
+
 
 class UnknownField(object):
-    def __init__(self, *_, **__): pass
+        def __init__(self, *_, **__): pass
 
 class BaseModel(Model):
     class Meta:
@@ -22,7 +40,7 @@ class dbUser(BaseModel):
     tokens = IntegerField(default=0, null=True)
 
     class Meta:
-        table_name = 'user'
+        table_name = 'discord_user'
 
 class dbFarms(BaseModel):
     almond_seeds = IntegerField(default=25, null=True)
@@ -74,3 +92,13 @@ class dbUserCooldowns(BaseModel):
     class Meta:
         table_name = 'user_cooldowns'
 
+class dbGames(BaseModel):
+    game_id = AutoField()
+    game_type = CharField(null=True, max_length=20)
+    reward = BigIntegerField(null=True)
+    game_creator_id = ForeignKeyField(column_name='game_creator', field='id', model=dbUser)
+    
+    class Meta:
+        table_name = 'games'
+
+database.close()

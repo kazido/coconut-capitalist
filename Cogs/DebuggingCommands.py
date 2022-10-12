@@ -10,7 +10,7 @@ import os
 from pyston import PystonClient, File
 from ClassLibrary import *
 import pathlib
-from ClassLibrary2 import User2
+from ClassLibrary2 import RequestUser
 import mymodels as mm
 import peewee
 
@@ -35,8 +35,12 @@ class DebuggingCommands(commands.Cog):
     # Testing command
     @commands.command()
     async def itest(self, ctx):
-        user = User2(ctx.author.id)
-        print(user.dbinstance.money)
+        user = RequestUser(ctx.author.id)
+        embed = discord.Embed(title="Hello")
+        embed_message = await ctx.send(embed=embed)
+        embed.title = "Hi"
+        await embed_message.edit(embed=embed)
+        print("Done!")
         
     @commands.is_owner()
     @commands.command()

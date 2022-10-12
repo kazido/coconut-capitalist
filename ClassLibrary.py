@@ -77,32 +77,6 @@ wise = Rank("Wise", 375000, ranks['wise']['responses'], ":trident:", 1000, ranks
 expert = Rank("Expert", 1000000, ranks['expert']['responses'], ":gem:", 10000, ranks['expert']['description'], ranks['expert']['perks'])
 
 list_of_ranks = [peasant, farmer, citizen, educated, cultured, weathered, wise, expert]
-  
-
-class PostgreSQLDB:
-    conn = None
-    # Upon initialization, create a cursor object and print connection log
-    def __init__(self) -> None:
-        """ Connect to the PostgreSQL database server """
-        try:
-            # read connection parameters
-            params = config()
-
-            # connect to the PostgreSQL server
-            print('Connecting to the PostgreSQL database...') 
-            PostgreSQLDB.conn = psycopg2.connect(**params)
-            
-            # create a cursor
-            self.cur = PostgreSQLDB.conn.cursor()
-            
-        except (Exception, psycopg2.DatabaseError) as error:
-            print(error)
-    
-    # Code to run on deletion of the database object
-    def __del__(self):
-        if PostgreSQLDB.conn is not None:
-            PostgreSQLDB.conn.close()
-            print('Database connection closed.')
             
 
 # This class will have methods to update the user's money, statuses, and id.
