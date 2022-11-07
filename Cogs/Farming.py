@@ -89,7 +89,7 @@ class FarmingCog(commands.Cog, name="Farming"):
         pass
 
     @registered()
-    @missing_perks("Farmer")
+    @missing_perks()
     @commands.command(name="Farm", description="Grow some crops to fill your barn!", brief="-farm")
     async def farm(self, ctx):
         user_id = ctx.author.id
@@ -220,7 +220,7 @@ class FarmingCog(commands.Cog, name="Farming"):
         message = await ctx.send(embed=embed, view=FarmButtons())
 
     @registered()
-    @missing_perks("Farmer")
+    @missing_perks()
     @commands.command(name="Plant", description="Plant some seeds and grow some crops!", brief="-plant")
     async def plant(self, ctx):
         user_id = ctx.author.id
@@ -306,7 +306,7 @@ class FarmingCog(commands.Cog, name="Farming"):
         plant_message = await ctx.send(embed=plant_embed, view=PlantButtons())
 
     @registered()
-    @missing_perks("Farmer")
+    @missing_perks()
     @commands.command(name="Barn", description="Check your stock of crops and seeds.", brief="-bard")
     async def barn(self, ctx):
         user_id = ctx.author.id

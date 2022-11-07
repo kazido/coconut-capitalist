@@ -2,11 +2,8 @@
 import datetime
 import random
 from random import randint
-from tkinter import E
 import numpy
 from dataclasses import dataclass
-from typing import Callable
-import asyncio
 import json
 import sqlite3
 # Discord imports
@@ -14,16 +11,13 @@ import discord
 from discord.ext import commands
 # Database imports
 import psycopg2
-import sqlalchemy
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
 # File import
-from Cogs.Pets import pet_multipliers
+from Cogs.Pets import pets
 # Other imports
 import randfacts
 
 """This file is used for storing classes that I use for the different aspects of the bot."""
+
 
 # function to get the discord role from a user: takes in context
 def get_role(ctx):
@@ -48,6 +42,7 @@ async def cool_down_embed(off_cd, ctx, now, command):
     embed.set_footer(text=f"User: {ctx.author.name}")
     await ctx.send(embed=embed)
 
+
 # Load the json file where all the rank dialogue is stored
 with open('./EconomyBotProjectFiles/ranks.json', 'r') as file:
     ranks = json.load(file)
@@ -57,7 +52,7 @@ with open('./EconomyBotProjectFiles/ranks.json', 'r') as file:
 class Rank:
     name: str
     wage: int
-    work_dialogue: list 
+    work_dialogue: list
     emoji: str
     price: int
     description: str
@@ -67,17 +62,25 @@ class Rank:
         return random.choice(self.work_dialogue)
 
 
-peasant = Rank("Peasant", 2500, ranks['peasant']['responses'], ":palms_up_together:", 0, ranks['peasant']['description'], ranks['peasant']['perks'])
-farmer = Rank("Farmer", 10000, ranks['farmer']['responses'], ":basket:", 10, ranks['farmer']['description'], ranks['farmer']['perks'])
-citizen = Rank("Citizen", 25000, ranks['citizen']['responses'], ":busts_in_silhouette:", 45, ranks['citizen']['description'], ranks['citizen']['perks'])
-educated = Rank("Educated", 60000, ranks['educated']['responses'], ":book:", 100, ranks['educated']['description'], ranks['educated']['perks'])
-cultured = Rank("Cultured", 130000, ranks['cultured']['responses'], ":money_with_wings:", 250, ranks['cultured']['description'], ranks['cultured']['perks'])
-weathered = Rank("Weathered", 240000, ranks['weathered']['responses'], ":mountain:", 500, ranks['weathered']['description'], ranks['weathered']['perks'])
-wise = Rank("Wise", 375000, ranks['wise']['responses'], ":trident:", 1000, ranks['wise']['description'], ranks['wise']['perks'])
-expert = Rank("Expert", 1000000, ranks['expert']['responses'], ":gem:", 10000, ranks['expert']['description'], ranks['expert']['perks'])
+peasant = Rank("Peasant", 2500, ranks['peasant']['responses'], ":palms_up_together:", 0,
+               ranks['peasant']['description'], ranks['peasant']['perks'])
+farmer = Rank("Farmer", 10000, ranks['farmer']['responses'], ":basket:", 10, ranks['farmer']['description'],
+              ranks['farmer']['perks'])
+citizen = Rank("Citizen", 25000, ranks['citizen']['responses'], ":busts_in_silhouette:", 45,
+               ranks['citizen']['description'], ranks['citizen']['perks'])
+educated = Rank("Educated", 60000, ranks['educated']['responses'], ":book:", 100, ranks['educated']['description'],
+                ranks['educated']['perks'])
+cultured = Rank("Cultured", 130000, ranks['cultured']['responses'], ":money_with_wings:", 250,
+                ranks['cultured']['description'], ranks['cultured']['perks'])
+weathered = Rank("Weathered", 240000, ranks['weathered']['responses'], ":mountain:", 500,
+                 ranks['weathered']['description'], ranks['weathered']['perks'])
+wise = Rank("Wise", 375000, ranks['wise']['responses'], ":trident:", 1000, ranks['wise']['description'],
+            ranks['wise']['perks'])
+expert = Rank("Expert", 1000000, ranks['expert']['responses'], ":gem:", 10000, ranks['expert']['description'],
+              ranks['expert']['perks'])
 
 list_of_ranks = [peasant, farmer, citizen, educated, cultured, weathered, wise, expert]
-            
+
 
 # This class will have methods to update the user's money, statuses, and id.
 class User:
@@ -91,8 +94,8 @@ class User:
             self.bot = interaction.client
             self.interaction = interaction
         try:
-            self.sqliteConnection = sqlite3.connect('economySQLdatabase.sqlite')
-            self.cursor = self.sqliteConnection.cursor()
+            # self.connection = .connect()
+            # self.cursor = self.sqliteConnection.cursor()
             print("User object initialized, connected to database.")
         except sqlite3.Error as error:
             print(f"Ran into {error} whilst attempting to connect to the database.")
@@ -115,14 +118,16 @@ class User:
             self.cursor.execute(pet_check_statement, [self.user_id])
             active_pet_rarity = self.cursor.fetchall()[0][0]
             # If the user has a pet and the bonus isn't 0, send an embed showing the pet bonus
-            if active_pet_rarity and role.wage * pet_multipliers[active_pet_rarity]['work'] != 0:
-                work_pet_bonus = role.wage * pet_multipliers[active_pet_rarity]['work']
+            if active_pet_rarity and role.wage * pets[active_pet_rarity]['multipliers']['work'] != 0:
+                work_pet_bonus = role.wage * pets[active_pet_rarity]['multipliers']['work']
                 await self.update_balance(role.wage + int(work_pet_bonus))
                 embed.add_field(name=f"{role.work()}", value=f"You received **{'{:,}'.format(role.wage)}** bits\n"
-                                                             f"Your pet earned you an extra **{'{:,}'.format(int(work_pet_bonus))}** bits", inline=False)
+                                                             f"Your pet earned you an extra **{'{:,}'.format(int(work_pet_bonus))}** bits",
+                                inline=False)
             else:
                 await self.update_balance(role.wage)
-                embed.add_field(name=f"{role.work()}", value=f"You received **{'{:,}'.format(role.wage)}** bits", inline=False)
+                embed.add_field(name=f"{role.work()}", value=f"You received **{'{:,}'.format(role.wage)}** bits",
+                                inline=False)
             embed.add_field(name="Bits",
                             value=f"You have {'{:,}'.format(await self.check_balance('bits'))} bits",
                             inline=False)
@@ -170,9 +175,9 @@ class User:
             embed.set_footer(text=f"User: {self.ctx.author.name}")
             await self.ctx.send(embed=embed)
 
-    # Function used to check balance. Can input either 'bits' or 'tokens' to check the corresponsing database values
+    # Function used to check balance. Can input either 'bits' or 'tokens' to check the corresponding database values
     async def check_balance(self, balance_type):
-        statement = "SELECT "+balance_type+" FROM users WHERE user_id = ?"
+        statement = "SELECT " + balance_type + " FROM users WHERE user_id = ?"
         self.cursor.execute(statement, [self.user_id])
         balance = self.cursor.fetchall()[0][0]
         return balance
@@ -415,7 +420,7 @@ class Tree:
 
     def __init__(self, user1):
         self.height = numpy.random.choice(Tree.tree_heights, p=[0.499, 0.300, 0.200, 0.001])
-        self.hitpoints = round(self.height/2)
+        self.hitpoints = round(self.height / 2)
         self.rare_drops = Tree.rare_drops
         self.embed = None
         self.user1, self.user2 = user1, None
@@ -439,7 +444,3 @@ class Tree:
             color=0x573a26
         )
         return chopped_embed
-
-
-
-

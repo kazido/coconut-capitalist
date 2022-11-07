@@ -1,57 +1,97 @@
 {
   "peasant": {
+    "wage": 2500,
+    "emoji": ":palms_up_together:",
+    "price": 0,
+    "color": "ffffff",
     "responses": ["You actually manage to scrape up some bits. How wonderful.",
       "Someone donated a little more than normal. How kind.",
       "You are a peasant. Feel bad."],
     "description": "Born into the lower class, destined for the upper class.",
-    "perks": ["-beg"]
+    "perks": ["-beg"],
+    "all_perks": ["beg"]
   },
   "farmer": {
+    "wage": 10000,
+    "emoji": ":basket:",
+    "price": 10,
+    "color": "f6f69f",
     "responses": ["You toiled hard in the fields, picking... bits?",
      "Your spouse hasn't seen you all day, since you've been farming bits.",
      "You harvested a plentiful amount of bits."],
     "description": "A hard working farmer.\n Those coconuts aren't going to farm themselves.",
-    "perks": ["-farm"]
+    "perks": ["-farm", "-barn", "-plant"],
+    "all_perks": ["beg", "farm", "barn", "plant"]
   },
   "citizen": {
+    "wage": 25000,
+    "emoji": ":busts_in_silhouette:",
+    "price": 45,
+    "color": "bae9a6",
     "responses": ["You spend the day being a slave to the system.",
      "Work, work, work. 9-5, just killing time.",
      "When is your lunch break?"],
     "description": "The beginning of a new chapter. Welcome to the real world.",
-    "perks": ["-pay"]
+    "perks": ["-pay"],
+    "all_perks": ["beg", "farm", "barn", "plant", "pay"]
   },
   "educated": {
+    "wage": 60000,
+    "emoji": ":book:",
+    "price": 100,
+    "color": "84a0f0",
     "responses": ["Your dad owns a boat.",
      "Yeah, you finished college.",
      "Your dad also owns Microsoft."],
     "description": "Why not get a 31 on your ACT and get into a pretty nice college?",
-    "perks": ["-research"]
+    "perks": ["-research"],
+    "all_perks": ["beg", "farm", "barn", "plant", "pay", "research"]
   },
   "cultured": {
+    "wage": 130000,
+    "emoji": ":money_with_wings:",
+    "price": 250,
+    "color": "88cad8",
     "responses": ["You've settled into the ways of a classic American. A 9-5.",
      "Nice car! You'll own it soon if you keep this up!",
      "You could probably get a job coding for the guy who made this bot. I heard he pays lots of bits..."],
     "description": "It's been a while since college. Things are less fun, but more... real? Anyway, bigger paycheck!",
-    "perks": []
+    "perks": [],
+    "all_perks": ["beg", "farm", "barn", "plant", "pay", "research"]
   },
   "weathered": {
+    "wage": 240000,
+    "emoji": ":mountain:",
+    "price": 500,
+    "color": "9b51aa",
     "responses": ["The walk through life is full of wonderful experiences.",
       "Wrinkles are starting to form in various places.", "Be proud that you've come this far."],
     "description": "Once you were a peasant. Now, you can look back and smile!",
-    "perks": []
+    "perks": [],
+    "all_perks": ["beg", "farm", "barn", "plant", "pay", "research"]
   },
   "wise": {
+    "wage": 375000,
+    "emoji": ":trident:",
+    "price": 1000,
+    "color": "b396d8",
     "responses": ["You exit the cave. Look at the sun!.",
      "You preach your dumb philosophy; Plato smiles from above.",
      "You discover that it takes 10,000 bits to get to the center of a lollipop."],
     "description": "I farm, therefore I am.",
-    "perks": ["-meditate"]
+    "perks": ["-meditate"],
+    "all_perks": ["beg", "farm", "barn", "plant", "pay", "research", "meditate"]
   },
   "expert": {
+    "wage": 1000000,
+    "emoji": ":gem:",
+    "price": 10000,
+    "color": "f07c79",
     "responses": ["You deserve this.",
      "Only the finest of people can work this hard.",
      "There's no shot you've been outside lately."],
     "description": "Master to all. Servant to none. Coconut expert.",
-    "perks": []
+    "perks": [],
+    "all_perks": ["beg", "farm", "barn", "plant", "pay", "research", "meditate"]
   }
 }

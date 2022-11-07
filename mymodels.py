@@ -1,104 +1,99 @@
-import peewee
 from peewee import *
-from playhouse.pool import PooledPostgresqlDatabase
 import json
 
-with open('./data.json', 'r') as f:
-            data = json.load(f)
-            
-database = peewee.PostgresqlDatabase(database='discordbotPGDB', autorollback=True, **data['postgreSQLparams'])
-database.connect()
+with open('./data.json', 'r') as file:
+    data = json.load(file)
 
-class PGSQLDatabase:
-    database = peewee.PostgresqlDatabase(database='discordbotPGDB', autorollback=True, **data['postgreSQLparams'])
-    def __init__(self) -> None:
-        try:
-            print("Attempting to connect to PGSQL Database...")
-            self.database.connect()
-            print("Successfully connected!")
-        except peewee.DatabaseError as error:
-            print(f"Error connecting to PGSQL Database.\nError: {error}")
-        
-    def __del__(self):
-        self.database.close()
-        print("Closed connection to PGSQL Database.")
+database = PostgresqlDatabase(database=data['postgreSQLparams']['PGDATABASE'],
+                              **{'host': data['postgreSQLparams']['PGHOST'], 'port': data['postgreSQLparams']['PGPORT'],
+                                 'user': data['postgreSQLparams']['PGUSER'],
+                                 'password': data['postgreSQLparams']['PGPASSWORD']})
 
 
 class UnknownField(object):
-        def __init__(self, *_, **__): pass
+    def __init__(self, *_, **__): pass
+
 
 class BaseModel(Model):
     class Meta:
         database = database
 
-class dbUser(BaseModel):
-    avatar = CharField(default='None', null=True)
-    bank = IntegerField(default=0, null=True)
-    id = BigIntegerField(unique=True)
-    in_game = BooleanField(default=False, null=True)
-    money = IntegerField(default=0, null=True)
-    tokens = IntegerField(default=0, null=True)
+
+class Users(BaseModel):
+    avatar = CharField(null=True)
+    bank = IntegerField(null=True)
+    id = BigIntegerField(null=False)
+    in_game = BooleanField(null=True)
+    money = IntegerField(null=True)
+    name = CharField(null=True)
+    tokens = IntegerField(null=True)
+    xp = IntegerField(null=True, default=100)
+    combat_xp = IntegerField(null=True, default=100)
+    mining_xp = IntegerField(null=True, default=100)
+    foraging_xp = IntegerField(null=True, default=100)
+    fishing_xp = IntegerField(null=True, default=100)
+    area = SmallIntegerField(default=0)
+    weapon = SmallIntegerField(default=0)
+    pickaxe = SmallIntegerField(default=0)
+    axe = SmallIntegerField(default=0)
+    fishing_rod = SmallIntegerField(default=0)
 
     class Meta:
-        table_name = 'discord_user'
+        table_name = 'users'
 
-class dbFarms(BaseModel):
-    almond_seeds = IntegerField(default=25, null=True)
-    almonds = IntegerField(default=0, null=True)
-    cacao = IntegerField(default=0, null=True)
-    cacao_seeds = IntegerField(default=3, null=True)
-    coconut_seeds = IntegerField(default=5, null=True)
-    has_open_farm = BooleanField(default=False, null=True)
-    id = ForeignKeyField(column_name='id', field='id', model=dbUser, primary_key=True)
-    plots = CharField(default='000', null=True)
+
+class Farms(BaseModel):
+    almond_seeds = IntegerField(null=True)
+    almonds = IntegerField(null=True)
+    cacao_seeds = IntegerField(null=True)
+    cacaos = IntegerField(null=True)
+    coconut_seeds = IntegerField(null=True)
+    coconuts = IntegerField(null=True)
+    has_open_farm = BooleanField(null=True)
+    id = ForeignKeyField(column_name='id', field='id', model=Users, primary_key=True)
+    plot1 = CharField(constraints=[SQL("DEFAULT 'Empty!'::character varying")], null=True)
+    plot2 = CharField(constraints=[SQL("DEFAULT 'Empty!'::character varying")], null=True)
+    plot3 = CharField(constraints=[SQL("DEFAULT 'Empty!'::character varying")], null=True)
 
     class Meta:
         table_name = 'farms'
 
-class dbItems(BaseModel):
-    buy_price = IntegerField(default=0, null=True)
+
+class Items(BaseModel):
     durability = IntegerField(null=True)
-    item_id = AutoField()
-    item_name = CharField(null=True)
-    owner = ForeignKeyField(column_name='owner_id', field='id', model=dbUser, null=True)
-    quantity = IntegerField()
-    rarity = CharField(null=True)
-    sell_value = IntegerField(default=0, null=True)
-    tradeable = BooleanField(default=True, null=True)
-    useable = BooleanField(default=False, null=True)
+    id = UUIDField(constraints=[SQL("DEFAULT gen_random_uuid()")], primary_key=True)
+    item = CharField(null=True)
+    owner_id = BigIntegerField(null=True)
+    quantity = IntegerField(null=True)
+    rarity = CharField(max_length=15, null=True)
+    useable = BooleanField(default=False)
+    tradeable = BooleanField(default=True)
+    buy_price = IntegerField(default=0, null=True)
+    sell_price = IntegerField(default=0, null=True)
 
     class Meta:
         table_name = 'items'
 
-class dbPets(BaseModel):
-    active = BooleanField(default=False, null=True)
+
+class Pets(BaseModel):
+    active = BooleanField(null=True)
     health = IntegerField(null=True)
-    level = IntegerField(default=1, null=True)
-    name = CharField(null=True)
-    owner = ForeignKeyField(column_name='owner_id', field='id', model=dbUser)
-    pet_id = AutoField()
-    rarity = CharField(null=True)
-    species = CharField(null=True)
-    xp = IntegerField(default=0, null=True)
+    id = UUIDField(constraints=[SQL("DEFAULT gen_random_uuid()")], primary_key=True)
+    level = IntegerField(null=True)
+    name = TextField(null=True)
+    owner_id = BigIntegerField(null=True)
+    rarity = TextField(null=True)
+    species = TextField(null=True)
+    xp = IntegerField(null=True)
 
     class Meta:
         table_name = 'pets'
 
-class dbUserCooldowns(BaseModel):
-    daily_used_last = DoubleField(default=0, null=True)
-    id = ForeignKeyField(column_name='id', field='id', model=dbUser, primary_key=True)
-    work_used_last = DoubleField(default=0, null=True)
+
+class Usercooldowns(BaseModel):
+    daily_used_last = DoubleField(null=True)
+    id = ForeignKeyField(column_name='id', field='id', model=Users, primary_key=True)
+    worked_last = DoubleField(null=True)
 
     class Meta:
-        table_name = 'user_cooldowns'
-
-class dbGames(BaseModel):
-    game_id = AutoField()
-    game_type = CharField(null=True, max_length=20)
-    reward = BigIntegerField(null=True)
-    game_creator_id = ForeignKeyField(column_name='game_creator', field='id', model=dbUser)
-    
-    class Meta:
-        table_name = 'games'
-
-database.close()
+        table_name = 'user cooldowns'

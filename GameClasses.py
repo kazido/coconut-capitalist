@@ -14,7 +14,7 @@ from discord.ext import commands
 import peewee as pw
 from ClassLibrary2 import RequestUser
 # File import
-from Cogs.Pets import pet_multipliers
+from Cogs.Pets import pets
 from mymodels import database as mmdatabase
 from mymodels import *
 # Other imports

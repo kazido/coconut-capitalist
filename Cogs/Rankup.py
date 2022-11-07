@@ -1,26 +1,10 @@
 import asyncio
+import discord
 from discord.ext import commands
-from ClassLibrary import *
+from discord import app_commands
+from ClassLibrary2 import RequestUser, ranks
 import json
 from Cogs.ErrorHandler import registered
-
-
-def get_role_color(ctx):
-    roles = ["Peasant", "Farmer", "Citizen", "Educated", "Cultured", "Weathered", "Wise", "Expert"]
-    for role in roles:
-        retrieve_role = discord.utils.get(ctx.guild.roles, name=role)
-        if retrieve_role in ctx.author.roles:
-            return retrieve_role.color
-        else:
-            pass
-
-
-async def price_check(ctx, rank):
-    user = User(ctx)
-    if await user.check_balance('tokens') < rank.price:
-        return False
-    else:
-        return True
 
 
 class Ranks(commands.Cog):
@@ -30,118 +14,121 @@ class Ranks(commands.Cog):
         self.bot = bot
 
     @registered()
-    @commands.command(name="Rank", description="Check your current rank and it's perks.")
-    async def rank(self, ctx):
+    @app_commands.guilds(856915776345866240, 977351545966432306)
+    @app_commands.command(name="rank", description="Check your current rank and it's perks.")
+    async def rank(self, interaction: discord.Interaction):
         # Grabs the ranks from the class library and determines which discord role the user has
-        ranks = [peasant, farmer, citizen, educated, cultured, weathered, wise, expert]
-        user_role = get_role(ctx)
-        embed = discord.Embed(title=f"Current Rank: *{user_role.name}* {user_role.emoji}",
-                              color=get_role_color(ctx))
+        user = RequestUser(interaction.user.id, interaction=interaction)
+        embed = discord.Embed(title=f"Current Rank: *{user.rank.capitalize()}* {ranks[user.rank]['emoji']}",
+                              color=discord.Color.from_str("#"+ranks[user.rank]['color']))
         # If the role has permissions, display them
-        if user_role.perms:
-            perms = ', '.join(user_role.perms)
+        if ranks[user.rank]['perks']:
+            perms = ', '.join(ranks[user.rank]['perks'])
         else:
             perms = "This rank has no special perks."
         embed.add_field(name="Perks", value=perms)
-        embed.add_field(name="Wage", value=f"{'{:,}'.format(user_role.wage)} bits")
+        embed.add_field(name="Wage", value=f"{'{:,}'.format(ranks[user.rank]['wage'])} bits")
         # Finds the next rank in the list and displays the price of the next rank in the embed
         rank = 0
         try:
-            for index, x in enumerate(ranks):
-                if x.name.capitalize() == user_role.name:
-                    rank = index
-            embed.add_field(name="Next Rank", value=f"{ranks[rank + 1].name} {ranks[rank + 1].emoji}"
-                                                    f" | Cost: **{ranks[rank + 1].price}** tokens",
-                            inline=False)
+            for index, rank in enumerate(ranks):
+                if rank == user.rank:
+                    next_rank_name = list(ranks.keys())[index+1].capitalize()
+                    next_rank = ranks[list(ranks.keys())[index+1]]
+                    embed.add_field(name="Next Rank",
+                                    value=f"{next_rank_name} "
+                                          f"{next_rank['emoji']}"
+                                          f" | Cost: **{next_rank['price']}** tokens",
+                                    inline=False)
         except IndexError:
             embed.add_field(name="Max rank achieved", value="You've reached the max rank! Nice job!", inline=False)
-        embed.set_footer(text=f"User: {ctx.author.name}")
-        embed.set_thumbnail(url=ctx.author.display_avatar)
-        await ctx.send(embed=embed)
+        embed.set_footer(text=f"User: {interaction.user.name}")
+        embed.set_thumbnail(url=interaction.user.display_avatar)
+        await interaction.response.send_message(embed=embed)
 
     @registered()
-    @commands.command(name="Rankup", description="Spend tokens to move on to the next rank!", brief="-rankup")
-    async def rankup(self, ctx):
-        user = User(ctx)
-        # Checking to see what the highest role they have is
-        classes = [peasant, farmer, citizen, educated, cultured, weathered, wise, expert]
-        next_role = None
-        role_to_add = None
-        for index, role in enumerate(classes):
-            retrieve_role = discord.utils.get(ctx.guild.roles, name=role.name.capitalize())
-            if retrieve_role in ctx.author.roles:
-                if index == len(classes) - 1:
+    @app_commands.guilds(856915776345866240, 977351545966432306)
+    @app_commands.command(name="rankup", description="Spend tokens to move on to the next rank!")
+    async def rankup(self, interaction: discord.Interaction):
+        user = RequestUser(interaction.user.id, interaction=interaction)
+        rankup_embed = None
+        for index, rank in enumerate(ranks):  # Loop through ranks to find next rank
+            if rank == user.rank:
+                next_rank_name = list(ranks.keys())[index + 1].capitalize()
+                next_rank = ranks[list(ranks.keys())[index + 1]]
+                if index == len(ranks):
                     embed = discord.Embed(
                         title="Max rank!",
                         description="You are already at the max rank, "
                                     "so you can't rank up any further!",
-                        color=discord.Color.red()
-                    )
-                    await ctx.send(embed=embed)
+                        color=discord.Color.red())
+                    await interaction.response.send_message(embed=embed)
                     return
-                next_role = classes[index + 1]
-                role_to_remove = retrieve_role
-                role_to_add = discord.utils.get(ctx.guild.roles, name=str(next_role.name).capitalize())
+                else:
+                    rankup_embed = discord.Embed(
+                        title=f"{next_rank_name} {next_rank['emoji']}",
+                        description=next_rank['description'],
+                        color=discord.Color.from_str(f"#{next_rank['color']}")
+                    )
+                    rankup_embed.add_field(name="Wage", value=f"{'{:,}'.format(next_rank['wage'])} bits")
+                    rankup_embed.set_footer(text="You will also receive a new name color.")
+                role_to_add = discord.utils.get(interaction.guild.roles, name=next_rank_name)
+                role_to_remove = discord.utils.get(interaction.guild.roles, name=user.rank.capitalize())
                 break
-            else:
-                pass
 
-        if await price_check(ctx, next_role):
+        if user.instance.tokens >= next_rank['price']:
             class RolePurchaseButtons(discord.ui.View):
                 def __init__(self, *, timeout=180):
                     super().__init__(timeout=timeout)
 
-                @discord.ui.button(label=f"{'{:,}'.format(next_role.price)} tokens", style=discord.ButtonStyle.green)
-                async def green_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                    if interaction.user != ctx.author:
+                @discord.ui.button(label=f"{'{:,}'.format(next_rank['price'])} tokens",
+                                   style=discord.ButtonStyle.green)
+                async def green_button(self, green_button_interaction: discord.Interaction, button: discord.ui.Button):
+                    if green_button_interaction.user != interaction.user:
                         return
                     else:
-                        await ctx.author.add_roles(role_to_add)
-                        await ctx.author.remove_roles(role_to_remove)
-                        await user.update_tokens(-next_role.price)
                         purchased_embed = discord.Embed(
                             title="Purchased!",
-                            description=f"You are now rank: **{next_role.name}** {next_role.emoji}!",
+                            description=f"You are now rank: **{next_rank_name}** "
+                                        f"{next_rank['emoji']}!",
                             color=discord.Color.green()
                         )
-                        purchased_embed.set_footer(text=f"User: {ctx.author.name}")
-                        await interaction.response.edit_message(embed=purchased_embed, view=None)
+                        purchased_embed.set_footer(text=f"User: {green_button_interaction.user.name}")
+                        await interaction.edit_original_response(embed=purchased_embed, view=None)
+                        await green_button_interaction.user.add_roles(role_to_add)
+                        await green_button_interaction.user.remove_roles(role_to_remove)
+                        await user.update_tokens(-next_rank['price'])
 
                 @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
-                async def cancel_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+                async def cancel_button(self, cancel_interaction: discord.Interaction, button: discord.ui.Button):
                     for child in self.children:
                         child.label = ":("
                         child.disabled = True
-                    if interaction.user != ctx.author:
+                    if cancel_interaction.user != interaction.user:
                         return
                     cancel_embed = discord.Embed(
-                        title=f"Cancelled rankup to {next_role.name} {next_role.emoji}",
+                        title=f"Cancelled rankup to {next_rank_name} "
+                              f"{next_rank['emoji']}",
                         description="Unfortunate. Maybe you'll rank up later?",
                         color=discord.Color.red()
                     )
-                    cancel_embed.add_field(name="Hypothetical Wage", value=f"{'{:,}'.format(next_role.wage)} bits")
+                    cancel_embed.add_field(name="Hypothetical Wage",
+                                           value=f"{'{:,}'.format(next_rank['wage'])} bits")
                     cancel_embed.set_footer(text="You WOULD have received a new name color.")
-                    await interaction.response.edit_message(embed=cancel_embed, view=self)
+                    await cancel_interaction.response.edit_message(embed=cancel_embed, view=self)
                     await asyncio.sleep(2)
-                    await message.delete()
+                    await interaction.delete_original_response()
+                    user.__del__()
         else:
             class RolePurchaseButtons(discord.ui.View):
                 def __init__(self, *, timeout=180):
                     super().__init__(timeout=timeout)
 
-                @discord.ui.button(label=f"{'{:,}'.format(next_role.price)} tokens",
+                @discord.ui.button(label=f"{'{:,}'.format(next_rank['price'])} tokens",
                                    style=discord.ButtonStyle.red, disabled=True)
-                async def red_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+                async def red_button(self, cant_afford_interaction: discord.Interaction, button: discord.ui.Button):
                     pass
-
-        embed = discord.Embed(
-            title=f"{next_role.name} {next_role.emoji}",
-            description=next_role.description,
-            color=role_to_add.color
-        )
-        embed.add_field(name="Wage", value=f"{'{:,}'.format(next_role.wage)} bits")
-        embed.set_footer(text="You will also receive a new name color.")
-        message = await ctx.send(embed=embed, view=RolePurchaseButtons())
+        await interaction.response.send_message(embed=rankup_embed, view=RolePurchaseButtons())
 
 
 async def setup(bot):

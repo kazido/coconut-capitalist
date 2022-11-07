@@ -12,7 +12,7 @@ from ClassLibrary import *
 import pathlib
 from ClassLibrary2 import RequestUser
 import mymodels as mm
-import peewee
+import peewee as pw
 
 
 class EmbedModal(discord.ui.Modal, title="Embed Creation"):
@@ -33,14 +33,16 @@ class DebuggingCommands(commands.Cog):
         self.bot = bot
 
     # Testing command
-    @commands.command()
-    async def itest(self, ctx):
-        user = RequestUser(ctx.author.id)
-        embed = discord.Embed(title="Hello")
-        embed_message = await ctx.send(embed=embed)
-        embed.title = "Hi"
-        await embed_message.edit(embed=embed)
-        print("Done!")
+    @app_commands.guilds(856915776345866240, 977351545966432306)
+    @app_commands.command()
+    async def itest(self, interaction: discord.Interaction):
+        for user in mm.Users.select().objects():
+            print(user)
+            user_in_discord = interaction.client.get_user(user.id)
+            print(user.name, user_in_discord.name)
+            user.name = user_in_discord.name
+            user.save()
+
         
     @commands.is_owner()
     @commands.command()

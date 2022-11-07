@@ -69,16 +69,10 @@ def registered():
     return commands.check(predicate)
 
 
-def missing_perks(role_name):
-    async def predicate(ctx):
-        roles = ["Peasant", "Farmer", "Citizen", "Educated", "Cultured", "Wise", "Expert"]
-        role = discord.utils.get(ctx.guild.roles, name=role_name)
-        index = roles.index(role_name)
-        user_roles = ctx.author.roles
-        for x in user_roles:
-            if x.name in roles:
-                if roles.index(x.name) < index:
-                    raise PerkNotUnlockedYet("Doesn't have this perk unlocked!")
+def missing_perks():
+    async def predicate(ctx, user):
+        if ctx.command.name not in ranks[user.role]['all_perks']:
+            raise PerkNotUnlockedYet("Doesn't have this perk unlocked!")
         return True
 
     return commands.check(predicate)
