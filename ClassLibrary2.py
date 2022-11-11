@@ -21,7 +21,7 @@ with open('projfiles/ranks.json', 'r') as file:
     ranks = json.load(file)
 with open('projfiles/areas.json', 'r') as file:
     areas = json.load(file)
-with open('projfiles/petrarities.json', 'r') as file:
+with open('projfiles/pets.json', 'r') as file:
     pets = json.load(file)
 with open('projfiles/megadrop.json', 'r') as file:
     megadrop = json.load(file)
@@ -82,7 +82,7 @@ class RequestUser:
                 title = random.choice(ranks[self.rank]['responses'])
                 description = f" :money_with_wings: **+{'{:,}'.format(wage)} bits** ({self.rank.capitalize()} wage)"
                 if self.active_pet:
-                    work_multiplier = pets[self.active_pet.rarity]['max_multipliers']['work']
+                    work_multiplier = pets[self.active_pet.rarity]['bonuses']['work']
                     description += f"\n:money_with_wings: **+{'{:,}'.format(int(wage * work_multiplier))} bits** (pet bonus)"
                     self.update_balance(wage * work_multiplier)
                 else:
@@ -93,7 +93,7 @@ class RequestUser:
                 title = f"Daily Tokens"
                 description = f"**:coin: +{wage} tokens** ({areas[str(self.instance.area)]['name'].capitalize()} standard)"
                 if self.active_pet:
-                    pet_bonus = pets[self.active_pet.rarity]['max_multipliers']['daily']
+                    pet_bonus = pets[self.active_pet.rarity]['bonuses']['daily']
                     description += f"\n:coin: **+{int(wage + pet_bonus)} tokens** (pet bonus)"
                     self.update_tokens(wage + pet_bonus)
                 else:

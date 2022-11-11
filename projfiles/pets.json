@@ -4,7 +4,7 @@
     "cost": 100000,
     "color": "0x99f7a7",
     "health": 100,
-    "max_multipliers": {
+    "bonuses": {
       "work": 0,
       "daily": 0
     },
@@ -37,7 +37,7 @@
     "cost": 500000,
     "color": "0x63efff",
     "health": 200,
-    "max_multipliers": {
+    "bonuses": {
         "work": 0.25,
         "daily": 1
       },
@@ -64,7 +64,7 @@
     "cost": 1000000,
     "color": "0x0c61cf",
     "health": 400,
-    "max_multipliers": {
+    "bonuses": {
         "work": 0.5,
         "daily": 2
       },
@@ -94,7 +94,7 @@
     "cost": 5000000,
     "color": "0x6e3ade",
     "health": 800,
-    "max_multipliers": {
+    "bonuses": {
         "work": 0.7,
         "daily": 2
       },
@@ -124,7 +124,7 @@
     "cost": 10000000,
     "color": "0xe3ab3b",
     "health": 2000,
-    "max_multipliers": {
+    "bonuses": {
         "work": 1,
         "daily": 3
       },
@@ -148,7 +148,7 @@
     "cost": 250000000,
     "color": "0xe3a019",
     "health": 25000,
-    "max_multipliers": {
+    "bonuses": {
         "work": 5,
         "daily": 10
       },

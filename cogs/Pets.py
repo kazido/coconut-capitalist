@@ -6,7 +6,7 @@ import random
 from random import randint
 import json
 
-with open('projfiles/petrarities.json', 'r') as file:
+with open('projfiles/pets.json', 'r') as file:
     pets = json.load(file)
 
 
