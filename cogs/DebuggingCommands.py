@@ -1,18 +1,11 @@
-import asyncio
-from cgi import test
-from PIL import Image, ImageFont, ImageDraw
-from io import BytesIO
-import discord
-from discord.app_commands import Choice
-from discord.ext import commands
 from discord import app_commands
+import discord
+from discord.ext import commands
 import os
 from pyston import PystonClient, File
-from ClassLibrary import *
 import pathlib
-from ClassLibrary2 import RequestUser
+from ClassLibrary2 import RequestUser, axes
 import mymodels as mm
-import peewee as pw
 
 
 class EmbedModal(discord.ui.Modal, title="Embed Creation"):
@@ -35,29 +28,9 @@ class DebuggingCommands(commands.Cog):
     # Testing command
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command()
-    async def itest(self, interaction: discord.Interaction):
-        for user in mm.Users.select().objects():
-            print(user)
-            user_in_discord = interaction.client.get_user(user.id)
-            print(user.name, user_in_discord.name)
-            user.name = user_in_discord.name
-            user.save()
-
-        
-    @commands.is_owner()
-    @commands.command()
-    async def use(self, ctx, item):
-        inventory = Inventory(ctx)
-        usable_items = [golden_ticket, robber_token]
-        for x in usable_items:
-            if item == x.name:
-                if await inventory.get(item):
-                    await x.use(ctx)
-                    await inventory.remove_item(x.name, 1)
-                    await ctx.send("Item used!")
-                    return
-            else:
-                await ctx.send("You don't own this item!")
+    async def test(self, interaction: discord.Interaction):
+        user = RequestUser(interaction.user.id, interaction=interaction)
+        await interaction.response.send_message("Lots of choppin power!: " + str(axes[str(user.instance.axe)]['chopping_power']))
 
     # Sends the path of the bot. Mainly to check for more than one instance, not sure if this works yet
     @commands.is_owner()
@@ -67,7 +40,6 @@ class DebuggingCommands(commands.Cog):
         await ctx.send(f"`{os.path.abspath(__file__)}`")
         await ctx.send(f'Pong! {round(self.bot.latency * 1000)}ms')
         sync = await self.bot.tree.sync(guild=discord.Object(id=856915776345866240))
-
 
     @commands.command()
     @commands.has_permissions(kick_members=True)

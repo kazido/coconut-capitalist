@@ -1,21 +1,50 @@
-import typing
-from typing import Union
-from random import shuffle
-from PIL import Image, ImageFont, ImageDraw
-from io import BytesIO
+import discord.utils
 import asyncio
 import math
 import pathlib
-from discord.ext import commands
 from discord import app_commands
 from discord.app_commands import Choice
-from Cogs.ErrorHandler import registered, missing_perks
+from cogs.ErrorHandler import registered, missing_perks
 from ClassLibrary import *
 from ClassLibrary2 import *
 
-project_files = pathlib.Path.cwd() / 'EconomyBotProjectFiles'
+project_files = pathlib.Path.cwd() / 'projfiles'
 with open(project_files / 'words.txt', 'r') as f:
     words = f.readlines()
+
+
+def calculate_economy_share(interaction):
+    economy_users = {}
+    column = mm.Users.money + mm.Users.bank
+    query = mm.Users.select().order_by(column.desc())
+    circulation = 0
+    for user in query.objects():  # Loop through all users and add their networths to the database
+        discordMemberObject = interaction.client.get_user(user.id)
+        user_networth = user.bank + user.money
+        if discordMemberObject.bot:
+            continue
+        else:
+            economy_users[user.id] = {}
+            economy_users[user.id]["networth"] = user_networth
+        circulation += user_networth
+    for user in economy_users:  # Once circulation is done calculating, we can calculate percent holdings
+        economy_users[user]['percent_of_economy'] = round((economy_users[user]['networth'] / circulation) * 100, 2)
+
+    return circulation, economy_users
+
+
+def create_rank_string(interaction, index, user, xp, mode: int, advanced: bool = False):
+    match mode:
+        case 0:  # IF THE MODE IS SET TO BITS
+            if advanced:
+                circulation, economy_users = calculate_economy_share(interaction=interaction)
+                user_percent_of_economy = economy_users[user.id]['percent_of_economy']
+                return f"{index}. {user.name} - {'{:,}'.format(user.bank + user.money)} | `{user_percent_of_economy}%`"
+            return f"{index}. {user.name} - {'{:,}'.format(user.bank + user.money)}"
+        case 1:  # IF THE MODE IS SET TO any XP MODE
+            if advanced:
+                return f"{index}. {user.name} - Level {'{:,}'.format(int(math.sqrt(xp).__floor__() / 10))} | `{'{:,}'.format(xp)} xp`"
+            return f"{index}. {user.name} - Level {'{:,}'.format(int(math.sqrt(xp).__floor__() / 10))}"
 
 
 class EconomyCog(commands.Cog, name='Economy'):
@@ -151,7 +180,7 @@ class EconomyCog(commands.Cog, name='Economy'):
         embed.add_field(name="MONEY", value=f":money_with_wings: **BITS**: {'{:,}'.format(bits)}\n"
                                             f":bank: **BANK**: {'{:,}'.format(bank)}\n"
                                             f":coin: **TOKENS**: {'{:,}'.format(tokens)}")
-        embed.set_footer(text="Use -beg, -work, or -unscramble to get bits")
+        embed.set_footer(text="Use /beg, /work, or /unscramble to get bits")
         await interaction.response.send_message(embed=embed)
 
     # Command for the richest members in the server
@@ -164,77 +193,94 @@ class EconomyCog(commands.Cog, name='Economy'):
         Choice(name='combat', value=1),
         Choice(name='mining', value=2),
         Choice(name='foraging', value=3),
-        Choice(name='fishing', value=4)
-    ])
-    async def top(self, interaction: discord.Interaction, category: Choice[int]):
-        top_embed = title = color = column = None
+        Choice(name='fishing', value=4)])
+    async def top(self, interaction: discord.Interaction, category: Choice[int], advanced: bool | None):
+        leaderboard_attributes = {
+            0: {
+                "column": mm.Users.money + mm.Users.bank,
+                "title": ":money_with_wings: BITS LEADERBOARD :money_with_wings:",
+                "color": discord.Color.blue(),
+                "circulation": 0
+            },
+            1: {
+                "column": mm.Users.combat_xp,
+                "title": ":crossed_swords: COMBAT LEADERBOARD :crossed_swords:",
+                "color": discord.Color.dark_red()
+            },
+            2: {
+                "column": mm.Users.mining_xp,
+                "title": ":pick: MINING LEADERBOARD :pick:",
+                "color": discord.Color.dark_orange()
+            },
+            3: {
+                "column": mm.Users.foraging_xp,
+                "title": ":evergreen_tree: FORAGING LEADERBOARD :evergreen_tree:",
+                "color": discord.Color.dark_green()
+            },
+            4: {
+                "column": mm.Users.fishing_xp,
+                "title": ":fishing_pole_and_fish: FISHING LEADERBOARD :fishing_pole_and_fish:",
+                "color": discord.Color.dark_blue()
+            },
+        }
+        category_index = leaderboard_attributes[category.value]
         description = ''
-        prefix = ''
-        unit = 'xp'
-        match category.value:
-            case 0:
-                column = mm.Users.money + mm.Users.bank
-                title = ":money_with_wings: BITS LEADERBOARD :money_with_wings:"
-                color = discord.Color.blue()
-                prefix = '$'
-                unit = ''
-            case 1:
-                column = mm.Users.combat_xp
-                title = ":crossed_swords: COMBAT LEADERBOARD :crossed_swords:"
-                color = discord.Color.dark_red()
-            case 2:
-                column = mm.Users.mining_xp
-                title = ":pick: MINING LEADERBOARD :pick:"
-                color = discord.Color.dark_orange()
-            case 3:
-                column = mm.Users.foraging_xp
-                title = ":evergreen_tree: FORAGING LEADERBOARD :evergreen_tree:"
-                color = discord.Color.dark_green()
-            case 4:
-                column = mm.Users.fishing_xp
-                title = ":fishing_pole_and_fish: FISHING LEADERBOARD :fishing_pole_and_fish:"
-                color = discord.Color.dark_blue()
+        user_place = None
+        add_circulation = False
 
-        query = mm.Users.select().order_by(column.desc())
-        index = 1
-        circulation = 0
-        attribute = user_place = None
-        user_in_top_10 = False
+        query = mm.Users.select().order_by(category_index['column'].desc())
+
+        INDEX_START = 1
+        index = INDEX_START
         for user in query.objects():
-            if user.id == 956000805578768425:
-                continue
-            circulation += user.money + user.bank
-            if index > 10 and user_in_top_10:
+            discordMemberObject = interaction.guild.get_member(user.id)
+            if discordMemberObject.bot:  # Detect if the user is the bot in Discord
+                continue  # Move on to next interation in the loop
+            if category.value == 0:
+                category_index['circulation'] += user.money + user.bank  # Add user money and bank to circulation
+            rank_string = None
+
+            match category.value:
+                case 0:
+                    rank_string = create_rank_string(interaction, index, user, None,
+                                                     mode=0, advanced=advanced)
+                    add_circulation = True
+                case 1:
+                    rank_string = create_rank_string(interaction, index, user, xp=user.combat_xp,
+                                                     mode=1, advanced=advanced)
+                case 2:
+                    rank_string = create_rank_string(interaction, index, user, xp=user.mining_xp,
+                                                     mode=1, advanced=advanced)
+                case 3:
+                    rank_string = create_rank_string(interaction, index, user, xp=user.foraging_xp,
+                                                     mode=1, advanced=advanced)
+                case 4:
+                    rank_string = create_rank_string(interaction, index, user, xp=user.fishing_xp,
+                                                     mode=1, advanced=advanced)
+
+            if index <= 10 and (user.id == interaction.user.id):  # If loop is over command user and still in top 10 :)
+                description += f"**{rank_string}**\n"
+            elif index > 10 and (user.id == interaction.user.id):  # If loop is over command user and not in top 10 :(
+                user_place = f"**{rank_string}**"
+            elif index <= 10 and (user.id != interaction.user.id):  # If loop is anyone else and still in top 10
+                description += f"{rank_string}\n"
+            elif index > 10 and user_place:  # Break if we find the user
                 break
-            elif index > 10 and user_in_top_10 is False and user.id == interaction.user.id:
-                user_place = f"**{index}. {user.name} - {prefix}{'{:,}'.format(attribute)} {unit}**\n"
-                break
-            elif index > 10 and user_in_top_10 is False:
-                continue
-            match title:
-                case ":money_with_wings: BITS LEADERBOARD :money_with_wings:":
-                    attribute = user.bank + user.money
-                case ":crossed_swords: COMBAT LEADERBOARD :crossed_swords:":
-                    attribute = user.combat_xp
-                case ":pick: MINING LEADERBOARD :pick:":
-                    attribute = user.mining_xp
-                case ":evergreen_tree: FORAGING LEADERBOARD :evergreen_tree:":
-                    attribute = user.foraging_xp
-                case ":fishing_pole_and_fish: FISHING LEADERBOARD :fishing_pole_and_fish:":
-                    attribute = user.fishing_xp
-            if user.id == interaction.user.id:
-                user_in_top_10 = True
-                description += f"**{index}. {user.name} - {prefix}{'{:,}'.format(attribute)} {unit}**\n"
             else:
-                description += f"{index}. {user.name} - {prefix}{'{:,}'.format(attribute)} {unit}\n"
+                pass
             index += 1
-        if user_place:
+        if user_place:  # If the user didn't place top 10
             description += '\n' + 'Your rank:' + '\n' + user_place
         top_embed = discord.Embed(
-            title=title,
+            title=category_index['title'],
             description=description,
-            color=color
+            color=category_index['color']
         )
+        if add_circulation:
+            top_embed.add_field(
+                name="Current Circulation",
+                value=f"There are currently **{'{:,}'.format(category_index['circulation'])}** bits in the economy."
+            )
         await interaction.response.send_message(embed=top_embed)
 
     # Daily command, should give x amount of credits per day.
@@ -305,7 +351,7 @@ class EconomyCog(commands.Cog, name='Economy'):
                     return
                 if int(amount) > user.instance.bank:
                     await confirm_interaction.response.send_message(f"You don't have that many bits in your account. "
-                                                            f"Bank Balance: {'{:,}'.format(user.instance.bank)} bits")
+                                                                    f"Bank Balance: {'{:,}'.format(user.instance.bank)} bits")
                     return
                 user.instance.bank -= amount
                 user.instance.money += amount
@@ -330,7 +376,7 @@ class EconomyCog(commands.Cog, name='Economy'):
 
         if int(amount) > user.instance.bank:
             await interaction.response.send_message(f"You don't have that many bits in your account. "
-                           f"Bank Balance: {'{:,}'.format(user.instance.bank)} bits")
+                                                    f"Bank Balance: {'{:,}'.format(user.instance.bank)} bits")
             return
         elif int(amount) == 0:
             await interaction.response.send_message("You cannot withdraw **0** bits...")
@@ -383,42 +429,6 @@ class EconomyCog(commands.Cog, name='Economy'):
         except pw.DoesNotExist:
             embed = discord.Embed(title="This user is not yet registered.")
             await interaction.response.send_message(embed=embed)
-
-    @registered()
-    @app_commands.guilds(856915776345866240, 977351545966432306)
-    @app_commands.command(name="economy", description="Check to see the total amount of bits in circulation "
-                                                      "and how much of it you own!")
-    async def economy(self, interaction: discord.Interaction):
-        column = mm.Users.money + mm.Users.bank
-        query = mm.Users.select().order_by(column.desc())
-        circulation = 0
-        user_money = 0
-        for user in query.objects():
-            discord_user = interaction.client.get_user(user.id)
-            networth = user.bank + user.money
-            if discord_user.bot:
-                networth = 0
-            elif user.id == interaction.user.id:
-                user_money = networth
-            elif networth == 0:
-                pass
-            circulation += networth
-        embed = discord.Embed(
-            title="Current Circulation",
-            description=f"There are currently **{'{:,}'.format(circulation)}** bits floating around the server",
-            color=discord.Color.blue()
-        )
-        percent_holdings = round((user_money / circulation) * 100, 2)
-        if percent_holdings > 50:
-            embed = discord.Embed(
-                title="Current Circulation",
-                description=f"There are currently **{'{:,}'.format(circulation)}** bits floating around the server",
-                color=discord.Color.dark_red()
-            )
-        embed.add_field(name=f"{interaction.user.name}'s Ownership",
-                        value=f"{percent_holdings}% of circulation")
-        embed.set_footer(text="Note: does not include bits the house has made.")
-        await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot):

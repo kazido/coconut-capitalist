@@ -3,8 +3,8 @@ from random import randint
 
 from discord.ext import commands
 # from ClassLibrary import *
-from Cogs.EconomyCog import get_role
-from Cogs.ErrorHandler import registered
+from cogs.EconomyCog import get_role
+from cogs.ErrorHandler import registered
 
 
 class FishingCog(commands.Cog, name='Fishing'):

@@ -1,22 +1,8 @@
 # General python imports
-from operator import is_
-import random
-from random import randint
-from urllib.request import Request
-import numpy
-from typing import Callable
-import asyncio
-import json
 # Discord imports
-import discord
-from discord.ext import commands
 # Database imports
-import peewee as pw
 from ClassLibrary2 import RequestUser
 # File import
-from Cogs.Pets import pets
-from mymodels import database as mmdatabase
-from mymodels import *
 # Other imports
 
 

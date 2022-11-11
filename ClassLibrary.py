@@ -10,9 +10,7 @@ import sqlite3
 import discord
 from discord.ext import commands
 # Database imports
-import psycopg2
 # File import
-from Cogs.Pets import pets
 # Other imports
 import randfacts
 
@@ -44,7 +42,7 @@ async def cool_down_embed(off_cd, ctx, now, command):
 
 
 # Load the json file where all the rank dialogue is stored
-with open('./EconomyBotProjectFiles/ranks.json', 'r') as file:
+with open('projfiles/ranks.json', 'r') as file:
     ranks = json.load(file)
 
 
@@ -250,72 +248,72 @@ class User:
             return "Passed", True
 
 
-class Drop:
-    def __init__(self, bot, amount):
-        self.bot = bot
-        self.amount = amount
-
-    def drop_double(self):
-        odds = random.randint(0, 100)
-        if odds in range(0, 5):
-            message = f"claimed a **double** drop! **+{'{:,}'.format(self.amount * 2)}** bits"
-            color = 0xcc8c16
-            return message, self.amount, True, color
-        else:
-            message = f"claimed the drop! **+{'{:,}'.format(self.amount)}** bits"
-            color = 0xf0b57a
-            return message, self.amount, False, color
-
-    async def prep_claim(self, channel):
-        message, drop_amount, is_double, color = self.drop_double()
-        # Embed for a new drop appearing
-        embed = discord.Embed(
-            title="A drop has appeared! 📦",
-            description=f"This drop contains **{'{:,}'.format(self.amount)}** bits!",
-            color=0x946c44
-        )
-        embed.set_footer(text="React to claim!")
-
-        # Embed for when a drop expires after 1 hour
-        expired_embed = discord.Embed(
-            title="This drop expired :(",
-            description=f"This **{'{:,}'.format(self.amount)}** bit drop has expired.",
-            color=0x484a4a
-        )
-        expired_embed.set_footer(text="Drops happen randomly and last for an hour!")
-
-        class ClaimDropButtons(discord.ui.View):
-            async def on_timeout(self) -> None:
-                if self.claimed:
-                    return
-                await drop.edit(embed=expired_embed, view=None)
-
-            bot = self.bot
-
-            def __init__(self, *, timeout=3600):
-                super().__init__(timeout=timeout)
-                self.claimed = False
-
-            @discord.ui.button(label="CLAIM", style=discord.ButtonStyle.green)
-            async def claim_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                user = User(interaction=interaction)
-                drops_claimed_statement = """SELECT drops_claimed FROM users WHERE user_id = ?"""
-                user.cursor.execute(drops_claimed_statement, [user.user_id])
-                drops_claimed = user.cursor.fetchall()[0][0]
-                claimed_embed = discord.Embed(
-                    title="This drop has been claimed!",
-                    description=f"{interaction.user.name} {message}\nYou have claimed {drops_claimed}",
-                    color=color
-                )
-                claimed_embed.set_footer(text="Drops happen randomly and last for an hour!")
-                if is_double is True:
-                    await user.update_balance(int(drop_amount * 2))
-                else:
-                    await user.update_balance(int(drop_amount))
-                await interaction.response.edit_message(embed=claimed_embed, view=None)
-                self.claimed = True
-
-        drop = await channel.send(embed=embed, view=ClaimDropButtons())
+# class Drop:
+#     def __init__(self, bot, amount):
+#         self.bot = bot
+#         self.amount = amount
+#
+#     def drop_double(self):
+#         odds = random.randint(0, 100)
+#         if odds in range(0, 5):
+#             message = f"claimed a **double** drop! **+{'{:,}'.format(self.amount * 2)}** bits"
+#             color = 0xcc8c16
+#             return message, self.amount, True, color
+#         else:
+#             message = f"claimed the drop! **+{'{:,}'.format(self.amount)}** bits"
+#             color = 0xf0b57a
+#             return message, self.amount, False, color
+#
+#     async def prep_claim(self, channel):
+#         message, drop_amount, is_double, color = self.drop_double()
+#         # Embed for a new drop appearing
+#         embed = discord.Embed(
+#             title="A drop has appeared! 📦",
+#             description=f"This drop contains **{'{:,}'.format(self.amount)}** bits!",
+#             color=0x946c44
+#         )
+#         embed.set_footer(text="React to claim!")
+#
+#         # Embed for when a drop expires after 1 hour
+#         expired_embed = discord.Embed(
+#             title="This drop expired :(",
+#             description=f"This **{'{:,}'.format(self.amount)}** bit drop has expired.",
+#             color=0x484a4a
+#         )
+#         expired_embed.set_footer(text="Drops happen randomly and last for an hour!")
+#
+#         class ClaimDropButtons(discord.ui.View):
+#             async def on_timeout(self) -> None:
+#                 if self.claimed:
+#                     return
+#                 await drop.edit(embed=expired_embed, view=None)
+#
+#             bot = self.bot
+#
+#             def __init__(self, *, timeout=3600):
+#                 super().__init__(timeout=timeout)
+#                 self.claimed = False
+#
+#             @discord.ui.button(label="CLAIM", style=discord.ButtonStyle.green)
+#             async def claim_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+#                 user = User(interaction=interaction)
+#                 drops_claimed_statement = """SELECT drops_claimed FROM users WHERE user_id = ?"""
+#                 user.cursor.execute(drops_claimed_statement, [user.user_id])
+#                 drops_claimed = user.cursor.fetchall()[0][0]
+#                 claimed_embed = discord.Embed(
+#                     title="This drop has been claimed!",
+#                     description=f"{interaction.user.name} {message}\nYou have claimed {drops_claimed}",
+#                     color=color
+#                 )
+#                 claimed_embed.set_footer(text="Drops happen randomly and last for an hour!")
+#                 if is_double is True:
+#                     await user.update_balance(int(drop_amount * 2))
+#                 else:
+#                     await user.update_balance(int(drop_amount))
+#                 await interaction.response.edit_message(embed=claimed_embed, view=None)
+#                 self.claimed = True
+#
+#         drop = await channel.send(embed=embed, view=ClaimDropButtons())
 
 
 class Inventory:
@@ -410,37 +408,37 @@ almond_seeds = Item("almond_seed", price=10000, durability=1)
 coconut_seeds = Item("coconut_seed", price=80000, durability=1)
 cacao_seeds = Item("cacao_seed", price=500000, durability=1)
 
-# Tree Drops
-fine_bark = Item("fine_bark", rarity='legendary')
-
-
-class Tree:
-    rare_drops = [fine_bark]
-    tree_heights = [randint(20, 40), randint(40, 50), randint(50, 60), randint(90, 100)]
-
-    def __init__(self, user1):
-        self.height = numpy.random.choice(Tree.tree_heights, p=[0.499, 0.300, 0.200, 0.001])
-        self.hitpoints = round(self.height / 2)
-        self.rare_drops = Tree.rare_drops
-        self.embed = None
-        self.user1, self.user2 = user1, None
-
-    @property
-    def hitpoints(self):
-        return self._hitpoints
-
-    @hitpoints.setter
-    def hitpoints(self, new_hitpoints):
-        if new_hitpoints <= 0:
-            self._hitpoints = 0
-            self.embed = self.on_chopped_down()
-        else:
-            self._hitpoints = new_hitpoints
-
-    def on_chopped_down(self):
-        chopped_embed = discord.Embed(
-            title="Tree chopped! :evergreen_tree:",
-            description=f"{self.user1.display_name} and {self.user2.display_name} successfully chopped down a **{self.height}ft** tree!",
-            color=0x573a26
-        )
-        return chopped_embed
+# # Tree Drops
+# fine_bark = Item("fine_bark", rarity='legendary')
+#
+#
+# class Tree:
+#     rare_drops = [fine_bark]
+#     tree_heights = [randint(20, 40), randint(40, 50), randint(50, 60), randint(90, 100)]
+#
+#     def __init__(self, user1):
+#         self.height = numpy.random.choice(Tree.tree_heights, p=[0.499, 0.300, 0.200, 0.001])
+#         self.hitpoints = round(self.height / 2)
+#         self.rare_drops = Tree.rare_drops
+#         self.embed = None
+#         self.user1, self.user2 = user1, None
+#
+#     @property
+#     def hitpoints(self):
+#         return self._hitpoints
+#
+#     @hitpoints.setter
+#     def hitpoints(self, new_hitpoints):
+#         if new_hitpoints <= 0:
+#             self._hitpoints = 0
+#             self.embed = self.on_chopped_down()
+#         else:
+#             self._hitpoints = new_hitpoints
+#
+#     def on_chopped_down(self):
+#         chopped_embed = discord.Embed(
+#             title="Tree chopped! :evergreen_tree:",
+#             description=f"{self.user1.display_name} and {self.user2.display_name} successfully chopped down a **{self.height}ft** tree!",
+#             color=0x573a26
+#         )
+#         return chopped_embed

@@ -1,9 +1,8 @@
 import typing
 import pydealer
-from discord.ext import commands
 from ClassLibrary import *
 import asyncio
-from Cogs.ErrorHandler import in_game, registered
+from cogs.ErrorHandler import in_game, registered
 from random import randint
 
 

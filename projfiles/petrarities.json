@@ -1,0 +1,161 @@
+{
+  "common": {
+    "max level": 10,
+    "cost": 100000,
+    "color": "0x99f7a7",
+    "health": 100,
+    "max_multipliers": {
+      "work": 0,
+      "daily": 0
+    },
+    "animals": {
+      "dog": {
+        "emoji": ":dog:"
+      },
+      "cat": {
+        "emoji": ":cat:"
+      },
+      "mouse": {
+        "emoji": ":mouse:"
+      },
+      "rabbit": {
+        "emoji": ":rabbit:"
+      },
+      "bat": {
+        "emoji": ":bat:"
+      },
+      "goat": {
+        "emoji": ":goat:"
+      },
+      "chicken": {
+        "emoji": ":chicken:"
+      }
+    }
+  },
+  "uncommon": {
+    "max level": 20,
+    "cost": 500000,
+    "color": "0x63efff",
+    "health": 200,
+    "max_multipliers": {
+        "work": 0.25,
+        "daily": 1
+      },
+    "animals": {
+      "frog": {
+        "emoji": ":frog:"
+      },
+      "pig": {
+        "emoji": ":pig:"
+      },
+      "snake": {
+        "emoji": ":snake:"
+      },
+      "turtle": {
+        "emoji": ":turtle:"
+      },
+      "penguin": {
+        "emoji": ":penguin:"
+      }
+    }
+  },
+  "rare": {
+    "max level": 30,
+    "cost": 1000000,
+    "color": "0x0c61cf",
+    "health": 400,
+    "max_multipliers": {
+        "work": 0.5,
+        "daily": 2
+      },
+    "animals": {
+      "giraffe": {
+        "emoji": ":giraffe:"
+      },
+      "fox": {
+        "emoji": ":fox:"
+      },
+      "panda": {
+        "emoji": ":panda_face:"
+      },
+      "raccoon": {
+        "emoji": ":raccoon:"
+      },
+      "koala": {
+        "emoji": ":koala"
+      },
+      "monkey": {
+        "emoji": ":monkey:"
+      }
+    }
+  },
+  "super rare": {
+    "max level": 40,
+    "cost": 5000000,
+    "color": "0x6e3ade",
+    "health": 800,
+    "max_multipliers": {
+        "work": 0.7,
+        "daily": 2
+      },
+    "animals": {
+      "polar bear": {
+        "emoji": ":polar_bear:"
+      },
+      "octopus": {
+        "emoji": ":octopus:"
+      },
+      "eagle": {
+        "emoji": ":eagle:"
+      },
+      "dolphin": {
+        "emoji": ":dolphin:"
+      },
+      "dodo": {
+        "emoji": ":dodo:"
+      },
+      "flamingo": {
+        "emoji": ":flamingo:"
+      }
+    }
+  },
+  "legendary": {
+    "max level": 50,
+    "cost": 10000000,
+    "color": "0xe3ab3b",
+    "health": 2000,
+    "max_multipliers": {
+        "work": 1,
+        "daily": 3
+      },
+    "animals": {
+      "lion": {
+        "emoji": ":lion_face:"
+      },
+      "dragon": {
+        "emoji": ":dragon:"
+      },
+      "unicorn": {
+        "emoji": ":unicorn:"
+      },
+      "elephant": {
+        "emoji": ":elephant:"
+      }
+    }
+  },
+  "premium": {
+    "max level": 100,
+    "cost": 250000000,
+    "color": "0xe3a019",
+    "health": 25000,
+    "max_multipliers": {
+        "work": 5,
+        "daily": 10
+      },
+    "animals": {
+      "bee": {
+        "emoji": ":bee:"
+      }
+    }
+  }
+}

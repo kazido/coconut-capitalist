@@ -1,48 +1,18 @@
-import random
-from random import randint, shuffle
+from cogs.ErrorHandler import registered, own_pet
+import pathlib
 import discord
 from discord.ext import commands
-from Cogs.ErrorHandler import registered, own_pet
-from ClassLibrary import *
-import pathlib
+import random
+from random import randint
+import json
 
-pets = {
-    "common":
-        {"animals": {"dog": {"emoji": '🐶'}, "cat": {"emoji": '🐱'}, "mouse": {"emoji": '🐭'},
-                     "rabbit": {"emoji": '🐰'},
-                     "bat": {"emoji": '🦇'}, "goat": {"emoji": '🐐'}, "chicken": {"emoji": '🐔'}},
-         "health": 10, 
-         "color": 0x99f7a7,
-         "multipliers": {"work": 0, "daily": 1, "gambling": .001}},
-    "uncommon": {"animals": {"frog": {"emoji": '🐸'}, "pig": {"emoji": '🐷'}, "snake": {"emoji": '🐍'},
-                             "turtle": {"emoji": '🐢'}, "penguin": {"emoji": '🐧'}},
-                 "health": 15, 
-                 "color": 0x63efff,
-                 "multipliers": {"work": 0.01, "daily": 1, "gambling": .01}},
-    "rare": {"animals": {"giraffe": {"emoji": '🦒'}, "fox": {"emoji": '🦊'}, "panda_face": {"emoji": '🐼'},
-                         "raccoon": {"emoji": '🦝'}, "koala": {"emoji": '🐨'}, "monkey": {"emoji": '🐒'}},
-             "health": 25, 
-             "color": 0x0c61cf,
-             "multipliers":{"work": .1, "daily": 2, "gambling": .1}},
-    "super_rare": {"animals": {"polar_bear": {"emoji": '🐻‍❄️'}, "octopus": {"emoji": '🐙'}, "eagle": {"emoji": '🦅'},
-                               "dolphin": {"emoji": '🐬'}, "dodo": {"emoji": '🦤'}, "flamingo": {"emoji": '🦩'}},
-                   "health": 50, 
-                   "color": 0x6e3ade,
-                   "multipliers": {"work": .25, "daily": 2, "gambling": .25}},
-    "legendary": {"animals": {"lion_face": {"emoji": '🦁'}, "dragon": {"emoji": '🐉'}, "unicorn": {"emoji": '🦄'},
-                              "elephant": {"emoji": '🐘'}},
-                  "health": 100, 
-                  "color": 0xe3a019,
-                  "multipliers": {"work": .50, "daily": 3, "gambling": .50}},
-    "premium": {"animals": {"bee": {"emoji": '🐝'}},
-                "health": 1000, 
-                "color": 0xff0000,
-                "multipliers": {"work": 2, "daily": 10, "gambling": 2}}
-}
+with open('projfiles/petrarities.json', 'r') as file:
+    pets = json.load(file)
 
 
 class Page:
     pages = []
+
     def __init__(self, number, embed, cost, rarity):
         self.number = number
         self.embed = embed
@@ -53,7 +23,6 @@ class Page:
         self.emoji = None
         self.label = "Can't afford"
         self.pages.append(self)
-        
 
 
 embed_title = "Welcome to the pet shop!"
@@ -228,7 +197,7 @@ class PetsCog(commands.Cog, name='Pets'):
     @own_pet()
     @commands.command(name="Pet", aliases=['pets', 'animals'], description="Check your pet and their stats.")
     async def pet(self, ctx):
-        project_files = pathlib.Path.cwd() / 'EconomyBotProjectFiles'
+        project_files = pathlib.Path.cwd() / 'projfiles'
 
         # Check if the user owns a pet, if they don't tell them where they can buy one
         pet_owned = await ctx.bot.dbpets.find_one({"owner_id": ctx.author.id})
@@ -249,13 +218,15 @@ class PetsCog(commands.Cog, name='Pets'):
         )
         # Adding pet sprite to pet menu
         #
-        # file = discord.File(project_files / 'Sprites' / f'{active_pet["species"]}_sprite.png',
+        # file = discord.File(project_files / 'sprites' / f'{active_pet["species"]}_sprite.png',
         #                         filename=f'{active_pet["species"]}_sprite.png')
         # active_pet_embed.set_thumbnail(url=f'attachment://{active_pet["species"]}_sprite.png')
         active_pet_embed.add_field(name="Rarity", value=f"{active_pet['rarity'].replace('_', ' ')}")
-        active_pet_embed.add_field(name="Species", value=f"{pets[active_pet['rarity']]['animals'][active_pet['species']]['emoji']}")
+        active_pet_embed.add_field(name="Species",
+                                   value=f"{pets[active_pet['rarity']]['animals'][active_pet['species']]['emoji']}")
         active_pet_embed.add_field(name="Health",
-                                   value=f"**{active_pet['health']}/{pets[active_pet['rarity']]['health']}**", inline=False)
+                                   value=f"**{active_pet['health']}/{pets[active_pet['rarity']]['health']}**",
+                                   inline=False)
         active_pet_embed.add_field(name="Level", value=f"{active_pet['level']}")
 
         class PetActionButtons(discord.ui.View):
@@ -295,7 +266,7 @@ class PetsCog(commands.Cog, name='Pets'):
 
                         # add necessary fields to refreshed embed
                         # refreshed_pet_file = discord.File(
-                        #     project_files / 'Sprites' / f'{refreshed_pet["species"]}_sprite.png',
+                        #     project_files / 'sprites' / f'{refreshed_pet["species"]}_sprite.png',
                         #     filename=f'{refreshed_pet["species"]}_sprite.png')
                         # await pet_menu_message.add_files(refreshed_pet_file)
                         # refreshed_embed.set_thumbnail(url=f'attachment://{refreshed_pet["species"]}_sprite.png')
@@ -303,7 +274,8 @@ class PetsCog(commands.Cog, name='Pets'):
                         refreshed_embed.add_field(name="Species",
                                                   value=f"{pets[refreshed_pet['rarity']]['animals'][refreshed_pet['species']]['emoji']}")
                         refreshed_embed.add_field(name="Health",
-                                                  value=f"**{refreshed_pet['health']}/{pets[refreshed_pet['rarity']]['health']}**", inline=False)
+                                                  value=f"**{refreshed_pet['health']}/{pets[refreshed_pet['rarity']]['health']}**",
+                                                  inline=False)
                         refreshed_embed.add_field(name="Level", value=f"{refreshed_pet['level']}")
                         await switch_interaction.delete_original_message()
                         await switch_interaction.message.edit(embed=refreshed_embed, view=PetActionButtons())
@@ -353,73 +325,6 @@ class PetsCog(commands.Cog, name='Pets'):
                 self.stop()
 
         pet_menu_message = await ctx.send(embed=active_pet_embed, view=PetActionButtons())
-
-    @registered()
-    @own_pet()
-    @commands.command(name="Dig", description="Dig for unlimited loot! Well, until your shovel breaks that is.",
-                      hidden=True)
-    async def dig(self, ctx):
-        user = User(ctx)
-        inventory = Inventory(ctx)
-        owns_shovel = False
-        for x in ['basic_shovel', 'reinforced_shovel', 'steel_shovel']:
-            if await inventory.get(x):
-                owns_shovel = True
-        if not owns_shovel:
-            embed = discord.Embed(
-                title="Cannot dig",
-                description="You do not own a shovel! Buy one using -shop!",
-                colour=discord.Colour.red()
-            )
-            await ctx.send(embed=embed)
-            return
-        common_pool = ['almond_seeds', 'bits', 'clay', '']
-        uncommon_pool = ['coconut_seeds', 'bits', 'stone']
-        rare_pool = ['cacao_seeds', 'bits', 'reinforced_shovel_blueprint']
-        super_rare_pool = ['steel_shovel_blueprint']
-        legendary_pool = ['SH0V3L', 'golden_ticket', 'pet_voucher']
-        dig_roll = randint(1, 10000)
-        if dig_roll <= 8000:
-            pool = common_pool
-            color = 0xfffce0
-        elif 8000 < dig_roll <= 9000:
-            pool = uncommon_pool
-            color = 0xfff8b5
-        elif 9000 < dig_roll <= 9700:
-            pool = rare_pool
-            color = 0xfff170
-        elif 9700 < dig_roll <= 9998:
-            pool = super_rare_pool
-            color = 0xffe81c
-        else:
-            pool = legendary_pool
-            color = 0xff1cf7
-        item = random.choice(pool)
-        seed_drops = {'almond_seeds': (1, 5), 'coconut_seeds': (1, 2), 'cacao_seeds': (1, 1)}
-        if item in seed_drops:
-            await ctx.bot.dbfarms.update_one({"_id": str(ctx.author.id)},
-                                             {"$inc": {item: randint(seed_drops[item][0], seed_drops[item][1])}})
-        elif item == 'bits':
-            bit_amounts = {common_pool: (500, 1000), uncommon_pool: (1000, 5000), rare_pool: (10000, 25000)}
-            amount = randint(bit_amounts[pool][0], bit_amounts[pool][1])
-            await user.update_balance(amount)
-            item = f"{amount} bits"
-        elif item.endswith('blueprint'):
-            if await ctx.bot.dbitems.find_one({"owner_id": ctx.author.id, "item": item}):
-                pool.remove(item)
-                item = random.choice(pool)
-            else:
-                await ctx.bot.dbitems.insert_one({'durability': 1, 'item_name': item,
-                                                  'owner_id': ctx.author.id, 'quantity': 1})
-        else:
-            await ctx.bot.dbitems.insert_one({'durability': 1, 'item_name': item,
-                                              'owner_id': ctx.author.id, 'quantity': 1})
-        embed = discord.Embed(
-            title="Dig, dig, dig!",
-            description=f"You dug up **{item.replace('_', ' ')}**!",
-            color=color
-        )
-        await ctx.send(embed=embed)
 
 
 async def setup(bot):

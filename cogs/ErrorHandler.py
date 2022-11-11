@@ -1,7 +1,7 @@
-import discord
 import traceback
 import sys
 from discord.ext import commands
+from discord import app_commands
 from discord.utils import get
 from ClassLibrary import *
 
@@ -141,6 +141,11 @@ class CommandErrorHandler(commands.Cog):
                 await payload.member.add_roles(role)
         else:
             pass
+
+    @commands.Cog.listener()
+    async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        await interaction.response.send_message(error)
+        print(error)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):

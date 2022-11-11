@@ -1,13 +1,10 @@
 from peewee import *
 import json
 
-with open('./data.json', 'r') as file:
+with open('././config.json', 'r') as file:
     data = json.load(file)
 
-database = PostgresqlDatabase(database=data['postgreSQLparams']['PGDATABASE'],
-                              **{'host': data['postgreSQLparams']['PGHOST'], 'port': data['postgreSQLparams']['PGPORT'],
-                                 'user': data['postgreSQLparams']['PGUSER'],
-                                 'password': data['postgreSQLparams']['PGPASSWORD']})
+database = SqliteDatabase(database=data['sqlite_path'])
 
 
 class UnknownField(object):
@@ -20,23 +17,23 @@ class BaseModel(Model):
 
 
 class Users(BaseModel):
-    avatar = CharField(null=True)
+    area = IntegerField(constraints=[SQL("DEFAULT 0")])
+    avatar = TextField(null=True)
+    axe = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     bank = IntegerField(null=True)
-    id = BigIntegerField(null=False)
-    in_game = BooleanField(null=True)
+    combat_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
+    fishing_rod = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    fishing_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
+    foraging_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
+    in_game = IntegerField(null=True)
+    mining_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
     money = IntegerField(null=True)
-    name = CharField(null=True)
+    name = TextField(null=True)
+    pickaxe = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     tokens = IntegerField(null=True)
-    xp = IntegerField(null=True, default=100)
-    combat_xp = IntegerField(null=True, default=100)
-    mining_xp = IntegerField(null=True, default=100)
-    foraging_xp = IntegerField(null=True, default=100)
-    fishing_xp = IntegerField(null=True, default=100)
-    area = SmallIntegerField(default=0)
-    weapon = SmallIntegerField(default=0)
-    pickaxe = SmallIntegerField(default=0)
-    axe = SmallIntegerField(default=0)
-    fishing_rod = SmallIntegerField(default=0)
+    weapon = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
+    drops_claimed = IntegerField(constraints=[SQL("DEFAULT 0")])
 
     class Meta:
         table_name = 'users'
@@ -49,11 +46,11 @@ class Farms(BaseModel):
     cacaos = IntegerField(null=True)
     coconut_seeds = IntegerField(null=True)
     coconuts = IntegerField(null=True)
-    has_open_farm = BooleanField(null=True)
-    id = ForeignKeyField(column_name='id', field='id', model=Users, primary_key=True)
-    plot1 = CharField(constraints=[SQL("DEFAULT 'Empty!'::character varying")], null=True)
-    plot2 = CharField(constraints=[SQL("DEFAULT 'Empty!'::character varying")], null=True)
-    plot3 = CharField(constraints=[SQL("DEFAULT 'Empty!'::character varying")], null=True)
+    has_open_farm = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    id = ForeignKeyField(column_name='id', model=Users, primary_key=True)
+    plot1 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
+    plot2 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
+    plot3 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
 
     class Meta:
         table_name = 'farms'
@@ -61,27 +58,22 @@ class Farms(BaseModel):
 
 class Items(BaseModel):
     durability = IntegerField(null=True)
-    id = UUIDField(constraints=[SQL("DEFAULT gen_random_uuid()")], primary_key=True)
-    item = CharField(null=True)
-    owner_id = BigIntegerField(null=True)
-    quantity = IntegerField(null=True)
-    rarity = CharField(max_length=15, null=True)
-    useable = BooleanField(default=False)
-    tradeable = BooleanField(default=True)
-    buy_price = IntegerField(default=0, null=True)
-    sell_price = IntegerField(default=0, null=True)
+    item_name = TextField(null=True)
+    owner_id = IntegerField(null=True)
+    quantity = IntegerField(null=True, default=1)
+    reference_id = IntegerField(null=True)
+    item_type = TextField(null=True)
 
     class Meta:
         table_name = 'items'
 
 
 class Pets(BaseModel):
-    active = BooleanField(null=True)
+    active = IntegerField(null=True)
     health = IntegerField(null=True)
-    id = UUIDField(constraints=[SQL("DEFAULT gen_random_uuid()")], primary_key=True)
     level = IntegerField(null=True)
     name = TextField(null=True)
-    owner_id = BigIntegerField(null=True)
+    owner_id = IntegerField(null=True)
     rarity = TextField(null=True)
     species = TextField(null=True)
     xp = IntegerField(null=True)
@@ -90,10 +82,19 @@ class Pets(BaseModel):
         table_name = 'pets'
 
 
+class SqliteSequence(BaseModel):
+    name = BareField(null=True)
+    seq = BareField(null=True)
+
+    class Meta:
+        table_name = 'sqlite_sequence'
+        primary_key = False
+
+
 class Usercooldowns(BaseModel):
-    daily_used_last = DoubleField(null=True)
-    id = ForeignKeyField(column_name='id', field='id', model=Users, primary_key=True)
-    worked_last = DoubleField(null=True)
+    daily_used_last = IntegerField(null=True)
+    id = ForeignKeyField(column_name='id', model=Users, primary_key=True)
+    worked_last = IntegerField(null=True)
 
     class Meta:
         table_name = 'user cooldowns'

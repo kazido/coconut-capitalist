@@ -8,9 +8,9 @@
         # async def bal_command(user_avatar):
         #     gender, number = user_avatar.split('.')[0], user_avatar.split('.')[1]
         #
-        #     image1 = Image.open(project_files / 'Templates' / 'blank_template.png')
-        #     font = ImageFont.truetype(str(project_files / 'Fonts' / 'StaatlichesRegular.ttf'), 25)
-        #     smallerfont = ImageFont.truetype(str(project_files / 'Fonts' / 'StaatlichesRegular.ttf'), 18)
+        #     image1 = Image.open(project_files / 'templates' / 'blank_template.png')
+        #     font = ImageFont.truetype(str(project_files / 'fonts' / 'StaatlichesRegular.ttf'), 25)
+        #     smallerfont = ImageFont.truetype(str(project_files / 'fonts' / 'StaatlichesRegular.ttf'), 18)
         #
         #     rank = user.rank
         #     name = f'{interaction.user.name} #{interaction.user.discriminator}'
@@ -26,7 +26,7 @@
         #     # # Draw pet
         #     # pet = await ctx.bot.dbpets.find_one({"owner_id": ctx.author.id, "active": True})
         #     # if pet:
-        #     #     pet_sprite = Image.open(project_files / 'Sprites' / f'{pet["species"]}_sprite.png')
+        #     #     pet_sprite = Image.open(project_files / 'sprites' / f'{pet["species"]}_sprite.png')
         #     #     pet_name = pet["name"]
         #     #     image1.paste(pet_sprite, (636, 70), pet_sprite)
         #     #     if len(pet_name) > 8:
@@ -35,7 +35,7 @@
         #     #         image_editable.text((677, 187), pet_name, (238, 131, 255), font=font, anchor='mm')
         #
         #     # Draw avatar
-        #     avatar_to_draw = Image.open(project_files / 'Sprites' / f'{gender}_avatar_{number}.png')
+        #     avatar_to_draw = Image.open(project_files / 'sprites' / f'{gender}_avatar_{number}.png')
         #     image1.paste(avatar_to_draw, (85, 45), avatar_to_draw)
         #
         #     # Draw Name
@@ -114,7 +114,7 @@
         #             await set_avatar('female', '3', button6interaction)
         #
         #     message = await interaction.response.send_message(
-        #         file=discord.File(project_files / 'Templates' / 'CharacterSelect.png'),
+        #         file=discord.File(project_files / 'templates' / 'CharacterSelect.png'),
         #         view=CharacterSelectButtons())
         #     return
         # else:

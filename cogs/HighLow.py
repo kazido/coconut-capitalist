@@ -1,9 +1,7 @@
 import typing
-from discord.ext import commands
 import asyncio
-from Cogs.ErrorHandler import in_game, registered
+from cogs.ErrorHandler import in_game, registered
 from ClassLibrary import *
-from Cogs.EconomyCog import get_role
 from random import randint
 
 

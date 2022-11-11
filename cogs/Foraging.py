@@ -1,11 +1,12 @@
+from ClassLibrary2 import Tree, RequestUser
 import discord
-from PIL import Image, ImageFont, ImageDraw
-from io import BytesIO
-import pathlib
+from discord import app_commands
 from discord.ext import commands
-from Cogs.ErrorHandler import registered
-from ClassLibrary import *
-import asyncio
+from cogs.ErrorHandler import registered
+import json
+
+with open('projfiles/items/axes.json', 'r') as file:
+    axes = json.load(file)
 
 
 class ForagingCog(commands.Cog, name='Foraging'):
@@ -15,14 +16,12 @@ class ForagingCog(commands.Cog, name='Foraging'):
         self.bot = bot
         self.tree = self.bot.tree
 
-    foraging_commands = discord.app_commands.Group(name='foraging',
-                                                   description="Commands related to the foraging skill.",
-                                                   guild_ids=[856915776345866240, 977351545966432306])
-
-    @foraging_commands.command(name='chop', description="Grab a buddy and chop down a tree.")
+    @registered()
+    @app_commands.guilds(856915776345866240, 977351545966432306)
+    @app_commands.command(name='chop', description="Grab a buddy and chop down a tree.")
     async def chop(self, interaction: discord.Interaction):
-        CHOPPING_POWER = 1
-        tree = Tree(user1=interaction.user)
+        user1 = RequestUser(interaction.user.id, interaction=interaction)
+        tree = Tree(user1=user1)
         needs_join_embed = discord.Embed(
             title=f"You come across a **{tree.height}ft** tree. :evergreen_tree:",
             description="You need someone else to join you to chop down this tree!\nUsers: (1/2)",
@@ -39,8 +38,6 @@ class ForagingCog(commands.Cog, name='Foraging'):
                 )
                 await interaction.response.edit_message(embed=tree_expired_embed, view=None)
 
-            bot = self.bot
-
             def __init__(self, *, timeout=1800):
                 super().__init__(timeout=timeout)
 
@@ -48,13 +45,13 @@ class ForagingCog(commands.Cog, name='Foraging'):
             async def heave_button(self, heave_interaction: discord.Interaction, button: discord.Button):
                 if heave_interaction.user != tree.user1:
                     return
-                tree.hitpoints -= CHOPPING_POWER
+                tree.hitpoints -= tree.user1_chopping_power
                 if tree.hitpoints <= 0:
                     await heave_interaction.response.edit_message(embed=tree.embed, view=None)
                 else:
                     chop_embed = discord.Embed(
-                        title=f"{tree.user1.display_name} and {tree.user2.display_name} are chopping a **{tree.height}ft** tree...",
-                        description=f"*{tree.user2.display_name} must ho! :arrow_left:*\n**Tree Health: {tree.hitpoints}**",
+                        title=f"{tree.user1.instance.name} and {tree.user2.instance.name} are chopping a **{tree.height}ft** tree...",
+                        description=f"*{tree.user2.instance.name} must ho! :arrow_left:*\n**Tree Health: {tree.hitpoints}**",
                         color=0x039410
                     )
                     self.heave_button.disabled = True
@@ -67,13 +64,13 @@ class ForagingCog(commands.Cog, name='Foraging'):
             async def ho_button(self, ho_interaction: discord.Interaction, button: discord.Button):
                 if ho_interaction.user != tree.user2:
                     return
-                tree.hitpoints -= CHOPPING_POWER
+                tree.hitpoints -= tree.user2_chopping_power
                 if tree.hitpoints <= 0:
                     await ho_interaction.response.edit_message(embed=tree.embed, view=None)
                 else:
                     chop_embed = discord.Embed(
-                        title=f"{tree.user1.display_name} and {tree.user2.display_name} are chopping a **{tree.height}ft** tree...",
-                        description=f"*:arrow_right: {tree.user1.display_name} must heave!*\n**Tree Health: {tree.hitpoints}**",
+                        title=f"{tree.user1.instance.name} and {tree.user2.instance.name} are chopping a **{tree.height}ft** tree...",
+                        description=f"*:arrow_right: {tree.user1.instance.name} must heave!*\n**Tree Health: {tree.hitpoints}**",
                         color=0x039410
                     )
                     self.ho_button.disabled = True
@@ -91,19 +88,19 @@ class ForagingCog(commands.Cog, name='Foraging'):
                 )
                 await interaction.response.edit_message(embed=nobody_joined_embed, view=None)
 
-            bot = self.bot
-
             def __init__(self, *, timeout=1800):
                 super().__init__(timeout=timeout)
 
-            @discord.ui.button(label=f"Join {tree.user1.display_name}", style=discord.ButtonStyle.green)
+            @discord.ui.button(label=f"Join {tree.user1.instance.name}", style=discord.ButtonStyle.green)
             async def join_button(self, join_interaction: discord.Interaction, button: discord.ui.Button):
                 if join_interaction.user == interaction.user:
                     return
-                tree.user2 = join_interaction.user
+                user2 = RequestUser(join_interaction.user.id, interaction=join_interaction)
+                tree.user2 = user2
+                tree.user2_chopping_power = axes[tree.user2.instance.axe.reference_id]['chopping_power']
                 chop_embed = discord.Embed(
-                    title=f"{tree.user1.display_name} and {tree.user2.display_name} are chopping a **{tree.height}ft** tree.",
-                    description=f"*:arrow_right: {tree.user1.display_name} must heave!*\n**Tree Health: {tree.hitpoints}**",
+                    title=f"{tree.user1.instance.name} and {tree.user2.instance.name} are chopping a **{tree.height}ft** tree.",
+                    description=f"*:arrow_right: {tree.user1.instance.name} must heave!*\n**Tree Health: {tree.hitpoints}**",
                     color=0x039410
                 )
                 await join_interaction.response.edit_message(embed=chop_embed, view=HeaveHoButtons())

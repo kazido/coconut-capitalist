@@ -1,5 +1,4 @@
-import discord
-from Cogs.ErrorHandler import registered
+from cogs.ErrorHandler import registered
 from ClassLibrary import *
 
 class InventoryCog(commands.Cog, name='Inventory'):
