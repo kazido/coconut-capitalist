@@ -4,7 +4,7 @@ import math
 import pathlib
 from discord import app_commands
 from discord.app_commands import Choice
-from cogs.ErrorHandler import registered, missing_perks
+from cogs.ErrorHandler import registered
 from ClassLibrary import *
 from ClassLibrary2 import *
 
@@ -56,6 +56,7 @@ class EconomyCog(commands.Cog, name='Economy'):
 
     @registered()
     @app_commands.guilds(856915776345866240, 977351545966432306)
+    @app_commands.checks.cooldown(1, 60)
     @app_commands.command(name="beg", description="Beg for some money! Must have less than 10000 bits.")
     async def beg(self, interaction: discord.Interaction):
         user = RequestUser(interaction.user.id, interaction=interaction)  # Initialize user object upon request
@@ -75,7 +76,7 @@ class EconomyCog(commands.Cog, name='Economy'):
             await interaction.response.send_message(embed=embed)
         else:
             beg_amount = randint(100, 500)  # Randomly generate how many bits they will get
-            await user.update_balance(beg_amount)
+            user.update_balance(beg_amount)
 
             embed = discord.Embed(
                 title=f"Someone kind dropped {beg_amount} bits in your cup.",
@@ -334,8 +335,11 @@ class EconomyCog(commands.Cog, name='Economy'):
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="withdraw", description="Withdraw bits from the bank.")
     @app_commands.describe(amount='amount of bits you want to withdraw')
-    async def withdraw(self, interaction: discord.Interaction, amount: int):
+    async def withdraw(self, interaction: discord.Interaction, amount: str):
         user = RequestUser(interaction.user.id, interaction=interaction)
+        if amount in ['all', 'max']:
+            amount = user.instance.bank
+        amount = int(amount)
         warning_embed = discord.Embed(title="Are you sure?",
                                       description="Withdrawing just to gamble more might not be a good idea.",
                                       color=discord.Color.dark_red())
@@ -388,7 +392,6 @@ class EconomyCog(commands.Cog, name='Economy'):
         await interaction.response.send_message(embed=warning_embed, view=WithdrawButtons())
 
     @registered()
-    @missing_perks()
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="pay", description="Pay someone else some bits, if you're feeling nice!")
     @app_commands.describe(payee='discord user you want to pay', amount='amount of bits to pay the user')

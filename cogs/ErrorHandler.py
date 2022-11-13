@@ -1,15 +1,13 @@
 import traceback
 import sys
+import discord
 from discord.ext import commands
 from discord import app_commands
+import mymodels as mm
 from discord.utils import get
-from ClassLibrary import *
+from ClassLibrary2 import RequestUser
 
 import datetime
-
-
-class InGameError(commands.errors.CommandError):
-    pass
 
 
 class Unregistered(commands.errors.CommandError):
@@ -17,10 +15,6 @@ class Unregistered(commands.errors.CommandError):
 
 
 class WrongChannelError(commands.errors.CommandError):
-    pass
-
-
-class PerkNotUnlockedYet(commands.errors.CommandError):
     pass
 
 
@@ -46,19 +40,6 @@ def own_pet():
     return commands.check(predicate)
 
 
-def in_game():
-    async def predicate(ctx):
-        try:
-            result = (await ctx.bot.db.find_one({"_id": ctx.author.id}))["in_game"]
-            if result:
-                raise InGameError("Already in a game!")
-            return True
-        except TypeError:
-            await ctx.send("You might not be registered. Use **-register** to get started.")
-
-    return commands.check(predicate)
-
-
 def registered():
     async def predicate(ctx):
         result = await ctx.bot.db.find_one({"_id": ctx.author.id})
@@ -69,19 +50,11 @@ def registered():
     return commands.check(predicate)
 
 
-def missing_perks():
-    async def predicate(ctx, user):
-        if ctx.command.name not in ranks[user.role]['all_perks']:
-            raise PerkNotUnlockedYet("Doesn't have this perk unlocked!")
-        return True
-
-    return commands.check(predicate)
-
-
 class CommandErrorHandler(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.bot.tree.on_error = self.on_app_command_error
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -115,27 +88,7 @@ class CommandErrorHandler(commands.Cog):
     # When a reaction is added to the message in #assign-roles, it adds the user to the database
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
-        if payload.message_id == 958549934800511006:
-            if str(payload.emoji) == "✅":
-                result = await self.bot.db.find_one({"_id": payload.member.id})
-                if result is not None:
-                    pass
-                else:
-                    await self.bot.db.insert_one(
-                        {"_id": payload.member.id, "money": 0,
-                         "in_game": False, "bank": 0, "avatar": "None"})
-                    await self.bot.dbfarms.insert_one({"_id": payload.member.id, "almond_seeds": 25, "almonds": 0,
-                                                       "cacao_seeds": 3, "cacaos": 0, "coconut_seeds": 5, "coconuts": 0,
-                                                       "has_open_farm": False, "plot1": "Empty!", "plot2": "Empty!",
-                                                       "plot3": "Empty!"})
-                    await self.dbcooldowns.insert_one({"_id": payload.member.id, "daily_used_last": 0.0,
-                                                       "worked_last": 0.0})
-                    role = discord.utils.get(payload.member.guild.roles, name="Peasant")
-                    role_to_remove = discord.utils.get(payload.member.guild.roles, name="Unregistered")
-                    await payload.member.remove_roles(role_to_remove)
-                    await payload.member.add_roles(role)
-                    print(f"{payload.member.name} added into database!")
-        elif payload.message_id == 966558439880945745:
+        if payload.message_id == 966558439880945745:
             if str(payload.emoji) == "📢":
                 role = discord.utils.get(payload.member.guild.roles, id=966557572544995428)
                 await payload.member.add_roles(role)
@@ -144,8 +97,13 @@ class CommandErrorHandler(commands.Cog):
 
     @commands.Cog.listener()
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
-        await interaction.response.send_message(error)
-        print(error)
+        if isinstance(error, app_commands.CommandOnCooldown):
+            error_embed = discord.Embed(
+                title=error,
+                color=discord.Color.red())
+            await interaction.response.send_message(embed=error_embed)
+        else:
+            print("error:", error)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
@@ -177,9 +135,6 @@ class CommandErrorHandler(commands.Cog):
             if ctx.command.qualified_name == 'tag list':
                 await ctx.send('I could not find that member. Please try again.')
 
-        elif isinstance(error, InGameError):
-            await ctx.send("You're already in a game.")
-
         elif isinstance(error, WrongChannelError):
             channel = self.bot.get_channel(958198989201764373)
             await ctx.reply(f"This command is only available in {channel.mention}")
@@ -187,14 +142,6 @@ class CommandErrorHandler(commands.Cog):
         elif isinstance(error, Unregistered):
             channel = self.bot.get_channel(858552463236923432)
             await ctx.send(f"You must be registered to use this command. Register in {channel.mention}")
-
-        elif isinstance(error, PerkNotUnlockedYet):
-            embed = discord.Embed(
-                title="Permission denied.",
-                description="You have not unlocked this perk yet!",
-                color=discord.Color.red()
-            )
-            await ctx.send(embed=embed)
 
         elif isinstance(error, discord.ext.commands.errors.CheckFailure):
             print(f"User {ctx.author.name} brought up {error} with the command {ctx.command}.")

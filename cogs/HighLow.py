@@ -1,121 +1,156 @@
 import typing
 import asyncio
-from cogs.ErrorHandler import in_game, registered
-from ClassLibrary import *
+from cogs.ErrorHandler import registered
+from ClassLibrary2 import RequestUser
+import mymodels as mm
+from mymodels import Users
+from discord.ext import commands
+from discord import app_commands
+import discord
 from random import randint
+
+
+async def game_results(interaction: discord.Interaction, user: RequestUser, roll: int,
+                       multiplier: int, bet: int, win: [0, 1]):
+    embed = None
+    if win == 0:
+        user_balance_after_loss = user.instance.money
+        losing_embed = discord.Embed(
+            title=f"Highlow | User: {interaction.user.name} - Bet: {'{:,}'.format(bet)}",
+            color=discord.Color.red()
+        )
+        losing_embed.add_field(name="Incorrect!", value=f"The number was **{roll}**", inline=True)
+        losing_embed.add_field(name="Profit", value=f"**{'{:,}'.format(-bet)}** bits", inline=True)
+        losing_embed.add_field(name="Bits", value=f"You have {'{:,}'.format(user_balance_after_loss)} bits",
+                               inline=False)
+        losing_embed.set_footer(text=f"XP: coming soon.")
+        embed = losing_embed
+        user.update_game_status(False)
+
+        bot = RequestUser(956000805578768425, interaction)
+        bot.instance.money += bet
+        bot.instance.save()
+    elif win == 1:
+        success_embed = discord.Embed(
+            title=f"Highlow | User: {interaction.user.name} - Bet: {'{:,}'.format(bet)}",
+            color=discord.Color.green()
+        )
+        success_embed.add_field(name="Correct!", value=f"The number was **{roll}**", inline=True)
+        success_embed.add_field(name="Multiplier", value=f"**{multiplier}x**", inline=True)
+        success_embed.add_field(name="Continue", value="Use the **high** and **low** buttons", inline=False)
+        success_embed.set_footer(text=f"Click the stop button to cash out!")
+        embed = success_embed
+    return embed
 
 
 class HighLow(commands.Cog, name="HighLow"):
     """Guess if the next number will be high (6-10) or low (1-5)"""
+
     def __init__(self, bot):
         self.bot = bot
 
-    @in_game()
     @registered()
-    @commands.command(aliases=["hl", "highlow"], name="High Low", description="Guess if the number will be high (6-10) "
-                                                                              "or low (1-5).", brief="-highlow (bet)")
-    async def high_low(self, ctx, bet: int | typing.Literal['max']):
-        user = User(ctx)
+    @app_commands.guilds(856915776345866240, 977351545966432306)
+    @app_commands.command(name="highlow", description="Guess if the number will be high (6-10) or low (1-5).")
+    @app_commands.describe(bet='amount of bits you want to bet | use max for all bits in purse')
+    async def high_low(self, interaction: discord.Interaction, bet: str):
+        user = RequestUser(interaction.user.id, interaction=interaction)
+        if user.instance.in_game:
+            in_game_embed = discord.Embed(
+                title="You are already in game!",
+                description="Finish your other game before you start another.\n"
+                            "If you believe this is an error, please contact the owner.",
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=in_game_embed)
+            await asyncio.sleep(5)
+            await interaction.delete_original_response()
+            return
+
         if bet == 'max':
-            bet = await user.check_balance('bits')
+            bet = user.instance.money
         else:
-            pass
+            bet = int(bet)
 
-        async def high_low_game():
-            # Subtract their bet from their bits
-            await user.update_balance(-bet)
-            # Set their in_game status to True to prevent them from playing other games
-            await user.game_status_to_true()
-            multiplier = 0
-            await ctx.send("Guess if the number is **-high** or **-low**.")
-            # Loop through the game. Only stopped if the user loses or uses the -stop command
-            user.cursor.execute("""SELECT in_game FROM users WHERE user_id = ?""", [user.user_id])
-            user_in_game = user.cursor.fetchall()[0][0]
-            while user_in_game is True:
-                updated_money = await user.check_balance('bits')
-                num = randint(1, 10)
-                responses = ['-stop', '-high', '-low', '-h', '-l']
+        bet_checks_failed_message, passed = user.bet_checks(bet)
 
-                def check(m):
-                    return m.content.lower() in responses and m.author == ctx.author and m.channel == ctx.channel
-
-                # Waits for a response after asking for high or low. Can be high, low, or stop
-                try:
-                    guess = await self.bot.wait_for("message", timeout=90.0, check=check)
-                except asyncio.TimeoutError:
-                    await user.game_status_to_false()
-                    break
-                # Creating the embeds for winning and losing
-                stop_embed = discord.Embed(
-                    title=f"Highlow | User: {ctx.author.name} - Bet: {'{:,}'.format(bet)}",
-                    color=discord.Color.green()
-                )
-                stop_embed.add_field(name="Stopped at", value=f"**{'{:,}'.format(multiplier)}x**", inline=True)
-                stop_embed.add_field(name="Profit", value=f"**{'{:,}'.format(bet * multiplier)}** bits", inline=True)
-                stop_embed.add_field(name="Bits",
-                                     value=f"You have {'{:,}'.format(updated_money + (bet * multiplier))} bits",
-                                     inline=False)
-                # Simple high low checker
-                if num in range(1, 6):
-                    correct_responses = ['-low', '-l']
-                else:
-                    correct_responses = ['-high', '-h']
-                if guess.content.lower() in correct_responses:
-                    # Separate embeds to avoid having multiplier say "0x"
-                    if multiplier == 0:
-                        multiplier = 2
-                    else:
-                        multiplier *= 2
-                    embed = discord.Embed(
-                        title=f"Highlow | User: {ctx.author.name} - Bet: {'{:,}'.format(bet)}",
-                        color=discord.Color.green())
-                    embed.add_field(name="Correct!", value=f"The number was **{num}**", inline=True)
-                    embed.add_field(name="Multiplier", value=f"**{multiplier}x**", inline=True)
-                    embed.add_field(name="Continue", value="Use **-low** or **-high**", inline=False)
-                    embed.set_footer(text=f"Use -stop to stop")
-                    await ctx.send(embed=embed)
-                    await asyncio.sleep(0.2)
-                # IF they use -stop command
-                elif guess.content == '-stop':
-                    await user.update_balance(bet * multiplier)
-                    await user.game_status_to_false()
-                    stop_embed.set_footer(text="XP: coming soon")
-                    await ctx.send(embed=stop_embed)
-                    break
-                # If they lose the game
-                else:
-                    lost_game_money = await user.check_balance('bits')
-                    losing_embed = discord.Embed(
-                        title=f"Highlow | User: {ctx.author.name} - Bet: {'{:,}'.format(bet)}",
-                        color=discord.Color.red()
-                    )
-                    losing_embed.add_field(name="Incorrect!", value=f"The number was **{num}**", inline=True)
-                    losing_embed.add_field(name="Profit", value=f"**{'{:,}'.format(-bet)}** bits", inline=True)
-                    losing_embed.add_field(name="Bits", value=f"You have {'{:,}'.format(lost_game_money)} bits",
-                                           inline=False)
-                    losing_embed.set_footer(text=f"XP: coming soon.")
-                    await ctx.send(embed=losing_embed)
-                    await user.game_status_to_false()
-                    # This line adds the lost money to the house.
-                    update_bot_balance_statement = """UPDATE users SET bits = bits + ? WHERE user_id = ?"""
-                    user.cursor.execute(update_bot_balance_statement, [956000805578768425, bet])
-                    user.sqliteConnection.commit()
-                    break
-
-        message, passed = await user.bet_checks(bet)
         if passed is False:
-            await ctx.send(message)
-        else:
-            # Start the game if both checks are passed
-            await high_low_game()
-        lucky_drop = randint(0, 5000)
-        if lucky_drop == 1:
-            await user.update_tokens(1)
-            await ctx.reply("**RARE** You just found a token!")
-        elif lucky_drop in range(2, 10):
-            bits = randint(250, 750)
-            await user.update_balance(bits)
-            await ctx.reply(f"**UNCOMMON** You just found {'{:,}'.format(bits)} bits!")
+            bet_not_allowed_embed = discord.Embed(  # Embed for when a user bets more than they have in purse
+                title=bet_checks_failed_message, description="Try again with a valid bet.",
+                color=discord.Color.red())
+            await interaction.response.send_message(embed=bet_not_allowed_embed, view=None)
+            return
+
+        user.update_balance(-bet)  # Subtract the bet from the users purse
+        user.update_game_status(True)  # Set the users ingame status to True
+
+        class HighLowButtons(discord.ui.View):
+            def __init__(self, roll, *, multiplier=0, timeout=120):
+                self.roll = roll
+                self.multiplier = multiplier
+                super().__init__(timeout=timeout)
+
+            @discord.ui.button(label="High", style=discord.ButtonStyle.green, emoji='🇭')
+            async def high_button(self, high_interaction: discord.Interaction, button: discord.Button):
+                if high_interaction.user != interaction.user:
+                    return
+                self.stop_button.disabled = False
+                if self.roll in range(6, 11):
+                    if self.multiplier == 0:
+                        self.multiplier = 2
+                    else:
+                        self.multiplier *= 2
+                    success_embed = await game_results(interaction, user, self.roll, self.multiplier, bet, 1)
+                    self.roll = randint(1, 10)
+                    await high_interaction.response.edit_message(embed=success_embed, view=self)
+                else:
+                    losing_embed = await game_results(interaction, user, self.roll, self.multiplier, bet, 0)
+                    await high_interaction.response.edit_message(embed=losing_embed, view=None)
+
+            @discord.ui.button(label="Low", style=discord.ButtonStyle.green, emoji='🇱')
+            async def low_button(self, low_interaction: discord.Interaction, button: discord.Button):
+                if low_interaction.user != interaction.user:
+                    return
+                self.stop_button.disabled = False
+                if self.roll in range(1, 6):
+                    if self.multiplier == 0:
+                        self.multiplier = 2
+                    else:
+                        self.multiplier *= 2
+                    success_embed = await game_results(interaction, user, self.roll, self.multiplier, bet, 1)
+                    self.roll = randint(1, 10)
+                    await low_interaction.response.edit_message(embed=success_embed, view=self)
+                else:
+                    losing_embed = await game_results(interaction, user, self.roll, self.multiplier, bet, 0)
+                    await low_interaction.response.edit_message(embed=losing_embed, view=None)
+
+            @discord.ui.button(label="Cash Out", style=discord.ButtonStyle.gray, emoji='💰', disabled=True)
+            async def stop_button(self, stop_interaction: discord.Interaction, button: discord.Button):
+                if stop_interaction.user != interaction.user:
+                    return
+                stop_embed = discord.Embed(
+                    title=f"Highlow | User: {interaction.user.name} - Bet: {'{:,}'.format(bet)}",
+                    color=discord.Color.blue()
+                )
+                stop_embed.add_field(name="Stopped at", value=f"**{'{:,}'.format(self.multiplier)}x**", inline=True)
+                stop_embed.add_field(name="Profit", value=f"**{'{:,}'.format(bet * self.multiplier)}** bits",
+                                     inline=True)
+                stop_embed.add_field(name="Bits",
+                                     value=f"You have {'{:,}'.format(user.instance.money + (bet * self.multiplier))} bits",
+                                     inline=False)
+                stop_embed.set_footer(text="XP: coming soon")
+                user.update_balance(bet * self.multiplier)
+                user.update_game_status(False)
+                await stop_interaction.response.edit_message(embed=stop_embed, view=None)
+
+        game_begin_embed = discord.Embed(
+            title=f"Highlow | User: {interaction.user.name} - Bet: {'{:,}'.format(bet)}",
+            description="Guess high if you think the number will be 6-10\n"
+                        "Guess low if you think the number will be 1-5\n"
+                        "**Good luck.**",
+            color=discord.Color.green()
+        )
+        await interaction.response.send_message(embed=game_begin_embed, view=HighLowButtons(randint(1, 10)))
 
 
 async def setup(bot):

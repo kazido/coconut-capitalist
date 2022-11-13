@@ -6,6 +6,7 @@ import os
 import json
 import discord
 from discord.ext import commands, tasks
+from discord import app_commands
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -40,7 +41,7 @@ async def sync(ctx):
     synced_commands = []
     treesync = await bot.tree.sync(guild=discord.Object(id=856915776345866240))  # Main guild sync
     for command in treesync:
-        synced_commands.append(command)
+        synced_commands.append(command.name)
     await ctx.send("synced!\n" + str(synced_commands))
 
 

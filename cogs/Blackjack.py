@@ -2,7 +2,7 @@ import typing
 import pydealer
 from ClassLibrary import *
 import asyncio
-from cogs.ErrorHandler import in_game, registered
+from cogs.ErrorHandler import registered
 from random import randint
 
 
@@ -12,7 +12,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
     def __init__(self, bot):
         self.bot = bot
 
-    @in_game()
     @registered()
     @commands.command(aliases=["bj", "blackj", "bjack"], name="Blackjack", description="Classic blackjack. Get as "
                                                                                        "close to 21 as possible, "
