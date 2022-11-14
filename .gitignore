@@ -131,6 +131,6 @@ dmypy.json
 
 # OTHER FILES
 config.json
-config.json
 .data.json
 database.ini
+database/attempt10.db
