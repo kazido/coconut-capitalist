@@ -157,32 +157,53 @@ class EconomyCog(commands.Cog, name='Economy'):
 
     @registered()
     @app_commands.guilds(856915776345866240, 977351545966432306)
-    @app_commands.command(name="balance", description="Check your balance!")
+    @app_commands.command(name="profile", description="Check your profile, pets, etc.")
     async def bits(self, interaction: discord.Interaction):
         user = RequestUser(interaction.user.id, interaction=interaction)
+
+        class ProfileSwitchMenu(discord.ui.View):
+            def __init__(self):
+                super().__init__()
+
+            pet_menu = discord.SelectOption(label="Pets", value="pets", emoji="🐾")
+            profile_menu = discord.SelectOption(label="Profile", value="profile", emoji="👤")
+            select_options = [profile_menu, pet_menu]
+
+            @discord.ui.select(options=select_options, placeholder="Select a menu")
+            async def select_menu(self, select_interaction: discord.Interaction, select: discord.ui.Select):
+                switch_embed = None  # Initialize an embed to switch to
+                if select_interaction.user != interaction.user:
+                    return
+                if select.values[0] == 'pets':
+                    switch_embed = user.active_pet.pet_embed
+                elif select.values[0] == 'profile':
+                    switch_embed = profile_embed
+                await select_interaction.response.edit_message(embed=switch_embed, view=self)
+
         bits = user.instance.money
         bank = user.instance.bank
         tokens = user.instance.tokens
         level = (math.sqrt(user.instance.xp / 100)).__floor__()
-        embed = discord.Embed(title=f"{user.rank.capitalize()} *{interaction.user.name}*", color=discord.Color.yellow())
-        embed.set_author(name=f"{interaction.user.name} - profile", icon_url=interaction.user.display_avatar)
-        embed.add_field(name="PROGRESS", value=f"**Level**: {level}\n"
-                                               f"**XP**: {user.instance.xp}/{int(((level + 1) ** 2) * 100)}\n"
-                                               f"**Area**: COMING SOON",
-                        inline=False)
-        embed.add_field(name="SKILLS", value=f":crossed_swords: **COMBAT**: COMING SOON\n"
-                                             f":pick: **MINING**: COMING SOON\n"
-                                             f":evergreen_tree: **FORAGING**: COMING SOON\n"
-                                             f":fishing_pole_and_fish: **FISHING**: COMING SOON",
-                        inline=False)
-        embed.add_field(name="EQUIPMENT", value=f"COMING SOON\n"
-                                                f"COMING SOON\n"
-                                                f"COMING SOON")
-        embed.add_field(name="MONEY", value=f":money_with_wings: **BITS**: {'{:,}'.format(bits)}\n"
-                                            f":bank: **BANK**: {'{:,}'.format(bank)}\n"
-                                            f":coin: **TOKENS**: {'{:,}'.format(tokens)}")
-        embed.set_footer(text="Use /beg, /work, or /unscramble to get bits")
-        await interaction.response.send_message(embed=embed)
+        profile_embed = discord.Embed(title=f"{user.rank.capitalize()} *{interaction.user.name}*",
+                                      color=discord.Color.from_str("0x262625"))
+        profile_embed.set_author(name=f"{interaction.user.name} - profile", icon_url=interaction.user.display_avatar)
+        profile_embed.add_field(name="PROGRESS", value=f"**Level**: {level}\n"
+                                                       f"**XP**: {user.instance.xp}/{int(((level + 1) ** 2) * 100)}\n"
+                                                       f"**Area**: *coming soon*")
+        profile_embed.add_field(name="SKILLS", value=f":crossed_swords: **COMBAT**: *coming soon*\n"
+                                                     f":pick: **MINING**: *coming soon*\n"
+                                                     f":evergreen_tree: **FORAGING**: *coming soon*\n"
+                                                     f":fishing_pole_and_fish: **FISHING**: *coming soon*",
+                                inline=False)
+        profile_embed.add_field(name="EQUIPMENT", value=f"*coming soon*\n"
+                                                        f"*coming soon*\n"
+                                                        f"*coming soon*")
+        profile_embed.add_field(name="MONEY", value=f":money_with_wings: **BITS**: {'{:,}'.format(bits)}\n"
+                                                    f":bank: **BANK**: {'{:,}'.format(bank)}\n"
+                                                    f":coin: **TOKENS**: {'{:,}'.format(tokens)}")
+        profile_embed.set_footer(text="Use /beg, /work, or /unscramble to get bits")
+        profile_embed.set_thumbnail(url=interaction.user.display_avatar)
+        await interaction.response.send_message(embed=profile_embed, view=ProfileSwitchMenu())
 
     # Command for the richest members in the server
     @registered()
@@ -420,15 +441,15 @@ class EconomyCog(commands.Cog, name='Economy'):
             await interaction.response.send_message("You cannot send someone negative bits either!")
             return
         try:
+            user.instance.money -= int(amount)
+            user.instance.save()
             payee_in_database = mm.Users.get_by_id(payee.id)
-            user.instance.money -= amount
-            payee_in_database.money += amount
+            payee_in_database.money += int(amount)
+            payee_in_database.save()
             embed = discord.Embed(colour=discord.Color.purple())
             embed.add_field(name="Payment sent!",
                             value=f"You have sent {payee.mention} **{'{:,}'.format(int(amount))}** bits")
             await interaction.response.send_message(embed=embed)
-            user.instance.save()
-            payee_in_database.save()
         except pw.DoesNotExist:
             embed = discord.Embed(title="This user is not yet registered.")
             await interaction.response.send_message(embed=embed)

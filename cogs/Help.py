@@ -4,6 +4,7 @@ import discord
 from discord import ui
 from discord.ext import commands
 from discord.errors import Forbidden
+from discord import app_commands
 
 """This custom help command is a perfect replacement for the default one on any Discord Bot written in Discord.py!
 However, you must put "bot.remove_command('help')" in your bot, and the command must be in a cog for it to work.
@@ -11,7 +12,7 @@ Original concept by Jared Newsom (AKA Jared M.F.)
 """
 
 
-async def send_embed(ctx, embed):
+async def send_embed(interaction, embed):
     """
     Function that handles the sending of embeds
     -> Takes context and embed to send
@@ -21,13 +22,13 @@ async def send_embed(ctx, embed):
     If this all fails: https://youtu.be/dQw4w9WgXcQ
     """
     try:
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
     except Forbidden:
         try:
-            await ctx.send("Hey, seems like I can't send embeds. Please check my permissions :)")
+            await interaction.response.send_message("Hey, seems like I can't send embeds. Please check my permissions :)")
         except Forbidden:
-            await ctx.author.send(
-                f"Hey, seems like I can't send any message in {ctx.channel.name} on {ctx.guild.name}\n"
+            await interaction.user.send(
+                f"Hey, seems like I can't send any message in {interaction.channel.name} on {interaction.guild.name}\n"
                 f"May you inform the server team about this issue? :slight_smile: ", embed=embed)
 
 
@@ -44,17 +45,16 @@ class Help(commands.Cog, name='Help'):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    # @commands.bot_has_permissions(add_reactions=True,embed_links=True)
-    async def help(self, ctx, *input):
+    @app_commands.guilds(856915776345866240, 977351545966432306)
+    @app_commands.command(name='help')
+    async def help(self, interaction: discord.Interaction, module: str = None):
         """Shows all modules of that bot"""
-
         # checks if cog parameter was given
         # if not: sending all modules and commands not associated with a cog
-        if not input:
+        if not module:
             # starting to build embed
             emb = discord.Embed(title='Commands and modules', color=discord.Color.blue(),
-                                description=f'Use `-help <module>` to gain more information about that module '
+                                description=f'Use `/help <module>` to gain more information about that module '
                                             f':smiley:\n')
 
             # iterating trough cogs, gathering descriptions
@@ -83,12 +83,12 @@ class Help(commands.Cog, name='Help'):
 
         # block called when one cog-name is given
         # trying to find matching cog and it's commands
-        elif len(input) == 1:
+        elif module:
 
             # iterating trough cogs
             for cog in self.bot.cogs:
                 # check if cog is the matching one
-                if cog.lower() == input[0].lower():
+                if cog.lower() == module.lower():
 
                     # making title - getting description from doc-string below class
 
@@ -97,7 +97,7 @@ class Help(commands.Cog, name='Help'):
                     bot_commands = []
                     embeds = {}
                     pages = []
-                    for command in self.bot.get_cog(cog).get_commands():
+                    for command in self.bot.get_cog(cog).get_app_commands():
                         bot_commands.append(command)
                     if len(bot_commands) > 5:
                         for x in range(0, math.ceil(len(bot_commands) / 5)):
@@ -123,7 +123,7 @@ class Help(commands.Cog, name='Help'):
                                     embeds[f'page{index + 1}'].add_field(name=f"`-{dict_command.name}`",
                                                                          value=dict_command.description, inline=False)
                                 else:
-                                    embeds[f'page{index + 1}'].add_field(name=f"`-{dict_command.name}`", value=None,
+                                    embeds[f'page{index + 1}'].add_field(name=f"`/{dict_command.name}`", value=None,
                                                                          inline=False)
                             index = Page(index, embeds[f'page{index + 1}'])
                             pages.append(index)
@@ -153,9 +153,9 @@ class Help(commands.Cog, name='Help'):
 
                             @discord.ui.button(emoji="⬅️", style=discord.ButtonStyle.blurple, disabled=True,
                                                custom_id="1")
-                            async def back_page_button(self, interaction: discord.Interaction,
+                            async def back_page_button(self, back_page_interaction: discord.Interaction,
                                                        button: discord.ui.Button):
-                                if interaction.user != ctx.author:
+                                if back_page_interaction.user != interaction.user:
                                     return
                                 if self.page.number == len(pages)-1:
                                     self.children[1].disabled = False
@@ -167,19 +167,20 @@ class Help(commands.Cog, name='Help'):
                                 await interaction.response.edit_message(embed=self.page.embed, view=self)
 
                             @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.blurple, custom_id="2")
-                            async def next_page_button(self, interaction: discord.Interaction,
-                                                       button: discord.ui.Button):
-                                if interaction.user != ctx.author:
+                            async def next_page_button(self, next_page_interaction: discord.Interaction,
+                                                       next_button: discord.ui.Button):
+                                if next_page_interaction.user != interaction.user:
                                     return
                                 if self.page == pages[0]:
                                     self.children[0].disabled = False
                                 self.next_page()
                                 if self.page.number == len(pages)-1:
-                                    button.disabled = True
+                                    next_button.disabled = True
                                 else:
-                                    button.disabled = False
+                                    next_button.disabled = False
                                 await interaction.response.edit_message(embed=self.page.embed, view=self)
-                        message = await ctx.send(embed=pages[0].embed, view=HelpPaginatorButtons(pages[0]))
+                        message = await interaction.response.send_message(embed=pages[0].embed,
+                                                                          view=HelpPaginatorButtons(pages[0]))
                         return
                     else:
                         emb = discord.Embed(title=f'{cog} - Commands',
@@ -201,14 +202,8 @@ class Help(commands.Cog, name='Help'):
             # yes, for-loops have an else statement, it's called when no 'break' was issued
             else:
                 emb = discord.Embed(title="What's that?!",
-                                    description=f"I've never heard from a module called `{input[0]}` before :scream:",
+                                    description=f"I've never heard from a module called `{module}` before :scream:",
                                     color=discord.Color.orange())
-
-        # too many cogs requested - only one at a time allowed
-        elif len(input) > 1:
-            emb = discord.Embed(title="That's too much.",
-                                description="Please request only one module at once :sweat_smile:",
-                                color=discord.Color.orange())
 
         else:
             emb = discord.Embed(title="It's a magical place.",
@@ -219,7 +214,7 @@ class Help(commands.Cog, name='Help'):
                                 color=discord.Color.red())
 
         # sending reply embed using our own function defined above
-        await send_embed(ctx, emb)
+        await send_embed(interaction, emb)
 
 
 async def setup(bot):

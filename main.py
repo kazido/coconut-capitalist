@@ -1,6 +1,7 @@
 import asyncio
 from datetime import datetime
 
+import random
 from random import randint
 import os
 import json
@@ -10,8 +11,7 @@ from discord import app_commands
 
 intents = discord.Intents.all()
 intents.message_content = True
-bot = commands.Bot(command_prefix='..', intents=intents, case_insensitive=True, strip_after_prefix=True)
-bot.remove_command('help')
+bot = commands.Bot(command_prefix='-', intents=intents, case_insensitive=True, strip_after_prefix=True)
 
 with open('./config.json', 'r') as f:
     data = json.load(f)
@@ -199,7 +199,7 @@ async def on_ready():
     print(f"-- BOT RAN --\nRan at: {now}\nDelaying tasks by: {seconds_until()} seconds")
     await asyncio.sleep(seconds_until())
     print("Running drop and farming tasks.")
-    drop_task.start()
+    # drop_task.start()
     farm_task.start()
 
 

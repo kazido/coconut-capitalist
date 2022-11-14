@@ -1,3 +1,4 @@
+import asyncio
 import traceback
 import sys
 import discord
@@ -32,7 +33,7 @@ def in_wrong_channel():
 
 def own_pet():
     async def predicate(ctx):
-        result = (await ctx.bot.dbpets.find_one({"owner_id": ctx.author.id}))
+        result = (mm.Pets.get(owner_id=ctx.author.id))
         if result is None:
             return PetNotOwned("You don't own a pet!")
         return True
@@ -42,7 +43,7 @@ def own_pet():
 
 def registered():
     async def predicate(ctx):
-        result = await ctx.bot.db.find_one({"_id": ctx.author.id})
+        result = mm.Users.get(id=ctx.author.id)
         if result is None:
             raise Unregistered("Not registered!")
         return True
@@ -102,8 +103,12 @@ class CommandErrorHandler(commands.Cog):
                 title=error,
                 color=discord.Color.red())
             await interaction.response.send_message(embed=error_embed)
-        else:
-            print("error:", error)
+            await asyncio.sleep(2)
+            await interaction.delete_original_response()
+
+        else:  # If it's a regular error, send the normal traceback
+            print('Ignoring exception in command {}:'.format(interaction.command.name), file=sys.stderr)
+            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):

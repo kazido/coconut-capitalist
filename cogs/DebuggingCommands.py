@@ -1,3 +1,5 @@
+import asyncio
+
 from discord import app_commands
 import discord
 from discord.ext import commands
@@ -31,6 +33,38 @@ class DebuggingCommands(commands.Cog):
     async def test(self, interaction: discord.Interaction):
         user = RequestUser(interaction.user.id, interaction=interaction)
         await interaction.response.send_message("Lots of choppin power!: " + str(axes[str(user.instance.axe)]['chopping_power']))
+
+    @commands.command(name='work', aliases=['daily', 'hl'])
+    async def using_slash_commands(self, ctx):
+        class ThanksButtons(discord.ui.View):
+            def __init__(self, *, timeout=180):
+                super().__init__(timeout=timeout)
+
+            @discord.ui.button(label="Thanks!", style=discord.ButtonStyle.blurple)
+            async def thanks_button(self, thanks_interaction: discord.Interaction, button: discord.Button):
+                if thanks_interaction.user != ctx.author:
+                    return
+                await thanks_interaction.response.send_message("You're welcome!")
+                await asyncio.sleep(5)
+                await thanks_interaction.delete_original_response()
+                await message.delete()
+                await ctx.message.delete()
+
+            @discord.ui.button(label="Cool.", style=discord.ButtonStyle.blurple)
+            async def cool_button(self, cool_interaction: discord.Interaction, button: discord.Button):
+                if cool_interaction.user != ctx.author:
+                    return
+                await message.delete()
+                await ctx.message.delete()
+
+        time_to_switch = discord.Embed(
+            title="The Economy Discord Bot now uses slash commands!",
+            description="All the Economy Bot commands have been switched over to **slash commands!**\n"
+                        "Try using **/** instead of **-** for your commands.\n"
+                        "*Let me know what you think!*",
+            color=discord.Color.from_str("0xc3f2a7")
+        )
+        message = await ctx.send(embed=time_to_switch, view=ThanksButtons())
 
     # Sends the path of the bot. Mainly to check for more than one instance, not sure if this works yet
     @commands.is_owner()

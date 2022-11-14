@@ -89,7 +89,7 @@
       }
     }
   },
-  "super rare": {
+  "super_rare": {
     "max level": 40,
     "cost": 5000000,
     "color": "0x6e3ade",

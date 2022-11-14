@@ -34,7 +34,7 @@ with open('projfiles/items/treeitems.json', 'r') as file:
 class RequestUser:
     def __init__(self, user_id, interaction) -> None:
         try:  # Establish a connection to the database
-            mmdatabase.connect()
+            mmdatabase.connect(reuse_if_open=True)
         except pw.DatabaseError as error:
             print(f"Error connecting to Database.\nError: {error}")
 
@@ -45,7 +45,8 @@ class RequestUser:
         self.farm, self.created_farm = mm.Farms.get_or_create(id=user_id)
         self.items = mm.Items.select().where(mm.Items.owner_id == user_id).objects()
         try:
-            self.active_pet = mm.Pets.select().where((mm.Pets.owner_id == user_id) & mm.Pets.active).get()
+            active_pet = mm.Pets.select().where((mm.Pets.owner_id == user_id) & mm.Pets.active).get()
+            self.active_pet = Pet(active_pet.id)
         except mm.DoesNotExist:
             self.active_pet = None
         for rank in ranks:
@@ -82,9 +83,9 @@ class RequestUser:
                 title = random.choice(ranks[self.rank]['responses'])
                 description = f" :money_with_wings: **+{'{:,}'.format(wage)} bits** ({self.rank.capitalize()} wage)"
                 if self.active_pet:
-                    work_multiplier = pets[self.active_pet.rarity]['bonuses']['work']
+                    work_multiplier = pets[self.active_pet.instance.rarity]['bonuses']['work']
                     description += f"\n:money_with_wings: **+{'{:,}'.format(int(wage * work_multiplier))} bits** (pet bonus)"
-                    self.update_balance(wage * work_multiplier)
+                    self.update_balance(wage + wage*work_multiplier)
                 else:
                     self.update_balance(wage)
                 self.cooldowns.worked_last = now
@@ -93,8 +94,8 @@ class RequestUser:
                 title = f"Daily Tokens"
                 description = f"**:coin: +{wage} tokens** ({areas[str(self.instance.area)]['name'].capitalize()} standard)"
                 if self.active_pet:
-                    pet_bonus = pets[self.active_pet.rarity]['bonuses']['daily']
-                    description += f"\n:coin: **+{int(wage + pet_bonus)} tokens** (pet bonus)"
+                    pet_bonus = pets[self.active_pet.instance.rarity]['bonuses']['daily']
+                    description += f"\n:coin: **+{int(pet_bonus)} tokens** (pet bonus)"
                     self.update_tokens(wage + pet_bonus)
                 else:
                     self.update_tokens(wage)
@@ -108,7 +109,7 @@ class RequestUser:
             check_in_embed.add_field(name=f"Random Fact", value=f'{randfacts.get_fact()}', inline=False)
         elif check_in_type == 'work':
             check_in_embed.add_field(name="Your Bits",
-                                     value=f"You have **{'{:,}'.format(self.instance.money)}** bits in your purse")
+                                     value=f"You have **{'{:,}'.format(int(self.instance.money))}** bits in your purse")
         check_in_embed.set_footer(text="Increase your profits by unlocking better pets and ranking up.")
         await interaction.response.send_message(embed=check_in_embed)
         self.cooldowns.save()
@@ -144,8 +145,8 @@ class RequestUser:
 
 
 class Pet:
-    def __init__(self, pet_id, user_id) -> None:
-        self.instance = mm.Pets.get(pet_id=pet_id)
+    def __init__(self, pet_id) -> None:
+        self.instance = mm.Pets.get(id=pet_id)
         self.pet_embed = discord.Embed(title=f"Pet: {self.instance.name}",
                                        color=discord.Color.from_str(pets[self.instance.rarity]['color']))
         self.pet_embed.add_field(name="Rarity", value=f"{self.instance.rarity.replace('_', ' ')}")
