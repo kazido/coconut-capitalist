@@ -41,11 +41,11 @@ class Users(BaseModel):
 
 class Farms(BaseModel):
     almond_seeds = IntegerField(null=True)
-    almonds = IntegerField(null=True)
+    almond = IntegerField(null=True)
     cacao_seeds = IntegerField(null=True)
-    cacaos = IntegerField(null=True)
+    cacao = IntegerField(null=True)
     coconut_seeds = IntegerField(null=True)
-    coconuts = IntegerField(null=True)
+    coconut = IntegerField(null=True)
     has_open_farm = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     id = ForeignKeyField(column_name='id', model=Users, primary_key=True)
     plot1 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)

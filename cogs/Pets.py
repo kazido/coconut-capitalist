@@ -147,8 +147,8 @@ class PetsCog(commands.Cog, name='Pets'):
                         buttons.disabled = True
                     await interaction.response.edit_message(view=self)
                     return
-                # Access list of pet names from 'pet_names.txt'
-                with open("pet_names.txt", "r") as f:
+                # Access list of pet names from 'petNames.txt'
+                with open("petNames.txt", "r") as f:
                     lines = f.readlines()
                 name = random.choice(lines).strip("\n")
                 species = random.choice(list(pets[self.page.rarity]["animals"].keys()))

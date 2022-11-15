@@ -17,18 +17,20 @@ import randfacts
 
 """This file is used for storing classes that I use for the different aspects of the bot."""
 # Load the json file where all the rank dialogue is stored
-with open('projfiles/ranks.json', 'r') as file:
-    ranks = json.load(file)
-with open('projfiles/areas.json', 'r') as file:
-    areas = json.load(file)
-with open('projfiles/pets.json', 'r') as file:
-    pets = json.load(file)
-with open('projfiles/megadrop.json', 'r') as file:
-    megadrop = json.load(file)
-with open('projfiles/items/axes.json', 'r') as file:
-    axes = json.load(file)
-with open('projfiles/items/treeitems.json', 'r') as file:
-    treeitems = json.load(file)
+with open('projfiles/ranks.json', 'r') as ranks_file:
+    ranks = json.load(ranks_file)
+with open('projfiles/areas.json', 'r') as areas_file:
+    areas = json.load(areas_file)
+with open('projfiles/pets.json', 'r') as pets_file:
+    pets = json.load(pets_file)
+with open('projfiles/megadrop.json', 'r') as megadrop_file:
+    megadrop = json.load(megadrop_file)
+with open('projfiles/items/axes.json', 'r') as axes_file:
+    axes = json.load(axes_file)
+with open('projfiles/items/treeitems.json', 'r') as treeitems_file:
+    treeitems = json.load(treeitems_file)
+with open('projfiles/items/crops.json', 'r') as crops_file:
+    crops = json.load(crops_file)
 
 
 class RequestUser:
@@ -81,21 +83,25 @@ class RequestUser:
             case 'work':  # If the checkin type is work, set title and description
                 wage = ranks[self.rank]['wage']
                 title = random.choice(ranks[self.rank]['responses'])
-                description = f" :money_with_wings: **+{'{:,}'.format(wage)} bits** ({self.rank.capitalize()} wage)"
+                description = f" :money_with_wings:" \
+                              f" **+{'{:,}'.format(wage)} bits** ({self.rank.capitalize()} wage)"
                 if self.active_pet:
                     work_multiplier = pets[self.active_pet.instance.rarity]['bonuses']['work']
-                    description += f"\n:money_with_wings: **+{'{:,}'.format(int(wage * work_multiplier))} bits** (pet bonus)"
-                    self.update_balance(wage + wage*work_multiplier)
+                    description += f"\n:money_with_wings: " \
+                                   f"**+{'{:,}'.format(int(wage * work_multiplier))} bits** (pet bonus)"
+                    self.update_balance(wage + wage * work_multiplier)
                 else:
                     self.update_balance(wage)
                 self.cooldowns.worked_last = now
             case 'daily':
                 wage = areas[str(self.instance.area)]['tokens']
                 title = f"Daily Tokens"
-                description = f"**:coin: +{wage} tokens** ({areas[str(self.instance.area)]['name'].capitalize()} standard)"
+                description = f"**:coin:" \
+                              f" +{wage} tokens** ({areas[str(self.instance.area)]['name'].capitalize()} standard)"
                 if self.active_pet:
                     pet_bonus = pets[self.active_pet.instance.rarity]['bonuses']['daily']
-                    description += f"\n:coin: **+{int(pet_bonus)} tokens** (pet bonus)"
+                    description += f"\n:coin:" \
+                                   f" **+{int(pet_bonus)} tokens** (pet bonus)"
                     self.update_tokens(wage + pet_bonus)
                 else:
                     self.update_tokens(wage)
@@ -165,79 +171,13 @@ class Pet:
             if pet.pet_id == pet_id:  # Set current active pet to inactive
                 self.instance.active = False
                 self.instance.save()
-                pet.active = True   # Update matching pet to be active and to be objects active pet
+                pet.active = True  # Update matching pet to be active and to be objects active pet
                 pet.save()
 
     def rename(self, new_name):
         self.instance.name = new_name
         self.instance.save()
         return new_name
-
-
-class Drop:
-    def __init__(self, interaction: discord.Interaction, amount):
-        self.interaction = interaction
-        self.amount = amount
-
-    def drop_double(self):
-        odds = random.randint(0, 100)
-        if odds in range(0, 5):
-            self.amount = self.amount * 2
-            message = f"claimed a **DOUBLE** drop! **+{'{:,}'.format(self.amount)}** bits"
-            color = 0xcc8c16
-            return message, self.amount, color
-        message = f"claimed a drop! **+{'{:,}'.format(self.amount)}** bits"
-        color = 0xf0b57a
-        return message, self.amount, color
-
-    async def prep_claim(self, channel):
-        message, drop_amount, color = self.drop_double()
-        # Embed for a new drop appearing
-        embed = discord.Embed(
-            title="A drop has appeared! 📦",
-            description=f"This drop contains **{'{:,}'.format(self.amount)}** bits!",
-            color=0x946c44
-        )
-        embed.set_footer(text="React to claim!")
-
-        # Embed for when a drop expires after 1 hour
-        expired_embed = discord.Embed(
-            title="This drop expired!",
-            description=f"This **{'{:,}'.format(drop_amount)}** bit drop has been added to the *Mega Drop*.",
-            color=0x484a4a
-        )
-        expired_embed.set_footer(text="Do /megadrop to check the current pot!")
-
-        class ClaimDropButtons(discord.ui.View):
-            async def on_timeout(self) -> None:
-                if self.claimed:
-                    return
-                await drop.interaction.response.edit_message(embed=expired_embed, view=None)
-                megadrop['amount'] += drop_amount
-                megadrop['total_drops_missed'] += 1
-                megadrop['total_drops'] += 1
-
-            def __init__(self, *, timeout=3600):
-                super().__init__(timeout=timeout)
-                self.claimed = False
-
-            @discord.ui.button(label="CLAIM", style=discord.ButtonStyle.green)
-            async def claim_button(self, claim_interaction: discord.Interaction, button: discord.ui.Button):
-                user = RequestUser(claim_interaction.user.id, interaction=claim_interaction)
-                user.instance.drops_claimed += 1
-                user.instance.save()
-                claimed_embed = discord.Embed(
-                    title="This drop has been claimed!",
-                    description=f"{claim_interaction.user.name} {message}\nYou have claimed {user.instance.drops_claimed}",
-                    color=color
-                )
-                claimed_embed.set_footer(text="Drops happen randomly and last for an hour!")
-                user.update_balance(int(drop_amount))
-                megadrop['total_drops'] += 1
-                await claim_interaction.response.edit_message(embed=claimed_embed, view=None)
-                self.claimed = True
-
-        drop = await self.interaction.channel.send_message(embed=embed, view=ClaimDropButtons())
 
 
 class Tree:
@@ -268,7 +208,8 @@ class Tree:
     def on_chopped_down(self):
         chopped_embed = discord.Embed(
             title="Tree chopped! :evergreen_tree:",
-            description=f"{self.user1.name} and {self.user2.name} successfully chopped down a **{self.height}ft** tree!",
+            description=f"{self.user1.name} and {self.user2.name} "
+                        f"successfully chopped down a **{self.height}ft** tree!",
             color=0x573a26
         )
         return chopped_embed

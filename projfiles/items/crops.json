@@ -1,16 +1,16 @@
 {
   "almond": {
-    "growth_odds": [0, 50],
+    "growth_odds": [0, 10],
     "xp": 600,
     "price": 10000
   },
   "coconut": {
-    "growth_odds": [0, 20],
+    "growth_odds": [0, 5],
     "xp": 5000,
     "price": 80000
   },
   "cacao": {
-    "growth_odds": [0, 5],
+    "growth_odds": [0, 1],
     "xp": 30000,
     "price": 500000
   }

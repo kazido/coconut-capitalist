@@ -1,33 +1,23 @@
 import asyncio
-
-from ClassLibrary import *
+import json
+import discord  # Discord imports
+from discord.ext import commands, tasks
+from discord import app_commands
+import random  # Random imports
+from random import randint
+from ClassLibrary2 import RequestUser, crops  # File imports
 from cogs.ErrorHandler import registered
+from utils import seconds_until_tasks
+import mymodels as mm
 
 
-class Crop:
-    def __init__(self, type, seed, price):
-        self.type = type
-        self.seed = seed
-        self.price = price
-
-
-almond = Crop("almonds", "almond_seeds", 0)
-coconut = Crop("coconuts", "coconut_seeds", 0)
-cacao = Crop("cacaos", "cacao_seeds", 0)
-crops = [almond, coconut, cacao]
-
-
-async def embed_out_check(ctx, database):
-    if database["has_open_farm"]:
-        embed = discord.Embed(
-            title="You already have a farming module!",
-            description="Please close the farming module, or wait 20 seconds",
-            color=discord.Color.red()
-        )
-        message = await ctx.send(embed=embed)
-        await asyncio.sleep(5)
-        await message.delete()
-        return True
+def growth_roll(crop_type):
+    growth_range = range(crops[crop_type]['growth_odds'][0], crops[crop_type]['growth_odds'][1])
+    roll = randint(0, 100)
+    if roll in growth_range:  # If the roll is in the range for the crop to grow
+        return True  # Set function as true, the crop grew
+    else:
+        return False  # The crop didn't grow
 
 
 async def plot_check(ctx, user_id, seed):
@@ -74,146 +64,190 @@ async def button_function(self, embed, unembed, options, ctx, interaction, butto
     await interaction.response.edit_message(embed=embed, view=self)
 
 
+def plot_button_refresh(plots_to_setup):
+    """For every plot, if its empty, button style is grey,
+    if its not, button style is green! Use this to refesh the
+    style of the button upon click OR to setup the button."""
+    plot_info = {
+        0: {
+            "label": "Empty!",
+            "disabled": True,
+            "style": discord.ButtonStyle.grey,
+            "crop": None
+        },
+        1: {
+            "label": "Empty!",
+            "disabled": True,
+            "style": discord.ButtonStyle.grey,
+            "crop": None
+        },
+        2: {
+            "label": "Empty!",
+            "disabled": True,
+            "style": discord.ButtonStyle.grey,
+            "crop": None
+        }}
+    grown_crops = [plant for plant in crops.keys()]
+    seeds = [plant + 's' for plant in crops.keys()]
+    for index, content in enumerate(plots_to_setup):
+        if content in seeds:
+            plot_info[index]['label'] = "Growing"
+        elif content in grown_crops:
+            plot_info[index]['style'] = discord.ButtonStyle.green
+            plot_info[index]['label'] = "Harvest!"
+            plot_info[index]['disabled'] = False
+            plot_info[index]['crop'] = content
+    return plot_info  #
+
+
+def harvest(button_number, button, users_farm):
+    harvested_crops = None
+    if button_number['crop'] == "almond":
+        harvested_crops = randint(3, 20)
+    elif button_number['crop'] == "coconut":
+        harvested_crops = randint(2, 3)
+    elif button_number['crop'] == "cacao":
+        harvested_crops = randint(1, 2)
+    users_farm.button_number['crop'] += harvested_crops
+    button.disabled = True
+    button.style = discord.ButtonStyle.grey
+    button.label = "Empty"
+    return harvested_crops
+
+
 class FarmingCog(commands.Cog, name="Farming"):
     """Special farming cog, allows users to farm for coconuts on plots of land"""
 
     def __init__(self, bot):
         self.bot = bot
+        self.tree = self.bot.tree
+        self.farm_task.start()
 
-    @commands.command(hidden=True)
-    async def add_farms(self, ctx):
-        # await self.bot.dbfarms.update_many({}, {"$set": {"plot2": "Empty"}})
-        pass
+    @tasks.loop(minutes=60)
+    async def farm_task(self):
+        lucky_farmers = []
+        plots = mm.Farms.select()
+        for farm in plots.objects():
+            if farm.plot1.endswith(' seeds'):
+                grown = growth_roll(farm.plot1[:len(farm.plot1) - 6])
+                if grown:
+                    farm.plot1 = farm.plot1[:len(farm.plot1) - 6]
+                    lucky_farmers.append(farm.id.name)
+            if farm.plot2.endswith(' seeds'):
+                grown = growth_roll(farm.plot2[:len(farm.plot2) - 6])
+                if grown:
+                    farm.plot2 = farm.plot2[:len(farm.plot2) - 6]
+                    lucky_farmers.append(farm.id.name)
+            if farm.plot3.endswith(' seeds'):
+                grown = growth_roll(farm.plot3[:len(farm.plot3) - 6])
+                if grown:
+                    farm.plot3 = farm.plot3[:len(farm.plot3) - 6]
+                    lucky_farmers.append(farm.id.name)
+            farm.save()
+        guild = self.bot.get_guild(856915776345866240)  # Guild to send the drops in
+        channel = guild.get_channel(966990507689533490)
+        rain_events = ["The rains pour down onto the fields...", "The sun provides ample growth today!",
+                       "The winds pass and bring an air of good harvest.",
+                       "There's no better time of day to harvest than now!", "It's harvest o'clock somewhere...",
+                       "Does the rain ever get tired of providing for these crops?", "Big rain storm approaching!"]
+        lucky_farmers = list(set(lucky_farmers))
+        if len(lucky_farmers) != 0:
+            await channel.send(f"*{random.choice(rain_events)}*\nThe lucky farmers are: **{', '.join(lucky_farmers)}**")
+
+    @farm_task.before_loop
+    async def before_farm_task(self):
+        await self.bot.wait_until_ready()
+        await asyncio.sleep(seconds_until_tasks())
 
     @registered()
-    @commands.command(name="Farm", description="Grow some crops to fill your barn!", brief="-farm")
-    async def farm(self, ctx):
-        user_id = ctx.author.id
-        users_farm = await self.bot.dbfarms.find_one({"_id": user_id})
-        if await embed_out_check(ctx, users_farm):
+    @app_commands.guilds(856915776345866240, 977351545966432306)
+    @app_commands.command(name="farm", description="Grow crops to feed your pets")
+    async def farm(self, interaction: discord.Interaction):
+        users_farm = mm.Farms.get(id=interaction.user.id)
+        if users_farm.has_open_farm:  # If the user already has an open farm
+
+            farm_already_open_embed = discord.Embed(
+                title="You already have an open farming module!",
+                description="Please close the farming module, or wait 20 seconds",
+                color=discord.Color.red())
+
+            await interaction.response.send_message(embed=farm_already_open_embed)
+            await asyncio.sleep(5)
+            await interaction.delete_original_response()
             return
-        await ctx.bot.dbfarms.update_one({"_id": user_id}, {"$set": {"has_open_farm": True}})
-        embed = discord.Embed(
-            title=f"{ctx.author.name}'s Farm",
+        users_farm.has_open_farm = True  # so users cannot double harvest crops
+        users_farm.save()
+
+        farm_module_embed = discord.Embed(
+            title=f"{interaction.user.name}'s Farm",
             description="Collect seeds and plant them in your plots!\nCustomizations coming soon!",
-            color=0x1adb24
-        )
-        plots = [users_farm['plot1'], users_farm['plot2'], users_farm['plot3']]
-        emoji = None
-        for count, x in enumerate(plots):
-            if x == "coconuts" or x == "coconut":
-                emoji = ":coconut:"
-            elif x == "almonds" or x == "almond":
-                emoji = ":chestnut:"
-            elif x == "cacaos" or x == "cacao":
-                emoji = ":chocolate_bar:"
+            color=0x1adb24)
+
+        plots = [users_farm.plot1, users_farm.plot2, users_farm.plot3]
+        for count, crop in enumerate(plots):
+            if crop == "coconut":
+                plot_contents = ":coconut:"
+            elif crop == "almond":
+                plot_contents = ":chestnut:"
+            elif crop == "cacao":
+                plot_contents = ":chocolate_bar:"
             else:
-                emoji = x
-            embed.add_field(name=f"Plot {count + 1} 🌳", value=emoji)
-        embed.set_footer(text="Crops have a chance to grow once every 30 minutes.")
+                plot_contents = crop
+            farm_module_embed.add_field(name=f"Plot {count + 1} 🌳", value=plot_contents)
+        farm_module_embed.set_footer(text="Crops have a chance to grow once every 30 minutes.")
 
-        # For every plot, if its empty, button style is grey, if its not, button style is green!
-        def farm_check():
-            amount = 1
-            styles = {}
-            labels = {}
-            disabled = {1: False,
-                        2: False,
-                        3: False}
-            plant_types = {}
-            plants = ["almonds", "almond", "coconuts", "coconut", "cacaos", "cacao"]
-            for count, x in enumerate(plots):
-                if x == "Empty!":
-                    styles[count + 1] = discord.ButtonStyle.grey
-                    labels[count + 1] = "Empty"
-                    disabled[count + 1] = True
-                elif x not in plants:
-                    styles[count + 1] = discord.ButtonStyle.grey
-                    labels[count + 1] = "Growing"
-                    disabled[count + 1] = True
-                else:
-                    styles[count + 1] = discord.ButtonStyle.green
-                    labels[count + 1] = "Harvest!"
-                    if x.endswith('s'):
-                        plant_types[count + 1] = x
-                    else:
-                        plant_types[count + 1] = x + "s"
-            return styles, plant_types, disabled, labels, amount
-
-        styles, plant_types, disabled, labels, amount = farm_check()
+        plot_button_info = plot_button_refresh(plots)
+        button_1 = plot_button_info[0]
+        button_2 = plot_button_info[1]
+        button_3 = plot_button_info[2]
 
         class FarmButtons(discord.ui.View):
             def __init__(self, *, timeout=20):
                 super().__init__(timeout=timeout)
 
             async def on_timeout(self) -> None:
-                await ctx.bot.dbfarms.update_one({"_id": user_id}, {"$set": {"has_open_farm": False}})
-                await message.delete()
+                users_farm.has_open_farm = False
+                await interaction.delete_original_response()
 
-            @discord.ui.button(label=labels[1], style=styles[1], disabled=disabled[1])
-            async def plot_1_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                if interaction.user != ctx.author:
+            @discord.ui.button(label=button_1['label'], style=button_1['style'], disabled=button_1['disabled'])
+            async def plot_1_button(self, button1interaction: discord.Interaction, button: discord.ui.Button):
+                if button1interaction.user != interaction.user:
                     return
-                amount_to_add = 1
-                if plant_types[1] == "almonds":
-                    amount_to_add = randint(2, 20)
-                elif plant_types[1] == "coconuts":
-                    amount_to_add = randint(1, 2)
-                await ctx.bot.dbfarms.update_one({"_id": user_id}, {"$inc": {plant_types[1]: amount_to_add}})
-                button.disabled = True
-                button.style = discord.ButtonStyle.grey
-                button.label = "Empty"
-                await ctx.bot.dbfarms.update_one({"_id": user_id}, {"$set": {"plot1": "Empty!"}})
-                embed.set_field_at(0, name="Plot 1 🌳", value=f"+{amount_to_add}")
-                farm_check()
-                await interaction.response.edit_message(embed=embed, view=self)
+                harvested_crops = harvest(button_1, button, users_farm)
+                users_farm.plot1 = 'Empty!'
+                farm_module_embed.set_field_at(0, name="Plot 1 🌳", value=f"+{harvested_crops}")
+                plot_button_refresh(plots)
+                await interaction.response.edit_message(embed=farm_module_embed, view=self)
 
-            @discord.ui.button(label=labels[2], style=styles[2], disabled=disabled[2])
-            async def plot_2_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                if interaction.user != ctx.author:
+            @discord.ui.button(label=button_2['label'], style=button_2['style'], disabled=button_3['disabled'])
+            async def plot_2_button(self, button2interaction: discord.Interaction, button: discord.ui.Button):
+                if button2interaction.user != interaction.user:
                     return
-                amount_to_add = 1
-                if plant_types[2] == "almonds":
-                    amount_to_add = randint(2, 20)
-                elif plant_types[2] == "coconuts":
-                    amount_to_add = randint(1, 2)
-                await ctx.bot.dbfarms.update_one({"_id": user_id}, {"$inc": {plant_types[2]: amount_to_add}})
-                button.disabled = True
-                button.style = discord.ButtonStyle.grey
-                button.label = "Empty"
-                await ctx.bot.dbfarms.update_one({"_id": user_id}, {"$set": {"plot2": "Empty!"}})
-                embed.set_field_at(1, name="Plot 2 🌳", value=f"+{amount_to_add}")
-                farm_check()
-                await interaction.response.edit_message(embed=embed, view=self)
+                harvested_crops = harvest(button_2, button, users_farm)
+                users_farm.plot2 = 'Empty!'
+                farm_module_embed.set_field_at(1, name="Plot 2 🌳", value=f"+{harvested_crops}")
+                plot_button_refresh(plots)
+                await interaction.response.edit_message(embed=farm_module_embed, view=self)
 
-            @discord.ui.button(label=labels[3], style=styles[3], disabled=disabled[3])
-            async def plot_3_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                if interaction.user != ctx.author:
+            @discord.ui.button(label=button_3['label'], style=button_3['style'], disabled=button_3['disabled'])
+            async def plot_3_button(self, button3interaction: discord.Interaction, button: discord.ui.Button):
+                if button3interaction.user != interaction.user:
                     return
-                amount_to_add = 1
-                if plant_types[3] == "almonds":
-                    amount_to_add = randint(2, 20)
-                elif plant_types[3] == "coconuts":
-                    amount_to_add = randint(1, 2)
-                await ctx.bot.dbfarms.update_one({"_id": user_id}, {"$inc": {plant_types[3]: amount_to_add}})
-                button.disabled = True
-                button.style = discord.ButtonStyle.grey
-                button.label = "Empty"
-                await ctx.bot.dbfarms.update_one({"_id": user_id}, {"$set": {"plot3": "Empty!"}})
-                embed.set_field_at(2, name="Plot 3 🌳", value=f"+{amount_to_add}")
-                farm_check()
-                await interaction.response.edit_message(embed=embed, view=self)
+                harvested_crops = harvest(button_3, button, users_farm)
+                users_farm.plot3 = 'Empty!'
+                farm_module_embed.set_field_at(2, name="Plot 3 🌳", value=f"+{harvested_crops}")
+                plot_button_refresh(plots)
+                await interaction.response.edit_message(embed=farm_module_embed, view=self)
 
             @discord.ui.button(label="Exit", style=discord.ButtonStyle.red)
-            async def exit_button(self, interaction: discord.Interaction, button: discord.ui.Button):
-                if interaction.user != ctx.author:
+            async def exit_button(self, exit_button_interaction: discord.Interaction, button: discord.ui.Button):
+                if exit_button_interaction.user != interaction.user:
                     return
-                await ctx.bot.dbfarms.update_one({"_id": user_id}, {"$set": {"has_open_farm": False}})
-                await message.delete()
-                await ctx.message.delete()
+                users_farm.has_open_farm = False
+                await interaction.delete_original_response()
                 self.stop()
 
-        message = await ctx.send(embed=embed, view=FarmButtons())
+        await interaction.response.send_message(embed=farm_module_embed, view=FarmButtons())
 
     @registered()
     @commands.command(name="Plant", description="Plant some seeds and grow some crops!", brief="-plant")
