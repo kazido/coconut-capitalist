@@ -54,9 +54,7 @@ class RequestUser:
             role_in_discord = discord.utils.get(interaction.guild.roles, name=rank.capitalize())
             if role_in_discord in interaction.user.roles:
                 self.rank = rank
-            else:
-                self.rank = ranks['peasant']
-                role_to_add = discord.utils.get(interaction.guild.roles, name='peasant')
+                break
 
     async def check_ins(self, interaction, check_in_type):
         TWENTY_ONE_HOURS_IN_SECONDS = 75600  # Used for checking seconds between DAILY cooldown

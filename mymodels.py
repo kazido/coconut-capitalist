@@ -107,6 +107,8 @@ class Megadrop(BaseModel):
     total_drops = IntegerField(default=0)
     date_started = TextField()
     times_missed = IntegerField(default=0)
+    COUNTER = IntegerField(default=0)
+    last_winner = TextField()
 
     class Meta:
         table_name = 'megadrop'

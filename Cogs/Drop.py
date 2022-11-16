@@ -26,55 +26,116 @@ def drop_double(amount):
 
 
 class Drop:
-    def __init__(self, channel: discord.TextChannel, amount):
+    def __init__(self, channel: discord.TextChannel, amount, ismegadrop):
         self.channel = channel
+        self.isMegadrop = ismegadrop
         self.description, self.amount, self.color = drop_double(amount)
-        self.embed = discord.Embed(  # Embed for a new drop appearing
-            title="A drop has appeared! 📦",
-            description=f"This drop contains **{'{:,}'.format(self.amount)}** bits!",
-            color=0x946c44)
-        self.embed.set_footer(text="Click the button below to claim!")
-        self.expired_embed = discord.Embed(  # Embed for when a drop expires after 1 hour
-            title="This drop expired!",
-            description=f"This **{'{:,}'.format(self.amount)}** bit drop has been added to the *Mega Drop*.",
-            color=0x484a4a)
-        self.expired_embed.set_footer(text="Do */megadrop* to check the current pot!")
+
+        if self.isMegadrop:  # Mega drop, run special init method
+            self.instance: mm.Megadrop = mm.Megadrop.get(id=1)
+
+            self.embed = discord.Embed(  # Megadrop embed
+                title="⚠️ THE MEGADROP HAS APPEARED ⚠️",
+                description=f"This drop contains **{'{:,}'.format(amount)}** bits!!",
+                color=0x946c44)
+            self.embed.set_footer(text="Click the button below to claim!")
+
+            self.expired_embed = discord.Embed(
+                title="MEGADROP EXPIRED.",
+                description=f"The megadrop has gone back into hiding...",
+                color=0x484a4a)
+            self.expired_embed.set_footer(text="Do /megadrop to see its current status.")
+
+            self.timeout = 900 + (self.instance.times_missed * 900)
+
+        else:  # It's not a mega drop, initialize as normal
+
+            self.embed = discord.Embed(  # Embed for a new drop appearing
+                title="A drop has appeared! 📦",
+                description=f"This drop contains **{'{:,}'.format(amount)}** bits!",
+                color=0x946c44)
+            self.embed.set_footer(text="Click the button below to claim!")
+
+            self.expired_embed = discord.Embed(  # Embed for when a drop expires after 1 hour
+                title="Drop expired.",
+                description=f"This **{'{:,}'.format(self.amount)}** bit drop has been added to the *Mega Drop*.",
+                color=0x484a4a)
+            self.expired_embed.set_footer(text="Do /megadrop to check the current pot!")
+
+            self.timeout = 3600  # 1 hour for the drop to be claimed
 
     async def prep_claim(self, drop):
         class ClaimDropButtons(discord.ui.View):
 
-            def __init__(self, *, timeout=3600):
+            def __init__(self, ismegadrop, *, timeout=self.timeout):
                 super().__init__(timeout=timeout)
                 self.claimed = False
+                self.isMegadrop = ismegadrop
+                self.megadrop: mm.Megadrop = mm.Megadrop.get(id=1)
 
             async def on_timeout(self) -> None:
                 if self.claimed:
                     return
-                await message.edit(embed=drop.expired_embed, view=None)
-                megadrop.amount += drop.amount
-                megadrop.total_drops += 1
-                megadrop.total_drops_missed += 1
-                megadrop.save()
 
-            @discord.ui.button(label="CLAIM", style=discord.ButtonStyle.green)
+                await message.edit(embed=drop.expired_embed, view=None)
+
+                if self.isMegadrop:
+                    self.megadrop.times_missed += 1
+
+                else:
+                    self.megadrop.amount += drop.amount
+                    self.megadrop.total_drops += 1
+                    self.megadrop.total_drops_missed += 1
+                    self.megadrop.COUNTER += 1
+
+                self.megadrop.save()
+
+            @discord.ui.button(label="CLAIM", emoji='📦', style=discord.ButtonStyle.green)
             async def claim_button(self, claim_interaction: discord.Interaction, button: discord.ui.Button):
                 user = RequestUser(claim_interaction.user.id, interaction=claim_interaction)
                 user.instance.drops_claimed += 1
                 user.instance.save()
-                claimed_embed = discord.Embed(
-                    title="This drop has been claimed!",
-                    description=f"{claim_interaction.user.name} {drop.description}\n"
-                                f"You have claimed **{'{:,}'.format(user.instance.drops_claimed)}** drops 📦",
-                    color=drop.color
-                )
-                claimed_embed.set_footer(text="Drops happen randomly and last for an hour!")
+
+                if self.isMegadrop:
+                    claimed_embed = discord.Embed(
+                        title="🎉 THE MEGADROP HAS BEEN CLAIMED! 🎉",
+                        description=f"{claim_interaction.user.name} {drop.description}\n"
+                                    f"You have claimed **{'{:,}'.format(user.instance.drops_claimed)}** drops 📦",
+                        color=drop.color
+                    )
+                    claimed_embed.add_field(name="Drops Cumulated",
+                                            value=f"This megadrop was a combination of"
+                                                  f"**{'{:,}'.format(self.megadrop.total_drops_missed)}** drops")
+                    claimed_embed.add_field(name="Times Missed",
+                                            value=f"This megadrop had gone unclaimed **{self.megadrop.times_missed}** "
+                                                  f"times.")
+                    claimed_embed.add_field(name="Last Winner",
+                                            value=f"The last winner was {self.megadrop.last_winner}", inline=False)
+                    claimed_embed.set_footer(text=f"The megadrop has been growing since: {self.megadrop.date_started}")
+                    self.megadrop.last_winner = claim_interaction.user.name  # last winner is user who claimed it
+                    self.megadrop.amount = self.megadrop.total_drops \
+                        = self.megadrop.total_drops_missed = self.megadrop.times_missed = self.megadrop.COUNTER = 0
+                    fmt = "%m-%d-%Y"  # Put current date into a format
+                    now_time = datetime.now(timezone('US/Eastern'))
+                    self.megadrop.date_started = now_time.strftime(fmt)
+
+                else:
+                    claimed_embed = discord.Embed(
+                        title="This drop has been claimed!",
+                        description=f"{claim_interaction.user.name} {drop.description}\n"
+                                    f"You have claimed **{'{:,}'.format(user.instance.drops_claimed)}** drops 📦",
+                        color=drop.color
+                    )
+                    claimed_embed.set_footer(text="Drops happen randomly and last for an hour!")
+                    self.megadrop.total_drops += 1
+                    self.megadrop.COUNTER += 1
+
+                self.megadrop.save()
                 user.update_balance(int(drop.amount))
-                megadrop.total_drops += 1
-                megadrop.save()
                 await claim_interaction.response.edit_message(embed=claimed_embed, view=None)
                 self.claimed = True
 
-        message = await self.channel.send(embed=drop.embed, view=ClaimDropButtons())
+        message = await self.channel.send(embed=drop.embed, view=ClaimDropButtons(self.isMegadrop))
 
 
 class DropsCog(commands.Cog, name='Drops'):
@@ -91,39 +152,51 @@ class DropsCog(commands.Cog, name='Drops'):
         channels = [858549045613035541, 959271607241683044, 961471869725343834,  # All channels drops can be sent to
                     961045401803317299, 962171274073899038, 962171351794327562]
         channel = guild.get_channel(random.choice(channels))  # Pick a random channel from one of the channels
-        fmt = "%m-%d-%Y"  # Put current date into a format and add to bottom of embed
-        now_time = datetime.now(timezone('US/Eastern'))
-        megadrop, created = mm.Megadrop.get_or_create(defaults={"date_started": datetime.strftime(now_time, fmt)})
-        if megadrop.total_drops > 80:
 
         drop_amount = randint(10000, 25000)
-        drop = Drop(channel, drop_amount)
+        drop = Drop(channel, drop_amount, False)
+
+        fmt = "%m-%d-%Y"  # Put current date into a format and add to bottom of embed
+        now_time = datetime.now(timezone('US/Eastern'))
+        megadrop, created = mm.Megadrop.get_or_create(id=1, defaults={"date_started": datetime.strftime(now_time, fmt)})
+        if megadrop.COUNTER >= 80:
+            roll = randint(1, 100)
+            roll = 50
+            if roll == 50:
+                # RELEASE MEGA DROP
+                drop = Drop(channel, megadrop.amount, True)
+                megadrop.COUNTER = 0
+                megadrop.save()
         await drop.prep_claim(drop)
         DropsCog.drop_task.change_interval(minutes=randint(60, 120))  # Set next drop to come out 1-2 hours from now
 
     @drop_task.before_loop
     async def before_drop_tast(self):
         await self.bot.wait_until_ready()
-        await asyncio.sleep(seconds_until_tasks())
+        # await asyncio.sleep(seconds_until_tasks())
 
     @registered()
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="megadrop", description="Check the current status of the Mega Drop")
     async def megadrop_status(self, interaction: discord.Interaction):
+        megadrop: mm.Megadrop = mm.Megadrop.get(id=1)
         status_embed = discord.Embed(
-            title="Current Mega Drop",
-            color=discord.Color.from_str("0xdb4f4b")
+            title="📦 MEGADROP STATUS 📦",
+            color=0x45ffb1
         )
-        status_embed.add_field(name="Drop Begin Date", value=megadrop.date_started)
-        status_embed.add_field(name="Drop Value", value=f"**{'{:,}'.format(megadrop.amount)}** bits")
-        status_embed.add_field(name="Drops Missed", value=f"{megadrop.total_drops_missed} drops"
-                                                          f"/{megadrop.total_drops} total drops")
-        status_embed.add_field(name="Times Missed", value=megadrop.times_missed)
+        status_embed.add_field(name="Current Pot",
+                               value=f"{'{:,}'.format(megadrop.amount)} bits")
+        status_embed.add_field(name="Drops Cumulated",
+                               value=f"The megadrop has accumulated "
+                                     f"**{'{:,}'.format(megadrop.total_drops_missed)}** drops")
+        status_embed.add_field(name="Times Missed",
+                               value=f"The megadrop has gone unclaimed **{megadrop.times_missed}** times.",
+                               inline=False)
+        status_embed.add_field(name="Last Winner",
+                               value=megadrop.last_winner, inline=True)
 
-        fmt = "%m-%d-%Y %H:%M:%S"  # Put current date into a format and add to bottom of embed
-        now_time = datetime.now(timezone('US/Eastern'))
-        status_embed.set_footer(text=now_time.strftime(fmt=fmt))
-        await interaction.response.send_message(embed=status_embed, view=None)
+        status_embed.set_footer(text=f"The megadrop has been growing since: {megadrop.date_started}")
+        await interaction.response.send_message(embed=status_embed)
 
 
 async def setup(bot):

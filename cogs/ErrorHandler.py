@@ -65,6 +65,15 @@ class CommandErrorHandler(commands.Cog):
                            f"Their id: {member.id}")
 
     @commands.Cog.listener()
+    async def on_member_join(self, member):
+        role_to_add = discord.utils.get(member.guild.roles, name='Peasant')
+        await member.add_roles(role_to_add)
+
+    @commands.Cog.listener()
+    async def on_user_update(self, before, after):
+        pass
+
+    @commands.Cog.listener()
     async def on_message(self, message):
         if not message.guild:
             return await self.bot.process_commands(message)
