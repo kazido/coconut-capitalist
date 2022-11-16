@@ -4,10 +4,10 @@ from discord.ext import commands, tasks
 from discord import app_commands
 import random  # Random imports
 from random import randint
-from ClassLibrary2 import RequestUser, crops  # File imports
+from classLibrary import RequestUser, crops  # File imports
 from cogs.ErrorHandler import registered
 from utils import seconds_until_tasks
-import mymodels as mm
+import myModels as mm
 
 
 def growth_roll(crop_type):

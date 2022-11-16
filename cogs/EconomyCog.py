@@ -5,8 +5,8 @@ import pathlib
 from discord import app_commands
 from discord.app_commands import Choice
 from cogs.ErrorHandler import registered
-from ClassLibrary import *
-from ClassLibrary2 import *
+from oldClassLibrary import *
+from classLibrary import *
 
 project_files = pathlib.Path.cwd() / 'projfiles'
 with open(project_files / 'words.txt', 'r') as f:

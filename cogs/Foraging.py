@@ -1,4 +1,4 @@
-from ClassLibrary2 import Tree, RequestUser
+from classLibrary import Tree, RequestUser
 import discord
 from discord import app_commands
 from discord.ext import commands

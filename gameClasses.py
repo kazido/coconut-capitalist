@@ -1,7 +1,7 @@
 # General python imports
 # Discord imports
 # Database imports
-from ClassLibrary2 import RequestUser
+from classLibrary import RequestUser
 
 
 # File import

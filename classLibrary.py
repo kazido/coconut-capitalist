@@ -4,14 +4,14 @@ from random import randint
 import datetime
 import numpy
 
-import mymodels as mm
+import myModels as mm
 import json
 # Discord imports
 import discord
 # Database imports
 import peewee as pw
 # File import
-from mymodels import database as mmdatabase
+from myModels import database as mmdatabase
 # Other imports
 import randfacts
 

@@ -133,4 +133,6 @@ dmypy.json
 config.json
 .data.json
 database.ini
-database/attempt10.db
+database
+database/devdatabase.db
+database/livedatabase.db

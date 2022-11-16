@@ -1,6 +1,6 @@
 import typing
 import pydealer
-from ClassLibrary import *
+from oldClassLibrary import *
 import asyncio
 from cogs.ErrorHandler import registered
 from random import randint
