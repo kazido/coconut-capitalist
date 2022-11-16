@@ -23,8 +23,6 @@ with open('projfiles/areas.json', 'r') as areas_file:
     areas = json.load(areas_file)
 with open('projfiles/pets.json', 'r') as pets_file:
     pets = json.load(pets_file)
-with open('projfiles/megadrop.json', 'r') as megadrop_file:
-    megadrop = json.load(megadrop_file)
 with open('projfiles/items/axes.json', 'r') as axes_file:
     axes = json.load(axes_file)
 with open('projfiles/items/treeitems.json', 'r') as treeitems_file:
@@ -42,10 +40,11 @@ class RequestUser:
 
         # If the provided User ID is in the database, fetch all related tables
         self.interaction = interaction
-        self.instance, self.created_user = mm.Users.get_or_create(id=user_id)
-        self.cooldowns, self.created_cooldowns = mm.Usercooldowns.get_or_create(id=user_id)
-        self.farm, self.created_farm = mm.Farms.get_or_create(id=user_id)
+        self.instance, self.created = mm.Users.get_or_create(id=user_id)
+        self.cooldowns, self.created = mm.Usercooldowns.get_or_create(id=user_id)
+        self.farm, self.created = mm.Farms.get_or_create(id=user_id)
         self.items = mm.Items.select().where(mm.Items.owner_id == user_id).objects()
+        self.instance.name = self.interaction.user.name
         try:
             active_pet = mm.Pets.select().where((mm.Pets.owner_id == user_id) & mm.Pets.active).get()
             self.active_pet = Pet(active_pet.id)
@@ -55,6 +54,9 @@ class RequestUser:
             role_in_discord = discord.utils.get(interaction.guild.roles, name=rank.capitalize())
             if role_in_discord in interaction.user.roles:
                 self.rank = rank
+            else:
+                self.rank = ranks['peasant']
+                role_to_add = discord.utils.get(interaction.guild.roles, name='peasant')
 
     async def check_ins(self, interaction, check_in_type):
         TWENTY_ONE_HOURS_IN_SECONDS = 75600  # Used for checking seconds between DAILY cooldown

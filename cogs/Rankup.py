@@ -50,7 +50,7 @@ class Ranks(commands.Cog):
     @app_commands.command(name="rankup", description="Spend tokens to move on to the next rank!")
     async def rankup(self, interaction: discord.Interaction):
         user = RequestUser(interaction.user.id, interaction=interaction)
-        rankup_embed = None
+        rankup_embed = next_rank = None
         for index, rank in enumerate(ranks):  # Loop through ranks to find next rank
             if rank == user.rank:
                 next_rank_name = list(ranks.keys())[index + 1].capitalize()

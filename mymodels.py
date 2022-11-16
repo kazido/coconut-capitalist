@@ -98,3 +98,15 @@ class Usercooldowns(BaseModel):
 
     class Meta:
         table_name = 'user cooldowns'
+
+
+class Megadrop(BaseModel):
+    id = IntegerField(primary_key=True, default=1)
+    amount = IntegerField(default=0)
+    total_drops_missed = IntegerField(default=0)
+    total_drops = IntegerField(default=0)
+    date_started = TextField()
+    times_missed = IntegerField(default=0)
+
+    class Meta:
+        table_name = 'megadrop'

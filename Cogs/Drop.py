@@ -8,8 +8,9 @@ from pytz import timezone
 import asyncio
 import json  # File handling imports
 from cogs.ErrorHandler import registered  # File imports
-from ClassLibrary2 import RequestUser, megadrop
+from ClassLibrary2 import RequestUser
 from utils import seconds_until_tasks
+import mymodels as mm
 
 
 def drop_double(amount):
@@ -37,7 +38,7 @@ class Drop:
             title="This drop expired!",
             description=f"This **{'{:,}'.format(self.amount)}** bit drop has been added to the *Mega Drop*.",
             color=0x484a4a)
-        self.expired_embed.set_footer(text="Do /megadrop to check the current pot!")
+        self.expired_embed.set_footer(text="Do */megadrop* to check the current pot!")
 
     async def prep_claim(self, drop):
         class ClaimDropButtons(discord.ui.View):
@@ -50,9 +51,10 @@ class Drop:
                 if self.claimed:
                     return
                 await message.edit(embed=drop.expired_embed, view=None)
-                megadrop['megadrop']['amount'] += drop.amount
-                megadrop['megadrop']['total_drops_missed'] += 1
-                megadrop['megadrop']['total_drops'] += 1
+                megadrop.amount += drop.amount
+                megadrop.total_drops += 1
+                megadrop.total_drops_missed += 1
+                megadrop.save()
 
             @discord.ui.button(label="CLAIM", style=discord.ButtonStyle.green)
             async def claim_button(self, claim_interaction: discord.Interaction, button: discord.ui.Button):
@@ -62,12 +64,13 @@ class Drop:
                 claimed_embed = discord.Embed(
                     title="This drop has been claimed!",
                     description=f"{claim_interaction.user.name} {drop.description}\n"
-                                f"You have claimed {user.instance.drops_claimed}",
+                                f"You have claimed **{'{:,}'.format(user.instance.drops_claimed)}** drops 📦",
                     color=drop.color
                 )
                 claimed_embed.set_footer(text="Drops happen randomly and last for an hour!")
                 user.update_balance(int(drop.amount))
-                megadrop['megadrop']['total_drops'] += 1
+                megadrop.total_drops += 1
+                megadrop.save()
                 await claim_interaction.response.edit_message(embed=claimed_embed, view=None)
                 self.claimed = True
 
@@ -88,6 +91,11 @@ class DropsCog(commands.Cog, name='Drops'):
         channels = [858549045613035541, 959271607241683044, 961471869725343834,  # All channels drops can be sent to
                     961045401803317299, 962171274073899038, 962171351794327562]
         channel = guild.get_channel(random.choice(channels))  # Pick a random channel from one of the channels
+        fmt = "%m-%d-%Y"  # Put current date into a format and add to bottom of embed
+        now_time = datetime.now(timezone('US/Eastern'))
+        megadrop, created = mm.Megadrop.get_or_create(defaults={"date_started": datetime.strftime(now_time, fmt)})
+        if megadrop.total_drops > 80:
+
         drop_amount = randint(10000, 25000)
         drop = Drop(channel, drop_amount)
         await drop.prep_claim(drop)
@@ -106,11 +114,11 @@ class DropsCog(commands.Cog, name='Drops'):
             title="Current Mega Drop",
             color=discord.Color.from_str("0xdb4f4b")
         )
-        status_embed.add_field(name="Drop Begin Date", value=megadrop['megadrop']['date_started'])
-        status_embed.add_field(name="Drop Value", value=f"**{'{:,}'.format(megadrop['megadrop']['amount'])}** bits")
-        status_embed.add_field(name="Drops Missed", value=f"{megadrop['megadrop']['total_drops_missed']} drops"
-                                                          f"/{megadrop['megadrop']['total_drops']} total drops")
-        status_embed.add_field(name="Times Missed", value=megadrop['megadrop']['times_missed'])
+        status_embed.add_field(name="Drop Begin Date", value=megadrop.date_started)
+        status_embed.add_field(name="Drop Value", value=f"**{'{:,}'.format(megadrop.amount)}** bits")
+        status_embed.add_field(name="Drops Missed", value=f"{megadrop.total_drops_missed} drops"
+                                                          f"/{megadrop.total_drops} total drops")
+        status_embed.add_field(name="Times Missed", value=megadrop.times_missed)
 
         fmt = "%m-%d-%Y %H:%M:%S"  # Put current date into a format and add to bottom of embed
         now_time = datetime.now(timezone('US/Eastern'))
