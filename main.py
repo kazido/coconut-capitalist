@@ -10,7 +10,7 @@ from pytz import timezone
 
 intents = discord.Intents.all()
 intents.message_content = True
-bot = commands.Bot(command_prefix='..', intents=intents, case_insensitive=True, strip_after_prefix=True)
+bot = commands.Bot(command_prefix='-', intents=intents, case_insensitive=True, strip_after_prefix=True)
 primary_guild = discord.Object(id=856915776345866240)
 testing_guild = discord.Object(id=977351545966432306)
 

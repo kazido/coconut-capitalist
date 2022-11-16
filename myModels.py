@@ -112,3 +112,8 @@ class Megadrop(BaseModel):
 
     class Meta:
         table_name = 'megadrop'
+
+
+def create_tables():
+    with database:
+        database.create_tables([Users, Usercooldowns, Farms, Pets, Items, Megadrop])

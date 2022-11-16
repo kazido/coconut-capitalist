@@ -10,7 +10,7 @@ import json  # File handling imports
 from cogs.ErrorHandler import registered  # File imports
 from classLibrary import RequestUser
 from utils import seconds_until_tasks
-import myModels as mm
+import myModels as mM
 
 
 def drop_double(amount):
@@ -32,7 +32,7 @@ class Drop:
         self.description, self.amount, self.color = drop_double(amount)
 
         if self.isMegadrop:  # Mega drop, run special init method
-            self.instance: mm.Megadrop = mm.Megadrop.get(id=1)
+            self.instance: mM.Megadrop = mM.Megadrop.get(id=1)
 
             self.embed = discord.Embed(  # Megadrop embed
                 title="⚠️ THE MEGADROP HAS APPEARED ⚠️",
@@ -71,7 +71,7 @@ class Drop:
                 super().__init__(timeout=timeout)
                 self.claimed = False
                 self.isMegadrop = ismegadrop
-                self.megadrop: mm.Megadrop = mm.Megadrop.get(id=1)
+                self.megadrop: mM.Megadrop = mM.Megadrop.get(id=1)
 
             async def on_timeout(self) -> None:
                 if self.claimed:
@@ -158,7 +158,7 @@ class DropsCog(commands.Cog, name='Drops'):
 
         fmt = "%m-%d-%Y"  # Put current date into a format and add to bottom of embed
         now_time = datetime.now(timezone('US/Eastern'))
-        megadrop, created = mm.Megadrop.get_or_create(id=1, defaults={"date_started": datetime.strftime(now_time, fmt)})
+        megadrop, created = mM.Megadrop.get_or_create(id=1, defaults={"date_started": datetime.strftime(now_time, fmt)})
         if megadrop.COUNTER >= 80:
             roll = randint(1, 100)
             roll = 50
@@ -173,13 +173,13 @@ class DropsCog(commands.Cog, name='Drops'):
     @drop_task.before_loop
     async def before_drop_tast(self):
         await self.bot.wait_until_ready()
-        # await asyncio.sleep(seconds_until_tasks())
+        await asyncio.sleep(seconds_until_tasks())
 
     @registered()
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="megadrop", description="Check the current status of the Mega Drop")
     async def megadrop_status(self, interaction: discord.Interaction):
-        megadrop: mm.Megadrop = mm.Megadrop.get(id=1)
+        megadrop: mM.Megadrop = mM.Megadrop.get(id=1)
         status_embed = discord.Embed(
             title="📦 MEGADROP STATUS 📦",
             color=0x45ffb1
