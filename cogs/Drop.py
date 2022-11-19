@@ -161,14 +161,13 @@ class DropsCog(commands.Cog, name='Drops'):
         megadrop, created = mM.Megadrop.get_or_create(id=1, defaults={"date_started": datetime.strftime(now_time, fmt)})
         if megadrop.COUNTER >= 80:
             roll = randint(1, 100)
-            roll = 50
-            if roll == 50:
+            if roll in range(1, 6):
                 # RELEASE MEGA DROP
                 drop = Drop(channel, megadrop.amount, True)
                 megadrop.COUNTER = 0
                 megadrop.save()
         await drop.prep_claim(drop)
-        DropsCog.drop_task.change_interval(minutes=randint(60, 120))  # Set next drop to come out 1-2 hours from now
+        self.drop_task.change_interval(minutes=randint(60, 120))  # Set next drop to come out 1-2 hours from now
 
     @drop_task.before_loop
     async def before_drop_tast(self):

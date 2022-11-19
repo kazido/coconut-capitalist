@@ -1,4 +1,5 @@
 import asyncio
+import random
 
 from discord import app_commands
 import discord
@@ -31,8 +32,7 @@ class DebuggingCommands(commands.Cog):
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command()
     async def test(self, interaction: discord.Interaction):
-        user = RequestUser(interaction.user.id, interaction=interaction)
-        await interaction.response.send_message("Lots of choppin power!: " + str(axes[str(user.instance.axe)]['chopping_power']))
+        pass
 
     @commands.command(name='work', aliases=['daily', 'hl'])
     async def using_slash_commands(self, ctx):

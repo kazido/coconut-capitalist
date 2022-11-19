@@ -88,12 +88,20 @@ class HighLow(commands.Cog, name="HighLow"):
             def __init__(self, roll, *, multiplier=0, timeout=120):
                 self.roll = roll
                 self.multiplier = multiplier
+                self.high_interaction_at = None
+                self.low_interaction_at = None
                 super().__init__(timeout=timeout)
 
             @discord.ui.button(label="High", style=discord.ButtonStyle.blurple, emoji='⬆️')
             async def high_button(self, high_interaction: discord.Interaction, button: discord.Button):
                 if high_interaction.user != interaction.user:
                     return
+                self.high_interaction_at = high_interaction.created_at
+                try:
+                    if self.high_interaction_at.second == self.low_interaction_at.second:
+                        return
+                except AttributeError:
+                    pass
                 self.stop_button.disabled = False
                 if self.roll in range(6, 11):
                     if self.multiplier == 0:
@@ -104,12 +112,12 @@ class HighLow(commands.Cog, name="HighLow"):
                     success_embed = await game_results(interaction, user, self.roll, self.multiplier, bet, 1)
                     self.roll = randint(1, 10)
 
-                    await high_interaction.response.edit_message(embed=success_embed, view=self)
+                    await high_interaction.response.edit_message(embed=success_embed, view=None)
                     await asyncio.sleep(1)  # Add a delay so the user can tell if they won or not
 
                     success_embed.title = f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {'{:,}'.format(bet)}"
                     success_embed.color = discord.Color.from_str("0x666666")
-                    await high_interaction.edit_original_response(embed=success_embed)
+                    await high_interaction.edit_original_response(embed=success_embed, view=self)
 
                 else:
                     losing_embed = await game_results(interaction, user, self.roll, self.multiplier, bet, 0)
@@ -122,6 +130,13 @@ class HighLow(commands.Cog, name="HighLow"):
             async def low_button(self, low_interaction: discord.Interaction, button: discord.Button):
                 if low_interaction.user != interaction.user:
                     return
+                self.low_interaction_at = low_interaction.created_at
+                try:
+                    if self.high_interaction_at.second == self.low_interaction_at.second:
+                        await low_interaction.response.send_message("Stop trying to cheat!", ephemeral=True)
+                        return
+                except AttributeError:
+                    pass
                 self.stop_button.disabled = False
                 if self.roll in range(1, 6):
                     if self.multiplier == 0:
@@ -132,12 +147,12 @@ class HighLow(commands.Cog, name="HighLow"):
                     success_embed = await game_results(interaction, user, self.roll, self.multiplier, bet, 1)
                     self.roll = randint(1, 10)
 
-                    await low_interaction.response.edit_message(embed=success_embed, view=self)
+                    await low_interaction.response.edit_message(embed=success_embed, view=None)
                     await asyncio.sleep(1)  # Add a delay so the user can tell if they won or not
 
                     success_embed.title = f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {'{:,}'.format(bet)}"
                     success_embed.color = discord.Color.from_str("0x666666")
-                    await low_interaction.edit_original_response(embed=success_embed)
+                    await low_interaction.edit_original_response(embed=success_embed, view=self)
 
                 else:
                     losing_embed = await game_results(interaction, user, self.roll, self.multiplier, bet, 0)

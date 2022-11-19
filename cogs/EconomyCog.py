@@ -45,6 +45,11 @@ def create_rank_string(interaction, index, user, xp, mode: int, advanced: bool =
             if advanced:
                 return f"{index}. {user.name} - Level {'{:,}'.format(int(math.sqrt(xp).__floor__() / 10))} | `{'{:,}'.format(xp)} xp`"
             return f"{index}. {user.name} - Level {'{:,}'.format(int(math.sqrt(xp).__floor__() / 10))}"
+        case 2:  # IF THE MODE IS SET TO DROPS
+            if advanced:
+                return f"{index}. {user.name} - {user.drops_claimed} " \
+                       f"drops | `~{'{:,}'.format(user.drops_claimed * 17500)} bits`"
+            return f"{index}. {user.name} - {user.drops_claimed} drops claimed"
 
 
 class EconomyCog(commands.Cog, name='Economy'):
@@ -111,7 +116,7 @@ class EconomyCog(commands.Cog, name='Economy'):
 
         word, scrambled_word = get_word()
         time_limit = 1.4 ** len(word)
-        reward = len(word) * 70
+        reward = (len(word) * (10*len(word)**2) + 300)
         unscramble_prompt_embed = discord.Embed(
             title="Unscramble!",
             description=f"You will have {time_limit.__round__()} seconds to unscramble the following word!",
@@ -140,7 +145,7 @@ class EconomyCog(commands.Cog, name='Economy'):
                                 f"***{scrambled_word}*** - {word}",
                     color=0xa0f09c
                 )
-                correct_word_embed.add_field(name="Reward", value=f"**{reward}** bits")
+                correct_word_embed.add_field(name="Reward", value=f"**{reward:,}** bits")
                 embed = correct_word_embed
                 user.update_balance(reward)
         except asyncio.TimeoutError:
@@ -215,7 +220,8 @@ class EconomyCog(commands.Cog, name='Economy'):
         Choice(name='combat', value=1),
         Choice(name='mining', value=2),
         Choice(name='foraging', value=3),
-        Choice(name='fishing', value=4)])
+        Choice(name='fishing', value=4),
+        Choice(name='drops', value=5)])
     async def top(self, interaction: discord.Interaction, category: Choice[int], advanced: bool | None):
         leaderboard_attributes = {
             0: {
@@ -244,6 +250,11 @@ class EconomyCog(commands.Cog, name='Economy'):
                 "title": ":fishing_pole_and_fish: FISHING LEADERBOARD :fishing_pole_and_fish:",
                 "color": discord.Color.dark_blue()
             },
+            5: {
+                "column": mm.Users.drops_claimed,
+                "title": ":package: DROPS LEADERBOARD :package:",
+                "color": discord.Color.from_str("0xcc8c16")
+            }
         }
         category_index = leaderboard_attributes[category.value]
         description = ''
@@ -279,6 +290,8 @@ class EconomyCog(commands.Cog, name='Economy'):
                 case 4:
                     rank_string = create_rank_string(interaction, index, user, xp=user.fishing_xp,
                                                      mode=1, advanced=advanced)
+                case 5:
+                    rank_string = create_rank_string(interaction, index, user, None, mode=2, advanced=advanced)
 
             if index <= 10 and (user.id == interaction.user.id):  # If loop is over command user and still in top 10 :)
                 description += f"**{rank_string}**\n"

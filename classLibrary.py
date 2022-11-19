@@ -60,15 +60,19 @@ class RequestUser:
         TWENTY_ONE_HOURS_IN_SECONDS = 75600  # Used for checking seconds between DAILY cooldown
         SIX_HOURS_IN_SECONDS = 21600  # Used for checking seconds between WORK cooldown
         now = datetime.datetime.now().timestamp()  # Current time, used to compare with last used time
-        work_off_cooldown = int(self.cooldowns.worked_last) + SIX_HOURS_IN_SECONDS
-        daily_off_cooldown = int(self.cooldowns.daily_used_last) + TWENTY_ONE_HOURS_IN_SECONDS
+        work_off_cooldown = float(self.cooldowns.worked_last) + float(SIX_HOURS_IN_SECONDS)
+        daily_off_cooldown = float(self.cooldowns.daily_used_last) + float(TWENTY_ONE_HOURS_IN_SECONDS)
+        # print(work_off_cooldown)
+        # print(float(now))
         description = title = None
 
         off_cooldown = work_off_cooldown if check_in_type == 'work' else daily_off_cooldown
 
-        if int(now) <= int(off_cooldown):  # If it has NOT been enough time since they last used the command
+        if float(now) <= float(off_cooldown):  # If it has NOT been enough time since they last used the command
+            # print("NOT BEEN ENOUGH TIME")
+            # return
             on_cooldown_embed = discord.Embed(color=discord.Colour.red())
-            cd_left_in_seconds = int(off_cooldown - int(now))
+            cd_left_in_seconds = int(off_cooldown - float(now))
             day = cd_left_in_seconds // 86400
             hours = (cd_left_in_seconds - (day * 86400)) // 3600
             minutes = (cd_left_in_seconds - ((day * 86400) + (hours * 3600))) // 60
@@ -79,6 +83,9 @@ class RequestUser:
             on_cooldown_embed.set_footer(text=f"User: {interaction.user.name}")
             await interaction.response.send_message(embed=on_cooldown_embed)
             return
+        # print("GOOD TO GO!")
+        # await interaction.response.send_message("This command is being tested right now. Sorry for the inconvenience.")
+        # return
         match check_in_type:  # Match statement to check which type of cooldown we need to test
             case 'work':  # If the checkin type is work, set title and description
                 wage = ranks[self.rank]['wage']
