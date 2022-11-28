@@ -24,10 +24,11 @@ class SpectrumCog(commands.Cog, name='Spectrum'):
 
         async def button_callback(this, button_interaction: discord.Interaction, button: discord.ui.Button):
             if button_interaction.user != interaction.user:
-                return
+                await button_interaction.response.send_message("This is not your game!", ephemeral=True)
+                return this.total_score
             if str(this.sequence[this.index]) != str(button.emoji):
                 played = 1 if this.total_score > 0 else 0  # Adds no reward if they didn't even get 1 right
-                reward = this.total_score * (10 * this.total_score ** 2) + (300*played)
+                reward = this.total_score * (10 * this.total_score ** 2) + (300 * played)
                 wrong_embed = discord.Embed(title="GAME OVER!",
                                             description=f"You got the pattern wrong :sob:",
                                             colour=discord.Color.blurple())
@@ -58,8 +59,21 @@ class SpectrumCog(commands.Cog, name='Spectrum'):
                 wrong_embed.set_field_at(index=0, name="Final Score",
                                          value=f"**{this.total_score}** colors :white_check_mark:")
                 await button_interaction.edit_original_response(embed=wrong_embed, view=None)
-                return
+                return this.total_score
 
+            this.option1.disabled = True
+            this.option2.disabled = True
+            this.option3.disabled = True
+            this.option4.disabled = True
+            embed = discord.Embed(title="Recall the order!",
+                                  description="" + f"{this.sequence[this.index]}" * 6,
+                                  color=discord.Color.blue())
+            embed.set_author(name=f"{interaction.user.name} - SPECTRUM SEQUENCE",
+                             icon_url=interaction.user.display_avatar)
+            embed.set_footer(text=f"Color: {this.index + 1}")
+            await button_interaction.response.edit_message(embed=embed, view=this)
+            await asyncio.sleep(0.05)
+            embed.description = "" + (":black_large_square:" * 6)
             if this.index + 1 == len(this.sequence):  # If element is last element in the list
                 this.total_score += 1
                 embed = discord.Embed(title="Pattern Remembered!",
@@ -69,23 +83,15 @@ class SpectrumCog(commands.Cog, name='Spectrum'):
                 embed.set_author(name=f"{interaction.user.name} - SPECTRUM SEQUENCE",
                                  icon_url=interaction.user.display_avatar)
                 this.sequence.append(random.choice(options))
-                await button_interaction.response.edit_message(embed=embed, view=None)
-                await asyncio.sleep(2)
+                await asyncio.sleep(0.2)
+                await button_interaction.edit_original_response(embed=embed, view=None)
+                await asyncio.sleep(1)
                 await show_pattern(button_interaction, this.sequence, this.total_score)
-            else:  # If user gets the next item right
-                this.option1.disabled = True
-                this.option2.disabled = True
-                embed = discord.Embed(title="Recall the order!",
-                                      description="" + f"{this.sequence[this.index]}"*6,
-                                      color=discord.Color.blue())
-                embed.set_author(name=f"{interaction.user.name} - SPECTRUM SEQUENCE",
-                                 icon_url=interaction.user.display_avatar)
-                await button_interaction.response.edit_message(embed=embed, view=this)
-                await asyncio.sleep(0.1)
-                embed.description = "" + (":black_large_square:"*6)
+            else:
                 this.index += 1
                 await button_interaction.edit_original_response(embed=embed,
-                                                                view=TestButtons(this.sequence, this.index, this.total_score))
+                                                                view=TestButtons(this.sequence, this.index,
+                                                                                 this.total_score))
 
         class TestButtons(discord.ui.View):
             def __init__(self, sequence, index, total_score):
@@ -113,12 +119,12 @@ class SpectrumCog(commands.Cog, name='Spectrum'):
         async def show_pattern(inter: discord.Interaction, seq: list[options], tot_score: int):
             for element in seq:  # show each element in the pattern
                 embed = discord.Embed(title="Remember this!",
-                                      description="" + (f"{element}"*6),
+                                      description="" + (f"{element}" * 6),
                                       color=discord.Color.blue())
                 embed.set_author(name=f"{interaction.user.name} - SPECTRUM SEQUENCE",
                                  icon_url=interaction.user.display_avatar)
                 await inter.edit_original_response(embed=embed)
-                embed.description = "" + (":black_large_square:"*6)
+                embed.description = "" + (":black_large_square:" * 6)
                 await asyncio.sleep(0.4)
 
                 await inter.edit_original_response(embed=embed)
@@ -138,7 +144,7 @@ class SpectrumCog(commands.Cog, name='Spectrum'):
         initial_ready_embed.set_author(name=f"{interaction.user.name} - SPECTRUM SEQUENCE",
                                        icon_url=interaction.user.display_avatar)
         await interaction.response.send_message(embed=initial_ready_embed)
-        await asyncio.sleep(2)
+        await asyncio.sleep(1.5)
         await show_pattern(interaction, pattern, 0)
 
 

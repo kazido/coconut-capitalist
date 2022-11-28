@@ -179,6 +179,7 @@ class HighLow(commands.Cog, name="HighLow"):
                 user.update_balance(bet * self.multiplier)
                 user.update_game_status(False)
                 await stop_interaction.response.edit_message(embed=stop_embed, view=None)
+                return
 
         game_begin_embed = discord.Embed(
             title=f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {'{:,}'.format(bet)}",

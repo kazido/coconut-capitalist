@@ -104,7 +104,7 @@ class Drop:
                         color=drop.color
                     )
                     claimed_embed.add_field(name="Drops Cumulated",
-                                            value=f"This megadrop was a combination of"
+                                            value=f"This megadrop was a combination of "
                                                   f"**{'{:,}'.format(self.megadrop.total_drops_missed)}** drops")
                     claimed_embed.add_field(name="Times Missed",
                                             value=f"This megadrop had gone unclaimed **{self.megadrop.times_missed}** "
