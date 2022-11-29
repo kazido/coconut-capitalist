@@ -7,6 +7,7 @@ from discord.app_commands import Choice
 from cogs.ErrorHandler import registered
 from oldClassLibrary import *
 from classLibrary import *
+from cogs.Drop import DROP_AVERAGE
 
 project_files = pathlib.Path.cwd() / 'projfiles'
 with open(project_files / 'words.txt', 'r') as f:
@@ -48,7 +49,7 @@ def create_rank_string(interaction, index, user, xp, mode: int, advanced: bool =
         case 2:  # IF THE MODE IS SET TO DROPS
             if advanced:
                 return f"{index}. {user.name} - {user.drops_claimed} " \
-                       f"drops | `~{'{:,}'.format(user.drops_claimed * 17500)} bits`"
+                       f"drops | `~{'{:,}'.format(user.drops_claimed * DROP_AVERAGE)} bits`"
             return f"{index}. {user.name} - {user.drops_claimed} drops claimed"
 
 

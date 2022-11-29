@@ -25,6 +25,11 @@ def drop_double(amount):
     return description, amount, color
 
 
+DROP_MAX = 20000
+DROP_MIN = 10000
+DROP_AVERAGE = int((DROP_MIN + DROP_MAX) / 2)
+
+
 class Drop:
     def __init__(self, channel: discord.TextChannel, amount, ismegadrop):
         self.channel = channel
@@ -62,7 +67,7 @@ class Drop:
                 color=0x484a4a)
             self.expired_embed.set_footer(text="Do /megadrop to check the current pot!")
 
-            self.timeout = 3600  # 1 hour for the drop to be claimed
+            self.timeout = 1800  # 30 minutes for the drop to be claimed
 
     async def prep_claim(self, drop):
         class ClaimDropButtons(discord.ui.View):
@@ -126,7 +131,7 @@ class Drop:
                                     f"You have claimed **{'{:,}'.format(user.instance.drops_claimed)}** drops 📦",
                         color=drop.color
                     )
-                    claimed_embed.set_footer(text="Drops happen randomly and last for an hour!")
+                    claimed_embed.set_footer(text="Drops happen randomly and last for 30 minutes!")
                     self.megadrop.total_drops += 1
                     self.megadrop.COUNTER += 1
 
@@ -152,16 +157,15 @@ class DropsCog(commands.Cog, name='Drops'):
         channels = [858549045613035541, 959271607241683044, 961471869725343834,  # All channels drops can be sent to
                     961045401803317299, 962171274073899038, 962171351794327562]
         channel = guild.get_channel(random.choice(channels))  # Pick a random channel from one of the channels
-
-        drop_amount = randint(10000, 25000)
+        drop_amount = randint(DROP_MIN, DROP_MAX)
         drop = Drop(channel, drop_amount, False)
 
         fmt = "%m-%d-%Y"  # Put current date into a format and add to bottom of embed
         now_time = datetime.now(timezone('US/Eastern'))
         megadrop, created = mM.Megadrop.get_or_create(id=1, defaults={"date_started": datetime.strftime(now_time, fmt)})
-        if megadrop.COUNTER >= 80:
+        if megadrop.COUNTER >= 150:
             roll = randint(1, 100)
-            if roll in range(1, 6):
+            if roll in range(1, 2):
                 # RELEASE MEGA DROP
                 drop = Drop(channel, megadrop.amount, True)
                 megadrop.COUNTER = 0

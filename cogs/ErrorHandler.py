@@ -66,7 +66,7 @@ class CommandErrorHandler(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        role_to_add = discord.utils.get(member.guild.roles, name='Peasant')
+        role_to_add = discord.utils.get(member.guild.roles, name='Unranked')
         await member.add_roles(role_to_add)
 
     @commands.Cog.listener()

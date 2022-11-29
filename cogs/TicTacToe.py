@@ -11,6 +11,12 @@ class TicTacToeCog(commands.Cog, name='TicTacToe'):
         self.bot = bot
         self.tree = self.bot.tree
 
+    @app_commands.guilds(856915776345866240, 977351545966432306)
+    @app_commands.command(name="tictactoe", description="Challenge someone in tictactoe")
+    async def tic(self, interaction: discord.Interaction, user: discord.User):
+        """Starts a tic-tac-toe game with yourself."""
+        await interaction.response.send_message(f'Tic Tac Toe:  ', view=TicTacToeCog.TicTacToe(interaction.user, user))
+
     # Defines a custom button that contains the logic of the game.
     # The ['TicTacToe'] bit is for type hinting purposes to tell your IDE or linter
     # what the type of `self.view` is. It is not required.
@@ -21,39 +27,45 @@ class TicTacToeCog(commands.Cog, name='TicTacToe'):
             # A View can only contain up to 5 rows -- each row can only have 5 buttons.
             # Since a Tic Tac Toe grid is 3x3 that means we have 3 rows and 3 columns.
             super().__init__(style=discord.ButtonStyle.secondary, label='\u200b', row=y)
-            self.x = x
-            self.y = y
+            self.x_pos = x
+            self.y_pos = y
 
         # This function is called whenever this particular button is pressed
         # This is part of the "meat" of the game logic
-        async def callback(self, interaction: discord.Interaction):
+        async def callback(self, button_interaction: discord.Interaction):
             assert self.view is not None
             view: TicTacToeCog.TicTacToe = self.view
-            state = view.board[self.y][self.x]
+            state = view.board[self.y_pos][self.x_pos]
             if state in (view.X_value, view.O_value):
                 return
 
-            if view.current_player == view.X_value:
-                self.style = discord.ButtonStyle.danger
+            if button_interaction.user != view.current_player:
+                await button_interaction.response.send_message("Wait your turn...", ephemeral=True)
+                return
+
+            content = None
+
+            if view.current_player == view.player1:
+                self.style = discord.ButtonStyle.red
                 self.label = 'X'
                 self.disabled = True
-                view.board[self.y][self.x] = view.X_value
-                view.current_player = view.O_value
-                content = "It is now O's turn"
-            else:
-                self.style = discord.ButtonStyle.success
+                view.board[self.y_pos][self.x_pos] = view.X_value
+                view.current_player = view.player2
+                content = f"It is now {view.player2.name}'s turn"
+            elif view.current_player == view.player2:
+                self.style = discord.ButtonStyle.green
                 self.label = 'O'
                 self.disabled = True
-                view.board[self.y][self.x] = view.O_value
-                view.current_player = view.X_value
-                content = "It is now X's turn"
+                view.board[self.y_pos][self.x_pos] = view.O_value
+                view.current_player = view.player1
+                content = f"It is now {view.player1.name}'s turn"
 
             winner = view.check_board_winner()
             if winner is not None:
                 if winner == view.X_value:
-                    content = 'X won!'
+                    content = f'**{view.player1.name} won!**'
                 elif winner == view.O_value:
-                    content = 'O won!'
+                    content = f'**{view.player2.name} won!**'
                 else:
                     content = "It's a tie!"
 
@@ -62,19 +74,19 @@ class TicTacToeCog(commands.Cog, name='TicTacToe'):
 
                 view.stop()
 
-            await interaction.response.edit_message(content=content, view=view)
+            await button_interaction.response.edit_message(content=content, view=view)
 
     # This is our actual board View
     class TicTacToe(discord.ui.View):
-        # This tells the IDE or linter that all our children will be TicTacToeButtons
-        # This is not required
         X_value = -1
         O_value = 1
         Tie = 2
 
-        def __init__(self):
+        def __init__(self, player1, player2):
             super().__init__()
-            self.current_player = self.X_value
+            self.player1 = player1
+            self.player2 = player2
+            self.current_player = self.player1
             self.board = [
                 [0, 0, 0],
                 [0, 0, 0],
@@ -123,12 +135,6 @@ class TicTacToeCog(commands.Cog, name='TicTacToe'):
                 return self.Tie
 
             return None
-
-    @app_commands.guilds(856915776345866240, 977351545966432306)
-    @app_commands.command(name="tictactoe", description="Play tictactoe vs a bot or someone else!")
-    async def tic(self, interaction: discord.Interaction, user: discord.User):
-        """Starts a tic-tac-toe game with yourself."""
-        await interaction.response.send_message(f'Tic Tac Toe:  ', view=TicTacToeCog.TicTacToe())
 
 
 async def setup(bot):

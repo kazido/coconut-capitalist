@@ -18,19 +18,19 @@ class BaseModel(Model):
 
 class Users(BaseModel):
     area = IntegerField(constraints=[SQL("DEFAULT 0")])
-    avatar = TextField(null=True)
+    avatar = TextField(constraints=[SQL("DEFAULT 'None'")], null=True)
     axe = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    bank = IntegerField(null=True)
+    bank = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     combat_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
     fishing_rod = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     fishing_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
     foraging_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
-    in_game = IntegerField(null=True)
+    in_game = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     mining_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
-    money = IntegerField(null=True)
+    money = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     name = TextField(null=True)
     pickaxe = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    tokens = IntegerField(null=True)
+    tokens = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     weapon = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
     drops_claimed = IntegerField(constraints=[SQL("DEFAULT 0")])
@@ -40,12 +40,12 @@ class Users(BaseModel):
 
 
 class Farms(BaseModel):
-    almond_seeds = IntegerField(null=True)
-    almond = IntegerField(null=True)
-    cacao_seeds = IntegerField(null=True)
-    cacao = IntegerField(null=True)
-    coconut_seeds = IntegerField(null=True)
-    coconut = IntegerField(null=True)
+    almond_seeds = IntegerField(constraints=[SQL("DEFAULT 25")], null=True)
+    almond = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    cacao_seeds = IntegerField(constraints=[SQL("DEFAULT 3")], null=True)
+    cacao = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    coconut_seeds = IntegerField(constraints=[SQL("DEFAULT 5")], null=True)
+    coconut = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     has_open_farm = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     id = ForeignKeyField(column_name='id', model=Users, primary_key=True)
     plot1 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
@@ -60,7 +60,7 @@ class Items(BaseModel):
     durability = IntegerField(null=True)
     item_name = TextField(null=True)
     owner_id = IntegerField(null=True)
-    quantity = IntegerField(null=True, default=1)
+    quantity = IntegerField(constraints=[SQL("DEFAULT 1")], null=True)
     reference_id = IntegerField(null=True)
     item_type = TextField(null=True)
 
@@ -71,12 +71,12 @@ class Items(BaseModel):
 class Pets(BaseModel):
     active = IntegerField(null=True)
     health = IntegerField(null=True)
-    level = IntegerField(null=True)
+    level = IntegerField(constraints=[SQL("DEFAULT 1")], null=True)
     name = TextField(null=True)
     owner_id = IntegerField(null=True)
     rarity = TextField(null=True)
     species = TextField(null=True)
-    xp = IntegerField(null=True)
+    xp = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
 
     class Meta:
         table_name = 'pets'
@@ -92,22 +92,22 @@ class SqliteSequence(BaseModel):
 
 
 class Usercooldowns(BaseModel):
-    daily_used_last = IntegerField(null=True)
+    daily_used_last = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     id = ForeignKeyField(column_name='id', model=Users, primary_key=True)
-    worked_last = IntegerField(null=True)
+    worked_last = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
 
     class Meta:
         table_name = 'user cooldowns'
 
 
 class Megadrop(BaseModel):
-    id = IntegerField(primary_key=True, default=1)
-    amount = IntegerField(default=0)
-    total_drops_missed = IntegerField(default=0)
-    total_drops = IntegerField(default=0)
+    id = IntegerField(constraints=[SQL("DEFAULT 1")], primary_key=True)
+    amount = IntegerField(constraints=[SQL("DEFAULT 0")])
+    total_drops_missed = IntegerField(constraints=[SQL("DEFAULT 0")])
+    total_drops = IntegerField(constraints=[SQL("DEFAULT 0")])
     date_started = TextField()
-    times_missed = IntegerField(default=0)
-    COUNTER = IntegerField(default=0)
+    times_missed = IntegerField(constraints=[SQL("DEFAULT 0")])
+    COUNTER = IntegerField(constraints=[SQL("DEFAULT 0")])
     last_winner = TextField()
 
     class Meta:

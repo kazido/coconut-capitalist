@@ -34,6 +34,22 @@ class DebuggingCommands(commands.Cog):
     async def test(self, interaction: discord.Interaction):
         pass
 
+    admin_commands = discord.app_commands.Group(
+        name="admin",
+        description="Admin only commands.",
+        guild_ids=[856915776345866240, 977351545966432306],
+        default_permissions=None
+    )
+
+    @admin_commands.command(name="pay")
+    async def admin_pay(self, interaction: discord.Interaction, user: discord.User, amount: int):
+        user_to_pay = RequestUser(user.id, interaction=interaction)
+        paid_embed = discord.Embed(title="Updated balance.",
+                                   description=f"Updated {user.name}'s balance by **{amount:,}** bits.",
+                                   color=discord.Color.red())
+        user_to_pay.update_balance(amount)
+        await interaction.response.send_message(embed=paid_embed)
+
     @commands.command(name='work', aliases=['daily', 'hl'])
     async def using_slash_commands(self, ctx):
         class ThanksButtons(discord.ui.View):
