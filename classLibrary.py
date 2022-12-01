@@ -142,6 +142,9 @@ class RequestUser:
         self.instance.in_game = in_game
         self.instance.save()
 
+    def update_xp(self, amount):  # Function to increase a user's xp
+        pass
+
     def bet_checks(self, bet) -> object:  # Checks to make sure the user isn't betting more than they have or 0
         user_balance = self.instance.money
         if int(bet) > user_balance:  # If they try to bet more than they have in their account.

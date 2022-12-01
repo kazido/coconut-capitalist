@@ -11,7 +11,7 @@ import myModels as mm
 
 
 def growth_roll(crop_type):
-    growth_range = range(crops[crop_type]['growth_odds'][0], crops[crop_type]['growth_odds'][1])
+    growth_range = range(crops[crop_type+'s']['growth_odds'][0], crops[crop_type+'s']['growth_odds'][1])
     roll = randint(0, 100)
     if roll in growth_range:  # If the roll is in the range for the crop to grow
         return True  # Set function as true, the crop grew
@@ -131,7 +131,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 self.farm_module_embed = discord.Embed(
                     title=f"Welcome to the Farm!",
                     description="Collect seeds and plant them in your plots!",
-                    color=0x1adb24)
+                    color=0xdaebb0)
                 self.farm_module_embed.set_author(name=f"{interaction.user.name} - Farming",
                                                   icon_url=interaction.user.display_avatar)
 
@@ -192,8 +192,8 @@ class FarmingCog(commands.Cog, name="Farming"):
                 await harvest_interacton.response.edit_message(embed=self.view.farm_module_embed, view=self.view)
 
         class ExitButton(discord.ui.Button):
-            def __init__(self):
-                super().__init__(label="Exit", style=discord.ButtonStyle.red)
+            def __init__(self, row=1):
+                super().__init__(label="Exit", style=discord.ButtonStyle.red, row=row)
 
             async def callback(self, exit_interaction: discord.Interaction):
                 if exit_interaction.user != interaction.user:
@@ -221,7 +221,16 @@ class FarmingCog(commands.Cog, name="Farming"):
                         "chocolates": {"emoji": ":chocolate_bar:",
                                        "count": users_barn.chocolates},
                         "almonds": {"emoji": ":chestnut:",
-                                    "count": users_barn.almonds}
+                                    "count": users_barn.almonds},
+                        "coconut seeds": {
+                            "count": users_barn.coconuts_seeds
+                        },
+                        "chocolate seeds": {
+                            "count": users_barn.chocolates_seeds
+                        },
+                        "almond seeds": {
+                            "count": users_barn.almonds_seeds
+                        }
                         }
                 for crop in barn_crops:
                     self.barn_embed.add_field(name=f"{crop.capitalize()}",
@@ -240,9 +249,9 @@ class FarmingCog(commands.Cog, name="Farming"):
                                                                      f"*`({barn['coconut seeds']['count']} seeds)`*")
                     self.barn_embed.add_field(name="Cacaos", value=f"`{barn['chocolates']['count']}`\n"
                                                                    f"*`({barn['chocolate seeds']['count']} seeds)`*")
-                self.add_item(ExitButton())
-                self.add_item(SwitchToFarmButton(1))
-                self.add_item(SwitchToPlantButton(1))
+                self.add_item(ExitButton(0))
+                self.add_item(SwitchToFarmButton(0))
+                self.add_item(SwitchToPlantButton(0))
 
             async def on_timeout(self) -> None:
                 users_farm.has_open_farm = False
@@ -261,18 +270,22 @@ class FarmingCog(commands.Cog, name="Farming"):
                 self.plant_embed = discord.Embed(
                     title=f"Plant crops to feed your pets",
                     description=f"You can plant various kinds of crops:\n{', '.join(names)}",
-                    color=0x1adb24
+                    color=0x8db046
                 )
                 self.plant_embed.set_author(name=f"{interaction.user.name} - Planting",
                                             icon_url=interaction.user.display_avatar)
                 seeds = [users_farm.almonds_seeds, users_farm.coconuts_seeds, users_farm.chocolates_seeds]
-                for number, seed in enumerate(seeds):
-                    if seed == 0:
-                        self.add_item(PlantButton("No seeds", discord.ButtonStyle.grey, True, seed, number,
-                                                  list(crops.keys())[number]))
-                    else:
-                        self.add_item(PlantButton(names[number], discord.ButtonStyle.blurple, False, seed, number,
-                                                  list(crops.keys())[number]))
+                if (users_farm.plot1 != 'Empty!') and (users_farm.plot2 != 'Empty!') and (users_farm.plot3 != 'Empty!'):
+                    for x in range(3):
+                        self.add_item(PlantButton("Plots full!", discord.ButtonStyle.grey, True, None, None, None))
+                else:
+                    for number, seed in enumerate(seeds):
+                        if seed == 0:
+                            self.add_item(PlantButton("No seeds", discord.ButtonStyle.grey, True, seed, number,
+                                                      list(crops.keys())[number]))
+                        else:
+                            self.add_item(PlantButton(names[number], discord.ButtonStyle.blurple, False, seed, number,
+                                                      list(crops.keys())[number]))
                 self.add_item(ExitButton())
                 self.add_item(SwitchToBarnButton())
                 self.add_item(SwitchToFarmButton())
@@ -324,14 +337,14 @@ class FarmingCog(commands.Cog, name="Farming"):
                 users_farm.save()
                 if (users_farm.plot1 != 'Empty!') and (users_farm.plot2 != 'Empty!') and (users_farm.plot3 != 'Empty!'):
                     for button in self.view.children:
-                        if button.label == "Exit":
+                        if button.row == 1:
                             button.disabled = False
                         else:
                             button.disabled = True
                 await plant_interaction.response.edit_message(embed=self.view.plant_embed, view=self.view)
 
         class SwitchToBarnButton(discord.ui.Button):
-            def __init__(self, row=2):
+            def __init__(self, row=1):
                 super().__init__(label="Barn", style=discord.ButtonStyle.blurple, row=row)
 
             async def callback(self, switch_to_barn_interaction: discord.Interaction):
@@ -341,7 +354,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 await switch_to_barn_interaction.response.edit_message(embed=Barn().barn_embed, view=Barn())
 
         class SwitchToPlantButton(discord.ui.Button):
-            def __init__(self, row=2):
+            def __init__(self, row=1):
                 super().__init__(label="Plant", style=discord.ButtonStyle.blurple, row=row)
 
             async def callback(self, switch_to_plant_interaction: discord.Interaction):
@@ -351,7 +364,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 await switch_to_plant_interaction.response.edit_message(embed=Plant().plant_embed, view=Plant())
 
         class SwitchToFarmButton(discord.ui.Button):
-            def __init__(self, row=2):
+            def __init__(self, row=1):
                 super().__init__(label="Farm", style=discord.ButtonStyle.blurple, row=row)
 
             async def callback(self, switch_to_farm_interaction: discord.Interaction):
