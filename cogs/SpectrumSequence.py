@@ -1,5 +1,6 @@
 from discord import app_commands
 from discord.ext import commands
+from discord.app_commands import Choice
 import discord
 
 import random
@@ -16,116 +17,137 @@ class SpectrumCog(commands.Cog, name='Spectrum'):
         self.tree = self.bot.tree
 
     @app_commands.guilds(856915776345866240, 977351545966432306)
-    @app_commands.command(name='spectrum', description="Remember the pattern, win some bits!")
-    async def spectrum(self, interaction: discord.Interaction):
-        user = RequestUser(interaction.user.id, interaction=interaction)
-        options = ['🟥', '🟦', '🟧', '🟩']
-        pattern = [random.choice(options)]
+    @app_commands.command(name='sequence', description="Remember the pattern, win some bits!")
+    @app_commands.choices(difficulty=[
+        Choice(name='easy', value=0),
+        Choice(name='medium', value=1),
+        Choice(name='hard', value=2)])
+    async def spectrum(self, interaction: discord.Interaction, difficulty: Choice[int]):
+        difficulties = {
+            0: {
+                "options": ['😂', '😍'],
+                "reward_multiplier": 5
+            },
+            1: {
+                "options": ['🟥', '🟦', '🟧', '🟩'],
+                "reward_multiplier":10
+            },
+            2: {
+                "options": ['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣'],
+                "reward_multiplier": 40
+            }
 
-        async def button_callback(this, button_interaction: discord.Interaction, button: discord.ui.Button):
+        }
+        user = RequestUser(interaction.user.id, interaction=interaction)
+
+        options = difficulties[difficulty.value]['options']
+        pattern = [random.choice(options)]
+        difficulty_multiplier = difficulties[difficulty.value]['reward_multiplier']
+
+        async def button_callback(view, button_interaction: discord.Interaction, button: discord.ui.Button):
             if button_interaction.user != interaction.user:
                 await button_interaction.response.send_message("This is not your game!", ephemeral=True)
-                return this.total_score
-            if str(this.sequence[this.index]) != str(button.emoji):
-                played = 1 if this.total_score > 0 else 0  # Adds no reward if they didn't even get 1 right
-                reward = this.total_score * (10 * this.total_score ** 2) + (300 * played)
+                return view.total_score
+
+            if str(view.sequence[view.index]) != str(button.emoji):  # If the user picks the wrong button
+                played = 1 if view.total_score > 0 else 0  # Adds no reward if they didn't even get 1 right
+                reward = view.total_score * (difficulty_multiplier * view.total_score ** 2) + (300 * played)  # Score calculation
                 wrong_embed = discord.Embed(title="GAME OVER!",
                                             description=f"You got the pattern wrong :sob:",
                                             colour=discord.Color.blurple())
-                wrong_embed.add_field(name="Final Score", value=f"**{this.total_score}** colors :white_check_mark:")
+                wrong_embed.add_field(name="Final Score", value=f"**{view.total_score}** elements :white_check_mark:")
                 wrong_embed.add_field(name="Reward", value=f"**{reward:,}** bits :money_with_wings:")
                 user.update_balance(reward)
-                wrong_embed.set_author(name=f"{interaction.user.name} - SPECTRUM SEQUENCE",
+                wrong_embed.set_author(name=f"{interaction.user.name} - SEQUENCE",
                                        icon_url=interaction.user.display_avatar)
                 await button_interaction.response.edit_message(embed=wrong_embed, view=None)
                 await asyncio.sleep(0.7)
 
                 wrong_embed.set_field_at(index=0, name="Final Score",
-                                         value=f"**{this.total_score}** colors :black_large_square:")
+                                         value=f"**{view.total_score}** elements :black_large_square:")
                 await button_interaction.edit_original_response(embed=wrong_embed, view=None)
                 await asyncio.sleep(0.25)
 
-                for elem in this.sequence:  # Show pattern at the end
+                for elem in view.sequence:  # Show pattern at the end
                     wrong_embed.set_field_at(index=0, name="Final Score",
-                                             value=f"**{this.total_score}** colors {elem}")
+                                             value=f"**{view.total_score}** elements {elem}")
                     await button_interaction.edit_original_response(embed=wrong_embed, view=None)
                     await asyncio.sleep(0.7)
 
                     wrong_embed.set_field_at(index=0, name="Final Score",
-                                             value=f"**{this.total_score}** colors :black_large_square:")
+                                             value=f"**{view.total_score}** elements :black_large_square:")
                     await button_interaction.edit_original_response(embed=wrong_embed, view=None)
                     await asyncio.sleep(0.25)
 
                 wrong_embed.set_field_at(index=0, name="Final Score",
-                                         value=f"**{this.total_score}** colors :white_check_mark:")
+                                         value=f"**{view.total_score}** elements :white_check_mark:")
                 await button_interaction.edit_original_response(embed=wrong_embed, view=None)
-                return this.total_score
+                return view.total_score
 
-            this.option1.disabled = True
-            this.option2.disabled = True
-            this.option3.disabled = True
-            this.option4.disabled = True
+            for child in view.children:
+                child.disabled = True
+
             embed = discord.Embed(title="Recall the order!",
-                                  description="" + f"{this.sequence[this.index]}" * 6,
+                                  description="" + f"{view.sequence[view.index]}" * 6,
                                   color=discord.Color.blue())
-            embed.set_author(name=f"{interaction.user.name} - SPECTRUM SEQUENCE",
+            embed.set_author(name=f"{interaction.user.name} - SEQUENCE",
                              icon_url=interaction.user.display_avatar)
-            embed.set_footer(text=f"Color: {this.index + 1}")
-            await button_interaction.response.edit_message(embed=embed, view=this)
+            embed.set_footer(text=f"Element: {view.index + 1}")
+            await button_interaction.response.edit_message(embed=embed, view=view)
             await asyncio.sleep(0.05)
             embed.description = "" + (":black_large_square:" * 6)
-            if this.index + 1 == len(this.sequence):  # If element is last element in the list
-                this.total_score += 1
+            if view.index + 1 == len(view.sequence):  # If element is last element in the list
+                view.total_score += 1
                 embed = discord.Embed(title="Pattern Remembered!",
-                                      description=f"Current score: **{this.total_score}** colors :white_check_mark:\n"
+                                      description=f"Current score: **{view.total_score}** elements :white_check_mark:\n"
                                                   f"Next round starting!",
                                       color=discord.Color.green())
-                embed.set_author(name=f"{interaction.user.name} - SPECTRUM SEQUENCE",
+                embed.set_author(name=f"{interaction.user.name} - SEQUENCE",
                                  icon_url=interaction.user.display_avatar)
-                this.sequence.append(random.choice(options))
+                view.sequence.append(random.choice(options))
                 await asyncio.sleep(0.2)
                 await button_interaction.edit_original_response(embed=embed, view=None)
                 await asyncio.sleep(1)
-                await show_pattern(button_interaction, this.sequence, this.total_score)
+                await show_pattern(button_interaction, view.sequence, view.total_score)
             else:
-                this.index += 1
+                view.index += 1
                 await button_interaction.edit_original_response(embed=embed,
-                                                                view=TestButtons(this.sequence, this.index,
-                                                                                 this.total_score))
+                                                                view=SequenceGame(view.sequence, view.index,
+                                                                                  view.total_score, difficulty.value))
 
-        class TestButtons(discord.ui.View):
-            def __init__(self, sequence, index, total_score):
+        class SequenceGame(discord.ui.View):
+            def __init__(self, sequence, index, total_score, selected_difficulty: int):
+                super().__init__()
                 self.sequence: list[options] = sequence
                 self.index = index
                 self.total_score = total_score
-                super().__init__()
+                for emoji_number, emoji in enumerate(difficulties[selected_difficulty]['options'], start=1):
+                    self.add_item(SequenceButton(emoji, emoji_number))
 
-            @discord.ui.button(emoji='🟥', style=discord.ButtonStyle.grey)
-            async def option1(self, option1_interaction: discord.Interaction, button: discord.ui.Button):
-                self.total_score = await button_callback(self, option1_interaction, button)
+        class SequenceButton(discord.ui.Button):
+            def __init__(self, emoticon, buttonno):
+                self.emoticon = emoticon
+                if buttonno > 4:
+                    self.row = 2
+                else:
+                    self.row = 1
+                super().__init__(emoji=self.emoticon, style=discord.ButtonStyle.grey, row=self.row)
 
-            @discord.ui.button(emoji='🟦', style=discord.ButtonStyle.grey)
-            async def option2(self, option2_interaction: discord.Interaction, button: discord.ui.Button):
-                self.total_score = await button_callback(self, option2_interaction, button)
+            async def callback(self, button_interaction: discord.Interaction):
+                self.view.total_score = await button_callback(self.view, button_interaction, button=self)
 
-            @discord.ui.button(emoji='🟧', style=discord.ButtonStyle.grey)
-            async def option3(self, option3_interaction: discord.Interaction, button: discord.ui.Button):
-                self.total_score = await button_callback(self, option3_interaction, button)
-
-            @discord.ui.button(emoji='🟩', style=discord.ButtonStyle.grey)
-            async def option4(self, option4_interaction: discord.Interaction, button: discord.ui.Button):
-                self.total_score = await button_callback(self, option4_interaction, button)
-
+        # When game is ready to begin, send the initial embed and show the pattern
         async def show_pattern(inter: discord.Interaction, seq: list[options], tot_score: int):
+            pattern_interval = 0.4 if len(seq) < 15 else 0.2
             for element in seq:  # show each element in the pattern
                 embed = discord.Embed(title="Remember this!",
                                       description="" + (f"{element}" * 6),
                                       color=discord.Color.blue())
-                embed.set_author(name=f"{interaction.user.name} - SPECTRUM SEQUENCE",
+                embed.set_author(name=f"{interaction.user.name} - SEQUENCE",
                                  icon_url=interaction.user.display_avatar)
                 await inter.edit_original_response(embed=embed)
                 embed.description = "" + (":black_large_square:" * 6)
-                await asyncio.sleep(0.4)
+                await asyncio.sleep(pattern_interval)
 
                 await inter.edit_original_response(embed=embed)
                 await asyncio.sleep(0.05)
@@ -133,15 +155,15 @@ class SpectrumCog(commands.Cog, name='Spectrum'):
                                              description="Push the buttons in the order they are shown!\n"
                                                          "Mess up the order and the **game will end**.",
                                              color=discord.Color.blue())
-            user_ready_embed.set_author(name=f"{interaction.user.name} - SPECTRUM SEQUENCE",
+            user_ready_embed.set_author(name=f"{interaction.user.name} - SEQUENCE",
                                         icon_url=interaction.user.display_avatar)
-            await inter.edit_original_response(embed=user_ready_embed, view=TestButtons(seq, 0, tot_score))
+            await inter.edit_original_response(embed=user_ready_embed, view=SequenceGame(seq, 0, tot_score, difficulty.value))
 
         initial_ready_embed = discord.Embed(title="Welcome to Spectrum Sequence!",
                                             description="Push the buttons in the order they are shown!\n"
                                                         "Mess up the order and the **game will end**.",
                                             color=discord.Color.blue())
-        initial_ready_embed.set_author(name=f"{interaction.user.name} - SPECTRUM SEQUENCE",
+        initial_ready_embed.set_author(name=f"{interaction.user.name} - SEQUENCE",
                                        icon_url=interaction.user.display_avatar)
         await interaction.response.send_message(embed=initial_ready_embed)
         await asyncio.sleep(1.5)

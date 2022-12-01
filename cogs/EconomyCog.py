@@ -266,12 +266,21 @@ class EconomyCog(commands.Cog, name='Economy'):
 
         INDEX_START = 1
         index = INDEX_START
+        footer = None
         for user in query.objects():
             discordMemberObject = interaction.guild.get_member(user.id)
             if discordMemberObject.bot:  # Detect if the user is the bot in Discord
+                footer = f"The house has made: {user.money:,} bits"
                 continue  # Move on to next interation in the loop
             if category.value == 0:
                 category_index['circulation'] += user.money + user.bank  # Add user money and bank to circulation
+                if index == 1:  # If the user is number one
+                    role_to_add = discord.utils.get(interaction.guild.roles, name='RICHEST!')
+                    for users in interaction.guild.members:
+                        if role_to_add in users.roles:  # Remove the RICHEST! role from all other users
+                            await users.remove_roles(role_to_add)
+                    user_in_discord = discord.utils.get(interaction.guild.members, id=user.id)
+                    await user_in_discord.add_roles(role_to_add)
             rank_string = None
 
             match category.value:
@@ -312,6 +321,7 @@ class EconomyCog(commands.Cog, name='Economy'):
             description=description,
             color=category_index['color']
         )
+        top_embed.set_footer(text=footer)
         if add_circulation:
             top_embed.add_field(
                 name="Current Circulation",

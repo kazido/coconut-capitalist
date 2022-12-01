@@ -40,12 +40,12 @@ class Users(BaseModel):
 
 
 class Farms(BaseModel):
-    almond_seeds = IntegerField(constraints=[SQL("DEFAULT 25")], null=True)
-    almond = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    cacao_seeds = IntegerField(constraints=[SQL("DEFAULT 3")], null=True)
-    cacao = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    coconut_seeds = IntegerField(constraints=[SQL("DEFAULT 5")], null=True)
-    coconut = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    almonds_seeds = IntegerField(constraints=[SQL("DEFAULT 25")], null=True)
+    almonds = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    chocolates_seeds = IntegerField(constraints=[SQL("DEFAULT 3")], null=True)
+    chocolates = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    coconuts_seeds = IntegerField(constraints=[SQL("DEFAULT 5")], null=True)
+    coconuts = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     has_open_farm = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     id = ForeignKeyField(column_name='id', model=Users, primary_key=True)
     plot1 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
