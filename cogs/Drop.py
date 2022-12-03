@@ -9,7 +9,7 @@ import asyncio
 import json  # File handling imports
 from cogs.ErrorHandler import registered  # File imports
 from pyfiles.classLibrary import RequestUser
-from utils import seconds_until_tasks
+from pyfiles.utils import seconds_until_tasks
 import pyfiles.myModels as mM
 
 
