@@ -5,8 +5,8 @@ import pathlib
 from discord import app_commands
 from discord.app_commands import Choice
 from cogs.ErrorHandler import registered
-from oldClassLibrary import *
-from classLibrary import *
+from pyfiles.oldClassLibrary import *
+from pyfiles.classLibrary import *
 from cogs.Drop import DROP_AVERAGE
 
 project_files = pathlib.Path.cwd() / 'projfiles'

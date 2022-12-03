@@ -1,9 +1,9 @@
 import typing
 import asyncio
 from cogs.ErrorHandler import registered
-from classLibrary import RequestUser
-import myModels as mm
-from myModels import Users
+from pyfiles.classLibrary import RequestUser
+import pyfiles.myModels as mm
+from pyfiles.myModels import Users
 from discord.ext import commands
 from discord import app_commands
 import discord

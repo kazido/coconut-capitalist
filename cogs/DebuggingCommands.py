@@ -7,8 +7,8 @@ from discord.ext import commands
 import os
 from pyston import PystonClient, File
 import pathlib
-from classLibrary import RequestUser, axes
-import myModels as mm
+from pyfiles.classLibrary import RequestUser, axes
+import pyfiles.myModels as mm
 
 
 class EmbedModal(discord.ui.Modal, title="Embed Creation"):

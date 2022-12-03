@@ -1,6 +1,6 @@
 import typing
 import pydealer
-from classLibrary import RequestUser
+from pyfiles.classLibrary import RequestUser
 import asyncio
 from cogs.ErrorHandler import registered
 from random import randint
