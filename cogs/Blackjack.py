@@ -206,6 +206,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
             while view.dealer_hand_total < 17:
                 view.draw_card(player=False)
                 if view.dealer_hand_total > 21:
+                    view.user.update_balance(view.bet * 2)
                     dealer_bust_embed = discord.Embed(
                         title=f"Blackjack | User: {stand_interaction.user.name} - Bet: {view.bet:,}",
                         colour=discord.Color.green())
