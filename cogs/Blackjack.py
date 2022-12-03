@@ -286,8 +286,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     self.player_aces += 1
 
                 if self.player_hand_total > 21:  # If the players hand goes over 21
-                    print(self.player_aces)
-                    print(self.player_aces_subtracted)
                     if self.player_aces > self.player_aces_subtracted:  # If player has aces left to subtract
                         self.player_hand_total -= 10
                         self.player_aces_subtracted += 1
