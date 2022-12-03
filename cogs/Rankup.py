@@ -96,7 +96,7 @@ class Ranks(commands.Cog):
                         await interaction.edit_original_response(embed=purchased_embed, view=None)
                         await green_button_interaction.user.add_roles(role_to_add)
                         await green_button_interaction.user.remove_roles(role_to_remove)
-                        await user.update_tokens(-next_rank['price'])
+                        user.update_tokens(-next_rank['price'])
 
                 @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
                 async def cancel_button(self, cancel_interaction: discord.Interaction, button: discord.ui.Button):

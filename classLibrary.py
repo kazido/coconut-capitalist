@@ -45,6 +45,7 @@ class RequestUser:
         self.farm, self.created = mm.Farms.get_or_create(id=user_id)
         self.items = mm.Items.select().where(mm.Items.owner_id == user_id).objects()
         self.instance.name = self.interaction.user.name
+        self.instance.save()
         try:
             active_pet = mm.Pets.select().where((mm.Pets.owner_id == user_id) & mm.Pets.active).get()
             self.active_pet = Pet(active_pet.id)
@@ -83,8 +84,6 @@ class RequestUser:
             on_cooldown_embed.set_footer(text=f"User: {interaction.user.name}")
             await interaction.response.send_message(embed=on_cooldown_embed)
             return
-        # print("GOOD TO GO!")
-        # await interaction.response.send_message("This command is being tested right now. Sorry for the inconvenience.")
         # return
         match check_in_type:  # Match statement to check which type of cooldown we need to test
             case 'work':  # If the checkin type is work, set title and description

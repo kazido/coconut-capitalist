@@ -17,22 +17,22 @@ class BaseModel(Model):
 
 
 class Users(BaseModel):
-    area = IntegerField(constraints=[SQL("DEFAULT 0")])
     avatar = TextField(constraints=[SQL("DEFAULT 'None'")], null=True)
-    axe = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     bank = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    combat_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
-    fishing_rod = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    fishing_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
-    foraging_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
     in_game = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    mining_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
     money = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    name = TextField(null=True)
-    pickaxe = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     tokens = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    weapon = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    name = TextField(null=True)
     xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
+    combat_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
+    mining_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
+    foraging_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
+    fishing_xp = IntegerField(constraints=[SQL("DEFAULT 100")], null=True)
+    area = IntegerField(constraints=[SQL("DEFAULT 0")])
+    weapon = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    pickaxe = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    axe = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    fishing_rod = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     drops_claimed = IntegerField(constraints=[SQL("DEFAULT 0")])
 
     class Meta:
@@ -40,6 +40,7 @@ class Users(BaseModel):
 
 
 class Farms(BaseModel):
+    id = ForeignKeyField(column_name='id', model=Users, primary_key=True)
     almonds_seeds = IntegerField(constraints=[SQL("DEFAULT 25")], null=True)
     almonds = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     chocolates_seeds = IntegerField(constraints=[SQL("DEFAULT 3")], null=True)
@@ -47,7 +48,6 @@ class Farms(BaseModel):
     coconuts_seeds = IntegerField(constraints=[SQL("DEFAULT 5")], null=True)
     coconuts = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     has_open_farm = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    id = ForeignKeyField(column_name='id', model=Users, primary_key=True)
     plot1 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
     plot2 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
     plot3 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
@@ -92,8 +92,8 @@ class SqliteSequence(BaseModel):
 
 
 class Usercooldowns(BaseModel):
-    daily_used_last = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     id = ForeignKeyField(column_name='id', model=Users, primary_key=True)
+    daily_used_last = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     worked_last = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
 
     class Meta:

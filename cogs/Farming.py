@@ -11,7 +11,7 @@ import myModels as mm
 
 
 def growth_roll(crop_type):
-    growth_range = range(crops[crop_type+'s']['growth_odds'][0], crops[crop_type+'s']['growth_odds'][1])
+    growth_range = range(crops[crop_type + 's']['growth_odds'][0], crops[crop_type + 's']['growth_odds'][1])
     roll = randint(0, 100)
     if roll in growth_range:  # If the roll is in the range for the crop to grow
         return True  # Set function as true, the crop grew
@@ -84,11 +84,17 @@ class FarmingCog(commands.Cog, name="Farming"):
         lucky_farmers = []
         plots = mm.Farms.select()
         for farm in plots.objects():
-            for plot in [farm.plot1, farm.plot2, farm.plot3]:
+            for index, plot in enumerate([farm.plot1, farm.plot2, farm.plot3]):
                 if plot.endswith(' seeds'):
                     grown = growth_roll(plot[:len(plot) - 6])
+                    grown_crop = plot[:len(plot) - 6] + 's'
                     if grown:  # Applies growth role based on crop without "seeds" at the end, checks if grown
-                        plot = plot[:len(plot) - 6]
+                        if index == 0:
+                            farm.plot1 = grown_crop
+                        elif index == 1:
+                            farm.plot2 = grown_crop
+                        elif index == 2:
+                            farm.plot3 = grown_crop
                         lucky_farmers.append(farm.id.name)
             farm.save()
         guild = self.bot.get_guild(856915776345866240)  # Guild to send the farm updates in

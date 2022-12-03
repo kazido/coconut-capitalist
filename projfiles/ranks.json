@@ -1,4 +1,14 @@
 {
+  "unranked": {
+  "wage": 2500,
+    "emoji": ":white_circle:",
+    "price": 0,
+    "color": "ffffff",
+    "responses": ["You're unranked. Get to work"],
+    "description": "Unranked.",
+    "perks": [],
+    "all_perks": []
+},
   "peasant": {
     "wage": 2500,
     "emoji": ":palms_up_together:",
