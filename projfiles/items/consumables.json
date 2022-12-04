@@ -4,28 +4,32 @@
     "growth_odds": [0, 20],
     "harvest_amount": [10, 20],
     "pet_xp": 660,
-    "price": 10000
+    "price": 10000,
+    "emoji": ":apple:"
   },
   "SEED_lemon": {
     "item_name": "lemon",
     "growth_odds": [0, 10],
     "harvest_amount": [3, 5],
     "pet_xp": 5500,
-    "price": 80000
+    "price": 80000,
+    "emoji": ":lemon:"
   },
   "SEED_hot_pepper": {
     "item_name": "hot pepper",
     "growth_odds": [0, 5],
     "harvest_amount": [1, 3],
     "pet_xp": 35700,
-    "price": 500000
+    "price": 500000,
+    "emoji": ":hot_pepper:"
   },
   "SEED_coconut":{
     "item_name": "coconut",
     "growth_odds": [0, 1],
     "harvest_amount": [1, 1],
     "pet_xp": 125900,
-    "price": 1700000
+    "price": 1700000,
+    "emoji": ":coconut:"
   },
   "UPGRADE_dont_find_me":{
     "item_name" : "hello!",
