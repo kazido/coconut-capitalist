@@ -4,7 +4,7 @@ from discord import app_commands
 from discord.ext import commands
 from cogs.ErrorHandler import registered
 import json
-from classLibrary import axes
+from classLibrary import tools
 
 class ForagingCog(commands.Cog, name='Foraging'):
     """Earn foraging xp by cutting down trees. Don't forget to replant!"""
@@ -49,7 +49,7 @@ class ForagingCog(commands.Cog, name='Foraging'):
             async def heave_button(self, heave_interaction: discord.Interaction, button: discord.Button):
                 if heave_interaction.user.id != tree.user1.instance.id:
                     return
-                tree.hitpoints -= axes[tree.user1_axe]['chopping_power']
+                tree.hitpoints -= tools[tree.user1_axe]['chopping_power']
                 if tree.hitpoints <= 0:
                     await heave_interaction.response.edit_message(embed=tree.embed, view=None)
                 else:
@@ -68,7 +68,7 @@ class ForagingCog(commands.Cog, name='Foraging'):
             async def ho_button(self, ho_interaction: discord.Interaction, button: discord.Button):
                 if ho_interaction.user.id != tree.user2.instance.id:
                     return
-                tree.hitpoints -= axes[tree.user2_axe]['chopping_power']
+                tree.hitpoints -= tools[tree.user2_axe]['chopping_power']
                 if tree.hitpoints <= 0:
                     await ho_interaction.response.edit_message(embed=tree.embed, view=None)
                 else:
