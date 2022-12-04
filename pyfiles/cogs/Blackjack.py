@@ -82,11 +82,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
                                                                 f"Total: {view.player_hand_total}", inline=True)
                     hit_embed.add_field(name="Dealer's hand", value=f"{''.join(view.dealer_embed_hand)}\n"
                                                                     f"Total: {view.dealer_hand_total}", inline=True)
-                    hit_embed.add_field(name="Options", value="Click **stand** to see dealers cards and end the game\n"
-                                                              "Click **hit** draw another card to get closer to 21\n"
-                                                              "Click **fold** to give up, BUT you lose *half* of your bet\n"
-                                                              "Click **double** to *double* your bet and take *one* more card",
-                                        inline=False)
                     hit_embed.set_footer(text="You have 90 seconds to use a command")
                     await hit_interaction.response.edit_message(embed=hit_embed)
                 case 'lost':
@@ -274,12 +269,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
                                                                    f"Total: {self.player_hand_total}", inline=True)
             self.blackjack_embed.add_field(name="Dealer's hand", value=f"{''.join(self.dealer_embed_hand)}\n"
                                                                        f"Total: {self.dealer_hand_total}", inline=True)
-            self.blackjack_embed.add_field(name="Options",
-                                           value="Click **stand** to see dealers cards and end the game\n"
-                                                 "Click **hit** draw another card to get closer to 21\n"
-                                                 "Click **fold** to give up, BUT you lose *half* of your bet\n"
-                                                 "Click **double** to *double* your bet and take *one* more card",
-                                           inline=False)
             self.blackjack_embed.set_footer(text="You have 90 seconds to play")
 
         def draw_card(self, player: bool):  # Function for drawing a card and adding it to a hand
