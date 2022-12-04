@@ -54,18 +54,19 @@ class Farms(BaseModel):
     plot1 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
     plot2 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
     plot3 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
+    plots = [plot1, plot2, plot3]
 
     class Meta:
         table_name = 'farms'
 
 
+
+
 class Items(BaseModel):
     durability = IntegerField(null=True)
-    item_name = TextField(null=True)
     owner_id = IntegerField(null=True)
     quantity = IntegerField(constraints=[SQL("DEFAULT 1")], null=True)
     reference_id = IntegerField(null=True)
-    item_type = TextField(null=True)
 
     class Meta:
         table_name = 'items'
