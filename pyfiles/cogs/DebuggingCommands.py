@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 import os
 import pathlib
-from classLibrary import RequestUser, axes
+from classLibrary import RequestUser
 import myModels as mm
 
 
