@@ -45,7 +45,7 @@ class RequestUser:
         self.cooldowns, self.created = mm.Usercooldowns.get_or_create(id=user_id)
         self.farm, self.created = mm.Farms.get_or_create(id=user_id)
         self.items = mm.Items.select().where(mm.Items.owner_id == user_id).objects()
-        self.instance.name = self.interaction.user.name
+        self.instance.name = discord.utils.get(interaction.guild.members, id=user_id).display_name
         self.instance.save()
         try:
             active_pet = mm.Pets.select().where((mm.Pets.owner_id == user_id) & mm.Pets.active).get()
@@ -233,7 +233,7 @@ class Inventory:
     #     return items
 
 class Tree:
-    rare_drops = [item for item in materials_file if item.startswith("MATERIAL_TREE")]
+    rare_drops = [item for item in materials if item.startswith("MATERIAL_TREE")]
     tree_heights = [randint(20, 40), randint(40, 50), randint(50, 60), randint(90, 100)]
 
     def __init__(self, user1):
