@@ -24,12 +24,12 @@ with open(f'{ROOT_DIRECTORY}\projfiles\items\\areas.json', 'r') as areas_file:
     areas = json.load(areas_file)
 with open(f'{ROOT_DIRECTORY}\projfiles\items\\pets.json', 'r') as pets_file:
     pets = json.load(pets_file)
-with open(f'{ROOT_DIRECTORY}\projfiles\items\\axes.json', 'r') as axes_file:
-    axes = json.load(axes_file)
-with open(f'{ROOT_DIRECTORY}\projfiles\items\\treeitems.json', 'r') as treeitems_file:
-    treeitems = json.load(treeitems_file)
-with open(f'{ROOT_DIRECTORY}\projfiles\items\\crops.json', 'r') as crops_file:
-    crops = json.load(crops_file)
+with open(f'{ROOT_DIRECTORY}\projfiles\items\\tools.json', 'r') as tools_file:
+    tools = json.load(tools_file)
+with open(f'{ROOT_DIRECTORY}\projfiles\items\\materials.json', 'r') as materials_file:
+    materials = json.load(materials_file)
+with open(f'{ROOT_DIRECTORY}\projfiles\items\\consumables.json', 'r') as consumables_file:
+    consumables = json.load(consumables_file)
 
 
 class RequestUser:
@@ -233,7 +233,7 @@ class Inventory:
     #     return items
 
 class Tree:
-    rare_drops = [item for item in treeitems]
+    rare_drops = [item for item in materials_file if item.startswith("MATERIAL_TREE")]
     tree_heights = [randint(20, 40), randint(40, 50), randint(50, 60), randint(90, 100)]
 
     def __init__(self, user1):
