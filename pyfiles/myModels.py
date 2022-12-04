@@ -1,7 +1,10 @@
 from peewee import *
 import json
+import os
 
-with open('././config.json', 'r') as file:
+current = os.path.dirname(os.path.realpath(__file__))
+ROOT_DIRECTORY = os.path.dirname(current)
+with open(f'{ROOT_DIRECTORY}\config.json', 'r') as file:
     data = json.load(file)
 
 database = SqliteDatabase(database=data['sqlite_path'])

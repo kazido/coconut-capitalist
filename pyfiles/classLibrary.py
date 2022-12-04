@@ -4,30 +4,31 @@ from random import randint
 import datetime
 import numpy
 
-import pyfiles.myModels as mm
+import myModels as mm
 import json
 # Discord imports
 import discord
 # Database imports
 import peewee as pw
 # File import
-from pyfiles.myModels import database as mmdatabase
+from myModels import database as mmdatabase
+from myModels import ROOT_DIRECTORY
 # Other imports
 import randfacts
 
 """This file is used for storing classes that I use for the different aspects of the bot."""
 # Load the json file where all the rank dialogue is stored
-with open('projfiles/ranks.json', 'r') as ranks_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\items\\ranks.json', 'r') as ranks_file:
     ranks = json.load(ranks_file)
-with open('projfiles/areas.json', 'r') as areas_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\items\\areas.json', 'r') as areas_file:
     areas = json.load(areas_file)
-with open('projfiles/pets.json', 'r') as pets_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\items\\pets.json', 'r') as pets_file:
     pets = json.load(pets_file)
-with open('projfiles/items/axes.json', 'r') as axes_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\items\\axes.json', 'r') as axes_file:
     axes = json.load(axes_file)
-with open('projfiles/items/treeitems.json', 'r') as treeitems_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\items\\treeitems.json', 'r') as treeitems_file:
     treeitems = json.load(treeitems_file)
-with open('projfiles/items/crops.json', 'r') as crops_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\items\\crops.json', 'r') as crops_file:
     crops = json.load(crops_file)
 
 

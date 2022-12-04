@@ -8,9 +8,9 @@ from pytz import timezone
 import asyncio
 import json  # File handling imports
 from cogs.ErrorHandler import registered  # File imports
-from pyfiles.classLibrary import RequestUser
-from pyfiles.utils import seconds_until_tasks
-import pyfiles.myModels as mM
+from classLibrary import RequestUser
+from utils import seconds_until_tasks
+import myModels as mM
 
 
 def drop_double(amount):

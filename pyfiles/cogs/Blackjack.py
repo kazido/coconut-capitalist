@@ -1,6 +1,12 @@
 import typing
 import pydealer
-from pyfiles.classLibrary import RequestUser
+import sys
+import os
+current = os.path.dirname(os.path.realpath(__file__))
+parent = os.path.dirname(current)
+print(parent)
+sys.path.append(parent)
+from classLibrary import RequestUser
 import asyncio
 from cogs.ErrorHandler import registered
 from random import randint

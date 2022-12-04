@@ -4,13 +4,18 @@ import math
 import pathlib
 from discord import app_commands
 from discord.app_commands import Choice
+from discord.ext import commands
+import random
+from random import randint
 from cogs.ErrorHandler import registered
-from pyfiles.oldClassLibrary import *
-from pyfiles.classLibrary import *
+from classLibrary import RequestUser
 from cogs.Drop import DROP_AVERAGE
+import myModels as mm
+import peewee as pw
+import os
 
-project_files = pathlib.Path.cwd() / 'projfiles'
-with open(project_files / 'words.txt', 'r') as f:
+project_files = os.path.dirname(pathlib.Path.cwd()) + '\\projfiles'
+with open(f'{project_files}\\words.txt', 'r') as f:
     words = f.readlines()
 
 
@@ -63,7 +68,7 @@ class EconomyCog(commands.Cog, name='Economy'):
     @registered()
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.checks.cooldown(1, 60)
-    @app_commands.command(name="beg", description="Beg for some money! Must have less than 10000 bits.")
+    @app_commands.command(name="beg", description="Beg for some money! Must have less than 10,000 bits.")
     async def beg(self, interaction: discord.Interaction):
         user = RequestUser(interaction.user.id, interaction=interaction)  # Initialize user object upon request
         titles = ["Begging is for poor people...", "You're already rich!", "Really?"]  # Possible embed titles

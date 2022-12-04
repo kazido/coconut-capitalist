@@ -4,9 +4,9 @@ import sys
 import discord
 from discord.ext import commands
 from discord import app_commands
-import pyfiles.myModels as mm
+import myModels as mm
 from discord.utils import get
-from pyfiles.classLibrary import RequestUser
+from classLibrary import RequestUser
 
 import datetime
 

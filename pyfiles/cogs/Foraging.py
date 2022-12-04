@@ -1,13 +1,10 @@
-from pyfiles.classLibrary import Tree, RequestUser
+from classLibrary import Tree, RequestUser
 import discord
 from discord import app_commands
 from discord.ext import commands
 from cogs.ErrorHandler import registered
 import json
-
-with open('projfiles/items/axes.json', 'r') as file:
-    axes = json.load(file)
-
+from classLibrary import axes
 
 class ForagingCog(commands.Cog, name='Foraging'):
     """Earn foraging xp by cutting down trees. Don't forget to replant!"""

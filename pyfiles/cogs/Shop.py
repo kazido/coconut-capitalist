@@ -1,5 +1,5 @@
 from cogs.ErrorHandler import registered
-from pyfiles.oldClassLibrary import *
+from oldClassLibrary import *
 
 
 class ShopCog(commands.Cog, name='Shop'):

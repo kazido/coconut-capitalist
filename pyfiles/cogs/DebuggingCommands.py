@@ -5,10 +5,9 @@ from discord import app_commands
 import discord
 from discord.ext import commands
 import os
-from pyston import PystonClient, File
 import pathlib
-from pyfiles.classLibrary import RequestUser, axes
-import pyfiles.myModels as mm
+from classLibrary import RequestUser, axes
+import myModels as mm
 
 
 class EmbedModal(discord.ui.Modal, title="Embed Creation"):
@@ -124,21 +123,21 @@ class DebuggingCommands(commands.Cog):
     async def clear(self, ctx, amount):
         await ctx.channel.purge(limit=int(amount) + 1)
 
-    # A command for evaluating python code in discord
-    @commands.command()
-    async def eval(self, ctx, *, args):
-        client = PystonClient()
-        if str(args.startswith('`')):
-            args = str(args.strip('`'))
-        else:
-            await ctx.send("Please format your code with ``` at the beginning and end.")
-        output = await client.execute("python", [File(args)])
-        embed = discord.Embed(
-            title=f"Evaluation for: {ctx.author.name}",
-            description=f"```{args}\n\nResults in:\n{output}```",
-            color=discord.Color.purple()
-        )
-        await ctx.send(embed=embed)
+    # # A command for evaluating python code in discord
+    # @commands.command()
+    # async def eval(self, ctx, *, args):
+    #     client = PystonClient()
+    #     if str(args.startswith('`')):
+    #         args = str(args.strip('`'))
+    #     else:
+    #         await ctx.send("Please format your code with ``` at the beginning and end.")
+    #     output = await client.execute("python", [File(args)])
+    #     embed = discord.Embed(
+    #         title=f"Evaluation for: {ctx.author.name}",
+    #         description=f"```{args}\n\nResults in:\n{output}```",
+    #         color=discord.Color.purple()
+    #     )
+    #     await ctx.send(embed=embed)
 
     # A command for sending embeds
     @app_commands.command(name="embed", description="Create an embed.")

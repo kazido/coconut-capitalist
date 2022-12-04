@@ -1,8 +1,8 @@
 import asyncio
 
-import pyfiles.myModels as mm
+import myModels as mm
 from cogs.ErrorHandler import registered, own_pet
-from pyfiles.classLibrary import RequestUser
+from classLibrary import RequestUser
 import pathlib
 
 # discord imports
@@ -11,8 +11,10 @@ from discord.ext import commands
 from discord import app_commands
 import random
 import json
+import os
 
-with open('projfiles/pets.json', 'r') as file:
+project_files = os.path.dirname(pathlib.Path.cwd()) + '\\projfiles'
+with open(f'{project_files}\\items\\pets.json', 'r') as file:
     pets = json.load(file)
 
 embed_title = "Welcome to the pet shop!"

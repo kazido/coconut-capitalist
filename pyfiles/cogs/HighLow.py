@@ -1,9 +1,9 @@
 import typing
 import asyncio
 from cogs.ErrorHandler import registered
-from pyfiles.classLibrary import RequestUser
-import pyfiles.myModels as mm
-from pyfiles.myModels import Users
+from classLibrary import RequestUser
+import myModels as mm
+from myModels import Users
 from discord.ext import commands
 from discord import app_commands
 import discord
@@ -11,7 +11,7 @@ from random import randint
 
 
 async def game_results(interaction: discord.Interaction, user: RequestUser, roll: int,
-                       multiplier: int, bet: int, win: [0, 1]):
+                       multiplier: int, bet: int, win):
     embed = None
     if win == 0:
         user_balance_after_loss = user.instance.money
@@ -69,8 +69,19 @@ class HighLow(commands.Cog, name="HighLow"):
 
         if bet == 'max':
             bet = user.instance.money
-        else:
+        try:
             bet = int(bet)
+        except ValueError:
+            if type(bet) == str:
+                invalid_input = discord.Embed(
+                title="Invalid input!",
+                description="You can either input an integer or 'max' as your bet.",
+                color=discord.Color.red()
+            )
+            await interaction.response.send_message(embed=invalid_input)
+            await asyncio.sleep(4)
+            await interaction.delete_original_response()
+            return
 
         bet_checks_failed_message, passed = user.bet_checks(bet)
 

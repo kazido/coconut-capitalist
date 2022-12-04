@@ -54,8 +54,7 @@ async def sync(ctx):
 async def reload(ctx):
     cogs = []
     options = {}
-    path = project_root
-    for cog in os.listdir(path=fr"{project_root}\cogs"):
+    for cog in os.listdir(path=fr"{project_root}\pyfiles\cogs"):
         if cog.endswith('.py'):
             if cog.startswith('__init__'):
                 pass
@@ -76,9 +75,7 @@ async def reload(ctx):
         async def selection(self, interaction: discord.Interaction, select: discord.ui.Select):
             if interaction.user != ctx.author:
                 return
-            path = r"C:\Users\beege\PycharmProjects\EconomyDiscordBot\cogs"
-            await bot.reload_extension(f"{path}.{select.values[0][:-3]}")
-            last_cog_name = select.values[0][:-3]
+            await bot.reload_extension(f"cogs.{select.values[0][:-3]}")
             await interaction.response.edit_message(
                 content=f"{select.values[0][:-3]} has successfully been reloaded.",
                 view=None)
@@ -93,8 +90,8 @@ async def reload(ctx):
 @bot.command(hidden=True)
 async def unload(ctx, cog):
     try:
-        path = r"C:\Users\beege\PycharmProjects\EconomyDiscordBot\cogs"
-        await bot.unload_extension(f"{path}.{cog}")
+        path = r"C:\Users\beege\PycharmProjects\EconomyDiscordBot\pyfiles\cogs"
+        await bot.unload_extension(f"cogs.{cog}")
         await ctx.send(f"{cog} has successfully been unloaded.")
     except commands.ExtensionNotFound:
         await ctx.send(f"{cog} could not be located.")
@@ -106,8 +103,8 @@ async def unload(ctx, cog):
 @bot.command(hidden=True)
 async def load(ctx, cog):
     try:
-        path = r"C:\Users\beege\PycharmProjects\EconomyDiscordBot\cogs"
-        await bot.load_extension(f"{path}.{cog}")
+        path = r"C:\Users\beege\PycharmProjects\EconomyDiscordBot\pyfiles\cogs"
+        await bot.load_extension(f"cogs.{cog}")
         await ctx.send(f"{cog} has been successfully loaded.")
     except commands.ExtensionAlreadyLoaded:
         await ctx.send(f"{cog} is already loaded.")
@@ -127,11 +124,10 @@ async def on_ready():
 
 async def main():
     async def load_extensions():  # Function for loading cogs upon bot.run
-        path = r"C:\Users\beege\PycharmProjects\EconomyDiscordBot\cogs"
+        path = r"C:\Users\beege\PycharmProjects\EconomyDiscordBot\pyfiles\cogs"
         for filename in os.listdir(path=path):
             if filename.endswith('.py'):
-                await bot.load_extension(f'{filename[:-3]}')
-                print(f"Loaded {filename[:-3]}")
+                await bot.load_extension(f'cogs.{filename[:-3]}')
 
     async with bot:
         await load_extensions()

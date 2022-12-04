@@ -1,5 +1,5 @@
 from cogs.ErrorHandler import registered
-from pyfiles.oldClassLibrary import *
+from oldClassLibrary import *
 
 class InventoryCog(commands.Cog, name='Inventory'):
     """Check out all the useful items you own."""
