@@ -54,7 +54,7 @@ class Farms(BaseModel):
     plot1 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
     plot2 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
     plot3 = TextField(constraints=[SQL("DEFAULT 'Empty!'")], null=True)
-    plots = [plot1, plot2, plot3]
+    plots = ['plot1', 'plot2', 'plot3']
 
     class Meta:
         table_name = 'farms'
