@@ -1,34 +1,38 @@
 {
-  "1": {
+  "AXE_basic": {
     "item_name": "basic axe",
     "buy_price": 10000,
     "sell_value": 8000,
-    "tradeble": 1,
+    "trade": 1,
     "rarity": "common",
-    "chopping_power": 1
+    "chopping_power": 1,
+    "durability": -1
   },
-  "2": {
+  "AXE_reinforced": {
     "item_name": "reinforced axe",
     "buy_price": 50000,
     "sell_value": 42000,
-    "tradeble": 1,
+    "trade": 1,
     "rarity": "uncommon",
-    "chopping_power": 3
+    "chopping_power": 3,
+    "durability": -1
   },
-  "3": {
+  "AXE_steel": {
     "item_name": "steel axe",
     "buy_price": 100000,
     "sell_value": 80000,
-    "tradeble": 1,
+    "trade": 1,
     "rarity": "rare",
-    "chopping_power": 6
+    "chopping_power": 6,
+    "durability": -1
   },
-  "4": {
+  "AXE_dadschainsaw": {
     "item_name": "dad's chainsaw",
     "buy_price": 1000000,
     "sell_value": 800000,
-    "tradeble": 1,
+    "trade": 1,
     "rarity": "legendary",
-    "chopping_power": 25
+    "chopping_power": 25,
+    "durability": -1
   }
 }

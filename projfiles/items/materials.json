@@ -1,0 +1,10 @@
+{
+  "MATERIAL_finebark": {
+    "item_name": "fine bark",
+    "buy_price": 0,
+    "sell_value": 30000,
+    "trade": 0,
+    "rarity": "super rare",
+    "craft_into": {}
+  }
+}

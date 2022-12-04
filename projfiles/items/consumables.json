@@ -1,17 +1,17 @@
 {
-  "almonds": {
+  "SEED_almond": {
     "growth_odds": [0, 10],
-    "xp": 600,
+    "pet_xp": 600,
     "price": 10000
   },
-  "coconuts": {
+  "SEED_coconut": {
     "growth_odds": [0, 5],
-    "xp": 5000,
+    "pet_xp": 5000,
     "price": 80000
   },
-  "chocolates": {
+  "SEED_chocolate": {
     "growth_odds": [0, 1],
-    "xp": 30000,
+    "pet_xp": 30000,
     "price": 500000
   }
 }
