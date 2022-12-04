@@ -18,6 +18,13 @@ class ForagingCog(commands.Cog, name='Foraging'):
     @app_commands.command(name='chop', description="Grab a buddy and chop down a tree.")
     async def chop(self, interaction: discord.Interaction):
         user1 = RequestUser(interaction.user.id, interaction=interaction)
+        if user1.instance.axe == "None":
+            need_axe_embed = discord.Embed(
+                title="You don't have an axe!",
+                description="You need an axe to chop trees. Get one at the shop.",
+                color=discord.Color.red())
+            await interaction.response.send_message(embed=need_axe_embed)
+            return
         tree = Tree(user1=user1)
         needs_join_embed = discord.Embed(
             title=f"You come across a **{tree.height}ft** tree. :evergreen_tree:",
@@ -40,9 +47,9 @@ class ForagingCog(commands.Cog, name='Foraging'):
 
             @discord.ui.button(label=f"Heave!", style=discord.ButtonStyle.green, disabled=False)
             async def heave_button(self, heave_interaction: discord.Interaction, button: discord.Button):
-                if heave_interaction.user != tree.user1:
+                if heave_interaction.user.id != tree.user1.instance.id:
                     return
-                tree.hitpoints -= tree.user1_chopping_power
+                tree.hitpoints -= axes[tree.user1_axe]['chopping_power']
                 if tree.hitpoints <= 0:
                     await heave_interaction.response.edit_message(embed=tree.embed, view=None)
                 else:
@@ -59,9 +66,9 @@ class ForagingCog(commands.Cog, name='Foraging'):
 
             @discord.ui.button(label=f"Ho!", style=discord.ButtonStyle.grey, disabled=True)
             async def ho_button(self, ho_interaction: discord.Interaction, button: discord.Button):
-                if ho_interaction.user != tree.user2:
+                if ho_interaction.user.id != tree.user2.instance.id:
                     return
-                tree.hitpoints -= tree.user2_chopping_power
+                tree.hitpoints -= axes[tree.user2_axe]['chopping_power']
                 if tree.hitpoints <= 0:
                     await ho_interaction.response.edit_message(embed=tree.embed, view=None)
                 else:
@@ -83,7 +90,7 @@ class ForagingCog(commands.Cog, name='Foraging'):
                     description="Maybe a friendly bear will help you! JK.",
                     color=discord.Color.red()
                 )
-                await interaction.response.edit_message(embed=nobody_joined_embed, view=None)
+                await interaction.edit_original_response(embed=nobody_joined_embed, view=None)
 
             def __init__(self, *, timeout=1800):
                 super().__init__(timeout=timeout)
@@ -93,8 +100,15 @@ class ForagingCog(commands.Cog, name='Foraging'):
                 if join_interaction.user == interaction.user:
                     return
                 user2 = RequestUser(join_interaction.user.id, interaction=join_interaction)
+                if user2.instance.axe == 'None':
+                    need_axe_embed = discord.Embed(
+                        title="You don't have an axe!",
+                        description="You need an axe to chop trees. Get one at the shop.",
+                        color=discord.Color.red())
+                    await join_interaction.response.send_message(embed=need_axe_embed, ephemeral=True)
+                    return
                 tree.user2 = user2
-                tree.user2_chopping_power = axes[tree.user2.instance.axe.reference_id]['chopping_power']
+                tree.user2_axe = tree.user2.instance.axe
                 chop_embed = discord.Embed(
                     title=f"{tree.user1.instance.name} and {tree.user2.instance.name} are chopping a **{tree.height}ft** tree.",
                     description=f"*:arrow_right: {tree.user1.instance.name} must heave!*\n**Tree Health: {tree.hitpoints}**",
