@@ -190,6 +190,48 @@ class Pet:
         return new_name
 
 
+class Inventory:
+    def __init__(self, interaction: discord.Interaction):
+        self.interaction = interaction
+
+    def add_item(self, reference_id, reference_dict: dict, quantity: int = 1):
+        exisiting_item = mm.Items.find_one(owner_id=self.interaction.user.id, item_name=reference_dict[reference_id]['item_name'])
+        if exisiting_item:
+            exisiting_item.quantity += quantity
+            exisiting_item.save()
+        else:
+            mm.Items.insert(durability=reference_dict[reference_id]['durability'], 
+                            item_name=reference_dict[reference_id]['item_name'], 
+                            owner_id=self.interaction.user.id, quantity=quantity, reference_id=reference_id)
+
+    # def remove_item(self, item, quantity=None):
+    #     if isinstance(quantity, int):
+    #         check_remaining_items_statement = """SELECT quantity FROM items WHERE owner_id = ? and item_name = ?"""
+    #         self.cursor.execute(check_remaining_items_statement, [self.user_id, item.name])
+    #         remaining_items = self.cursor.fetchall()[0][0]
+    #         if remaining_items - quantity >= 0:
+    #             delete_item_statement = """DELETE FROM items WHERE owner_id = ? and item_name = ?"""
+    #             self.cursor.execute(delete_item_statement, [quantity, self.user_id, item.name])
+    #         else:
+    #             update_quantity_statement = """UPDATE items SET quantity = quantity - ? WHERE owner_id = ? and item_name = ?"""
+    #             self.cursor.execute(update_quantity_statement, [quantity, self.user_id, item.name])
+    #         self.sqliteConnection.commit()
+    #     else:
+    #         delete_item_statement = """DELETE FROM items WHERE owner_id = ? and item_name = ?"""
+    #         self.cursor.execute(delete_item_statement, [quantity, self.user_id, item.name])
+    #         self.sqliteConnection.commit()
+
+    # def get(self, item=None):
+    #     if item:
+    #         find_item_statement = """SELECT * FROM items WHERE owner_id = ? and item_name = ?"""
+    #         self.cursor.execute(find_item_statement, [self.user_id, item])
+    #         items = self.cursor.fetchall()[0][0]
+    #     else:
+    #         find_all_items_statement = """SELECT * FROM items WHERE owner_id = ?"""
+    #         self.cursor.execute(find_all_items_statement, [self.user_id])
+    #         items = self.cursor.fetchall()
+    #     return items
+
 class Tree:
     rare_drops = [item for item in treeitems]
     tree_heights = [randint(20, 40), randint(40, 50), randint(50, 60), randint(90, 100)]
@@ -200,8 +242,8 @@ class Tree:
         self.rare_drops = Tree.rare_drops
         self.embed = None
         self.user1, self.user2 = user1, None
-        self.user1_chopping_power = axes[self.user1.instance.axe.reference_id]['chopping_power']
-        self.user2_chopping_power = None
+        self.user1_axe = self.user1.instance.axe
+        self.user2_axe = None
 
     @property
     def hitpoints(self):
@@ -218,7 +260,7 @@ class Tree:
     def on_chopped_down(self):
         chopped_embed = discord.Embed(
             title="Tree chopped! :evergreen_tree:",
-            description=f"{self.user1.name} and {self.user2.name} "
+            description=f"{self.user1.instance.name} and {self.user2.instance.name} "
                         f"successfully chopped down a **{self.height}ft** tree!",
             color=0x573a26
         )
