@@ -1,17 +1,30 @@
 {
-  "SEED_almond": {
-    "growth_odds": [0, 10],
-    "pet_xp": 600,
+  "SEED_apple": {
+    "item_name": "apple",
+    "growth_odds": [0, 20],
+    "pet_xp": 660,
     "price": 10000
   },
-  "SEED_coconut": {
-    "growth_odds": [0, 5],
-    "pet_xp": 5000,
+  "SEED_lemon": {
+    "item_name": "lemon",
+    "growth_odds": [0, 10],
+    "pet_xp": 5500,
     "price": 80000
   },
-  "SEED_chocolate": {
-    "growth_odds": [0, 1],
-    "pet_xp": 30000,
+  "SEED_hot_pepper": {
+    "item_name": "hot pepper",
+    "growth_odds": [0, 5],
+    "pet_xp": 35700,
     "price": 500000
+  },
+  "SEED_coconut":{
+    "item_name": "coconut",
+    "growth_odds": [0, 1],
+    "pet_xp": 125900,
+    "price": 1700000
+  },
+  "UPGRADE_dont_find_me":{
+    "item_name" : "hello!",
+    "price": 10000000
   }
 }
