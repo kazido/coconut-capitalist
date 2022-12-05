@@ -7,7 +7,8 @@
     ],
     "pet_xp": 660,
     "sell_price": 15000,
-    "emoji": ":apple:"
+    "emoji": ":apple:",
+    "grows_from": "SEED_APPLE"
   },
   "SEED_APPLE": {
     "item_name": "apple seeds",
@@ -26,7 +27,8 @@
     ],
     "pet_xp": 5500,
     "sell_price": 100000,
-    "emoji": ":lemon:"
+    "emoji": ":lemon:",
+    "grows_from": "SEED_LEMON"
   },
   "SEED_LEMON": {
     "item_name": "lemon seeds",
@@ -45,7 +47,8 @@
     ],
     "pet_xp": 35700,
     "sell_price": 570000,
-    "emoji": ":hot_pepper:"
+    "emoji": ":hot_pepper:",
+    "grows_from": "SEED_HOT_PEPPER"
   },
   "SEED_HOT_PEPPER": {
     "item_name": "hot pepper seeds",
@@ -64,7 +67,8 @@
     ],
     "pet_xp": 125900,
     "sell_price": 2000000,
-    "emoji": ":coconut:"
+    "emoji": ":coconut:",
+    "grows_from": "SEED_COCONUT"
   },
   "SEED_COCONUT": {
     "item_name": "coconut seeds",
