@@ -255,7 +255,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 super().__init__(timeout=timeout)
                 self.plant_embed = discord.Embed(
                     title=f"Plant crops to sell or to feed your pets",
-                    description=f"You can plant various kinds of crops\n\
+                    description=f"You can plant various kinds of crops \
                         which you can *sell* for a **profit** or *feed* to your **pets**.",
                     color=0x8db046)
                 self.plant_embed.set_author(name=f"{interaction.user.name} - Planting",
