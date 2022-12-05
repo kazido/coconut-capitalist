@@ -47,8 +47,14 @@ def plot_button_refresh(user_farm_dict: dict):
 
 
 def harvest(button_info, button, user: discord.Member):
-    harvested_crops = randint(consumables[button_info['crop']]['harvest_amount'][0],
-                              consumables[button_info['crop']]['harvest_amount'][1])
+    if button_info['crop'] == 'CROP_COCONUT':
+        harvested_crops = 1
+        double = randint(1, 100)
+        if double == 5:
+            harvested_crops = 2
+    else:
+        harvested_crops = randint(consumables[button_info['crop']]['harvest_amount'][0],
+                                  consumables[button_info['crop']]['harvest_amount'][1])
     crop_in_db, created = mm.Items.get_or_create(owner_id=user.id, reference_id=button_info['crop'],
                                         defaults={'durability': None, 'quantity': harvested_crops})
     crop_in_db.quantity += harvested_crops
