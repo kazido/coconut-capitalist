@@ -129,7 +129,7 @@ class FarmingCog(commands.Cog, name="Farming"):
             await asyncio.sleep(5)
             await interaction.delete_original_response()
             return
-        # users_farm.has_open_farm = True  # so users cannot double harvest crops
+        users_farm.has_open_farm = True  # so users cannot double harvest crops
         users_farm.save()
 
         class Farm(discord.ui.View):
