@@ -220,18 +220,14 @@ class FarmingCog(commands.Cog, name="Farming"):
                                            icon_url=interaction.user.display_avatar)
                 for key, value in consumables.items():
                     if key.startswith('CROP'):
-                        try:
-                            crop = mm.Items.get(
-                                mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == key)
+                        crop_quantity = 0
+                        seeds_quantity = 0
+                        crop = mm.Items.get_or_none(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == key)
+                        if crop:
                             crop_quantity = crop.quantity
-                        except mm.DoesNotExist:
-                            crop_quantity = 0
-                        try:
-                            seed = mm.Items.get(
-                                mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == value['grows_from'])
+                        seed = mm.Items.get_or_none(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == value['grows_from'])
+                        if seed:
                             seeds_quantity = seed.quantity
-                        except mm.DoesNotExist:
-                            seeds_quantity = 0
                         # self.barn_embed.description += f"\n{value['emoji']} \u200b **{crop_quantity:,}** {value['item_name']}s \
                         #     :seedling: \u200b **{seeds_quantity:,}** seeds"
                         self.barn_embed.add_field(name=f"{value['item_name'].capitalize()}",
@@ -275,11 +271,10 @@ class FarmingCog(commands.Cog, name="Farming"):
                 else:
                     for key in consumables.keys():
                         if key.startswith('SEED'):
-                            try:
-                                seeds = mm.Items.get(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == key)
+                            seeds_quantity = 0
+                            seeds = mm.Items.get_or_none(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == key)
+                            if seeds:
                                 seeds_quantity = seeds.quantity
-                            except mm.DoesNotExist:
-                                seeds_quantity = 0
                             if seeds_quantity == 0:
                                 self.add_item(PlantButton(
                                     discord.ButtonStyle.grey, True, label='No seeds'))
