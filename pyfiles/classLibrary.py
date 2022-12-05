@@ -91,11 +91,11 @@ class RequestUser:
                 wage = ranks[self.rank]['wage']
                 title = random.choice(ranks[self.rank]['responses'])
                 description = f" :money_with_wings:" \
-                              f" **+{'{:,}'.format(wage)} bits** ({self.rank.capitalize()} wage)"
+                              f" **+{wage:,} bits** ({self.rank.capitalize()} wage)"
                 if self.active_pet:
                     work_multiplier = pets[self.active_pet.instance.rarity]['bonuses']['work']
                     description += f"\n:money_with_wings: " \
-                                   f"**+{'{:,}'.format(int(wage * work_multiplier))} bits** (pet bonus)"
+                                   f"**+{int(wage * work_multiplier):,} bits** (pet bonus)"
                     self.update_balance(wage + wage * work_multiplier)
                 else:
                     self.update_balance(wage)
@@ -117,12 +117,16 @@ class RequestUser:
         check_in_embed.set_author(name=f"{interaction.user.name} - "
                                        f"{check_in_type}", icon_url=interaction.user.display_avatar)
         if check_in_type == 'daily':
+            bank_interest_rate = .005
             check_in_embed.add_field(name="Your Tokens",
-                                     value=f"You have **{'{:,}'.format(self.instance.tokens)}** tokens")
+                                     value=f"You have **{self.instance.tokens:,}** tokens")
+            check_in_embed.add_field(name="Bank Interest",
+                                     value=f"You recieved **{int(self.instance.bank * bank_interest_rate):,}** bits in *interest*")
+            self.update_balance(amount=self.instance.bank * bank_interest_rate, bank=True)
             check_in_embed.add_field(name=f"Random Fact", value=f'{randfacts.get_fact()}', inline=False)
         elif check_in_type == 'work':
             check_in_embed.add_field(name="Your Bits",
-                                     value=f"You have **{'{:,}'.format(int(self.instance.money))}** bits in your purse")
+                                     value=f"You have **{int(self.instance.money):,}** bits in your purse")
         check_in_embed.set_footer(text="Increase your profits by unlocking better pets and ranking up.")
         await interaction.response.send_message(embed=check_in_embed)
         self.cooldowns.save()
