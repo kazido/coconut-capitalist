@@ -26,7 +26,7 @@
       5
     ],
     "pet_xp": 5500,
-    "sell_price": 100000,
+    "sell_price": 30000,
     "emoji": ":lemon:",
     "grows_from": "SEED_LEMON"
   },
@@ -46,7 +46,7 @@
       3
     ],
     "pet_xp": 35700,
-    "sell_price": 600000,
+    "sell_price": 300000,
     "emoji": ":hot_pepper:",
     "grows_from": "SEED_HOT_PEPPER"
   },
