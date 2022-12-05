@@ -3,6 +3,7 @@ import random
 from random import randint
 import datetime
 import numpy
+import math
 
 import myModels as mm
 import json
@@ -117,7 +118,7 @@ class RequestUser:
         check_in_embed.set_author(name=f"{interaction.user.name} - "
                                        f"{check_in_type}", icon_url=interaction.user.display_avatar)
         if check_in_type == 'daily':
-            bank_interest_rate = .005
+            bank_interest_rate = 0.003+0.027*(math.e**(-(self.instance.bank/20_000_000)))
             check_in_embed.add_field(name="Your Tokens",
                                      value=f"You have **{self.instance.tokens:,}** tokens")
             check_in_embed.add_field(name="Bank Interest",
