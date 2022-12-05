@@ -1,8 +1,8 @@
 {
   "TOOL_AXE_basic": {
     "item_name": "basic axe",
-    "price": 10000,
-    "sell_price": 8000,
+    "price": 50000,
+    "sell_price": 42000,
     "trade": 1,
     "rarity": "common",
     "chopping_power": 1,
@@ -10,8 +10,8 @@
   },
   "TOOL_AXE_reinforced": {
     "item_name": "reinforced axe",
-    "price": 50000,
-    "sell_price": 42000,
+    "price": 150000,
+    "sell_price": 135000,
     "trade": 1,
     "rarity": "uncommon",
     "chopping_power": 3,
@@ -19,17 +19,17 @@
   },
   "TOOL_AXE_steel": {
     "item_name": "steel axe",
-    "price": 100000,
-    "sell_price": 80000,
+    "price": 1000.000,
+    "sell_price": 800000,
     "trade": 1,
     "rarity": "rare",
-    "chopping_power": 6,
+    "chopping_power": 10,
     "durability": -1
   },
   "TOOL_AXE_dadschainsaw": {
     "item_name": "dad's chainsaw",
-    "price": 1000000,
-    "sell_price": 800000,
+    "price": 50000000,
+    "sell_price": 45000000,
     "trade": 1,
     "rarity": "legendary",
     "chopping_power": 25,
