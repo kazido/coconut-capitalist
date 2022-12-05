@@ -1,6 +1,7 @@
 from cogs.ErrorHandler import registered
 from classLibrary import RequestUser, Inventory
 from classLibrary import tools, consumables
+from utils import SwitchButton
 from discord.ext import commands
 from discord import app_commands
 import discord
@@ -17,155 +18,149 @@ class ShopCog(commands.Cog, name='Shop'):
     @app_commands.guilds(977351545966432306, 856915776345866240)
     @app_commands.command(name="shop", description="Buy helpful items!")
     async def shop(self, interaction: discord.Interaction):
-        user = RequestUser(interaction.user.id, interaction=interaction) # User information
+        user = RequestUser(interaction.user.id, interaction=interaction)  # User information
         inventory = Inventory(interaction)
         
-        menu_page = discord.Embed(
-            title="Shop Select",
-            description="Choose which section you would like to shop from!",
-            color=discord.Color.teal()
-        )
+        def add_button(view, parent_dict, item_ref_id):
+            user_balance = user.instance.money
+            label = parent_dict[item_ref_id]['item_name'].capitalize()
+            if item_ref_id.startswith('TOOL_') and inventory.get(item_ref_id):
+                style = discord.ButtonStyle.grey
+                disabled = True
+            elif user_balance >= parent_dict[item_ref_id]['price']:
+                style = discord.ButtonStyle.green
+                disabled = False
+            else:
+                style = discord.ButtonStyle.grey
+                disabled = True
+                
+            new_button = PurchaseItemButton(item_ref_id, parent_dict, label=label, button_disabled=disabled, button_style=style)
+            view.add_item(new_button)
 
         # Class for subclassing buttons for purchasing items
-        # class ButtonCreation(discord.ui.Button):
-        #     def __init__(self, ctx, label, style, custom_id, disabled, item, shop_view):
-        #         super().__init__(label=label, style=style, custom_id=custom_id, disabled=disabled)
-        #         self.ctx = ctx
-        #         self.item = item
-        #         self.shop_view = shop_view
+        class PurchaseItemButton(discord.ui.Button):
+            def __init__(self, item_ref_id, parent_dict, label, button_disabled, button_style):
+                if item_ref_id.startswith('TOOL_'):
+                    item_exists = mm.Items.get_or_none(owner_id=interaction.user.id, reference_id=item_ref_id)
+                    if item_exists:
+                        self.button_label = 'Out of Stock'
+                        self.button_emoji = '🚫'
+                    else:
+                        self.button_label = parent_dict[item_ref_id]['item_name']
+                        self.button_emoji = None
+                elif item_ref_id.startswith(('CROP', 'SEED')):
+                    self.button_label = parent_dict[item_ref_id]['item_name']
+                    self.button_emoji = parent_dict[parent_dict[item_ref_id]['grows_into']]['emoji']
+                self.item_ref_id = item_ref_id
+                self.parent_dict = parent_dict
+                if label:
+                    self.button_label = label
+                else:
+                    self.button_label = self.parent_dict[self.item_ref_id]['item_name']
+                super().__init__(label=self.button_label,
+                                 style=button_style, disabled=button_disabled)
 
-        #     async def callback(self, button_interaction):
-        #         if button_interaction.user != interaction.user:
-        #             return
-        #         # Add the item to the players inventory, subtract the price of the item from their balance, display purchased embed
-        #         if self.item.name.endswith('seed'):
-        #             user_farm = mm.Farms.select().where(id=interaction.user.id)
-        #             if self.item:
-        #         else:
-        #             await inventory.add_item(self.item, 1)
-        #         await user.update_balance(-self.item.price)
-        #         new_balance = await user.check_balance('bits')
-        #         for x in self.shop_view.children:
-        #             if x.label == "Go back":
-        #                 pass
-        #             else:
-        #                 if x.item not in seeds:
-        #                     if await inventory.get(x.item.name):
-        #                         x.style = discord.ButtonStyle.grey
-        #                         x.label = "Owned"
-        #                         x.disabled = True
-        #                 if x.item.price > new_balance:
-        #                     x.disabled = True
-        #                     x.style = discord.ButtonStyle.grey
-        #         await interaction.response.edit_message(view=self.shop_view)
+            async def callback(self, purchase_interaction: discord.Interaction):
+                if purchase_interaction.user != interaction.user:
+                    return
+                await purchase_interaction.response.send_message("This isn't finished yet.", ephemeral=True)
+            
+                # Add the item to the players inventory, subtract the price of the item from their balance, display purchased embed
+                # item_price = self.parent_dict[self.item_ref_id]['price']
+                # await user.update_balance(-item_price)
 
-        # class GoBackButton(discord.ui.Button):
-        #     def __init__(self):
-        #         super().__init__(label='Go back', style=discord.ButtonStyle.blurple, row=2)
-
-        #     async def callback(self, go_back_interaction):
-        #         if interaction.user != go_back_interaction.user:
-        #             return
-        #         await interaction.edit_original_response(embed=menu_page, view=ShopSectionSelect())
-
-        # # Function to add all items as buttons to each page
-        # buttons = {}
-
-        # async def add_buttons(view, items):
-        #     balance = await user.check_balance('bits')
-        #     for x in items:
-        #         label = x.name.replace('_', ' ')
-        #         if items != seeds:
-        #             if await inventory.get(x.name):
-        #                 style = discord.ButtonStyle.grey
-        #                 label = "Owned"
-        #                 disabled = True
-        #             else:
-        #                 if balance >= x.price:
-        #                     style = discord.ButtonStyle.green
-        #                     disabled = False
-        #                 else:
-        #                     style = discord.ButtonStyle.grey
-        #                     disabled = True
-        #         else:
-        #             if balance >= x.price:
-        #                 style = discord.ButtonStyle.green
-        #                 disabled = False
-        #             else:
-        #                 style = discord.ButtonStyle.grey
-        #                 disabled = True
-        #         buttons[x.name] = ButtonCreation(ctx, label, style, x.name, disabled, item=x, shop_view=view)
-        #         view.add_item(buttons[x.name])
-        #     view.add_item(go_back_button)
-
-        # CLASSES FOR EACH SHOP PAGE
-        class ToolSelection(discord.ui.View):
+        # View that contains the Tools Shop
+        class ToolShopView(discord.ui.View):
             def __init__(self, *, timeout=180):
                 super().__init__(timeout=timeout)
-                self.tools_embed = discord.Embed(title="Shop for Tools!",
-                                        description="Buy some tools that will allow you to dig, mine, or fish!\n*They're worth it, I promise.*",
-                                        color=discord.Color.blue())
+                self.view_embed = discord.Embed(title="Shop for Tools!",
+                                                 description="Buy some tools that will allow you to dig, mine, or fish!\n*They're worth it, I promise.*",
+                                                 color=discord.Color.blue())
                 for tool in tools:
-                    self.tools_embed.add_field(name=tools[tool]['item_name'], value=f"{tools[tool]['buy_price']:,}")
-            
+                    self.view_embed.add_field(name=tools[tool]['item_name'].capitalize(), value=f"{tools[tool]['price']:,}")
+                    add_button(self, tools, tool)
+                self.add_item(GoBackButton())
+
             async def on_timeout(self) -> None:
-                try:
-                    await interaction.delete_original_response()
-                except discord.errors.NotFound:
-                    pass
-            
-        class SeedSelection(discord.ui.View):
-            def __init__(self, *, timeout=180):
+                await ShopSelectView.on_timeout(self=self)
+                
+        # View that contains the Seeds Shop
+        class SeedShopView(discord.ui.View):
+            def __init__(self, *, timeout=20):
                 super().__init__(timeout=timeout)
-                self.seeds_embed = discord.Embed(title="Shop for Seeds!",
-                                        description="Buy some seeds to plant.\n*Nothing special about these.*",
-                                        color=discord.Color.brand_green())
+                self.view_embed = discord.Embed(title="Shop for Seeds!",
+                                                 description="Buy some seeds to plant.\n*Grown crops can be used to sell for profit or feed to pets.*",
+                                                 color=discord.Color.brand_green())
                 for key, value in consumables.items():
                     if key.startswith('SEED'):
-                        self.seeds_embed.add_field(name=value['item_name'], value=f"{value['price']:,}")
-
-        # Class to select what type of shop you want to open!
-        class ShopSectionSelect(discord.ui.View):
-            def __init__(self, *, timeout=180):
-                super().__init__(timeout=timeout)
-                views = [SeedSelection(), ToolSelection()]
-                for view in views:
-                    self.add_item(view)
-                self.add_item(ExitButton())
-
-        class SwitchToToolsShop(discord.ui.Button):
-            def __init__(self, row=1):
-                super().__init__(label="Tools", style=discord.ButtonStyle.blurple, row=row)
-
-            async def callback(self, switch_to_tools_interaction: discord.Interaction):
-                if switch_to_tools_interaction.user != interaction.user:
-                    return
-                self.view.stop()
-                new_view = ToolSelection()
-                await switch_to_tools_interaction.response.edit_message(embed=new_view.tools_embed, view=new_view)
-        
-        class SwitchToSeedsShop(discord.ui.Button):
-            def __init__(self, row=1):
-                super().__init__(label="Tools", style=discord.ButtonStyle.blurple, row=row)
-
-            async def callback(self, switch_to_seeds_interaction: discord.Interaction):
-                if switch_to_seeds_interaction.user != interaction.user:
-                    return
-                self.view.stop()
-                new_view = SeedSelection()
-                await switch_to_seeds_interaction.response.edit_message(embed=new_view.seeds_embed, view=new_view)
-
-        class ExitButton(discord.ui.Button):
-            def __init__(self, row=1):
-                super().__init__(label="Exit", style=discord.ButtonStyle.red, row=row)
-
-            async def callback(self, exit_interaction: discord.Interaction):
-                if exit_interaction.user != interaction.user:
-                    return
-                await interaction.delete_original_response()
-                self.view.stop()
+                        self.view_embed.add_field(
+                            name=f"{value['item_name'].capitalize()} {consumables[value['grows_into']]['emoji']}", value=f"{value['price']:,}")
+                        add_button(self, consumables, key)
+                self.add_item(GoBackButton())
             
-        menu_message = await interaction.response.send_message(embed=menu_page, view=ShopSectionSelect())
+            async def on_timeout(self) -> None:
+                await ShopSelectView.on_timeout(self=self)
+
+        # View that contains the main Shop page where the user selects the SubShop
+        class ShopSelectView(discord.ui.View):
+            def __init__(self, *, timeout=20):
+                super().__init__(timeout=timeout)
+                sub_shops = {
+                    "tools": {
+                        "view": ToolShopView(),
+                        "label": "\u200b",
+                        "emoji": '⚒️'
+                    },
+                    "seeds": {
+                        "view": SeedShopView(),
+                        "label": "\u200b",
+                        "emoji": '🌱'
+                    }
+                }
                 
+                self.view_embed = discord.Embed(
+                    title="Shop Select",
+                    description="Choose which section you would like to shop from!",
+                    color=discord.Color.teal()
+                )
+                for shop in sub_shops.values():
+                    self.add_item(SwitchButton(interaction, shop['view'], shop['label'], shop['emoji']))
+                self.add_item(CloseButton())
+                
+            async def on_timeout(self) -> None:
+                shop_closed_embed = discord.Embed(
+                    title="Shop Closed",
+                    description=f"Thanks for your business, {interaction.user.mention}!\nCome again!",
+                    color=discord.Color.gold()
+                )
+                self.view.stop()
+                await interaction.edit_original_response(embed=shop_closed_embed, view=None)
+                
+        # Button to go back to the initial Shop Select page
+        class GoBackButton(discord.ui.Button):
+            def __init__(self):
+                super().__init__(label='\u200b', emoji='🔙', style=discord.ButtonStyle.blurple, row=2)
+
+            async def callback(self, go_back_interaction):
+                if interaction.user != go_back_interaction.user:
+                    return
+                new_view = ShopSelectView()
+                self.view.stop()
+                await go_back_interaction.response.edit_message(embed=new_view.view_embed, view=new_view)
+
+        # Button to close the module
+        class CloseButton(discord.ui.Button):
+            def __init__(self, row=1):
+                super().__init__(label="Leave", style=discord.ButtonStyle.red, row=row)
+
+            async def callback(self, close_interaction: discord.Interaction):
+                if close_interaction.user != interaction.user:
+                    return
+                await ShopSelectView.on_timeout(self)
+
+        view = ShopSelectView()
+        menu_message = await interaction.response.send_message(embed=view.view_embed, view=view)
+
+
 async def setup(bot):
     await bot.add_cog(ShopCog(bot))
