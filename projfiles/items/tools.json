@@ -19,7 +19,7 @@
   },
   "TOOL_AXE_steel": {
     "item_name": "steel axe",
-    "price": 1000.000,
+    "price": 1000000,
     "sell_price": 800000,
     "trade": 1,
     "rarity": "rare",
