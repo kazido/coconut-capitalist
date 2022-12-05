@@ -21,11 +21,12 @@ def growth_roll(seed_ref_id):
         return False  # The crop didn't grow
 
 
-def plot_button_refresh(plots_to_setup):
+def plot_button_refresh(user_farm_dict: dict):
     """For every plot, if its empty, button style is grey,
     if its not, button style is green! Use this to refesh the
     style of the button upon click OR to setup the button."""
     button_info = {}
+    plots = []
     for index in range(len(mm.Farms.plots)):
         button_info[index] = {
             "label": "Empty!",
@@ -33,7 +34,8 @@ def plot_button_refresh(plots_to_setup):
             "style": discord.ButtonStyle.grey,
             "crop": None
         }
-    for index, plot_contents in enumerate(plots_to_setup):
+        plots.append(user_farm_dict[f'plot{index+1}'])
+    for index, plot_contents in enumerate(plots):
         if plot_contents.startswith("SEED"):
             button_info[index]['label'] = "Growing"
         elif plot_contents.startswith("CROP"):
@@ -110,7 +112,6 @@ class FarmingCog(commands.Cog, name="Farming"):
     async def farm(self, interaction: discord.Interaction):
         users_farm = mm.Farms.get(id=interaction.user.id)
         users_farm_dict = phs.model_to_dict(users_farm)
-        user_plots = [users_farm_dict[x] for x in mm.Farms.plots]
         if users_farm.has_open_farm:  # If the user already has an open farm
 
             farm_already_open_embed = discord.Embed(
@@ -127,6 +128,8 @@ class FarmingCog(commands.Cog, name="Farming"):
 
         class Farm(discord.ui.View):
             def __init__(self, *, timeout=20):
+                users_farm = mm.Farms.get(id=interaction.user.id)
+                users_farm_dict = phs.model_to_dict(users_farm)
                 super().__init__(timeout=timeout)
                 self.farm_module_embed = discord.Embed(
                     title=f"Welcome to the Farm!",
@@ -134,17 +137,20 @@ class FarmingCog(commands.Cog, name="Farming"):
                     color=0xdaebb0)
                 self.farm_module_embed.set_author(name=f"{interaction.user.name} - Farming",
                                                   icon_url=interaction.user.display_avatar)
-
+                
+                user_plots = [users_farm_dict[x] for x in mm.Farms.plots]
                 for count, plot_contents in enumerate(user_plots):
                     if plot_contents.startswith("CROP"):
                         plot_contents = consumables[plot_contents]['emoji']
+                    elif plot_contents == 'Empty!':
+                        plot_contents = plot_contents
                     else:
                         plot_contents = consumables[plot_contents]['item_name']
                     self.farm_module_embed.add_field(
                         name=f"Plot {count + 1} 🌳", value=plot_contents)
                 self.farm_module_embed.set_footer(
                     text="Crops have a chance to grow every hour.")
-                plot_button_info = plot_button_refresh(user_plots)
+                plot_button_info = plot_button_refresh(user_farm_dict=users_farm_dict)
                 for number, plot in enumerate(plot_button_info):
                     self.add_item(HarvestButton(plot_button_info[plot]['label'],
                                                 plot_button_info[plot]['style'],
@@ -180,8 +186,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 self.view.farm_module_embed.set_field_at(self.button_no, name=f'Plot {self.button_no + 1}',
                                                          value=f"+{harvested_crops}")
                 users_farm_dict[f'plot{self.button_no+1}'] = 'Empty!'
-                user_plots = [users_farm_dict[x] for x in mm.Farms.plots]
-                plot_button_refresh(user_plots)
+                button_info = plot_button_refresh(user_farm_dict=users_farm_dict)
                 users_farm = phs.dict_to_model(mm.Farms, users_farm_dict)
                 users_farm.save()
                 await harvest_interacton.response.edit_message(embed=self.view.farm_module_embed, view=self.view)
@@ -194,7 +199,6 @@ class FarmingCog(commands.Cog, name="Farming"):
                 if exit_interaction.user != interaction.user:
                     return
                 users_farm.has_open_farm = False
-                users_farm.save()
                 await interaction.delete_original_response()
                 self.view.stop()
 
@@ -244,26 +248,37 @@ class FarmingCog(commands.Cog, name="Farming"):
                 super().__init__(timeout=timeout)
                 self.plant_embed = discord.Embed(
                     title=f"Plant crops to sell or to feed your pets",
-                    description=f"You can plant various kinds of crops, which you can sell for a profit or feed to your pets.",
+                    description=f"You can plant various kinds of crops\n\
+                        which you can *sell* for a **profit** or *feed* to your **pets**.",
                     color=0x8db046)
                 self.plant_embed.set_author(name=f"{interaction.user.name} - Planting",
                                             icon_url=interaction.user.display_avatar)
-
-                for plot in user_plots:
+                user_plots = [users_farm_dict[x] for x in mm.Farms.plots]
+                plots_full = 0
+                for index, plot in enumerate(user_plots):
                     if plot != 'Empty!':
-                        self.add_item(PlantButton(
-                            discord.ButtonStyle.grey, True, label='Plots full!'))
+                        self.plant_embed.add_field(name=f"Plot {index+1} 🌳", value=f"{consumables[plot]['item_name']}")
+                        plots_full += 1
                     else:
-                        for key in consumables.keys():
-                            if key.startswith('SEED'):
-                                seeds = mm.Items.get(
-                                    mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == key)
-                                if seeds.quantity == 0:
-                                    self.add_item(PlantButton(
-                                        discord.ButtonStyle.grey, True, label='No seeds'))
-                                else:
-                                    self.add_item(PlantButton(
-                                        discord.ButtonStyle.blurple, False, crop_ref_id=consumables[key]['grows_into']))
+                        self.plant_embed.add_field(name=f"Plot {index+1} 🌳", value=f"Empty!")
+    
+                if plots_full == len(user_plots):
+                    self.add_item(PlantButton(
+                            discord.ButtonStyle.grey, True, label='Plots full!'))
+                else:
+                    for key in consumables.keys():
+                        if key.startswith('SEED'):
+                            try:
+                                seeds = mm.Items.get(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == key)
+                                seeds_quantity = seeds.quantity
+                            except mm.DoesNotExist:
+                                seeds_quantity = 0
+                            if seeds_quantity == 0:
+                                self.add_item(PlantButton(
+                                    discord.ButtonStyle.grey, True, label='No seeds'))
+                            else:
+                                self.add_item(PlantButton(
+                                    discord.ButtonStyle.blurple, False, seed_ref_id=key))
 
                 self.add_item(ExitButton())
                 self.add_item(SwitchToBarnButton())
@@ -278,36 +293,33 @@ class FarmingCog(commands.Cog, name="Farming"):
                     pass
 
         class PlantButton(discord.ui.Button):
-            def __init__(self, button_style, button_disabled, crop_ref_id=None, label: str = None):
+            def __init__(self, button_style, button_disabled, seed_ref_id=None, label: str = None):
                 self.button_style = button_style
                 self.button_disabled = button_disabled
-                self.crop_ref_id = crop_ref_id
+                self.seed_ref_id = seed_ref_id
                 if label:
                     button_label = label
                 else:
-                    button_label = consumables[self.crop_ref_id]['item_name']+'s'
+                    button_label = consumables[self.seed_ref_id]['item_name']
                 super().__init__(label=button_label,
                                  style=self.button_style, disabled=self.button_disabled)
 
             async def callback(self, plant_interaction: discord.Interaction):
                 if plant_interaction.user != interaction.user:
                     return
-                seeds = mm.Items.select(mm.Items.quantity).where(
-                    owner_id=interaction.user.id, reference_id=self.crop_ref_id)
-                print(seeds)
-                seeds -= 1
-                print(seeds)
-                users_farm.save()
-                if seeds == 0:
+                seeds = mm.Items.get(mm.Items.owner_id==interaction.user.id, mm.Items.reference_id==self.seed_ref_id)
+                seeds.quantity -= 1
+                seeds.save()
+                if seeds.quantity == 0:
                     self.disabled = True
                     self.style = discord.ButtonStyle.grey
                     self.label = "No seeds"
-                planted_in = None
-                for plot in user_plots:
+                user_plots = [users_farm_dict[x] for x in mm.Farms.plots]
+                for index, plot in enumerate(user_plots):
                     if plot == 'Empty!':
-                        self.view.plant_embed.add_field(
-                            name="Planted!", value=f"{consumables[self.crop_ref_id]['item_name']} seeds\n{planted_in}")
-                        users_farm = phs.dict_to_model(mm.Farms, user_plots)
+                        self.view.plant_embed.set_field_at(index=index, name="PLANTED!", value=f"{consumables[self.seed_ref_id]['item_name']}")
+                        users_farm_dict[f'plot{index+1}'] = self.seed_ref_id
+                        users_farm = phs.dict_to_model(mm.Farms, users_farm_dict)
                         users_farm.save()
                         break
                 else:
@@ -316,6 +328,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                             button.disabled = False
                         else:
                             button.disabled = True
+                self.view.__init__()
                 await plant_interaction.response.edit_message(embed=self.view.plant_embed, view=self.view)
 
         class SwitchToBarnButton(discord.ui.Button):
