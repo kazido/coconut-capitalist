@@ -1,31 +1,34 @@
+from discord.ext import commands
+import discord
+from discord import app_commands
+from random import randint
+from cogs.ErrorHandler import registered
+import asyncio
+from classLibrary import RequestUser
 import typing
 import pydealer
 import sys
 import os
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
-print(parent)
 sys.path.append(parent)
-from classLibrary import RequestUser
-import asyncio
-from cogs.ErrorHandler import registered
-from random import randint
-from discord import app_commands
-import discord
-from discord.ext import commands
 
 
-def format_cards(card_input):  # Function for formatting cards to give points values if they are face cards
+# Function for formatting cards to give points values if they are face cards
+def format_cards(card_input):
     suit_emoji = str(":" + str(card_input.suit).lower() + ":")
     if card_input.value in ["King", "Queen", "Jack"]:
-        card_input.value = card_input.value[0]  # Sets the value to be the first letter of the face card
+        # Sets the value to be the first letter of the face card
+        card_input.value = card_input.value[0]
         card_worth = 10  # Face cards are worth 10
     elif card_input.value == "Ace":
-        card_input.value = card_input.value[0]  # Sets the value to be the first letter of the Ace
+        # Sets the value to be the first letter of the Ace
+        card_input.value = card_input.value[0]
         card_worth = 11  # Aces start as worth 11
     else:  # If the card is just a number card
         card_worth = int(card_input.value)
-    formatted_card = f"{card_input.value}{suit_emoji}"  # Format the card a discord embed
+    # Format the card a discord embed
+    formatted_card = f"{card_input.value}{suit_emoji}"
     return formatted_card, card_worth
 
 
@@ -60,7 +63,8 @@ class BlackJack(commands.Cog, name="Blackjack"):
         user.update_balance(-bet)
         """TESTING"""
         # user.update_game_status(True)
-        view = BlackJack.BlackJackGame(interaction=interaction, user=user, bet=bet)
+        view = BlackJack.BlackJackGame(
+            interaction=interaction, user=user, bet=bet)
         await interaction.response.send_message(embed=view.blackjack_embed, view=view)
 
     class HitButton(discord.ui.Button):
@@ -82,7 +86,8 @@ class BlackJack(commands.Cog, name="Blackjack"):
                                                                 f"Total: {view.player_hand_total}", inline=True)
                     hit_embed.add_field(name="Dealer's hand", value=f"{''.join(view.dealer_embed_hand)}\n"
                                                                     f"Total: {view.dealer_hand_total}", inline=True)
-                    hit_embed.set_footer(text="You have 90 seconds to use a command")
+                    hit_embed.set_footer(
+                        text="You have 90 seconds to use a command")
                     await hit_interaction.response.edit_message(embed=hit_embed)
                 case 'lost':
                     while view.dealer_hand_total < 17:
@@ -94,8 +99,10 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     lose_embed.add_field(name="Dealer's hand", value=f"{''.join(view.dealer_embed_hand)}\n"
                                                                      f"Total: {view.dealer_hand_total}",
                                          inline=True)
-                    lose_embed.add_field(name="Profit", value=f"{-view.bet:,} bits", inline=False)
-                    lose_embed.add_field(name="Bits", value=f"{view.user.instance.money:,} bits")
+                    lose_embed.add_field(
+                        name="Profit", value=f"{-view.bet:,} bits", inline=False)
+                    lose_embed.add_field(
+                        name="Bits", value=f"{view.user.instance.money:,} bits")
                     lose_embed.set_footer(text="You earned *coming soon* xp")
 
                     await hit_interaction.response.edit_message(embed=lose_embed, view=None)
@@ -113,23 +120,26 @@ class BlackJack(commands.Cog, name="Blackjack"):
             assert self.view is not None
             view: BlackJack.BlackJackGame = self.view
 
-            view.user.update_balance(round(view.bet / 2))  # Give the user half of their bet back
+            # Give the user half of their bet back
+            view.user.update_balance(round(view.bet / 2))
 
             # Keep half of your bet
             while view.dealer_hand_total < 17:
                 view.draw_card(player=False)
-                fold_embed = discord.Embed(
-                    title=f"Blackjack | User: {fold_interaction.user.name} - Bet: {view.bet:,}",
-                    colour=0xff0000)
-                fold_embed.add_field(name="FOLD", value=f"{''.join(view.player_embed_hand)}\n"
-                                                        f"Total: {view.player_hand_total}", inline=True)
-                fold_embed.add_field(name="WIN", value=f"{''.join(view.dealer_embed_hand)}\n"
-                                                       f"Total: {view.dealer_hand_total}", inline=True)
-                fold_embed.add_field(name="Profit", value=f"{round(-view.bet / 2):,} bits", inline=False)
-                fold_embed.add_field(name="Bits", value=f"{view.user.instance.money:,} bits")
-                fold_embed.set_footer(text="*coming soon* is xp")
-                await fold_interaction.response.edit_message(embed=fold_embed, view=None)
-                await asyncio.sleep(1)
+            fold_embed = discord.Embed(
+                title=f"Blackjack | User: {fold_interaction.user.name} - Bet: {view.bet:,}",
+                colour=0xff0000)
+            fold_embed.add_field(name="FOLD", value=f"{''.join(view.player_embed_hand)}\n"
+                                                    f"Total: {view.player_hand_total}", inline=True)
+            fold_embed.add_field(name="WIN", value=f"{''.join(view.dealer_embed_hand)}\n"
+                                                    f"Total: {view.dealer_hand_total}", inline=True)
+            fold_embed.add_field(
+                name="Profit", value=f"{round(-view.bet / 2):,} bits", inline=False)
+            fold_embed.add_field(
+                name="Bits", value=f"{view.user.instance.money:,} bits")
+            fold_embed.set_footer(text="*coming soon* is xp")
+            await fold_interaction.response.edit_message(embed=fold_embed, view=None)
+            await asyncio.sleep(1)
 
             view.user.update_game_status(False)
             bot = RequestUser(956000805578768425, fold_interaction)
@@ -162,9 +172,12 @@ class BlackJack(commands.Cog, name="Blackjack"):
                                                                       f"Total: {view.player_hand_total}", inline=True)
                     user_lost_embed.add_field(name="WIN", value=f"{''.join(view.dealer_embed_hand)}\n"
                                                                 f"Total: {view.dealer_hand_total}", inline=True)
-                    user_lost_embed.add_field(name="Profit", value=f"{-view.bet:,} bits", inline=False)
-                    user_lost_embed.add_field(name="Bits", value=f"{view.user.instance.money:,} bits")
-                    user_lost_embed.set_footer(text="You earned *coming soon* xp")
+                    user_lost_embed.add_field(
+                        name="Profit", value=f"{-view.bet:,} bits", inline=False)
+                    user_lost_embed.add_field(
+                        name="Bits", value=f"{view.user.instance.money:,} bits")
+                    user_lost_embed.set_footer(
+                        text="You earned *coming soon* xp")
                     await stand_interaction.response.edit_message(embed=user_lost_embed, view=None)
 
                     view.user.update_game_status(False)
@@ -181,8 +194,10 @@ class BlackJack(commands.Cog, name="Blackjack"):
                                                             f"Total: {view.player_hand_total}", inline=True)
                     push_embed.add_field(name="PUSH", value=f"{''.join(view.dealer_embed_hand)}\n"
                                                             f"Total: {view.dealer_hand_total}", inline=True)
-                    push_embed.add_field(name="Profit", value=f"0 bits", inline=False)
-                    push_embed.add_field(name="Bits", value=f"{view.user.instance.money:,} bits")
+                    push_embed.add_field(
+                        name="Profit", value=f"0 bits", inline=False)
+                    push_embed.add_field(
+                        name="Bits", value=f"{view.user.instance.money:,} bits")
                     push_embed.set_footer(text="You earned *coming soon* xp")
                     await stand_interaction.response.edit_message(embed=push_embed, view=None)
                     view.user.update_game_status(False)
@@ -198,9 +213,12 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     dealer_lost_embed.add_field(name="Dealer's hand", value=f"{''.join(view.dealer_embed_hand)}\n"
                                                                             f"Total: {view.dealer_hand_total}",
                                                 inline=True)
-                    dealer_lost_embed.add_field(name="Profit", value=f"{view.bet * 2:,} bits", inline=False)
-                    dealer_lost_embed.add_field(name="Bits", value=f"{view.user.instance.money:,} bits")
-                    dealer_lost_embed.set_footer(text="You earned *coming soon* xp")
+                    dealer_lost_embed.add_field(
+                        name="Profit", value=f"{view.bet * 2:,} bits", inline=False)
+                    dealer_lost_embed.add_field(
+                        name="Bits", value=f"{view.user.instance.money:,} bits")
+                    dealer_lost_embed.set_footer(
+                        text="You earned *coming soon* xp")
                     await stand_interaction.response.edit_message(embed=dealer_lost_embed, view=None)
                     view.user.update_game_status(False)
 
@@ -216,9 +234,12 @@ class BlackJack(commands.Cog, name="Blackjack"):
                                                                         f"Total: {view.player_hand_total}", inline=True)
                     dealer_bust_embed.add_field(name="BUSTED", value=f"{''.join(view.dealer_embed_hand)}\n"
                                                                      f"Total: {view.dealer_hand_total}", inline=True)
-                    dealer_bust_embed.add_field(name="Profit", value=f"{view.bet * 2:,} bits", inline=False)
-                    dealer_bust_embed.add_field(name="Bits", value=f"{view.user.instance.money:,} bits")
-                    dealer_bust_embed.set_footer(text="You earned *coming soon* xp")
+                    dealer_bust_embed.add_field(
+                        name="Profit", value=f"{view.bet * 2:,} bits", inline=False)
+                    dealer_bust_embed.add_field(
+                        name="Bits", value=f"{view.user.instance.money:,} bits")
+                    dealer_bust_embed.set_footer(
+                        text="You earned *coming soon* xp")
                     await stand_interaction.response.edit_message(embed=dealer_bust_embed, view=None)
                     return
             await compare_hands()
@@ -229,7 +250,8 @@ class BlackJack(commands.Cog, name="Blackjack"):
             self.bet = bet
             self.user = user
 
-            buttons = (BlackJack.HitButton(), BlackJack.StandButton(), BlackJack.FoldButton())
+            buttons = (BlackJack.HitButton(),
+                       BlackJack.StandButton(), BlackJack.FoldButton())
             for button in buttons:  # Add the 4 buttons to the view
                 self.add_item(button)
 
@@ -272,7 +294,8 @@ class BlackJack(commands.Cog, name="Blackjack"):
             self.blackjack_embed.set_footer(text="You have 90 seconds to play")
 
         def draw_card(self, player: bool):  # Function for drawing a card and adding it to a hand
-            drawn_card = self.deck.deal(1)  # Draw a card from the deck we are working with
+            # Draw a card from the deck we are working with
+            drawn_card = self.deck.deal(1)
             formatted_card, points = format_cards(drawn_card[0])
             if player:
                 self.player_hand_total += points
