@@ -44,6 +44,7 @@ class TicTacToeCog(commands.Cog, name='TicTacToe'):
                 return
 
             content = None
+            user_name = "Bob"
 
             if view.current_player == view.player1:
                 self.style = discord.ButtonStyle.red
