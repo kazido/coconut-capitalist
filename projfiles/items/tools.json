@@ -5,7 +5,7 @@
     "sell_price": 42000,
     "trade": 1,
     "rarity": "common",
-    "chopping_power": 1,
+    "power": 1,
     "durability": -1
   },
   "TOOL_AXE_reinforced": {
@@ -14,7 +14,7 @@
     "sell_price": 135000,
     "trade": 1,
     "rarity": "uncommon",
-    "chopping_power": 3,
+    "power": 3,
     "durability": -1
   },
   "TOOL_AXE_steel": {
@@ -23,16 +23,52 @@
     "sell_price": 800000,
     "trade": 1,
     "rarity": "rare",
-    "chopping_power": 10,
+    "power": 10,
     "durability": -1
   },
   "TOOL_AXE_dadschainsaw": {
     "item_name": "dad's chainsaw",
-    "price": 50000000,
-    "sell_price": 45000000,
+    "price": 25000000,
+    "sell_price": 20000000,
     "trade": 1,
     "rarity": "legendary",
-    "chopping_power": 25,
+    "power": 25,
+    "durability": -1
+  },
+  "TOOL_ROD_basic": {
+    "item_name": "basic rod",
+    "price": 50000,
+    "sell_price": 42000,
+    "trade": 1,
+    "rarity": "common",
+    "power": 1,
+    "durability": -1
+  },
+  "TOOL_ROD_reinforced": {
+    "item_name": "reinforced rod",
+    "price": 110000,
+    "sell_price": 100000,
+    "trade": 1,
+    "rarity": "uncommon",
+    "power": 2,
+    "durability": -1
+  },
+  "TOOL_ROD_fiberglass": {
+    "item_name": "fiberglass rod",
+    "price": 2000000,
+    "sell_price": 1500000,
+    "trade": 1,
+    "rarity": "rare",
+    "power": 5,
+    "durability": -1
+  },
+  "TOOL_ROD_internet": {
+    "item_name": "the internet",
+    "price": 100000000,
+    "sell_price": 75000000,
+    "trade": 1,
+    "rarity": "legendary",
+    "power": 100,
     "durability": -1
   }
 }
