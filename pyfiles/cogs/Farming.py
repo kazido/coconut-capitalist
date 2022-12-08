@@ -92,7 +92,8 @@ class FarmingCog(commands.Cog, name="Farming"):
                     grown_crop = consumables[plot]['grows_into']
                     if should_grow:  # Applies growth role based on crop without "seeds" at the end, checks if grown
                         users_farm_dict[f'plot{index+1}'] = grown_crop
-                        user_in_discord = discord.utils.get(self.bot.guild.members, id=farm.id)
+                        guild = self.bot.get_guild(856915776345866240)
+                        user_in_discord = discord.utils.get(guild.members, id=int(farm.id.id))
                         lucky_farmers.append(user_in_discord.mention)
             farm = phs.dict_to_model(mm.Farms, users_farm_dict)
             farm.save()
@@ -206,6 +207,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 if exit_interaction.user != interaction.user:
                     return
                 users_farm.has_open_farm = False
+                users_farm.save()
                 await interaction.delete_original_response()
                 self.view.stop()
 
