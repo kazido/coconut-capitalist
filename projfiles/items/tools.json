@@ -1,33 +1,33 @@
 {
   "TOOL_AXE_basic": {
-    "item_name": "basic axe",
-    "price": 50000,
-    "sell_price": 42000,
+    "item_name": "Basic axe",
+    "price": 12500,
+    "sell_price": 10000,
     "trade": 1,
     "rarity": "common",
-    "power": 1,
-    "durability": -1
-  },
-  "TOOL_AXE_reinforced": {
-    "item_name": "reinforced axe",
-    "price": 150000,
-    "sell_price": 135000,
-    "trade": 1,
-    "rarity": "uncommon",
-    "power": 3,
-    "durability": -1
-  },
-  "TOOL_AXE_steel": {
-    "item_name": "steel axe",
-    "price": 1000000,
-    "sell_price": 800000,
-    "trade": 1,
-    "rarity": "rare",
     "power": 10,
     "durability": -1
   },
+  "TOOL_AXE_reinforced": {
+    "item_name": "Home Depot axe",
+    "price": 150000,
+    "sell_price": 120000,
+    "trade": 1,
+    "rarity": "uncommon",
+    "power": 60,
+    "durability": -1
+  },
+  "TOOL_AXE_steel": {
+    "item_name": "Terry's axe",
+    "price": 8700000,
+    "sell_price": 6960000,
+    "trade": 1,
+    "rarity": "rare",
+    "power": 7,
+    "durability": -1
+  },
   "TOOL_AXE_dadschainsaw": {
-    "item_name": "dad's chainsaw",
+    "item_name": "Dad's Chainsaw",
     "price": 25000000,
     "sell_price": 20000000,
     "trade": 1,
@@ -36,7 +36,7 @@
     "durability": -1
   },
   "TOOL_ROD_basic": {
-    "item_name": "basic rod",
+    "item_name": "Basic rod",
     "price": 50000,
     "sell_price": 42000,
     "trade": 1,
@@ -45,7 +45,7 @@
     "durability": -1
   },
   "TOOL_ROD_reinforced": {
-    "item_name": "reinforced rod",
+    "item_name": "Reinforced rod",
     "price": 110000,
     "sell_price": 100000,
     "trade": 1,
@@ -54,7 +54,7 @@
     "durability": -1
   },
   "TOOL_ROD_fiberglass": {
-    "item_name": "fiberglass rod",
+    "item_name": "Fiberglass rod",
     "price": 2000000,
     "sell_price": 1500000,
     "trade": 1,
@@ -63,7 +63,7 @@
     "durability": -1
   },
   "TOOL_ROD_internet": {
-    "item_name": "the internet",
+    "item_name": "The Inter-net",
     "price": 100000000,
     "sell_price": 75000000,
     "trade": 1,
