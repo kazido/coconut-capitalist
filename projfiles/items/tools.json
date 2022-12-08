@@ -5,7 +5,7 @@
     "sell_price": 10000,
     "trade": 1,
     "rarity": "common",
-    "power": 10,
+    "power": 1,
     "durability": -1
   },
   "TOOL_AXE_reinforced": {
@@ -14,7 +14,7 @@
     "sell_price": 120000,
     "trade": 1,
     "rarity": "uncommon",
-    "power": 60,
+    "power": 5,
     "durability": -1
   },
   "TOOL_AXE_steel": {
@@ -23,7 +23,7 @@
     "sell_price": 6960000,
     "trade": 1,
     "rarity": "rare",
-    "power": 7,
+    "power": 40,
     "durability": -1
   },
   "TOOL_AXE_dadschainsaw": {
@@ -32,11 +32,11 @@
     "sell_price": 20000000,
     "trade": 1,
     "rarity": "legendary",
-    "power": 25,
+    "power": 200,
     "durability": -1
   },
   "TOOL_ROD_basic": {
-    "item_name": "Basic rod",
+    "item_name": "Scrappy rod",
     "price": 50000,
     "sell_price": 42000,
     "trade": 1,
@@ -59,7 +59,7 @@
     "sell_price": 1500000,
     "trade": 1,
     "rarity": "rare",
-    "power": 5,
+    "power": 15,
     "durability": -1
   },
   "TOOL_ROD_internet": {
