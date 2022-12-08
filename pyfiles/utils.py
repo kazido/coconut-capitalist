@@ -34,3 +34,40 @@ class SwitchButton(Button):
         self.view.stop()
         new_view = self.view_to_switch_to
         await switch_interaction.response.edit_message(embed=new_view.view_embed, view=new_view)
+        
+# Button that sends page to next page
+class Paginator_Forward_Button(Button):
+    def __init__(self, parent_interaction, view_categories: dict):
+        self.parent_interaction = parent_interaction
+        self.view_categories = view_categories
+        super().__init__(label='\u200b', emoji='▶️', style=ButtonStyle.blurple, row=1)
+    
+    async def callback(self, next_page_interaction: Interaction):
+        if self.parent_interaction.user != next_page_interaction.user:
+            return
+        if self.view.current_page+1 == len(self.view_categories):
+            self.view.current_page = 0
+        else:
+            self.view.current_page += 1
+        self.view.view_embed = list(self.view_categories)[self.view.current_page]['view_embed']
+        self.view.update_buttons(tools_dict=list(self.view_categories)[self.view.current_page])
+        await next_page_interaction.response.edit_message(embed=self.view.view_embed, view=self.view)
+            
+            
+# Button that sends page to next page
+class Paginator_Backward_Button(Button):
+    def __init__(self, parent_interaction, view_categories: dict):
+        self.parent_interaction = parent_interaction
+        self.view_categories = view_categories
+        super().__init__(label='\u200b', emoji='◀️', style=ButtonStyle.blurple, row=1)
+    
+    async def callback(self, back_page_interaction: Interaction):
+        if self.parent_interaction.user != back_page_interaction.user:
+            return
+        if self.view.current_page == 0:
+            self.view.current_page = len(self.view_categories)-1
+        else:
+            self.view.current_page -= 1
+        self.view.view_embed = list(self.view_categories)[self.view.current_page]['view_embed']
+        self.view.update_buttons(tools_dict=list(self.view_categories)[self.view.current_page])
+        await back_page_interaction.response.edit_message(embed=self.view.view_embed, view=self.view)
