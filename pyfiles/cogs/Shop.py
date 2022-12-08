@@ -84,12 +84,15 @@ class ShopCog(commands.Cog, name='Shop'):
                     tool_categories[tool_category[1]] = {}
                     tool_categories[tool_category[1]][key] = value
             for key in tool_categories.keys():  # Adds an embed for each category
-                embed = discord.Embed(title=f"Shop for {key.lower()}s!",
-                                        description=f"Tools have unlimited durability and will give you their respective XP.",
+                embed = discord.Embed(title=f"Looking for {key.lower()}s?",
+                                        description=f"Tools have unlimited durability and will give you their respective XP.\n\
+                                                                        All tools can be resold for 80% of their buy price.",
                                         color=discord.Color.blue())
                 for value in tool_categories[key].values():  # Adds a field for each tool in the category
-                    embed.add_field(name=value['item_name'].capitalize(), value=f"**{value['price']:,}** bits\n"
+                    embed.add_field(name=value['item_name'], value=f"**{value['price']:,}** bits\n"
                                                                                 f"Power: {value['power']}")
+                embed.set_author(name=f"{interaction.user.name} - Shopping for {key.lower()}s",
+                                        icon_url=interaction.user.display_avatar)
                 tool_categories[key]['view_embed'] = embed
                 
             def __init__(self, timeout=180):
@@ -123,6 +126,8 @@ class ShopCog(commands.Cog, name='Shop'):
                 self.view_embed = discord.Embed(title="Shop for Seeds!",
                                                 description="Buy some seeds to plant.\n*Grown crops can be used to sell for profit or feed to pets.*",
                                                 color=discord.Color.brand_green())
+                self.view_embed.set_author(name=f"{interaction.user.name} - Shopping for seeds",
+                                        icon_url=interaction.user.display_avatar)
                 for key, value in consumables.items():
                     if key.startswith('SEED'):
                         self.view_embed.add_field(
@@ -154,6 +159,8 @@ class ShopCog(commands.Cog, name='Shop'):
                     description="Choose which section you would like to shop from!",
                     color=discord.Color.teal()
                 )
+                self.view_embed.set_author(name=f"{interaction.user.name} - Shopping",
+                                        icon_url=interaction.user.display_avatar)
                 for shop in sub_shops.values():
                     self.add_item(SwitchButton(
                         interaction, shop['view'], shop['label'], shop['emoji']))
