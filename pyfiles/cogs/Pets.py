@@ -121,8 +121,7 @@ class PetsCog(commands.Cog, name='Pets'):
             else:
                 view.page_number -= 1
             update_purchase_button_values(view, view.pages[view.page_number - 1], view.user)
-            await previous_page_interaction.response.edit_message(embed=view.pages[view.page_number - 1].embed,
-                                                                  view=view)
+            await previous_page_interaction.response.edit_message(embed=view.pages[view.page_number - 1].embed, view=view)
 
     class PurchasePetButton(discord.ui.Button):
         def __init__(self, view):
