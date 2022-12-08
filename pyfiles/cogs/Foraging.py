@@ -49,7 +49,7 @@ class ForagingCog(commands.Cog, name='Foraging'):
             async def heave_button(self, heave_interaction: discord.Interaction, button: discord.Button):
                 if heave_interaction.user.id != tree.user1.instance.id:
                     return
-                tree.hitpoints -= tools[tree.user1_axe]['chopping_power']
+                tree.hitpoints -= tools[tree.user1_axe]['power']
                 if tree.hitpoints <= 0:
                     await heave_interaction.response.edit_message(embed=tree.embed, view=None)
                 else:
@@ -68,7 +68,7 @@ class ForagingCog(commands.Cog, name='Foraging'):
             async def ho_button(self, ho_interaction: discord.Interaction, button: discord.Button):
                 if ho_interaction.user.id != tree.user2.instance.id:
                     return
-                tree.hitpoints -= tools[tree.user2_axe]['chopping_power']
+                tree.hitpoints -= tools[tree.user2_axe]['power']
                 if tree.hitpoints <= 0:
                     await ho_interaction.response.edit_message(embed=tree.embed, view=None)
                 else:
