@@ -3,41 +3,123 @@
     "TOOL_AXE_starter": {
       "name": "Starter axe",
       "description": "A basic axe, meant for novice lumberjacks. You'll learn a lot from this axe, and it will learn a lot from you.",
+      "stats": {
+        "fortune": {
+          "embed_format": {
+            "Chopping Fortune": "**1**"
+          },
+          "value": 1
+        },
+        "speed": {
+          "embed_format": {
+            "Chopping Speed": "**1**"
+          },
+          "value": 1
+        }
+      },
       "price": 10000,
+      "sell_price": 0,
+      "can_sell": 0,
+      "can_trade": 0,
       "rarity": "common",
-      "power": 1,
-      "durability": -1,
-      "cansell": 0
+      "durability": -1, 
+      "can_upgrade": 1,
+      "can_craft": 0,
+      "crafted_from": {},
+      "parent_items": ["TOOL_CHAINSAW_R1", "TOOL_AXE_R1"],
+      "child_items": []
     },
     "TOOL_ROD_starter": {
       "name": "Starter rod",
       "description": "A similar story to the starter axe, this rod was meant for the Apostles. Get it?",
+      "stats": {
+        "fortune": {
+          "embed_format": {
+            "Fishing Fortune": "**1**"
+          },
+          "value": 1
+        },
+        "speed": {
+          "embed_format": {
+            "Fishing Speed": "**1**"
+          },
+          "value": 1
+        }
+      },
       "price": 1000000,
+      "sell_price": 0,
+      "can_sell": 0,
+      "can_trade": 0,
       "rarity": "common",
-      "power": 1,
-      "durability": -1,
-      "cansell": 0
+      "durability": -1, 
+      "can_upgrade": 1,
+      "can_craft": 0,
+      "crafted_from": {},
+      "parent_items": [],
+      "child_items": []
     }
   },
   "TOOLS_UPGRADES": {
     "AXE_CHAINSAW_PATH": {
-      "TOOL_AXE_path_0_rank_1": {
-        "item_name": "Home Depot chainsaw",
-        "price": 150000,
-        "sell_price": 120000,
+      "TOOL_CHAINSAW_R1": {
+        "name": "Chainsaw R1",
+        "description": "The first upgrade in the Chainsaw path. It's speed buff is small, yet noticeable.",
+        "stats": {
+          "fortune": {
+            "embed_format": {
+              "Chopping Fortune": "**1**"
+            },
+            "value": 1
+          },
+          "speed": {
+            "embed_format": {
+              "Chopping Speed": "**5**"
+            },
+            "value": 5
+          }
+        },
+        "price": 0,
+        "sell_price": 0,
+        "can_sell": 0,
+        "can_trade": 0,
         "rarity": "uncommon",
-        "power": 5,
-        "durability": -1
+        "durability": -1, 
+        "can_upgrade": 1,
+        "can_craft": 0,
+        "crafted_from": {},
+        "parent_items": [],
+        "child_items": ["TOOL_AXE_starter"]
       }
     },
     "AXE_AXE_PATH": {
-      "TOOL_AXE_II": {
-        "item_name": "Terry's axe",
-        "price": 8700000,
-        "sell_price": 6960000,
-        "rarity": "rare",
-        "power": 40,
-        "durability": -1
+      "TOOL_AXE_R1": {
+        "name": "Axe R1",
+        "description": "The first upgrade in the Axe path. This axe brings slightly more rewards than your starter axe.",
+        "stats": {
+          "fortune": {
+            "embed_format": {
+              "Chopping Fortune": "**5**"
+            },
+            "value": 5
+          },
+          "speed": {
+            "embed_format": {
+              "Chopping Speed": "**1**"
+            },
+            "value": 1
+          }
+        },
+        "price": 0,
+        "sell_price": 0,
+        "can_sell": 0,
+        "can_trade": 0,
+        "rarity": "uncommon",
+        "durability": -1, 
+        "can_upgrade": 1,
+        "can_craft": 0,
+        "crafted_from": {},
+        "parent_item": [],
+        "child_item": ["TOOL_AXE_starter"]
       }
     },
     "ROD_NET_PATH":{
