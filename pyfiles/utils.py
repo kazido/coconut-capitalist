@@ -3,7 +3,7 @@ from datetime import datetime
 from random import randint
 
 from discord.ui import Button, View
-from discord import Interaction, ButtonStyle
+from discord import Interaction, ButtonStyle, PartialEmoji
 
 
 def get_project_root() -> Path:
@@ -71,3 +71,21 @@ class Paginator_Backward_Button(Button):
         self.view.view_embed = list(self.view_categories)[self.view.current_page]['view_embed']
         self.view.update_buttons(tools_dict=list(self.view_categories)[self.view.current_page])
         await back_page_interaction.response.edit_message(embed=self.view.view_embed, view=self.view)
+        
+
+# Button that sends paginator back one page
+class PreviousPageButton(Button):
+    def __init__(self, row=None):  # Initialize with a back arrow, grey color and a row, if given.
+        super().__init__(emoji=PartialEmoji.from_str("<:backarrow:1050563563917418586>"), style=ButtonStyle.grey, custom_id="back", row=row)
+
+    async def callback(self, previous_page_interaction: Interaction):
+        assert self.view is not None
+        view: PetsCog.PetShop = self.view
+        if previous_page_interaction.user != view.discordUser:
+            return
+        if view.page_number == 1:  # If we are on the first page, don't continue
+            view.page_number = len(view.pages)
+        else:
+            view.page_number -= 1
+        update_purchase_button_values(view, view.pages[view.page_number - 1], view.user)
+        await previous_page_interaction.response.edit_message(embed=view.pages[view.page_number - 1].embed, view=view)
