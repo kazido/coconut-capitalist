@@ -19,17 +19,17 @@ import randfacts
 
 """This file is used for storing classes that I use for the different aspects of the bot."""
 # Load the json file where all the rank dialogue is stored
-with open(f'{ROOT_DIRECTORY}\projfiles\items\\ranks.json', 'r') as ranks_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\ranks.json', 'r') as ranks_file:
     ranks = json.load(ranks_file)
-with open(f'{ROOT_DIRECTORY}\projfiles\items\\areas.json', 'r') as areas_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\areas.json', 'r') as areas_file:
     areas = json.load(areas_file)
-with open(f'{ROOT_DIRECTORY}\projfiles\items\\pets.json', 'r') as pets_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\pets.json', 'r') as pets_file:
     pets = json.load(pets_file)
-with open(f'{ROOT_DIRECTORY}\projfiles\items\\tools.json', 'r') as tools_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\tools.json', 'r') as tools_file:
     tools = json.load(tools_file)
-with open(f'{ROOT_DIRECTORY}\projfiles\items\\materials.json', 'r') as materials_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\materials.json', 'r') as materials_file:
     materials = json.load(materials_file)
-with open(f'{ROOT_DIRECTORY}\projfiles\items\\consumables.json', 'r') as consumables_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\consumables.json', 'r') as consumables_file:
     consumables = json.load(consumables_file)
 
 
