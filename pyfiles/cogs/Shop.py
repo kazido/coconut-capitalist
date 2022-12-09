@@ -25,11 +25,11 @@ class ShopCog(commands.Cog, name='Shop'):
     async def shop(self, interaction: discord.Interaction):
         user = RequestUser(interaction.user.id, interaction=interaction)  # User information
         inventory = Inventory(interaction)
-
-        shop_view = ShopView(subshops=sub_shops, command_interaction=interaction)
+        
+        shop_view = ShopView(command_interaction=interaction)
         tools_sub_shop_dict = {
             "name": "Tools",
-            "emoji": "⚒️",
+            "emoji": '⚒️',
             "description": "Shop for some tools",
             "pages": []
         }
@@ -37,7 +37,7 @@ class ShopCog(commands.Cog, name='Shop'):
             tools_sub_shop_dict['pages'].append(SubShopPage(entity_ref_id=starter_item_ref_id, entity_info=starter_item_info))
             
         tools_sub_shop = SubShopView(subshop_dict=tools_sub_shop_dict, parent_view=shop_view)
-        sub_shops = [tools_sub_shop]
+        
         
         await interaction.response.send_message(embed=shop_view.embed, view=shop_view)
         
@@ -216,8 +216,8 @@ class ShopCog(commands.Cog, name='Shop'):
         #             return
         #         await ShopSelectView.on_timeout(self)
 
-        view = ShopSelectView()
-        await interaction.response.send_message(embed=view.view_embed, view=view)
+        # view = ShopSelectView()
+        # await interaction.response.send_message(embed=view.view_embed, view=view)
 
 
 async def setup(bot):
