@@ -6,6 +6,12 @@ from discord.ext import commands
 from discord import app_commands
 import discord
 import myModels as mm
+from myModels import ROOT_DIRECTORY
+import json
+
+
+with open(f'{ROOT_DIRECTORY}\projfiles\items\\tools.json', 'r') as tools_file:
+    tools = json.load(tools_file)
 
 
 class ShopCog(commands.Cog, name='Shop'):
