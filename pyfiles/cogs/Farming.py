@@ -1,19 +1,23 @@
 import asyncio
+import json
 import discord  # Discord imports
 from discord.ext import commands, tasks
 from discord import app_commands
 import random  # Random imports
 from random import randint
-from classLibrary import RequestUser, consumables  # File imports
+from classLibrary import RequestUser # File imports
 from cogs.ErrorHandler import registered
 from utils import seconds_until_tasks
 import myModels as mm
+from myModels import ROOT_DIRECTORY
 import playhouse.shortcuts as phs
 
 
+with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\consumables.json', 'r') as consumables_file:
+    consumables = json.load(consumables_file)
+
 def growth_roll(seed_ref_id):
-    growth_range = range(consumables[seed_ref_id]['growth_odds']
-                         [0], consumables[seed_ref_id]['growth_odds'][1])
+    growth_range = range(0, consumables['SEEDS'][seed_ref_id]['STAT_growth_odds'])
     roll = randint(0, 200)
     if roll in growth_range:  # If the roll is in the range for the crop to grow
         return True  # Set function as true, the crop grew
@@ -53,8 +57,8 @@ def harvest(button_info, button, user: discord.Member):
         if double == 5:
             harvested_crops = 2
     else:
-        harvested_crops = randint(consumables[button_info['crop']]['harvest_amount'][0],
-                                  consumables[button_info['crop']]['harvest_amount'][1])
+        harvested_crops = randint(consumables['CROPS'][button_info['crop']]['STAT_harvest_low'],
+                                  consumables['CROPS'][button_info['crop']]['STAT_harvest_high'])
     crop_in_db, created = mm.Items.get_or_create(owner_id=user.id, reference_id=button_info['crop'],
                                         defaults={'durability': None, 'quantity': harvested_crops})
     crop_in_db.quantity += harvested_crops
@@ -89,7 +93,7 @@ class FarmingCog(commands.Cog, name="Farming"):
             for index, plot in enumerate(user_plots):
                 if plot.startswith('SEED'):
                     should_grow = growth_roll(seed_ref_id=plot)
-                    grown_crop = consumables[plot]['grows_into']
+                    grown_crop = consumables['SEEDS'][plot]['grows_into']
                     if should_grow:  # Applies growth role based on crop without "seeds" at the end, checks if grown
                         users_farm_dict[f'plot{index+1}'] = grown_crop
                         guild = self.bot.get_guild(856915776345866240)
@@ -149,11 +153,11 @@ class FarmingCog(commands.Cog, name="Farming"):
                 user_plots = [users_farm_dict[x] for x in mm.Farms.plots]
                 for count, plot_contents in enumerate(user_plots):
                     if plot_contents.startswith("CROP"):
-                        plot_contents = consumables[plot_contents]['emoji']
+                        plot_contents = consumables['CROPS'][plot_contents]['emoji']
                     elif plot_contents == 'Empty!':
                         plot_contents = plot_contents
                     else:
-                        plot_contents = consumables[plot_contents]['item_name']
+                        plot_contents = consumables['SEEDS'][plot_contents]['item_name']
                     self.farm_module_embed.add_field(
                         name=f"Plot {count + 1} 🌳", value=plot_contents)
                 self.farm_module_embed.set_footer(
@@ -220,22 +224,21 @@ class FarmingCog(commands.Cog, name="Farming"):
                     color=0x8c6803)
                 self.barn_embed.set_author(name=f"{interaction.user.name} - In the Barn",
                                            icon_url=interaction.user.display_avatar)
-                for key, value in consumables.items():
-                    if key.startswith('CROP'):
-                        crop_quantity = 0
-                        seeds_quantity = 0
-                        crop = mm.Items.get_or_none(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == key)
-                        if crop:
-                            crop_quantity = crop.quantity
-                        seed = mm.Items.get_or_none(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == value['grows_from'])
-                        if seed:
-                            seeds_quantity = seed.quantity
-                        # self.barn_embed.description += f"\n{value['emoji']} \u200b **{crop_quantity:,}** {value['item_name']}s \
-                        #     :seedling: \u200b **{seeds_quantity:,}** seeds"
-                        self.barn_embed.add_field(name=f"{value['item_name'].capitalize()}",
-                                                  value=f"{value['emoji']} \u200b **{crop_quantity:,}** {value['item_name']}s "
-                                                  f":seedling: \u200b **{seeds_quantity:,}** seeds",
-                                                  inline=False)
+                for key, value in consumables['CROPS'].items():
+                    crop_quantity = 0
+                    seeds_quantity = 0
+                    crop = mm.Items.get_or_none(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == key)
+                    if crop:
+                        crop_quantity = crop.quantity
+                    seed = mm.Items.get_or_none(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == value['grows_from'])
+                    if seed:
+                        seeds_quantity = seed.quantity
+                    # self.barn_embed.description += f"\n{value['emoji']} \u200b **{crop_quantity:,}** {value['item_name']}s \
+                    #     :seedling: \u200b **{seeds_quantity:,}** seeds"
+                    self.barn_embed.add_field(name=f"{value['item_name'].capitalize()}",
+                                                value=f"{value['emoji']} \u200b **{crop_quantity:,}** {value['item_name']}s "
+                                                f":seedling: \u200b **{seeds_quantity:,}** seeds",
+                                                inline=False)
                 self.add_item(ExitButton(0))
                 self.add_item(SwitchToFarmButton(0))
                 self.add_item(SwitchToPlantButton(0))
@@ -262,7 +265,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 plots_full = 0
                 for index, plot in enumerate(user_plots):
                     if plot != 'Empty!':
-                        self.plant_embed.add_field(name=f"Plot {index+1} 🌳", value=f"{consumables[plot]['item_name']}")
+                        self.plant_embed.add_field(name=f"Plot {index+1} 🌳", value=f"{consumables[plot[0:4]+'S'][plot]['item_name']}")
                         plots_full += 1
                     else:
                         self.plant_embed.add_field(name=f"Plot {index+1} 🌳", value=f"Empty!")
@@ -271,18 +274,17 @@ class FarmingCog(commands.Cog, name="Farming"):
                     self.add_item(PlantButton(
                             discord.ButtonStyle.grey, True, label='Plots full!'))
                 else:
-                    for key in consumables.keys():
-                        if key.startswith('SEED'):
-                            seeds_quantity = 0
-                            seeds = mm.Items.get_or_none(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == key)
-                            if seeds:
-                                seeds_quantity = seeds.quantity
-                            if seeds_quantity == 0:
-                                self.add_item(PlantButton(
-                                    discord.ButtonStyle.grey, True, label='No seeds'))
-                            else:
-                                self.add_item(PlantButton(
-                                    discord.ButtonStyle.blurple, False, seed_ref_id=key))
+                    for key in consumables['SEEDS'].keys():
+                        seeds_quantity = 0
+                        seeds = mm.Items.get_or_none(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == key)
+                        if seeds:
+                            seeds_quantity = seeds.quantity
+                        if seeds_quantity == 0:
+                            self.add_item(PlantButton(
+                                discord.ButtonStyle.grey, True, label='No seeds'))
+                        else:
+                            self.add_item(PlantButton(
+                                discord.ButtonStyle.blurple, False, seed_ref_id=key))
 
                 self.add_item(ExitButton())
                 self.add_item(SwitchToBarnButton())
@@ -304,7 +306,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 if label:
                     button_label = label
                 else:
-                    button_label = consumables[self.seed_ref_id]['item_name']
+                    button_label = consumables['SEEDS'][self.seed_ref_id]['item_name']
                 super().__init__(label=button_label,
                                  style=self.button_style, disabled=self.button_disabled)
 
@@ -321,7 +323,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 user_plots = [users_farm_dict[x] for x in mm.Farms.plots]
                 for index, plot in enumerate(user_plots):
                     if plot == 'Empty!':
-                        self.view.plant_embed.set_field_at(index=index, name="PLANTED!", value=f"{consumables[self.seed_ref_id]['item_name']}")
+                        self.view.plant_embed.set_field_at(index=index, name="PLANTED!", value=f"{consumables['SEEDS'][self.seed_ref_id]['item_name']}")
                         users_farm_dict[f'plot{index+1}'] = self.seed_ref_id
                         users_farm = phs.dict_to_model(mm.Farms, users_farm_dict)
                         users_farm.save()
