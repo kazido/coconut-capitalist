@@ -42,9 +42,6 @@ class ShopCog(commands.Cog, name='Shop'):
         await interaction.response.send_message(embed=shop_view.embed, view=shop_view)
         
        
-       
-       
-       
         # def add_button(view, parent_dict, item_ref_id):
         #     user_balance = user.instance.money
         #     label = parent_dict[item_ref_id]['item_name'].capitalize()
