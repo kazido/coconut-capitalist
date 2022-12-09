@@ -14,7 +14,7 @@ import json
 import os
 
 project_files = os.path.dirname(pathlib.Path.cwd()) + '\\projfiles'
-with open(f'{project_files}\\items\\pets.json', 'r') as file:
+with open(f'{project_files}\\game_entities\\pets.json', 'r') as file:
     pets = json.load(file)
 
 embed_title = "Welcome to the pet shop!"
