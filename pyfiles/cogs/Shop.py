@@ -1,6 +1,5 @@
 from cogs.ErrorHandler import registered
 from classLibrary import RequestUser, Inventory
-from classLibrary import tools, consumables
 from ViewElements import SubShopPage, SubShopView, ShopView
 from discord.ext import commands
 from discord import app_commands
@@ -10,8 +9,14 @@ from myModels import ROOT_DIRECTORY
 import json
 
 
+with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\pets.json', 'r') as pets_file:
+    pets = json.load(pets_file)
+    
 with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\tools.json', 'r') as tools_file:
     tools = json.load(tools_file)
+    
+with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\consumables.json', 'r') as consumables_file:
+    consumables = json.load(consumables_file)
 
 class ShopCog(commands.Cog, name='Shop'):
     """Purchase helpful items on your way to the top!"""
@@ -23,20 +28,30 @@ class ShopCog(commands.Cog, name='Shop'):
     @app_commands.guilds(977351545966432306, 856915776345866240)
     @app_commands.command(name="shop", description="Buy helpful items!")
     async def shop(self, interaction: discord.Interaction):
+        # await interaction.response.send_message("I'm not done yet...", ephemeral=True)
         user = RequestUser(interaction.user.id, interaction=interaction)  # User information
         inventory = Inventory(interaction)
         
         shop_view = ShopView(command_interaction=interaction)
-        tools_sub_shop_dict = {
+        tools_subshop_dict = {
             "name": "Tools",
             "emoji": '⚒️',
-            "description": "Shop for some tools",
+            "description": "Shop for some upgradable tools that will start you on your journey through various skills.",
             "pages": []
         }
+        seeds_subshop_dict = {
+            "name": "Seeds",
+            "emoji": '🌱',
+            "description": "Seeds will grow into crops which can be used for feeding your pet or reselling for profit!",
+            "pages": []
+        }
+        for seed_ref_id, seed_info in consumables['SEEDS'].items():
+            seeds_subshop_dict['pages'].append(SubShopPage(entity_ref_id=seed_ref_id, entity_info=seed_info, command_interaction=interaction))
         for starter_item_ref_id, starter_item_info in tools['TOOLS_STARTER'].items():
-            tools_sub_shop_dict['pages'].append(SubShopPage(entity_ref_id=starter_item_ref_id, entity_info=starter_item_info))
+            tools_subshop_dict['pages'].append(SubShopPage(entity_ref_id=starter_item_ref_id, entity_info=starter_item_info, command_interaction=interaction))
             
-        tools_sub_shop = SubShopView(subshop_dict=tools_sub_shop_dict, parent_view=shop_view)
+        tools_subshop = SubShopView(subshop_dict=tools_subshop_dict, parent_view=shop_view)
+        seeds_subshop = SubShopView(subshop_dict=seeds_subshop_dict, parent_view=shop_view)
         
         
         await interaction.response.send_message(embed=shop_view.embed, view=shop_view)
@@ -158,66 +173,7 @@ class ShopCog(commands.Cog, name='Shop'):
         #     async def on_timeout(self) -> None:
         #         await ShopSelectView.on_timeout(self=self)
 
-        # # View that contains the main Shop page where the user selects the SubShop
-        # class ShopSelectView(discord.ui.View):
-        #     def __init__(self, *, timeout=20):
-        #         super().__init__(timeout=timeout)
-        #         sub_shops = {
-        #             "tools": {
-        #                 "view": ToolShopView(),
-        #                 "label": "\u200b",
-        #                 "emoji": '⚒️'
-        #             },
-        #             "seeds": {
-        #                 "view": SeedShopView(),
-        #                 "label": "\u200b",
-        #                 "emoji": '🌱'
-        #             }
-        #         }
-        #         self.view_embed = discord.Embed(
-        #             title="Shop Select",
-        #             description="Choose which section you would like to shop from!",
-        #             color=discord.Color.teal()
-        #         )
-        #         self.view_embed.set_author(name=f"{interaction.user.name} - Shopping",
-        #                                 icon_url=interaction.user.display_avatar)
-        #         for shop in sub_shops.values():
-        #             self.add_item(SwitchButton(
-        #                 interaction, shop['view'], shop['label'], shop['emoji']))
-        #         self.add_item(CloseButton())
-
-        #     async def on_timeout(self) -> None:
-        #         shop_closed_embed = discord.Embed(
-        #             title="Shop Closed",
-        #             description=f"Thanks for your business, {interaction.user.mention}!\nCome again!",
-        #             color=discord.Color.from_str("0x41a651")
-        #         )
-        #         await interaction.edit_original_response(embed=shop_closed_embed, view=None)
-                
-        # # Button to go back to the initial Shop Select page
-        # class GoBackButton(discord.ui.Button):
-        #     def __init__(self, row=2):
-        #         super().__init__(label='Go back', style=discord.ButtonStyle.red, row=row)
-
-        #     async def callback(self, go_back_interaction):
-        #         if interaction.user != go_back_interaction.user:
-        #             return
-        #         new_view = ShopSelectView()
-        #         self.view.stop()
-        #         await go_back_interaction.response.edit_message(embed=new_view.view_embed, view=new_view)
-
-        # # Button to close the module
-        # class CloseButton(discord.ui.Button):
-        #     def __init__(self, row=1):
-        #         super().__init__(label="Leave", style=discord.ButtonStyle.red, row=row)
-
-        #     async def callback(self, close_interaction: discord.Interaction):
-        #         if close_interaction.user != interaction.user:
-        #             return
-        #         await ShopSelectView.on_timeout(self)
-
-        # view = ShopSelectView()
-        # await interaction.response.send_message(embed=view.view_embed, view=view)
+        
 
 
 async def setup(bot):
