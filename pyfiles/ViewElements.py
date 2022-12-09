@@ -4,14 +4,11 @@ from classLibrary import RequestUser
 
 # View for the overall shop, with buttons to select subshops
 class ShopView(View):
-    def __init__(self, subshops: list, command_interaction, *, timeout=20):
+    def __init__(self, command_interaction, *, timeout=20):
         super().__init__(timeout=timeout)
-        self.subshops = subshops
         self.command_interaction = command_interaction
         self.embed = self.create_embed()
-        for subshop in self.subshops:
-            self.add_item(subshop.go_here_button)
-        self.add_item(CloseShopButton(command_interaction, row=1))
+        self.add_item(CloseShopButton(command_interaction, row=2))
         
     # Creates an embed with fields for each sub shop
     def create_embed(self):
@@ -21,10 +18,13 @@ class ShopView(View):
             color=Color.teal())
         embed.set_author(name=f"{self.command_interaction.user.name} - Shopping",
                          icon_url=self.command_interaction.user.display_avatar)
-        for subshop in self.subshops:
-            embed.add_field(name=subshop.subshop_dict['name'], value=subshop.subshop_dict['description'])
         return embed
-            
+        
+    # Adds a subshop button when one is added
+    def add_subshop(self, subshop):
+        self.add_item(subshop.go_here_button)
+        self.embed.add_field(name=subshop.subshop_dict['name'], value=subshop.subshop_dict['description'])
+    
     async def on_timeout(self) -> None:
         shop_closed_embed = Embed(
             title="Shop Closed",
@@ -37,7 +37,7 @@ class ShopView(View):
 class CloseShopButton(Button):
     def __init__(self, parent_interaction, row=None):
         self.parent_interaction = parent_interaction
-        super().__init__(emoji=PartialEmoji.from_str("<:exit:1050611309957357588>"), style=ButtonStyle.blurple, custom_id="return", row=row)
+        super().__init__(emoji=PartialEmoji.from_str("<:close:1050634248983412746>"), style=ButtonStyle.red, custom_id="return", row=row)
         
     async def callback(self, shop_exit_interaction: Interaction):
         if self.parent_interaction.user != shop_exit_interaction.user:
@@ -60,8 +60,9 @@ class SubShopView(View):
         self.page_no: int = 0    # Current page is 0, will be changed with buttons
         self.page: SubShopPage = self.pages[self.page_no]  # Pages is indexed using page_no
         self.embed: Embed = self.page.embed
+        self.parent_view.add_subshop(self)
         pagination_buttons = [PaginateBackwardButton(self.parent_view.command_interaction), 
-                              PurchaseItemButton(self.parent_view.command_interaction), 
+                              PurchaseItemButton(self.parent_view.command_interaction, self), 
                               PaginateForwardButton(self.parent_view.command_interaction), 
                               PaginateReturnButton(self.parent_view.command_interaction)]
         for button in pagination_buttons:
@@ -109,7 +110,7 @@ class SubShopPage():
         page_embed = Embed(
             title=entity_info['name'], # Sets embed title to item name
             description=entity_info['description'] + f"\nCost: **{entity_info['price']:,}** bits", # Sets embed description to item description and price
-            color=SubShopPage.rarity_colors[entity_info['rarity']] # Sets embed to be color of item rarity
+            color=Color.from_str(SubShopPage.rarity_colors[entity_info['rarity']]) # Sets embed to be color of item rarity
             )
         for entity_info_field, field_dict in entity_info.items():
             if entity_info_field in ['stats', 'perks']:
@@ -119,12 +120,12 @@ class SubShopPage():
                         description += f"{stat_name}: {stat_value}"
                         if index != len(field_dict):
                             description += "\n"
-                self.embed.add_field(name=entity_info_field.capitalize(), value=description)
+                page_embed.add_field(name=entity_info_field.capitalize(), value=description)
         return page_embed
     
 # Button that sends user to subshop
 class SwitchButton(Button):
-    def __init__(self, parent_interaction: Interaction, view_to_switch_to: View, button_label: str, emoji=None, row=1):
+    def __init__(self, parent_interaction: Interaction, view_to_switch_to: View, button_label: str, emoji=None, row=0):
         self.parent_interaction = parent_interaction
         self.view_to_switch_to = view_to_switch_to
         super().__init__(label=button_label, style=ButtonStyle.blurple, emoji=emoji, row=row)
@@ -140,7 +141,7 @@ class SwitchButton(Button):
 class PaginateBackwardButton(Button):
     def __init__(self, parent_interaction, row=None):  # Initialize with a backward arrow, grey color and a row, if given.
         self.parent_interaction = parent_interaction
-        super().__init__(emoji=PartialEmoji.from_str("<:backarrow:1050563563917418586>"), style=ButtonStyle.grey, custom_id="back", row=row)
+        super().__init__(emoji=PartialEmoji.from_str("<:left_arrow:1050633298667389008>"), style=ButtonStyle.grey, custom_id="back", row=row)
 
     async def callback(self, paginate_backward_interaction: Interaction):
         assert self.view is not None
@@ -153,9 +154,9 @@ class PaginateBackwardButton(Button):
     
 # Button for purchasing the item on the page   
 class PurchaseItemButton(Button):
-    def __init__(self, parent_interaction: Interaction):
+    def __init__(self, parent_interaction: Interaction, parent_view: SubShopView):
         user = RequestUser(parent_interaction.user.id, interaction=parent_interaction)
-        if user.instance.money >= self.view.page.entity_price:
+        if user.instance.money >= parent_view.page.entity_price:
             label = "Purchase!"
             style = ButtonStyle.green
             emoji = '💰'
@@ -175,7 +176,7 @@ class PurchaseItemButton(Button):
 class PaginateForwardButton(Button):
     def __init__(self, parent_interaction, row=None):  # Initialize with a forward arrow, grey color and a row, if given.
         self.parent_interaction = parent_interaction
-        super().__init__(emoji=PartialEmoji.from_str("<:forwardarrow:1050571261971017769>"), style=ButtonStyle.grey, custom_id="forward", row=row)
+        super().__init__(emoji=PartialEmoji.from_str("<:right_arrow:1050633322813993000>"), style=ButtonStyle.grey, custom_id="forward", row=row)
 
     async def callback(self, paginate_forward_interaction: Interaction):
         assert self.view is not None
@@ -190,7 +191,7 @@ class PaginateForwardButton(Button):
 class PaginateReturnButton(Button):
     def __init__(self, parent_interaction, row=None):
         self.parent_interaction = parent_interaction
-        super().__init__(emoji=PartialEmoji.from_str("<:return:1050614735864864859>"), style=ButtonStyle.blurple, custom_id="return", row=row)
+        super().__init__(emoji=PartialEmoji.from_str("<:return:1050633534836064286>"), style=ButtonStyle.blurple, custom_id="return", row=row)
         
     async def callback(self, paginate_return_interaction: Interaction):
         assert self.view is not None
