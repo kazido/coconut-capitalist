@@ -10,7 +10,7 @@ from myModels import ROOT_DIRECTORY
 import json
 
 
-with open(f'{ROOT_DIRECTORY}\projfiles\items\\tools.json', 'r') as tools_file:
+with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\tools.json', 'r') as tools_file:
     tools = json.load(tools_file)
 
 class ShopCog(commands.Cog, name='Shop'):
