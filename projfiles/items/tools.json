@@ -53,22 +53,31 @@
     "power": 2,
     "durability": -1
   },
-  "TOOL_ROD_fiberglass": {
+  "TOOL_ROD_fiberglass":{
     "item_name": "Fiberglass rod",
-    "price": 2000000,
-    "sell_price": 1500000,
+    "price": 2500000,
+    "sell_price": 2000000,
     "trade": 1,
     "rarity": "rare",
-    "power": 15,
+    "power": 40,
     "durability": -1
   },
-  "TOOL_ROD_internet": {
-    "item_name": "The Inter-net",
+  "TOOL_ROD_festival": {
+    "item_name": "Festival rod",
+    "price": 20000000,
+    "sell_price": 16000000,
+    "trade": 1,
+    "rarity": "epic",
+    "power": 150,
+    "durability": -1
+  },
+  "TOOL_ROD_hotrod": {
+    "item_name": "The Hot-rod",
     "price": 100000000,
-    "sell_price": 75000000,
+    "sell_price": 80000000,
     "trade": 1,
     "rarity": "legendary",
-    "power": 100,
+    "power": 1000,
     "durability": -1
   }
 }
