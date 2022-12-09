@@ -1,0 +1,62 @@
+{
+  "TOOLS_STARTER": {
+    "TOOL_AXE_starter": {
+      "name": "Starter axe",
+      "description": "A basic axe, meant for novice lumberjacks. You'll learn a lot from this axe, and it will learn a lot from you.",
+      "price": 10000,
+      "rarity": "common",
+      "power": 1,
+      "durability": -1,
+      "cansell": 0
+    },
+    "TOOL_ROD_starter": {
+      "name": "Starter rod",
+      "description": "A similar story to the starter axe, this rod was meant for the Apostles. Get it?",
+      "price": 1000000,
+      "rarity": "common",
+      "power": 1,
+      "durability": -1,
+      "cansell": 0
+    }
+  },
+  "TOOLS_UPGRADES": {
+    "AXE_CHAINSAW_PATH": {
+      "TOOL_AXE_path_0_rank_1": {
+        "item_name": "Home Depot chainsaw",
+        "price": 150000,
+        "sell_price": 120000,
+        "rarity": "uncommon",
+        "power": 5,
+        "durability": -1
+      }
+    },
+    "AXE_AXE_PATH": {
+      "TOOL_AXE_II": {
+        "item_name": "Terry's axe",
+        "price": 8700000,
+        "sell_price": 6960000,
+        "rarity": "rare",
+        "power": 40,
+        "durability": -1
+      }
+    },
+    "ROD_NET_PATH":{
+
+    },
+    "ROD_ROD_PATH":{
+
+    },
+    "PICK_DRILL_PATH":{
+
+    },
+    "PICK_PICK_PATH":{
+
+    },
+    "SWORD_GREATSWORD_PATH": {
+
+    },
+    "SWORD_SWORD_PATH": {
+
+    }
+  }
+}
