@@ -92,7 +92,7 @@ class PetsCog(commands.Cog, name='Pets'):
 
     class NextPageButton(discord.ui.Button):
         def __init__(self):
-            super().__init__(emoji="➡️", style=discord.ButtonStyle.blurple, custom_id="next")
+            super().__init__(emoji=discord.PartialEmoji.from_str("<:forwardarrow:1050571261971017769>"), style=discord.ButtonStyle.blurple, custom_id="next")
 
         async def callback(self, next_page_interaction: discord.Interaction):
             assert self.view is not None
@@ -109,7 +109,7 @@ class PetsCog(commands.Cog, name='Pets'):
 
     class PreviousPageButton(discord.ui.Button):
         def __init__(self):
-            super().__init__(emoji="⬅️", style=discord.ButtonStyle.blurple, custom_id="back")
+            super().__init__(emoji=discord.PartialEmoji.from_str("<:backarrow:1050570391963320340>"), style=discord.ButtonStyle.blurple, custom_id="back")
 
         async def callback(self, previous_page_interaction: discord.Interaction):
             assert self.view is not None
