@@ -157,7 +157,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                     elif plot_contents == 'Empty!':
                         plot_contents = plot_contents
                     else:
-                        plot_contents = consumables['SEEDS'][plot_contents]['item_name']
+                        plot_contents = consumables['SEEDS'][plot_contents]['name']
                     self.farm_module_embed.add_field(
                         name=f"Plot {count + 1} 🌳", value=plot_contents)
                 self.farm_module_embed.set_footer(
@@ -233,10 +233,10 @@ class FarmingCog(commands.Cog, name="Farming"):
                     seed = mm.Items.get_or_none(mm.Items.owner_id == interaction.user.id, mm.Items.reference_id == value['grows_from'])
                     if seed:
                         seeds_quantity = seed.quantity
-                    # self.barn_embed.description += f"\n{value['emoji']} \u200b **{crop_quantity:,}** {value['item_name']}s \
+                    # self.barn_embed.description += f"\n{value['emoji']} \u200b **{crop_quantity:,}** {value['name']}s \
                     #     :seedling: \u200b **{seeds_quantity:,}** seeds"
-                    self.barn_embed.add_field(name=f"{value['item_name'].capitalize()}",
-                                                value=f"{value['emoji']} \u200b **{crop_quantity:,}** {value['item_name']}s "
+                    self.barn_embed.add_field(name=f"{value['name'].capitalize()}",
+                                                value=f"{value['emoji']} \u200b **{crop_quantity:,}** {value['name']}s "
                                                 f":seedling: \u200b **{seeds_quantity:,}** seeds",
                                                 inline=False)
                 self.add_item(ExitButton(0))
@@ -265,7 +265,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 plots_full = 0
                 for index, plot in enumerate(user_plots):
                     if plot != 'Empty!':
-                        self.plant_embed.add_field(name=f"Plot {index+1} 🌳", value=f"{consumables[plot[0:4]+'S'][plot]['item_name']}")
+                        self.plant_embed.add_field(name=f"Plot {index+1} 🌳", value=f"{consumables[plot[0:4]+'S'][plot]['name']}")
                         plots_full += 1
                     else:
                         self.plant_embed.add_field(name=f"Plot {index+1} 🌳", value=f"Empty!")
@@ -306,7 +306,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 if label:
                     button_label = label
                 else:
-                    button_label = consumables['SEEDS'][self.seed_ref_id]['item_name']
+                    button_label = consumables['SEEDS'][self.seed_ref_id]['name']
                 super().__init__(label=button_label,
                                  style=self.button_style, disabled=self.button_disabled)
 
@@ -323,7 +323,7 @@ class FarmingCog(commands.Cog, name="Farming"):
                 user_plots = [users_farm_dict[x] for x in mm.Farms.plots]
                 for index, plot in enumerate(user_plots):
                     if plot == 'Empty!':
-                        self.view.plant_embed.set_field_at(index=index, name="PLANTED!", value=f"{consumables['SEEDS'][self.seed_ref_id]['item_name']}")
+                        self.view.plant_embed.set_field_at(index=index, name="PLANTED!", value=f"{consumables['SEEDS'][self.seed_ref_id]['name']}")
                         users_farm_dict[f'plot{index+1}'] = self.seed_ref_id
                         users_farm = phs.dict_to_model(mm.Farms, users_farm_dict)
                         users_farm.save()
