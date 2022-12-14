@@ -5,6 +5,10 @@ from discord import app_commands
 from discord.app_commands import Choice
 import requests
 from bs4 import BeautifulSoup
+import os
+import openai
+import json
+import asyncio
 
 
 class FunCommands(commands.Cog, name='FunCommands'):
@@ -28,6 +32,30 @@ class FunCommands(commands.Cog, name='FunCommands'):
     async def yay(self, interaction: discord.Interaction):
         await interaction.response.send_message(f':balloon:')
 
+    @commands.cooldown(rate=1, per=20)
+    @fun_commands.command(name="ai", description="Get a response from AI based on a prompt.")
+    async def ai(self, interaction: discord.Interaction, prompt: str):
+        with open('../config.json', 'r') as f:
+            data = json.load(f)
+        openai.api_key = data['OPENAI_KEY']
+            
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=prompt,
+            temperature=0.80,
+            max_tokens=1500,
+            top_p=1,
+            frequency_penalty=0.80,
+            presence_penalty=0
+        )
+        response_embed = discord.Embed(
+            title=prompt,
+            description=response['choices'][0]['text'],
+            color=discord.Color.green())
+        await asyncio.sleep(len(prompt*2))
+        await interaction.response.defer(thinking=True)
+        await interaction.edit_original_response(embed=response_embed)
+
     @fun_commands.command(name="status", description="Change the status of the bot")
     async def status(self, interaction: discord.Interaction, playing: str):
         game = discord.Game(playing.replace("playing", ""))
@@ -48,7 +76,8 @@ class FunCommands(commands.Cog, name='FunCommands'):
         if item:
             # Get webpage for searching
             # response = requests.get(url=f"{game_urls[game.name.lower()+'search']}+{item.replace(' ', '+')}")  ^^^
-            response = requests.get(url=f"{game_urls['terraria' + 'search']}+{item.replace(' ', '+')}")
+            response = requests.get(
+                url=f"{game_urls['terraria' + 'search']}+{item.replace(' ', '+')}")
             soup = BeautifulSoup(response.content, 'html.parser')
             # Get title and descriptions for the item
             title = soup.find(id="firstHeading")
@@ -86,7 +115,8 @@ class FunCommands(commands.Cog, name='FunCommands'):
             embed.set_footer(text=f"Requested by {interaction.user.name}")
             try:
                 sprite = section_images.find("img")
-                embed.set_thumbnail(url=f"https://terraria.wiki.gg{sprite['src']}")
+                embed.set_thumbnail(
+                    url=f"https://terraria.wiki.gg{sprite['src']}")
                 embed.set_author(name="Terraria Wiki",
                                  url=f"{game_urls['terraria']}",
                                  icon_url="https://terraria.wiki.gg/images/thumb/a/ac/Tree.png/25px-Tree.png")
@@ -106,8 +136,10 @@ class FunCommands(commands.Cog, name='FunCommands'):
                             "A collector? An explorer? There's something for everyone.",
                 color=discord.Color.green()
             )
-            embed.set_footer(text="Use /wiki (item) to see the wiki page about an item!")
-            embed.set_thumbnail(url="https://terraria.wiki.gg/images/thumb/a/ac/Tree.png/25px-Tree.png")
+            embed.set_footer(
+                text="Use /wiki (item) to see the wiki page about an item!")
+            embed.set_thumbnail(
+                url="https://terraria.wiki.gg/images/thumb/a/ac/Tree.png/25px-Tree.png")
             embed.set_author(name="Terraria Wiki", url=f"{game_urls['terraria']}",
                              icon_url="https://terraria.wiki.gg/images/thumb/a/ac/Tree.png/25px-Tree.png")
         await interaction.response.send_message(embed=embed)
@@ -115,7 +147,8 @@ class FunCommands(commands.Cog, name='FunCommands'):
     @app_commands.command(name="crafting", description="Check recipes for Terraria items.")
     @app_commands.guilds(856915776345866240)
     async def crafting(self, interaction: discord.Interaction, item: str | None):
-        response = requests.get(url=f"https://terraria.wiki.gg/index.php?search={item.replace(' ', '+')}")
+        response = requests.get(
+            url=f"https://terraria.wiki.gg/index.php?search={item.replace(' ', '+')}")
         soup = BeautifulSoup(response.content, 'html.parser')
         title = soup.find(id="firstHeading")
         section_images = soup.find("div", {"class": "section images"})
@@ -144,13 +177,15 @@ class FunCommands(commands.Cog, name='FunCommands'):
         for x in data[2:]:
             dont_add_me = False
             if len(x) == 3:
-                embed.add_field(name="Crafting Station", value=f"{x[2].replace('or', ' or ')}")
+                embed.add_field(name="Crafting Station",
+                                value=f"{x[2].replace('or', ' or ')}")
             for index, strings in enumerate(x):
                 alphabet = 'abcdefghijklmnopqrstuvwxyz'
                 prev = ''
                 for letter in strings:
                     if letter.lower() in alphabet and prev == ')':
-                        fixed_string = strings.replace(f'){letter}', f')\n{letter}')
+                        fixed_string = strings.replace(
+                            f'){letter}', f')\n{letter}')
                         x.remove(x[index])
                         x.insert(index, fixed_string)
                     prev = letter
