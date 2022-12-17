@@ -38,8 +38,8 @@
     "color": "0x63efff",
     "health": 200,
     "bonuses": {
-        "work": 0.25,
-        "daily": 1
+        "work": 0.0125,
+        "daily": 0
       },
     "animals": {
       "frog": {
@@ -65,8 +65,8 @@
     "color": "0x0c61cf",
     "health": 400,
     "bonuses": {
-        "work": 0.5,
-        "daily": 2
+        "work": 0.016,
+        "daily": 0
       },
     "animals": {
       "giraffe": {
@@ -95,8 +95,8 @@
     "color": "0x6e3ade",
     "health": 800,
     "bonuses": {
-        "work": 0.7,
-        "daily": 2
+        "work": 0.0175,
+        "daily": 0
       },
     "animals": {
       "polar bear": {
@@ -125,8 +125,8 @@
     "color": "0xe3ab3b",
     "health": 2000,
     "bonuses": {
-        "work": 1,
-        "daily": 3
+        "work": 0.02,
+        "daily": 0
       },
     "animals": {
       "lion": {
@@ -149,8 +149,8 @@
     "color": "0xe3a019",
     "health": 25000,
     "bonuses": {
-        "work": 5,
-        "daily": 10
+        "work": 0.05,
+        "daily": 0
       },
     "animals": {
       "bee": {
