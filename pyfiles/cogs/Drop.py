@@ -8,7 +8,7 @@ from pytz import timezone
 import asyncio
 import json  # File handling imports
 from cogs.ErrorHandler import registered  # File imports
-from classLibrary import RequestUser
+from ClassLibrary import RequestUser
 from utils import seconds_until_tasks
 import myModels as mM
 

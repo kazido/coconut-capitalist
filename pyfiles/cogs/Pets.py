@@ -2,7 +2,7 @@ import asyncio
 
 import myModels as mm
 from cogs.ErrorHandler import registered, own_pet
-from classLibrary import RequestUser
+from ClassLibrary import RequestUser
 import pathlib
 
 # discord imports

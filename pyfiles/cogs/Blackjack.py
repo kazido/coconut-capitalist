@@ -4,7 +4,7 @@ from discord import app_commands
 from random import randint
 from cogs.ErrorHandler import registered
 import asyncio
-from classLibrary import RequestUser
+from ClassLibrary import RequestUser
 import typing
 import pydealer
 import sys

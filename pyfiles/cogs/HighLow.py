@@ -1,7 +1,7 @@
 import typing
 import asyncio
 from cogs.ErrorHandler import registered
-from classLibrary import RequestUser
+from ClassLibrary import RequestUser
 import myModels as mm
 from myModels import Users
 from discord.ext import commands

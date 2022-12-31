@@ -2,7 +2,7 @@ import asyncio
 import discord
 from discord.ext import commands
 from discord import app_commands
-from classLibrary import RequestUser, ranks
+from ClassLibrary import RequestUser, ranks
 from cogs.ErrorHandler import registered
 
 

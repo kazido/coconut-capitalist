@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord import app_commands
 import myModels as mm
 from discord.utils import get
-from classLibrary import RequestUser
+from ClassLibrary import RequestUser
 
 import datetime
 
