@@ -1,10 +1,9 @@
-from classLibrary import Tree, RequestUser
+from ClassLibrary import Tree, RequestUser, tools
 import discord
 from discord import app_commands
 from discord.ext import commands
 from cogs.ErrorHandler import registered
 import json
-from classLibrary import tools
 
 class ForagingCog(commands.Cog, name='Foraging'):
     """Earn foraging xp by cutting down trees. Don't forget to replant!"""

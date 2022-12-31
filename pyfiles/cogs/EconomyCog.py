@@ -8,7 +8,7 @@ from discord.ext import commands
 import random
 from random import randint
 from cogs.ErrorHandler import registered
-from classLibrary import RequestUser
+from ClassLibrary import RequestUser
 from cogs.Drop import DROP_AVERAGE
 import myModels as mm
 import peewee as pw
