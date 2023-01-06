@@ -40,6 +40,23 @@ class Users(BaseModel):
 
     class Meta:
         table_name = 'users'
+        
+        
+class Games(BaseModel):
+    user_id = ForeignKeyField(column_name='id', model=Users)
+    bet = IntegerField(null=True)
+    id = AutoField(null=True, primary_key=True, unique=True)
+
+    class Meta:
+        table_name = 'games'
+        
+        
+class Settings(BaseModel):
+    id = ForeignKeyField(column_name='id', unique=True, model=Users)
+    autodeposit = IntegerField(null=True)
+
+    class Meta:
+        table_name = 'settings'
 
 
 class Farms(BaseModel):
@@ -52,8 +69,6 @@ class Farms(BaseModel):
 
     class Meta:
         table_name = 'farms'
-
-
 
 
 class Items(BaseModel):
