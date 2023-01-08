@@ -54,6 +54,7 @@ class Games(BaseModel):
 class Settings(BaseModel):
     id = ForeignKeyField(column_name='id', unique=True, model=Users)
     autodeposit = IntegerField(null=True)
+    withdrawwarning = IntegerField(null=True)
 
     class Meta:
         table_name = 'settings'
