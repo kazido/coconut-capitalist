@@ -3,6 +3,7 @@ from discord.ui import Button, View
 from ClassLibrary import RequestUser
 from myModels import ROOT_DIRECTORY
 import json
+import asyncio
 
 with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\consumables.json', 'r') as consumables_file:
     consumables = json.load(consumables_file)
@@ -140,11 +141,14 @@ class SubShopPage():
         if entity_ref_id.startswith('SEED'):
             seed_info = ""
             seed_grows_into = consumables['CROPS'][entity_info['grows_into']]
-            average_profit = seed_grows_into['sell_price'] * ((seed_grows_into['STAT_harvest_low'] + seed_grows_into['STAT_harvest_high'])/2) - entity_info['price']
+            average_profit = seed_grows_into['sell_price'] * ((seed_grows_into['STAT_harvest_low'] + 
+                                                               seed_grows_into['STAT_harvest_high'])/2) - entity_info['price']
             average_grow_time = 100 / entity_info['STAT_growth_odds']
-            seed_info += f"Average Profit: **{int(average_profit):,}** bits\n"
-            seed_info += f"Average Time to Grow: **{int(average_grow_time):,}** hours\n"
-            seed_info += f"Pet XP: **{seed_grows_into['pet_xp']:,}** xp"
+            suffix = '' if (seed_grows_into['STAT_harvest_low'] or seed_grows_into['STAT_harvest_high']) == 1 else 's'
+            seed_info += f"Grown Sell Price: **{int(seed_grows_into['sell_price']):,}** bits\n"
+            seed_info += f"Time to Grow: ~**{int(average_grow_time):,}** hours\n"
+            seed_info += f"Grown Crop Yield: **{seed_grows_into['STAT_harvest_low']}** - **{seed_grows_into['STAT_harvest_high']}** {seed_grows_into['name']}{suffix}\n"
+            seed_info += f"Pet XP: **{seed_grows_into['pet_xp']:,}** xp per"
             fields['Info'] = seed_info
         elif entity_ref_id.startswith('TOOL'):
             tool_info = ""
@@ -205,7 +209,20 @@ class PurchaseItemButton(Button):
         self.refresh(self.parent_view.page)
         
     async def callback(self, purchase_interaction: Interaction):
-        await purchase_interaction.response.send_message("This isn't ready yet.", ephemeral=True)
+        user = RequestUser(self.parent_interaction.user.id, interaction=self.parent_interaction)
+        # If the user doesn't have enough money to make the purchase
+        if user.instance.money < self.parent_view.page.entity_price:
+            self.disabled = True
+            self.label = "Nope, sorry."
+            self.style = ButtonStyle.red
+            self.emoji = "☹️"
+            for button in self.parent_view.children:
+                button.disabled = True
+            await purchase_interaction.response.edit_message(view=self.parent_view)
+            await asyncio.sleep(1)
+            await purchase_interaction.delete_original_response()
+            return
+        
         return
 
     def refresh(self, page):
@@ -220,6 +237,7 @@ class PurchaseItemButton(Button):
             style = ButtonStyle.grey
             emoji = None
             disabled = True
+        # Reinitializes the button with the proper attributes, based on whether or not the user can purchase
         super().__init__(label=label, style=style, emoji=emoji, disabled=disabled, row=0, custom_id='purchase')
 
 # Button that sends paginator forward one page
