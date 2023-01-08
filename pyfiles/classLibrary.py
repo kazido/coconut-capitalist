@@ -189,45 +189,6 @@ class Pet:
         self.instance.save()
         return new_name
 
-
-class Inventory:
-    def __init__(self, interaction: discord.Interaction):
-        self.interaction = interaction
-
-    def add_item(self, reference_id, reference_dict: dict, quantity: int = 1):
-        exisiting_item = mm.Items.get_or_none(owner_id=self.interaction.user.id, reference_id=reference_id)
-        if exisiting_item:
-            exisiting_item.quantity += quantity
-            exisiting_item.save()
-        else:
-            mm.Items.insert(durability=reference_dict[reference_id]['durability'], 
-                            item_name=reference_dict[reference_id]['item_name'], 
-                            owner_id=self.interaction.user.id, quantity=quantity, reference_id=reference_id)
-
-    # def remove_item(self, item, quantity=None):
-    #     if isinstance(quantity, int):
-    #         check_remaining_items_statement = """SELECT quantity FROM items WHERE owner_id = ? and item_name = ?"""
-    #         self.cursor.execute(check_remaining_items_statement, [self.user_id, item.name])
-    #         remaining_items = self.cursor.fetchall()[0][0]
-    #         if remaining_items - quantity >= 0:
-    #             delete_item_statement = """DELETE FROM items WHERE owner_id = ? and item_name = ?"""
-    #             self.cursor.execute(delete_item_statement, [quantity, self.user_id, item.name])
-    #         else:
-    #             update_quantity_statement = """UPDATE items SET quantity = quantity - ? WHERE owner_id = ? and item_name = ?"""
-    #             self.cursor.execute(update_quantity_statement, [quantity, self.user_id, item.name])
-    #         self.sqliteConnection.commit()
-    #     else:
-    #         delete_item_statement = """DELETE FROM items WHERE owner_id = ? and item_name = ?"""
-    #         self.cursor.execute(delete_item_statement, [quantity, self.user_id, item.name])
-    #         self.sqliteConnection.commit()
-
-    def get(self, reference_id):
-        exisiting_item = mm.Items.get_or_none(mm.Items.owner_id==self.interaction.user.id, mm.Items.reference_id==reference_id)
-        if exisiting_item:
-            return exisiting_item.objects()
-        else:
-            return False
-
 class Tree:
     rare_drops = [item for item in materials if item.startswith("MATERIAL_TREE")]
     tree_heights = [randint(20, 40), randint(40, 50), randint(50, 60), randint(90, 100)]
