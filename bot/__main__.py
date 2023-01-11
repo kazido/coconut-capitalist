@@ -1,38 +1,39 @@
 import asyncio
 from datetime import datetime
-import random
-from random import randint
 import os
 import json
+
+# discord imports
 import discord
-from discord.ext import commands, tasks
-from pytz import timezone
+from discord.ext import commands
+
+# file imports
+import exts
+import constants
+
+exts_path = exts.__path__
 
 intents = discord.Intents.all()
 intents.message_content = True
-bot = commands.Bot(command_prefix='-', intents=intents, case_insensitive=True, strip_after_prefix=True)
-primary_guild = discord.Object(id=856915776345866240)
-testing_guild = discord.Object(id=977351545966432306)
 
-project_root = r"C:\Users\beege\PycharmProjects\EconomyDiscordBot"
+bot = commands.Bot(
+    command_prefix=constants.BOT_PREFIX, 
+    intents=intents, 
+    case_insensitive=True, 
+    strip_after_prefix=True
+    )
 
-with open('../config.json', 'r') as f:
+with open('config.json', 'r') as f:
     data = json.load(f)
-
-
-def owner_perms_check(ctx):
-    authorized = [326903703422500866, 730955069201317999]
-    return ctx.message.author.id in authorized
 
 
 @commands.is_owner()
 @bot.command(hidden=True)
 async def cogcheck(ctx):
-    path = project_root
-    for cog in os.listdir(path=fr"{project_root}\cogs"):
+    for cog in os.listdir(path=exts_path):
         if cog.endswith('.py'):
             try:
-                await bot.load_extension(f"cogs.{cog[:-3]}")
+                await bot.load_extension(f"exts.{cog[:-3]}")
             except commands.ExtensionAlreadyLoaded:
                 await ctx.send(f"{cog} is currently loaded.")
             except commands.ExtensionNotFound:
@@ -42,40 +43,37 @@ async def cogcheck(ctx):
 @commands.is_owner()
 @bot.command(hidden=True)
 async def sync(ctx):
-    synced_commands = []
-    treesync = await bot.tree.sync(guild=primary_guild)  # Main guild sync
+    treesync = await bot.tree.sync(guild=constants.PRIMARY_GUILD)  # Main guild sync
+    embed = discord.Embed(title="Synced!", description="", color=discord.Color.blurple())
     for command in treesync:
-        synced_commands.append(command.name)
-    await ctx.send("synced!\n" + str(synced_commands))
+        embed.description += command.name + ", "
+    await ctx.send(embed=embed)
 
 
-@commands.check(owner_perms_check)
-@bot.command(hidden=True, aliases=['rl'])
+@commands.is_owner()
+@bot.command(hidden=True, aliases=['r'])
 async def reload(ctx):
-    cogs = []
-    options = {}
-    for cog in os.listdir(path=fr"{project_root}\pyfiles\cogs"):
-        if cog.endswith('.py'):
-            if cog.startswith('__init__'):
+    extensions = []
+    select_options = {}
+    for extension in os.listdir(path=exts_path):
+        if extension.endswith('.py'):
+            if extension.startswith('__init__'):
                 pass
             else:
-                cogs.append(cog)
+                extensions.append(extension)
 
-    for x in cogs:
-        options[x] = discord.SelectOption(label=x, value=x)
-    select_options = []
-    for x in options.values():
-        select_options.append(x)
+    for x in extensions:
+        select_options[x] = discord.SelectOption(label=x, value=x)
 
     class CogSelect(discord.ui.View):
         def __init__(self, *, timeout=180):
             super().__init__(timeout=timeout)
 
-        @discord.ui.select(placeholder="Cog to reload", options=select_options)
+        @discord.ui.select(placeholder="Cog to Reload", options=select_options.values())
         async def selection(self, interaction: discord.Interaction, select: discord.ui.Select):
             if interaction.user != ctx.author:
                 return
-            await bot.reload_extension(f"cogs.{select.values[0][:-3]}")
+            await bot.reload_extension(f"exts.{select.values[0][:-3]}")
             await interaction.response.edit_message(
                 content=f"{select.values[0][:-3]} has successfully been reloaded.",
                 view=None)
@@ -90,8 +88,7 @@ async def reload(ctx):
 @bot.command(hidden=True)
 async def unload(ctx, cog):
     try:
-        path = r"C:\Users\beege\PycharmProjects\EconomyDiscordBot\pyfiles\cogs"
-        await bot.unload_extension(f"cogs.{cog}")
+        await bot.unload_extension(f"exts.{cog}")
         await ctx.send(f"{cog} has successfully been unloaded.")
     except commands.ExtensionNotFound:
         await ctx.send(f"{cog} could not be located.")
@@ -103,8 +100,7 @@ async def unload(ctx, cog):
 @bot.command(hidden=True)
 async def load(ctx, cog):
     try:
-        path = r"C:\Users\beege\PycharmProjects\EconomyDiscordBot\pyfiles\cogs"
-        await bot.load_extension(f"cogs.{cog}")
+        await bot.load_extension(f"exts.{cog}")
         await ctx.send(f"{cog} has been successfully loaded.")
     except commands.ExtensionAlreadyLoaded:
         await ctx.send(f"{cog} is already loaded.")
@@ -114,25 +110,23 @@ async def load(ctx, cog):
 
 @bot.event
 async def on_ready():
-    print("Bot is ready.")
-    activity = discord.Game("-help")
-    await bot.change_presence(status=discord.Status.online, activity=activity)
     fmt = "%m-%d-%Y %H:%M:%S"  # Put current date into a format and add to bottom of embed
-    now_time = datetime.now(timezone('US/Eastern'))
-    print(f"-- BOT RAN --\nRan at: {datetime.strftime(now_time, fmt)}")
+    print(f"-- BOT RAN --\nRan at: {datetime.strftime(datetime.now(), fmt)}")
+    print("Bot is ready.")
+
+
+async def load_extensions():  # Function for loading cogs upon bot.run
+    for filename in os.listdir(path=exts_path):
+        if filename.endswith('.py') and filename != '__init__.py':
+            await bot.load_extension(f'exts.{filename[:-3]}')
 
 
 async def main():
-    async def load_extensions():  # Function for loading cogs upon bot.run
-        path = r"C:\Users\beege\PycharmProjects\EconomyDiscordBot\pyfiles\cogs"
-        for filename in os.listdir(path=path):
-            if filename.endswith('.py'):
-                await bot.load_extension(f'cogs.{filename[:-3]}')
-
     async with bot:
-        await load_extensions()
-        discord.utils.setup_logging()
-        await bot.start(data["token"])
+        await load_extensions() # Loads cogs on bot startup
+        discord.utils.setup_logging() # 2.1 Logging feature
+        await bot.start(data["secondary_token"], reconnect=True) # Starts bot using token
 
 
-asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())
