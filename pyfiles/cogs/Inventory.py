@@ -1,28 +1,75 @@
 from cogs.ErrorHandler import registered
-from oldClassLibrary import *
+from ClassLibrary import RequestUser
+from discord.ext import commands
+from discord import app_commands
+import myModels as mm
+import discord
 
 class InventoryCog(commands.Cog, name='Inventory'):
     """Check out all the useful items you own."""
 
     def __init__(self, bot):
         self.bot = bot
+        
+    # Class for managing the items database
+    class Inventory:
+        def __init__(self):
+            pass
+
+        def add_item(self, reference_id, reference_dict: dict, quantity: int = 1):
+            exisiting_item = mm.Items.get_or_none(owner_id=self.interaction.user.id, reference_id=reference_id)
+            if exisiting_item:
+                exisiting_item.quantity += quantity
+                exisiting_item.save()
+            else:
+                mm.Items.insert(durability=reference_dict[reference_id]['durability'], 
+                                item_name=reference_dict[reference_id]['item_name'], 
+                                owner_id=self.interaction.user.id, quantity=quantity, reference_id=reference_id)
+
+        # def remove_item(self, item, quantity=None):
+        #     if isinstance(quantity, int):
+        #         check_remaining_items_statement = """SELECT quantity FROM items WHERE owner_id = ? and item_name = ?"""
+        #         self.cursor.execute(check_remaining_items_statement, [self.user_id, item.name])
+        #         remaining_items = self.cursor.fetchall()[0][0]
+        #         if remaining_items - quantity >= 0:
+        #             delete_item_statement = """DELETE FROM items WHERE owner_id = ? and item_name = ?"""
+        #             self.cursor.execute(delete_item_statement, [quantity, self.user_id, item.name])
+        #         else:
+        #             update_quantity_statement = """UPDATE items SET quantity = quantity - ? WHERE owner_id = ? and item_name = ?"""
+        #             self.cursor.execute(update_quantity_statement, [quantity, self.user_id, item.name])
+        #         self.sqliteConnection.commit()
+        #     else:
+        #         delete_item_statement = """DELETE FROM items WHERE owner_id = ? and item_name = ?"""
+        #         self.cursor.execute(delete_item_statement, [quantity, self.user_id, item.name])
+        #         self.sqliteConnection.commit()
+
+        def find(self, reference_id=None):
+            if reference_id:
+                exisiting_item = mm.Items.get_or_none(mm.Items.owner_id==self.interaction.user.id, mm.Items.reference_id==reference_id)
+                if exisiting_item:
+                    return exisiting_item.objects()
+                else:
+                    return False
+            query = mm.Items.select().where(mm.Items.owner_id==self.interaction.user.id)
+            return query.objects()
 
     @registered()
-    @commands.command(name="Inventory", aliases=["inv"], description="Check your inventory!", brief="-inventory")
-    async def inventory(self, ctx):
-        # User info
-        user = User(ctx)
-        inventory = Inventory(ctx)
+    @app_commands.guilds(977351545966432306, 856915776345866240)
+    @app_commands.command(name="inventory", description="Check your inventory!")
+    async def inventory(self, interaction: discord.Interaction):
+        user = RequestUser(interaction.user.id, interaction=interaction)  # User info
+        inventory = InventoryCog.Inventory(interaction=interaction) # Inventory info
 
-        embed = discord.Embed(
-            title=f"{ctx.author.name}'s Inventory",
+        inventory_embed = discord.Embed(
+            title=f"{interaction.user.name}'s Inventory",
             description="Testing description. Seeds are not stored here.",
             color=discord.Color.from_rgb(153, 176, 162)
         )
-        for x in await inventory.get():
-            embed.add_field(name=x['item'].replace('_', ' '), value=x['quantity'])
-        embed.set_footer(text="Test footer")
-        await ctx.send(embed=embed)
+        for item in inventory.get():
+            print(item)
+            # inventory_embed.add_field(name=item['name'], value=item['quantity'])
+        inventory_embed.set_footer(text="Test footer")
+        await interaction.response.send_message(embed=inventory_embed)
 
 async def setup(bot):
     await bot.add_cog(InventoryCog(bot))
