@@ -1,9 +1,9 @@
 from peewee import *
 import json
 import os
-from constants import PROJECT_ROOT
+from constants import PROJECT_ROOT, DATABASE
 
-database_path = os.path.join(PROJECT_ROOT, 'bot', 'database')
+database_path = os.path.join(PROJECT_ROOT, 'bot', 'database', DATABASE)
 database = SqliteDatabase(database=database_path)
 
 
