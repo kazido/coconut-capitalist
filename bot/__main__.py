@@ -22,26 +22,16 @@ intents.invites = False
 intents.webhooks = False
 intents.integrations = False
 
-debug = True
-if debug:
-    prefix = constants.SECONDARY_BOT_PREFIX
-else:
-    prefix = constants.BOT_PREFIX
-
 bot = commands.Bot(
     guild_id=constants.PRIMARY_GUILD,
-    command_prefix=commands.when_mentioned_or(prefix),
-    activity=discord.Game(name=f"Commands: {prefix}help"),
+    command_prefix=commands.when_mentioned_or(constants.BOT_PREFIX),
+    activity=discord.Game(name=f"Commands: {constants.BOT_PREFIX}help"),
     case_insensitive=True,
     max_messages=10_000,
     allowed_mentions=discord.AllowedMentions(everyone=False),
     intents=intents,
     strip_after_prefix=True
 )
-
-with open('bot/config.json', 'r') as f:
-    data = json.load(f)
-
 
 @commands.is_owner()
 @bot.command(hidden=True)
@@ -134,7 +124,7 @@ async def on_ready():
 
 
 async def load_extensions():  # Function for loading cogs upon bot.run
-    if debug:  # REMOVE THIS LINE
+    if constants.data['DEBUG']:  # REMOVE THIS LINE
         return
     for filename in os.listdir(path=exts_path):
         if filename.endswith('.py') and filename != '__init__.py':
@@ -146,7 +136,7 @@ async def main():
         await load_extensions()  # Loads cogs on bot startup
         discord.utils.setup_logging()  # 2.1 Logging feature
         # Starts bot using token
-        await bot.start(data["secondary_token"], reconnect=True)
+        await bot.start(constants.TOKEN, reconnect=True)
 
 
 if __name__ == '__main__':
