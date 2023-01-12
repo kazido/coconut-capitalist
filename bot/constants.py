@@ -1,5 +1,24 @@
 import discord
 import os
+import json
+
+
+# Opening config file
+config_path = os.path.join('bot', 'config.json')
+with open(config_path, 'r') as f:
+    data = json.load(f)
+
+
+# If DEBUG is set to 1
+if data['DEBUG']:    
+    BOT_PREFIX = '.'
+    DATABASE = 'testdatabase.db'
+    TOKEN = data['secondary_token']
+# If DEBUG is set to 0
+else:                 
+    BOT_PREFIX = '-'
+    DATABASE = 'livedatabase.db'
+    TOKEN = data['primary_token']
 
 
 # Discord IDs
@@ -10,11 +29,6 @@ TESTING_GUILD = discord.Object(id=977351545966432306)
 # Paths
 BOT_DIR = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.abspath(os.path.join(BOT_DIR, os.pardir))
-
-
-# Other constants
-BOT_PREFIX = "-"
-SECONDARY_BOT_PREFIX = "."
 
 # Bot replies
 NEGATIVE_REPLIES = [
