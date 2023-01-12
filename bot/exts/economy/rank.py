@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from ClassLibrary import RequestUser, ranks
-from cogs.ErrorHandler import registered
+from exts.ErrorHandler import registered
 
 
 class Ranks(commands.Cog):

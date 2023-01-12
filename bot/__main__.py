@@ -11,19 +11,35 @@ from discord.ext import commands
 import exts
 import constants
 
-exts_path = exts.__path__
+exts_path = exts.__path__[0]
 
 intents = discord.Intents.all()
 intents.message_content = True
+intents.presences = False
+intents.dm_typing = False
+intents.dm_reactions = False
+intents.invites = False
+intents.webhooks = False
+intents.integrations = False
+
+debug = True
+if debug:
+    prefix = constants.SECONDARY_BOT_PREFIX
+else:
+    prefix = constants.BOT_PREFIX
 
 bot = commands.Bot(
-    command_prefix=constants.BOT_PREFIX, 
-    intents=intents, 
-    case_insensitive=True, 
+    guild_id=constants.PRIMARY_GUILD,
+    command_prefix=commands.when_mentioned_or(prefix),
+    activity=discord.Game(name=f"Commands: {prefix}help"),
+    case_insensitive=True,
+    max_messages=10_000,
+    allowed_mentions=discord.AllowedMentions(everyone=False),
+    intents=intents,
     strip_after_prefix=True
-    )
+)
 
-with open('config.json', 'r') as f:
+with open('bot/config.json', 'r') as f:
     data = json.load(f)
 
 
@@ -43,8 +59,10 @@ async def cogcheck(ctx):
 @commands.is_owner()
 @bot.command(hidden=True)
 async def sync(ctx):
-    treesync = await bot.tree.sync(guild=constants.PRIMARY_GUILD)  # Main guild sync
-    embed = discord.Embed(title="Synced!", description="", color=discord.Color.blurple())
+    # Main guild sync
+    treesync = await bot.tree.sync(guild=constants.PRIMARY_GUILD)
+    embed = discord.Embed(title="Synced!", description="",
+                          color=discord.Color.blurple())
     for command in treesync:
         embed.description += command.name + ", "
     await ctx.send(embed=embed)
@@ -116,6 +134,8 @@ async def on_ready():
 
 
 async def load_extensions():  # Function for loading cogs upon bot.run
+    if debug:  # REMOVE THIS LINE
+        return
     for filename in os.listdir(path=exts_path):
         if filename.endswith('.py') and filename != '__init__.py':
             await bot.load_extension(f'exts.{filename[:-3]}')
@@ -123,9 +143,10 @@ async def load_extensions():  # Function for loading cogs upon bot.run
 
 async def main():
     async with bot:
-        await load_extensions() # Loads cogs on bot startup
-        discord.utils.setup_logging() # 2.1 Logging feature
-        await bot.start(data["secondary_token"], reconnect=True) # Starts bot using token
+        await load_extensions()  # Loads cogs on bot startup
+        discord.utils.setup_logging()  # 2.1 Logging feature
+        # Starts bot using token
+        await bot.start(data["secondary_token"], reconnect=True)
 
 
 if __name__ == '__main__':

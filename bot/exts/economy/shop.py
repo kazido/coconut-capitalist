@@ -1,4 +1,4 @@
-from cogs.ErrorHandler import registered
+from exts.ErrorHandler import registered
 from ClassLibrary import RequestUser
 from ViewElements import SubShopPage, SubShopView, ShopView
 from discord.ext import commands

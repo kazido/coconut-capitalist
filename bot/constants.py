@@ -14,6 +14,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(BOT_DIR, os.pardir))
 
 # Other constants
 BOT_PREFIX = "-"
+SECONDARY_BOT_PREFIX = "."
 
 # Bot replies
 NEGATIVE_REPLIES = [

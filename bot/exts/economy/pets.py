@@ -1,7 +1,7 @@
 import asyncio
 
 import myModels as mm
-from cogs.ErrorHandler import registered, own_pet
+from exts.ErrorHandler import registered, own_pet
 from ClassLibrary import RequestUser
 import pathlib
 

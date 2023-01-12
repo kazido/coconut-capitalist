@@ -1,4 +1,4 @@
-from cogs.ErrorHandler import registered
+from exts.ErrorHandler import registered
 from ClassLibrary import RequestUser
 from discord.ext import commands
 from discord import app_commands

@@ -6,7 +6,7 @@ from discord import app_commands
 import random  # Random imports
 from random import randint
 from ClassLibrary import RequestUser # File imports
-from cogs.ErrorHandler import registered
+from exts.ErrorHandler import registered
 from utils import seconds_until_tasks
 import myModels as mm
 from myModels import ROOT_DIRECTORY

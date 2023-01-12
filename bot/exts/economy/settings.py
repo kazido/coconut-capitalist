@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 import discord.ui
 from ClassLibrary import RequestUser, ranks
-from cogs.ErrorHandler import registered
+from exts.ErrorHandler import registered
 import myModels as mm
 import playhouse.shortcuts as phs
 

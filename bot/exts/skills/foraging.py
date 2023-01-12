@@ -2,7 +2,7 @@ from ClassLibrary import Tree, RequestUser, tools
 import discord
 from discord import app_commands
 from discord.ext import commands
-from cogs.ErrorHandler import registered
+from exts.ErrorHandler import registered
 import json
 
 class ForagingCog(commands.Cog, name='Foraging'):

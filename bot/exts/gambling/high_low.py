@@ -1,6 +1,6 @@
 import typing
 import asyncio
-from cogs.ErrorHandler import registered
+from exts.ErrorHandler import registered
 from ClassLibrary import RequestUser
 import myModels as mm
 from myModels import Users
