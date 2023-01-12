@@ -1,8 +1,8 @@
 import asyncio
 
-import myModels as mm
-from exts.ErrorHandler import registered, own_pet
-from ClassLibrary import RequestUser
+import utils.models as mm
+from exts.error import registered, own_pet
+from classLibrary import RequestUser
 import pathlib
 
 # discord imports

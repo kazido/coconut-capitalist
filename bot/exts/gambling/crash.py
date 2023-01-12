@@ -2,7 +2,7 @@ import asyncio
 from random import randint
 import discord
 from discord.ext import commands
-from exts.ErrorHandler import registered
+from exts.error import registered
 
 
 class Crash(commands.Cog, name='Crash'):

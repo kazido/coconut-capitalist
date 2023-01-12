@@ -1,7 +1,6 @@
 import math
 
 import discord
-from discord import ui
 from discord.ext import commands
 from discord.errors import Forbidden
 from discord import app_commands

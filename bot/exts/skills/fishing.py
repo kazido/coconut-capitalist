@@ -3,7 +3,7 @@ from random import randint
 
 from discord.ext import commands
 # from ClassLibrary import *
-from exts.ErrorHandler import registered
+from exts.error import registered
 
 
 class FishingCog(commands.Cog, name='Fishing'):

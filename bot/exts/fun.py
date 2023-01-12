@@ -1,14 +1,8 @@
-import typing
 from discord.ext import commands
 import discord
 from discord import app_commands
-from discord.app_commands import Choice
 import requests
 from bs4 import BeautifulSoup
-import os
-import openai
-import json
-import asyncio
 
 
 class FunCommands(commands.Cog, name='FunCommands'):
@@ -31,30 +25,6 @@ class FunCommands(commands.Cog, name='FunCommands'):
     @fun_commands.command(name="yay", description="YAY!")
     async def yay(self, interaction: discord.Interaction):
         await interaction.response.send_message(f':balloon:')
-
-    @commands.cooldown(rate=1, per=20)
-    @fun_commands.command(name="ai", description="Get a response from AI based on a prompt.")
-    async def ai(self, interaction: discord.Interaction, prompt: str):
-        with open('../config.json', 'r') as f:
-            data = json.load(f)
-        openai.api_key = data['OPENAI_KEY']
-            
-        response = openai.Completion.create(
-            model="text-davinci-003",
-            prompt=prompt,
-            temperature=0.80,
-            max_tokens=1500,
-            top_p=1,
-            frequency_penalty=0.80,
-            presence_penalty=0
-        )
-        response_embed = discord.Embed(
-            title=prompt,
-            description=response['choices'][0]['text'],
-            color=discord.Color.green())
-        await asyncio.sleep(len(prompt*2))
-        await interaction.response.defer(thinking=True)
-        await interaction.edit_original_response(embed=response_embed)
 
     @fun_commands.command(name="status", description="Change the status of the bot")
     async def status(self, interaction: discord.Interaction, playing: str):

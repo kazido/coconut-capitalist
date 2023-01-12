@@ -1,21 +1,21 @@
-from exts.ErrorHandler import registered
-from ClassLibrary import RequestUser
-from ViewElements import SubShopPage, SubShopView, ShopView
+from exts.error import registered
+from classLibrary import RequestUser
+from utils.shop import SubShopPage, SubShopView, ShopView
 from discord.ext import commands
 from discord import app_commands
 import discord
-import myModels as mm
-from myModels import ROOT_DIRECTORY
+import utils.models as mm
+from constants import PROJECT_ROOT
 import json
 
 
-with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\pets.json', 'r') as pets_file:
+with open(f'{PROJECT_ROOT}\projfiles\game_entities\\pets.json', 'r') as pets_file:
     pets = json.load(pets_file)
     
-with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\tools.json', 'r') as tools_file:
+with open(f'{PROJECT_ROOT}\projfiles\game_entities\\tools.json', 'r') as tools_file:
     tools = json.load(tools_file)
     
-with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\consumables.json', 'r') as consumables_file:
+with open(f'{PROJECT_ROOT}\projfiles\game_entities\\consumables.json', 'r') as consumables_file:
     consumables = json.load(consumables_file)
 
 class ShopCog(commands.Cog, name='Shop'):

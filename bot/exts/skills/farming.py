@@ -5,11 +5,11 @@ from discord.ext import commands, tasks
 from discord import app_commands
 import random  # Random imports
 from random import randint
-from ClassLibrary import RequestUser # File imports
-from exts.ErrorHandler import registered
+from classLibrary import RequestUser # File imports
+from exts.error import registered
 from utils import seconds_until_tasks
-import myModels as mm
-from myModels import ROOT_DIRECTORY
+import utils.models as mm
+from utils.models import ROOT_DIRECTORY
 import playhouse.shortcuts as phs
 
 

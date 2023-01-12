@@ -1,9 +1,7 @@
 import typing
 import asyncio
-from exts.ErrorHandler import registered
-from ClassLibrary import RequestUser
-import myModels as mm
-from myModels import Users
+from exts.error import registered
+from classLibrary import RequestUser
 from discord.ext import commands
 from discord import app_commands
 import discord

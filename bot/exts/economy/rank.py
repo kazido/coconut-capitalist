@@ -2,8 +2,8 @@ import asyncio
 import discord
 from discord.ext import commands
 from discord import app_commands
-from ClassLibrary import RequestUser, ranks
-from exts.ErrorHandler import registered
+from classLibrary import RequestUser, ranks
+from exts.error import registered
 
 
 class Ranks(commands.Cog):

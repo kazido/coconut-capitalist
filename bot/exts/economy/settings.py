@@ -3,9 +3,9 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import discord.ui
-from ClassLibrary import RequestUser, ranks
-from exts.ErrorHandler import registered
-import myModels as mm
+from classLibrary import RequestUser, ranks
+from exts.error import registered
+import utils.models as mm
 import playhouse.shortcuts as phs
 
 

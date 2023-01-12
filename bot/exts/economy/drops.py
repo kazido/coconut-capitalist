@@ -7,10 +7,10 @@ from datetime import datetime  # Time imports for formatting and retrieving date
 from pytz import timezone
 import asyncio
 import json  # File handling imports
-from exts.ErrorHandler import registered  # File imports
-from ClassLibrary import RequestUser
+from exts.error import registered  # File imports
+from classLibrary import RequestUser
 from utils import seconds_until_tasks
-import myModels as mM
+import utils.models as mM
 
 
 def drop_double(amount):

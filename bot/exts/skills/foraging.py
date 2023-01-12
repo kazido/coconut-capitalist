@@ -1,8 +1,8 @@
-from ClassLibrary import Tree, RequestUser, tools
+from classLibrary import Tree, RequestUser, tools
 import discord
 from discord import app_commands
 from discord.ext import commands
-from exts.ErrorHandler import registered
+from exts.error import registered
 import json
 
 class ForagingCog(commands.Cog, name='Foraging'):

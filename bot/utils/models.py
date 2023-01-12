@@ -3,10 +3,8 @@ import json
 import os
 from constants import PROJECT_ROOT
 
-with open(f'{PROJECT_ROOT}\config.json', 'r') as file:
-    data = json.load(file)
-
-database = SqliteDatabase(database=data['sqlite_path'])
+database_path = os.path.join(PROJECT_ROOT, 'bot', 'database')
+database = SqliteDatabase(database=database_path)
 
 
 class UnknownField(object):

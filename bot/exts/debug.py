@@ -6,8 +6,8 @@ import discord
 from discord.ext import commands
 import os
 import pathlib
-from ClassLibrary import RequestUser
-import myModels as mm
+from classLibrary import RequestUser
+import utils.models as mm
 
 
 class EmbedModal(discord.ui.Modal, title="Embed Creation"):
