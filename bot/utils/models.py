@@ -1,10 +1,9 @@
 from peewee import *
 import json
 import os
+from constants import PROJECT_ROOT
 
-current = os.path.dirname(os.path.realpath(__file__))
-ROOT_DIRECTORY = os.path.dirname(current)
-with open(f'{ROOT_DIRECTORY}\config.json', 'r') as file:
+with open(f'{PROJECT_ROOT}\config.json', 'r') as file:
     data = json.load(file)
 
 database = SqliteDatabase(database=data['sqlite_path'])
