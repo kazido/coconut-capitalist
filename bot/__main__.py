@@ -10,8 +10,9 @@ from discord.ext import commands
 # file imports
 import exts
 import constants
+from utils._extensions import walk_extensions
 
-exts_path = exts.__path__[0]
+exts_dir_path = exts.__path__[0]
 
 intents = discord.Intents.all()
 intents.message_content = True
@@ -32,18 +33,26 @@ bot = commands.Bot(
     intents=intents,
     strip_after_prefix=True
 )
+bot.remove_command('help')
 
 @commands.is_owner()
-@bot.command(hidden=True)
-async def cogcheck(ctx):
-    for cog in os.listdir(path=exts_path):
-        if cog.endswith('.py'):
-            try:
-                await bot.load_extension(f"exts.{cog[:-3]}")
-            except commands.ExtensionAlreadyLoaded:
-                await ctx.send(f"{cog} is currently loaded.")
-            except commands.ExtensionNotFound:
-                await ctx.send(f"{cog} could not be located.")
+@bot.command(hidden=True, aliases=["ch"])
+async def cogs(ctx):
+    for dirpath, _, files in os.walk(exts_dir_path):
+        for file in files:
+            if file.endswith('.py') and file != '__init__.py':
+                dirname = dirpath.split(os.path.sep)[-1]
+                print(dirname)
+                try:
+                    if dirname == 'exts':
+                        ext_path = f"{dirname}.{file[:-3]}"
+                    else:
+                        ext_path = f"exts.{dirname}.{file[:-3]}"
+                    await bot.load_extension(name=ext_path)
+                except commands.ExtensionAlreadyLoaded:
+                    await ctx.send(f"{file[:-3]} is currently loaded.")
+                except commands.ExtensionNotFound:
+                    await ctx.send(f"{file[:-3]} could not be located.")
 
 
 @commands.is_owner()
@@ -63,7 +72,7 @@ async def sync(ctx):
 async def reload(ctx):
     extensions = []
     select_options = {}
-    for extension in os.listdir(path=exts_path):
+    for extension in os.listdir(path=exts_dir_path):
         if extension.endswith('.py'):
             if extension.startswith('__init__'):
                 pass
@@ -124,9 +133,9 @@ async def on_ready():
 
 
 async def load_extensions():  # Function for loading cogs upon bot.run
-    if constants.data['DEBUG']:  # REMOVE THIS LINE
-        return
-    for filename in os.listdir(path=exts_path):
+    # if constants.data['DEBUG']:  # REMOVE THIS LINE
+    #     return
+    for filename in os.listdir(path=exts_dir_path):
         if filename.endswith('.py') and filename != '__init__.py':
             await bot.load_extension(f'exts.{filename[:-3]}')
 

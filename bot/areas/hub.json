@@ -1,0 +1,12 @@
+{
+  "area": {
+    "description": {
+      "reference_name": "hub"
+    }
+  },
+  "components": {
+    "display_name": "Hub",
+    "difficulty": 0,
+    "description": "The basic hub. Not much to see."
+  }
+}

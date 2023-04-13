@@ -1,0 +1,21 @@
+{
+  "item": {
+    "description": {
+      "identifier": "starter_axe"
+    },
+    "components": {
+      "max_stack_size": 1,
+      "display_name": "Starter Axe",
+      "tool_tip": {
+        "value": "A basic axe, meant for novice lumberjacks. You'll learn a lot from this axe, and it will learn a lot from you."
+      },
+      "purchaseable": {
+        "price": 10000
+      },
+      "rarity": "common",
+      "upgradeable": {
+
+      }
+    }
+  }
+}

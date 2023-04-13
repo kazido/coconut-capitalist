@@ -1,10 +1,14 @@
 import discord
 import os
 import json
+from enum import Enum
 
+
+# Paths
+PROJECT_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
 # Opening config file
-config_path = os.path.join('bot', 'config.json')
+config_path = os.path.join(PROJECT_ROOT, 'bot', 'config.json')
 with open(config_path, 'r') as f:
     data = json.load(f)
 
@@ -14,6 +18,7 @@ if data['DEBUG']:
     BOT_PREFIX = '.'
     DATABASE = 'testdatabase.db'
     TOKEN = data['secondary_token']
+    
 # If DEBUG is set to 0
 else:                 
     BOT_PREFIX = '-'
@@ -24,11 +29,6 @@ else:
 # Discord IDs
 PRIMARY_GUILD = discord.Object(id=856915776345866240)
 TESTING_GUILD = discord.Object(id=977351545966432306)
-
-
-# Paths
-BOT_DIR = os.path.dirname(__file__)
-PROJECT_ROOT = os.path.abspath(os.path.join(BOT_DIR, os.pardir))
 
 # Bot replies
 NEGATIVE_REPLIES = [
@@ -83,3 +83,8 @@ ERROR_REPLIES = [
     "Noooooo!!",
     "I can't believe you've done this",
 ]
+
+
+# Emojis
+class Emoji(Enum):
+    pass

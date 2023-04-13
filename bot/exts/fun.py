@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 
 
-class FunCommands(commands.Cog, name='FunCommands'):
+class FunCommands(commands.Cog, name='Fun'):
     """All fun commands were moved to slash commands. Do / to see them!"""
 
     def __init__(self, bot):
