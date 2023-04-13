@@ -6,8 +6,8 @@
 `display_name` _str_
 >The formatted name of the item.
 
-`max_stack_size` _int_
->Determines the maximum amount of items that can be in the player's inventory.
+`unique` _bool_
+>If True, the user can only hold one of this item.
 
 `rarity` _str_
 >The level of rarity of the item. _(See rarities)_
