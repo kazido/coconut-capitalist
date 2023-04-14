@@ -1,0 +1,11 @@
+{
+    "description": {
+        "type": "pet",
+        "identifier": "chicken_pet",
+        "tags": []
+    },
+    "components":{
+        "display_name": "Chicken",
+        "rarity": "common"
+    }
+}

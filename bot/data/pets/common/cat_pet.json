@@ -1,0 +1,11 @@
+{
+    "description": {
+        "type": "pet",
+        "identifier": "cat_pet",
+        "tags": []
+    },
+    "components":{
+        "display_name": "Cat",
+        "rarity": "common"
+    }
+}

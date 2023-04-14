@@ -1,0 +1,12 @@
+{
+    "description": {
+        "type": "pet",
+        "identifier": "elephant_pet",
+        "tags": []
+    },
+    "components":{
+        "display_name": "Elephant",
+        "rarity": "legendary",
+        "emoji": ":elephant:"
+    }
+}

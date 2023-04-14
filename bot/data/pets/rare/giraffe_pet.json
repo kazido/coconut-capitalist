@@ -1,0 +1,12 @@
+{
+    "description": {
+        "type": "pet",
+        "identifier": "giraffe_pet",
+        "tags": []
+    },
+    "components":{
+        "display_name": "Giraffe",
+        "rarity": "rare",
+        "emoji": ":giraffe:"
+    }
+}

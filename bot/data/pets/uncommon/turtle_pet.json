@@ -1,0 +1,11 @@
+{
+    "description": {
+        "type": "pet",
+        "identifier": "turtle_pet",
+        "tags": []
+    },
+    "components":{
+        "display_name": "Turtle",
+        "rarity": "uncommon"
+    }
+}
