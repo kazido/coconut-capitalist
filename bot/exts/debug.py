@@ -116,7 +116,6 @@ class DebuggingCommands(commands.Cog):
                 await ctx.send(f'User {user.mention} has been unbanned.')
                 return
 
-        print(banned_users)
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
