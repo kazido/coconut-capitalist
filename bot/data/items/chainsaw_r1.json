@@ -1,0 +1,29 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "chainsaw_r1",
+        "tags": [
+            "axe",
+            "chainsaw",
+            "tool"
+        ]
+    },
+    "components": {
+        "display_name": "Chainsaw R1",
+        "tool_tip": "The first upgrade in the Chainsaw path. It's speed buff is small, yet noticeable.",
+        "unique": true,
+        "rarity": "uncommon",
+        "single_use": false,
+        "is_crafted": {
+            "components": [],
+            "station": "rust_belt_forge"
+        },
+        "level_requirement": {
+            "level": 20,
+            "skill": "foraging"
+        },
+        "area_requirement": {
+            "area_id": "rust_belt"
+        }
+    }
+}

@@ -1,0 +1,28 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "enriched_axe",
+        "tags": [
+            "axe",
+            "tool"
+        ]
+    },
+    "components": {
+        "display_name": "Enriched Axe",
+        "tool_tip": "Better rewards and, like the Chainsaw R2, a modification chamber!",
+        "unique": true,
+        "rarity": "rare",
+        "single_use": false,
+        "is_crafted": {
+            "components": [],
+            "station": "atmosphere_forge"
+        },
+        "level_requirement": {
+            "level": 40,
+            "skill": "foraging"
+        },
+        "area_requirement": {
+            "area_id": "atmosphere"
+        }
+    }
+}

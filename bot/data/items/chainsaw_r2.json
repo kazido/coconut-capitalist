@@ -1,0 +1,29 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "chainsaw_r2",
+        "tags": [
+            "axe",
+            "chainsaw",
+            "tool"
+        ]
+    },
+    "components": {
+        "display_name": "Chainsaw R2",
+        "tool_tip": "With the R2 comes an additional increase in speed, as well as a modification chamber.",
+        "unique": true,
+        "rarity": "rare",
+        "single_use": false,
+        "is_crafted": {
+            "components": [],
+            "station": "atmosphere_forge"
+        },
+        "level_requirement": {
+            "level": 40,
+            "skill": "foraging"
+        },
+        "area_requirement": {
+            "area_id": "atmosphere"
+        }
+    }
+}
