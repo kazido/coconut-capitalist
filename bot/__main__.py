@@ -8,9 +8,9 @@ import discord
 from discord.ext import commands
 
 # file imports
-from bot import exts
-from bot import constants
-from bot.utils._extensions import walk_extensions
+import exts
+import constants
+from utils._extensions import walk_extensions
 
 exts_dir_path = exts.__path__[0]
 
