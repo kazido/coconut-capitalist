@@ -1,0 +1,25 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "corrupted_seed",
+        "tags": [
+            "foraging",
+            "seed"
+        ]
+    },
+    "components":{
+        "display_name": "Corrupted Seed",
+        "description": "Doomed to fail in a garden of life.",
+        "rarity": "legendary",
+        "unique": false,
+        "single_use": true,
+        "growth_odds": 200,
+        "emoji": ":seedling: :wilted_rose:",
+        "grows_into": "wilted_rose",
+        "drop_info": {
+            "drop_rate": 350,
+            "minimum": 1,
+            "maximum": 2
+        }
+    }
+}

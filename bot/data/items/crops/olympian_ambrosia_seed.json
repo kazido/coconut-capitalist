@@ -1,0 +1,19 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "olympian_ambrosia_seed",
+        "tags": [
+            "seed"
+        ]
+    },
+    "components":{
+        "display_name": "Olympian Ambrosia Seed",
+        "description": "???",
+        "rarity": "premium",
+        "unique": false,
+        "single_use": true,
+        "growth_odds": 777,
+        "emoji": ":seedling: :tropical_drink:",
+        "grows_into": "olympian_ambrosia"
+    }
+}
