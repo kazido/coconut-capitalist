@@ -1,0 +1,22 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "apple_seed",
+        "tags": [
+            "seed"
+        ]
+    },
+    "components":{
+        "display_name": "Apple Seed",
+        "description": "Grows into some apples. Wait, shouldn't it grow into a tree?",
+        "rarity": "common",
+        "unique": false,
+        "single_use": true,
+        "purchaseable": {
+            "price": 10000
+        },
+        "growth_odds": 20,
+        "emoji": ":seedling: :apple:",
+        "grows_into": "apple"
+    }
+}

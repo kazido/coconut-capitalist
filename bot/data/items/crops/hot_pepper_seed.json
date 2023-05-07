@@ -1,0 +1,22 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "hot_pepper_seed",
+        "tags": [
+            "seed"
+        ]
+    },
+    "components":{
+        "display_name": "Hot Pepper Seed",
+        "description": "Plant for a spicy ingredient.",
+        "rarity": "rare",
+        "unique": false,
+        "single_use": true,
+        "purchaseable": {
+            "price": 500000
+        },
+        "growth_odds": 5,
+        "emoji": ":seedling: :hot_pepper:",
+        "grows_into": "hot_pepper"
+    }
+}

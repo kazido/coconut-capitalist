@@ -1,0 +1,22 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "coconut_seed",
+        "tags": [
+            "seed"
+        ]
+    },
+    "components":{
+        "display_name": "Coconut Seed",
+        "description": "Grows into the alpha crop, the coconut.",
+        "rarity": "super_rare",
+        "unique": false,
+        "single_use": true,
+        "purchaseable": {
+            "price": 1700000
+        },
+        "growth_odds": 1,
+        "emoji": ":seedling: :coconut:",
+        "grows_into": "coconut"
+    }
+}
