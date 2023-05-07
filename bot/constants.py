@@ -5,30 +5,46 @@ from enum import Enum
 
 
 # Paths
-PROJECT_ROOT = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
+
+BOT_DIR = os.path.dirname(__file__)
+PROJECT_ROOT = os.path.abspath(os.path.join(BOT_DIR, os.pardir))
 
 # Opening config file
-config_path = os.path.join(PROJECT_ROOT, 'bot', 'config.json')
-with open(config_path, 'r') as f:
+config_path = os.path.join(PROJECT_ROOT, "bot", "config.json")
+with open(config_path, "r") as f:
     data = json.load(f)
 
 
 # If DEBUG is set to 1
-if data['DEBUG']:    
-    BOT_PREFIX = '.'
-    DATABASE = 'testdatabase.db'
-    TOKEN = data['secondary_token']
-    
+if data["DEBUG"]:
+    BOT_PREFIX = "."
+    DATABASE = "testdatabase.db"
+    TOKEN = data["secondary_token"]
+
 # If DEBUG is set to 0
-else:                 
-    BOT_PREFIX = '-'
-    DATABASE = 'livedatabase.db'
-    TOKEN = data['primary_token']
+else:
+    BOT_PREFIX = "-"
+    DATABASE = "livedatabase.db"
+    TOKEN = data["primary_token"]
 
 
-# Discord IDs
-PRIMARY_GUILD = discord.Object(id=856915776345866240)
-TESTING_GUILD = discord.Object(id=977351545966432306)
+class DiscordGuilds(Enum):
+    PRIMARY_GUILD = discord.Object(id=856915776345866240)
+    TESTING_GUILD = discord.Object(id=977351545966432306)
+
+class GamblingChannels(Enum):
+    PARADISE = discord.Object(id=858549045613035541)
+    DREAMSCAPE = discord.Object(id=959271607241683044)
+    PLANETARIUM = discord.Object(id=961471869725343834)
+    NIGHTMARE = discord.Object(id=961045401803317299)
+    HEAVEN = discord.Object(id=962171274073899038)
+    WWTGS = discord.Object(id=962171351794327562)
+
+
+class CooldownTimes(Enum):
+    WORK = 6
+    DAILY = 21
+    WEEKLY = 167
 
 # Bot replies
 NEGATIVE_REPLIES = [
@@ -87,4 +103,9 @@ ERROR_REPLIES = [
 
 # Emojis
 class Emoji(Enum):
-    pass
+    HAPPY = ":smile:"
+    FROWN = ":slight_frown:"
+    SAD = ":sob:"
+    ANGRY = ":angry:"
+    CONFIRM = ":white_check_mark:"
+    CANCEL = ":x:"
