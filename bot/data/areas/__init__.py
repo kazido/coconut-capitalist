@@ -26,8 +26,8 @@ def get_files_from_path(path: str='.', extension: str=None) -> list:
 
 filelist = get_files_from_path(path=dir_path, extension='.json')
 
-tools = {}
+areas = {}
 
 for identifier, filepath in filelist.items():
     with open(filepath) as infile:
-        tools[identifier] = (json.load(infile))
+        areas[identifier] = (json.load(infile))
