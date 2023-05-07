@@ -1,13 +1,5 @@
-from pathlib import Path
 from datetime import datetime
 from random import randint
-
-from discord.ui import Button, View
-from discord import Interaction, ButtonStyle, PartialEmoji
-
-
-def get_project_root() -> Path:
-    return Path(__file__).parent.parent
 
 
 def seconds_until_tasks():  # Delay drops until half hour
