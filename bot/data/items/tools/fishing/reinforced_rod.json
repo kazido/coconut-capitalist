@@ -1,0 +1,29 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "reinforced_rod",
+        "tags": [
+            "fishing",
+            "rod",
+            "tool"
+        ]
+    },
+    "components": {
+        "display_name": "Reinforced Rod",
+        "description": "Upgraded by some sleepy angler at a small shack on the ocean.",
+        "unique": true,
+        "rarity": "uncommon",
+        "single_use": false,
+        "is_crafted": {
+            "components": [],
+            "station": ""
+        },
+        "level_requirement": {
+            "level": 10,
+            "skill": "fishing"
+        },
+        "area_requirement": {
+            "area_id": ""
+        }
+    }
+}
