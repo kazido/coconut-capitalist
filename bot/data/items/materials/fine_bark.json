@@ -1,0 +1,22 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "fine_bark",
+        "tags": [
+            "material",
+            "foraging"
+        ]
+    },
+    "components": {
+        "display_name": "Fine Bark",
+        "description": "Few trees will shed such a high quality bark.",
+        "rarity": "super_rare",
+        "emoji": ":wood:",
+        "unique": false,
+        "single_use": true,
+        "sellable": {
+            "price": 300000
+        },
+        "used_to_craft": []
+    }
+}
