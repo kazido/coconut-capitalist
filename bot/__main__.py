@@ -139,7 +139,6 @@ async def load_extensions():  # Function for loading cogs upon bot.run
         if filename.endswith('.py') and filename != '__init__.py':
             await bot.load_extension(f'exts.{filename[:-3]}')
 
-
 async def main():
     async with bot:
         await load_extensions()  # Loads cogs on bot startup
