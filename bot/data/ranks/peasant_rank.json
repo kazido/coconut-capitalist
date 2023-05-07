@@ -1,0 +1,21 @@
+{
+    "description": {
+        "type": "rank",
+        "identifier": "peasant_rank",
+        "tags": []
+    },
+    "components": {
+        "display_name": "Peasant",
+        "description": "Born into the lower class, destined for the upper class.",
+        "emoji": ":palms_up_together:",
+        "color": "ffffff",
+        "responses": ["You actually manage to scrape up some bits. How wonderful.",
+        "Someone donated a little more than normal. How kind.",
+        "You are a peasant. Feel bad."],
+        "price": 0,
+        "wage": 2500,
+        "perks": [],
+        "unlocked_commands": ["beg"],
+        "next_rank": "farmer_rank"
+    }
+}

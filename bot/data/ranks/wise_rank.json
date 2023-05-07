@@ -1,0 +1,25 @@
+{
+    "description": {
+        "type": "rank",
+        "identifier": "wise_rank",
+        "tags": []
+    },
+    "components": {
+        "display_name": "Wise",
+        "description": "I farm, therefore I am.",
+        "emoji": ":trident:",
+        "color": "b396d8",
+        "responses": [
+            "You exit the cave. Look at the sun!.",
+            "You preach your dumb philosophy; Plato smiles from above.",
+            "You discover that it takes 10,000 bits to get to the center of a lollipop."
+        ],
+        "price": 1000,
+        "wage": 375000,
+        "perks": [
+            "meditate"
+        ],
+        "unlocked_commands": [],
+        "next_rank": "expert_rank"
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "description": {
+        "type": "rank",
+        "identifier": "unranked_rank",
+        "tags": []
+    },
+    "components": {
+        "display_name": "Unranked",
+        "description": "Unranked.",
+        "emoji": ":white_circle:",
+        "color": "ffffff",
+        "responses": ["You're unranked, get to work."],
+        "price": 0,
+        "wage": 2500,
+        "perks": [],
+        "unlocked_commands": [],
+        "next_rank": "peasant_rank" 
+    }
+}

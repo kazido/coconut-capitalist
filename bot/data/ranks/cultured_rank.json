@@ -1,0 +1,21 @@
+{
+    "description": {
+        "type": "rank",
+        "identifier": "cultured_rank",
+        "tags": []
+    },
+    "components": {
+        "display_name": "Cultured",
+        "description": "It's been a while since college. Things are less fun, but more... real? Anyway, bigger paycheck!",
+        "emoji": ":money_with_wings:",
+        "color": "88cad8",
+        "responses":  ["You've settled into the ways of a classic American. A 9-5.",
+        "Nice car! You'll own it soon if you keep this up!",
+        "You could probably get a job coding for the guy who made this bot. I heard he pays lots of bits..."],
+        "price": 250,
+        "wage": 130000,
+        "perks": [],
+        "unlocked_commands": [],
+        "next_rank": "weathered_rank"
+    }
+}

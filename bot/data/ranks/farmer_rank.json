@@ -1,0 +1,21 @@
+{
+    "description": {
+        "type": "rank",
+        "identifier": "farmer_rank",
+        "tags": []
+    },
+    "components": {
+        "display_name": "Farmer",
+        "description": "A hard working farmer.\n Those coconuts aren't going to farm themselves.",
+        "emoji": ":basket:",
+        "color": "f6f69f",
+        "responses": ["You toiled hard in the fields, picking... bits?",
+        "Your spouse hasn't seen you all day, since you've been farming bits.",
+        "You harvested a plentiful amount of bits."],
+        "price": 10,
+        "wage": 10000,
+        "perks": [],
+        "unlocked_commands": ["farm"],
+        "next_rank": "citizen_rank"
+    }
+}

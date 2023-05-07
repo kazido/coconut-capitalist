@@ -1,0 +1,20 @@
+{
+    "description": {
+        "type": "rank",
+        "identifier": "weathered_rank",
+        "tags": []
+    },
+    "components": {
+        "display_name": "Weathered",
+        "description": "Once you were a peasant. Now, you can look back and smile!",
+        "emoji": ":mountain:",
+        "color": "9b51aa",
+        "responses":  ["The walk through life is full of wonderful experiences.",
+        "Wrinkles are starting to form in various places.", "Be proud that you've come this far."],
+        "price": 500,
+        "wage": 240000,
+        "perks": [],
+        "unlocked_commands": [],
+        "next_rank": "wise_rank"
+    }
+}
