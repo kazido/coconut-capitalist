@@ -8,5 +8,8 @@
         "display_name": "",
         "description": "",
         "rarity": ""
+    },
+    "sellable": {
+        "price": 0
     }
 }
