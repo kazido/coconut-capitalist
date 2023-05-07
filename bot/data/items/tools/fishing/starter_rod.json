@@ -1,0 +1,20 @@
+{
+    "description": {
+      "type": "item",
+      "identifier": "starter_rod",
+      "tags": [
+        "fishing",
+        "tool"
+      ]
+    },
+    "components": {
+      "display_name": "Starter Rod",
+      "description": "A basic rod, meant for novice fishermen.",
+      "unique": true,
+      "rarity": "common",
+      "single_use": false,
+      "purchaseable": {
+        "price": 100000
+      }
+    }
+  }

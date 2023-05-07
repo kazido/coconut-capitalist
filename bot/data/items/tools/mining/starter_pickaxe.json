@@ -1,0 +1,20 @@
+{
+    "description": {
+      "type": "item",
+      "identifier": "starter_pickaxe",
+      "tags": [
+        "mining",
+        "tool"
+      ]
+    },
+    "components": {
+      "display_name": "Starter Pickaxe",
+      "description": "A basic pickaxe, meant for novice miners.",
+      "unique": true,
+      "rarity": "common",
+      "single_use": false,
+      "purchaseable": {
+        "price": 30000000
+      }
+    }
+  }
