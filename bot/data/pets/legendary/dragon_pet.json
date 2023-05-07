@@ -1,0 +1,12 @@
+{
+    "description": {
+        "type": "pet",
+        "identifier": "dragon_pet",
+        "tags": []
+    },
+    "components":{
+        "display_name": "Dragon",
+        "rarity": "legendary",
+        "emoji": ":dragon:"
+    }
+}

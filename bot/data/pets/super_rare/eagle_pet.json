@@ -1,0 +1,12 @@
+{
+    "description": {
+        "type": "pet",
+        "identifier": "eagle_pet",
+        "tags": []
+    },
+    "components":{
+        "display_name": "Eagle",
+        "rarity": "super_rare",
+        "emoji": ":eagle:"
+    }
+}
