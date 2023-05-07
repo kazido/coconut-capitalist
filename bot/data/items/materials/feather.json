@@ -1,27 +1,27 @@
 {
     "description": {
         "type": "item",
-        "identifier": "fine_bark",
+        "identifier": "feather",
         "tags": [
             "material",
             "foraging"
         ]
     },
     "components": {
-        "display_name": "Fine Bark",
-        "description": "Few trees will shed such a quality bark.",
-        "rarity": "rare",
-        "emoji": ":wood:",
+        "display_name": "Feather",
+        "description": "A small, flimsy feather.",
+        "rarity": "common",
+        "emoji": "",
         "unique": false,
         "single_use": true,
         "sellable": {
-            "price": 30000
+            "price": 100
         },
         "used_to_craft": [],
         "drop_info": {
-            "drop_rate": 30,
-            "minimum": 1,
-            "maximum": 4
+            "drop_rate": 2,
+            "minimum": 2,
+            "maximum": 5
         }
     }
 }

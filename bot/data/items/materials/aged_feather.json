@@ -1,27 +1,27 @@
 {
     "description": {
         "type": "item",
-        "identifier": "fine_bark",
+        "identifier": "aged_feather",
         "tags": [
             "material",
             "foraging"
         ]
     },
     "components": {
-        "display_name": "Fine Bark",
-        "description": "Few trees will shed such a quality bark.",
-        "rarity": "rare",
-        "emoji": ":wood:",
+        "display_name": "Aged Feather",
+        "description": "A strong feather, capable of enduring high speeds.",
+        "rarity": "legendary",
+        "emoji": ":feather:",
         "unique": false,
         "single_use": true,
         "sellable": {
-            "price": 30000
+            "price": 7000000
         },
         "used_to_craft": [],
         "drop_info": {
-            "drop_rate": 30,
+            "drop_rate": 420,
             "minimum": 1,
-            "maximum": 4
+            "maximum": 1
         }
     }
 }
