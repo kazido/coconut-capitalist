@@ -9,7 +9,7 @@
     },
     "components": {
         "display_name": "Reinforced Axe",
-        "tool_tip": "The first upgrade in the Axe path. You'll notice better rewards.",
+        "description": "The first upgrade in the Axe path. You'll notice better rewards.",
         "unique": true,
         "rarity": "uncommon",
         "single_use": false,

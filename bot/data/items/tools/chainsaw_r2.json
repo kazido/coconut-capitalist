@@ -1,15 +1,16 @@
 {
     "description": {
         "type": "item",
-        "identifier": "enriched_axe",
+        "identifier": "chainsaw_r2",
         "tags": [
             "axe",
+            "chainsaw",
             "tool"
         ]
     },
     "components": {
-        "display_name": "Enriched Axe",
-        "tool_tip": "Better rewards and, like the Chainsaw R2, a modification chamber!",
+        "display_name": "Chainsaw R2",
+        "description": "With the R2 comes an additional increase in speed, as well as a modification chamber.",
         "unique": true,
         "rarity": "rare",
         "single_use": false,

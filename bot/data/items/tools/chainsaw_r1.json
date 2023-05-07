@@ -10,7 +10,7 @@
     },
     "components": {
         "display_name": "Chainsaw R1",
-        "tool_tip": "The first upgrade in the Chainsaw path. It's speed buff is small, yet noticeable.",
+        "description": "The first upgrade in the Chainsaw path. It's speed buff is small, yet noticeable.",
         "unique": true,
         "rarity": "uncommon",
         "single_use": false,

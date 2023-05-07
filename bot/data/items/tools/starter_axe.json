@@ -9,7 +9,7 @@
   },
   "components": {
     "display_name": "Starter Axe",
-    "tool_tip": "A basic axe, meant for novice lumberjacks. You'll learn a lot from this axe, and it will learn a lot from you.",
+    "description": "A basic axe, meant for novice lumberjacks. You'll learn a lot from this axe, and it will learn a lot from you.",
     "unique": true,
     "rarity": "common",
     "single_use": false,
