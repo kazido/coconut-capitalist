@@ -14,20 +14,8 @@ class Unregistered(commands.errors.CommandError):
     pass
 
 
-class WrongChannelError(commands.errors.CommandError):
-    pass
-
-
 class PetNotOwned(commands.errors.CommandError):
     pass
-
-
-def in_wrong_channel():
-    async def predicate(ctx):
-        if ctx.channel.id != 958198989201764373:
-            raise WrongChannelError("Not in the right channel!")
-
-    return commands.check(predicate)
 
 
 def own_pet():
@@ -147,10 +135,6 @@ class CommandErrorHandler(commands.Cog):
         elif isinstance(error, commands.BadArgument):
             if ctx.command.qualified_name == 'tag list':
                 await ctx.send('I could not find that member. Please try again.')
-
-        elif isinstance(error, WrongChannelError):
-            channel = self.bot.get_channel(958198989201764373)
-            await ctx.reply(f"This command is only available in {channel.mention}")
 
         elif isinstance(error, Unregistered):
             channel = self.bot.get_channel(858552463236923432)
