@@ -19,7 +19,7 @@
         },
         "used_to_craft": [],
         "drop_info": {
-            "drop_rate": 420,
+            "drop_rate": 1000,
             "minimum": 1,
             "maximum": 1
         }

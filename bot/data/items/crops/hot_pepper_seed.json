@@ -15,7 +15,7 @@
         "purchaseable": {
             "price": 500000
         },
-        "growth_odds": 5,
+        "growth_odds": 20,
         "emoji": ":seedling: :hot_pepper:",
         "grows_into": "hot_pepper"
     }

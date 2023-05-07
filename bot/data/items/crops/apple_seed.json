@@ -15,7 +15,7 @@
         "purchaseable": {
             "price": 10000
         },
-        "growth_odds": 20,
+        "growth_odds": 5,
         "emoji": ":seedling: :apple:",
         "grows_into": "apple"
     }

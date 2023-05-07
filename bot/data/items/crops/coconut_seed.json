@@ -15,7 +15,7 @@
         "purchaseable": {
             "price": 1700000
         },
-        "growth_odds": 1,
+        "growth_odds": 100,
         "emoji": ":seedling: :coconut:",
         "grows_into": "coconut"
     }
