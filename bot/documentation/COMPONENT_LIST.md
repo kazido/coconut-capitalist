@@ -79,6 +79,9 @@ Required. The description category is used to identify the object.
 
 `grows_into` _str_ **(Seeds only)**
 > ID of the crop that the seed will grow into.
+
+`used_to_craft` _[str]_ **(Materials only)**
+> List of items that can be crafted with this material
 ***
 
 ## Pets
