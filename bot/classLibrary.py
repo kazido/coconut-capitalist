@@ -13,26 +13,24 @@ import discord
 # Database imports
 import peewee as pw
 # File import
-from utils.models import database as mmdatabase
+from utils.models import db as mmdatabase
 from constants import PROJECT_ROOT
 # Other imports
 import randfacts
 
-"""This file is used for storing classes that I use for the different aspects of the bot."""
-# Load the json file where all the rank dialogue is stored
-game_entities_path = os.path.join(PROJECT_ROOT, 'bot', 'resources', 'game_entities')
-with open(os.path.join(game_entities_path, 'ranks.json'), 'r') as ranks_file:
-    ranks = json.load(ranks_file)
-with open(os.path.join(game_entities_path, 'areas.json'), 'r') as areas_file:
-    areas = json.load(areas_file)
-with open(os.path.join(game_entities_path, 'pets.json'), 'r') as pets_file:
-    pets = json.load(pets_file)
-with open(os.path.join(game_entities_path, 'tools.json'), 'r') as tools_file:
-    tools = json.load(tools_file)
-with open(os.path.join(game_entities_path, 'materials.json'), 'r') as materials_file:
-    materials = json.load(materials_file)
-with open(os.path.join(game_entities_path, 'consumables.json'), 'r') as consumables_file:
-    consumables = json.load(consumables_file)
+# """This file is used for storing classes that I use for the different aspects of the bot."""
+# # Load the json file where all the rank dialogue is stored
+# game_entities_path = os.path.join(PROJECT_ROOT, 'bot', 'resources', 'game_entities')
+# with open(os.path.join(game_entities_path, 'ranks.json'), 'r') as ranks_file:
+#     ranks = json.load(ranks_file)
+# with open(os.path.join(game_entities_path, 'pets.json'), 'r') as pets_file:
+#     pets = json.load(pets_file)
+# with open(os.path.join(game_entities_path, 'tools.json'), 'r') as tools_file:
+#     tools = json.load(tools_file)
+# with open(os.path.join(game_entities_path, 'materials.json'), 'r') as materials_file:
+#     materials = json.load(materials_file)
+# with open(os.path.join(game_entities_path, 'consumables.json'), 'r') as consumables_file:
+#     consumables = json.load(consumables_file)
 
 
 class RequestUser:
@@ -44,9 +42,9 @@ class RequestUser:
 
         # If the provided User ID is in the database, fetch all related tables
         self.interaction = interaction
-        self.instance, self.created = mm.Users.get_or_create(id=user_id)
-        self.cooldowns, self.created = mm.Usercooldowns.get_or_create(id=user_id)
-        self.farm, self.created = mm.Farms.get_or_create(id=user_id)
+        self.instance = mm.User.get_or_create(id=user_id)
+        self.cooldowns = mm.Usercooldowns.get_or_create(id=user_id)
+        self.farm = mm.Farms.get_or_create(id=user_id)
         self.items = mm.Items.select().where(mm.Items.owner_id == user_id).objects()
         self.instance.name = discord.utils.get(interaction.guild.members, id=user_id).display_name
         self.instance.save()
@@ -128,35 +126,6 @@ class RequestUser:
         check_in_embed.set_footer(text="Increase your profits by unlocking better pets and ranking up.")
         await interaction.response.send_message(embed=check_in_embed)
         self.cooldowns.save()
-
-    def update_balance(self, amount, bank: bool = False):  # Function to update a user's balance
-        if bank:
-            self.instance.bank += amount
-        else:
-            self.instance.money += amount
-        self.instance.save()
-
-    def update_tokens(self, amount):  # Function to update a user's tokens
-        self.instance.tokens += amount
-        self.instance.save()
-
-    def update_game_status(self, in_game: bool):  # Function to set a user's game status to true
-        self.instance.in_game = in_game
-        self.instance.save()
-
-    def update_xp(self, amount):  # Function to increase a user's xp
-        pass
-
-    def bet_checks(self, bet) -> object:  # Checks to make sure the user isn't betting more than they have or 0
-        user_balance = self.instance.money
-        if int(bet) > user_balance:  # If they try to bet more than they have in their account.
-            return f"You don't have enough to place this bet. Balance: {user_balance} bits", False
-        elif int(bet) < 0:  # If their bet is <= 0, stop the code.
-            return f"You can't bet a negative amount.", False
-        elif bet == 0:
-            return "You can't bet 0 bits.", False
-        else:
-            return "Passed", True
 
     def __del__(self):  # On cleanup of the object, close the connection to the database
         mmdatabase.close()
