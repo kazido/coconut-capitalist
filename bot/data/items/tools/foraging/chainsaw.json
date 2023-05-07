@@ -1,28 +1,29 @@
 {
     "description": {
         "type": "item",
-        "identifier": "reinforced_axe",
+        "identifier": "chainsaw",
         "tags": [
-            "axe",
+            "foraging",
+            "saw",
             "tool"
         ]
     },
     "components": {
-        "display_name": "Reinforced Axe",
-        "description": "The first upgrade in the Axe path. You'll notice better rewards.",
+        "display_name": "Chainsaw",
+        "description": "The chainsaw comes a noticable increase in speed, as well as a modification chamber.",
         "unique": true,
-        "rarity": "uncommon",
+        "rarity": "rare",
         "single_use": false,
         "is_crafted": {
             "components": [],
-            "station": "rust_belt_forge"
+            "station": "atmosphere_forge"
         },
         "level_requirement": {
-            "level": 20,
+            "level": 40,
             "skill": "foraging"
         },
         "area_requirement": {
-            "area_id": "rust_belt"
+            "area_id": "atmosphere"
         }
     }
 }

@@ -3,13 +3,14 @@
         "type": "item",
         "identifier": "enriched_axe",
         "tags": [
+            "foraging",
             "axe",
             "tool"
         ]
     },
     "components": {
         "display_name": "Enriched Axe",
-        "description": "Better rewards and, like the Chainsaw R2, a modification chamber!",
+        "description": "Better rewards and, like the Chainsaw, a modification chamber!",
         "unique": true,
         "rarity": "rare",
         "single_use": false,

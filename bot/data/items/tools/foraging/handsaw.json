@@ -1,16 +1,16 @@
 {
     "description": {
         "type": "item",
-        "identifier": "chainsaw_r1",
+        "identifier": "handsaw",
         "tags": [
-            "axe",
-            "chainsaw",
+            "foraging",
+            "saw",
             "tool"
         ]
     },
     "components": {
-        "display_name": "Chainsaw R1",
-        "description": "The first upgrade in the Chainsaw path. It's speed buff is small, yet noticeable.",
+        "display_name": "Handsaw",
+        "description": "The first upgrade in the Saw path. It's speed buff is small, yet noticeable.",
         "unique": true,
         "rarity": "uncommon",
         "single_use": false,

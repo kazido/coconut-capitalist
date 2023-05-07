@@ -1,29 +1,29 @@
 {
     "description": {
         "type": "item",
-        "identifier": "chainsaw_r2",
+        "identifier": "improved_axe",
         "tags": [
+            "foraging",
             "axe",
-            "chainsaw",
             "tool"
         ]
     },
     "components": {
-        "display_name": "Chainsaw R2",
-        "description": "With the R2 comes an additional increase in speed, as well as a modification chamber.",
+        "display_name": "Improved Axe",
+        "description": "The first upgrade in the Axe path. You'll notice better rewards.",
         "unique": true,
-        "rarity": "rare",
+        "rarity": "uncommon",
         "single_use": false,
         "is_crafted": {
             "components": [],
-            "station": "atmosphere_forge"
+            "station": "rust_belt_forge"
         },
         "level_requirement": {
-            "level": 40,
+            "level": 20,
             "skill": "foraging"
         },
         "area_requirement": {
-            "area_id": "atmosphere"
+            "area_id": "rust_belt"
         }
     }
 }
