@@ -1,20 +1,20 @@
 {
-  "area": {
     "description": {
-      "reference_name": "cairo_valley"
+        "type": "area",
+        "identifier": "cairo_valley",
+        "tags": []
     },
     "components": {
-      "display_name": "Cairo Valley",
-      "difficulty": 5,
-      "description": "A frozen valley, with the appearance of a sheet of glass.",
-      "bonus_tokens": 4,
-      "fuel_requirement": {
-        "fuel_type": "poetic_guidance"
-      },
-      "level_requirement": {
-        "level": 75,
-        "skill": "fishing"
-      }
+        "display_name": "Cairo Valley",
+        "difficulty": 5,
+        "description": "A frozen valley, with the appearance of a sheet of glass.",
+        "bonus_tokens": 4,
+        "fuel_requirement": {
+            "fuel_type": "poetic_guidance"
+        },
+        "level_requirement": {
+            "level": 75,
+            "skill": "fishing"
+        }
     }
-  }
 }

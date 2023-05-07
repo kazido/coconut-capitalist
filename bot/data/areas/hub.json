@@ -1,12 +1,12 @@
 {
-  "area": {
     "description": {
-      "reference_name": "hub"
+        "type": "area",
+        "identifier": "hub",
+        "tags": []
+    },
+    "components": {
+        "display_name": "Hub",
+        "difficulty": 0,
+        "description": "The basic hub. Not much to see."
     }
-  },
-  "components": {
-    "display_name": "Hub",
-    "difficulty": 0,
-    "description": "The basic hub. Not much to see."
-  }
 }

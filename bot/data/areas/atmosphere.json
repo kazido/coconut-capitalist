@@ -1,20 +1,20 @@
 {
-  "area": {
     "description": {
-      "reference_name": "atmosphere"
+        "type": "area",
+        "identifier": "atmosphere",
+        "tags": []
     },
     "components": {
-      "display_name": "The Atmosphere",
-      "difficulty": 3,
-      "description": "Watch out for the harpies!",
-      "bonus_tokens": 2,
-      "fuel_requirement": {
-        "fuel_type": "junkyard_jewels"
-      },
-      "level_requirement": {
-        "level": 30,
-        "skill": "foraging"
-      }
+        "display_name": "The Atmosphere",
+        "difficulty": 3,
+        "description": "Watch out for the harpies!",
+        "bonus_tokens": 2,
+        "fuel_requirement": {
+            "fuel_type": "junkyard_jewels"
+        },
+        "level_requirement": {
+            "level": 30,
+            "skill": "foraging"
+        }
     }
-  }
 }

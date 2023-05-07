@@ -1,20 +1,20 @@
 {
-  "area": {
-    "description": {
-      "reference_name": "rust_belt"
-    },
-    "components": {
-      "display_name": "The Rust Belt",
-      "difficulty": 2,
-      "description": "A lawless, scorched desert, complete with flying debris and sketchy merchants.",
-      "bonus_tokens": 1,
-      "fuel_requirement": {
-        "fuel_type": "gelatinous_solution"
-      },
-      "level_requirement": {
-        "level": 10,
-        "skill": "combat"
-      }
-    }
-  }
+	"description": {
+		"type": "area",
+		"identifier": "rust_belt",
+		"tags": []
+	},
+	"components": {
+		"display_name": "The Rust Belt",
+		"difficulty": 2,
+		"description": "A lawless, scorched desert, complete with flying debris and sketchy merchants.",
+		"bonus_tokens": 1,
+		"fuel_requirement": {
+			"fuel_type": "gelatinous_solution"
+		},
+		"level_requirement": {
+			"level": 10,
+			"skill": "combat"
+		}
+	}
 }

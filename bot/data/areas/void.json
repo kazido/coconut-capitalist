@@ -1,20 +1,20 @@
 {
-  "area": {
     "description": {
-      "reference_name": "void"
+        "type": "area",
+        "identifier": "void",
+        "tags": []
     },
     "components": {
-      "display_name": "The Void",
-      "difficulty": 10,
-      "description": "Vast and silent, painful and unforgiving.",
-      "bonus_tokens": 10,
-      "fuel_requirement": {
-        "fuel_type": "stardust"
-      },
-      "level_requirement": {
-        "level": 250,
-        "skill": "all"
-      }
+        "display_name": "The Void",
+        "difficulty": 10,
+        "description": "Vast and silent, painful and unforgiving.",
+        "bonus_tokens": 10,
+        "fuel_requirement": {
+            "fuel_type": "stardust"
+        },
+        "level_requirement": {
+            "level": 250,
+            "skill": "all"
+        }
     }
-  }
 }

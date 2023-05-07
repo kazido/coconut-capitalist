@@ -1,19 +1,19 @@
 {
-  "area": {
     "description": {
-      "reference_name": "cadrega_city"
+        "type": "area",
+        "identifier": "cadrega_city",
+        "tags": []
     },
     "components": {
-      "display_name": "Cadrega City",
-      "difficulty": 7,
-      "description": "The #1 manufacturer of chairs and stools. Stop by this industrial powerhouse for some mechanical upgrades!",
-      "bonus_tokens": 6,
-      "fuel_requirement": {
-        "fuel_type": "helix_fossil"
-      },
-      "level_requirement": {
-        "level": 100
-      }
+        "display_name": "Cadrega City",
+        "difficulty": 7,
+        "description": "The #1 manufacturer of chairs and stools. Stop by this industrial powerhouse for some mechanical upgrades!",
+        "bonus_tokens": 6,
+        "fuel_requirement": {
+            "fuel_type": "helix_fossil"
+        },
+        "level_requirement": {
+            "level": 100
+        }
     }
-  }
 }
