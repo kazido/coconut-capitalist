@@ -1,13 +1,13 @@
 {
     "description": {
         "type": "item",
-        "identifier": "olympian_ambrosia_seed",
+        "identifier": "ambrosia_seed",
         "tags": [
             "seed"
         ]
     },
     "components":{
-        "display_name": "Olympian Ambrosia Seed",
+        "display_name": "Ambrosia Seed",
         "description": "???",
         "rarity": "premium",
         "unique": false,
