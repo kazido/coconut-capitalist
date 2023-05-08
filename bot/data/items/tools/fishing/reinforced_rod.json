@@ -10,7 +10,7 @@
     },
     "components": {
         "display_name": "Reinforced Rod",
-        "description": "Upgraded by some sleepy angler at a small shack on the ocean.",
+        "description": "Upgraded by some sleepy angler at a small shack by the ocean.",
         "unique": true,
         "rarity": "uncommon",
         "single_use": false,
