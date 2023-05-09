@@ -32,7 +32,7 @@ def get_files_from_path(path: str = ".", extension: str = None) -> list:
 pet_files, stat_files = get_files_from_path(path=dir_path, extension=".json")
 
 pets = {}
-stats = {}
+pet_stats = {}
 
 for identifier, filepath in pet_files.items():
     with open(filepath) as infile:
@@ -40,4 +40,4 @@ for identifier, filepath in pet_files.items():
 
 for rarity, filepath in stat_files.items():
     with open(filepath) as infile:
-        stats[rarity] = json.load(infile)
+        pet_stats[rarity] = json.load(infile)

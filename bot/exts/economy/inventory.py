@@ -2,7 +2,7 @@ from exts.error import registered
 from classLibrary import RequestUser
 from discord.ext import commands
 from discord import app_commands
-import utils.models as mm
+import models as mm
 import discord
 
 class InventoryCog(commands.Cog, name='Inventory'):

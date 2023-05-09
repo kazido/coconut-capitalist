@@ -4,7 +4,7 @@ import sys
 import discord
 from discord.ext import commands
 from discord import app_commands
-import utils.models as mm
+import models
 from discord.utils import get
 
 import datetime
@@ -20,7 +20,7 @@ class PetNotOwned(commands.errors.CommandError):
 
 def own_pet():
     async def predicate(ctx):
-        result = (mm.Pets.get(owner_id=ctx.author.id))
+        result = (models.Pets.get(owner_id=ctx.author.id))
         if result is None:
             return PetNotOwned("You don't own a pet!")
         return True
@@ -30,7 +30,7 @@ def own_pet():
 
 def registered():
     async def predicate(ctx):
-        result = mm.Users.get(id=ctx.author.id)
+        result = models.Users.get(id=ctx.author.id)
         if result is None:
             raise Unregistered("Not registered!")
         return True
@@ -103,7 +103,7 @@ class CommandErrorHandler(commands.Cog):
             await interaction.delete_original_response()
 
         else:  # If it's a regular error, send the normal traceback
-            print('Ignoring exception in command {}:'.format(interaction.command.name), file=sys.stderr)
+            print('Ignoring exception in command {}:'.format(interaction.command.qualified_name), file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
     @commands.Cog.listener()

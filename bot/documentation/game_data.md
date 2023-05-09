@@ -63,6 +63,12 @@ Required. The description category is used to identify the object.
 > * `components` _[str]_ - List of items required to make the item.
 > * `station` _str_ - The station ID that is required to craft the item.
 
+`drop_info`
+> Determines the amount and rate at which the material will drop
+> * `drop_rate` _int_ - Number of iterations on average for material to drop (Will be set as 1/drop_rate)
+> * `minimum` _int_ - Lowest amount of the material that will drop
+> * `maximum` _int_ - Highest amount of the material that will drop
+
 `pet_xp` _int_ **(Crops only)**
 > Amount of xp to give to pets when consumed.
 
@@ -75,7 +81,7 @@ Required. The description category is used to identify the object.
 > ID of the seed that the crop grows from.
 
 `growth_odds` _int_ **(Seeds only)**
-> Percent chance (1-100) that the crop will grow during a cycle.
+> umber of iterations on average for material to drop (Will be set as 1/growth_odds)
 
 `grows_into` _str_ **(Seeds only)**
 > ID of the crop that the seed will grow into.

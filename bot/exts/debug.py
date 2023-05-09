@@ -7,7 +7,7 @@ from discord.ext import commands
 import os
 import pathlib
 from classLibrary import RequestUser
-import utils.models as mm
+from bot import models
 
 
 class EmbedModal(discord.ui.Modal, title="Embed Creation"):
