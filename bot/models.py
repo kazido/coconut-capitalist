@@ -7,19 +7,22 @@ from pytz import timezone
 from typing import Literal, get_args
 from peewee import *
 from playhouse.migrate import SqliteMigrator
+from logging import getLogger
 
 # File imports
 from data.ranks import ranks
-from data.pets import pets, stats
+from data.pets import pets, pet_stats
 from data.items.tools import tools
 from data.items.crops import crops
 from constants import DATABASE
 
 # Database setup
-db_path = os.path.realpath(os.path.join("database", DATABASE))
+db_path = os.path.realpath(os.path.join("bot", "database", DATABASE))
 db = SqliteDatabase(db_path)
 # Migrator to edit tables
 migrator = SqliteMigrator(db)
+
+log = getLogger(__name__)
 
 
 class BaseModel(Model):
@@ -70,12 +73,18 @@ class Users(BaseModel):
         Takes in an interaction argument to handle discord interactions
         Pretty much acts as in init method
         """
-        user = cls.get_or_create(id=user_id)
+        try:  # Establish a connection to the database
+            db.connect(reuse_if_open=True)
+            log.debug("Successfully connected to database.")
+        except DatabaseError as error:
+            log.error(f"Error connecting to Database.\nError: {error}")
+
+        user, created = cls.get_or_create(id=user_id)
         # This will auto update a users name in the database whenever
         # they use a command or whenever a new user is added
         user.name = interaction.user.nick
         user.save()
-        print(f"User {user} fetched.")
+        log.debug(f"User {user} fetched.")
         cls.retrieve_pet(user, user_id)
         cls.retrieve_rank(user, interaction)
         return user
@@ -84,7 +93,7 @@ class Users(BaseModel):
     def retrieve_pet(user, user_id):
         try:
             active_pet = (
-                Pets.select().where((Pets.owner_id == user_id) & Pets.active).get()
+                Pets.select().where((Pets.user == user_id) & Pets.active).get()
             )
             user.active_pet = Pets(active_pet.id)
         except DoesNotExist:
@@ -121,7 +130,7 @@ class Users(BaseModel):
         else:
             return "Passed", True
 
-    async def work(self, interaction):
+    async def work(self):
         title = random.choice(ranks[self.rank]["components"]["responses"])
         wage = ranks[self.rank]["components"]["wage"]
         description = (
@@ -129,7 +138,8 @@ class Users(BaseModel):
         )
         # If the user has a pet, we need to apply the bits multiplier
         if self.active_pet:
-            work_multiplier = stats[self.active_pet.instance.rarity]["bonuses"]["work"]
+
+            work_multiplier = pet_stats[self.active_pet.rarity]["bonuses"]["work"]
             pet_bonus = wage * work_multiplier
             description += f"\n:money_with_wings: **+{int(wage * work_multiplier):,} bits** (pet bonus)"
             self.update_balance(wage + wage * work_multiplier)
@@ -138,6 +148,10 @@ class Users(BaseModel):
             self.update_balance(wage)
         self.cooldowns.set_cooldown("work")
         self.save()
+        return 
+    
+    def __del__(self):
+        db.close()
 
 # Table for user's skills and tools associated with skills
 class UserSkills(BaseModel):
@@ -413,3 +427,4 @@ def create_tables():
     tables = [Users, UserCooldowns, Farms, Pets, Items, MegaDrop, UserSkills]
     with db:
         db.create_tables(tables)
+
