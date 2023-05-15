@@ -12,8 +12,8 @@ from pydis_core import StartupError
 # file imports
 import bot
 from bot import exts, constants
-from bot.bot import Bot
-from utils.extensions import walk_extensions
+from bot._bot import Bot
+from bot.utils.extensions import walk_extensions
 
 
 async def main():
@@ -42,10 +42,11 @@ async def main():
         discord.utils.setup_logging()  # 2.1 Logging feature
         await _bot.start(constants.TOKEN, reconnect=True)
 
-try:
-    asyncio.run(main())
-except StartupError as e:
-    message = "Unknown Startup Error Occurred."
+asyncio.run(main())
+# try:
+#     asyncio.run(main())
+# except StartupError as e:
+#     message = "Unknown Startup Error Occurred."
 
 @commands.is_owner()
 @bot.instance.command(hidden=True, aliases=["ch"])
