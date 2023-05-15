@@ -10,7 +10,7 @@ BOT_DIR = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.abspath(os.path.join(BOT_DIR, os.pardir))
 
 # Opening config file
-config_path = os.path.join(PROJECT_ROOT, "bot", "config.json")
+config_path = os.path.join(PROJECT_ROOT, "config.json")
 with open(config_path, "r") as f:
     data = json.load(f)
 
@@ -46,11 +46,13 @@ class CooldownTimes(Enum):
     DAILY = 21
     WEEKLY = 167
 
+
+# Default role combinations
+MODERATION_ROLES = None
 # Bot replies
 NEGATIVE_REPLIES = [
     "Noooooo!!",
     "Nope.",
-    "I'm sorry Dave, I'm afraid I can't do that.",
     "I don't think so.",
     "Not gonna happen.",
     "Out of the question.",
@@ -102,10 +104,11 @@ ERROR_REPLIES = [
 
 
 # Emojis
-class Emoji(Enum):
+class Emojis(Enum):
     HAPPY = ":smile:"
     FROWN = ":slight_frown:"
     SAD = ":sob:"
     ANGRY = ":angry:"
     CONFIRM = ":white_check_mark:"
     CANCEL = ":x:"
+    TRASHCAN = ":trashcan:"
