@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from pydis_core import BotBase
-from utils.extensions import walk_extensions
+from bot.utils.extensions import walk_extensions
 
 from logging import getLogger
 from bot import exts
