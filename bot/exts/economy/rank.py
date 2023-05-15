@@ -2,7 +2,8 @@ import asyncio
 import discord
 from discord.ext import commands
 from discord import app_commands
-from classLibrary import RequestUser, ranks
+from data.ranks import ranks
+from models import Users
 from exts.error import registered
 
 
@@ -17,7 +18,7 @@ class Ranks(commands.Cog):
     @app_commands.command(name="rank", description="Check your current rank and it's perks.")
     async def rank(self, interaction: discord.Interaction):
         # Grabs the ranks from the class library and determines which discord role the user has
-        user = RequestUser(interaction.user.id, interaction=interaction)
+        user = Users.new(interaction.user.id, interaction)
         embed = discord.Embed(title=f"Current Rank: *{user.rank.capitalize()}* {ranks[user.rank]['emoji']}",
                               color=discord.Color.from_str("#"+ranks[user.rank]['color']))
         # If the role has permissions, display them

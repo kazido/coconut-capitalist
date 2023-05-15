@@ -1,12 +1,8 @@
 from discord import Interaction, ButtonStyle, PartialEmoji, Embed, Color
 from discord.ui import Button, View
-from ClassLibrary import RequestUser
-from myModels import ROOT_DIRECTORY
-import json
+from classLibrary import RequestUser
 import asyncio
 
-with open(f'{ROOT_DIRECTORY}\projfiles\game_entities\\consumables.json', 'r') as consumables_file:
-    consumables = json.load(consumables_file)
 
 # View for the overall shop, with buttons to select subshops
 class ShopView(View):
