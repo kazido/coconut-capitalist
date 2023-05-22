@@ -1,6 +1,6 @@
 from discord.ext.commands import Context, Converter, BadArgument
 from pydis_core.utils import unqualify
-from bot import exts, instance as bot_instance
+from src import exts, instance as bot_instance
 
 
 class Extension(Converter):

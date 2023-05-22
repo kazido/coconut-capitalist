@@ -1,10 +1,10 @@
 from collections import defaultdict
 
 from pydis_core import BotBase
-from bot.utils.extensions import walk_extensions
+from src.utils.extensions import walk_extensions
 
 from logging import getLogger
-from bot import exts
+from src import exts
 
 log = getLogger('bot')
 

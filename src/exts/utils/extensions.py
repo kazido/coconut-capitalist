@@ -8,8 +8,8 @@ from discord.ext.commands import Context, group
 
 import exts
 from discord.ext.commands import Bot
-from bot.constants import Emojis, MODERATION_ROLES
-from bot.converters import Extension
+from src.constants import Emojis, MODERATION_ROLES
+from src.converters import Extension
 from logging import getLogger
 from pagination import LinePaginator
 

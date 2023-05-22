@@ -7,9 +7,9 @@ import discord
 from discord.abc import User
 from discord.ext.commands import Context, Paginator
 
-from bot import constants
+from src import constants
 from logging import getLogger
-from bot.utils import messages
+from src.utils import messages
 
 FIRST_EMOJI = "\u23EE"   # [:track_previous:]
 LEFT_EMOJI = "\u2B05"    # [:arrow_left:]

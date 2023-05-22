@@ -10,10 +10,10 @@ from discord import app_commands
 from pydis_core import StartupError
 
 # file imports
-import bot
-from bot import exts, constants
-from bot._bot import Bot
-from bot.utils.extensions import walk_extensions
+import src
+from src import exts, constants
+from src._bot import Bot
+from src.utils.extensions import walk_extensions
 
 
 async def main():
@@ -26,7 +26,7 @@ async def main():
     intents.webhooks = False
     intents.integrations = False
 
-    bot.instance = commands.Bot(
+    src.instance = commands.Bot(
         guild_id=constants.DiscordGuilds.PRIMARY_GUILD,
         command_prefix=commands.when_mentioned_or(constants.BOT_PREFIX),
         activity=discord.Game(name=f"Commands: {constants.BOT_PREFIX}help"),
@@ -36,9 +36,9 @@ async def main():
         intents=intents,
         strip_after_prefix=True
     )
-    bot.instance.remove_command('help')
+    src.instance.remove_command('help')
 
-    async with bot.instance as _bot:
+    async with src.instance as _bot:
         discord.utils.setup_logging()  # 2.1 Logging feature
         await _bot.start(constants.TOKEN, reconnect=True)
 
@@ -49,13 +49,13 @@ asyncio.run(main())
 #     message = "Unknown Startup Error Occurred."
 
 @commands.is_owner()
-@bot.instance.command(hidden=True, aliases=["ch"])
+@src.instance.command(hidden=True, aliases=["ch"])
 async def check_cogs(ctx):
     extensions = walk_extensions(exts)
     for extension in extensions:
         print(extension)
         try:
-            await bot.load_extension(extension)
+            await src.load_extension(extension)
         except commands.ExtensionAlreadyLoaded:
             await ctx.send(f"{extension} is already loaded.")
         except commands.ExtensionNotFound:
@@ -63,10 +63,10 @@ async def check_cogs(ctx):
 
 
 @commands.is_owner()
-@bot.command(hidden=True)
+@src.command(hidden=True)
 async def sync(ctx):
     # Main guild sync
-    treesync = await bot.tree.sync(guild=constants.PRIMARY_GUILD)
+    treesync = await src.tree.sync(guild=constants.PRIMARY_GUILD)
     embed = discord.Embed(title="Synced!", description="",
                           color=discord.Color.blurple())
     for command in treesync:
@@ -75,7 +75,7 @@ async def sync(ctx):
 
 
 @commands.is_owner()
-@bot.command(hidden=True, aliases=['r', 'rl'])
+@src.command(hidden=True, aliases=['r', 'rl'])
 async def reload(ctx):
     extensions = []
     select_options = {}
@@ -93,7 +93,7 @@ async def reload(ctx):
         async def selection(self, interaction: discord.Interaction, select: discord.ui.Select):
             if interaction.user != ctx.author:
                 return
-            await bot.reload_extension(select.values[0])
+            await src.reload_extension(select.values[0])
             await interaction.response.edit_message(
                 content=f"{select.values[0]} has successfully been reloaded.",
                 view=None)
@@ -102,10 +102,10 @@ async def reload(ctx):
 
 
 @commands.is_owner()
-@bot.command(hidden=True)
+@src.command(hidden=True)
 async def unload(ctx, cog):
     try:
-        await bot.unload_extension(f"exts.{cog}")
+        await src.unload_extension(f"exts.{cog}")
         await ctx.send(f"{cog} has successfully been unloaded.")
     except commands.ExtensionNotFound:
         await ctx.send(f"{cog} could not be located.")
@@ -114,7 +114,7 @@ async def unload(ctx, cog):
 
 
 @commands.is_owner()
-@bot.command(hidden=True)
+@src.command(hidden=True)
 async def load(ctx, extension: str):
     """
     Load a bot extension
@@ -124,7 +124,7 @@ async def load(ctx, extension: str):
         The unqualified module name.
     """
     try:
-        await bot.load_extension(extension)
+        await src.load_extension(extension)
         await ctx.send(f"{extension} has been successfully loaded.")
     except commands.ExtensionAlreadyLoaded:
         await ctx.send(f"{extension} is already loaded.")
@@ -132,7 +132,7 @@ async def load(ctx, extension: str):
         await ctx.send(f"{extension} could not be located.")
 
 
-@bot.event
+@src.event
 async def on_ready():
     fmt = "%m-%d-%Y %H:%M:%S"
     print(f"-- BOT READY --\nRan at: {datetime.strftime(datetime.now(), fmt)}")

@@ -6,8 +6,8 @@ from discord.ext.commands import Context
 
 from pydis_core.utils import scheduling
 
-import bot
-from bot.constants import MODERATION_ROLES, NEGATIVE_REPLIES
+import src
+from src.constants import MODERATION_ROLES, NEGATIVE_REPLIES
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -29,7 +29,7 @@ def reaction_check(
     If `allow_mods` is True, allow users with moderator roles even if they're not in `allowed_users`.
     """
     right_reaction = (
-        user != bot.instance.user
+        user != src.instance.user
         and reaction.message.id == message_id
         and str(reaction.emoji) in allowed_emoji
     )
