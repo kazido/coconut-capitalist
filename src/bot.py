@@ -1,7 +1,6 @@
-from collections import defaultdict
-
 from pydis_core import BotBase
 from src.utils.extensions import walk_extensions
+from discord.utils import setup_logging
 
 from logging import getLogger
 from src import exts
@@ -20,8 +19,11 @@ class StartupError(Exception):
 class Bot(BotBase):
     async def setup_hook(self) -> None:
         await super().setup_hook()
-
+        
+        setup_logging()  # 2.1 Logging feature  
+        print("Attempting to load extensions...")
         await self.load_extensions(exts)
+        print("Finished loading extensions.")
         print("Printing all extensions:", self.all_extensions)
         
 
