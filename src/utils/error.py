@@ -2,88 +2,39 @@ import asyncio
 import traceback
 import sys
 import discord
+
 from discord.ext import commands
+from discord.ext.commands import Cog
 from discord import app_commands
-import models
-from discord.utils import get
+
 
 import datetime
 
 
-class Unregistered(commands.errors.CommandError):
-    pass
-
-
-class PetNotOwned(commands.errors.CommandError):
-    pass
-
-
-def own_pet():
-    async def predicate(ctx):
-        result = (models.Pets.get(owner_id=ctx.author.id))
-        if result is None:
-            return PetNotOwned("You don't own a pet!")
-        return True
-
-    return commands.check(predicate)
-
-
-def registered():
-    async def predicate(ctx):
-        result = models.Users.get(id=ctx.author.id)
-        if result is None:
-            raise Unregistered("Not registered!")
-        return True
-
-    return commands.check(predicate)
-
-
-class CommandErrorHandler(commands.Cog):
+class CommandErrorHandler(Cog):
 
     def __init__(self, bot):
         self.bot = bot
         self.bot.tree.on_error = self.on_app_command_error
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_member_remove(self, member):
         owner = self.bot.get_user(326903703422500866)
         channel = await owner.create_dm()
         await channel.send(f"{member.name} has left the guild and could cause issues in database.\n"
                            f"Their id: {member.id}")
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_member_join(self, member):
         role_to_add = discord.utils.get(member.guild.roles, name='Unranked')
         await member.add_roles(role_to_add)
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_user_update(self, before, after):
         pass
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if not message.guild:
-            return await self.bot.process_commands(message)
-
-        async def king_of_the_hill():
-            role = get(message.guild.roles, id=895078616063430666)
-            guild = self.bot.get_guild(856915776345866240)
-            for user in guild.members:
-                if user == message.author:
-                    await user.add_roles(role)
-                else:
-                    if role in user.roles:
-                        await user.remove_roles(role)
-
-        if message.channel.id == 859262125390168074:
-            await king_of_the_hill()
-            return
-
-        if message.content.lower() == 'yey':
-            await message.channel.send(":balloon:")
-
     # When a reaction is added to the message in #assign-roles, it adds the user to the database
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_raw_reaction_add(self, payload):
         if payload.message_id == 966558439880945745:
             if str(payload.emoji) == "📢":
@@ -92,7 +43,7 @@ class CommandErrorHandler(commands.Cog):
         else:
             pass
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         if isinstance(error, app_commands.CommandOnCooldown):
             error_embed = discord.Embed(
@@ -106,7 +57,7 @@ class CommandErrorHandler(commands.Cog):
             print('Ignoring exception in command {}:'.format(interaction.command.qualified_name), file=sys.stderr)
             traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
-    @commands.Cog.listener()
+    @Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.CommandNotFound):
             return
