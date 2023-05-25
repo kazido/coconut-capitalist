@@ -124,4 +124,4 @@ class Emojis(Enum):
     CANCEL = ":x:"
     STATUS_ONLINE = ":white_check_mark:"
     STATUS_OFFLINE = ":x:"
-    TRASHCAN = ":trashcan:"
+    TRASHCAN = ":wastebasket:"
