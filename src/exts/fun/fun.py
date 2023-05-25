@@ -1,51 +1,57 @@
-from discord.ext import commands
 import discord
-from discord import app_commands
 import requests
+
+from src.bot import Bot
+from discord.ext import commands
+from discord.ext.commands import Cog
+from discord import app_commands, Interaction
 from bs4 import BeautifulSoup
 
 
 class FunCommands(commands.Cog, name='Fun'):
-    """All fun commands were moved to slash commands. Do / to see them!"""
+    """Fun commands that spice up the daily chatting."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: Bot):
         self.bot = bot
 
-    fun_commands = discord.app_commands.Group(name="fun", description="Some fun commands to use.",
-                                              guild_ids=[856915776345866240])
+    @commands.group()
+    async def fun(self) -> None:
+        """Group for commands that are simply for fun."""
 
-    @fun_commands.command(name="backwards", description="Repeats your message but backwards!")
-    async def backwards(self, interaction: discord.Interaction, message: str):
+    @Cog.listener()
+    async def on_message(self, message):
+        triggers = ['yey', 'yay', 'woohoo', 'hooray']
+        if message.content.lower() in triggers:
+            await message.channel.send(":balloon:")
+
+    @fun.command(name="backwards", description="I'll repeat your message, but backwards!")
+    async def backwards(self, interaction: Interaction, message: str):
         await interaction.response.send_message(message[::-1])
 
-    @fun_commands.command(name="shout", description="SHOUT your message!")
-    async def shout(self, interaction: discord.Interaction, message: str):
+    @fun.command(name="shout", description="I will SHOUT your message!")
+    async def shout(self, interaction: Interaction, message: str):
         await interaction.response.send_message(f"**{message.upper()}** -{interaction.user.name}")
 
-    @fun_commands.command(name="yay", description="YAY!")
-    async def yay(self, interaction: discord.Interaction):
+    @fun.command(name="yay", description="YAY!")
+    async def yay(self, interaction: Interaction):
         await interaction.response.send_message(f':balloon:')
 
-    @fun_commands.command(name="status", description="Change the status of the bot")
-    async def status(self, interaction: discord.Interaction, playing: str):
+    @fun.command(name="status", description="Change my status. Please be considerate.")
+    async def status(self, interaction: Interaction, playing: str):
+        self.bot: Bot
         game = discord.Game(playing.replace("playing", ""))
         await self.bot.change_presence(status=discord.Status.online, activity=game)
-        await interaction.response.send_message(f"Economy Bot is now playing: **{playing.replace('playing', '')}**.")
+        await interaction.response.send_message(f"{self.bot.user.display_name} is now playing: **{playing.replace('playing', '')}**.")
 
     @app_commands.command(name="wiki", description="Check the wiki for Terraria!")
-    # @app_commands.choices(game=[
-    #     Choice(name='Terraria', value=1)
-    # ])
     @app_commands.guilds(856915776345866240)
-    async def wiki(self, interaction: discord.Interaction, item: str | None):
-        # game: Choice[int], ADD THIS IN WHEN THERE ARE MUTLIPLE GAMES TO CHOOSE FROM
+    async def wiki(self, interaction: Interaction, item: str | None):
         game_urls = {
             "terraria": "https://terraria.wiki.gg/wiki/",
             "terrariasearch": "https://terraria.wiki.gg/index.php?search="
         }
         if item:
             # Get webpage for searching
-            # response = requests.get(url=f"{game_urls[game.name.lower()+'search']}+{item.replace(' ', '+')}")  ^^^
             response = requests.get(
                 url=f"{game_urls['terraria' + 'search']}+{item.replace(' ', '+')}")
             soup = BeautifulSoup(response.content, 'html.parser')
@@ -116,7 +122,7 @@ class FunCommands(commands.Cog, name='Fun'):
 
     @app_commands.command(name="crafting", description="Check recipes for Terraria items.")
     @app_commands.guilds(856915776345866240)
-    async def crafting(self, interaction: discord.Interaction, item: str | None):
+    async def crafting(self, interaction: Interaction, item: str | None):
         response = requests.get(
             url=f"https://terraria.wiki.gg/index.php?search={item.replace(' ', '+')}")
         soup = BeautifulSoup(response.content, 'html.parser')
