@@ -41,14 +41,11 @@ async def main():
     src.instance.remove_command('help')
 
     async with src.instance as _bot:
-        print("Attempting to start bot...")
         await _bot.start(constants.TOKEN, reconnect=True)
-        print("Bot started. ", _bot)
 
-try:
-    asyncio.run(main())
-except StartupError as e:
-    message = "Unknown Startup Error Occurred."
 
 if __name__ == '__main__':
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except StartupError as e:
+        message = "Unknown Startup Error Occurred."
