@@ -43,7 +43,8 @@ def reaction_check(
     # )
 
     if user.id in allowed_users:
-        log.info(f"Allowed reaction {reaction} by {user} on {reaction.message.id}.")
+        log.info(
+            f"Allowed reaction {reaction} by {user} on {reaction.message.id}.")
         return True
     else:
         log.info(
@@ -55,7 +56,8 @@ def reaction_check(
             name=f"remove_reaction-{reaction}-{reaction.message.id}-{user}",
         )
         return False
-    
+
+
 async def send_denial(ctx: Context, reason: str) -> discord.Message:
     """Send an embed denying the user with the given reason."""
     embed = discord.Embed()
