@@ -27,7 +27,7 @@ async def main():
     intents.integrations = False
 
     src.instance = Bot(
-        guild_id=constants.DiscordGuilds.PRIMARY_GUILD,
+        guild_id=constants.DiscordGuilds.PRIMARY_GUILD.value,
         command_prefix=commands.when_mentioned_or(constants.BOT_PREFIX),
         activity=discord.Game(name=f"Commands: {constants.BOT_PREFIX}help"),
         case_insensitive=True,
@@ -49,12 +49,6 @@ try:
     asyncio.run(main())
 except StartupError as e:
     message = "Unknown Startup Error Occurred."
-
-
-@src.instance.event
-async def on_ready():
-    fmt = "%m-%d-%Y %H:%M:%S"
-    print(f"-- BOT READY --\nRan at: {datetime.strftime(datetime.now(), fmt)}")
 
 if __name__ == '__main__':
     asyncio.run(main())

@@ -23,7 +23,7 @@ class KingOfTheHill(Cog, name="King of the Hill"):
         async def update_king():
             koth_role = utils.get(message.guild.roles, id=KOTH_ROLE_ID)
             # Retrieve the guild so we can check everyone's roles
-            guild = self.bot.get_guild(DiscordGuilds.PRIMARY_GUILD)
+            guild = self.bot.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
             for user in guild.members:
                 if user == message.author:
                     await user.add_roles(koth_role)

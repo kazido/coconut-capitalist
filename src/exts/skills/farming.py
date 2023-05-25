@@ -6,7 +6,7 @@ from discord import app_commands
 import random  # Random imports
 from random import randint
 from classLibrary import RequestUser # File imports
-from exts.error import registered
+from utils.decorators import registered
 from utils.utils import seconds_until_tasks
 import models as mm
 import playhouse.shortcuts as phs

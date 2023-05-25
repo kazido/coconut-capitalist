@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 import discord.ui
 from classLibrary import RequestUser
-from exts.error import registered
+from utils.decorators import registered
 import models as mm
 import playhouse.shortcuts as phs
 

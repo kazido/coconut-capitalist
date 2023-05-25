@@ -1,4 +1,4 @@
-from exts.error import registered
+from utils.decorators import registered
 from classLibrary import RequestUser
 from discord.ext import commands
 from discord import app_commands

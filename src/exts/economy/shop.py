@@ -1,4 +1,4 @@
-from exts.error import registered
+from utils.decorators import registered
 from classLibrary import RequestUser
 from utils.shop import SubShopPage, SubShopView, ShopView
 from discord.ext import commands

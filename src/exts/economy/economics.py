@@ -7,7 +7,7 @@ from discord.app_commands import Choice
 from discord.ext import commands
 import random
 from random import randint
-from exts.error import registered
+from utils.decorators import registered
 from classLibrary import RequestUser
 from exts.economy.drops import DROP_AVERAGE
 import models

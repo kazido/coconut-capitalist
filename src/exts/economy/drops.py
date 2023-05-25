@@ -7,7 +7,7 @@ from datetime import datetime  # Time imports for formatting and retrieving date
 from pytz import timezone
 import asyncio
 import json  # File handling imports
-from exts.error import registered  # File imports
+from utils.decorators import registered  # File imports
 from classLibrary import RequestUser
 from utils.utils import seconds_until_tasks
 import models

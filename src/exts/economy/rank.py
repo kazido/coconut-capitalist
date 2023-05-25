@@ -2,9 +2,9 @@ import asyncio
 import discord
 from discord.ext import commands
 from discord import app_commands
-from data.ranks import ranks
+from src.data.ranks import ranks
 from models import Users
-from exts.error import registered
+from utils.decorators import registered
 
 
 class Ranks(commands.Cog):

@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 from discord import app_commands
 from random import randint
-from exts.error import registered
+from utils.decorators import registered
 import asyncio
 from classLibrary import RequestUser
 import typing

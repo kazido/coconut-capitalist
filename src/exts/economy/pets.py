@@ -1,8 +1,8 @@
 import asyncio
 
 import models as mm
-from exts.error import registered
-from data.pets import pets
+from utils.decorators import registered
+from src.data.pets import pets
 from classLibrary import RequestUser
 
 import discord

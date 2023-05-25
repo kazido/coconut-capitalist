@@ -26,7 +26,7 @@ class MemberUpdates(Cog):
     @Cog.listener()
     async def on_member_remove(self, member: discord.Member):
         """Handle when a user leaves the guild"""
-        channel = self.bot.get_channel(ModerationChannels.DATABASE_LOGS)
+        channel = self.bot.get_channel(ModerationChannels.DATABASE_LOGS.value)
 
         left_embed = discord.Embed(color=discord.Color.red())
         left_embed.title = "Member left"
@@ -37,7 +37,7 @@ class MemberUpdates(Cog):
     @Cog.listener()
     async def on_user_update(self, before, after):
         """Handle when a user updates something about their profile"""
-        channel = self.bot.get_channel(ModerationChannels.DATABASE_LOGS)
+        channel = self.bot.get_channel(ModerationChannels.DATABASE_LOGS.value)
 
         update_embed = discord.Embed(color=discord.Color.blurple())
         update_embed.title = "Member updated"
