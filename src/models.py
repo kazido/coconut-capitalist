@@ -18,7 +18,7 @@ from src.data.items.crops import crops
 from src.constants import DATABASE
 
 # Database setup
-db_path = os.path.realpath(os.path.join("bot", "database", DATABASE))
+db_path = os.path.realpath(os.path.join("database", DATABASE))
 db = SqliteDatabase(db_path)
 # Migrator to edit tables
 migrator = SqliteMigrator(db)
