@@ -41,7 +41,7 @@ async def game_results(interaction: discord.Interaction, user: RequestUser, roll
     return embed
 
 
-class HighLow(commands.Cog, name="HighLow"):
+class HighLow(commands.Cog, name="High Low"):
     """Guess if the next number will be high (6-10) or low (1-5)"""
 
     def __init__(self, bot):

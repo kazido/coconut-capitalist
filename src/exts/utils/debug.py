@@ -23,7 +23,7 @@ class EmbedModal(discord.ui.Modal, title="Embed Creation"):
         await interaction.response.send_message(embed=embed)
 
 
-class DebuggingCommands(commands.Cog):
+class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     def __init__(self, bot):
         self.bot = bot
 
