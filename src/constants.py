@@ -23,13 +23,13 @@ else:
     BOT_PREFIX = "-"
     DATABASE = "livedatabase.db"
     TOKEN = data["primary_token"]
-    
+
 if data["DEBUG_MODE"]:
     DEBUG_MODE = True
 else:
     DEBUG_MODE = False
-    
-    
+
+
 if data["FILE_LOGGING"]:
     FILE_LOGGING = True
 else:
@@ -40,6 +40,7 @@ class DiscordGuilds(Enum):
     PRIMARY_GUILD = 856915776345866240
     TESTING_GUILD = 977351545966432306
 
+
 class GamblingChannels(Enum):
     PARADISE = 858549045613035541
     DREAMSCAPE = 959271607241683044
@@ -47,11 +48,10 @@ class GamblingChannels(Enum):
     NIGHTMARE = 961045401803317299
     HEAVEN = 962171274073899038
     WWTGS = 962171351794327562
-    
-    
+
+
 class ModerationChannels(Enum):
-    DATABASE_LOGS  = 858606781093511248
-    
+    DATABASE_LOGS = 858606781093511248
 
 
 class CooldownTimes(Enum):
@@ -114,6 +114,15 @@ ERROR_REPLIES = [
     "Are you trying to kill me?",
     "Noooooo!!",
     "I can't believe you've done this",
+]
+
+TOO_RICH_TITLES = [
+    "Begging is for poor people...",
+    "You're already rich!",
+    "Really?",
+    "You have a job, go work it.",
+    "No.",
+    "Bet everything, then come back."
 ]
 
 
