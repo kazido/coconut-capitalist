@@ -3,13 +3,14 @@ import discord
 import os
 
 from datetime import time, datetime
+from enum import Enum
 from pytz import timezone
 from typing import Literal, get_args
 from peewee import *
 from playhouse.migrate import SqliteMigrator
 from logging import getLogger
+from discord import utils
 
-# File imports
 from src.data.ranks import ranks
 from src.data.pets import pets, pet_stats
 from src.data.items.tools import tools
@@ -23,39 +24,45 @@ db = SqliteDatabase(db_path)
 migrator = SqliteMigrator(db)
 
 log = getLogger(__name__)
+log.setLevel(10)
 
+
+# region Base Model definition
 
 class BaseModel(Model):
     class Meta:
         database = db
 
-    MODES = Literal["overwrite", "add"]
-
-    def update_value(self, attribute, mode: MODES, value):
-        """
-        Update a specific value in a table.\n
-        Overwrite mode will write in the new value to the attribute.\n
-        Add mode will increase the attribute by the passed value. (Integer attributes only)
-        """
-
-        if mode == "overwrite":
-            old_value = getattr(self, attribute)
-            setattr(self, attribute, value)
-        elif mode == "add":
-            old_value = getattr(self, attribute)
+    def increase(self, attribute, value):
+        log.debug(f"Attempting to increase {attribute} by {value}.")
+        old_value = getattr(self, attribute)
+        try:
             old_value += value
+            self.save()
+            return f"{attribute} updated ({old_value} -> {getattr(self, attribute)})", True
+        except TypeError as e:
+            return f"Failed to increase {attribute}. Error: {e}", False
 
-        self.save()
-        return f"{attribute} updated ({old_value} -> {getattr(self, attribute)})", True
+    def overwrite(self, attribute, value):
+        log.debug(f"Attempting to overwrite {attribute} with {value}.")
+        old_value = getattr(self, attribute)
+        try:
+            setattr(self, attribute, value)
+            self.save()
+            return f"{attribute} updated ({old_value} -> {getattr(self, attribute)})", True
+        except TypeError as e:
+            return f"Failed to overwrite {attribute}. Error: {e}", False
 
     @classmethod
     def list_columns(cls):
         columns = [field for field in cls._meta.fields]
         return columns
+    
+# endregion
 
-# Table for all users
+# region Users class 
+
 class Users(BaseModel):
-    # Fields of the User table
     name = TextField(null=True)
     bank = IntegerField(default=0, null=True)
     money = IntegerField(default=0, null=True)
@@ -83,40 +90,51 @@ class Users(BaseModel):
         # This will auto update a users name in the database whenever
         # they use a command or whenever a new user is added
         user.name = interaction.user.nick
+        log.debug(f"Updated username to {interaction.user.nick}.")
         user.save()
+
+        user.total_balance = user.bank + user.money
+
+        pet = cls.retrieve_pet(user, user_id)
+        log.debug(f"Retrieved {pet} for {user}.")
+
+        rank = cls.retrieve_rank(user, interaction)
+        log.debug(f"Retrieved {rank} for {user}.")
+
         log.debug(f"User {user} fetched.")
-        cls.retrieve_pet(user, user_id)
-        cls.retrieve_rank(user, interaction)
         return user
 
     @staticmethod
     def retrieve_pet(user, user_id):
         try:
-            active_pet = (
-                Pets.select().where((Pets.user == user_id) & Pets.active).get()
-            )
+            active_pet_query = (Pets.user == user_id) & Pets.active
+            active_pet = Pets.select().where(active_pet_query).get()
             user.active_pet = Pets(active_pet.id)
         except DoesNotExist:
             user.active_pet = None
+            log.debug("Found no active pet, setting pet to None.")
         return user.active_pet
 
     @staticmethod
     def retrieve_rank(user, interaction: discord.Interaction):
         guild_roles = interaction.guild.roles
         for rank in ranks.keys():
-            discord_role = discord.utils.get(guild_roles, name=rank.capitalize())
+            discord_role = utils.get(guild_roles, name=rank.capitalize())
             # Check to see if the user has any matching role in discord
             if discord_role in interaction.user.roles:
                 user.rank = rank
+                log.debug(f"Found {rank} rank.")
                 break
         return user.rank
 
     def start_game(self):
         self.in_game = True
+        log.debug(f"Updating {self.name} status to True.")
         self.save()
 
     def end_game(self):
         self.in_game = False
+        log.debug(f"Updating {self.name} status to False.")
         self.save()
 
     def check_bet(self, bet):
@@ -148,14 +166,17 @@ class Users(BaseModel):
             self.update_balance(wage)
         self.cooldowns.set_cooldown("work")
         self.save()
-        return 
-    
+        return
+
     def __del__(self):
         db.close()
 
-# Table for user's skills and tools associated with skills
+# endregion
+
+# region Users Skills class
 class UserSkills(BaseModel):
-    user_id = ForeignKeyField(Users, backref="skills", unique=True, on_delete="CASCADE")
+    user_id = ForeignKeyField(Users, backref="skills",
+                              unique=True, on_delete="CASCADE")
     # -- COMBAT -- #
     combat_xp = IntegerField(default=0)
     weapon = TextField(default=None, null=True)
@@ -177,7 +198,9 @@ class UserSkills(BaseModel):
     class Meta:
         table_name = "user_skills"
 
-# Table for cooldowns for user commands
+# endregion
+
+# region Users Cooldowns class
 class UserCooldowns(BaseModel):
     user = ForeignKeyField(
         Users, backref="cooldowns", primary_key=True, on_delete="CASCADE"
@@ -239,7 +262,9 @@ class UserCooldowns(BaseModel):
         else:
             return True, None  # The check has been passed
 
-# Table for user's settings
+# endregion
+
+# region Settings class
 class Settings(BaseModel):
     """
     Auto Deposit: automatically deposit your bits from working into the bank\n
@@ -273,7 +298,9 @@ class Settings(BaseModel):
         self.save()
         return f"{attribute} updated successfully ({old_value} -> {value})", True
 
-# Table for user's individual farms
+# endregion
+
+# region Farms class
 class Farms(BaseModel):
     user = ForeignKeyField(
         Users,
@@ -304,7 +331,9 @@ class Farms(BaseModel):
         self.has_open_farm = False
         self.save()
 
-# Table for all items, with their owners
+# endregion
+
+# region Items class
 class Items(BaseModel):
     user = ForeignKeyField(
         Users, backref="items", on_delete="CASCADE", column_name="user"
@@ -380,7 +409,9 @@ class Items(BaseModel):
             # If item doesn't exist, do nothing
             return False, "This item does not exist."
 
-# Table of all pets, with their owners
+# endregion
+
+# region Pets class
 class Pets(BaseModel):
     user = ForeignKeyField(Users, backref="pets", on_delete="CASCADE")
     reference_id = TextField()
@@ -405,7 +436,9 @@ class Pets(BaseModel):
     def set_activity(self, pet_id):
         self.active = False
 
-# Table for the one mega drop
+# endregion
+
+# region Megadrop class
 class MegaDrop(BaseModel):
     amount = IntegerField(default=0)
     total_drops_missed = IntegerField(default=0)
@@ -428,3 +461,4 @@ def create_tables():
     with db:
         db.create_tables(tables)
 
+# endregion
