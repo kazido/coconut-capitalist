@@ -22,13 +22,10 @@ class Bot(BotBase):
         await super().setup_hook()
         
         setup_logging()  # 2.1 Logging feature  
-        print("Attempting to load extensions...")
         await self.load_extensions(exts)
-        print("Finished loading extensions.")
-        print("Printing all extensions:", self.all_extensions)
         
-        fmt = "%m-%d-%Y %H:%M:%S"
-        print(f"-- BOT READY --\nRan at: {datetime.strftime(datetime.now(), fmt)}")
+        # fmt = "%m-%d-%Y %H:%M:%S"
+        # print(f"-- BOT READY --\nRan at: {datetime.strftime(datetime.now(), fmt)}")
 
     # async def load_extensions(self, module):
     #     """Function for loading extensions recursively"""

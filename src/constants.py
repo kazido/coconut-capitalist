@@ -15,17 +15,22 @@ with open(config_path, "r") as f:
     data = json.load(f)
 
 
-# If DEBUG is set to 1
 if data["DEBUG"]:
     BOT_PREFIX = "."
     DATABASE = "testdatabase.db"
     TOKEN = data["secondary_token"]
-
-# If DEBUG is set to 0
+    DEBUG_MODE = True
 else:
     BOT_PREFIX = "-"
     DATABASE = "livedatabase.db"
     TOKEN = data["primary_token"]
+    DEBUG_MODE = False
+    
+    
+if data["FILE_LOGGING"]:
+    FILE_LOGGING = True
+else:
+    FILE_LOGGING = False
 
 
 class DiscordGuilds(Enum):
@@ -117,4 +122,6 @@ class Emojis(Enum):
     ANGRY = ":angry:"
     CONFIRM = ":white_check_mark:"
     CANCEL = ":x:"
+    STATUS_ONLINE = ":white_check_mark:"
+    STATUS_OFFLINE = ":x:"
     TRASHCAN = ":trashcan:"
