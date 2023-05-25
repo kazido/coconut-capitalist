@@ -138,3 +138,6 @@ database
 database/devdatabase.db
 database/livedatabase.db
 .idea
+/logs
+.logs
+logs
