@@ -39,6 +39,11 @@ class GamblingChannels(Enum):
     NIGHTMARE = discord.Object(id=961045401803317299)
     HEAVEN = discord.Object(id=962171274073899038)
     WWTGS = discord.Object(id=962171351794327562)
+    
+    
+class ModerationChannels(Enum):
+    DATABASE_LOGS  = discord.Object(id=858606781093511248)
+    
 
 
 class CooldownTimes(Enum):
@@ -49,6 +54,7 @@ class CooldownTimes(Enum):
 
 # Default role combinations
 MODERATION_ROLES = None
+
 # Bot replies
 NEGATIVE_REPLIES = [
     "Noooooo!!",
