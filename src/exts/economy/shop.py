@@ -1,11 +1,11 @@
-from utils.decorators import registered
-from classLibrary import RequestUser
-from utils.shop import SubShopPage, SubShopView, ShopView
+from src.utils.decorators import registered
+from src.classLibrary import RequestUser
+from src.utils.shop import SubShopPage, SubShopView, ShopView
 from discord.ext import commands
 from discord import app_commands
 import discord
-import models as mm
-from constants import PROJECT_ROOT
+from src import models as mm
+from src.constants import PROJECT_ROOT
 import json
 
 

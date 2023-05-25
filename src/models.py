@@ -14,7 +14,7 @@ from src.data.ranks import ranks
 from src.data.pets import pets, pet_stats
 from src.data.items.tools import tools
 from src.data.items.crops import crops
-from constants import DATABASE
+from src.constants import DATABASE
 
 # Database setup
 db_path = os.path.realpath(os.path.join("bot", "database", DATABASE))

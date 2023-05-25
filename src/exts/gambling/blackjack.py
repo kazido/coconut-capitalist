@@ -2,9 +2,9 @@ from discord.ext import commands
 import discord
 from discord import app_commands
 from random import randint
-from utils.decorators import registered
+from src.utils.decorators import registered
 import asyncio
-from classLibrary import RequestUser
+from src.classLibrary import RequestUser
 import typing
 import pydealer
 import sys

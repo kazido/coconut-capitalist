@@ -1,6 +1,6 @@
 from discord import Interaction, ButtonStyle, PartialEmoji, Embed, Color
 from discord.ui import Button, View
-from classLibrary import RequestUser
+from src.classLibrary import RequestUser
 import asyncio
 
 

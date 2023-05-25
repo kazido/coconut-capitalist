@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 import os
 import pathlib
-from classLibrary import RequestUser
+from src.classLibrary import RequestUser
 from src import models
 
 

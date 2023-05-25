@@ -6,7 +6,7 @@ from discord import Colour, Embed
 from discord.ext import commands
 from discord.ext.commands import Context, group
 
-import exts
+from src import exts
 from discord.ext.commands import Bot
 from src.constants import Emojis, MODERATION_ROLES
 from src.converters import Extension

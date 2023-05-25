@@ -1,7 +1,7 @@
 import typing
 import asyncio
-from utils.decorators import registered
-from classLibrary import RequestUser
+from src.utils.decorators import registered
+from src.classLibrary import RequestUser
 from discord.ext import commands
 from discord import app_commands
 import discord

@@ -3,8 +3,8 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from src.data.ranks import ranks
-from models import Users
-from utils.decorators import registered
+from src.models import Users
+from src.utils.decorators import registered
 
 
 class Ranks(commands.Cog):

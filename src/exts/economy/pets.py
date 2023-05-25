@@ -1,9 +1,9 @@
 import asyncio
 
-import models as mm
-from utils.decorators import registered
+from src import models as mm
+from src.utils.decorators import registered
 from src.data.pets import pets
-from classLibrary import RequestUser
+from src.classLibrary import RequestUser
 
 import discord
 from discord.ext import commands

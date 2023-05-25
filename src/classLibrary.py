@@ -6,14 +6,14 @@ import numpy
 import math
 import os
 
-import models as mm
+from src import models as mm
 import json
 # Discord imports
 import discord
 # Database imports
 import peewee as pw
 # File import
-from models import db as mmdatabase
+from src.models import db as mmdatabase
 # Other imports
 import randfacts
 

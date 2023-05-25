@@ -6,7 +6,7 @@ import discord
 import random
 import asyncio
 
-from classLibrary import RequestUser
+from src.classLibrary import RequestUser
 
 
 class SpectrumCog(commands.Cog, name='Spectrum'):

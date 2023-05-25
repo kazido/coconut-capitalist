@@ -3,9 +3,9 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import discord.ui
-from classLibrary import RequestUser
-from utils.decorators import registered
-import models as mm
+from src.classLibrary import RequestUser
+from src.utils.decorators import registered
+from src import models as mm
 import playhouse.shortcuts as phs
 
 

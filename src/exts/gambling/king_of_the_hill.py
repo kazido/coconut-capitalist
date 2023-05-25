@@ -1,7 +1,10 @@
 from src.constants import DiscordGuilds
+from src.bot import Bot
 
 from discord.ext.commands import Cog
 from discord import utils
+
+
 
 # King of the Hill related IDs
 KOTH_CHANNEL_ID = 859262125390168074
@@ -34,3 +37,7 @@ class KingOfTheHill(Cog, name="King of the Hill"):
         if message.channel.id == KOTH_CHANNEL_ID:
             await update_king()
             return
+        
+        
+async def setup(bot: Bot):
+    await bot.add_cog(KingOfTheHill(bot))

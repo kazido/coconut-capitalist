@@ -5,10 +5,10 @@ from discord.ext import commands, tasks
 from discord import app_commands
 import random  # Random imports
 from random import randint
-from classLibrary import RequestUser # File imports
-from utils.decorators import registered
-from utils.utils import seconds_until_tasks
-import models as mm
+from src.classLibrary import RequestUser # File imports
+from src.utils.decorators import registered
+from src.utils.utils import seconds_until_tasks
+from src import models as mm
 import playhouse.shortcuts as phs
 
 

@@ -7,10 +7,10 @@ from datetime import datetime  # Time imports for formatting and retrieving date
 from pytz import timezone
 import asyncio
 import json  # File handling imports
-from utils.decorators import registered  # File imports
-from classLibrary import RequestUser
-from utils.utils import seconds_until_tasks
-import models
+from src.utils.decorators import registered  # File imports
+from src.classLibrary import RequestUser
+from src.utils.utils import seconds_until_tasks
+from src import models
 
 
 def drop_double(amount):

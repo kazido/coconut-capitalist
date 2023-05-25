@@ -14,7 +14,7 @@ class FunCommands(commands.Cog, name='Fun'):
     def __init__(self, bot: Bot):
         self.bot = bot
 
-    @commands.group()
+    @commands.group(name="fun")
     async def fun(self) -> None:
         """Group for commands that are simply for fun."""
 
