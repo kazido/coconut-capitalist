@@ -11,6 +11,9 @@ KOTH_CHANNEL_ID = 859262125390168074
 KOTH_ROLE_ID = 895078616063430666
 
 
+# \frac{10000000}{1+e^{-\frac{k}{1.5}\left(x-\left(\frac{168}{2}\right)\right)}}
+
+
 class KingOfTheHill(Cog, name="King of the Hill"):
     """Be the last to send a message in the King of the Hill channel to be the King!"""
 
