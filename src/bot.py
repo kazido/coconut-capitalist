@@ -1,10 +1,8 @@
-from datetime import datetime
 from pydis_core import BotBase
-from src.utils.extensions import walk_extensions
-from discord.utils import setup_logging
 from logging import getLogger
 
 from src import exts
+from src.logs import setup
 
 log = getLogger('bot')
 
@@ -21,14 +19,10 @@ class Bot(BotBase):
     async def setup_hook(self) -> None:
         await super().setup_hook()
         
-        setup_logging()  # 2.1 Logging feature  
+        # Logging setup
+        setup()
+        
         await self.load_extensions(exts)
         
         # fmt = "%m-%d-%Y %H:%M:%S"
         # print(f"-- BOT READY --\nRan at: {datetime.strftime(datetime.now(), fmt)}")
-
-    # async def load_extensions(self, module):
-    #     """Function for loading extensions recursively"""
-    #     extensions = walk_extensions(module)
-    #     for extension in extensions:
-    #         await self.load_extension(extension)
