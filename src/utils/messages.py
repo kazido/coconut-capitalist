@@ -28,19 +28,21 @@ def reaction_check(
     If the user is not allowed, remove the reaction. Ignore reactions made by the bot.
     If `allow_mods` is True, allow users with moderator roles even if they're not in `allowed_users`.
     """
+    log.debug(f"Began reaction check for {user}")
     right_reaction = (
         user != src.instance.user
         and reaction.message.id == message_id
         and str(reaction.emoji) in allowed_emoji
     )
     if not right_reaction:
+        log.debug(f"Improper reaction by {user} on {reaction.message.id}.")
         return False
 
-    is_moderator = allow_mods and any(
-        role.id in MODERATION_ROLES for role in getattr(user, "roles", [])
-    )
+    # is_moderator = allow_mods and any(
+    #     role.id in MODERATION_ROLES for role in getattr(user, "roles", [])
+    # )
 
-    if user.id in allowed_users or is_moderator:
+    if user.id in allowed_users:
         log.info(f"Allowed reaction {reaction} by {user} on {reaction.message.id}.")
         return True
     else:

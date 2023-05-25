@@ -15,7 +15,7 @@ FIRST_EMOJI = "\u23EE"   # [:track_previous:]
 LEFT_EMOJI = "\u2B05"    # [:arrow_left:]
 RIGHT_EMOJI = "\u27A1"   # [:arrow_right:]
 LAST_EMOJI = "\u23ED"    # [:track_next:]
-DELETE_EMOJI = constants.Emojis.TRASHCAN  # [:trashcan:]
+DELETE_EMOJI = "🗑" # [:wastebasket:]
 
 PAGINATION_EMOJI = (FIRST_EMOJI, LEFT_EMOJI, RIGHT_EMOJI, LAST_EMOJI, DELETE_EMOJI)
 
@@ -245,7 +245,7 @@ class LinePaginator(Paginator):
                 log.exception(f"Failed to add line to paginator: '{line}'")
                 raise  # Should propagate
             else:
-                log.trace(f"Added line to paginator: '{line}'")
+                log.debug(f"Added line to paginator: '{line}'")
 
         log.debug(f"Paginator created with {len(paginator.pages)} pages")
 
@@ -254,11 +254,11 @@ class LinePaginator(Paginator):
         if len(paginator.pages) <= 1:
             if footer_text:
                 embed.set_footer(text=footer_text)
-                log.trace(f"Setting embed footer to '{footer_text}'")
+                log.debug(f"Setting embed footer to '{footer_text}'")
 
             if url:
                 embed.url = url
-                log.trace(f"Setting embed url to '{url}'")
+                log.debug(f"Setting embed url to '{url}'")
 
             log.debug("There's less than two pages, so we won't paginate - sending single page on its own")
             return await ctx.send(embed=embed)
@@ -267,11 +267,11 @@ class LinePaginator(Paginator):
                 embed.set_footer(text=f"{footer_text} (Page {current_page + 1}/{len(paginator.pages)})")
             else:
                 embed.set_footer(text=f"Page {current_page + 1}/{len(paginator.pages)}")
-            log.trace(f"Setting embed footer to '{embed.footer.text}'")
+            log.debug(f"Setting embed footer to '{embed.footer.text}'")
 
             if url:
                 embed.url = url
-                log.trace(f"Setting embed url to '{url}'")
+                log.debug(f"Setting embed url to '{url}'")
 
             log.debug("Sending first page to channel...")
             message = await ctx.send(embed=embed)
@@ -280,7 +280,7 @@ class LinePaginator(Paginator):
 
         for emoji in PAGINATION_EMOJI:
             # Add all the applicable emoji to the message
-            log.trace(f"Adding reaction: {repr(emoji)}")
+            log.debug(f"Adding reaction: {repr(emoji)}")
             await message.add_reaction(emoji)
 
         check = partial(
@@ -292,14 +292,15 @@ class LinePaginator(Paginator):
 
         while True:
             try:
+                log.debug("Waiting for a reaction!")
                 reaction, user = await ctx.bot.wait_for("reaction_add", timeout=timeout, check=check)
-                log.trace(f"Got reaction: {reaction}")
+                log.debug(f"Got reaction: {reaction}")
             except asyncio.TimeoutError:
                 log.debug("Timed out waiting for a reaction")
                 break  # We're done, no reactions for the last 5 minutes
 
             if str(reaction.emoji) == DELETE_EMOJI:
-                log.debug("Got delete reaction")
+                log.info("Got delete reaction")
                 return await message.delete()
             elif reaction.emoji in PAGINATION_EMOJI:
                 total_pages = len(paginator.pages)

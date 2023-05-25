@@ -15,15 +15,18 @@ with open(config_path, "r") as f:
     data = json.load(f)
 
 
-if data["DEBUG"]:
+if data["DEV"]:
     BOT_PREFIX = "."
     DATABASE = "testdatabase.db"
     TOKEN = data["secondary_token"]
-    DEBUG_MODE = True
 else:
     BOT_PREFIX = "-"
     DATABASE = "livedatabase.db"
     TOKEN = data["primary_token"]
+    
+if data["DEBUG_MODE"]:
+    DEBUG_MODE = True
+else:
     DEBUG_MODE = False
     
     
