@@ -1,22 +1,23 @@
-import discord.utils
 import asyncio
 import math
 import pathlib
-from discord import app_commands
+import random
+import discord
+import peewee as pw
+
+from random import randint
+from discord import utils, Embed
+from discord import app_commands, Interaction
 from discord.app_commands import Choice
 from discord.ext import commands
-import random
-from random import randint
-from src.utils.decorators import registered
-from src.classLibrary import RequestUser
-from src.exts.economy.drops import DROP_AVERAGE
-from src import models
-import peewee as pw
-import os
 
-# project_files = os.path.dirname(pathlib.Path.cwd()) + "\\projfiles"
-# with open(f"{project_files}\\words.txt", "r") as f:
-#     words = f.readlines()
+from src.models import Users
+from src.utils.decorators import registered
+from src.exts.economy.drops import DROP_AVERAGE
+from src.constants import DiscordGuilds, TOO_RICH_TITLES
+
+
+
 
 
 def calculate_economy_share(interaction):
@@ -80,47 +81,36 @@ class EconomyCog(commands.Cog, name="Economy"):
         self.tree = self.bot.tree
 
     @registered()
-    @app_commands.guilds(856915776345866240, 977351545966432306)
-    @app_commands.checks.cooldown(1, 60)
-    @app_commands.command(
-        name="beg", description="Beg for some money! Must have less than 10,000 bits."
-    )
-    async def beg(self, interaction: discord.Interaction):
-        user = RequestUser(
-            interaction.user.id, interaction=interaction
-        )  # Initialize user object upon request
-        titles = [
-            "Begging is for poor people...",
-            "You're already rich!",
-            "Really?",
-        ]  # Possible embed titles
+    @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value)
+    @app_commands.command(name="beg")
+    async def beg(self, interaction: Interaction):
+        """Beg for some money! Must have less than 10,000 bits."""
+        
+        # Initialize user object upon request
+        user: Users = Users.new(interaction.user.id, interaction)
         max_balance = 10000
-        user_total_balance = user.instance.money + user.instance.bank
-        if (
-            user_total_balance >= max_balance
-        ):  # If user has 10000 bits or more in their purse or bank
+        
+        # If user has 10,000 bits or more in their purse or bank
+        if user.total_balance >= max_balance:
             embed = discord.Embed(
-                title=random.choice(titles),
+                title=random.choice(TOO_RICH_TITLES),
                 description=f"You cannot beg if you have more than 10,000 bits\n"
-                f"You have **{'{:,}'.format(user_total_balance)}** bits",
-                color=discord.Color.red(),
-            )
-
-            embed.set_footer(text=f"User: {interaction.user.name}")
+                            f"You have **{'{:,}'.format(user.total_balance)}** bits",
+                color=discord.Color.red()
+                ).set_footer(text=f"User: {interaction.user.name}")
+            
             await interaction.response.send_message(embed=embed)
+            
         else:
-            beg_amount = randint(
-                100, 500
-            )  # Randomly generate how many bits they will get
-            user.update_balance(beg_amount)
+            beg_amount = randint(100, 500)  
+            user.increase("money", beg_amount)
 
             embed = discord.Embed(
                 title=f"Someone kind dropped {beg_amount} bits in your cup.",
-                description=f"You now have {'{:,}'.format(user_total_balance + beg_amount)} bits.",
+                description=f"You now have {'{:,}'.format(user.total_balance + beg_amount)} bits.",
                 color=discord.Color.green(),
-            )
-
-            embed.set_footer(text=f"User: {interaction.user.name}")
+            ).set_footer(text=f"User: {interaction.user.name}")
+            
             await interaction.response.send_message(embed=embed)
 
     # @registered()
