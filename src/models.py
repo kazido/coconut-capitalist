@@ -1,9 +1,9 @@
 import random
 import discord
 import os
+import math
 
 from datetime import time, datetime
-from enum import Enum
 from pytz import timezone
 from typing import Literal, get_args
 from peewee import *
@@ -33,34 +33,15 @@ class BaseModel(Model):
     class Meta:
         database = db
 
-    def increase(self, attribute, value):
-        log.debug(f"Attempting to increase {attribute} by {value}.")
-        old_value = getattr(self, attribute)
-        try:
-            old_value += value
-            self.save()
-            return f"{attribute} updated ({old_value} -> {getattr(self, attribute)})", True
-        except TypeError as e:
-            return f"Failed to increase {attribute}. Error: {e}", False
-
-    def overwrite(self, attribute, value):
-        log.debug(f"Attempting to overwrite {attribute} with {value}.")
-        old_value = getattr(self, attribute)
-        try:
-            setattr(self, attribute, value)
-            self.save()
-            return f"{attribute} updated ({old_value} -> {getattr(self, attribute)})", True
-        except TypeError as e:
-            return f"Failed to overwrite {attribute}. Error: {e}", False
-
     @classmethod
     def list_columns(cls):
         columns = [field for field in cls._meta.fields]
         return columns
-    
+
 # endregion
 
-# region Users class 
+# region Users class
+
 
 class Users(BaseModel):
     name = TextField(null=True)
@@ -69,63 +50,65 @@ class Users(BaseModel):
     tokens = IntegerField(default=0, null=True)
     xp = IntegerField(default=100, null=True)
     in_game = IntegerField(default=0, null=True)
-    area = TextField(default="hub")
+    area = IntegerField(default=401)
     login_streak = IntegerField(default=0)
     drops_claimed = IntegerField(default=0)
+    contributions_made = IntegerField(default=0)
+    bit_bonus = IntegerField(default=0)
 
     @classmethod
-    def new(cls, user_id, interaction: discord.Interaction):
+    def initialize(cls, interaction: discord.Interaction):
         """
         Gets a user object from the User table
         Takes in an interaction argument to handle discord interactions
         Pretty much acts as in init method
+        If a user ID is passed, will affect only user with that ID, not command user
         """
-        try:  # Establish a connection to the database
+        # Attempt to establish a connection to the database
+        try:
             db.connect(reuse_if_open=True)
             log.debug("Successfully connected to database.")
         except DatabaseError as error:
             log.error(f"Error connecting to Database.\nError: {error}")
 
-        user, created = cls.get_or_create(id=user_id)
-        # This will auto update a users name in the database whenever
-        # they use a command or whenever a new user is added
+        user, _ = cls.get_or_create(id=interaction.user.id)
+
+        # Update the user's name in the database
         user.name = interaction.user.nick
         log.debug(f"Updated username to {interaction.user.nick}.")
         user.save()
 
         user.total_balance = user.bank + user.money
 
-        pet = cls.retrieve_pet(user, user_id)
-        log.debug(f"Retrieved {pet} for {user}.")
-
-        rank = cls.retrieve_rank(user, interaction)
-        log.debug(f"Retrieved {rank} for {user}.")
+        user.pet = Pets.retrieve_pet(interaction.user.id)
+        user.rank = Users.retrieve_rank(interaction)
 
         log.debug(f"User {user} fetched.")
         return user
 
     @staticmethod
-    def retrieve_pet(user, user_id):
-        try:
-            active_pet_query = (Pets.user == user_id) & Pets.active
-            active_pet = Pets.select().where(active_pet_query).get()
-            user.active_pet = Pets(active_pet.id)
-        except DoesNotExist:
-            user.active_pet = None
-            log.debug("Found no active pet, setting pet to None.")
-        return user.active_pet
-
-    @staticmethod
-    def retrieve_rank(user, interaction: discord.Interaction):
+    def retrieve_rank(interaction: discord.Interaction):
         guild_roles = interaction.guild.roles
         for rank in ranks.keys():
+            log.debug(f"Checking for {rank}...")
             discord_role = utils.get(guild_roles, name=rank.capitalize())
             # Check to see if the user has any matching role in discord
             if discord_role in interaction.user.roles:
-                user.rank = rank
                 log.debug(f"Found {rank} rank.")
-                break
-        return user.rank
+                return rank
+            else:
+                return "No rank found"
+            
+    def increase_balance(self, amount, bank: bool = False):
+        if bank:
+            self.bank += amount
+        else:
+            self.money += amount
+        self.save()
+
+    def update_tokens(self, amount):
+        self.tokens += amount
+        self.save()
 
     def start_game(self):
         self.in_game = True
@@ -148,59 +131,104 @@ class Users(BaseModel):
         else:
             return "Passed", True
 
-    async def work(self):
-        title = random.choice(ranks[self.rank]["components"]["responses"])
-        wage = ranks[self.rank]["components"]["wage"]
-        description = (
-            f" :money_with_wings: **+{wage:,} bits** ({self.rank.capitalize()} wage)"
-        )
-        # If the user has a pet, we need to apply the bits multiplier
-        if self.active_pet:
-
-            work_multiplier = pet_stats[self.active_pet.rarity]["bonuses"]["work"]
-            pet_bonus = wage * work_multiplier
-            description += f"\n:money_with_wings: **+{int(wage * work_multiplier):,} bits** (pet bonus)"
-            self.update_balance(wage + wage * work_multiplier)
-        else:
-            wage = ranks[self.rank]["components"]["wage"]
-            self.update_balance(wage)
-        self.cooldowns.set_cooldown("work")
-        self.save()
-        return
-
     def __del__(self):
         db.close()
 
 # endregion
 
-# region Users Skills class
-class UserSkills(BaseModel):
-    user_id = ForeignKeyField(Users, backref="skills",
-                              unique=True, on_delete="CASCADE")
-    # -- COMBAT -- #
-    combat_xp = IntegerField(default=0)
-    weapon = TextField(default=None, null=True)
-    monsters_slain = IntegerField(default=0)
-    bosses_slain = IntegerField(default=0)
-    # -- MINING -- #
-    mining_xp = IntegerField(default=0)
-    pickaxe = TextField(default=None, null=True)
-    ores_mined = IntegerField(default=0)
-    # -- FORAGING -- #
-    foraging_xp = IntegerField(default=0)
-    axe = TextField(default=None, null=True)
-    trees_chopped = IntegerField(default=0)
-    # -- FISHING -- #
-    fishing_xp = IntegerField(default=0)
-    fishing_rod = TextField(default=None, null=True)
-    fish_caught = IntegerField(default=0)
+# region Farming skill
 
-    class Meta:
-        table_name = "user_skills"
+class Farming(BaseModel):
+    user = ForeignKeyField(Users, backref="farming", on_delete="CASCADE")
+    has_open_farm = BooleanField(default=False)
+    crops_grown = IntegerField(default=0)
+    plots_unlocked = IntegerField(default=3)
+    fertilizer_level = IntegerField(default=1)
+    tool_id = IntegerField(default=None)
+    plot1 = TextField(default=None, null=True)
+    plot2 = TextField(default=None, null=True)
+    plot3 = TextField(default=None, null=True)
+    plot4 = TextField(default=None, null=True)
+    plot5 = TextField(default=None, null=True)
+    plot6 = TextField(default=None, null=True)
+    plot7 = TextField(default=None, null=True)
+    plot8 = TextField(default=None, null=True)
+    plot9 = TextField(default=None, null=True)
+    
+    plots = ["plot1", "plot2", "plot3",
+             "plot4", "plot5", "plot6",
+             "plot7", "plot8", "plot9"]
+
+    def open_farm(self):
+        self.has_open_farm = True
+        self.save()
+
+    def close_farm(self):
+        self.has_open_farm = False
+        self.save()
+        
+    def update_plot(self, plot: int, new_id: int):
+        pass
 
 # endregion
 
+
+class Combat(BaseModel):
+    user_id = ForeignKeyField(Users, backref="combat", on_delete="CASCADE")
+    xp = IntegerField(default=0)
+    weapon_id = IntegerField(default=None, null=True)
+    monsters_slain = IntegerField(default=0)
+    bosses_slain = IntegerField(default=0)
+
+
+class Mining(BaseModel):
+    user_id = ForeignKeyField(Users, backref="mining", on_delete="CASCADE")
+    xp = IntegerField(default=0)
+    tool_id = IntegerField(default=None, null=True)
+    lodes_mined = IntegerField(default=0)
+    reactor_fragments = IntegerField(default=0)
+    core_slot_1 = BooleanField(default=False)
+    core_slot_2 = BooleanField(default=False)
+    core_slot_3 = BooleanField(default=False)
+    core_slot_4 = BooleanField(default=False)
+    prestige_level = IntegerField(default=None, null=True)
+
+
+class Foraging(BaseModel):
+    user_id = ForeignKeyField(Users, backref="foraging", on_delete="CASCADE")
+    xp = IntegerField(default=0)
+    tool_id = IntegerField(default=None, null=True)
+    trees_chopped = IntegerField(default=0)
+
+
+class Fishing(BaseModel):
+    user_id = ForeignKeyField(Users, backref="fishing", on_delete="CASCADE")
+    xp = IntegerField(default=0)
+    tool_id = IntegerField(default=None, null=True)
+    skiff_level = IntegerField(default=1)
+    fish_caught = IntegerField(default=0)
+    book_entries = IntegerField(default=0)
+    contributions = IntegerField(default=0)
+
+    def give_xp(amount: int):
+        pass
+
+    @staticmethod
+    def calculate_level(xp):
+        # Change up XP scaling here if needed
+        level = ((xp / 100) ** (1/math.e)).__floor__()
+        return level
+
+    @staticmethod
+    def total_xp(xp):
+        # Will need fixing if I change XP scaling to be different for each skill!!!
+        level = Fishing.calculate_level(xp)
+        xp_to_lvl_up = int(((level + 1) ** math.e) * 100)
+        return xp_to_lvl_up
+
 # region Users Cooldowns class
+
+
 class UserCooldowns(BaseModel):
     user = ForeignKeyField(
         Users, backref="cooldowns", primary_key=True, on_delete="CASCADE"
@@ -265,6 +293,8 @@ class UserCooldowns(BaseModel):
 # endregion
 
 # region Settings class
+
+
 class Settings(BaseModel):
     """
     Auto Deposit: automatically deposit your bits from working into the bank\n
@@ -297,39 +327,6 @@ class Settings(BaseModel):
         setattr(self, attribute, value)
         self.save()
         return f"{attribute} updated successfully ({old_value} -> {value})", True
-
-# endregion
-
-# region Farms class
-class Farms(BaseModel):
-    user = ForeignKeyField(
-        Users,
-        backref="farms",
-        primary_key=True,
-        on_delete="CASCADE",
-        column_name="user",
-    )
-    has_open_farm = BooleanField(default=False)
-    plot1 = TextField(default=None, null=True)
-    plot2 = TextField(default=None, null=True)
-    plot3 = TextField(default=None, null=True)
-    plots = ["plot1", "plot2", "plot3"]
-
-    ATTRIBUTES = Literal["plot1", "plot2", "plot3"]
-
-    def update_value(self, attribute, value):
-        old_value = getattr(self, attribute)
-        setattr(self, attribute, value)
-        self.save()
-        return f"{attribute} updated successfully ({old_value} -> {value})", True
-
-    def open_farm(self):
-        self.has_open_farm = True
-        self.save()
-
-    def close_farm(self):
-        self.has_open_farm = False
-        self.save()
 
 # endregion
 
@@ -412,9 +409,11 @@ class Items(BaseModel):
 # endregion
 
 # region Pets class
+
+
 class Pets(BaseModel):
     user = ForeignKeyField(Users, backref="pets", on_delete="CASCADE")
-    reference_id = TextField()
+    reference_id = IntegerField()
     active = BooleanField()
     level = IntegerField(default=1)
     xp = IntegerField(default=0)
@@ -422,9 +421,20 @@ class Pets(BaseModel):
 
     @classmethod
     def get_info(cls, pet_id):
-        descriptors = tools[pet_id]["description"]
-        components = tools[pet_id]["components"]
+        descriptors = pets[pet_id]["description"]
+        components = pets[pet_id]["components"]
         return descriptors, components
+
+    @classmethod
+    def retrieve_pet(cls, user_id: int):
+        try:
+            # Look for an active pet with the passed user_id
+            query = ((cls.user == user_id) & Pets.active)
+            active_pet = Pets.select().where(query)
+        except DoesNotExist:
+            active_pet = None
+            log.debug("Found no active pet, setting pet to None.")
+        return active_pet
 
     def change_name(self, new_name):
         if len(new_name) > 14:
@@ -433,8 +443,9 @@ class Pets(BaseModel):
         self.save()
         return f"Name successfully changed to {new_name}."
 
-    def set_activity(self, pet_id):
-        self.active = False
+    # def set_activity(self, pet_id):
+    #     self.active = False
+
 
 # endregion
 
@@ -455,10 +466,13 @@ class MegaDrop(BaseModel):
     def new(cls, bot):
         guild = bot.get_guild(856915776345866240)  # Guild to send the drops in
 
+# endregion
+
 
 def create_tables():
-    tables = [Users, UserCooldowns, Farms, Pets, Items, MegaDrop, UserSkills]
+    tables = [Users, UserCooldowns, Pets, Items, MegaDrop, Mining, Combat, Fishing, Foraging, Farming]
     with db:
         db.create_tables(tables)
 
-# endregion
+
+create_tables()

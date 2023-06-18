@@ -11,13 +11,14 @@ from discord import app_commands, Interaction
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from src.models import Users
+from src.models import Users, UserSkills
+from src.data.ranks import ranks
+from src.data.areas import areas
+from src.data.items.tools import tools
+from src.utils.data import get_attribute
 from src.utils.decorators import registered
 from src.exts.economy.drops import DROP_AVERAGE
 from src.constants import DiscordGuilds, TOO_RICH_TITLES
-
-
-
 
 
 def calculate_economy_share(interaction):
@@ -85,11 +86,11 @@ class EconomyCog(commands.Cog, name="Economy"):
     @app_commands.command(name="beg")
     async def beg(self, interaction: Interaction):
         """Beg for some money! Must have less than 10,000 bits."""
-        
+
         # Initialize user object upon request
         user: Users = Users.new(interaction.user.id, interaction)
         max_balance = 10000
-        
+
         # If user has 10,000 bits or more in their purse or bank
         if user.total_balance >= max_balance:
             embed = discord.Embed(
@@ -97,12 +98,12 @@ class EconomyCog(commands.Cog, name="Economy"):
                 description=f"You cannot beg if you have more than 10,000 bits\n"
                             f"You have **{'{:,}'.format(user.total_balance)}** bits",
                 color=discord.Color.red()
-                ).set_footer(text=f"User: {interaction.user.name}")
-            
+            ).set_footer(text=f"User: {interaction.user.name}")
+
             await interaction.response.send_message(embed=embed)
-            
+
         else:
-            beg_amount = randint(100, 500)  
+            beg_amount = randint(100, 500)
             user.increase("money", beg_amount)
 
             embed = discord.Embed(
@@ -110,7 +111,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                 description=f"You now have {'{:,}'.format(user.total_balance + beg_amount)} bits.",
                 color=discord.Color.green(),
             ).set_footer(text=f"User: {interaction.user.name}")
-            
+
             await interaction.response.send_message(embed=embed)
 
     # @registered()
@@ -202,57 +203,44 @@ class EconomyCog(commands.Cog, name="Economy"):
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="profile", description="Check your profile, pets, etc.")
     async def bits(self, interaction: discord.Interaction):
-        user = RequestUser(interaction.user.id, interaction=interaction)
+        user = Users.initialize(interaction)
 
-        class ProfileSwitchMenu(discord.ui.View):
-            def __init__(self):
-                super().__init__()
+        bits = user.money
+        bank = user.bank
+        tokens = user.tokens
 
-            pet_menu = discord.SelectOption(label="Pets", value="pets", emoji="🐾")
-            profile_menu = discord.SelectOption(
-                label="Profile", value="profile", emoji="👤"
-            )
-            select_options = [profile_menu, pet_menu]
-
-            @discord.ui.select(options=select_options, placeholder="Select a menu")
-            async def select_menu(
-                self, select_interaction: discord.Interaction, select: discord.ui.Select
-            ):
-                switch_embed = None  # Initialize an embed to switch to
-                if select_interaction.user != interaction.user:
-                    return
-                if select.values[0] == "pets":
-                    switch_embed = user.active_pet.pet_embed
-                elif select.values[0] == "profile":
-                    switch_embed = profile_embed
-                await select_interaction.response.edit_message(
-                    embed=switch_embed, view=self
-                )
-
-        bits = user.instance.money
-        bank = user.instance.bank
-        tokens = user.instance.tokens
-        level = (math.sqrt(user.instance.xp / 100)).__floor__()
         profile_embed = discord.Embed(
-            title=f"{user.rank.capitalize()} *{interaction.user.name}*",
-            color=discord.Color.from_str("0x262625"),
+            title=f"{user.rank.capitalize()} *{user.name}*",
+            color=discord.Color.from_str("0x262625")
         )
+
         profile_embed.set_author(
-            name=f"{interaction.user.name} - profile",
-            icon_url=interaction.user.display_avatar,
+            name=f"{user.name} - profile",
+            icon_url=interaction.user.display_avatar
         )
+        
         profile_embed.add_field(
             name="PROGRESS",
-            value=f"**Level**: {level}\n"
-            f"**XP**: {user.instance.xp}/{int(((level + 1) ** 2) * 100)}\n"
-            f"**Area**: *coming soon*",
+            value=f"**Level**: {UserSkills.calculate_level(user.xp)}\n"
+            f"**XP**: {user.xp}/{UserSkills.total_xp(user.xp)}\n"
+            f"**Area**: {get_attribute(areas, user.area, 'components.display_name')}",
         )
+        
+    
+        print(type(user.skills))
+        for thing in user.skills.objects():
+            print(thing, type(thing))
+            
         profile_embed.add_field(
             name="SKILLS",
-            value=f":crossed_swords: **COMBAT**: *coming soon*\n"
-            f":pick: **MINING**: *coming soon*\n"
-            f":evergreen_tree: **FORAGING**: *coming soon*\n"
-            f":fishing_pole_and_fish: **FISHING**: *coming soon*",
+            value=f":crossed_swords: **COMBAT**: {UserSkills.calculate_level(user.skills.combat_xp)}\n"
+            f"`Tool:` {get_attribute(tools, user.skills.weapon, 'components.display_name')}"
+            f":pick: **MINING**: {UserSkills.calculate_level(user.skills.mining_xp)}\n"
+            f"`Tool:` {get_attribute(tools, user.skills.pickaxe, 'components.display_name')}"
+            f":evergreen_tree: **FORAGING**: {UserSkills.calculate_level(user.skills.foraging_xp)}\n"
+            f"`Tool:` {get_attribute(tools, user.skills.axe, 'components.display_name')}"
+            f":fishing_pole_and_fish: **FISHING**: {UserSkills.calculate_level(user.skills.fishing_xp)}"
+            f"`Tool:` {get_attribute(tools, user.skills.fishing_rod, 'components.display_name')}",
             inline=False,
         )
         profile_embed.add_field(
@@ -265,11 +253,10 @@ class EconomyCog(commands.Cog, name="Economy"):
             f":bank: **BANK**: {'{:,}'.format(bank)}\n"
             f":coin: **TOKENS**: {'{:,}'.format(tokens)}",
         )
-        profile_embed.set_footer(text="Use /beg, /work, or /unscramble to get bits")
+        profile_embed.set_footer(
+            text="Use /beg, /work, or /unscramble to get bits")
         profile_embed.set_thumbnail(url=interaction.user.display_avatar)
-        await interaction.response.send_message(
-            embed=profile_embed, view=ProfileSwitchMenu()
-        )
+        await interaction.response.send_message(embed=profile_embed)
 
     # Command for the richest members in the server
     @registered()
@@ -467,12 +454,30 @@ class EconomyCog(commands.Cog, name="Economy"):
     @app_commands.command()
     async def work(self, interaction: discord.Interaction):
         """Work every 6 hours to earn some bits."""
-        user: models.Users = models.Users.new(interaction.user.id, interaction)
+        user: Users = Users.new(interaction.user.id, interaction)
         # Check the if the command is on cooldown
         passed, cooldown = user.cooldowns.check_cooldown(command_type=__name__)
         if not passed:
             await EconomyCog.check_failed(__name__, cooldown, interaction=interaction)
-        print("User used work")
+
+        title = random.choice(ranks[self.rank]["components"]["responses"])
+        wage = ranks[self.rank]["components"]["wage"]
+        description = (
+            f" :money_with_wings: **+{wage:,} bits** ({self.rank.capitalize()} wage)"
+        )
+        # If the user has a pet, we need to apply the bits multiplier
+        if self.active_pet:
+
+            work_multiplier = pet_stats[self.active_pet.rarity]["bonuses"]["work"]
+            pet_bonus = wage * work_multiplier
+            description += f"\n:money_with_wings: **+{int(wage * work_multiplier):,} bits** (pet bonus)"
+            self.update_balance(wage + wage * work_multiplier)
+        else:
+            wage = ranks[self.rank]["components"]["wage"]
+            self.update_balance(wage)
+        self.cooldowns.set_cooldown("work")
+        self.save()
+        return
 
     @registered()
     @app_commands.guilds(856915776345866240, 977351545966432306)
@@ -553,7 +558,8 @@ class EconomyCog(commands.Cog, name="Economy"):
                     return
                 user.instance.bank -= amount
                 user.instance.money += amount
-                withdraw_embed = discord.Embed(colour=discord.Color.dark_blue())
+                withdraw_embed = discord.Embed(
+                    colour=discord.Color.dark_blue())
                 withdraw_embed.add_field(
                     name="Withdrawal made!",
                     value=f"You withdrew **{'{:,}'.format(amount)}** bits",

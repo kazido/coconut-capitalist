@@ -1,6 +1,8 @@
 import json
 import os
+
 from pprint import pprint
+from src.utils.data import get_attribute
 
 # Get the directory where this file is located
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -28,6 +30,10 @@ filelist = get_files_from_path(path=dir_path, extension='.json')
 
 areas = {}
 
-for identifier, filepath in filelist.items():
+for filename, filepath in filelist.items():
     with open(filepath) as infile:
-        areas[identifier] = (json.load(infile))
+        asset_dict = json.load(infile)
+        identifier = get_attribute(asset_dict, attribute="description.identifier")
+        areas[identifier] = asset_dict
+        
+        
