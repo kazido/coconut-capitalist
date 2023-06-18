@@ -1,7 +1,7 @@
 {
     "description": {
         "type": "item",
-        "identifier": "handsaw",
+        "identifier": 311,
         "tags": [
             "foraging",
             "saw",

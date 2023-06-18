@@ -1,7 +1,7 @@
 {
     "description": {
         "type": "item",
-        "identifier": "enriched_axe",
+        "identifier": 303,
         "tags": [
             "foraging",
             "axe",

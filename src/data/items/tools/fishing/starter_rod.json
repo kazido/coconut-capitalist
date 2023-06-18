@@ -1,7 +1,7 @@
 {
     "description": {
       "type": "item",
-      "identifier": "starter_rod",
+      "identifier": 251,
       "tags": [
         "fishing",
         "tool"

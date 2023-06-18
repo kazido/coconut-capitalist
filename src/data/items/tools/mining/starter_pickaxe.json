@@ -1,7 +1,7 @@
 {
     "description": {
       "type": "item",
-      "identifier": "starter_pickaxe",
+      "identifier": 351,
       "tags": [
         "mining",
         "tool"

@@ -1,7 +1,7 @@
 {
     "description": {
         "type": "item",
-        "identifier": "reinforced_rod",
+        "identifier": 252,
         "tags": [
             "fishing",
             "rod",

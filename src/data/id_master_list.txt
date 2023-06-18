@@ -1,0 +1,67 @@
+MASTER ITEM ID LIST
+
+RESERVED: 1-100
+================
+
+BOWS: 101-150
+================
+101: starter_bow
+
+SWORDS: 151-200
+================
+151: starter_sword
+
+MAGIC: 201-250
+================
+
+FISHING: 251-300
+================
+251: starter_rod
+252: reinforced_rod
+
+FORAGING: 301-350
+================
+301: starter_axe
+302: improved_axe
+303: enriched_axe
+
+311: handsaw
+312: chainsaw
+
+MINING: 351-400
+================
+351: starter_pickaxe
+
+AREAS: 401-450
+================
+401: hub
+402: slime_hill
+403: rust_belt
+404: atmosphere
+405: cairo_valley
+406: cadrega_city
+407: void
+
+RANKS: 451-500
+================
+451: unranked
+452: peasant
+453: farmer
+454: citizen
+455: educated
+456: cultured
+457: weathered
+458: wise
+459: expert
+
+pets: 501-600
+================
+501: bat
+502: cat
+503: chicken
+504: dog
+505: goat 
+506: mouse 
+507: rabbit
+
+

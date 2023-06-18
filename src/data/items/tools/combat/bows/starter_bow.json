@@ -1,7 +1,7 @@
 {
     "description": {
       "type": "item",
-      "identifier": "starter_bow",
+      "identifier": 101,
       "tags": [
         "bow",
         "combat",

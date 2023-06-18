@@ -1,7 +1,7 @@
 {
     "description": {
         "type": "item",
-        "identifier": "chainsaw",
+        "identifier": 312,
         "tags": [
             "foraging",
             "saw",
