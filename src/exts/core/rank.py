@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 from src.data.ranks import ranks
 from src.models import Users
-from src.utils.decorators import registered
+
 
 
 class Ranks(commands.Cog):
@@ -13,7 +13,7 @@ class Ranks(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="rank", description="Check your current rank and it's perks.")
     async def rank(self, interaction: discord.Interaction):
@@ -46,7 +46,7 @@ class Ranks(commands.Cog):
         embed.set_thumbnail(url=interaction.user.display_avatar)
         await interaction.response.send_message(embed=embed)
 
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="rankup", description="Spend tokens to move on to the next rank!")
     async def rankup(self, interaction: discord.Interaction):

@@ -4,8 +4,8 @@ from discord.ext import commands
 from discord import app_commands
 import discord.ui
 from src.classLibrary import RequestUser
-from src.utils.decorators import registered
-from src import models as mm
+
+from src import models as m
 import playhouse.shortcuts as phs
 
 
@@ -22,7 +22,7 @@ class Settings(commands.Cog):
             # so that the embed can be updated using the View's children
             self.embed: discord.Embed = embed
             # Fetches the user's settings from the database, or creates them if they don't exist
-            self.user_settings, created = mm.Settings.get_or_create(
+            self.user_settings, created = m.Settings.get_or_create(
                 id=user.instance.id, defaults={'id': user.instance.id})
             self.user_settings_dict = phs.model_to_dict(self.user_settings)
 
@@ -93,7 +93,7 @@ class Settings(commands.Cog):
             print(self.view.user_settings_dict)
             await interaction.response.send_message("Settings saved.", ephemeral=True)
 
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="settings", description="Change your account settings.")
     async def settings(self, interaction: discord.Interaction, help: bool = False):

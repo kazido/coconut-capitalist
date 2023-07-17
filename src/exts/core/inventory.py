@@ -1,8 +1,8 @@
-from src.utils.decorators import registered
+
 from src.classLibrary import RequestUser
 from discord.ext import commands
 from discord import app_commands
-from src import models as mm
+from src import models as m
 import discord
 
 class InventoryCog(commands.Cog, name='Inventory'):
@@ -17,12 +17,12 @@ class InventoryCog(commands.Cog, name='Inventory'):
             pass
 
         def add_item(self, reference_id, reference_dict: dict, quantity: int = 1):
-            exisiting_item = mm.Items.get_or_none(owner_id=self.interaction.user.id, reference_id=reference_id)
+            exisiting_item = m.Items.get_or_none(owner_id=self.interaction.user.id, reference_id=reference_id)
             if exisiting_item:
                 exisiting_item.quantity += quantity
                 exisiting_item.save()
             else:
-                mm.Items.insert(durability=reference_dict[reference_id]['durability'], 
+                m.Items.insert(durability=reference_dict[reference_id]['durability'], 
                                 item_name=reference_dict[reference_id]['item_name'], 
                                 owner_id=self.interaction.user.id, quantity=quantity, reference_id=reference_id)
 
@@ -45,17 +45,17 @@ class InventoryCog(commands.Cog, name='Inventory'):
 
         def find(self, reference_id=None):
             if reference_id:
-                exisiting_item = mm.Items.get_or_none(mm.Items.owner_id==self.interaction.user.id, mm.Items.reference_id==reference_id)
+                exisiting_item = m.Items.get_or_none(m.Items.owner_id==self.interaction.user.id, m.Items.reference_id==reference_id)
                 if exisiting_item:
                     return exisiting_item.objects()
                 else:
                     return False
-            query = mm.Items.select().where(mm.Items.owner_id==self.interaction.user.id)
+            query = m.Items.select().where(m.Items.owner_id==self.interaction.user.id)
             return query.objects()
 
-    @registered()
-    @app_commands.guilds(977351545966432306, 856915776345866240)
+    
     @app_commands.command(name="inventory", description="Check your inventory!")
+    @app_commands.guilds(977351545966432306, 856915776345866240)
     async def inventory(self, interaction: discord.Interaction):
         user = RequestUser(interaction.user.id, interaction=interaction)  # User info
         inventory = InventoryCog.Inventory(interaction=interaction) # Inventory info
