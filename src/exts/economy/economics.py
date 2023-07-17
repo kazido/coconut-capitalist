@@ -11,12 +11,12 @@ from discord import app_commands, Interaction
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from src.models import Users, UserSkills
+from src.models import Users, Combat, Farming, Foraging, Fishing, Mining
 from src.data.ranks import ranks
 from src.data.areas import areas
 from src.data.items.tools import tools
 from src.utils.data import get_attribute
-from src.utils.decorators import registered
+
 from src.exts.economy.drops import DROP_AVERAGE
 from src.constants import DiscordGuilds, TOO_RICH_TITLES
 
@@ -81,7 +81,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         self.bot = bot
         self.tree = self.bot.tree
 
-    @registered()
+    
     @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value)
     @app_commands.command(name="beg")
     async def beg(self, interaction: Interaction):
@@ -114,7 +114,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
             await interaction.response.send_message(embed=embed)
 
-    # @registered()
+    # 
     # @app_commands.guilds(856915776345866240, 977351545966432306)
     # @app_commands.command(
     #     name="unscramble",
@@ -199,7 +199,7 @@ class EconomyCog(commands.Cog, name="Economy"):
     #     embed.set_footer(text=f"User: {interaction.user.name}")
     #     await interaction.edit_original_response(embed=embed)
 
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="profile", description="Check your profile, pets, etc.")
     async def bits(self, interaction: discord.Interaction):
@@ -220,10 +220,8 @@ class EconomyCog(commands.Cog, name="Economy"):
         )
         
         profile_embed.add_field(
-            name="PROGRESS",
-            value=f"**Level**: {UserSkills.calculate_level(user.xp)}\n"
-            f"**XP**: {user.xp}/{UserSkills.total_xp(user.xp)}\n"
-            f"**Area**: {get_attribute(areas, user.area, 'components.display_name')}",
+            name="CURRENT AREA",
+            value=f"**Area**: {get_attribute(areas, user.area, 'components.display_name')}",
         )
         
     
@@ -233,33 +231,31 @@ class EconomyCog(commands.Cog, name="Economy"):
             
         profile_embed.add_field(
             name="SKILLS",
-            value=f":crossed_swords: **COMBAT**: {UserSkills.calculate_level(user.skills.combat_xp)}\n"
-            f"`Tool:` {get_attribute(tools, user.skills.weapon, 'components.display_name')}"
-            f":pick: **MINING**: {UserSkills.calculate_level(user.skills.mining_xp)}\n"
-            f"`Tool:` {get_attribute(tools, user.skills.pickaxe, 'components.display_name')}"
-            f":evergreen_tree: **FORAGING**: {UserSkills.calculate_level(user.skills.foraging_xp)}\n"
-            f"`Tool:` {get_attribute(tools, user.skills.axe, 'components.display_name')}"
-            f":fishing_pole_and_fish: **FISHING**: {UserSkills.calculate_level(user.skills.fishing_xp)}"
-            f"`Tool:` {get_attribute(tools, user.skills.fishing_rod, 'components.display_name')}",
+            value=f":crossed_swords: **COMBAT**: {Combat.calculate_level(user.combat.xp)}\n"
+            f"`Tool:` {get_attribute(tools, user.combat.tool_id, 'components.display_name')}"
+            f":pick: **MINING**: {Mining.calculate_level(user.mining.xp)}\n"
+            f"`Tool:` {get_attribute(tools, user.mining.tool_id, 'components.display_name')}"
+            f":evergreen_tree: **FORAGING**: {Foraging.calculate_level(user.foraging.xp)}\n"
+            f"`Tool:` {get_attribute(tools, user.foraging.tool_id, 'components.display_name')}"
+            f":fishing_pole_and_fish: **FISHING**: {Fishing.calculate_level(user.fishing.xp)}"
+            f"`Tool:` {get_attribute(tools, user.fishing.tool_id, 'components.display_name')}"
+            f":corn: **FARMING**: {Farming.calculate_level(user.farming.xp)}"
+            f"`Tool:` {get_attribute(tools, user.farming.tool_id, 'components.display_name')}",
             inline=False,
         )
-        profile_embed.add_field(
-            name="EQUIPMENT",
-            value=f"*coming soon*\n" f"*coming soon*\n" f"*coming soon*",
-        )
+
         profile_embed.add_field(
             name="MONEY",
-            value=f":money_with_wings: **BITS**: {'{:,}'.format(bits)}\n"
-            f":bank: **BANK**: {'{:,}'.format(bank)}\n"
-            f":coin: **TOKENS**: {'{:,}'.format(tokens)}",
+            value=f":money_with_wings: **BITS**: {bits:,}\n"
+            f":bank: **BANK**: {bank:,}\n"
+            f":coin: **TOKENS**: {tokens:,}",
         )
-        profile_embed.set_footer(
-            text="Use /beg, /work, or /unscramble to get bits")
+        profile_embed.set_footer(text="Use /work to get bits")
         profile_embed.set_thumbnail(url=interaction.user.display_avatar)
         await interaction.response.send_message(embed=profile_embed)
 
     # Command for the richest members in the server
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(
         name="top", description="See the top 10 players in each category!"
@@ -437,7 +433,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         return
 
     # Daily command, should give x amount of credits per day.
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command()
     async def daily(self, interaction: discord.Interaction):
@@ -449,7 +445,7 @@ class EconomyCog(commands.Cog, name="Economy"):
             await EconomyCog.check_failed(__name__, cooldown, interaction=interaction)
         print("User used daily")
 
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command()
     async def work(self, interaction: discord.Interaction):
@@ -479,7 +475,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         self.save()
         return
 
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command()
     @app_commands.describe(amount="amount of bits to deposit | enter max for all")
@@ -522,7 +518,7 @@ class EconomyCog(commands.Cog, name="Economy"):
             await interaction.response.send_message(embed=embed)
             user.instance.save()
 
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="withdraw", description="Withdraw bits from the bank.")
     @app_commands.describe(amount="amount of bits you want to withdraw")
@@ -611,7 +607,7 @@ class EconomyCog(commands.Cog, name="Economy"):
             embed=warning_embed, view=WithdrawButtons()
         )
 
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(
         name="pay", description="Pay someone else some bits, if you're feeling nice!"
