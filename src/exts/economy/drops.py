@@ -7,7 +7,7 @@ from datetime import datetime  # Time imports for formatting and retrieving date
 from pytz import timezone
 import asyncio
 import json  # File handling imports
-from src.utils.decorators import registered  # File imports
+  # File imports
 from src.classLibrary import RequestUser
 from src.utils.utils import seconds_until_tasks
 from src import models
@@ -217,7 +217,7 @@ class DropsCog(commands.Cog, name="Drops"):
         await self.bot.wait_until_ready()
         await asyncio.sleep(seconds_until_tasks())
 
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(
         name="megadrop", description="Check the current status of the Mega Drop"
