@@ -3,6 +3,7 @@ import discord
 from discord import utils
 from src import models
 from src.data.ranks import ranks
+from src.utils.data import get_attribute
 from logging import getLogger
 
 
@@ -22,7 +23,7 @@ class UserManager:
         # Setup remaining user data from other sources
         self._user.total_money = self._user.purse + self._user.bank
         self._user.pet = models.Pets.retrieve_pet(user_id=user_id)
-        self._user.rank = models.Users.retrieve_rank(user_id=user_id, interaction=interaction)
+        self._user.rank = self.retrieve_rank(user_id=user_id, interaction=interaction)
 
         # Create or retrieve related instances from other tables
         self._cooldowns, _ = models.UserCooldowns.get_or_create(
@@ -91,12 +92,11 @@ class UserManager:
     def retrieve_rank(user_id, interaction: discord.Interaction):
         guild_roles = interaction.guild.roles
         for rank in ranks.keys():
-            log.debug(f"Checking for {rank}...")
-            discord_role = utils.get(guild_roles, name=rank.capitalize())
+            log.debug(f"Checking for {get_attribute(ranks, rank)}...")
             user = utils.get(interaction.guild.members, id=user_id)
+            discord_role = utils.get(guild_roles, id=rank)
             
             # Check to see if the user has any matching role in discord
-            if not discord_role in user.roles:
-                return "No rank found"
-            log.debug(f"Found {rank} rank.")
-            return rank
+            if discord_role in user.roles:    
+                log.debug(f"Found {get_attribute(ranks, rank)} rank.")
+                return rank
