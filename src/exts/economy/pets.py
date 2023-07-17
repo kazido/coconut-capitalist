@@ -1,7 +1,7 @@
 import asyncio
 
-from src import models as mm
-from src.utils.decorators import registered
+from src import models as m
+
 from src.data.pets import pets
 from src.classLibrary import RequestUser
 
@@ -51,7 +51,7 @@ class PetsCog(commands.Cog, name='Pets'):
     def __init__(self, bot):
         self.bot = bot
 
-#     @registered()
+#     
 #     @app_commands.guilds(856915776345866240, 977351545966432306)
 #     @app_commands.command(name="petshop", description="Purchase a pet for various bonuses!")
 #     async def purchase_pet(self, interaction: discord.Interaction):
@@ -195,7 +195,7 @@ class PetsCog(commands.Cog, name='Pets'):
 
 
 
-    # @registered()
+    # 
     # @own_pet()
     # @commands.command(name="Pet", aliases=['pets', 'animals'], description="Check your pet and their stats.")
     # async def pet(self, ctx):
