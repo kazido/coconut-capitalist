@@ -52,6 +52,10 @@ class GamblingChannels(Enum):
 
 class ModerationChannels(Enum):
     DATABASE_LOGS = 858606781093511248
+    
+    
+class PartyRoles(Enum):
+    PARTY_LEADER= 1130004841687699487
 
 
 class CooldownTimes(Enum):
