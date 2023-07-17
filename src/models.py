@@ -79,6 +79,7 @@ class Users(BaseModel):
     tokens = IntegerField(default=0, null=True)
     in_game = BooleanField(default=False)
     party_id = IntegerField(null=True)
+    party_channel_id = IntegerField(null=True)
     area_id = IntegerField(default=1)
     login_streak = IntegerField(default=0)
     drops_claimed = IntegerField(default=0)
