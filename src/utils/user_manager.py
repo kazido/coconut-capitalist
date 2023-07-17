@@ -1,7 +1,7 @@
 import discord
 
 from discord import utils
-from src import models
+from src import models as mdl
 from src.data.ranks import ranks
 from src.utils.data import get_attribute
 from logging import getLogger
@@ -11,34 +11,33 @@ from logging import getLogger
 log = getLogger(__name__)
 log.setLevel(10)
 
-
 class UserManager:
 
     def __init__(self, user_id, interaction: discord.Interaction) -> None:
 
         # Create or retrieve the user instance from the Users table
         log.debug("Request recieved, building user info.")
-        self._user, _ = models.Users.get_or_create(user_id=user_id)
+        self._user, _ = mdl.Users.get_or_create(user_id=user_id)
 
         # Setup remaining user data from other sources
         self._user.total_money = self._user.purse + self._user.bank
-        self._user.pet = models.Pets.retrieve_pet(user_id=user_id)
+        self._user.pet = mdl.Pets.retrieve_pet(user_id=user_id)
         self._user.rank = self.retrieve_rank(user_id=user_id, interaction=interaction)
 
         # Create or retrieve related instances from other tables
-        self._cooldowns, _ = models.UserCooldowns.get_or_create(
+        self._cooldowns, _ = mdl.UserCooldowns.get_or_create(
             user_id=user_id)
-        self._settings, _ = models.Settings.get_or_create(user_id=user_id)
-        self._combat, _ = models.Combat.get_or_create(user_id=user_id)
-        self._farming, _ = models.Farming.get_or_create(user_id=user_id)
-        self._mining, _ = models.Mining.get_or_create(user_id=user_id)
-        self._foraging, _ = models.Foraging.get_or_create(user_id=user_id)
-        self._fishing, _ = models.Fishing.get_or_create(user_id=user_id)
+        self._settings, _ = mdl.Settings.get_or_create(user_id=user_id)
+        self._combat, _ = mdl.Combat.get_or_create(user_id=user_id)
+        self._farming, _ = mdl.Farming.get_or_create(user_id=user_id)
+        self._mining, _ = mdl.Mining.get_or_create(user_id=user_id)
+        self._foraging, _ = mdl.Foraging.get_or_create(user_id=user_id)
+        self._fishing, _ = mdl.Fishing.get_or_create(user_id=user_id)
 
         # Retrieve all rows where user_id == owner_id for items and pets
-        self._items = models.Items.select().where(
-            models.Items.owner_id == user_id).objects()
-        self._pets = models.Pets.select().where(models.Pets.user == user_id).objects()
+        self._items = mdl.Items.select().where(
+            mdl.Items.owner_id == user_id).objects()
+        self._pets = mdl.Pets.select().where(mdl.Pets.user == user_id).objects()
 
         # Update the user's display name if available in the interaction
         user = discord.utils.get(interaction.guild.members, id=user_id)
