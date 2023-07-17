@@ -6,9 +6,7 @@ from pytz import timezone
 from typing import Literal
 from peewee import *
 from logging import getLogger
-from discord import utils
 
-from src.data.ranks import ranks
 from src.data.pets import pets, pet_stats
 from src.data.items.tools import tools
 from src.data.items.crops import crops
