@@ -16,7 +16,7 @@ class UserManager:
     def __init__(self, user_id, interaction: discord.Interaction) -> None:
 
         # Create or retrieve the user instance from the Users table
-        log.debug("Request recieved, building user info.")
+        log.debug(f"Request recieved! Building user info.")
         self._user, _ = mdl.Users.get_or_create(user_id=user_id)
 
         # Setup remaining user data from other sources
@@ -62,18 +62,21 @@ class UserManager:
     def get_data(self, field_name):
         if hasattr(self._user, field_name):
             return getattr(self._user, field_name)
+        
+    def save(self):
+        self._user.save()
     
     # Starts a game for the user, meaning they cannot play other games
     def start_game(self):
         self._user.in_game = True
         log.debug(f"Updating {self._user.name} status to True.")
-        self.save()
+        self._user.save()
 
     # Ends a game for the user, enabling them to play other games
     def end_game(self):
         self._user.in_game = False
         log.debug(f"Updating {self._user.name} status to False.")
-        self.save()
+        self._user.save()
         
     # Ensures that the user's bet is valid
     def check_bet(self, bet):
@@ -87,7 +90,7 @@ class UserManager:
         else:
             return "Passed", True
         
-    # Retrieves a rank
+    @staticmethod
     def retrieve_rank(user_id, interaction: discord.Interaction):
         guild_roles = interaction.guild.roles
         for rank in ranks.keys():
