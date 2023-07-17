@@ -1,6 +1,6 @@
 import typing
 import asyncio
-from src.utils.decorators import registered
+
 from src.classLibrary import RequestUser
 from discord.ext import commands
 from discord import app_commands
@@ -47,7 +47,7 @@ class HighLow(commands.Cog, name="High Low"):
     def __init__(self, bot):
         self.bot = bot
 
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="highlow", description="Guess if the number will be high (6-10) or low (1-5).")
     @app_commands.describe(bet='amount of bits you want to bet | use max for all bits in purse')

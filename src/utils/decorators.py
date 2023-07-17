@@ -24,20 +24,3 @@ def owns_a_pet():
         return success
 
     return commands.check(predicate)
-
-
-class RegisteredCheckFailure(CommandError):
-    """Raised when a user tries to use a command, but is not registered in the bot database"""
-
-
-def registered():
-
-    async def predicate(ctx: Context):
-        result = models.Users.get(id=ctx.author.id)
-
-        if result is None:
-            raise RegisteredCheckFailure("Not registered!")
-
-        return True
-
-    return commands.check(predicate)

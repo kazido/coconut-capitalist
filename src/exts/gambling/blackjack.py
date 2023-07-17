@@ -2,7 +2,7 @@ from discord.ext import commands
 import discord
 from discord import app_commands
 from random import randint
-from src.utils.decorators import registered
+
 import asyncio
 from src.classLibrary import RequestUser
 import typing
@@ -38,7 +38,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
     def __init__(self, bot):
         self.bot = bot
 
-    @registered()
+    
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="blackjack",
                           description="Classic blackjack. Get as close to 21 as possible, but not over.")

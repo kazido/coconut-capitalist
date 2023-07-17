@@ -2,7 +2,7 @@ import asyncio
 from random import randint
 import discord
 from discord.ext import commands
-from src.utils.decorators import registered
+
 
 
 class Crash(commands.Cog, name='Crash'):
@@ -10,7 +10,7 @@ class Crash(commands.Cog, name='Crash'):
     def __init__(self, bot):
         self.bot = bot
 
-    # @registered()
+    # 
     # @commands.command(enabled=False)
     # async def crash(self, ctx, bet: int):
     #     # Loop to increase multiplier

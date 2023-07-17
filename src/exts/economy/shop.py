@@ -1,10 +1,10 @@
-from src.utils.decorators import registered
+
 from src.classLibrary import RequestUser
 from src.utils.shop import SubShopPage, SubShopView, ShopView
 from discord.ext import commands
 from discord import app_commands
 import discord
-from src import models as mm
+from src import models as m
 from src.constants import PROJECT_ROOT
 import json
 
@@ -24,7 +24,7 @@ class ShopCog(commands.Cog, name='Shop'):
     def __init__(self, bot):
         self.bot = bot
 
-    @registered()
+    
     @app_commands.guilds(977351545966432306, 856915776345866240)
     @app_commands.command(name="shop", description="Buy helpful items!")
     async def shop(self, interaction: discord.Interaction):

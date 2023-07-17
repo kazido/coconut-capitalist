@@ -6,9 +6,9 @@ from discord import app_commands
 import random  # Random imports
 from random import randint
 from src.classLibrary import RequestUser # File imports
-from src.utils.decorators import registered
+
 from src.utils.utils import seconds_until_tasks
-from src import models as mm
+from src import models as m
 import playhouse.shortcuts as phs
 
 
@@ -30,7 +30,7 @@ def plot_button_refresh(user_farm_dict: dict):
     style of the button upon click OR to setup the button."""
     button_info = {}
     plots = []
-    for index in range(len(mm.Farms.plots)):
+    for index in range(len(m.Farms.plots)):
         button_info[index] = {
             "label": "Empty!",
             "disabled": True,
@@ -117,9 +117,9 @@ class FarmingCog(commands.Cog, name="Farming"):
     #     await self.bot.wait_until_ready()
     #     await asyncio.sleep(seconds_until_tasks())
 
-    # @registered()
-    # @app_commands.guilds(977351545966432306, 856915776345866240)
+    # 
     # @app_commands.command(name="farm", description="grow crops to feed your pets")
+    # @app_commands.guilds(977351545966432306, 856915776345866240)
     # async def farm(self, interaction: discord.Interaction):
     #     users_farm = mm.Farms.get(id=interaction.user.id)
     #     users_farm_dict = phs.model_to_dict(users_farm)

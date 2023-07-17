@@ -2,7 +2,7 @@ from src.classLibrary import RequestUser
 import discord
 from discord import app_commands
 from discord.ext import commands
-from src.utils.decorators import registered
+
 import json
 
 class ForagingCog(commands.Cog, name='Foraging'):
@@ -12,7 +12,7 @@ class ForagingCog(commands.Cog, name='Foraging'):
         self.bot = bot
         self.tree = self.bot.tree
 
-    # @registered()
+    # 
     # @app_commands.guilds(856915776345866240, 977351545966432306)
     # @app_commands.command(name='chop', description="Grab a buddy and chop down a tree.")
     # async def chop(self, interaction: discord.Interaction):
