@@ -1,13 +1,10 @@
-import random
 import discord
 import os
-import math
 
 from datetime import time, datetime
 from pytz import timezone
-from typing import Literal, get_args
+from typing import Literal
 from peewee import *
-from playhouse.migrate import SqliteMigrator
 from logging import getLogger
 from discord import utils
 
@@ -20,16 +17,18 @@ from src.constants import DATABASE
 # Database setup
 db_path = os.path.realpath(os.path.join("database", DATABASE))
 db = SqliteDatabase(db_path)
-# Migrator to edit tables
-migrator = SqliteMigrator(db)
 
 log = getLogger(__name__)
 log.setLevel(10)
 
+# region Base Model definitions
 
-# region Base Model definition
 
 class BaseModel(Model):
+    leaderboard_columns: dict
+    color: discord.Color
+    emoji: str
+
     class Meta:
         database = db
 
@@ -38,113 +37,71 @@ class BaseModel(Model):
         columns = [field for field in cls._meta.fields]
         return columns
 
+
+class SkillModel(BaseModel):
+    # Lower scaling_x = more XP required per level
+    # Higher scaling_y = larger gaps between levels
+    scaling_x: int
+    scaling_y: int
+
+    def set_xp(self, amount: int):
+        self.xp = amount
+
+    def get_xp(self):
+        return self.xp
+
+    def xp_required_for_next_level(self):
+        current_level = self.level_from_xp(self.xp)
+        next_level = current_level + 1
+        xp_required = self.xp_required_for_level(next_level)
+        return xp_required
+
+    @classmethod
+    def level_from_xp(cls, xp):
+        level = cls.scaling_x * (xp**(1/cls.scaling_y))
+        return level
+
+    @classmethod
+    def xp_required_for_level(cls, level):
+        xp = (level/cls.scaling_x)**cls.scaling_y
+        return xp
+
+
 # endregion
 
 # region Users class
 
 
 class Users(BaseModel):
+    # Columns
+    user_id = IntegerField(primary_key=True)
     name = TextField(null=True)
     bank = IntegerField(default=0, null=True)
-    money = IntegerField(default=0, null=True)
+    purse = IntegerField(default=0, null=True)
     tokens = IntegerField(default=0, null=True)
-    xp = IntegerField(default=100, null=True)
-    in_game = IntegerField(default=0, null=True)
-    area = IntegerField(default=401)
+    in_game = BooleanField(default=False)
+    party_id = IntegerField(null=True)
+    area_id = IntegerField(default=1)
     login_streak = IntegerField(default=0)
     drops_claimed = IntegerField(default=0)
-    contributions_made = IntegerField(default=0)
-    bit_bonus = IntegerField(default=0)
 
-    @classmethod
-    def initialize(cls, interaction: discord.Interaction):
-        """
-        Gets a user object from the User table
-        Takes in an interaction argument to handle discord interactions
-        Pretty much acts as in init method
-        If a user ID is passed, will affect only user with that ID, not command user
-        """
-        # Attempt to establish a connection to the database
-        try:
-            db.connect(reuse_if_open=True)
-            log.debug("Successfully connected to database.")
-        except DatabaseError as error:
-            log.error(f"Error connecting to Database.\nError: {error}")
-
-        user, _ = cls.get_or_create(id=interaction.user.id)
-
-        # Update the user's name in the database
-        user.name = interaction.user.nick
-        log.debug(f"Updated username to {interaction.user.nick}.")
-        user.save()
-
-        user.total_balance = user.bank + user.money
-
-        user.pet = Pets.retrieve_pet(interaction.user.id)
-        user.rank = Users.retrieve_rank(interaction)
-
-        log.debug(f"User {user} fetched.")
-        return user
-
-    @staticmethod
-    def retrieve_rank(interaction: discord.Interaction):
-        guild_roles = interaction.guild.roles
-        for rank in ranks.keys():
-            log.debug(f"Checking for {rank}...")
-            discord_role = utils.get(guild_roles, name=rank.capitalize())
-            # Check to see if the user has any matching role in discord
-            if discord_role in interaction.user.roles:
-                log.debug(f"Found {rank} rank.")
-                return rank
-            else:
-                return "No rank found"
-            
-    def increase_balance(self, amount, bank: bool = False):
-        if bank:
-            self.bank += amount
-        else:
-            self.money += amount
-        self.save()
-
-    def update_tokens(self, amount):
-        self.tokens += amount
-        self.save()
-
-    def start_game(self):
-        self.in_game = True
-        log.debug(f"Updating {self.name} status to True.")
-        self.save()
-
-    def end_game(self):
-        self.in_game = False
-        log.debug(f"Updating {self.name} status to False.")
-        self.save()
-
-    def check_bet(self, bet):
-        balance = self.money
-        if int(bet) < 0:
-            return f"The oldest trick in the book... Nice try.", False
-        elif int(bet) > balance:
-            return f"No loans. You have {balance} bits.", False
-        elif int(bet) == 0:
-            return "What did you think this was going to do?", False
-        else:
-            return "Passed", True
-
-    def __del__(self):
-        db.close()
-
+    # Custom
+    leaderboard_columns = [purse + bank, login_streak, drops_claimed]
+    emoji = ":money_with_wings:"
+    color = discord.Color.blue()
 # endregion
 
-# region Farming skill
 
-class Farming(BaseModel):
-    user = ForeignKeyField(Users, backref="farming", on_delete="CASCADE")
-    has_open_farm = BooleanField(default=False)
+class Farming(SkillModel):
+    # Columns
+    user_id = ForeignKeyField(Users, primary_key=True,
+                              backref="farming", on_delete="CASCADE")
+    xp = IntegerField(default=0)
+    tool_id = IntegerField(default=None, null=True)
+    is_farming = BooleanField(default=False)
     crops_grown = IntegerField(default=0)
     plots_unlocked = IntegerField(default=3)
     fertilizer_level = IntegerField(default=1)
-    tool_id = IntegerField(default=None)
     plot1 = TextField(default=None, null=True)
     plot2 = TextField(default=None, null=True)
     plot3 = TextField(default=None, null=True)
@@ -154,85 +111,114 @@ class Farming(BaseModel):
     plot7 = TextField(default=None, null=True)
     plot8 = TextField(default=None, null=True)
     plot9 = TextField(default=None, null=True)
-    
+
+    # Custom
+    leaderboard_columns = [xp, crops_grown]
+    emoji = ":corn:"
+    color = discord.Color.green()
+    scaling_x = 0.07
+    scaling_y = 2
+
     plots = ["plot1", "plot2", "plot3",
              "plot4", "plot5", "plot6",
              "plot7", "plot8", "plot9"]
 
     def open_farm(self):
-        self.has_open_farm = True
+        self.is_farming = True
         self.save()
 
     def close_farm(self):
-        self.has_open_farm = False
+        self.is_farming = False
         self.save()
-        
+
     def update_plot(self, plot: int, new_id: int):
         pass
 
-# endregion
 
-
-class Combat(BaseModel):
-    user_id = ForeignKeyField(Users, backref="combat", on_delete="CASCADE")
+class Combat(SkillModel):
+    # Columns
+    user_id = ForeignKeyField(Users, primary_key=True,
+                              backref="combat", on_delete="CASCADE")
     xp = IntegerField(default=0)
-    weapon_id = IntegerField(default=None, null=True)
+    tool_id = IntegerField(default=None, null=True)
     monsters_slain = IntegerField(default=0)
     bosses_slain = IntegerField(default=0)
 
+    # Custom
+    leaderboard_column = [xp, monsters_slain, bosses_slain]
+    emoji = ":crossed_swords:"
+    color = discord.Color.dark_red()
+    scaling_x = 0.06
+    scaling_y = 2
 
-class Mining(BaseModel):
-    user_id = ForeignKeyField(Users, backref="mining", on_delete="CASCADE")
+
+class Mining(SkillModel):
+    # Columns
+    user_id = ForeignKeyField(Users, primary_key=True,
+                              backref="mining", on_delete="CASCADE")
     xp = IntegerField(default=0)
     tool_id = IntegerField(default=None, null=True)
     lodes_mined = IntegerField(default=0)
-    reactor_fragments = IntegerField(default=0)
     core_slot_1 = BooleanField(default=False)
     core_slot_2 = BooleanField(default=False)
     core_slot_3 = BooleanField(default=False)
     core_slot_4 = BooleanField(default=False)
     prestige_level = IntegerField(default=None, null=True)
+    bonuses_remaining = IntegerField(default=0)
+    bonus_type = IntegerField(default=0)
+
+    # Custom
+    leaderboard_column = [xp, lodes_mined]
+    emoji = ":pick:"
+    color = discord.Color.dark_orange()
+    scaling_x = 0.05
+    scaling_y = 2
 
 
-class Foraging(BaseModel):
-    user_id = ForeignKeyField(Users, backref="foraging", on_delete="CASCADE")
+class Foraging(SkillModel):
+    # Columns
+    user_id = ForeignKeyField(Users, primary_key=True,
+                              backref="foraging", on_delete="CASCADE")
     xp = IntegerField(default=0)
     tool_id = IntegerField(default=None, null=True)
     trees_chopped = IntegerField(default=0)
+    double_trees_chopped = IntegerField(default=0)
+    releaf_donations = IntegerField(default=0)
+
+    # Custom
+    leaderboard_column = [xp, trees_chopped,
+                          double_trees_chopped, releaf_donations]
+    emoji = ":evergreen_tree:"
+    color = discord.Color.dark_green()
+    scaling_x = 0.07
+    scaling_y = 2
 
 
-class Fishing(BaseModel):
-    user_id = ForeignKeyField(Users, backref="fishing", on_delete="CASCADE")
+class Fishing(SkillModel):
+    # Columns
+    user_id = ForeignKeyField(Users, primary_key=True,
+                              backref="fishing", on_delete="CASCADE")
     xp = IntegerField(default=0)
     tool_id = IntegerField(default=None, null=True)
     skiff_level = IntegerField(default=1)
     fish_caught = IntegerField(default=0)
     book_entries = IntegerField(default=0)
-    contributions = IntegerField(default=0)
+    treasures_found = IntegerField(default=0)
 
-    def give_xp(amount: int):
-        pass
-
-    @staticmethod
-    def calculate_level(xp):
-        # Change up XP scaling here if needed
-        level = ((xp / 100) ** (1/math.e)).__floor__()
-        return level
-
-    @staticmethod
-    def total_xp(xp):
-        # Will need fixing if I change XP scaling to be different for each skill!!!
-        level = Fishing.calculate_level(xp)
-        xp_to_lvl_up = int(((level + 1) ** math.e) * 100)
-        return xp_to_lvl_up
+    # Custom
+    leaderboard_name = "FISHING LEADERBOARD"
+    leaderboard_column = [xp, fish_caught, book_entries, treasures_found]
+    emoji = ":fishing_pole_and_fish:"
+    color = discord.Color.dark_blue()
+    scaling_x = 0.06
+    scaling_y = 2
 
 # region Users Cooldowns class
 
 
 class UserCooldowns(BaseModel):
-    user = ForeignKeyField(
-        Users, backref="cooldowns", primary_key=True, on_delete="CASCADE"
-    )
+    user_id = ForeignKeyField(
+        Users, backref="cooldowns", primary_key=True, on_delete="CASCADE")
     daily = IntegerField(default=0, null=True, column_name="last_daily")
     work = IntegerField(default=0, null=True, column_name="last_work")
     weekly = IntegerField(default=0, null=True, column_name="last_weekly")
@@ -304,37 +290,23 @@ class Settings(BaseModel):
     More settings to be added soon...
     """
 
-    user = ForeignKeyField(
-        Users, backref="settings", unique=True, on_delete="CASCADE", column_name="user"
-    )
+    user_id = ForeignKeyField(
+        Users, backref="settings", primary_key=True, on_delete="CASCADE")
     auto_deposit = BooleanField(default=False)
     withdraw_warning = BooleanField(default=False)
     disable_max_bet = BooleanField(default=False)
     upgraded_check_in = BooleanField(default=False)
 
-    ATTRIBUTES = Literal[
-        "auto_deposit", "withdraw_warning", "disable_max_bet", "upgraded_check_in"
-    ]
-
-    def update_value(self, attribute: ATTRIBUTES, value):
-        try:
-            options = get_args(self.ATTRIBUTES)
-            assert attribute in options, f"'{attribute}' is not in {options}"
-        except AssertionError as e:
-            return str(e), False
-
-        old_value = getattr(self, attribute)
-        setattr(self, attribute, value)
-        self.save()
-        return f"{attribute} updated successfully ({old_value} -> {value})", True
+    ATTRIBUTES = Literal["auto_deposit", "withdraw_warning",
+                         "disable_max_bet", "upgraded_check_in"]
 
 # endregion
 
 # region Items class
+
+
 class Items(BaseModel):
-    user = ForeignKeyField(
-        Users, backref="items", on_delete="CASCADE", column_name="user"
-    )
+    owner_id = ForeignKeyField(Users, backref="items", on_delete="CASCADE")
     reference_id = TextField()
     quantity = IntegerField(default=1)
 
@@ -450,14 +422,16 @@ class Pets(BaseModel):
 # endregion
 
 # region Megadrop class
+
+
 class MegaDrop(BaseModel):
+    # Columns
     amount = IntegerField(default=0)
     total_drops_missed = IntegerField(default=0)
     total_drops = IntegerField(default=0)
     times_missed = IntegerField(default=0)
     counter = IntegerField(default=0)
     last_winner = TextField()
-
     fmt = "%m-%d-%Y"  # Put current date into a format
     now_time = datetime.now(timezone("US/Eastern"))
     date_started = TextField(default=now_time.strftime(fmt))
@@ -465,12 +439,12 @@ class MegaDrop(BaseModel):
     @classmethod
     def new(cls, bot):
         guild = bot.get_guild(856915776345866240)  # Guild to send the drops in
-
 # endregion
 
 
 def create_tables():
-    tables = [Users, UserCooldowns, Pets, Items, MegaDrop, Mining, Combat, Fishing, Foraging, Farming]
+    tables = [Users, UserCooldowns, Pets, Items, MegaDrop,
+              Mining, Combat, Fishing, Foraging, Farming]
     with db:
         db.create_tables(tables)
 
