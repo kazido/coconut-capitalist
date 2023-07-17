@@ -28,6 +28,8 @@ filelist = get_files_from_path(path=dir_path, extension='.json')
 
 ranks = {}
 
-for identifier, filepath in filelist.items():
+for _, filepath in filelist.items():
     with open(filepath) as infile:
-        ranks[identifier] = (json.load(infile))
+        rank_data = (json.load(infile))
+        identifier = rank_data['description']['identifier']
+        ranks[identifier] = rank_data
