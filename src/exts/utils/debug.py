@@ -1,18 +1,18 @@
 import asyncio
-import random
-
-from discord import app_commands
-import discord
-from discord.ext import commands
 import os
 import pathlib
+import discord
+
+from discord import app_commands
+from discord.ext import commands
 from src.classLibrary import RequestUser
-from src import models
+from src.constants import DiscordGuilds
 
 
 class EmbedModal(discord.ui.Modal, title="Embed Creation"):
     embed_title = discord.ui.TextInput(label="Title")
-    description = discord.ui.TextInput(label="Description", style=discord.TextStyle.paragraph)
+    description = discord.ui.TextInput(
+        label="Description", style=discord.TextStyle.paragraph)
 
     async def on_submit(self, interaction: discord.Interaction) -> None:
         embed = discord.Embed(
@@ -28,7 +28,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         self.bot = bot
 
     # Testing command
-    @app_commands.guilds(856915776345866240, 977351545966432306)
+    @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value)
     @app_commands.command()
     async def test(self, interaction: discord.Interaction):
         pass
@@ -36,7 +36,8 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     admin_commands = discord.app_commands.Group(
         name="admin",
         description="Admin only commands.",
-        guild_ids=[856915776345866240, 977351545966432306],
+        guild_ids=[DiscordGuilds.PRIMARY_GUILD.value,
+                   DiscordGuilds.TESTING_GUILD.value],
         default_permissions=None
     )
 
@@ -85,10 +86,19 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     @commands.is_owner()
     @commands.command(name='Ping')
     async def ping(self, ctx):
-        path = pathlib.Path('main.py').parent.resolve()
-        await ctx.send(f"`{os.path.abspath(__file__)}`")
-        await ctx.send(f'Pong! {round(self.bot.latency * 1000)}ms')
-        sync = await self.bot.tree.sync(guild=discord.Object(id=856915776345866240))
+        sync = await self.bot.tree.sync(guild=discord.Object(id=DiscordGuilds.PRIMARY_GUILD.value))
+        if sync:
+            synced = True
+        else:
+            synced = False
+        embed = discord.Embed(
+            title="Ping requested.",
+            description=f"**Pong!** {round(self.bot.latency * 1000)}ms\
+            \nSynced? {synced}",
+            color=discord.Color.purple()
+        )
+        embed.set_footer(text=f"{os.path.abspath(__file__)}")
+        await ctx.send(embed=embed)
 
     @commands.command()
     @commands.has_permissions(kick_members=True)
@@ -115,7 +125,6 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
                 await ctx.guild.unban(user)
                 await ctx.send(f'User {user.mention} has been unbanned.')
                 return
-
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
