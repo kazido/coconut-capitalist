@@ -103,8 +103,7 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
             party_role: discord.PermissionOverwrite(read_messages=True)
         }
 
-        party_channels_category = discord.utils.get(
-            interaction.guild.categories, id=1130405873475387502)
+        party_channels_category = discord.utils.get(interaction.guild.categories, id=1130405873475387502)
         party_channel = await interaction.guild.create_text_channel(name=f"💠︱{interaction.user.nick}'s-party",
                                                                     overwrites=overwrites,
                                                                     category=party_channels_category)
@@ -184,16 +183,16 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
     @party.command(name="invite", description="Invite another user to your party.")
     @app_commands.rename(invited_discord_user='user')
     @app_commands.describe(invited_discord_user='the user to invite to your party')
-    async def invite(self, interaction: discord.Interaction, invited_discord_user: discord.User):
+    async def invite(self, interaction: discord.Interaction, invited_member: discord.Member):
         user = UserManager(interaction.user.id, interaction=interaction)
-        user_pid = user.get_data("party_id")
+        user_partyid = user.get_data("party_id")
 
         error_embed = discord.Embed(
-            title=f"Cannot invite {invited_discord_user.display_name} to party.",
+            title=f"Cannot invite {invited_member.display_name} to party.",
             color=discord.Color.red()
         )
 
-        if not user_pid:
+        if not user_partyid:
             error_embed.description = "You are not in a party."
             await interaction.response.send_message(embed=error_embed)
             return
@@ -204,8 +203,8 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
             return
         
         # If the person they invited is already in a party
-        inv_user = UserManager(invited_discord_user.id, interaction=interaction)
-        inv_user_pid = inv_user.get_data('party_id')
+        invited_user = UserManager(invited_member.id, interaction=interaction)
+        invited_user_partyid = invited_user.get_data('party_id')
         
         embed = discord.Embed(
                 title="Cannot invited user to the party.",
@@ -213,16 +212,16 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
             )
         
         # If they think they're really smart
-        if interaction.user == invited_discord_user:
+        if interaction.user == invited_member:
             embed.description="You can't invite yourself.",
             await interaction.response.send_message(embed=embed)
             return
         
-        elif inv_user_pid:
-            if inv_user_pid == user.get_data('party_id'):
-                embed.description=f"{invited_discord_user.display_name} is in your party."
+        elif invited_user_partyid:
+            if invited_user_partyid == user.get_data('party_id'):
+                embed.description=f"{invited_member.display_name} is in your party."
             else:
-                embed.description=f"{invited_discord_user.display_name} is already in a party.\
+                embed.description=f"{invited_member.display_name} is already in a party.\
                 \n Tell them to do /party leave."
             await interaction.response.send_message(embed=embed)
             return
@@ -233,6 +232,21 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
             color=discord.Color.from_rgb(84, 178, 209)
         )
 
+        # Create a temporary role to privately invite the user to the party
+        invite_role = await interaction.guild.create_role(name=f"Invited {user_partyid}", reason="Party invite.")
+        await invited_member.add_roles(invite_role)
+
+        party_channels_category = discord.utils.get(interaction.guild.categories, id=1130405873475387502)
+        overwrites = {
+            interaction.guild.default_role: discord.PermissionOverwrite(read_messages=False),
+            invite_role: discord.PermissionOverwrite(read_messages=True)
+        }
+
+        invite_channel = await interaction.guild.create_text_channel(
+            name=f"party-invite",
+            overwrites=overwrites,
+            category=party_channels_category)
+        
         party_channel = discord.utils.get(
             interaction.guild.channels, id=user.get_data('party_channel_id'))
         party_role = discord.utils.get(
@@ -247,8 +261,8 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
                 # User has decided to join party, give them proper role and update the database
                 member = discord.utils.get(interaction.guild.members, id=join_interaction.user.id)
                 await member.add_roles(party_role)
-                inv_user.update_data('party_id', user_pid)
-                inv_user.update_data('party_channel_id', party_channel.id)
+                invited_user.update_data('party_id', user_partyid)
+                invited_user.update_data('party_channel_id', party_channel.id)
                 
                 # Tell them they joined and mention the party channel
                 party_joined_embed = discord.Embed(
@@ -259,13 +273,13 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
                 await join_interaction.response.edit_message(embed=party_joined_embed, view=None)
 
                 # User joined the party, tell party channel
-                query = (m.Users.party_id == user_pid)
+                query = (m.Users.party_id == user_partyid)
                 query_execution = m.Users.select().where(query)
                 party_members = [member for member in query_execution]
 
                 success_embed = discord.Embed(
                     title=f"New party member!",
-                    description=f"{invited_discord_user.mention} has joined the party!",
+                    description=f"{invited_member.mention} has joined the party!",
                     color=discord.Color.green()
                     )
                 await interaction.followup.send(embed=success_embed)
@@ -280,14 +294,14 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
                 await decline_interaction.response.edit_message(embed=declined_embed, view=None)
                 rejection_embed = discord.Embed(
                     title="Not today...",
-                    description=f"Looks like {invited_discord_user.mention} didn't want to join your party.",
+                    description=f"Looks like {invited_member.mention} didn't want to join your party.",
                     color=discord.Color.red()
                 )
                 await interaction.followup.send(embed=rejection_embed)
                 return
 
         await interaction.response.defer(thinking=True)
-        await invited_discord_user.send(embed=invite_embed, view=InviteView())
+        await invited_member.send(embed=invite_embed, view=InviteView())
         
 
     # Removes specified user from the party.
