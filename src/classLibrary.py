@@ -1,38 +1,23 @@
-# General python imports
 import random
-from random import randint
 import datetime
-import numpy
 import math
-import os
-
-from src import models as mm
-import json
-# Discord imports
 import discord
-# Database imports
-import peewee as pw
-# File import
-from src.models import db as mmdatabase
-# Other imports
 import randfacts
 
+from src import models as m
+from src.models import db as database
 
 class RequestUser:
-    def __init__(self, user_id, interaction) -> None:
-        try:  # Establish a connection to the database
-            mmdatabase.connect(reuse_if_open=True)
-        except pw.DatabaseError as error:
-            print(f"Error connecting to Database.\nError: {error}")
+    pass
 
-        # If the provided User ID is in the database, fetch all related tables
-        self.interaction = interaction
-        self.instance = mm.User.get_or_create(id=user_id)
-        self.cooldowns = mm.Usercooldowns.get_or_create(id=user_id)
-        self.farm = mm.Farms.get_or_create(id=user_id)
-        self.items = mm.Items.select().where(mm.Items.owner_id == user_id).objects()
-        self.instance.name = discord.utils.get(interaction.guild.members, id=user_id).display_name
-        self.instance.save()
+class UserManager:
+    def __init__(self, user_id, interaction) -> None:
+        self._user = m.User.get_or_create(id=user_id)
+        self.cooldowns = m.Usercooldowns.get_or_create(id=user_id)
+        self.farm = m.Farms.get_or_create(id=user_id)
+        self.items = m.Items.select().where(m.Items.owner_id == user_id).objects()
+        self._user.name = discord.utils.get(interaction.guild.members, id=user_id).display_name
+        self._user.save()
         # try:
         #     active_pet = mm.Pets.select().where((mm.Pets.owner_id == user_id) & mm.Pets.active).get()
         #     self.active_pet = Pet(active_pet.id)
@@ -67,53 +52,53 @@ class RequestUser:
             on_cooldown_embed.set_footer(text=f"User: {interaction.user.name}")
             await interaction.response.send_message(embed=on_cooldown_embed)
             return
-        # match check_in_type:  # Match statement to check which type of cooldown we need to test
-        #     case 'work':  # If the checkin type is work, set title and description
-        #         wage = ranks[self.rank]['wage']
-        #         title = random.choice(ranks[self.rank]['responses'])
-        #         description = f" :money_with_wings:" \
-        #                       f" **+{wage:,} bits** ({self.rank.capitalize()} wage)"
-        #         if self.active_pet:
-        #             work_multiplier = pets[self.active_pet.instance.rarity]['bonuses']['work']
-        #             description += f"\n:money_with_wings: " \
-        #                            f"**+{int(wage * work_multiplier):,} bits** (pet bonus)"
-        #             self.update_balance(wage + wage * work_multiplier)
-        #         else:
-        #             self.update_balance(wage)
-        #         self.cooldowns.worked_last = now
-        #     case 'daily':
-        #         wage = areas[str(self.instance.area)]['tokens']
-        #         title = f"Daily Tokens"
-        #         description = f"**:coin:" \
-        #                       f" +{wage} tokens** ({areas[str(self.instance.area)]['name'].capitalize()} standard)"
-        #         if self.active_pet:
-        #             pet_bonus = pets[self.active_pet.instance.rarity]['bonuses']['daily']
-        #             description += f"\n:coin:" \
-        #                            f" **+{int(pet_bonus)} tokens** (pet bonus)"
-        #             self.update_tokens(wage + pet_bonus)
-        #         else:
-        #             self.update_tokens(wage)
-        #         self.cooldowns.daily_used_last = now
-        # check_in_embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
-        # check_in_embed.set_author(name=f"{interaction.user.name} - "
-        #                                f"{check_in_type}", icon_url=interaction.user.display_avatar)
-        # if check_in_type == 'daily':
-        #     bank_interest_rate = 0.003+0.027*(math.e**(-(self.instance.bank/20_000_000)))
-        #     check_in_embed.add_field(name="Your Tokens",
-        #                              value=f"You have **{self.instance.tokens:,}** tokens")
-        #     check_in_embed.add_field(name="Bank Interest",
-        #                              value=f"You recieved **{int(self.instance.bank * bank_interest_rate):,}** bits in *interest*")
-        #     self.update_balance(amount=self.instance.bank * bank_interest_rate, bank=True)
-        #     check_in_embed.add_field(name=f"Random Fact", value=f'{randfacts.get_fact()}', inline=False)
-        # elif check_in_type == 'work':
-        #     check_in_embed.add_field(name="Your Bits",
-        #                              value=f"You have **{int(self.instance.money):,}** bits in your purse")
-        # check_in_embed.set_footer(text="Increase your profits by unlocking better pets and ranking up.")
-        # await interaction.response.send_message(embed=check_in_embed)
-        # self.cooldowns.save()
+        match check_in_type:  # Match statement to check which type of cooldown we need to test
+            case 'work':  # If the checkin type is work, set title and description
+                wage = ranks[self.rank]['wage']
+                title = random.choice(ranks[self.rank]['responses'])
+                description = f" :money_with_wings:" \
+                              f" **+{wage:,} bits** ({self.rank.capitalize()} wage)"
+                if self.active_pet:
+                    work_multiplier = pets[self.active_pet.instance.rarity]['bonuses']['work']
+                    description += f"\n:money_with_wings: " \
+                                   f"**+{int(wage * work_multiplier):,} bits** (pet bonus)"
+                    self.update_balance(wage + wage * work_multiplier)
+                else:
+                    self.update_balance(wage)
+                self.cooldowns.worked_last = now
+            case 'daily':
+                wage = areas[str(self._user.area)]['tokens']
+                title = f"Daily Tokens"
+                description = f"**:coin:" \
+                              f" +{wage} tokens** ({areas[str(self._user.area)]['name'].capitalize()} standard)"
+                if self.active_pet:
+                    pet_bonus = pets[self.active_pet.instance.rarity]['bonuses']['daily']
+                    description += f"\n:coin:" \
+                                   f" **+{int(pet_bonus)} tokens** (pet bonus)"
+                    self.update_tokens(wage + pet_bonus)
+                else:
+                    self.update_tokens(wage)
+                self.cooldowns.daily_used_last = now
+        check_in_embed = discord.Embed(title=title, description=description, color=discord.Color.blue())
+        check_in_embed.set_author(name=f"{interaction.user.name} - "
+                                       f"{check_in_type}", icon_url=interaction.user.display_avatar)
+        if check_in_type == 'daily':
+            bank_interest_rate = 0.003+0.027*(math.e**(-(self._user.bank/20_000_000)))
+            check_in_embed.add_field(name="Your Tokens",
+                                     value=f"You have **{self._user.tokens:,}** tokens")
+            check_in_embed.add_field(name="Bank Interest",
+                                     value=f"You recieved **{int(self._user.bank * bank_interest_rate):,}** bits in *interest*")
+            self.update_balance(amount=self._user.bank * bank_interest_rate, bank=True)
+            check_in_embed.add_field(name=f"Random Fact", value=f'{randfacts.get_fact()}', inline=False)
+        elif check_in_type == 'work':
+            check_in_embed.add_field(name="Your Bits",
+                                     value=f"You have **{int(self._user.money):,}** bits in your purse")
+        check_in_embed.set_footer(text="Increase your profits by unlocking better pets and ranking up.")
+        await interaction.response.send_message(embed=check_in_embed)
+        self.cooldowns.save()
 
     def __del__(self):  # On cleanup of the object, close the connection to the database
-        mmdatabase.close()
+        database.close()
 
 
 # class Pet:
