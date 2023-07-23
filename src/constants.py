@@ -62,6 +62,11 @@ class CooldownTimes(Enum):
     WORK = 6
     DAILY = 21
     WEEKLY = 167
+    
+    
+IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images"
+GREEN_CHECK_MARK_URL = f"{IMAGES_REPO}/main/icons/checkmarks/green-checkmark-dist.png"
+RED_X_URL = f"{IMAGES_REPO}/main/icons/checkmarks/red-x.png"
 
 
 # Default role combinations
