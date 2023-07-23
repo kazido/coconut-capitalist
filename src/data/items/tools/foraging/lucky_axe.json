@@ -1,7 +1,7 @@
 {
     "description": {
         "type": "item",
-        "identifier": 302,
+        "identifier": 2,
         "tags": [
             "foraging",
             "axe",
@@ -14,6 +14,8 @@
         "unique": true,
         "rarity": "uncommon",
         "single_use": false,
+        "potency": 1,
+        "profit": 3,
         "is_crafted": {
             "components": [],
             "station": "rust_belt_forge"

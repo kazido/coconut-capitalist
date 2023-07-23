@@ -30,13 +30,21 @@ Required. The description category is used to identify the object.
 * premium
 
 `emoji` _:str:_
->Emoji to represent the item.
+> Emoji to represent the item.
 
 `unique` _bool_
->If True, the user can only hold one of this item.
+> If True, the user can only hold one of this item.
 
 `single_use` _bool_
 > If True, the item will disappear from the user's inventory upon use.
+
+`potency` _int_
+> Represents the power of the item. Scales with the amount of stars on an item.
+> Example: 10 potency * 5 stars = 50 potency
+
+`profit` _int_
+> Increases the amount of items that drop. Scales with the amount of stars on an item.
+> Example: 10 profit * 5 stars = 50 profit
 
 `purchaseable`
 > Enables the item to be bought.

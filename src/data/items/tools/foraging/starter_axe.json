@@ -1,7 +1,7 @@
 {
   "description": {
     "type": "item",
-    "identifier": 301,
+    "identifier": 1,
     "tags": [
       "foraging",
       "tool"
@@ -13,6 +13,8 @@
     "unique": true,
     "rarity": "common",
     "single_use": false,
+    "potency": 1,
+    "profit": 1,
     "purchaseable": {
       "price": 100000
     }
