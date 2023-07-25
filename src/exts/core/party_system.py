@@ -9,16 +9,13 @@ from discord import app_commands
 from src import models as m
 from src import instance
 from src.constants import PartyRoles, DiscordGuilds
+from src.constants import GREEN_CHECK_MARK_URL, RED_X_URL
 from src.utils.user_manager import UserManager
 from logging import getLogger
 
 
 log = getLogger(__name__)
 log.setLevel(10)
-
-IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images"
-GREEN_CHECK_MARK_URL = f"{IMAGES_REPO}/main/icons/checkmarks/green-checkmark-dist.png"
-RED_X_URL = f"{IMAGES_REPO}/main/icons/checkmarks/red-x.png"
 
 NEW_PARTY_FOOTER = "Invite members to your party using /party invite"
 
@@ -230,10 +227,10 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
             # Remove and delete appropriate roles
             await interaction.user.remove_roles(self.leader_role)
             await party_role.delete()
+            await interaction.response.send_message("*You left the party.*", ephemeral=True)
             # Delete the party channel
             await party_channel.delete()
-            log.debug(
-                f"{self.role_prefix} {user_party_id} - Solo leader left. Deleted role and channel.")
+            log.debug(f"{self.role_prefix} {user_party_id} - Solo leader left.")
         else:
             await interaction.user.remove_roles(party_role)
             left_party_embed = discord.Embed(
