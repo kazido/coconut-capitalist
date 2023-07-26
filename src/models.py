@@ -74,15 +74,15 @@ class Users(BaseModel):
     # Columns
     user_id = IntegerField(primary_key=True)
     name = TextField(null=True)
-    bank = IntegerField(default=0, null=True)
-    purse = IntegerField(default=0, null=True)
-    tokens = IntegerField(default=0, null=True)
+    bank = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    purse = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    tokens = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     in_game = BooleanField(default=False)
     party_id = IntegerField(null=True)
     party_channel_id = IntegerField(null=True)
-    area_id = IntegerField(default=1)
-    login_streak = IntegerField(default=0)
-    drops_claimed = IntegerField(default=0)
+    area_id = IntegerField(constraints=[SQL("DEFAULT 1")])
+    login_streak = IntegerField(constraints=[SQL("DEFAULT 0")])
+    drops_claimed = IntegerField(constraints=[SQL("DEFAULT 0")])
 
     # Custom
     leaderboard_columns = [purse + bank, login_streak, drops_claimed]
@@ -90,17 +90,19 @@ class Users(BaseModel):
     color = discord.Color.blue()
 # endregion
 
+# region Skills class
+
 
 class Farming(SkillModel):
     # Columns
     user_id = ForeignKeyField(Users, primary_key=True,
                               backref="farming", on_delete="CASCADE")
-    xp = IntegerField(default=0)
+    xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
     is_farming = BooleanField(default=False)
-    crops_grown = IntegerField(default=0)
+    crops_grown = IntegerField(constraints=[SQL("DEFAULT 0")])
     plots_unlocked = IntegerField(default=3)
-    fertilizer_level = IntegerField(default=1)
+    fertilizer_level = IntegerField(constraints=[SQL("DEFAULT 1")])
     plot1 = TextField(default=None, null=True)
     plot2 = TextField(default=None, null=True)
     plot3 = TextField(default=None, null=True)
@@ -138,10 +140,10 @@ class Combat(SkillModel):
     # Columns
     user_id = ForeignKeyField(Users, primary_key=True,
                               backref="combat", on_delete="CASCADE")
-    xp = IntegerField(default=0)
+    xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
-    monsters_slain = IntegerField(default=0)
-    bosses_slain = IntegerField(default=0)
+    monsters_slain = IntegerField(constraints=[SQL("DEFAULT 0")])
+    bosses_slain = IntegerField(constraints=[SQL("DEFAULT 0")])
 
     # Custom
     leaderboard_column = [xp, monsters_slain, bosses_slain]
@@ -155,16 +157,16 @@ class Mining(SkillModel):
     # Columns
     user_id = ForeignKeyField(Users, primary_key=True,
                               backref="mining", on_delete="CASCADE")
-    xp = IntegerField(default=0)
+    xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
-    lodes_mined = IntegerField(default=0)
+    lodes_mined = IntegerField(constraints=[SQL("DEFAULT 0")])
     core_slot_1 = BooleanField(default=False)
     core_slot_2 = BooleanField(default=False)
     core_slot_3 = BooleanField(default=False)
     core_slot_4 = BooleanField(default=False)
     prestige_level = IntegerField(default=None, null=True)
-    bonuses_remaining = IntegerField(default=0)
-    bonus_type = IntegerField(default=0)
+    bonuses_remaining = IntegerField(constraints=[SQL("DEFAULT 0")])
+    bonus_type = IntegerField(constraints=[SQL("DEFAULT 0")])
 
     # Custom
     leaderboard_column = [xp, lodes_mined]
@@ -178,11 +180,11 @@ class Foraging(SkillModel):
     # Columns
     user_id = ForeignKeyField(Users, primary_key=True,
                               backref="foraging", on_delete="CASCADE")
-    xp = IntegerField(default=0)
+    xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
-    trees_chopped = IntegerField(default=0)
-    double_trees_chopped = IntegerField(default=0)
-    releaf_donations = IntegerField(default=0)
+    trees_chopped = IntegerField(constraints=[SQL("DEFAULT 0")])
+    double_trees_chopped = IntegerField(constraints=[SQL("DEFAULT 0")])
+    releaf_donations = IntegerField(constraints=[SQL("DEFAULT 0")])
 
     # Custom
     leaderboard_column = [xp, trees_chopped,
@@ -197,12 +199,12 @@ class Fishing(SkillModel):
     # Columns
     user_id = ForeignKeyField(Users, primary_key=True,
                               backref="fishing", on_delete="CASCADE")
-    xp = IntegerField(default=0)
+    xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
-    skiff_level = IntegerField(default=1)
-    fish_caught = IntegerField(default=0)
-    book_entries = IntegerField(default=0)
-    treasures_found = IntegerField(default=0)
+    skiff_level = IntegerField(constraints=[SQL("DEFAULT 1")])
+    fish_caught = IntegerField(constraints=[SQL("DEFAULT 0")])
+    book_entries = IntegerField(constraints=[SQL("DEFAULT 0")])
+    treasures_found = IntegerField(constraints=[SQL("DEFAULT 0")])
 
     # Custom
     leaderboard_name = "FISHING LEADERBOARD"
@@ -211,19 +213,20 @@ class Fishing(SkillModel):
     color = discord.Color.dark_blue()
     scaling_x = 0.06
     scaling_y = 2
+    
+# endregion
 
 # region Users Cooldowns class
 
 
 class UserCooldowns(BaseModel):
-    user_id = ForeignKeyField(
-        Users, backref="cooldowns", primary_key=True, on_delete="CASCADE")
-    daily = IntegerField(default=0, null=True, column_name="last_daily")
-    work = IntegerField(default=0, null=True, column_name="last_work")
-    weekly = IntegerField(default=0, null=True, column_name="last_weekly")
+    last_daily = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    last_weekly = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    last_work = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    user = ForeignKeyField(column_name='user_id', model=Users, primary_key=True)
 
     class Meta:
-        table_name = "user_cooldowns"
+        table_name = 'user_cooldowns'
 
     COMMAND_TYPES = Literal["daily", "work", "weekly"]
 
@@ -289,8 +292,7 @@ class Settings(BaseModel):
     More settings to be added soon...
     """
 
-    user_id = ForeignKeyField(
-        Users, backref="settings", primary_key=True, on_delete="CASCADE")
+    user = ForeignKeyField(column_name='user_id', model=Users, primary_key=True)
     auto_deposit = BooleanField(default=False)
     withdraw_warning = BooleanField(default=False)
     disable_max_bet = BooleanField(default=False)
@@ -307,7 +309,7 @@ class Settings(BaseModel):
 class Items(BaseModel):
     owner_id = ForeignKeyField(Users, backref="items", on_delete="CASCADE")
     reference_id = TextField()
-    quantity = IntegerField(default=1)
+    quantity = IntegerField(constraints=[SQL("DEFAULT 1")])
 
     @classmethod
     def get_info(cls, item_id):
@@ -383,11 +385,11 @@ class Items(BaseModel):
 
 
 class Pets(BaseModel):
-    user = ForeignKeyField(Users, backref="pets", on_delete="CASCADE")
+    owner_id = ForeignKeyField(Users, backref="pets", on_delete="CASCADE")
     reference_id = IntegerField()
     active = BooleanField()
-    level = IntegerField(default=1)
-    xp = IntegerField(default=0)
+    level = IntegerField(constraints=[SQL("DEFAULT 1")])
+    xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     name = TextField(null=True)
 
     @classmethod
@@ -400,7 +402,7 @@ class Pets(BaseModel):
     def retrieve_pet(cls, user_id: int):
         try:
             # Look for an active pet with the passed user_id
-            query = ((cls.user == user_id) & Pets.active)
+            query = ((cls.owner_id == user_id) & Pets.active)
             active_pet = Pets.select().where(query)
         except DoesNotExist:
             active_pet = None
@@ -420,16 +422,59 @@ class Pets(BaseModel):
 
 # endregion
 
+# region Item data classes
+
+
+class ItemData(BaseModel):
+    reference_id = TextField(primary_key=True)
+    buy_price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    consumable = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    description = TextField(null=True)
+    display_name = TextField(null=True)
+    drop_rate = IntegerField(null=True)
+    is_material = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    max_drop = IntegerField(null=True)
+    min_drop = IntegerField(null=True)
+    rarity = IntegerField(null=True)
+    sell_price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    skill = TextField(null=True)
+    type = TextField(null=True)
+
+    class Meta:
+        table_name = 'item_data'
+
+
+class SeedData(BaseModel):
+    grows_into = TextField(null=True)
+    growth_odds = IntegerField(null=True)
+    reference_id = ForeignKeyField(column_name='reference_id', model=ItemData, null=True, primary_key=True)
+
+    class Meta:
+        table_name = 'seed_data'
+        
+        
+class CropData(BaseModel):
+    grows_from = TextField(null=True)
+    max_harvest = IntegerField(null=True)
+    min_harvest = IntegerField(null=True)
+    pet_xp = IntegerField(null=True)
+    reference_id = ForeignKeyField(column_name='reference_id', model=ItemData, null=True, primary_key=True)
+
+    class Meta:
+        table_name = 'crop_data'
+        
+#endregion
+
 # region Megadrop class
 
 
 class MegaDrop(BaseModel):
     # Columns
-    amount = IntegerField(default=0)
-    total_drops_missed = IntegerField(default=0)
-    total_drops = IntegerField(default=0)
-    times_missed = IntegerField(default=0)
-    counter = IntegerField(default=0)
+    amount = IntegerField(constraints=[SQL("DEFAULT 0")])
+    total_drops_missed = IntegerField(constraints=[SQL("DEFAULT 0")])
+    total_drops = IntegerField(constraints=[SQL("DEFAULT 0")])
+    times_missed = IntegerField(constraints=[SQL("DEFAULT 0")])
+    counter = IntegerField(constraints=[SQL("DEFAULT 0")])
     last_winner = TextField()
     fmt = "%m-%d-%Y"  # Put current date into a format
     now_time = datetime.now(timezone("US/Eastern"))
