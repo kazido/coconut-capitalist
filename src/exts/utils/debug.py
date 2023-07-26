@@ -9,20 +9,6 @@ from src.classLibrary import RequestUser
 from src.constants import DiscordGuilds
 
 
-class EmbedModal(discord.ui.Modal, title="Embed Creation"):
-    embed_title = discord.ui.TextInput(label="Title")
-    description = discord.ui.TextInput(
-        label="Description", style=discord.TextStyle.paragraph)
-
-    async def on_submit(self, interaction: discord.Interaction) -> None:
-        embed = discord.Embed(
-            title=self.embed_title,
-            description=self.description,
-            color=discord.Color.green()
-        )
-        await interaction.response.send_message(embed=embed)
-
-
 class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     def __init__(self, bot):
         self.bot = bot
@@ -101,56 +87,26 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         await ctx.send(embed=embed)
 
     @commands.command()
-    @commands.has_permissions(kick_members=True)
-    async def kick(self, ctx, member: discord.Member, *, reason=None):
-        await member.kick(reason=reason)
-        await ctx.send(f'Kicked {member.mention}.')
-
-    @commands.command()
-    @commands.has_permissions(ban_members=True)
-    async def ban(self, ctx, member: discord.Member, *, reason=None):
-        await member.ban(reason=reason)
-        await ctx.send(f'Banned {member.mention}.')
-
-    @commands.command()
-    @commands.has_permissions(ban_members=True)
-    async def unban(self, ctx, *, member):
-        banned_users = await ctx.guild.bans()
-        member_name, member_discriminator = member.split('#')
-
-        for ban_entry in banned_users:
-            user = ban_entry.user
-
-            if (user.name, user.discriminator) == (member_name, member_discriminator):
-                await ctx.guild.unban(user)
-                await ctx.send(f'User {user.mention} has been unbanned.')
-                return
-
-    @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def clear(self, ctx, amount):
         await ctx.channel.purge(limit=int(amount) + 1)
-
-    # # A command for evaluating python code in discord
-    # @commands.command()
-    # async def eval(self, ctx, *, args):
-    #     client = PystonClient()
-    #     if str(args.startswith('`')):
-    #         args = str(args.strip('`'))
-    #     else:
-    #         await ctx.send("Please format your code with ``` at the beginning and end.")
-    #     output = await client.execute("python", [File(args)])
-    #     embed = discord.Embed(
-    #         title=f"Evaluation for: {ctx.author.name}",
-    #         description=f"```{args}\n\nResults in:\n{output}```",
-    #         color=discord.Color.purple()
-    #     )
-    #     await ctx.send(embed=embed)
 
     # A command for sending embeds
     @app_commands.command(name="embed", description="Create an embed.")
     @app_commands.guilds(856915776345866240, 977351545966432306)
     async def embed(self, interaction: discord.Interaction):
+        class EmbedModal(discord.ui.Modal, title="Embed Creation"):
+            embed_title = discord.ui.TextInput(label="Title")
+            description = discord.ui.TextInput(
+                label="Description", style=discord.TextStyle.paragraph)
+
+            async def on_submit(self, interaction: discord.Interaction) -> None:
+                embed = discord.Embed(
+                    title=self.embed_title,
+                    description=self.description,
+                    color=discord.Color.green()
+                )
+                await interaction.response.send_message(embed=embed)
         await interaction.response.send_modal(EmbedModal())
 
     @app_commands.command(name="check", description="Check to see if you're on mobile or desktop!")
