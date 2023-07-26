@@ -1,13 +1,8 @@
-import random
-from typing import Sequence
-
+import src
 import discord
-from discord.ext.commands import Context
 
 from pydis_core.utils import scheduling
-
-import src
-from src.constants import MODERATION_ROLES, NEGATIVE_REPLIES
+from typing import Sequence
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -56,13 +51,3 @@ def reaction_check(
             name=f"remove_reaction-{reaction}-{reaction.message.id}-{user}",
         )
         return False
-
-
-async def send_denial(ctx: Context, reason: str) -> discord.Message:
-    """Send an embed denying the user with the given reason."""
-    embed = discord.Embed()
-    embed.colour = discord.Colour.red()
-    embed.title = random.choice(NEGATIVE_REPLIES)
-    embed.description = reason
-
-    return await ctx.send(embed=embed)
