@@ -122,8 +122,8 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
                                                                     overwrites=overwrites,
                                                                     category=party_channels_category)
         party_channel_id = party_channel.id
-        user.update_data('party_channel_id', party_channel_id)
-        user.update_data("party_id", user_party_id)
+        user.set_data('party_channel_id', party_channel_id)
+        user.set_data("party_id", user_party_id)
 
         # add the party leader role to the user
         await interaction.user.add_roles(self.leader_role)
@@ -244,8 +244,8 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
                 f"{self.role_prefix} {user_party_id} - {interaction.user.name} left party.")
 
         # Clear the user's party data in the database
-        user.update_data('party_id', None)
-        user.update_data('party_channel_id', None)
+        user.set_data('party_id', None)
+        user.set_data('party_channel_id', None)
         return
         
     # Invites specified user to a party, doesn't need to be registered.
@@ -347,8 +347,8 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
                     return
 
                 # Update invited user's party information in the database
-                invited_user.update_data('party_id', user_party_id)
-                invited_user.update_data('party_channel_id', party_channel.id)
+                invited_user.set_data('party_id', user_party_id)
+                invited_user.set_data('party_channel_id', party_channel.id)
 
                 # Embed to inform the party that a new member has joined
                 success_embed = discord.Embed(
@@ -433,8 +433,8 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
         await member_to_kick.remove_roles(party_role)
 
         # Clear the user's party data in the database
-        user_to_kick.update_data('party_id', None)
-        user_to_kick.update_data('party_channel_id', None)
+        user_to_kick.set_data('party_id', None)
+        user_to_kick.set_data('party_channel_id', None)
 
         kicked_embed = discord.Embed(
             title="User kicked from party.",
