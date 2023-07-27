@@ -7,9 +7,7 @@ from typing import Literal
 from peewee import *
 from logging import getLogger
 
-from src.data.pets import pets, pet_stats
-from src.data.items.tools import tools
-from src.data.items.crops import crops
+from src.data.pets import pets
 from src.constants import DATABASE
 
 # Database setup
@@ -18,6 +16,11 @@ db = SqliteDatabase(db_path)
 
 log = getLogger(__name__)
 log.setLevel(10)
+
+
+backrefs = ["combat", "mining", "foraging", 
+            "fishing", "farming", "settings", 
+            "cooldowns"]
 
 # region Base Model definitions
 
@@ -29,6 +32,12 @@ class BaseModel(Model):
 
     class Meta:
         database = db
+        
+    def get_field(self, field_name):
+        return getattr(self, field_name)
+    
+    def set_field(self, field_name, value):
+        setattr(self, field_name, value)
 
     @classmethod
     def list_columns(cls):
@@ -41,13 +50,7 @@ class SkillModel(BaseModel):
     # Higher scaling_y = larger gaps between levels
     scaling_x: int
     scaling_y: int
-
-    def set_xp(self, amount: int):
-        self.xp = amount
-
-    def get_xp(self):
-        return self.xp
-
+    
     def xp_required_for_next_level(self):
         current_level = self.level_from_xp(self.xp)
         next_level = current_level + 1
@@ -95,8 +98,7 @@ class Users(BaseModel):
 
 class Farming(SkillModel):
     # Columns
-    user_id = ForeignKeyField(Users, primary_key=True,
-                              backref="farming", on_delete="CASCADE")
+    user_id = ForeignKeyField(Users, primary_key=True,backref="farming", on_delete="CASCADE")
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
     is_farming = BooleanField(default=False)
@@ -112,6 +114,9 @@ class Farming(SkillModel):
     plot7 = TextField(default=None, null=True)
     plot8 = TextField(default=None, null=True)
     plot9 = TextField(default=None, null=True)
+    
+    class Meta:
+        table_name = 'skill_farming'
 
     # Custom
     leaderboard_columns = [xp, crops_grown]
@@ -144,6 +149,9 @@ class Combat(SkillModel):
     tool_id = IntegerField(default=None, null=True)
     monsters_slain = IntegerField(constraints=[SQL("DEFAULT 0")])
     bosses_slain = IntegerField(constraints=[SQL("DEFAULT 0")])
+    
+    class Meta:
+        table_name = 'skill_combat'
 
     # Custom
     leaderboard_column = [xp, monsters_slain, bosses_slain]
@@ -151,7 +159,7 @@ class Combat(SkillModel):
     color = discord.Color.dark_red()
     scaling_x = 0.06
     scaling_y = 2
-
+    
 
 class Mining(SkillModel):
     # Columns
@@ -167,6 +175,9 @@ class Mining(SkillModel):
     prestige_level = IntegerField(default=None, null=True)
     bonuses_remaining = IntegerField(constraints=[SQL("DEFAULT 0")])
     bonus_type = IntegerField(constraints=[SQL("DEFAULT 0")])
+    
+    class Meta:
+        table_name = 'skill_mining'
 
     # Custom
     leaderboard_column = [xp, lodes_mined]
@@ -185,6 +196,9 @@ class Foraging(SkillModel):
     trees_chopped = IntegerField(constraints=[SQL("DEFAULT 0")])
     double_trees_chopped = IntegerField(constraints=[SQL("DEFAULT 0")])
     releaf_donations = IntegerField(constraints=[SQL("DEFAULT 0")])
+    
+    class Meta:
+        table_name = 'skill_foraging'
 
     # Custom
     leaderboard_column = [xp, trees_chopped,
@@ -205,6 +219,9 @@ class Fishing(SkillModel):
     fish_caught = IntegerField(constraints=[SQL("DEFAULT 0")])
     book_entries = IntegerField(constraints=[SQL("DEFAULT 0")])
     treasures_found = IntegerField(constraints=[SQL("DEFAULT 0")])
+    
+    class Meta:
+        table_name = 'skill_fishing'
 
     # Custom
     leaderboard_name = "FISHING LEADERBOARD"
@@ -223,7 +240,7 @@ class UserCooldowns(BaseModel):
     last_daily = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     last_weekly = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     last_work = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    user = ForeignKeyField(column_name='user_id', model=Users, primary_key=True)
+    user = ForeignKeyField(column_name='user_id', model=Users, backref="cooldowns",  primary_key=True)
 
     class Meta:
         table_name = 'user_cooldowns'
@@ -292,7 +309,7 @@ class Settings(BaseModel):
     More settings to be added soon...
     """
 
-    user = ForeignKeyField(column_name='user_id', model=Users, primary_key=True)
+    user = ForeignKeyField(column_name='user_id', model=Users, backref='settings', primary_key=True)
     auto_deposit = BooleanField(default=False)
     withdraw_warning = BooleanField(default=False)
     disable_max_bet = BooleanField(default=False)
@@ -303,121 +320,16 @@ class Settings(BaseModel):
 
 # endregion
 
-# region Items class
-
-
-class Items(BaseModel):
-    owner_id = ForeignKeyField(Users, backref="items", on_delete="CASCADE")
-    reference_id = TextField()
-    quantity = IntegerField(constraints=[SQL("DEFAULT 1")])
-
-    @classmethod
-    def get_info(cls, item_id):
-        descriptors = tools[item_id]["description"]
-        components = tools[item_id]["components"]
-        return descriptors, components
-
-    @classmethod
-    def get_item(cls, owner: int, item_id: str):
-        return Items.get(cls.user == owner, cls.reference_id == item_id)
-
-    @classmethod
-    def insert_item(cls, owner: int, item_id: str, quantity: int = 1):
-        item, created = cls.get_or_create(
-            user=owner, reference_id=item_id, defaults={"quantity": quantity}
-        )
-        if created:
-            return True, f"New item created with quantity: {quantity}."
-        else:
-            item.quantity += quantity
-            item.save()
-            return True, f"Item quantity increased by {quantity}"
-
-    @classmethod
-    def delete_item(cls, owner: int, item_id: str, quantity: int = None):
-        try:
-            # Try to decrement quantity of existing item
-            item = cls.get(user=owner, reference_id=item_id)
-            if quantity:
-                item.quantity -= quantity
-                if item.quantity <= 0:
-                    # If quantity becomes 0 or negative, delete item
-                    item.delete_instance()
-                    return True, "Item quantity 0 or below, item deleted."
-                else:
-                    item.save()
-                    return True, f"Item quantity reduced by {quantity}"
-            else:
-                item.delete_instance()
-                return True, "Item deleted."
-
-        except cls.DoesNotExist:
-            # If item doesn't exist, do nothing
-            return False, "This item does not exist."
-
-    @classmethod
-    def trade_item(cls, owner: int, new_owner: int, item_id: str, quantity: int = None):
-        try:
-            # Transfer the ownership of the item if it exists
-            item: Items = cls.get(user=owner, reference_id=item_id)
-            if quantity:
-                if quantity > item.quantity:
-                    return False, "User does not own enough of this item."
-                # Inserts same item into tradee's inventory
-                Items.insert_item(new_owner, item_id, quantity)
-                # Removes items from trader's inventory
-                Items.delete_item(owner, item_id, quantity)
-                return True, f"{quantity} items transferred."
-            else:
-                # If the entire quantity of the item is being traded, just transfer ownership
-                item.user = new_owner
-                item.save()
-                return True, "Entire item transferred."
-
-            item.save()
-        except cls.DoesNotExist:
-            # If item doesn't exist, do nothing
-            return False, "This item does not exist."
-
-# endregion
-
 # region Pets class
 
 
 class Pets(BaseModel):
     owner_id = ForeignKeyField(Users, backref="pets", on_delete="CASCADE")
-    reference_id = IntegerField()
-    active = BooleanField()
+    pet_id = IntegerField()
+    active = BooleanField(default=False)
     level = IntegerField(constraints=[SQL("DEFAULT 1")])
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     name = TextField(null=True)
-
-    @classmethod
-    def get_info(cls, pet_id):
-        descriptors = pets[pet_id]["description"]
-        components = pets[pet_id]["components"]
-        return descriptors, components
-
-    @classmethod
-    def retrieve_pet(cls, user_id: int):
-        try:
-            # Look for an active pet with the passed user_id
-            query = ((cls.owner_id == user_id) & Pets.active)
-            active_pet = Pets.select().where(query)
-        except DoesNotExist:
-            active_pet = None
-            log.debug("Found no active pet, setting pet to None.")
-        return active_pet
-
-    def change_name(self, new_name):
-        if len(new_name) > 14:
-            return "Please refrain from using more than 14 characters."
-        self.name = new_name
-        self.save()
-        return f"Name successfully changed to {new_name}."
-
-    # def set_activity(self, pet_id):
-    #     self.active = False
 
 
 # endregion
@@ -425,8 +337,8 @@ class Pets(BaseModel):
 # region Item data classes
 
 
-class ItemData(BaseModel):
-    reference_id = TextField(primary_key=True)
+class DataMaster(BaseModel):
+    item_id = TextField(primary_key=True)
     buy_price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     consumable = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     description = TextField(null=True)
@@ -441,27 +353,71 @@ class ItemData(BaseModel):
     type = TextField(null=True)
 
     class Meta:
-        table_name = 'item_data'
+        table_name = 'data_master'
 
 
-class SeedData(BaseModel):
+class DataSeeds(BaseModel):
+    item_id = ForeignKeyField(column_name='item_id', model=DataMaster, backref='seed_data', null=True, primary_key=True)
     grows_into = TextField(null=True)
     growth_odds = IntegerField(null=True)
-    reference_id = ForeignKeyField(column_name='reference_id', model=ItemData, null=True, primary_key=True)
 
     class Meta:
-        table_name = 'seed_data'
+        table_name = 'data_seeds'
         
         
-class CropData(BaseModel):
+class DataCrops(BaseModel):
+    item_id = ForeignKeyField(column_name='item_id', model=DataMaster, backref='crop_data', null=True, primary_key=True)
     grows_from = TextField(null=True)
     max_harvest = IntegerField(null=True)
     min_harvest = IntegerField(null=True)
     pet_xp = IntegerField(null=True)
-    reference_id = ForeignKeyField(column_name='reference_id', model=ItemData, null=True, primary_key=True)
 
     class Meta:
-        table_name = 'crop_data'
+        table_name = 'data_crops'
+        
+class DataTools(BaseModel):
+    item_id = ForeignKeyField(column_name='item_id', model=DataMaster, backref='tool_data', null=True, primary_key=True)
+    power = IntegerField(constraints=[SQL("DEFAULT 1")], null=True)    
+
+    class Meta:
+        table_name = 'data_tools'
+        
+class DataPets(BaseModel):
+    pet_id = TextField(null=True, primary_key=True)
+    daily_bonus = IntegerField(null=True)
+    display_name = TextField(null=True)
+    max_level = IntegerField(null=True)
+    price = IntegerField(null=True)
+    rarity = IntegerField(null=True)
+    work_bonus = IntegerField(null=True)
+
+    class Meta:
+        table_name = 'data_pets'
+        
+class DataRanks(BaseModel):
+    rank_id = IntegerField(null=True, primary_key=True)
+    color = TextField(null=True)
+    description = TextField(null=True)
+    display_name = TextField(null=True)
+    emoji = TextField(null=True)
+    next_rank_id = IntegerField(null=True)
+    token_price = IntegerField(null=True)
+    wage = IntegerField(null=True)
+
+    class Meta:
+        table_name = 'data_ranks'
+        
+class DataAreas(BaseModel):
+    area_id = TextField(null=True, primary_key=True)
+    description = TextField(null=True)
+    difficulty = IntegerField(null=True)
+    display_name = TextField(null=True)
+    fuel_amount = IntegerField(null=True)
+    fuel_requirement = TextField(null=True)
+    token_bonus = IntegerField(null=True)
+
+    class Meta:
+        table_name = 'data_areas'
         
 #endregion
 
@@ -485,12 +441,26 @@ class MegaDrop(BaseModel):
         guild = bot.get_guild(856915776345866240)  # Guild to send the drops in
 # endregion
 
+# region Items class
 
+
+class Items(BaseModel):
+    owner = ForeignKeyField(column_name='owner_id', model=Users, backref='items')
+    item_id = ForeignKeyField(column_name='item_id', model=DataMaster, backref='data')
+    enchantment = TextField(null=True)
+    quantity = IntegerField()
+    star_level = IntegerField(null=True)
+    
+    class Meta:
+        table_name = 'items'
+
+# endregion
+    
+    
 def create_tables():
     tables = [Users, UserCooldowns, Pets, Items, MegaDrop,
               Mining, Combat, Fishing, Foraging, Farming]
     with db:
         db.create_tables(tables)
-
-
+        
 create_tables()
