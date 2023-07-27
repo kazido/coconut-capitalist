@@ -1,0 +1,22 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "lemon_seed",
+        "tags": [
+            "seed"
+        ]
+    },
+    "components":{
+        "display_name": "Lemon Seed",
+        "description": "Grows into some lemons.",
+        "rarity": "uncommon",
+        "unique": false,
+        "single_use": true,
+        "purchaseable": {
+            "price": 80000
+        },
+        "growth_odds": 10,
+        "emoji": ":seedling: :lemon:",
+        "grows_into": "lemon"
+    }
+}

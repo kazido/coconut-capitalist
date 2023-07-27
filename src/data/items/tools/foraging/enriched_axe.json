@@ -1,0 +1,31 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": 3,
+        "tags": [
+            "foraging",
+            "axe",
+            "tool"
+        ]
+    },
+    "components": {
+        "display_name": "Enriched Axe",
+        "description": "Slightly higher potency than your average axe.",
+        "unique": true,
+        "rarity": "rare",
+        "single_use": false,
+        "potency": 1,
+        "profit": 10,
+        "is_crafted": {
+            "components": [],
+            "station": "atmosphere_forge"
+        },
+        "level_requirement": {
+            "level": 40,
+            "skill": "foraging"
+        },
+        "area_requirement": {
+            "area_id": "atmosphere"
+        }
+    }
+}

@@ -1,0 +1,22 @@
+{
+  "description": {
+    "type": "item",
+    "identifier": 1,
+    "tags": [
+      "foraging",
+      "tool"
+    ]
+  },
+  "components": {
+    "display_name": "Starter Axe",
+    "description": "A basic axe, meant for novice lumberjacks.",
+    "unique": true,
+    "rarity": "common",
+    "single_use": false,
+    "potency": 1,
+    "profit": 1,
+    "purchaseable": {
+      "price": 100000
+    }
+  }
+}

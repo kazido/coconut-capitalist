@@ -1,0 +1,26 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "hot_pepper",
+        "tags": [
+            "crop"
+        ]
+    },
+    "components":{
+        "display_name": "Hot Pepper",
+        "description": "The spiciest of them all.",
+        "rarity": "rare",
+        "unique": false,
+        "single_use": true,
+        "sellable": {
+            "price": 300000
+        },
+        "harvest_level": {
+            "minimum": 1,
+            "maximum": 3
+        },
+        "pet_xp": 18000,
+        "emoji": ":hot_pepper:",
+        "grows_from": "hot_pepper_seed"
+    }
+}

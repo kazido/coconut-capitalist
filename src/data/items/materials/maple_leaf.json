@@ -1,0 +1,27 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "maple_leaf",
+        "tags": [
+            "material",
+            "foraging"
+        ]
+    },
+    "components": {
+        "display_name": "Maple Leaf",
+        "description": "Said to harness the spirit of the north.",
+        "rarity": "super_rare",
+        "emoji": ":maple_leaf:",
+        "unique": false,
+        "single_use": true,
+        "sellable": {
+            "price": 500000
+        },
+        "used_to_craft": [],
+        "drop_info": {
+            "drop_rate": 100,
+            "minimum": 1,
+            "maximum": 2
+        }
+    }
+}
