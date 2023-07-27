@@ -1,9 +1,0 @@
-{
-    "max_level": 40,
-    "price": 5000000,
-    "color": "0x6e3ade",
-    "bonuses": {
-        "work": 0.0175,
-        "daily": 0
-    }
-}
