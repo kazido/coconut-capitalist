@@ -10,7 +10,7 @@ from src import models as m
 from src import instance
 from src.constants import PartyRoles, DiscordGuilds
 from src.constants import GREEN_CHECK_MARK_URL, RED_X_URL
-from src.utils.user_manager import UserManager
+from src.utils.managers import UserManager
 from logging import getLogger
 
 
