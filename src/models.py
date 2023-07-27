@@ -7,7 +7,6 @@ from typing import Literal
 from peewee import *
 from logging import getLogger
 
-from src.data.pets import pets
 from src.constants import DATABASE
 
 # Database setup
