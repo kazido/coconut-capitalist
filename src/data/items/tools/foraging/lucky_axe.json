@@ -1,0 +1,31 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": 2,
+        "tags": [
+            "foraging",
+            "axe",
+            "tool"
+        ]
+    },
+    "components": {
+        "display_name": "Improved Axe",
+        "description": "The first upgrade in the Axe path. You'll notice better rewards.",
+        "unique": true,
+        "rarity": "uncommon",
+        "single_use": false,
+        "potency": 1,
+        "profit": 3,
+        "is_crafted": {
+            "components": [],
+            "station": "rust_belt_forge"
+        },
+        "level_requirement": {
+            "level": 20,
+            "skill": "foraging"
+        },
+        "area_requirement": {
+            "area_id": "rust_belt"
+        }
+    }
+}

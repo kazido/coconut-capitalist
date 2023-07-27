@@ -1,0 +1,26 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "coconut",
+        "tags": [
+            "crop"
+        ]
+    },
+    "components":{
+        "display_name": "Coconut",
+        "description": "Have you ever tried one of these?",
+        "rarity": "super_rare",
+        "unique": false,
+        "single_use": true,
+        "sellable": {
+            "price": 2000000
+        },
+        "harvest_level": {
+            "minimum": 1,
+            "maximum": 1
+        },
+        "pet_xp": 125900,
+        "emoji": ":coconut:",
+        "grows_from": "coconut_seed"
+    }
+}

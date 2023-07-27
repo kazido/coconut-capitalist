@@ -131,8 +131,13 @@ dmypy.json
 
 # OTHER FILES
 config.json
+.vscode
 .data.json
 database.ini
 database
 database/devdatabase.db
 database/livedatabase.db
+.idea
+/logs
+.logs
+logs

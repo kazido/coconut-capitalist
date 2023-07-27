@@ -1,0 +1,26 @@
+{
+    "description": {
+        "type": "item",
+        "identifier": "apple",
+        "tags": [
+            "crop"
+        ]
+    },
+    "components":{
+        "display_name": "Apple",
+        "description": "Good ol' apple.",
+        "rarity": "common",
+        "unique": false,
+        "single_use": true,
+        "sellable": {
+            "price": 1000
+        },
+        "harvest_level": {
+            "minimum": 10,
+            "maximum": 20
+        },
+        "pet_xp": 50,
+        "emoji": ":apple:",
+        "grows_from": "apple_seed"
+    }
+}
