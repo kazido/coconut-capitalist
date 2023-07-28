@@ -42,7 +42,7 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
     @party.command(name="list", description="See who is in your party.")
     async def list(self, interaction: discord.Interaction):
         user = UserManager(interaction.user.id, interaction=interaction)
-        user_party_id = user.get_data("party_id")
+        user_party_id = user.get_field('party_id')
 
         if not user_party_id:
             embed = discord.Embed(
@@ -59,7 +59,7 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
 
         # Get the party channel
         party_channel = discord.utils.get(
-            interaction.guild.channels, id=user.get_data('party_channel_id'))
+            interaction.guild.channels, id=user.get_field('party_channel_id'))
 
         embed = discord.Embed(
             title=":busts_in_silhouette: Party Members",
@@ -83,7 +83,7 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
     async def create(self, interaction: discord.Interaction):
         # Party leadership should be done through discord roles only.
         user = UserManager(interaction.user.id, interaction=interaction)
-        user_party_id = user.get_data("party_id")
+        user_party_id = user.get_field("party_id")
 
         if user_party_id:
             embed = discord.Embed(
@@ -122,8 +122,8 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
                                                                     overwrites=overwrites,
                                                                     category=party_channels_category)
         party_channel_id = party_channel.id
-        user.set_data('party_channel_id', party_channel_id)
-        user.set_data("party_id", user_party_id)
+        user.set_field('party_channel_id', party_channel_id)
+        user.set_field("party_id", user_party_id)
 
         # add the party leader role to the user
         await interaction.user.add_roles(self.leader_role)
@@ -141,7 +141,7 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
     @party.command(name="disband", description="Disbands your current party.")
     async def disband(self, interaction: discord.Interaction):
         user = UserManager(interaction.user.id, interaction=interaction)
-        user_party_id = user.get_data("party_id")
+        user_party_id = user.get_field("party_id")
 
         error_embed = discord.Embed(
             color=discord.Color.red()
@@ -167,7 +167,7 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
         party_role = discord.utils.get(
             interaction.guild.roles, name=f"{self.role_prefix} {user_party_id}")
         party_channel = discord.utils.get(
-            interaction.guild.channels, id=user.get_data('party_channel_id'))
+            interaction.guild.channels, id=user.get_field('party_channel_id'))
 
         # Go through every user in the party and clear their party data
         for member in party_members:
@@ -199,8 +199,8 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
     async def leave(self, interaction: discord.Interaction):
         guild = interaction.guild
         user = UserManager(interaction.user.id, interaction=interaction)
-        user_party_id = user.get_data("party_id")
-        party_channel_id = user.get_data('party_channel_id')
+        user_party_id = user.get_field("party_id")
+        party_channel_id = user.get_field('party_channel_id')
 
         # Query to find all users with the same party ID
         query = (m.Users.party_id == user_party_id)
@@ -244,8 +244,8 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
                 f"{self.role_prefix} {user_party_id} - {interaction.user.name} left party.")
 
         # Clear the user's party data in the database
-        user.set_data('party_id', None)
-        user.set_data('party_channel_id', None)
+        user.set_field('party_id', None)
+        user.set_field('party_channel_id', None)
         return
         
     # Invites specified user to a party, doesn't need to be registered.
@@ -255,10 +255,10 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
     async def invite(self, interaction: discord.Interaction, member_to_invite: discord.Member):
         guild = interaction.guild
         user = UserManager(interaction.user.id, interaction=interaction)
-        user_party_id = user.get_data("party_id")
+        user_party_id = user.get_field("party_id")
         
         invited_user = UserManager(member_to_invite.id, interaction=interaction)
-        invited_user_party_id = invited_user.get_data('party_id')  
+        invited_user_party_id = invited_user.get_field('party_id')  
 
         error_embed = discord.Embed(
             color=discord.Color.red()
@@ -284,7 +284,7 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
 
         # If the person they invited is already in a party
         elif invited_user_party_id:
-            if invited_user_party_id == user.get_data('party_id'):
+            if invited_user_party_id == user.get_field('party_id'):
                 error_embed.description = f"{member_to_invite.display_name} is in your party."
             else:
                 error_embed.description = f"{member_to_invite.display_name} is already in a party.\
@@ -319,7 +319,7 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
 
         # Get the channel and the role that the user will recieve upon joining the party
         party_channel = discord.utils.get(
-            guild.channels, id=user.get_data('party_channel_id'))
+            guild.channels, id=user.get_field('party_channel_id'))
         party_role = discord.utils.get(
             guild.roles, name=f"{self.role_prefix} {user_party_id}")
 
@@ -347,8 +347,8 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
                     return
 
                 # Update invited user's party information in the database
-                invited_user.set_data('party_id', user_party_id)
-                invited_user.set_data('party_channel_id', party_channel.id)
+                invited_user.set_field('party_id', user_party_id)
+                invited_user.set_field('party_channel_id', party_channel.id)
 
                 # Embed to inform the party that a new member has joined
                 success_embed = discord.Embed(
@@ -392,7 +392,7 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
     @app_commands.describe(member_to_kick='the user to kick from your party')
     async def kick(self, interaction: discord.Interaction, member_to_kick: discord.Member):
         user = UserManager(interaction.user.id, interaction=interaction)
-        user_party_id = user.get_data("party_id")
+        user_party_id = user.get_field("party_id")
 
         user_to_kick = UserManager(member_to_kick.id, interaction=interaction)
 
@@ -433,8 +433,8 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
         await member_to_kick.remove_roles(party_role)
 
         # Clear the user's party data in the database
-        user_to_kick.set_data('party_id', None)
-        user_to_kick.set_data('party_channel_id', None)
+        user_to_kick.set_field('party_id', None)
+        user_to_kick.set_field('party_channel_id', None)
 
         kicked_embed = discord.Embed(
             title="User kicked from party.",
@@ -450,7 +450,7 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
     @app_commands.describe(member_to_promote='the user to give greater privileges to')
     async def promote(self, interaction: discord.Interaction, member_to_promote: discord.Member):
         user = UserManager(interaction.user.id, interaction=interaction)
-        user_party_id = user.get_data("party_id")
+        user_party_id = user.get_field("party_id")
         
         # Query to find all users with the same party ID
         query = ((m.Users.party_id == user_party_id))
@@ -488,7 +488,7 @@ class PartySystemCog(commands.Cog, name='PartySystem'):
         await interaction.user.remove_roles(self.leader_role)
         
         # Change the party channel's name
-        party_channel = discord.utils.get(interaction.guild.channels, id=user.get_data('party_channel_id'))
+        party_channel = discord.utils.get(interaction.guild.channels, id=user.get_field('party_channel_id'))
         await party_channel.edit(name=f"💠︱{member_to_promote.display_name}'s-party", reason="Party leader changed.")
         
         success_embed = discord.Embed(

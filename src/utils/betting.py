@@ -2,7 +2,7 @@ from src.utils.managers import UserManager
 
 # Ensures that the user's bet is valid
 def check_bet(user: UserManager, bet):
-    balance = user.get_data("purse")
+    balance = user.get_field("purse")
     if int(bet) < 0:
         return f"The oldest trick in the book... Nice try.", False
     elif int(bet) > balance:
