@@ -2,7 +2,6 @@ import asyncio
 
 from src import models as m
 
-from src.data.pets import pets
 from src.classLibrary import RequestUser
 
 import discord

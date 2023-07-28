@@ -2,7 +2,6 @@ import asyncio
 import discord
 from discord.ext import commands
 from discord import app_commands
-from src.data.ranks import ranks
 from src.models import Users
 
 

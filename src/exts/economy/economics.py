@@ -12,8 +12,6 @@ from discord.app_commands import Choice
 from discord.ext import commands
 
 from src.models import Users, Combat, Farming, Foraging, Fishing, Mining
-from src.data.ranks import ranks
-from src.data.areas import areas
 from src.data.items.tools import tools
 from src.resources.unused_code.data import get_attribute
 
