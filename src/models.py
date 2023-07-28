@@ -4,6 +4,7 @@ import os
 from datetime import time, datetime
 from pytz import timezone
 from typing import Literal
+from enum import Enum
 from peewee import *
 from logging import getLogger
 
@@ -17,13 +18,7 @@ log = getLogger(__name__)
 log.setLevel(10)
 
 
-backrefs = ["combat", "mining", "foraging", 
-            "fishing", "farming", "settings", 
-            "cooldowns"]
-
 # region Base Model definitions
-
-
 class BaseModel(Model):
     leaderboard_columns: dict
     color: discord.Color
@@ -31,10 +26,10 @@ class BaseModel(Model):
 
     class Meta:
         database = db
-        
+
     def get_field(self, field_name):
         return getattr(self, field_name)
-    
+
     def set_field(self, field_name, value):
         setattr(self, field_name, value)
 
@@ -49,7 +44,7 @@ class SkillModel(BaseModel):
     # Higher scaling_y = larger gaps between levels
     scaling_x: int
     scaling_y: int
-    
+
     def xp_required_for_next_level(self):
         current_level = self.level_from_xp(self.xp)
         next_level = current_level + 1
@@ -70,8 +65,6 @@ class SkillModel(BaseModel):
 # endregion
 
 # region Users class
-
-
 class Users(BaseModel):
     # Columns
     user_id = IntegerField(primary_key=True)
@@ -92,12 +85,11 @@ class Users(BaseModel):
     color = discord.Color.blue()
 # endregion
 
-# region Skills class
-
-
+# region Backrefs class
 class Farming(SkillModel):
     # Columns
-    user_id = ForeignKeyField(Users, primary_key=True,backref="farming", on_delete="CASCADE")
+    user_id = ForeignKeyField(Users, primary_key=True,
+                              backref="farming", on_delete="CASCADE")
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
     is_farming = BooleanField(default=False)
@@ -113,7 +105,7 @@ class Farming(SkillModel):
     plot7 = TextField(default=None, null=True)
     plot8 = TextField(default=None, null=True)
     plot9 = TextField(default=None, null=True)
-    
+
     class Meta:
         table_name = 'skill_farming'
 
@@ -148,7 +140,7 @@ class Combat(SkillModel):
     tool_id = IntegerField(default=None, null=True)
     monsters_slain = IntegerField(constraints=[SQL("DEFAULT 0")])
     bosses_slain = IntegerField(constraints=[SQL("DEFAULT 0")])
-    
+
     class Meta:
         table_name = 'skill_combat'
 
@@ -158,7 +150,7 @@ class Combat(SkillModel):
     color = discord.Color.dark_red()
     scaling_x = 0.06
     scaling_y = 2
-    
+
 
 class Mining(SkillModel):
     # Columns
@@ -174,7 +166,7 @@ class Mining(SkillModel):
     prestige_level = IntegerField(default=None, null=True)
     bonuses_remaining = IntegerField(constraints=[SQL("DEFAULT 0")])
     bonus_type = IntegerField(constraints=[SQL("DEFAULT 0")])
-    
+
     class Meta:
         table_name = 'skill_mining'
 
@@ -195,7 +187,7 @@ class Foraging(SkillModel):
     trees_chopped = IntegerField(constraints=[SQL("DEFAULT 0")])
     double_trees_chopped = IntegerField(constraints=[SQL("DEFAULT 0")])
     releaf_donations = IntegerField(constraints=[SQL("DEFAULT 0")])
-    
+
     class Meta:
         table_name = 'skill_foraging'
 
@@ -218,7 +210,7 @@ class Fishing(SkillModel):
     fish_caught = IntegerField(constraints=[SQL("DEFAULT 0")])
     book_entries = IntegerField(constraints=[SQL("DEFAULT 0")])
     treasures_found = IntegerField(constraints=[SQL("DEFAULT 0")])
-    
+
     class Meta:
         table_name = 'skill_fishing'
 
@@ -229,17 +221,14 @@ class Fishing(SkillModel):
     color = discord.Color.dark_blue()
     scaling_x = 0.06
     scaling_y = 2
-    
-# endregion
-
-# region Users Cooldowns class
 
 
 class UserCooldowns(BaseModel):
     last_daily = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     last_weekly = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     last_work = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    user = ForeignKeyField(column_name='user_id', model=Users, backref="cooldowns",  primary_key=True)
+    user = ForeignKeyField(column_name='user_id', model=Users,
+                           backref="cooldowns",  primary_key=True)
 
     class Meta:
         table_name = 'user_cooldowns'
@@ -294,10 +283,6 @@ class UserCooldowns(BaseModel):
         else:
             return True, None  # The check has been passed
 
-# endregion
-
-# region Settings class
-
 
 class Settings(BaseModel):
     """
@@ -308,7 +293,8 @@ class Settings(BaseModel):
     More settings to be added soon...
     """
 
-    user = ForeignKeyField(column_name='user_id', model=Users, backref='settings', primary_key=True)
+    user = ForeignKeyField(column_name='user_id', model=Users,
+                           backref='settings', primary_key=True)
     auto_deposit = BooleanField(default=False)
     withdraw_warning = BooleanField(default=False)
     disable_max_bet = BooleanField(default=False)
@@ -316,12 +302,24 @@ class Settings(BaseModel):
 
     ATTRIBUTES = Literal["auto_deposit", "withdraw_warning",
                          "disable_max_bet", "upgraded_check_in"]
+    
+class Backrefs(Enum):
+    combat: Combat
+    mining: Mining
+    foraging: Foraging
+    fishing: Fishing
+    farming: Farming
+    settings: Settings
+    cooldowns: UserCooldowns
+    
+BACKREFS = Literal["combat", "mining", 
+                   "foraging", "fishing", 
+                   "farming", "settings", 
+                   "cooldowns"]
 
 # endregion
 
 # region Pets class
-
-
 class Pets(BaseModel):
     owner_id = ForeignKeyField(Users, backref="pets", on_delete="CASCADE")
     pet_id = IntegerField()
@@ -334,11 +332,9 @@ class Pets(BaseModel):
 # endregion
 
 # region Item data classes
-
-
 class DataMaster(BaseModel):
     item_id = TextField(primary_key=True)
-    buy_price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     consumable = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     description = TextField(null=True)
     display_name = TextField(null=True)
@@ -356,16 +352,18 @@ class DataMaster(BaseModel):
 
 
 class DataSeeds(BaseModel):
-    item_id = ForeignKeyField(column_name='item_id', model=DataMaster, backref='seed_data', null=True, primary_key=True)
+    item_id = ForeignKeyField(column_name='item_id', model=DataMaster,
+                              backref='seed_data', null=True, primary_key=True)
     grows_into = TextField(null=True)
     growth_odds = IntegerField(null=True)
 
     class Meta:
         table_name = 'data_seeds'
-        
-        
+
+
 class DataCrops(BaseModel):
-    item_id = ForeignKeyField(column_name='item_id', model=DataMaster, backref='crop_data', null=True, primary_key=True)
+    item_id = ForeignKeyField(column_name='item_id', model=DataMaster,
+                              backref='crop_data', null=True, primary_key=True)
     grows_from = TextField(null=True)
     max_harvest = IntegerField(null=True)
     min_harvest = IntegerField(null=True)
@@ -373,14 +371,17 @@ class DataCrops(BaseModel):
 
     class Meta:
         table_name = 'data_crops'
-        
+
+
 class DataTools(BaseModel):
-    item_id = ForeignKeyField(column_name='item_id', model=DataMaster, backref='tool_data', null=True, primary_key=True)
-    power = IntegerField(constraints=[SQL("DEFAULT 1")], null=True)    
+    item_id = ForeignKeyField(column_name='item_id', model=DataMaster,
+                              backref='tool_data', null=True, primary_key=True)
+    power = IntegerField(constraints=[SQL("DEFAULT 1")], null=True)
 
     class Meta:
         table_name = 'data_tools'
-        
+
+
 class DataPets(BaseModel):
     pet_id = TextField(null=True, primary_key=True)
     daily_bonus = IntegerField(null=True)
@@ -392,7 +393,8 @@ class DataPets(BaseModel):
 
     class Meta:
         table_name = 'data_pets'
-        
+
+
 class DataRanks(BaseModel):
     rank_id = IntegerField(null=True, primary_key=True)
     color = TextField(null=True)
@@ -405,7 +407,8 @@ class DataRanks(BaseModel):
 
     class Meta:
         table_name = 'data_ranks'
-        
+
+
 class DataAreas(BaseModel):
     area_id = TextField(null=True, primary_key=True)
     description = TextField(null=True)
@@ -418,11 +421,23 @@ class DataAreas(BaseModel):
     class Meta:
         table_name = 'data_areas'
         
-#endregion
+
+class DataTables(Enum):
+    areas = DataAreas
+    crops = DataCrops
+    pets = DataPets
+    ranks = DataRanks
+    seeds = DataSeeds
+    tools = DataTools
+    master = DataMaster
+    
+DATATABLES = Literal["areas", "crops",
+                     "pets", "ranks",
+                     "seeds", "tools",
+                     "master"]
+# endregion
 
 # region Megadrop class
-
-
 class MegaDrop(BaseModel):
     # Columns
     amount = IntegerField(constraints=[SQL("DEFAULT 0")])
@@ -441,25 +456,26 @@ class MegaDrop(BaseModel):
 # endregion
 
 # region Items class
-
-
 class Items(BaseModel):
-    owner = ForeignKeyField(column_name='owner_id', model=Users, backref='items')
-    item_id = ForeignKeyField(column_name='item_id', model=DataMaster, backref='data')
+    owner = ForeignKeyField(column_name='owner_id',
+                            model=Users, backref='items')
+    item_id = ForeignKeyField(column_name='item_id',
+                              model=DataMaster, backref='data')
     enchantment = TextField(null=True)
     quantity = IntegerField()
     star_level = IntegerField(null=True)
-    
+
     class Meta:
         table_name = 'items'
 
 # endregion
-    
-    
+
+
 def create_tables():
     tables = [Users, UserCooldowns, Pets, Items, MegaDrop,
               Mining, Combat, Fishing, Foraging, Farming]
     with db:
         db.create_tables(tables)
-        
+
+
 create_tables()
