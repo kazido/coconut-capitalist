@@ -27,12 +27,6 @@ class BaseModel(Model):
     class Meta:
         database = db
 
-    def get_field(self, field_name):
-        return getattr(self, field_name)
-
-    def set_field(self, field_name, value):
-        setattr(self, field_name, value)
-
     @classmethod
     def list_columns(cls):
         columns = [field for field in cls._meta.fields]
