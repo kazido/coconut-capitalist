@@ -17,14 +17,12 @@ class UserManager:
         # Create or retrieve the user instance from the Users table
         self.instance: Users
         self.instance, _ = Users.get_or_create(user_id=user_id)
-
+        self.id = user_id
         # If there is no interaction, finish initializing
         if not interaction:
             return
-        
         # Update the user's rank and display name if available in the interaction
         user = discord.utils.get(interaction.guild.members, id=user_id)
-        
         self.rank = retrieve_rank(user_id=user_id, interaction=interaction)
         if user and (self.instance.name != user.display_name):
             self.instance.name = user.display_name
@@ -77,10 +75,13 @@ class ItemManager:
         except Items.DoesNotExist:
             log.debug("Item not found.")
             self.instance = None
+            
+    def __str__(self) -> str:
+        return DataManager.get_data("master", self.instance.item_id, 'display_name')
 
     def get_field(self, field: str):
         fields = self.instance
-        item_data = DataManager('master', self.instance.item_id)
+        item_data = DataManager('master', self.instance.item_id).instance
         sub_data = getattr(item_data, f"{item_data.type}_data").get()
         
         # Get the attributes from the related tables
@@ -92,7 +93,7 @@ class ItemManager:
 
     def insert_item(owner: int, item_id: str, quantity: int = 1):
         # Ensure that the item is an actual item first
-        if not ItemManager.get_fields(item_id):
+        if not ItemManager.get_data(item_id, 'item_id'):
             return False, f"'{item_id}' is not a valid item id."
         # Retrieve or create the item in the database
         item, created = Items.get_or_create(
@@ -158,11 +159,11 @@ class ItemManager:
 
     def get_data(item_id: str, field: str):
         item_data = DataMaster.get_by_id(item_id)
-        sub_data = getattr(item_data, f"{item_data.type}_data").get()
-        
-        # Get the attributes from the related tables
-        for attr in sub_data.__data__:
-            setattr(item_data, attr, getattr(sub_data, attr))
+        if item_data.type:
+            sub_data = getattr(item_data, f"{item_data.type}_data").get()
+            # Get the attributes from the related tables
+            for attr in sub_data.__data__:
+                setattr(item_data, attr, getattr(sub_data, attr))
         return getattr(item_data, field)
     
 class PetManager:
@@ -175,8 +176,11 @@ class PetManager:
             print("Pet not found.")
             self.instance = None
             
+    def __str__(self) -> str:
+        return self.instance.name
+            
     # Get field from instance
-    def get_field(self, field: str):
+    def get_field(self, field: str = 'pet_id'):
         fields = self.instance
         pet_data = DataPets.get_by_id(self.instance.pet_id)
         for attr in pet_data.__data__:
@@ -252,11 +256,14 @@ class DataManager:
             print("Entity not found")
             self.instance = None
             
-    def get_field(self, field: str):
+    def __str__(self) -> str:
+        return self.instance.display_name
+            
+    def get_field(self, field: str = 'item_id'):
         fields = self.instance
         return getattr(fields, field)
     
-    # Get data from a specified pet
+    # Get data from a specified table
     def get_data(category: DATATABLES, entity_id: str, field: str):
         entity_data = DataTables[category].value.get_by_id(entity_id)
         return getattr(entity_data, field)
