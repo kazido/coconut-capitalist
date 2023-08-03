@@ -1,19 +1,16 @@
 import asyncio
-from datetime import datetime
-import os
-from pprint import pprint
-
-# discord imports
 import discord
-from discord.ext import commands
-from discord import app_commands
-from pydis_core import StartupError
-
-# file imports
 import src
-from src import exts, constants
+import os
+
+from discord.ext import commands
+from pydis_core import StartupError
+from src import constants
 from src.bot import Bot
-from src.utils.extensions import walk_extensions
+from logging import getLogger
+
+log = getLogger(__name__)
+log.setLevel(10)
 
 
 async def main():
@@ -36,16 +33,19 @@ async def main():
         intents=intents,
         strip_after_prefix=True,
         allowed_roles=None,
-        http_session=None
+        http_session=None,
     )
-    src.instance.remove_command('help')
+    src.instance.remove_command("help")
 
     async with src.instance as _bot:
+        log.info(f"Bot starting in {os.getcwd()}")
         await _bot.start(constants.TOKEN, reconnect=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         asyncio.run(main())
     except StartupError as e:
         message = "Unknown Startup Error Occurred."
+    except KeyboardInterrupt:
+            log.critical("Bot shutting down due to manual interrupt.")
