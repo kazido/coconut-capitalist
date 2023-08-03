@@ -22,7 +22,7 @@ class Settings(commands.Cog):
             # so that the embed can be updated using the View's children
             self.embed: discord.Embed = embed
             # Fetches the user's settings from the database, or creates them if they don't exist
-            self.user_settings, created = m.Settings.get_or_create(
+            self.user_settings, created = m.UserSettings.get_or_create(
                 id=user.instance.id, defaults={'id': user.instance.id})
             self.user_settings_dict = phs.model_to_dict(self.user_settings)
 
