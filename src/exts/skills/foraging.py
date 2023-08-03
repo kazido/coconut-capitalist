@@ -33,7 +33,7 @@ class Tree:
         self.item_pool = DataMaster.select().where(
             DataMaster.skill == "foraging", DataMaster.drop_rate
         )
-    
+
 
 class JoinTreeView(discord.ui.View):
     def __init__(self, interaction, user: UserManager):
