@@ -8,7 +8,7 @@ from enum import Enum
 from peewee import *
 from logging import getLogger
 
-from src.constants import DATABASE
+from src.constants import DATABASE, Rarities
 
 # Database setup
 db_path = os.path.realpath(os.path.join("database", DATABASE))
@@ -32,6 +32,18 @@ class BaseModel(Model):
         columns = [field for field in cls._meta.fields]
         return columns
 
+    @classmethod
+    def get_display_name(cls, entity_id):
+        """Retrieve the display name or name of the entity."""
+        try:
+            entity = cls.get_by_id(entity_id)
+            display_name = getattr(entity, "display_name", None)
+            name = getattr(entity, "name", None)
+            return display_name or name
+        except DoesNotExist:
+            print(f"No entity found with ID {entity_id}")
+            return None
+
 
 class SkillModel(BaseModel):
     # Lower scaling_x = more XP required per level
@@ -47,16 +59,17 @@ class SkillModel(BaseModel):
 
     @classmethod
     def level_from_xp(cls, xp):
-        level = cls.scaling_x * (xp**(1/cls.scaling_y))
+        level = cls.scaling_x * (xp ** (1 / cls.scaling_y))
         return level
 
     @classmethod
     def xp_required_for_level(cls, level):
-        xp = (level/cls.scaling_x)**cls.scaling_y
+        xp = (level / cls.scaling_x) ** cls.scaling_y
         return xp
 
 
 # endregion
+
 
 # region Users class
 class Users(BaseModel):
@@ -77,13 +90,17 @@ class Users(BaseModel):
     leaderboard_columns = [purse + bank, login_streak, drops_claimed]
     emoji = ":money_with_wings:"
     color = discord.Color.blue()
+
+
 # endregion
+
 
 # region Backrefs class
 class Farming(SkillModel):
     # Columns
-    user_id = ForeignKeyField(Users, primary_key=True,
-                              backref="farming", on_delete="CASCADE")
+    user_id = ForeignKeyField(
+        Users, primary_key=True, backref="farming", on_delete="CASCADE"
+    )
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
     is_farming = BooleanField(default=False)
@@ -101,7 +118,7 @@ class Farming(SkillModel):
     plot9 = TextField(default=None, null=True)
 
     class Meta:
-        table_name = 'skill_farming'
+        table_name = "skill_farming"
 
     # Custom
     leaderboard_columns = [xp, crops_grown]
@@ -110,9 +127,17 @@ class Farming(SkillModel):
     scaling_x = 0.07
     scaling_y = 2
 
-    plots = ["plot1", "plot2", "plot3",
-             "plot4", "plot5", "plot6",
-             "plot7", "plot8", "plot9"]
+    plots = [
+        "plot1",
+        "plot2",
+        "plot3",
+        "plot4",
+        "plot5",
+        "plot6",
+        "plot7",
+        "plot8",
+        "plot9",
+    ]
 
     def open_farm(self):
         self.is_farming = True
@@ -128,15 +153,16 @@ class Farming(SkillModel):
 
 class Combat(SkillModel):
     # Columns
-    user_id = ForeignKeyField(Users, primary_key=True,
-                              backref="combat", on_delete="CASCADE")
+    user_id = ForeignKeyField(
+        Users, primary_key=True, backref="combat", on_delete="CASCADE"
+    )
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
     monsters_slain = IntegerField(constraints=[SQL("DEFAULT 0")])
     bosses_slain = IntegerField(constraints=[SQL("DEFAULT 0")])
 
     class Meta:
-        table_name = 'skill_combat'
+        table_name = "skill_combat"
 
     # Custom
     leaderboard_column = [xp, monsters_slain, bosses_slain]
@@ -148,8 +174,9 @@ class Combat(SkillModel):
 
 class Mining(SkillModel):
     # Columns
-    user_id = ForeignKeyField(Users, primary_key=True,
-                              backref="mining", on_delete="CASCADE")
+    user_id = ForeignKeyField(
+        Users, primary_key=True, backref="mining", on_delete="CASCADE"
+    )
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
     lodes_mined = IntegerField(constraints=[SQL("DEFAULT 0")])
@@ -162,7 +189,7 @@ class Mining(SkillModel):
     bonus_type = IntegerField(constraints=[SQL("DEFAULT 0")])
 
     class Meta:
-        table_name = 'skill_mining'
+        table_name = "skill_mining"
 
     # Custom
     leaderboard_column = [xp, lodes_mined]
@@ -174,8 +201,9 @@ class Mining(SkillModel):
 
 class Foraging(SkillModel):
     # Columns
-    user_id = ForeignKeyField(Users, primary_key=True,
-                              backref="foraging", on_delete="CASCADE")
+    user_id = ForeignKeyField(
+        Users, primary_key=True, backref="foraging", on_delete="CASCADE"
+    )
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
     trees_chopped = IntegerField(constraints=[SQL("DEFAULT 0")])
@@ -183,11 +211,10 @@ class Foraging(SkillModel):
     releaf_donations = IntegerField(constraints=[SQL("DEFAULT 0")])
 
     class Meta:
-        table_name = 'skill_foraging'
+        table_name = "skill_foraging"
 
     # Custom
-    leaderboard_column = [xp, trees_chopped,
-                          double_trees_chopped, releaf_donations]
+    leaderboard_column = [xp, trees_chopped, double_trees_chopped, releaf_donations]
     emoji = ":evergreen_tree:"
     color = discord.Color.dark_green()
     scaling_x = 0.07
@@ -196,8 +223,9 @@ class Foraging(SkillModel):
 
 class Fishing(SkillModel):
     # Columns
-    user_id = ForeignKeyField(Users, primary_key=True,
-                              backref="fishing", on_delete="CASCADE")
+    user_id = ForeignKeyField(
+        Users, primary_key=True, backref="fishing", on_delete="CASCADE"
+    )
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = IntegerField(default=None, null=True)
     skiff_level = IntegerField(constraints=[SQL("DEFAULT 1")])
@@ -206,7 +234,7 @@ class Fishing(SkillModel):
     treasures_found = IntegerField(constraints=[SQL("DEFAULT 0")])
 
     class Meta:
-        table_name = 'skill_fishing'
+        table_name = "skill_fishing"
 
     # Custom
     leaderboard_name = "FISHING LEADERBOARD"
@@ -221,11 +249,12 @@ class UserCooldowns(BaseModel):
     last_daily = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     last_weekly = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     last_work = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    user = ForeignKeyField(column_name='user_id', model=Users,
-                           backref="cooldowns",  primary_key=True)
+    user = ForeignKeyField(
+        column_name="user_id", model=Users, backref="cooldowns", primary_key=True
+    )
 
     class Meta:
-        table_name = 'user_cooldowns'
+        table_name = "user_cooldowns"
 
     COMMAND_TYPES = Literal["daily", "work", "weekly"]
 
@@ -278,7 +307,7 @@ class UserCooldowns(BaseModel):
             return True, None  # The check has been passed
 
 
-class Settings(BaseModel):
+class UserSettings(BaseModel):
     """
     Auto Deposit: automatically deposit your bits from working into the bank\n
     Withdraw Warning: when enabled, a warning appears when you try to withdraw bits\n
@@ -287,31 +316,34 @@ class Settings(BaseModel):
     More settings to be added soon...
     """
 
-    user = ForeignKeyField(column_name='user_id', model=Users,
-                           backref='settings', primary_key=True)
+    user = ForeignKeyField(
+        column_name="user_id", model=Users, backref="settings", primary_key=True
+    )
     auto_deposit = BooleanField(default=False)
     withdraw_warning = BooleanField(default=False)
     disable_max_bet = BooleanField(default=False)
     upgraded_check_in = BooleanField(default=False)
 
-    ATTRIBUTES = Literal["auto_deposit", "withdraw_warning",
-                         "disable_max_bet", "upgraded_check_in"]
-    
+    class Meta:
+        table_name = "user_settings"
+
+    ATTRIBUTES = Literal[
+        "auto_deposit", "withdraw_warning", "disable_max_bet", "upgraded_check_in"
+    ]
+
+
 class Backrefs(Enum):
     combat: Combat
     mining: Mining
     foraging: Foraging
     fishing: Fishing
     farming: Farming
-    settings: Settings
+    settings: UserSettings
     cooldowns: UserCooldowns
-    
-BACKREFS = Literal["combat", "mining", 
-                   "foraging", "fishing", 
-                   "farming", "settings", 
-                   "cooldowns"]
+
 
 # endregion
+
 
 # region Pets class
 class Pets(BaseModel):
@@ -322,8 +354,12 @@ class Pets(BaseModel):
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     name = TextField(null=True)
 
+    class Meta:
+        table_name = "user_pets"
+
 
 # endregion
+
 
 # region Item data classes
 class DataMaster(BaseModel):
@@ -339,45 +375,60 @@ class DataMaster(BaseModel):
     rarity = IntegerField(null=True)
     sell_price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     skill = TextField(null=True)
-    type = TextField(null=True)
+    filter_type = TextField(null=True)
 
     class Meta:
-        table_name = 'data_master'
+        table_name = "data_master"
 
 
 class DataSeeds(BaseModel):
-    item_id = ForeignKeyField(column_name='item_id', model=DataMaster,
-                              backref='seed_data', null=True, primary_key=True)
+    item_id = ForeignKeyField(
+        column_name="item_id",
+        model=DataMaster,
+        backref="seed_data",
+        null=True,
+        primary_key=True,
+    )
     grows_into = TextField(null=True)
     growth_odds = IntegerField(null=True)
 
     class Meta:
-        table_name = 'data_seeds'
+        table_name = "data_seeds"
 
 
 class DataCrops(BaseModel):
-    item_id = ForeignKeyField(column_name='item_id', model=DataMaster,
-                              backref='crop_data', null=True, primary_key=True)
+    item_id = ForeignKeyField(
+        column_name="item_id",
+        model=DataMaster,
+        backref="crop_data",
+        null=True,
+        primary_key=True,
+    )
     grows_from = TextField(null=True)
     max_harvest = IntegerField(null=True)
     min_harvest = IntegerField(null=True)
     pet_xp = IntegerField(null=True)
 
     class Meta:
-        table_name = 'data_crops'
+        table_name = "data_crops"
 
 
 class DataTools(BaseModel):
-    item_id = ForeignKeyField(column_name='item_id', model=DataMaster,
-                              backref='tool_data', null=True, primary_key=True)
+    item_id = ForeignKeyField(
+        column_name="item_id",
+        model=DataMaster,
+        backref="tool_data",
+        null=True,
+        primary_key=True,
+    )
     power = IntegerField(constraints=[SQL("DEFAULT 1")], null=True)
 
     class Meta:
-        table_name = 'data_tools'
+        table_name = "data_tools"
 
 
 class DataPets(BaseModel):
-    pet_id = TextField(null=True, primary_key=True)
+    item_id = TextField(null=True, primary_key=True)
     daily_bonus = IntegerField(null=True)
     display_name = TextField(null=True)
     max_level = IntegerField(null=True)
@@ -386,7 +437,7 @@ class DataPets(BaseModel):
     work_bonus = IntegerField(null=True)
 
     class Meta:
-        table_name = 'data_pets'
+        table_name = "data_pets"
 
 
 class DataRanks(BaseModel):
@@ -400,7 +451,7 @@ class DataRanks(BaseModel):
     wage = IntegerField(null=True)
 
     class Meta:
-        table_name = 'data_ranks'
+        table_name = "data_ranks"
 
 
 class DataAreas(BaseModel):
@@ -413,27 +464,73 @@ class DataAreas(BaseModel):
     token_bonus = IntegerField(null=True)
 
     class Meta:
-        table_name = 'data_areas'
-        
+        table_name = "data_areas"
 
-class DataTables(Enum):
-    areas = DataAreas
-    crops = DataCrops
-    pets = DataPets
-    ranks = DataRanks
-    seeds = DataSeeds
-    tools = DataTools
+
+field_formats = {
+    # General fields section
+    "item_id": {"text": "**Item ID**: *{:}*"},
+    "filter_type": {"text": "**Type**: *{:}*"},
+    "rarity": {"text": "**Rarity**: *{:}*", "shop_field": True, "rarity": True},
+    "consumable": {"text": "**Single Use**: *{:}*", "convert_to_bool": True},
+    "is_material": {"text": "**Material**: *{:}*", "convert_to_bool": True},
+    "skill": {"text": "**Category**: *{:}*"},
+    "drop_rate": {"text": "**Drop Rate**: 1/*{:,}*"},
+    "min_drop": {"text": "**Min Roll**: *{:,}*"},
+    "max_drop": {"text": "**Max Roll**: *{:,}*"},
+    # Crop specific section
+    "pet_xp": {"text": "**Pet XP**: *{:,}*", "shop_field": True},
+    "min_harvest": {"text": "**Min Harvest**: *{:,}*"},
+    "max_harvest": {"text": "**Max Harvest**: *{:,}*"},
+    "grows_from": {
+        "text": "**Grows From**: *{:}*",
+        "shop_field": True,
+        "get_display_name": True,
+    },
+    # Seed specific section
+    "growth_odds": {"text": "**Growth Time**: ~*{:,}* cycles", "shop_field": True},
+    "grows_into": {
+        "text": "**Grows Into**: *{:}*",
+        "shop_field": True,
+        "get_display_name": True,
+    },
+    # Tool specific section
+    "power": {"text": "**Power**: *{:,}*", "shop_field": True},
+    # Pet specific section
+    "max_level": {"text": "**Max Level**: *{:,}*", "shop_field": True},
+    "work_bonus": {"text": "**Work Bonus**: *{:,}* bits", "shop_field": True},
+    "daily_bonus": {"text": "**Daily Bonus**: *{:,}* tokens", "shop_field": True},
+    # Rank specific section
+    "emoji": {"text": "**Emoji**: *{:}*"},
+    "token_price": {"text": "**Price**: *{:,}* tokens", "shop_field": True},
+    "wage": {"text": "**Wage**: *{:,}* bits", "shop_field": True},
+    "next_rank_id": {"text": "**Next Rank**: *{:}*", "shop_field": True},
+    # Area specific section
+    "difficulty": {"text": "**Difficulty**: *{:,}* :star:"},
+    "token_bonus": {"text": "**Daily Bonus**: *{:,}* tokens"},
+    "fuel_requriement": {"text": "**Fuel Type**: *{:}*"},
+    "fuel_amount": {"text": "**Req. Fuel**: *{:,}*"},
+    # Bottom formatting
+    "price": {"text": "**Price**: *{:,}*", "shop_field": True},
+    "sell_price": {"text": "**Sell Price**: *{:,}*"},
+}
+
+
+class ItemType(Enum):
+    AREA = DataAreas
+    CROP = DataCrops
+    PET = DataPets
+    RANK = DataRanks
+    SEED = DataSeeds
+    TOOL = DataTools
     master = DataMaster
-    
-DATATABLES = Literal["areas", "crops",
-                     "pets", "ranks",
-                     "seeds", "tools",
-                     "master"]
+
+
 # endregion
+
 
 # region Megadrop class
 class MegaDrop(BaseModel):
-    # Columns
     amount = IntegerField(constraints=[SQL("DEFAULT 0")])
     total_drops_missed = IntegerField(constraints=[SQL("DEFAULT 0")])
     total_drops = IntegerField(constraints=[SQL("DEFAULT 0")])
@@ -446,28 +543,41 @@ class MegaDrop(BaseModel):
 
     @classmethod
     def new(cls, bot):
-        guild = bot.get_guild(856915776345866240)  # Guild to send the drops in
+        # TODO: Not sure...
+        pass
+
+
 # endregion
+
 
 # region Items class
 class Items(BaseModel):
-    owner = ForeignKeyField(column_name='owner_id',
-                            model=Users, backref='items')
-    item_id = ForeignKeyField(column_name='item_id',
-                              model=DataMaster, backref='data')
+    owner = ForeignKeyField(column_name="owner_id", model=Users, backref="items")
+    item_id = ForeignKeyField(column_name="item_id", model=DataMaster, backref="data")
     enchantment = TextField(null=True)
     quantity = IntegerField()
     star_level = IntegerField(null=True)
 
     class Meta:
-        table_name = 'items'
+        table_name = "user_items"
+
 
 # endregion
 
 
 def create_tables():
-    tables = [Users, UserCooldowns, Pets, Items, MegaDrop,
-              Mining, Combat, Fishing, Foraging, Farming]
+    tables = [
+        Users,
+        UserCooldowns,
+        Pets,
+        Items,
+        MegaDrop,
+        Mining,
+        Combat,
+        Fishing,
+        Foraging,
+        Farming,
+    ]
     with db:
         db.create_tables(tables)
 
