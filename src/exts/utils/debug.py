@@ -1,6 +1,5 @@
 import asyncio
 import os
-import pathlib
 import discord
 
 from discord import app_commands
@@ -17,7 +16,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value)
     @app_commands.command()
     async def test(self, interaction: discord.Interaction):
-        pass
+        await interaction.response.send_message(asyncio.all_tasks())
 
     admin_commands = discord.app_commands.Group(
         name="admin",
