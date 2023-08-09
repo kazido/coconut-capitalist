@@ -1,6 +1,6 @@
 
 from src.classLibrary import RequestUser
-from src.utils.shop import SubShopPage, SubShopView, ShopView
+from src.utils.shop import SubShopPage, ItemPage, ItemMenu
 from discord.ext import commands
 from discord import app_commands
 import discord
@@ -28,7 +28,12 @@ class ShopCog(commands.Cog, name='Shop'):
     @app_commands.guilds(977351545966432306, 856915776345866240)
     @app_commands.command(name="shop", description="Buy helpful items!")
     async def shop(self, interaction: discord.Interaction):
-        shop_view = ShopView(command_interaction=interaction)
+        shop_view = ItemPage('corrupted_seed')
+        
+        await interaction.response.send_message(embed=shop_view.embed, view=shop_view)
+        return
+        
+        shop_view = ItemMenu(interaction=interaction)
         tools_subshop_dict = {
             "name": "Tools",
             "emoji": '⚒️',
@@ -47,7 +52,7 @@ class ShopCog(commands.Cog, name='Shop'):
         #     tools_subshop_dict['pages'].append(SubShopPage(entity_ref_id=starter_item_ref_id, entity_info=starter_item_info, command_interaction=interaction))
             
         # SubShopView(subshop_dict=tools_subshop_dict, parent_view=shop_view)
-        SubShopView(subshop_dict=seeds_subshop_dict, parent_view=shop_view)
+        ItemPage(subshop_dict=seeds_subshop_dict, parent_view=shop_view)
         
         
         await interaction.response.send_message(embed=shop_view.embed, view=shop_view)
