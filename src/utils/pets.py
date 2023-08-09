@@ -1,6 +1,3 @@
-
-
-
 class PetManager:
     # Retrieve row from pet table for feeding, changing name, etc.
     def __init__(self, owner_id: int, pet_id: str) -> None:
