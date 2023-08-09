@@ -174,9 +174,10 @@ class DropsCog(commands.Cog, name="Drops"):
     """Cog related to Drops and the Mega Drop"""
 
     def __init__(self, bot):
+        # TODO: Remove comment on drop_task
         self.bot = bot
         self.tree = self.bot.tree
-        self.drop_task.start()
+        # self.drop_task.start()
 
     @tasks.loop(minutes=randint(30, 60))
     async def drop_task(self):
