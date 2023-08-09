@@ -6,14 +6,10 @@ from discord.ext import commands
 from random import randint
 from logging import getLogger
 from discord.interactions import Interaction
-from src.utils.managers import (
-    UserManager,
-    DataManager,
-    ToolManager,
-    DataMaster,
-)
+
 from src.constants import RED_X_URL, DiscordGuilds
-from src.utils.managers import UserManager
+from src.utils.members import *
+from src.utils.items import *
 from src.utils.utils import distribute_drops
 
 log = getLogger(__name__)
@@ -36,13 +32,13 @@ class Tree:
 
 
 class JoinTreeView(discord.ui.View):
-    def __init__(self, interaction, user: UserManager):
+    def __init__(self, interaction, user_id):
         super().__init__(timeout=120)
         self.interaction = interaction
-        self.user = user
+        self.user = get_user_data(user_id, backrefs=True)
         # Generate a tree based on the user
-        area = DataManager("areas", user.get_field("area_id"))
-        difficulty = area.get_field("difficulty")
+        area = self.user['area_id']
+        difficulty = area['difficulty']
         self.tree = Tree(difficulty)
         # Add the join button
         self.add_item(JoinTreeButton())
@@ -64,10 +60,10 @@ class JoinTreeButton(discord.ui.Button):
         view: JoinTreeView = self.view
         if join_interaction.user == view.interaction.user:
             return
-        user_2 = UserManager(join_interaction.user.id, interaction=join_interaction)
-        user_2.tool = ToolManager(user_2.id, user_2.get_field("tool_id", "foraging"))
+        user_2 = get_user_data(join_interaction.user.id, backrefs=True)
+        user_2['tool'] = get_user_tool(join_interaction.user.id, 'foraging')
         # Ensure that the second user has a tool
-        if user_2.tool.instance is None:
+        if user_2['tool'] is None:
             embed = discord.Embed(
                 title="You don't have an axe!",
                 description="You need an axe to chop trees. Get one at the shop.",
@@ -111,16 +107,17 @@ class TreeView(discord.ui.View):
         tree_emoji = "🌳"
         tree_visual = tree_emoji * int((self.tree.hitpoints / self.tree.height) * 10)
         embed = discord.Embed(
-            title=f"{self.current_user} is chopping the tree...",
+            title=f"{get_user_name(self.current_user['user_id'])} is chopping the tree...",
             description=f"Tree remaining HP: {self.tree.hitpoints}\n{tree_visual}",
             color=0x039410,
         )
         return embed
 
     async def handle_chop(self, interaction: discord.Interaction, next_user):
-        if interaction.user.id != self.current_user.id:
+        if interaction.user.id != self.current_user['user_id']:
             return
-        self.tree.hitpoints -= self.current_user.tool.total_power
+        user_tool_power = self.current_user['tool']['total_power']
+        self.tree.hitpoints -= user_tool_power
         if self.tree.hitpoints <= 0:
             await self.handle_tree_down(interaction)
             return
@@ -193,11 +190,11 @@ class ForagingCog(commands.Cog, name="Foraging"):
 
     @foraging.command(name="chop", description="Grab a buddy and chop down a tree.")
     async def chop(self, interaction: discord.Interaction):
-        user = UserManager(interaction.user.id, interaction=interaction)
-        user.tool = ToolManager(user.id, user.get_field("tool_id", "foraging"))
+        user = get_user_data(interaction.user.id, backrefs=True)
+        user['tool'] = get_user_tool(interaction.user.id, 'foraging')
 
         # If the user does not own an axe
-        if not user.tool.instance:
+        if not user['tool']:
             embed = discord.Embed(
                 description="You need an axe to chop trees!", color=discord.Color.red()
             )
@@ -207,7 +204,7 @@ class ForagingCog(commands.Cog, name="Foraging"):
             return
 
         # Create the view
-        view = JoinTreeView(interaction, user)
+        view = JoinTreeView(interaction, interaction.user.id)
         # Create an embed to attach the view to
         embed = discord.Embed(
             title=f"Here's a **{view.tree.height}ft** tree :evergreen_tree:",
