@@ -2,8 +2,12 @@ import random
 import discord
 
 from datetime import datetime
-from src.utils.managers import UserManager, ModelManager, ItemManager
-from src.models import DataMaster, field_formats
+
+from src.entity_models import DataMaster, field_formats
+
+from src.utils.items import get_item_data, get_item_display_name, insert_item
+from src.utils.members import get_user_data, set_user_field
+
 from src.constants import Rarities
 from logging import getLogger
 
@@ -33,11 +37,9 @@ def skewed_random(min_drop, max_drop):
 def roll_drops(item_pool):
     """Rolls each item in an item pool and returns all items that rolled and their quantity"""
     drops = []
-    manager = ModelManager(DataMaster)
     # Roll each item in the pool once
     for item in item_pool:
-        item: DataMaster
-        item: dict = manager.get(item.item_id)
+        get_item_data(item.item_id)
         # If a 1 is rolled, the item was dropped
         if random.randint(1, item["drop_rate"]) == 1:
             quantity = skewed_random(item["min_drop"], item["max_drop"])
@@ -45,19 +47,20 @@ def roll_drops(item_pool):
     return drops
 
 
-def distribute_drops(user: UserManager, item_pool, bit_multiplier=1):
+def distribute_drops(user_id, item_pool, bit_multiplier=1):
     # TODO: Fix user.get_field, UserManager has changed
     """Distribute bits and drops to a user"""
+    user = get_user_data(user_id)
     # Generate rewards
     bits_reward = bit_multiplier * skewed_random(10, 100)
     roll = roll_drops(item_pool)
     # Distribute items to user
     for item in roll:
         log.info(f"User rolled {item}")
-        ItemManager.insert_item(user.id, item["item"]["item_id"], item["quantity"])
+        insert_item(user_id, item["item"]["item_id"], item["quantity"])
     # Distribute bits to user
     log.info(f"User rolled {bits_reward} bits")
-    user.set_field("purse", user.get_field("purse") + bits_reward)
+    set_user_field(user_id, 'purse', user['purse'] + bits_reward)
     return roll, bits_reward
 
 
@@ -71,8 +74,7 @@ def construct_embed(item_id, for_shop: bool):
     Returns:
         discord.Embed: An embed filled with the items data.
     """
-    manager = ModelManager(DataMaster)
-    item_data = manager.get_with_related(item_id)
+    item_data = get_item_data(item_id, backrefs=True)
     log.debug(f"Retrieved {item_data} from manager with item_id: {item_id}")
 
     # Create an embed with the proper information from the item
@@ -84,11 +86,7 @@ def construct_embed(item_id, for_shop: bool):
     def format_value(value, field_format: dict, embed: discord.Embed):
         """Takes an unformatted value and formats it by specific tags"""
         if field_format.get("get_display_name"):
-            formatted_value = DataMaster.get_display_name(value)
-        elif field_format.get("convert_to_bool"):
-            log.debug("Got convert_to_bool, attempting to convert")
-            formatted_value = "True" if value == 1 else "False"
-            log.debug(f"Result: {formatted_value}")
+            formatted_value = get_item_display_name(value)
         elif field_format.get("rarity"):
             rarity = Rarities.from_value(value)
             formatted_value = rarity.rarity_name
@@ -102,7 +100,6 @@ def construct_embed(item_id, for_shop: bool):
     def construct_stats_string(item_data: dict, field_formats: dict, for_shop: bool):
         """Constructs a string filled with item information."""
         stats_string = ""
-        spacing = 10
         for field_name in field_formats.keys():
             # For loop will add the fields based on order set in field_formats
             if field_name in item_data:
@@ -126,9 +123,10 @@ def construct_embed(item_id, for_shop: bool):
     return embed
 
 
-def check_bet(user: UserManager, bet):
+def check_bet(user_id, bet):
     """Ensures that a user is not betting invalid amounts"""
-    balance = user.get_field("purse")
+    user = get_user_data(user_id)
+    balance = user['purse']
     if int(bet) < 0:
         return f"The oldest trick in the book... Nice try.", False
     elif int(bet) > balance:
