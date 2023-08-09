@@ -1,9 +1,12 @@
+import discord
 
-from src.classLibrary import RequestUser
+
 from discord.ext import commands
 from discord import app_commands
+from src.classLibrary import RequestUser
 from src import models as m
-import discord
+from src.utils.utils import construct_embed
+
 
 class InventoryCog(commands.Cog, name='Inventory'):
     """Check out all the useful items you own."""
@@ -62,7 +65,7 @@ class InventoryCog(commands.Cog, name='Inventory'):
 
         inventory_embed = discord.Embed(
             title=f"{interaction.user.name}'s Inventory",
-            description="Testing description. Seeds are not stored here.",
+            description="Testing description.",
             color=discord.Color.from_rgb(153, 176, 162)
         )
         for item in inventory.get():
@@ -70,6 +73,14 @@ class InventoryCog(commands.Cog, name='Inventory'):
             # inventory_embed.add_field(name=item['name'], value=item['quantity'])
         inventory_embed.set_footer(text="Test footer")
         await interaction.response.send_message(embed=inventory_embed)
+        
+    @app_commands.command(name="wiki", description="What is this item?")
+    @app_commands.guilds(977351545966432306, 856915776345866240)
+    async def wiki(self, interaction: discord.Interaction, item_id: str):
+        embed: discord.Embed = construct_embed(item_id, for_shop=False)
+        await interaction.response.send_message(embed=embed)
+        return
+        
 
 async def setup(bot):
     await bot.add_cog(InventoryCog(bot))
