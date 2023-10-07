@@ -7,6 +7,8 @@ from discord.ext import commands
 from src.classLibrary import RequestUser
 from src.constants import DiscordGuilds
 
+from src.pagination import LinePaginator
+
 
 class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     def __init__(self, bot):
@@ -16,7 +18,10 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value)
     @app_commands.command()
     async def test(self, interaction: discord.Interaction):
-        await interaction.response.send_message(asyncio.all_tasks())
+        lines = ["Kenzie is ugly", "Stop pulling on my hair", "I hate it when kids do that..."]
+        embed = discord.Embed()
+        embed.set_author(name="Some Operation")
+        await LinePaginator.paginate([line for line in lines], interaction, embed, 1)
 
     admin_commands = discord.app_commands.Group(
         name="admin",
