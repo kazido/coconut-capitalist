@@ -4,6 +4,8 @@ from logging import getLogger
 from src import exts
 from src.logs import setup
 
+from datetime import datetime
+
 log = getLogger('bot')
 
 
@@ -24,5 +26,5 @@ class Bot(BotBase):
         
         await self.load_extensions(exts)
         
-        # fmt = "%m-%d-%Y %H:%M:%S"
-        # print(f"-- BOT READY --\nRan at: {datetime.strftime(datetime.now(), fmt)}")
+        fmt = "%m-%d-%Y %H:%M:%S"
+        print(f"-- BOT READY --\nRan at: {datetime.strftime(datetime.now(), fmt)}")
