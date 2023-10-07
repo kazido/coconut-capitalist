@@ -14,6 +14,7 @@ log.setLevel(10)
 
 
 async def main():
+    # discord bot permissions
     intents = discord.Intents.all()
     intents.message_content = True
     intents.presences = False
@@ -35,6 +36,7 @@ async def main():
         allowed_roles=None,
         http_session=None,
     )
+    # necessary for custom help command
     src.instance.remove_command("help")
 
     async with src.instance as _bot:
@@ -48,4 +50,4 @@ if __name__ == "__main__":
     except StartupError as e:
         message = "Unknown Startup Error Occurred."
     except KeyboardInterrupt:
-            log.critical("Bot shutting down due to manual interrupt.")
+        log.critical("Bot shutting down due to manual interrupt.")
