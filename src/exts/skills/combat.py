@@ -13,6 +13,7 @@ from src.constants import RED_X_URL, DiscordGuilds
 from src.utils.members import *
 from src.utils.items import *
 from src.utils.utils import distribute_drops
+from src import instance
 
 from logging import getLogger
 
@@ -21,70 +22,93 @@ log.setLevel(10)
 
 
 map_1 = [
-  [2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 3, 0, 0, 0, 0, 3, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 0, 3, 0, 0, 0, 0, 3, 0, 2],
-  [2, 0, 0, 0, 0, 0, 0, 0, 0, 2],
-  [2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 1, 1, 5, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
 ]
 
+map_2 = [
+    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 5, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 2, 2, 2, 2, 6, 2, 2, 2, 2, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2],
+    [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+]
+
+
+class Player:
+    def __init__(self, action_points, movement_power=1) -> None:
+        self.action_points = action_points
+        self.movement_power = movement_power
+        self.pos = []
+
+
 class Dungeon:
-    
-    values = {
-        0: "➕",
-        1: "🧙",
-        2: "✖️",
-        3: "🧟",
-        4: "🌟",
+    mapping_values = {
+        0: str(instance.get_emoji(1160332976924663879)),  # out of bounds
+        1: str(instance.get_emoji(1160322480532103288)),  # dungeon tile
+        2: str(instance.get_emoji(1160329891129065532)),  # dungeon wall
+        3: str(instance.get_emoji(1160449921992900618)),  # player icon
+        4: str(instance.get_emoji(1160449902069960805)),  # ally icon
+        5: str(instance.get_emoji(1160440231233859604)),  # enemy icon
+        6: str(instance.get_emoji(1160439007726010461)),  # boss door
     }
 
-    def __init__(self, level_map):
-        # Assuming player starts at the center of the dungeon.
+    def __init__(self, level_map, spawn_point=None, vision_level: int = 5):
         self.level_map = level_map
         self.row_size = len(self.level_map)
         self.col_size = len(self.level_map[0])
-        self.player_pos = [self.row_size // 2, self.col_size // 2]
+        self.view_x = self.view_y = vision_level
+        self.spawn_x = self.row_size // 2
+        self.spawn_y = self.col_size // 2
+        if spawn_point:
+            self.spawn_x = spawn_point[0]
+            self.spawn_y = spawn_point[1]
+        self.players = []
 
-    def move(self, dx, dy):
-        new_x = self.player_pos[0] + dx
-        new_y = self.player_pos[1] + dy
+    def add_player(self, player: Player):
+        player.pos = [self.spawn_x + len(self.players), self.spawn_y]
+        self.players.append(player)
 
-        # Check if the new position is within the boundaries and isn't a wall.
-        if (0 <= new_x < self.col_size and
-            0 <= new_y < self.row_size and
-            self.level_map[new_x][new_y] == 0):
-            self.player_pos = [new_x, new_y]
-        else:
-            log.info("Player tried to move out of bounds")
+    def render_map_around_player(self, player: Player):
+        map_string = ""
 
-    def render_grid_around_player(self):
-        grid = ""
-
-        for i in range(-3, 4):
+        for other_player in self.players:
+            if other_player != player:
+                self.level_map[other_player.pos[1]][other_player.pos[0]] = 4
+        
+        for i in range(-self.view_y, self.view_y):
             row = ""
-            for j in range(-3, 4):
-                x, y = self.player_pos[0] + i, self.player_pos[1] + j
+            for j in range(-self.view_x, self.view_x):
+                x, y = player.pos[0] + i, player.pos[1] + j
+                # render everything within the size of the 2d array
                 if 0 <= x < self.col_size and 0 <= y < self.row_size:
-                    if i == 0 and j == 0:
-                        row += self.values[1]
-                    else:
-                        row += self.values[self.level_map[x][y]]
+                    row += self.mapping_values[self.level_map[x][y]]
+                # everything outside of the 'map' should render blank
                 else:
-                    row += self.values[0]
+                    row += self.mapping_values[0]
             row += "\n"
-            grid += row
+            map_string += row
 
-        return grid
+        return map_string
 
-    def display(self):
-        grid = self.render_grid_around_player()
-        return grid
-
+    def display(self, player: Player):
+        map_string = self.render_map_around_player(player)
+        return map_string
 
 
 class CombatView(View):
@@ -92,7 +116,7 @@ class CombatView(View):
         super().__init__(timeout=120)
         self.interaction = interaction
         self.user = get_user_data(user_id, backrefs=True)
-        # Generate a tree based on the user
+
         area = self.user["area_id"]
         difficulty = area["difficulty"]
 
@@ -112,7 +136,7 @@ class GridView(View):
 
     def create_embed(self):
         embed = discord.Embed(
-            title="Sample Combat Embed Title",
+            title="Dungeon Title Sample",
             description=self.dungeon.display(),
             color=discord.Color.light_grey(),
         )
@@ -122,7 +146,6 @@ class GridView(View):
 class DungeonView(GridView):
     def __init__(self, level_map):
         super().__init__(level_map)
-        self.action_points = 5
         self.embed = self.create_embed()
         self.create_buttons()
 
@@ -141,37 +164,38 @@ class DungeonView(GridView):
 
         for index, (emoji, row_diff, col_diff) in enumerate(directions):
             button = discord.ui.Button(
-                emoji=emoji, style=discord.ButtonStyle.gray, row=index // 3
+                emoji=emoji, style=discord.ButtonStyle.blurple, row=index // 3
             )
             button.callback = self.create_move_callback(row_diff, col_diff)
             self.add_item(button)
 
-    def create_move_callback(self, row_diff, col_diff):
+    def create_move_callback(self, player: Player, row_diff, col_diff):
         async def callback(interaction: discord.Interaction):
             # If the user is out of action points, our turn is over
-            if self.action_points <= 0:
+            if player.action_points <= 0:
                 await interaction.response.send_message(
                     "No movement points left!", ephemeral=True
                 )
                 return
             # If the row and column are the confirm button's coordinates
             if row_diff == 0 and col_diff == 0:
+                # TODO: handle confirm button interaction
                 await interaction.response.edit_message(
-                    view=AttackView(player_pos=self.dungeon.player_pos)
+                    view=AttackView(player_pos=0)
                 )
                 return
-            
 
-            new_row = self.dungeon.player_pos[0] + row_diff
-            new_col = self.dungeon.player_pos[1] + col_diff
+            new_row = player.pos[0] + row_diff
+            new_col = player.pos[1] + col_diff
 
             # Validate new position
-            if 0 <= new_row < self.dungeon.row_size and 0 <= new_col < self.dungeon.col_size:
+            if (
+                1 <= new_row < self.dungeon.row_size - 1
+                and 1 <= new_col < self.dungeon.col_size - 1
+            ):
                 self.dungeon.player_pos = (new_row, new_col)
                 self.action_points -= 1
-                await interaction.response.edit_message(
-                    embed=self.create_embed()
-                )
+                await interaction.response.edit_message(embed=self.create_embed())
             else:
                 await interaction.response.send_message("Invalid move!", ephemeral=True)
 
@@ -256,7 +280,7 @@ class CombatCog(commands.Cog, name="Combat"):
 
     @combat.command(name="fight", description="Fight, fight, fight!")
     async def fight(self, interaction: discord.Interaction):
-        view: GridView = DungeonView(map_1)
+        view: GridView = DungeonView(map_2)
         embed = view.create_embed()
         await interaction.response.send_message(embed=embed, view=view)
 
