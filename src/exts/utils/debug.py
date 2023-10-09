@@ -4,6 +4,7 @@ import discord
 
 from discord import app_commands
 from discord.ext import commands
+from discord.ext.commands import Cog
 from src.classLibrary import RequestUser
 from src.constants import DiscordGuilds
 
@@ -13,15 +14,35 @@ from src.pagination import LinePaginator
 class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     def __init__(self, bot):
         self.bot = bot
+        
+    linked_messages = {}
 
     # Testing command
     @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value)
     @app_commands.command()
     async def test(self, interaction: discord.Interaction):
-        lines = ["Kenzie is ugly", "Stop pulling on my hair", "I hate it when kids do that..."]
-        embed = discord.Embed()
-        embed.set_author(name="Some Operation")
-        await LinePaginator.paginate([line for line in lines], interaction, embed, 1)
+        content="Hello"
+        embed = discord.Embed(description="What is up!!!")
+        other_channel = discord.utils.get(interaction.guild.channels, id=894664255666802759)
+        echo_message = await other_channel.send(content=content, embed=embed)
+        await interaction.response.send_message(content=content, embed=embed)
+        original_response = await interaction.original_response()
+        DebuggingCommands.linked_messages[original_response] = [echo_message, False]
+        await asyncio.sleep(1)
+        await interaction.edit_original_response(content="Huh?!?!")
+        
+    @Cog.listener()
+    async def on_message_edit(self, before, after):
+        if before in DebuggingCommands.linked_messages.keys() and not DebuggingCommands.linked_messages[before][1]:
+            await DebuggingCommands.linked_messages[before][0].edit(content=after.content)
+            DebuggingCommands.linked_messages[before][1] = True
+            return
+        inverted_map = {v: k for k, v in DebuggingCommands.linked_messages.items()}
+        if before in inverted_map.keys() and not inverted_map[before][1]:
+            await inverted_map[before][0].edit(content=after.content)
+            inverted_map[before][1] = True
+            return
+
 
     admin_commands = discord.app_commands.Group(
         name="admin",
@@ -39,6 +60,12 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
                                    color=discord.Color.red())
         user_to_pay.update_balance(amount)
         await interaction.response.send_message(embed=paid_embed)
+        
+    @admin_commands.command(name="edit")
+    async def edit(self, interaction: discord.Interaction, message_id: str, new_content: str):
+        message: discord.Message = await interaction.channel.fetch_message(int(message_id))
+        await message.edit(content=new_content)
+        await interaction.response.send_message(content="Successfully edited message.", ephemeral=True)
 
     @commands.command(name='work', aliases=['daily', 'hl'])
     async def using_slash_commands(self, ctx):
