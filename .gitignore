@@ -131,6 +131,7 @@ dmypy.json
 
 # OTHER FILES
 config.json
+.DS_Store
 .vscode
 .data.json
 database.ini
