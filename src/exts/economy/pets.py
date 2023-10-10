@@ -1,6 +1,6 @@
 import asyncio
 
-from src import models as m
+from src import entity_models as m
 
 from src.classLibrary import RequestUser
 

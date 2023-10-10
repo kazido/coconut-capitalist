@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 from src.classLibrary import RequestUser
-from src import models as m
+from src import entity_models as m
 from src.utils.utils import construct_embed
 
 

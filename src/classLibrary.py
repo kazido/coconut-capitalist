@@ -4,8 +4,8 @@ import math
 import discord
 import randfacts
 
-from src import models as m
-from src.models import db as database
+from src import entity_models as m
+from src.entity_models import db as database
 
 class RequestUser:
     pass

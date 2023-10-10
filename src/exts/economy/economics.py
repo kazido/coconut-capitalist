@@ -9,7 +9,7 @@ from discord import app_commands, Interaction
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from src.models import Users, Combat, Farming, Foraging, Fishing, Mining
+from src.entity_models import Users, Combat, Farming, Foraging, Fishing, Mining
 from src.utils.managers import (
     DataManager,
 )

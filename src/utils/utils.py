@@ -3,7 +3,7 @@ import discord
 
 from datetime import datetime
 
-from src.entity_models import DataMaster, field_formats
+from src.item_models import DataMaster, field_formats
 
 from src.utils.items import get_item_data, get_item_display_name, insert_item
 from src.utils.members import get_user_data, set_user_field

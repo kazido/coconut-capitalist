@@ -10,7 +10,7 @@ import json  # File handling imports
   # File imports
 from src.classLibrary import RequestUser
 from src.utils.utils import seconds_until_tasks
-from src import models
+from src import entity_models
 
 
 def drop_double(amount):
@@ -37,7 +37,7 @@ class Drop:
         self.description, self.amount, self.color = drop_double(amount)
 
         if self.isMegadrop:  # Mega drop, run special init method
-            self.instance: models.Megadrop = models.Megadrop.get(id=1)
+            self.instance: entity_models.Megadrop = entity_models.Megadrop.get(id=1)
 
             self.embed = discord.Embed(  # Megadrop embed
                 title="⚠️ THE MEGADROP HAS APPEARED ⚠️",
@@ -80,7 +80,7 @@ class Drop:
                 super().__init__(timeout=timeout)
                 self.claimed = False
                 self.isMegadrop = ismegadrop
-                self.megadrop: models.Megadrop = models.Megadrop.get(id=1)
+                self.megadrop: entity_models.Megadrop = entity_models.Megadrop.get(id=1)
 
             async def on_timeout(self) -> None:
                 if self.claimed:
@@ -198,7 +198,7 @@ class DropsCog(commands.Cog, name="Drops"):
 
         fmt = "%m-%d-%Y"  # Put current date into a format and add to bottom of embed
         now_time = datetime.now(timezone("US/Eastern"))
-        megadrop, created = models.Megadrop.get_or_create(
+        megadrop, created = entity_models.Megadrop.get_or_create(
             id=1, defaults={"date_started": datetime.strftime(now_time, fmt)}
         )
         if megadrop.COUNTER >= 150:
@@ -224,7 +224,7 @@ class DropsCog(commands.Cog, name="Drops"):
         name="megadrop", description="Check the current status of the Mega Drop"
     )
     async def megadrop_status(self, interaction: discord.Interaction):
-        megadrop: models.Megadrop = models.Megadrop.get(id=1)
+        megadrop: entity_models.Megadrop = entity_models.Megadrop.get(id=1)
         status_embed = discord.Embed(title="📦 MEGADROP STATUS 📦", color=0x45FFB1)
         status_embed.add_field(
             name="Current Pot", value=f"{'{:,}'.format(megadrop.amount)} bits"

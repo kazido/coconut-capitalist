@@ -5,7 +5,7 @@ from discord import app_commands
 import discord.ui
 from src.classLibrary import RequestUser
 
-from src import models as m
+from src import entity_models as m
 import playhouse.shortcuts as phs
 
 

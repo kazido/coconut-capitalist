@@ -1,8 +1,8 @@
 import discord
 import peewee
 
-from src.models import Users, Backrefs
-from src.entity_models import DataRanks
+from src.entity_models import Users, Backrefs
+from src.item_models import DataRanks
 from src.utils.items import get_entity
 
 from logging import getLogger

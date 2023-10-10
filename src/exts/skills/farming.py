@@ -8,7 +8,7 @@ from random import randint
 from src.classLibrary import RequestUser # File imports
 
 from src.utils.utils import seconds_until_tasks
-from src import models as m
+from src import entity_models as m
 import playhouse.shortcuts as phs
 
 

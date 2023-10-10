@@ -4,7 +4,7 @@ from discord.ext.commands import Cog, Context
 from discord.ext.commands.errors import CommandError
 
 from src.constants import GamblingChannels
-import src.models as models
+import src.entity_models as entity_models
 
 
 class OwnsPetCheckFailure(CommandError):
@@ -14,7 +14,7 @@ class OwnsPetCheckFailure(CommandError):
 def owns_a_pet():
 
     async def predicate(ctx: Context):
-        owns_pet = (models.Pets.get(owner_id=ctx.author.id))
+        owns_pet = (entity_models.Pets.get(owner_id=ctx.author.id))
 
         success = owns_pet
 

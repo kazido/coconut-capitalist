@@ -1,7 +1,7 @@
 import peewee
 
-from src.models import BaseModel
-from src.entity_models import ItemType
+from src.entity_models import BaseModel
+from src.item_models import ItemType
 from logging import getLogger
 
 

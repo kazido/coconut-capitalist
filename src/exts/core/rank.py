@@ -2,7 +2,7 @@ import asyncio
 import discord
 from discord.ext import commands
 from discord import app_commands
-from src.models import Users
+from src.entity_models import Users
 
 
 

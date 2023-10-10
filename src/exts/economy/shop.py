@@ -4,7 +4,7 @@ from src.utils.shop import SubShopPage, ItemPage, ItemMenu
 from discord.ext import commands
 from discord import app_commands
 import discord
-from src import models as m
+from src import entity_models as m
 from src.constants import PROJECT_ROOT
 import json
 
