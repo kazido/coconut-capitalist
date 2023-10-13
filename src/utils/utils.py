@@ -5,7 +5,7 @@ from datetime import datetime
 
 from src.item_models import DataMaster, field_formats
 
-from src.utils.items import get_item_data, get_item_display_name, insert_item
+from src.utils.items import get_item_data, get_item_display_name, create_entity
 from src.utils.members import get_user_data, set_user_field
 
 from src.constants import Rarities
@@ -57,7 +57,7 @@ def distribute_drops(user_id, item_pool, bit_multiplier=1):
     # Distribute items to user
     for item in roll:
         log.info(f"User rolled {item}")
-        insert_item(user_id, item["item"]["item_id"], item["quantity"])
+        create_entity(user_id, item["item"]["item_id"], item["quantity"])
     # Distribute bits to user
     log.info(f"User rolled {bits_reward} bits")
     set_user_field(user_id, 'purse', user['purse'] + bits_reward)
