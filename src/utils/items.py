@@ -1,11 +1,10 @@
 import peewee
 
-from src.models import Items
-from src.entity_models import DataMaster, ItemType
+from src.entity_models import Items
+from src.item_models import DataMaster, ItemType
+
 from logging import getLogger
 from playhouse.shortcuts import model_to_dict
-
-from pprint import pprint
 
 log = getLogger(__name__)
 log.setLevel(20)
@@ -14,7 +13,39 @@ log.setLevel(20)
 class ItemDoesNotExist(Exception):
     pass
 
+class EntityDoesNotExist(Exception):
+    pass
 
+
+class Item:
+    def __init__(self, item_id: str) -> None:
+        try:
+            item_data = DataMaster.get_by_id(item_id)
+            for field in item_data.__data__.keys():
+                setattr(self, field, getattr(item_data, field))
+        except peewee.DoesNotExist:
+            raise ItemDoesNotExist(f"No {DataMaster.__name__} found with ID {item_id}")
+    
+    def __str__(self) -> str:
+        return self.display_name
+        
+
+class Entity:
+    # TODO: add self.owner and set it to an instance of the User class
+    def __init__(self, owner_id: int, item_id: str) -> None:
+        try:
+            entity_data = Items.get(owner=owner_id, item_id=item_id)
+            for field in entity_data.__data__.keys():
+                setattr(self, field, getattr(entity_data, field))
+            self.item = Item(item_id)
+        except peewee.DoesNotExist:
+            raise EntityDoesNotExist(f"No {Items.__name__} found with ID {item_id} and owner ID {owner_id}.")
+        
+    def __str__(self) -> str:
+        # TODO: make self.owner reference the owners name
+        return f"{self.item.display_name} owned by {self.owner}"
+    
+        
 def get_item_data(item_id: str, backrefs: bool = False):
     """Retrieve an item by ID."""
     try:
@@ -23,18 +54,6 @@ def get_item_data(item_id: str, backrefs: bool = False):
         return data
     except peewee.DoesNotExist:
         raise ItemDoesNotExist(f"No {DataMaster.__name__} found with ID {item_id}")
-
-
-def set_item_field(item_id: str, field, value):
-    """Set the field of an item"""
-    if not hasattr(DataMaster, field):
-        raise ValueError(
-            f"Field '{field}' does not exist in model {DataMaster.__name__}"
-        )
-    updated_rows = DataMaster.set_by_id(item_id, {field: value})
-    if updated_rows:
-        return updated_rows
-    raise ItemDoesNotExist(f"No {DataMaster.__name__} found with ID {item_id}")
 
 
 def get_item_display_name(item_id):
@@ -78,7 +97,8 @@ def set_entity_field(owner_id: int, item_id: str, field, value):
     return item.save()
 
 
-def insert_item(owner: int, item_id: str, quantity: int = 1):
+def create_entity(owner: int, item_id: str, quantity: int = 1):
+    """Inserts an entity into the database with specified owner and quantity"""
     # Ensure that the item is an actual item first
     if not DataMaster.get_or_none(item_id=item_id):
         return False, f"'{item_id}' is not a valid item id."
@@ -135,7 +155,7 @@ def trade_item(owner: int, new_owner: int, item_id: str, quantity: int = None):
             if quantity > item.quantity:
                 return False, "User does not own enough of this item."
             # Inserts same item into tradee's inventory
-            insert_item(new_owner, item_id, quantity)
+            create_entity(new_owner, item_id, quantity)
             # Removes items from trader's inventory
             delete_item(owner, item_id, quantity)
             return True, f"{quantity} items transferred."
