@@ -1,7 +1,7 @@
 import discord
 import peewee
 
-from src.entity_models import Users, Backrefs
+from src.entity_models import Users, UsersChildTables
 from src.item_models import DataRanks
 from src.utils.items import get_entity
 
@@ -17,6 +17,34 @@ log.setLevel(20)
 class UserDoesNotExist(Exception):
     pass
 
+class RowDoesNotExist(Exception):
+    pass
+
+
+class User:
+    def __init__(self, user_id: int) -> None:
+        user_data = Users.get_or_create(user_id=user_id)
+        # set self.field for each field in the users table
+        for field in user_data.__data__.keys():
+            setattr(self, field, getattr(user_data, field))
+        # set self.table_name.field for each field in all child tables of the users table
+        for table in UsersChildTables:
+            table_data = table.value.get_or_create(user_id=user_id)
+            for field in table_data.__data__.keys():
+                attr_name = f"{table.name}.{field}"
+                setattr(self, attr_name, getattr(table_data, field))
+        
+        
+        return _sanitize_user_data(table)
+    
+    def __str__(self) -> str:
+        return self.display_name
+    
+class ChildTable:
+    def __init__(self) -> None:
+        pass
+    
+
 
 def _sanitize_user_data(user_data):
     related_fields = [
@@ -27,7 +55,7 @@ def _sanitize_user_data(user_data):
         "mining",
         "settings",
         "cooldowns",
-    ]
+    ] 
     for field, value in user_data.items():
         if field in related_fields:
             value = value[0]
@@ -42,7 +70,7 @@ def get_user_data(user_id: int, backrefs: bool = False):
     # Create rows where needed if user is new
     if created:
         log.info(f"New user! Creating rows...")
-        for data in Backrefs:
+        for data in UsersChildTables:
             data.value.create(user_id=user_id)
 
     data = model_to_dict(user, backrefs=backrefs)
