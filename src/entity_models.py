@@ -333,7 +333,7 @@ class UserSettings(BaseModel):
     ]
 
 
-class Backrefs(Enum):
+class UsersChildTables(Enum):
     combat: Combat
     mining: Mining
     foraging: Foraging
