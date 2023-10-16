@@ -1,14 +1,16 @@
+from typing import Any
 import discord
-import peewee
 
 from src.entity_models import Users, UsersChildTables
 from src.item_models import DataRanks
-from src.utils.items import get_entity
+from src.utils.items import Entity
+from src.constants import DiscordGuilds
 
 from logging import getLogger
 from playhouse.shortcuts import model_to_dict
 
-from pprint import pprint
+from src import instance
+
 
 log = getLogger(__name__)
 log.setLevel(20)
@@ -23,6 +25,9 @@ class RowDoesNotExist(Exception):
 
 class User:
     def __init__(self, user_id: int) -> None:
+        self.discord_user = instance.get_user(user_id)
+        if self.discord_user is None:
+            raise UserDoesNotExist(f"No discord user with ID {user_id}.")
         user_data = Users.get_or_create(user_id=user_id)
         # set self.field for each field in the users table
         for field in user_data.__data__.keys():
@@ -33,105 +38,50 @@ class User:
             for field in table_data.__data__.keys():
                 attr_name = f"{table.name}.{field}"
                 setattr(self, attr_name, getattr(table_data, field))
-        
-        
-        return _sanitize_user_data(table)
+        # update username
+        self.name = self.discord_user.name if self.name != self.discord_user.name else self.name
+                
+    def __setattr__(self, __name: str, __value: Any) -> None:
+        if not hasattr(Users, __name):
+            raise ValueError(f"Field '{__name}' does not exist in model {Users.__name__}")
+        updated_rows = Users.set_by_id(self.user_id, {__name: __value})
+        if updated_rows:
+            return updated_rows
+        raise UserDoesNotExist(f"No {Users.__name__} found with ID {self.user_id}")
+    
+    def __getattr__(self, __name: str):
+        if not hasattr(self, __name):
+            raise ValueError(f"Field '{__name}' does not exist for the user.")
+        return self.__getattr__(__name)
     
     def __str__(self) -> str:
         return self.display_name
+
+    def get_user_tool(self, skill: str):
+        """Retrieve information about the tool that a user has equipped for specified skill."""
+        # TODO: ensure that this works
+        user_skill = self.__getattr__(skill)
+        user_tool_id = skill.tool_id
+        user_tool = Entity(self.user_id, user_tool_id)
+        return user_tool
     
-class ChildTable:
-    def __init__(self) -> None:
-        pass
+    def start_game(self):
+        self.in_game = True
+        log.info(f"Started game for user with ID {self.user_id}")
+        
+    def end_game(self):
+        # TODO: give player xp here, maybe rewards?
+        self.in_game = False
+        log.info(f"Ended game for user with ID {self.user_id}")
     
+    def get_user_rank(self) -> DataRanks:
+        """Retrieve the corresponding rank of a user based on their roles in a Discord guild."""
+        guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
 
+        for rank in DataRanks.select():
+            discord_role = discord.utils.get(guild.roles, id=rank.rank_id)
 
-def _sanitize_user_data(user_data):
-    related_fields = [
-        "foraging",
-        "farming",
-        "fishing",
-        "combat",
-        "mining",
-        "settings",
-        "cooldowns",
-    ] 
-    for field, value in user_data.items():
-        if field in related_fields:
-            value = value[0]
-            user_data[field] = value
-    return user_data
-
-
-def get_user_data(user_id: int, backrefs: bool = False):
-    """Retrieve an user by ID."""
-    user, created = Users.get_or_create(user_id=user_id)
-
-    # Create rows where needed if user is new
-    if created:
-        log.info(f"New user! Creating rows...")
-        for data in UsersChildTables:
-            data.value.create(user_id=user_id)
-
-    data = model_to_dict(user, backrefs=backrefs)
-    return _sanitize_user_data(data)
-
-
-def set_user_field(user_id: int, field, value):
-    """Set the field of an entity"""
-    if not hasattr(Users, field):
-        raise ValueError(f"Field '{field}' does not exist in model {Users.__name__}")
-    updated_rows = Users.set_by_id(user_id, {field: value})
-    if updated_rows:
-        return updated_rows
-    raise UserDoesNotExist(f"No {Users.__name__} found with ID {user_id}")
-
-
-def get_user_tool(user_id: int, skill: str):
-    """Retrieve information about the tool that a user has equipped for specified skill."""
-    user = get_user_data(user_id, backrefs=True)
-    user_tool_id = user[skill]['tool_id']['item_id']['item_id']
-    user_tool = get_entity(user_id, user_tool_id, backrefs=True)
-    return user_tool
-
-
-def get_user_rank(user_id: int, interaction: discord.Interaction) -> DataRanks:
-    """Retrieve the corresponding rank of a user based on their roles in a Discord guild."""
-    guild_roles = interaction.guild.roles
-    user = discord.utils.get(interaction.guild.members, id=user_id)
-
-    for rank in DataRanks.select():
-        discord_role = discord.utils.get(guild_roles, id=rank.rank_id)
-
-        # Check to see if the user has any matching role in discord
-        if discord_role in user.roles:
-            rank_data = model_to_dict(rank)
-            return rank_data
-
-
-def get_user_name(user_id: int) -> str:
-    """Retrieve the display name or name of the entity."""
-    try:
-        user = Users.get_by_id(user_id)
-        return getattr(user, "name", None)
-    except peewee.DoesNotExist:
-        raise UserDoesNotExist(f"No {Users.__name__} found with ID {user_id}")
-
-
-def update_user_name(user: discord.Member) -> None:
-    """Compares the name in the table with the name in discord
-    and updates the table if they are not the same"""
-    table_name = get_user_name(user.id)
-    if table_name != user.display_name:
-        set_user_field(user.id, "name", user.display_name)
-        log.info(f"Updating user name to {user.display_name}")
-
-
-def start_user_game(user_id: int):
-    set_user_field(user_id, "in_game", True)
-    log.info(f"Started game for user with ID {user_id}")
-
-
-def end_user_game(user_id: int):
-    set_user_field(user_id, "in_game", False)
-    log.info(f"Ended game for user with ID {user_id}")
+            # Check to see if the user has any matching role in discord
+            if discord_role in self.discord_user.roles:
+                rank_data = model_to_dict(rank)
+                return rank_data
