@@ -396,23 +396,3 @@ class Items(BaseModel):
 
 
 # endregion
-
-
-def create_tables():
-    tables = [
-        Users,
-        UserCooldowns,
-        Pets,
-        Items,
-        MegaDrop,
-        Mining,
-        Combat,
-        Fishing,
-        Foraging,
-        Farming,
-    ]
-    with db:
-        db.create_tables(tables)
-
-
-create_tables()

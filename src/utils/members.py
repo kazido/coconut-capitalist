@@ -44,28 +44,32 @@ class User:
             
         # update username
         if self.name != self.discord_user.name:
-            self.name = self.discord_user.name
-
-    # def __setattr__(self, __name: str, __value: Any) -> None:
-    #     # TODO: fix.. applies to every attribute. what was the goal?
-    #     # if not hasattr(Users, __name):
-    #     #     raise ValueError(f"Field '{__name}' does not exist in model {Users.__name__}")
-    #     # updated_rows = Users.set_by_id(self.user_id, {__name: __value})
-    #     # if updated_rows:
-    #     #     return updated_rows
-    #     # raise UserDoesNotExist(f"No {Users.__name__} found with ID {self.user_id}")
-    #     pass
+            self.update_field('name', self.discord_user.name)
 
     def __str__(self) -> str:
         return self.name
-
+    
+    def update_field(self, field_name: str, value) -> None:
+        if '.' in field_name:
+            nested_fields = field_name.split('.')
+            current_obj = self
+            for nested_field in nested_fields[:-1]:
+                current_obj = getattr(current_obj, nested_field)
+            setattr(current_obj, nested_fields[-1], value)
+        else:
+            if not hasattr(self, field_name):
+                raise ValueError(f"Field '{field_name}' does not exist in model {Users.__name__}")
+            updated_rows = Users.set_by_id(self.user_id, {field_name: value})
+            if updated_rows:
+                setattr(self, field_name, value)
+        
     def start_game(self):
-        self.in_game = True
+        self.update_field('in_game', True)
         log.info(f"Started game for user with ID {self.user_id}")
 
     def end_game(self):
         # TODO: give player xp here, maybe rewards?
-        self.in_game = False
+        self.update_field('in_game', False)
         log.info(f"Ended game for user with ID {self.user_id}")
 
     def get_user_rank(self) -> DataRanks:

@@ -25,7 +25,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     @app_commands.command()
     async def test(self, interaction: discord.Interaction):
         user = User(interaction.user.id)
-        print(user.get_user_tool("foraging").__dict__)
+        user.start_game()
         
         await interaction.response.send_message(user.__dict__)
             
