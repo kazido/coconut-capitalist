@@ -1,5 +1,7 @@
 import functools
 import typing as t
+import os
+import sys
 from enum import Enum
 
 from discord import Colour, Embed
@@ -37,6 +39,18 @@ class Extensions(commands.Cog):
     def __init__(self, bot: Bot):
         self.bot = bot
         self.action_in_progress = False
+        
+    @commands.command(name="restart", aliases=("rs",))
+    async def restart(self, ctx: Context) -> None:
+        await ctx.send("Restarting bot...")
+        python = python = sys.executable
+        os.execl(python, python, '-m', 'src')
+        
+    @commands.command(name="close")
+    async def close(self, ctx: Context) -> None:
+        await ctx.send("Bye bye!")
+        await self.bot.close()
+        
 
     @group(name="extensions", aliases=("ext", "exts", "c", "cog", "cogs"), invoke_without_command=True)
     async def extensions_group(self, ctx: Context) -> None:
