@@ -1,0 +1,12 @@
+with some slight caveats
+bot.close() will power off your bot safely, which is important rather than just crashing out to keep discord happy
+if bot.close() is slow (test it!) then that's the source of your issue. if it isn't, then it's the ctrl-c handler
+if you don't care about a clean exit and just want to quit now, exit(1) on a command will fix things up
+the execl stuff is for when you want a restart command
+Mine's just !rs
+close stuff down, mark the restart as intended (to catch... a particularly annoying error..) and then come back up on it's own
+takes like.. 6-7 seconds mostly because it does a lot on startup
+
+
+# the spot in the discord chat
+https://discord.com/channels/267624335836053506/267624335836053506/1165787560170229832
