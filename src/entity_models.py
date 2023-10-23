@@ -334,13 +334,13 @@ class UserSettings(BaseModel):
 
 
 class UsersChildTables(Enum):
-    combat: Combat
-    mining: Mining
-    foraging: Foraging
-    fishing: Fishing
-    farming: Farming
-    settings: UserSettings
-    cooldowns: UserCooldowns
+    combat: Combat = Combat
+    mining: Mining = Mining
+    foraging: Foraging = Foraging
+    fishing: Fishing = Fishing
+    farming: Farming = Farming
+    settings: UserSettings = UserSettings
+    cooldowns: UserCooldowns = UserCooldowns
 
 
 # endregion
