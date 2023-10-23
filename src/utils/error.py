@@ -34,6 +34,8 @@ class ErrorHandler(Cog):
                 interaction.command.qualified_name), file=sys.stderr)
             traceback.print_exception(
                 type(error), error, error.__traceback__, file=sys.stderr)
+            await interaction.response.send_message("```Ignoring exception in slash command {}```:".format(
+                interaction.command.qualified_name), file=sys.stderr)
 
     @Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
