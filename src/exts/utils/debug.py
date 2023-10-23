@@ -6,7 +6,10 @@ from discord import app_commands
 from discord.ext import commands
 from discord.ext.commands import Cog
 from src.classLibrary import RequestUser
+from src.utils.members import User
 from src.constants import DiscordGuilds
+
+from src.entity_models import UsersChildTables
 
 from src.pagination import LinePaginator
 
@@ -21,6 +24,14 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value)
     @app_commands.command()
     async def test(self, interaction: discord.Interaction):
+        user = User(interaction.user.id)
+        print(user.get_user_tool("foraging").__dict__)
+        
+        await interaction.response.send_message(user.__dict__)
+            
+        
+    @app_commands.command()
+    async def test_echo_message(self, interaction: discord.Interaction):
         content="Hello"
         embed = discord.Embed(description="What is up!!!")
         other_channel = discord.utils.get(interaction.guild.channels, id=894664255666802759)
