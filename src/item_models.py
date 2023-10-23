@@ -55,7 +55,7 @@ class DataMaster(BaseModel):
     rarity = IntegerField(null=True)
     sell_price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     skill = TextField(null=True)
-    filter_type = TextField(null=True)
+    item_type = TextField(null=True)
 
     class Meta:
         table_name = "data_master"
@@ -153,7 +153,7 @@ class DataAreas(BaseModel):
 field_formats = {
     # General fields section
     "item_id": {"text": "**Item ID**: *{:}*"},
-    "filter_type": {"text": "**Type**: *{:}*"},
+    "item_type": {"text": "**Type**: *{:}*"},
     "rarity": {"text": "**Rarity**: *{:}*", "shop_field": True, "rarity": True},
     "consumable": {"text": "**Single Use**: *{:}*"},
     "is_material": {"text": "**Material**: *{:}*"},
