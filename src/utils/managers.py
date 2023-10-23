@@ -42,10 +42,10 @@ class ModelManager:
         """Retrieve an entity and its related data from a specified extended table."""
         try:
             entity: self.model = self.model.get_by_id(entity_id)
-            if not entity.filter_type:
+            if not entity.item_type:
                 log.debug("Specified item had no type, returning fields.")
                 return self.get(entity_id)
-            related_model = ItemType[entity.filter_type].value
+            related_model = ItemType[entity.item_type].value
             related_entity: related_model = related_model.get_by_id(entity_id)
 
             combined_data = {**entity.__data__, **related_entity.__data__}
