@@ -5,7 +5,6 @@ from src.item_models import DataRanks
 from src.constants import DiscordGuilds
 
 from logging import getLogger
-from playhouse.shortcuts import model_to_dict
 
 from src import instance
 
@@ -24,24 +23,28 @@ class RowDoesNotExist(Exception):
 
 class User:
     def __init__(self, user_id: int) -> None:
+        # TODO: self.discord_guild currently initializes as the Coconut Farm..
         log.info("Initializing user object with user id: " + str(user_id))
-        self.discord_user: discord.Member = instance.get_guild(
-            DiscordGuilds.PRIMARY_GUILD.value
-        ).get_member(user_id)
+        self.discord_guild: discord.Guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
+        self.discord_user: discord.Member = self.discord_guild.get_member(user_id)
+        
+        # Ensure that the user exists in the guild
         if self.discord_user is None:
-            raise UserDoesNotExist(f"No discord user with ID {user_id}.")
+            raise UserDoesNotExist(f"No discord member with ID {user_id}.")
         user_data, _ = Users.get_or_create(user_id=user_id)
+        
         # set self.field for each field in the users table
         for field in user_data.__data__.keys():
             setattr(self, field, getattr(user_data, field))
+            
         # set self.table_name.field for each field in all child tables of the users table
         for table in UsersChildTables:
             table_data, _ = table.value.get_or_create(user_id=user_id)
             setattr(self, table.name, table_data)
+            
         # update username
-        self.name = (
-            self.discord_user.name if self.name != self.discord_user.name else self.name
-        )
+        if self.name != self.discord_user.name:
+            self.name = self.discord_user.name
 
     # def __setattr__(self, __name: str, __value: Any) -> None:
     #     # TODO: fix.. applies to every attribute. what was the goal?
