@@ -6,7 +6,6 @@ from pytz import timezone
 from typing import Literal
 from enum import Enum
 from peewee import *
-from logging import getLogger
 
 from src.constants import DATABASE
 from src.item_models import DataAreas, DataTools, DataMaster
@@ -15,15 +14,10 @@ from src.item_models import DataAreas, DataTools, DataMaster
 db_path = os.path.realpath(os.path.join("database", DATABASE))
 db = SqliteDatabase(db_path)
 
-log = getLogger(__name__)
-log.setLevel(10)
 
-
-# region Base Model definitions
 class BaseModel(Model):
+    # used
     leaderboard_columns: dict
-    color: discord.Color
-    emoji: str
 
     class Meta:
         database = db
@@ -33,29 +27,16 @@ class BaseModel(Model):
         columns = [field for field in cls._meta.fields]
         return columns
 
-    @classmethod
-    def get_display_name(cls, entity_id):
-        """Retrieve the display name or name of the entity."""
-        try:
-            entity = cls.get_by_id(entity_id)
-            display_name = getattr(entity, "display_name", None)
-            name = getattr(entity, "name", None)
-            return display_name or name
-        except DoesNotExist:
-            print(f"No entity found with ID {entity_id}")
-            return None
-
 
 class SkillModel(BaseModel):
-    # Lower scaling_x = more XP required per level
-    # Higher scaling_y = larger gaps between levels
-    scaling_x: int
-    scaling_y: int
+    scaling_x: int  # lower value = more xp per level
+    scaling_y: int  # higher value = more xp between levels
 
-    def xp_required_for_next_level(self):
-        current_level = self.level_from_xp(self.xp)
+    @classmethod
+    def xp_required_for_next_level(cls, xp):
+        current_level = cls.level_from_xp(xp)
         next_level = current_level + 1
-        xp_required = self.xp_required_for_level(next_level)
+        xp_required = cls.xp_required_for_level(next_level)
         return xp_required
 
     @classmethod
@@ -69,10 +50,6 @@ class SkillModel(BaseModel):
         return xp
 
 
-# endregion
-
-
-# region Users class
 class Users(BaseModel):
     # Columns
     user_id = IntegerField(primary_key=True)
@@ -89,15 +66,9 @@ class Users(BaseModel):
 
     # Custom
     leaderboard_columns = [purse + bank, login_streak, drops_claimed]
-    emoji = ":money_with_wings:"
-    color = discord.Color.blue()
 
 
-# endregion
-
-
-# region Backrefs class
-class Farming(SkillModel):
+class T_Farming(SkillModel):
     # Columns
     user_id = ForeignKeyField(
         Users, primary_key=True, backref="farming", on_delete="CASCADE"
@@ -105,26 +76,26 @@ class Farming(SkillModel):
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
     tool_id = ForeignKeyField(DataTools, default=None, null=True)
     is_farming = BooleanField(default=False)
-    crops_grown = IntegerField(constraints=[SQL("DEFAULT 0")])
-    plots_unlocked = IntegerField(default=3)
-    fertilizer_level = IntegerField(constraints=[SQL("DEFAULT 1")])
+    crops_grown = IntegerField(default=0)
+    raingod_blessings = IntegerField(default=0)
+    anomalies = IntegerField(default=0)
+    land_deeds = IntegerField(default=0)
+    plots_unlocked = IntegerField(default=1)
     plot1 = TextField(default=None, null=True)
-    plot2 = TextField(default=None, null=True)
-    plot3 = TextField(default=None, null=True)
-    plot4 = TextField(default=None, null=True)
-    plot5 = TextField(default=None, null=True)
-    plot6 = TextField(default=None, null=True)
-    plot7 = TextField(default=None, null=True)
-    plot8 = TextField(default=None, null=True)
-    plot9 = TextField(default=None, null=True)
+    plot2 = TextField(default="Locked", null=True)
+    plot3 = TextField(default="Locked", null=True)
+    plot4 = TextField(default="Locked", null=True)
+    plot5 = TextField(default="Locked", null=True)
+    plot6 = TextField(default="Locked", null=True)
+    plot7 = TextField(default="Locked", null=True)
+    plot8 = TextField(default="Locked", null=True)
+    plot9 = TextField(default="Locked", null=True)
 
     class Meta:
         table_name = "user_skill_farming"
 
     # Custom
     leaderboard_columns = [xp, crops_grown]
-    emoji = ":corn:"
-    color = discord.Color.green()
     scaling_x = 0.07
     scaling_y = 2
 
@@ -338,15 +309,11 @@ class UsersChildTables(Enum):
     mining: Mining = Mining
     foraging: Foraging = Foraging
     fishing: Fishing = Fishing
-    farming: Farming = Farming
+    farming: T_Farming = T_Farming
     settings: UserSettings = UserSettings
     cooldowns: UserCooldowns = UserCooldowns
 
 
-# endregion
-
-
-# region Pets class
 class Pets(BaseModel):
     owner_id = ForeignKeyField(Users, backref="pets", on_delete="CASCADE")
     pet_id = IntegerField()
@@ -359,10 +326,6 @@ class Pets(BaseModel):
         table_name = "user_pets"
 
 
-# endregion
-
-
-# region Megadrop class
 class MegaDrop(BaseModel):
     amount = IntegerField(constraints=[SQL("DEFAULT 0")])
     total_drops_missed = IntegerField(constraints=[SQL("DEFAULT 0")])
@@ -380,10 +343,6 @@ class MegaDrop(BaseModel):
         pass
 
 
-# endregion
-
-
-# region Items class
 class Items(BaseModel):
     owner = ForeignKeyField(column_name="owner_id", model=Users, backref="items")
     item_id = TextField(column_name="item_id")
@@ -394,5 +353,22 @@ class Items(BaseModel):
     class Meta:
         table_name = "user_items"
 
+def create_tables():
+    tables = [
+        Users,
+        UserCooldowns,
+        Pets,
+        Items,
+        MegaDrop,
+        Mining,
+        Combat,
+        Fishing,
+        Foraging,
+        T_Farming,
+    ]
+    with db:
+        db.create_tables(tables)
 
-# endregion
+
+print("CREATING THE TABLES XDDDDDDD")
+create_tables()
