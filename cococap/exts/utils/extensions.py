@@ -44,7 +44,7 @@ class Extensions(commands.Cog):
     async def restart(self, ctx: Context) -> None:
         await ctx.send("Restarting bot...")
         python = python = sys.executable
-        os.execl(python, python, '-m', 'src')
+        os.execl(python, python, '-m', 'cococap')
         
     @commands.command(name="close")
     async def close(self, ctx: Context) -> None:
