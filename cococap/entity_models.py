@@ -68,7 +68,7 @@ class Users(BaseModel):
     leaderboard_columns = [purse + bank, login_streak, drops_claimed]
 
 
-class T_Farming(SkillModel):
+class Farming(SkillModel):
     # Columns
     user_id = ForeignKeyField(
         Users, primary_key=True, backref="farming", on_delete="CASCADE"
@@ -110,17 +110,6 @@ class T_Farming(SkillModel):
         "plot8",
         "plot9",
     ]
-
-    def open_farm(self):
-        self.is_farming = True
-        self.save()
-
-    def close_farm(self):
-        self.is_farming = False
-        self.save()
-
-    def update_plot(self, plot: int, new_id: int):
-        pass
 
 
 class Combat(SkillModel):
@@ -309,7 +298,7 @@ class UsersChildTables(Enum):
     mining: Mining = Mining
     foraging: Foraging = Foraging
     fishing: Fishing = Fishing
-    farming: T_Farming = T_Farming
+    farming: Farming = Farming
     settings: UserSettings = UserSettings
     cooldowns: UserCooldowns = UserCooldowns
 
@@ -364,7 +353,7 @@ def create_tables():
         Combat,
         Fishing,
         Foraging,
-        T_Farming,
+        Farming,
     ]
     with db:
         db.create_tables(tables)

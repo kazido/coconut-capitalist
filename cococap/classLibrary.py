@@ -14,7 +14,7 @@ class UserManager:
     def __init__(self, user_id, interaction) -> None:
         self._user = m.User.get_or_create(id=user_id)
         self.cooldowns = m.Usercooldowns.get_or_create(id=user_id)
-        self.farm = m.Farms.get_or_create(id=user_id)
+        self.farm = m.Farming.get_or_create(id=user_id)
         self.items = m.Items.select().where(m.Items.owner_id == user_id).objects()
         self._user.name = discord.utils.get(interaction.guild.members, id=user_id).display_name
         self._user.save()

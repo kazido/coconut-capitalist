@@ -30,7 +30,7 @@ def plot_button_refresh(user_farm_dict: dict):
     style of the button upon click OR to setup the button."""
     button_info = {}
     plots = []
-    for index in range(len(m.Farms.plots)):
+    for index in range(len(m.Farming.plots)):
         button_info[index] = {
             "label": "Empty!",
             "disabled": True,
