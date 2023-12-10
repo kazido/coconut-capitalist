@@ -1,8 +1,12 @@
+from datetime import datetime
 import cococap
 import discord
 
+from cococap.user import User
+from discord.colour import Colour
+from discord.types.embed import EmbedType
 from pydis_core.utils import scheduling
-from typing import Sequence
+from typing import Any, Optional, Sequence, Union
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -38,8 +42,7 @@ def reaction_check(
     # )
 
     if user.id in allowed_users:
-        log.info(
-            f"Allowed reaction {reaction} by {user} on {reaction.message.id}.")
+        log.info(f"Allowed reaction {reaction} by {user} on {reaction.message.id}.")
         return True
     else:
         log.info(
@@ -51,3 +54,26 @@ def reaction_check(
             name=f"remove_reaction-{reaction}-{reaction.message.id}-{user}",
         )
         return False
+
+
+class Embed(discord.Embed):
+    def __init__(
+        self,
+        *,
+        color: int | Colour | None = None,
+        title: Any | None = None,
+        type: EmbedType = "rich",
+        url: Any | None = None,
+        desc: Any | None = None,
+        timestamp: datetime | None = None,
+        user: User | None = None
+    ):
+        super().__init__(
+            color=color,
+            title=title,
+            type=type,
+            url=url,
+            description=desc,
+            timestamp=timestamp,
+        )
+        self.footer = f"User: {user.name}"

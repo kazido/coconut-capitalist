@@ -6,7 +6,7 @@ from datetime import datetime
 from cococap.item_models import DataMaster, field_formats
 
 from cococap.utils.items import get_item_data, get_item_display_name, create_entity
-from cococap.utils.members import get_user_data, set_user_field
+from cococap.user import get_user_data, set_user_field
 
 from cococap.constants import Rarities
 from logging import getLogger

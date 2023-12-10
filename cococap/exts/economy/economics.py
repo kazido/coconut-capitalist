@@ -13,7 +13,7 @@ from cococap.entity_models import Users, Combat, Farming, Foraging, Fishing, Min
 from cococap.utils.managers import (
     DataManager,
 )
-from cococap.utils.members import get_user_data, get_user_rank, get_user_name
+from cococap.user import get_user_data, get_user_rank, get_user_name
 
 
 from cococap.exts.economy.drops import DROP_AVERAGE

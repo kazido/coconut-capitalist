@@ -1,5 +1,5 @@
 import pytest
-from cococap.utils.members import get_user_data, set_user_field, get_user_related, UserDoesNotExist
+from cococap.user import get_user_data, set_user_field, get_user_related, UserDoesNotExist
 
 def test_get_user():
     # Mock a user ID

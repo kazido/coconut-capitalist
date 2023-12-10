@@ -8,7 +8,7 @@ from discord import app_commands
 from discord.ext import commands, tasks
 from discord.ext.commands import Cog
 from cococap.classLibrary import RequestUser
-from cococap.utils.members import User
+from cococap.user import User
 from cococap.utils.tasks import get_time_until, est_tz
 from cococap.constants import DiscordGuilds
 
@@ -40,8 +40,9 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value
     )
     @app_commands.command()
-    async def test(self, interaction: discord.Interaction):
+    async def test(self, interaction: discord.Interaction): 
         user = User(interaction.user.id)
+        print(user)
         user.start_game()
 
         await interaction.response.send_message(user.__dict__)
