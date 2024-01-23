@@ -2,7 +2,7 @@ from pydis_core import BotBase
 from logging import getLogger
 
 from cococap import exts
-from cococap.logs import setup
+from cococap import logs
 
 from datetime import datetime
 
@@ -22,7 +22,7 @@ class Bot(BotBase):
         await super().setup_hook()
         
         # Logging setup
-        setup()
+        logs.setup()
         
         await self.load_extensions(exts)
         
