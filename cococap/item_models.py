@@ -1,11 +1,21 @@
 import discord
 import os
 
+from cococap.constants import DATABASE
+
 from enum import Enum
-from peewee import *
+from peewee import (
+    SqliteDatabase,
+    Model,
+    IntegerField,
+    BooleanField,
+    TextField,
+    ForeignKeyField,
+    DoesNotExist,
+    SQL,
+)
 from logging import getLogger
 
-from cococap.constants import DATABASE
 
 # Database setup
 db_path = os.path.realpath(os.path.join("database", DATABASE))
@@ -16,17 +26,8 @@ log.setLevel(10)
 
 
 class BaseModel(Model):
-    leaderboard_columns: dict
-    color: discord.Color
-    emoji: str
-
     class Meta:
         database = db
-
-    @classmethod
-    def list_columns(cls):
-        columns = [field for field in cls._meta.fields]
-        return columns
 
     @classmethod
     def get_display_name(cls, entity_id):
@@ -34,15 +35,14 @@ class BaseModel(Model):
         try:
             entity = cls.get_by_id(entity_id)
             display_name = getattr(entity, "display_name", None)
-            name = getattr(entity, "name", None)
-            return display_name or name
+            return display_name
         except DoesNotExist:
             print(f"No entity found with ID {entity_id}")
             return None
 
 
 # region Item data classes
-class DataMaster(BaseModel):
+class Master(BaseModel):
     item_id = TextField(primary_key=True)
     price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     consumable = BooleanField(constraints=[SQL("DEFAULT 0")], null=True)
@@ -61,10 +61,10 @@ class DataMaster(BaseModel):
         table_name = "data_master"
 
 
-class DataSeeds(BaseModel):
+class Seeds(BaseModel):
     item_id = ForeignKeyField(
         column_name="item_id",
-        model=DataMaster,
+        model=Master,
         backref="seed_data",
         null=True,
         primary_key=True,
@@ -76,10 +76,10 @@ class DataSeeds(BaseModel):
         table_name = "data_seeds"
 
 
-class DataCrops(BaseModel):
+class Crops(BaseModel):
     item_id = ForeignKeyField(
         column_name="item_id",
-        model=DataMaster,
+        model=Master,
         backref="crop_data",
         null=True,
         primary_key=True,
@@ -93,10 +93,10 @@ class DataCrops(BaseModel):
         table_name = "data_crops"
 
 
-class DataTools(BaseModel):
+class Tools(BaseModel):
     item_id = ForeignKeyField(
         column_name="item_id",
-        model=DataMaster,
+        model=Master,
         backref="tool_data",
         null=True,
         primary_key=True,
@@ -107,10 +107,10 @@ class DataTools(BaseModel):
         table_name = "data_tools"
 
 
-class DataPets(BaseModel):
+class Pets(BaseModel):
     item_id = ForeignKeyField(
         column_name="item_id",
-        model=DataMaster,
+        model=Master,
         backref="pet_data",
         null=True,
         primary_key=True,
@@ -118,12 +118,13 @@ class DataPets(BaseModel):
     daily_bonus = IntegerField(null=True)
     max_level = IntegerField(null=True)
     work_bonus = IntegerField(null=True)
+    emoji = TextField(null=True)
 
     class Meta:
         table_name = "data_pets"
 
 
-class DataRanks(BaseModel):
+class Ranks(BaseModel):
     rank_id = IntegerField(null=True, primary_key=True)
     color = TextField(null=True)
     description = TextField(null=True)
@@ -137,7 +138,7 @@ class DataRanks(BaseModel):
         table_name = "data_ranks"
 
 
-class DataAreas(BaseModel):
+class Areas(BaseModel):
     area_id = TextField(null=True, primary_key=True)
     description = TextField(null=True)
     difficulty = IntegerField(null=True)
@@ -200,13 +201,13 @@ field_formats = {
 
 
 class ItemType(Enum):
-    AREA = DataAreas
-    CROP = DataCrops
-    PET = DataPets
-    RANK = DataRanks
-    SEED = DataSeeds
-    TOOL = DataTools
-    master = DataMaster
+    AREA = Areas
+    CROP = Crops
+    PET = Pets
+    RANK = Ranks
+    SEED = Seeds
+    TOOL = Tools
+    master = Master
 
 
 # endregion
