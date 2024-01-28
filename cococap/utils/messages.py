@@ -76,4 +76,4 @@ class Embed(discord.Embed):
             description=desc,
             timestamp=timestamp,
         )
-        self.footer = f"User: {user.name}"
+        self.footer = f"User: {user.get_field('name')}"
