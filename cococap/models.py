@@ -5,7 +5,7 @@ from typing import Optional, List
 class UserCollection(Document):
     name: str # Required
     discord_id: int # Required
-    location: str = "the_agora"
+    zone: str = "the_agora"
     bank: int = 0
     purse: int = 1000
     tokens: int = 0
@@ -80,7 +80,7 @@ class UserCollection(Document):
 class PartyCollection(Document):
     party_id: str
     party_owner: int
-    location: str
+    zone: str
     party_members: list = []
     channel_id: int
     public: bool = False
