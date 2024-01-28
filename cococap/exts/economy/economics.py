@@ -1,7 +1,6 @@
 import asyncio
 import math
 import random
-from typing import Any, Coroutine, Optional
 import discord
 import randfacts
 
@@ -11,8 +10,8 @@ from discord.app_commands import Choice
 from discord.ext import commands
 
 from cococap.user import User
-from cococap.item_models import Areas, Pets
-from cococap.utils.menus import Menu
+from cococap.item_models import Pets
+from cococap.utils.messages import Cembed
 
 from cococap.exts.economy.drops import DROP_AVERAGE
 from cococap.constants import DiscordGuilds, TOO_RICH_TITLES
@@ -73,97 +72,73 @@ class EconomyCog(commands.Cog, name="Economy"):
         self.tree = self.bot.tree
 
     @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value)
-    @app_commands.command(name="play")
-    async def play(self, interaction: Interaction):
-        """The general play command which gives access to all functions of the bot."""
-        # Load the user
+    @app_commands.command(name="profile", description="Check your profile, pets, etc.")
+    async def bits(self, interaction: discord.Interaction):
         user = User(interaction.user.id)
         await user.load()
 
-        # PROFILE MENU ---------------------------------------------------------------
-        class MainMenu(Menu):
-            def __init__(self, embed):
-                super().__init__(timeout=60, embed=embed)
+        rank = user.get_user_rank()
+        zone = user.get_zone()
 
-            @discord.ui.button(label="Check-ins", emoji="✅", style=discord.ButtonStyle.blurple)
-            async def check_in_button(
-                self, interaction: discord.Interaction, button: discord.ui.Button
-            ):
-                await interaction.response.edit_message(
-                    embed=check_in_menu.embed, view=check_in_menu
-                )
-
-            # CHECKINS MENU ---------------------------------------------------------------
-
-            class WorkButton(discord.ui.Button):
-                def __init__(self, ready):
-                    super().__init__(
-                        label="Work",
-                        emoji="✅" if ready else "❌",
-                        style=discord.ButtonStyle.green if ready else discord.ButtonStyle.gray,
-                        disabled=False if ready else True,
-                    )
-
-                async def callback(self, interaction: Interaction):
-                    await EconomyCog.work(interaction)
-
-        embed = discord.Embed(
-            title=f"{user.get_user_rank().display_name} *{user.document.name}*",
+        embed = Cembed(
+            title=f"You are: `{rank.display_name}`",
             color=discord.Color.blue(),
-        )
-        embed.set_author(
-            name=f"{user.document.name} - profile",
-            icon_url=interaction.user.display_avatar,
-        )
-        embed.add_field(
-            name="CURRENT AREA",
-            value=f"**Area**: {Areas.get_by_id(user.get_field('zone')).display_name}",
-            inline=False,
+            interaction=interaction,
+            activity="profile",
         )
 
+        skills = [
+            {"emoji": ":crossed_swords:", "name": "COMBAT"},
+            {"emoji": ":pick:", "name": "MINING"},
+            {"emoji": ":evergreen_tree:", "name": "FORAGING"},
+            {"emoji": ":fishing_pole_and_fish:", "name": "FISHING"},
+            {"emoji": ":corn:", "name": "FARMING"},
+        ]
+
         embed.add_field(
-            name="MONEY",
+            name="Balances",
             value=f":money_with_wings: **BITS**: {user.get_field('purse'):,}\n"
             f":bank: **BANK**: {user.get_field('bank'):,}\n"
             f":coin: **TOKENS**: {user.get_field('tokens'):,}",
         )
+        embed.set_footer(text=f"You are currently in {zone.display_name}")
         embed.set_thumbnail(url=interaction.user.display_avatar)
-
-        main_menu = MainMenu(embed=embed)
-        check_in_menu = CheckInMenu(prev_menu=main_menu)
-
-        await interaction.response.send_message(embed=embed, view=MainMenu(embed=embed))
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value)
     @app_commands.command(name="beg")
     async def beg(self, interaction: Interaction):
         """Beg for some money! Must have less than 10,000 bits."""
+        # Load the user
+        user = User(interaction.user.id)
+        await user.load()
 
-        # Initialize user object upon request
-        user: Users = Users.new(interaction.user.id, interaction)
-        max_balance = 10000
+        max_balance = 10_000
+        total_balance = user.get_field("purse") + user.get_field("bank")
 
         # If user has 10,000 bits or more in their purse or bank
-        if user.total_balance >= max_balance:
-            embed = discord.Embed(
+        if total_balance >= max_balance:
+            embed = Cembed(
                 title=random.choice(TOO_RICH_TITLES),
                 description=f"You cannot beg if you have more than 10,000 bits\n"
-                f"You have **{'{:,}'.format(user.total_balance)}** bits",
+                f"You have **{total_balance:,}** bits",
                 color=discord.Color.red(),
-            ).set_footer(text=f"User: {interaction.user.name}")
-
-            await interaction.response.send_message(embed=embed)
+                interaction=interaction,
+                activity="begging",
+            )
+            await interaction.response.send_message(embed=embed, ephemeral=True)
 
         else:
             beg_amount = randint(100, 500)
             user.increase("money", beg_amount)
 
-            embed = discord.Embed(
+            embed = Cembed(
                 title=f"Someone kind dropped {beg_amount} bits in your cup.",
                 description=f"You now have {'{:,}'.format(user.total_balance + beg_amount)} bits.",
                 color=discord.Color.green(),
-            ).set_footer(text=f"User: {interaction.user.name}")
-
+                interaction=interaction,
+                activity="begging",
+            )
             await interaction.response.send_message(embed=embed)
 
     #
@@ -250,45 +225,6 @@ class EconomyCog(commands.Cog, name="Economy"):
     #         embed = too_slow_embed
     #     embed.set_footer(text=f"User: {interaction.user.name}")
     #     await interaction.edit_original_response(embed=embed)
-
-    @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value)
-    @app_commands.command(name="profile", description="Check your profile, pets, etc.")
-    async def bits(self, interaction: discord.Interaction):
-        user_data = get_user_data(interaction.user.id, backrefs=True)
-        user_name = get_user_name(interaction.user.id)
-        user_rank = get_user_rank(interaction.user.id, interaction)
-
-        profile_embed = discord.Embed(
-            title=f"{user_rank['display_name']} *{user_name}*",
-            color=discord.Color.from_str("0x262625"),
-        )
-
-        profile_embed.set_author(
-            name=f"{user_name} - profile", icon_url=interaction.user.display_avatar
-        )
-
-        profile_embed.add_field(
-            name="CURRENT AREA",
-            value=f"**Area**: {user_data['area_id']['display_name']}",
-        )
-
-        skills = [
-            {"emoji": ":crossed_swords:", "name": "COMBAT", "class": Combat},
-            {"emoji": ":pick:", "name": "MINING", "class": Mining},
-            {"emoji": ":evergreen_tree:", "name": "FORAGING", "class": Foraging},
-            {"emoji": ":fishing_pole_and_fish:", "name": "FISHING", "class": Fishing},
-            {"emoji": ":corn:", "name": "FARMING", "class": Farming},
-        ]
-
-        profile_embed.add_field(
-            name="MONEY",
-            value=f":money_with_wings: **BITS**: {user_data['money']:,}\n"
-            f":bank: **BANK**: {user_data['bank']:,}\n"
-            f":coin: **TOKENS**: {user_data['tokens']:,}",
-        )
-        profile_embed.set_footer(text="Use /work to get bits")
-        profile_embed.set_thumbnail(url=interaction.user.display_avatar)
-        await interaction.response.send_message(embed=profile_embed)
 
     # Command for the richest members in the server
 
@@ -464,14 +400,12 @@ class EconomyCog(commands.Cog, name="Economy"):
         class CheckInMenu(discord.ui.View):
             def __init__(self, *, timeout: float | None = 180):
                 super().__init__(timeout=timeout)
-                self.embed = discord.Embed(
+                self.embed = Cembed(
                     title="Check-ins",
                     description="Come back often to claim your rewards.",
                     color=discord.Color.dark_blue(),
-                )
-                self.embed.set_author(
-                    name=f"{user.get_field('name')} - checking in",
-                    icon_url=interaction.user.display_avatar,
+                    interaction=interaction,
+                    activity="checking in",
                 )
                 self.commands = {
                     "work": self.work_button,
@@ -521,7 +455,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
             @discord.ui.button(label="Daily")
             async def daily_button(self, interaction: Interaction, button: discord.ui.Button):
-                zone = Areas.get_by_id(user.get_field("zone"))
+                zone = user.get_zone()
                 wage = 1 + zone.token_bonus
                 description = f"**:coin: +{wage} tokens**"
 
@@ -576,7 +510,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
-        
+
         if not amount:
             amount = user.get_field("purse")
         if int(amount) > user.get_field("purse"):
@@ -586,25 +520,35 @@ class EconomyCog(commands.Cog, name="Economy"):
             )
             return
         elif int(amount) == 0:
-            await interaction.response.send_message("You cannot deposit **0** bits...", ephemeral=True)
+            await interaction.response.send_message(
+                "You cannot deposit **0** bits...", ephemeral=True
+            )
             return
         elif int(amount) < 0:
-            await interaction.response.send_message("You cannot deposit negative bits either!", ephemeral=True)
+            await interaction.response.send_message(
+                "You cannot deposit negative bits either!", ephemeral=True
+            )
             return
         elif int(amount) < 250:
-            await interaction.response.send_message("Sorry, deposits must be over 250 bits.", ephemeral=True)
+            await interaction.response.send_message(
+                "Sorry, deposits must be over 250 bits.", ephemeral=True
+            )
             return
         elif type(amount) == str:
-            await interaction.response.send_message("Please input an amount to deposit.", ephemeral=True)
+            await interaction.response.send_message(
+                "Please input an amount to deposit.", ephemeral=True
+            )
         else:
             await user.inc_purse(amount=-amount)
             await user.inc_bank(amount=amount)
-            embed = discord.Embed(colour=discord.Color.dark_blue())
+            embed = Cembed(colour=discord.Color.dark_blue(), interaction=interaction, activity="depositing")
             embed.add_field(
                 name="Deposit made!",
                 value=f"You have deposited **{'{:,}'.format(amount)}** bits",
             )
-            embed.set_author(name=f"{interaction.user.name} - deposit", icon_url=interaction.user.display_avatar)
+            embed.set_author(
+                name=f"{interaction.user.name} - deposit", icon_url=interaction.user.display_avatar
+            )
             await interaction.response.send_message(embed=embed)
 
     @app_commands.guilds(856915776345866240, 977351545966432306)
@@ -614,31 +558,38 @@ class EconomyCog(commands.Cog, name="Economy"):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
-        
-        bank = user.get_field('bank')
-        if amount in ["all", "max"]: amount = bank
+
+        bank = user.get_field("bank")
+        if amount in ["all", "max"]:
+            amount = bank
         amount = int(amount)
-        
+
         # Validate the withdraw amount
         if int(amount) > bank:
             await interaction.response.send_message(
-                f"You don't have that many bits in your account. "
-                f"Bank Balance: {bank:,} bits", ephemeral=True
+                f"You don't have that many bits in your account. " f"Bank Balance: {bank:,} bits",
+                ephemeral=True,
             )
             return
         elif int(amount) == 0:
-            await interaction.response.send_message("You cannot withdraw **0** bits...", ephemeral=True)
+            await interaction.response.send_message(
+                "You cannot withdraw **0** bits...", ephemeral=True
+            )
             return
         elif int(amount) < 0:
-            await interaction.response.send_message("You cannot withdraw negative bits either!", ephemeral=True)
+            await interaction.response.send_message(
+                "You cannot withdraw negative bits either!", ephemeral=True
+            )
             return
-        
-        settings = user.get_field('settings')
-        if settings['withdraw_warning']:
-            warning_embed = discord.Embed(
+
+        settings = user.get_field("settings")
+        if settings["withdraw_warning"]:
+            warning_embed = Cembed(
                 title="Are you sure?",
                 description="Withdrawing just to gamble more might not be a good idea.",
                 color=discord.Color.dark_red(),
+                interaction=interaction, 
+                activity="withdrawing"
             )
             warning_embed.set_footer(text=f"User: {interaction.user.name}")
 
@@ -654,17 +605,17 @@ class EconomyCog(commands.Cog, name="Economy"):
                 ):
                     if confirm_interaction.user != interaction.user:
                         return
-                    
+
                     await user.inc_bank(amount=-amount)
                     await user.inc_purse(amount=amount)
-                    withdraw_embed = discord.Embed(colour=discord.Color.dark_blue())
+                    withdraw_embed = Cembed(
+                        colour=discord.Color.dark_blue(),
+                        interaction=confirm_interaction,
+                        activity="withdrawing",
+                    )
                     withdraw_embed.add_field(
                         name="Withdrawal made!",
                         value=f"You withdrew **{'{:,}'.format(amount)}** bits",
-                    )
-                    withdraw_embed.set_author(
-                        name=f"{interaction.user.name} - " f"withdrawal",
-                        icon_url=interaction.user.display_avatar,
                     )
                     await confirm_interaction.response.edit_message(embed=withdraw_embed, view=None)
                     return
@@ -675,29 +626,25 @@ class EconomyCog(commands.Cog, name="Economy"):
                 ):
                     if deny_interaction.user != interaction.user:
                         return
-                    cancel_embed = discord.Embed(
+                    cancel_embed = Cembed(
                         title="Withdraw cancelled",
                         description="Withdraw was either cancelled or timed out.",
-                    )
-                    cancel_embed.set_author(
-                        name=f"{interaction.user.name} - " f"withdrawal",
-                        icon_url=interaction.user.display_avatar,
+                        interaction=deny_interaction,
+                        activity="cancelled withdraw",
                     )
                     await deny_interaction.response.edit_message(embed=cancel_embed, view=None)
                     await asyncio.sleep(3)
-                    
+
             await interaction.response.send_message(embed=warning_embed, view=WithdrawButtons())
-            
+
         await user.inc_bank(amount=-amount)
         await user.inc_purse(amount=amount)
-        withdraw_embed = discord.Embed(colour=discord.Color.dark_blue())
+        withdraw_embed = Cembed(
+            colour=discord.Color.dark_blue(), interaction=interaction, activity="withdrawing"
+        )
         withdraw_embed.add_field(
             name="Withdrawal made!",
             value=f"You withdrew **{'{:,}'.format(amount)}** bits",
-        )
-        withdraw_embed.set_author(
-            name=f"{interaction.user.name} - " f"withdrawal",
-            icon_url=interaction.user.display_avatar,
         )
         await interaction.response.send_message(embed=withdraw_embed, view=None)
         return
