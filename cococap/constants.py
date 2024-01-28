@@ -14,13 +14,15 @@ with open(config_path, "r") as f:
 
 
 BOT_PREFIX = "-"
-DATABASE = "livedatabase.db"
 TOKEN = data["primary_token"]
+URI = data["mongo_uri"]
+DATABASE = "livedatabase.db"
 
 if data["DEV"]:
     BOT_PREFIX = "."
-    DATABASE = "testdatabase.db"
     TOKEN = data["secondary_token"]
+    URI = data["mongo_uri"]
+    DATABASE = "testdatabase.db"
 
 
 DEBUG_MODE = False
