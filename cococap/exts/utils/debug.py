@@ -52,7 +52,13 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         user = User(interaction.user.id)
         await user.load()
         
-        print(await user.update_xp(skill="foraging", xp=100))
+        user.document.pets["active"] = {
+            "pet_id": "bee_pet",
+            "level": 1,
+            "xp": 0,
+            "name": "Arlo"
+        }
+        await user.save()
         # Interaction has finished
         await interaction.response.send_message("Done.")
 
