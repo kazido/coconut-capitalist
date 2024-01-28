@@ -332,32 +332,4 @@ class MegaDrop(BaseModel):
         pass
 
 
-class Items(BaseModel):
-    owner = ForeignKeyField(column_name="owner_id", model=Users, backref="items")
-    item_id = TextField(column_name="item_id")
-    enchantment = TextField(null=True)
-    quantity = IntegerField()
-    star_level = IntegerField(null=True)
 
-    class Meta:
-        table_name = "user_items"
-
-def create_tables():
-    tables = [
-        Users,
-        UserCooldowns,
-        Pets,
-        Items,
-        MegaDrop,
-        Mining,
-        Combat,
-        Fishing,
-        Foraging,
-        Farming,
-    ]
-    with db:
-        db.create_tables(tables)
-
-
-print("CREATING THE TABLES XDDDDDDD")
-create_tables()
