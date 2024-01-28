@@ -1,6 +1,5 @@
 import asyncio
 import os
-from typing import Any, Coroutine
 import discord
 import datetime
 
@@ -8,11 +7,11 @@ from discord import app_commands
 from discord.ext import commands, tasks
 from discord.ext.commands import Cog
 from cococap.classLibrary import RequestUser
+
 from cococap.user import User
+
 from cococap.utils.tasks import get_time_until, est_tz
 from cococap.constants import DiscordGuilds
-
-from cococap.entity_models import UsersChildTables
 
 from cococap.pagination import LinePaginator
 
@@ -20,18 +19,26 @@ from cococap.pagination import LinePaginator
 class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     def __init__(self, bot):
         self.bot = bot
+        
+        # starts the loop when the cog is loaded
         self.debugging_loop.start()
+
+    # 1:07 pm EST
+    time = datetime.time(hour=13, minute=7, tzinfo=est_tz)
     
-    time = datetime.time(hour=13, minute=7, tzinfo=est_tz)   
+    # function should run at 1:07 PM EST
     @tasks.loop(time=time)
     async def debugging_loop(self):
         print("Loop ran.")
-        
+
     @app_commands.command()
     async def next_loop(self, interaction: discord.Interaction):
         next_loop = get_time_until(self.debugging_loop.next_iteration)
-        await interaction.response.send_message("The loop will run next in: " + str(next_loop).split('.')[0])
-        
+        await interaction.response.send_message(
+            "The loop will run next in: " + str(next_loop).split(".")[0]
+        )
+
+    # If the cog unloads, cancel the loop
     def cog_unload(self):
         self.debugging_loop.cancel()
 
@@ -40,12 +47,14 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value
     )
     @app_commands.command()
-    async def test(self, interaction: discord.Interaction): 
+    async def test(self, interaction: discord.Interaction):
+        
         user = User(interaction.user.id)
-        print(user)
-        user.start_game()
-
-        await interaction.response.send_message(user.__dict__)
+        await user.load()
+        
+        print(await user.update_xp(skill="foraging", xp=100))
+        # Interaction has finished
+        await interaction.response.send_message("Done.")
 
     linked_messages = {}
 
