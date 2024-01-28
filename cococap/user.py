@@ -55,29 +55,32 @@ class User:
 
     def __str__(self) -> str:
         return self.discord_info.name
+    
+    async def save(self):
+        self.document.save()
 
     # --- UPDATE METHODS ---
     async def update_purse(self, amount: int):
         self.document.purse += amount
-        await self.document.save()
+        await self.save()
 
     async def update_bank(self, amount: int):
         self.document.bank += amount
-        await self.document.save()
+        await self.save()
 
     async def update_tokens(self, *, tokens: int):
         self.document.tokens += tokens
-        await self.document.save()
+        await self.save()
 
     async def update_game(self, *, in_game: bool):
         self.document.in_game = in_game
-        await self.document.save()
+        await self.save()
 
     async def update_xp(self, *, skill: str, xp: int):
         if not hasattr(self.document, skill):
             return "Object does not have skill {skill}."
         getattr(self.document, skill)["xp"] += xp
-        await self.document.save()
+        await self.save()
 
     # --- GET METHODS ---
     def get_field(self, field: str):
@@ -96,7 +99,7 @@ class User:
     async def set_cooldown(self, command_type: COMMAND_TYPES):
         now = time.time()
         self.document.cooldowns[command_type] = now
-        await self.document.save()
+        await self.save()
 
     def check_cooldown(self, command_type: COMMAND_TYPES):
         """Checks to see if a command is currently on cooldown. Returns boolean result and cooldown, if any"""
