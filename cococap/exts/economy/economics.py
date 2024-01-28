@@ -9,12 +9,7 @@ from discord import app_commands, Interaction
 from discord.app_commands import Choice
 from discord.ext import commands
 
-from cococap.entity_models import Users, Combat, Farming, Foraging, Fishing, Mining
-from cococap.utils.managers import (
-    DataManager,
-)
-from cococap.user import get_user_data, get_user_rank, get_user_name
-
+from cococap.user import User
 
 from cococap.exts.economy.drops import DROP_AVERAGE
 from cococap.constants import DiscordGuilds, TOO_RICH_TITLES
@@ -405,27 +400,26 @@ class EconomyCog(commands.Cog, name="Economy"):
             )
         await interaction.response.send_message(embed=top_embed)
 
-    async def check_failed(command_name, cooldown, interaction):
-        cooldown_embed = discord.Embed(color=discord.Colour.red()).add_field(
-            name=f"You already collected your {command_name}!",
-            value=f"Next in: **{cooldown}**",
-        )
-        cooldown_embed.set_footer(text=f"User: {interaction.user.name}")
-        await interaction.response.send_message(embed=cooldown_embed)
-        return
-
     # Daily command, should give x amount of credits per day.
 
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command()
     async def daily(self, interaction: discord.Interaction):
         """Get some tokens every 21 hours to rank up."""
-        user: models.Users = models.Users.new(interaction.user.id, interaction)
+        user = User(interaction.user.id)
+        await user.load()
+
         # Check the if the command is on cooldown
-        passed, cooldown = user.cooldowns.check_cooldown(command_type=__name__)
-        if not passed:
-            await EconomyCog.check_failed(__name__, cooldown, interaction=interaction)
-        print("User used daily")
+        passed, cooldown = user.check_cooldown(command_type="daily")
+        if passed:
+            user.update_tokens(tokens=1)
+            return
+        cooldown_embed = discord.Embed(color=discord.Colour.red()).add_field(
+            name=f"You already collected your daily!",
+            value=f"Next in: **{cooldown}**",
+        )
+        await interaction.response.send_message(embed=cooldown_embed)
+        
 
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command()
