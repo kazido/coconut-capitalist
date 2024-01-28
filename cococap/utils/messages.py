@@ -77,4 +77,5 @@ class Cembed(discord.Embed):
             description=desc,
             timestamp=timestamp,
         )
-        self.set_author(name=f"{interaction.user.name} - {activity}", icon_url=interaction.user.display_avatar)
+        if interaction:
+            self.set_author(name=f"{interaction.user.name} - {activity}", icon_url=interaction.user.display_avatar)
