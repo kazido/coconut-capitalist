@@ -19,19 +19,19 @@ class ShopInterface(View):
         self.embed = self.create_embed()
         self._hovered_item_index = 0
         
-    @Button(emoji=i.get_emoji(1161002648099618869), style=ButtonStyle.blurple, disabled=True)
+    # @Button(emoji=i.get_emoji(1161002648099618869), style=ButtonStyle.blurple, disabled=True)
     async def next_item(self, interaction: discord.Interaction, button: Button):
         self._hovered_item_index += 1
-        await interaction.response.edit_message(embed=)
+        await interaction.response.edit_message(embed="")
         
-    @Button(emoji=i.get_emoji(1161002666328068126), style=ButtonStyle.blurple, disabled=False)
+    # @Button(emoji=i.get_emoji(1161002666328068126), style=ButtonStyle.blurple, disabled=False)
     async def back_item(self, interaction: discord.Interaction, button: Button):
         self._hovered_item_index -= 1
         
     def create_embed(self):
         embed = Embed(color=discord.Color.green())
         for item in self.items:
-            embed.add_field(name=)
+            embed.add_field(name="")
 
 # View for the overall shop, with buttons to select subshops
 class ItemMenu(discord.ui.View):
