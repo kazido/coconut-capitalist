@@ -81,13 +81,9 @@ class Parties(Document):
     party_id: str
     party_owner: int
     location: str
-    party_members: List[Link["PartyUser"]]
+    party_members: list = []
     channel_id: int
     public: bool = False
 
     class Settings:
         name = "parties"
-
-    class PartyUser(Document):
-        discord_id: int
-        permission_level: int
