@@ -2,11 +2,11 @@ from datetime import datetime
 import cococap
 import discord
 
-from cococap.user import User
+from discord import Interaction
 from discord.colour import Colour
 from discord.types.embed import EmbedType
 from pydis_core.utils import scheduling
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Sequence
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -56,7 +56,7 @@ def reaction_check(
         return False
 
 
-class Embed(discord.Embed):
+class Cembed(discord.Embed):
     def __init__(
         self,
         *,
@@ -66,7 +66,8 @@ class Embed(discord.Embed):
         url: Any | None = None,
         desc: Any | None = None,
         timestamp: datetime | None = None,
-        user: User | None = None
+        interaction: Interaction | None = None,
+        activity: str = ":)"
     ):
         super().__init__(
             color=color,
@@ -76,4 +77,4 @@ class Embed(discord.Embed):
             description=desc,
             timestamp=timestamp,
         )
-        self.footer = f"User: {user.get_field('name')}"
+        self.set_author(name=f"{interaction.user.name} - {activity}", icon_url=interaction.user.display_avatar)
