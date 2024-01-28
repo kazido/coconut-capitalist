@@ -5,7 +5,7 @@ from discord import utils
 from typing import Literal
 
 from cococap import instance
-from cococap.item_models import Ranks
+from cococap.item_models import Ranks, Areas
 from cococap.constants import DiscordGuilds
 from cococap.models import UserCollection
 
@@ -98,6 +98,9 @@ class User:
         if "active" not in pets.keys():
             return None
         return pets["active"]
+    
+    def get_zone(self):
+        return Areas.get_by_id(self.get_field('zone'))
                 
 
     # --- COOLDOWN METHODS ---
