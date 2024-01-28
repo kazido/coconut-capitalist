@@ -2,9 +2,9 @@ from beanie import Document, Link
 from typing import Optional, List
 
 
-class User(Document):
-    name: str
-    discord_id: int
+class UserCollection(Document):
+    name: str # Required
+    discord_id: int # Required
     location: str = "the_agora"
     bank: int = 0
     purse: int = 1000
@@ -64,7 +64,7 @@ class User(Document):
         "bosses_slain": 0,
     }
     settings: dict = {
-        "auto_deposit": True,
+        "auto_deposit": False,
         "withdraw_warning": True,
         "disable_max_bet": False,
         "comprehensive_checkin": False,
@@ -77,7 +77,7 @@ class User(Document):
         name = "users"
 
 
-class Parties(Document):
+class PartyCollection(Document):
     party_id: str
     party_owner: int
     location: str
