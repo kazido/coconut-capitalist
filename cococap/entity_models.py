@@ -8,7 +8,7 @@ from enum import Enum
 from peewee import *
 
 from cococap.constants import URI, DATABASE
-from cococap.item_models import DataAreas, DataTools, DataMaster
+from cococap.item_models import Areas, Tools, Master
 
 # Database setup
 db_path = os.path.realpath(os.path.join("database", DATABASE))
@@ -60,7 +60,7 @@ class Users(BaseModel):
     in_game = BooleanField(default=False)
     party_id = IntegerField(null=True)
     party_channel_id = IntegerField(null=True)
-    area_id = ForeignKeyField(DataAreas, backref="area")
+    area_id = ForeignKeyField(Areas, backref="area")
     login_streak = IntegerField(constraints=[SQL("DEFAULT 0")])
     drops_claimed = IntegerField(constraints=[SQL("DEFAULT 0")])
 
@@ -74,7 +74,7 @@ class Farming(SkillModel):
         Users, primary_key=True, backref="farming", on_delete="CASCADE"
     )
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
-    tool_id = ForeignKeyField(DataTools, default=None, null=True)
+    tool_id = ForeignKeyField(Tools, default=None, null=True)
     is_farming = BooleanField(default=False)
     crops_grown = IntegerField(default=0)
     raingod_blessings = IntegerField(default=0)
@@ -118,7 +118,7 @@ class Combat(SkillModel):
         Users, primary_key=True, backref="combat", on_delete="CASCADE"
     )
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
-    tool_id = ForeignKeyField(DataTools, default=None, null=True)
+    tool_id = ForeignKeyField(Tools, default=None, null=True)
     monsters_slain = IntegerField(constraints=[SQL("DEFAULT 0")])
     bosses_slain = IntegerField(constraints=[SQL("DEFAULT 0")])
 
@@ -139,7 +139,7 @@ class Mining(SkillModel):
         Users, primary_key=True, backref="mining", on_delete="CASCADE"
     )
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
-    tool_id = ForeignKeyField(DataTools, default=None, null=True)
+    tool_id = ForeignKeyField(Tools, default=None, null=True)
     lodes_mined = IntegerField(constraints=[SQL("DEFAULT 0")])
     core_slot_1 = BooleanField(default=False)
     core_slot_2 = BooleanField(default=False)
@@ -166,7 +166,7 @@ class Foraging(SkillModel):
         Users, primary_key=True, backref="foraging", on_delete="CASCADE"
     )
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
-    tool_id = ForeignKeyField(DataTools, default=None, null=True)
+    tool_id = ForeignKeyField(Tools, default=None, null=True)
     trees_chopped = IntegerField(constraints=[SQL("DEFAULT 0")])
     double_trees_chopped = IntegerField(constraints=[SQL("DEFAULT 0")])
     releaf_donations = IntegerField(constraints=[SQL("DEFAULT 0")])
@@ -188,7 +188,7 @@ class Fishing(SkillModel):
         Users, primary_key=True, backref="fishing", on_delete="CASCADE"
     )
     xp = IntegerField(constraints=[SQL("DEFAULT 0")])
-    tool_id = ForeignKeyField(DataTools, default=None, null=True)
+    tool_id = ForeignKeyField(Tools, default=None, null=True)
     skiff_level = IntegerField(constraints=[SQL("DEFAULT 1")])
     fish_caught = IntegerField(constraints=[SQL("DEFAULT 0")])
     book_entries = IntegerField(constraints=[SQL("DEFAULT 0")])

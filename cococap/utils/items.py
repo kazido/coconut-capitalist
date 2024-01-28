@@ -1,8 +1,7 @@
 import peewee
 
-from cococap.entity_models import Items
 from cococap.user import User
-from cococap.item_models import DataMaster, ItemType
+from cococap.item_models import Master, ItemType
 
 from logging import getLogger
 from playhouse.shortcuts import model_to_dict
@@ -24,11 +23,11 @@ class ItemBlueprint:
 
     def __init__(self, item_id: str) -> None:
         try:
-            item_data = DataMaster.get_by_id(item_id)
+            item_data = Master.get_by_id(item_id)
             for field, value in item_data.__data__.items():
                 setattr(self, field, value)
         except peewee.DoesNotExist:
-            raise ItemDoesNotExist(f"No {DataMaster.__name__} found with ID {item_id}")
+            raise ItemDoesNotExist(f"No {Master.__name__} found with ID {item_id}")
 
     def __str__(self) -> str:
         return self.display_name
@@ -56,7 +55,7 @@ class Item:
     def create(owner: int, item_id: str, quantity: int = 1):
         """Inserts an item into the database with specified owner and quantity"""
         # Ensure that the item is an actual item first
-        if not DataMaster.get_or_none(item_id=item_id):
+        if not Master.get_or_none(item_id=item_id):
             log.warn(f"Tried to create: {quantity} {item_id}. Error: item does not exist.")
             return False, f"'{item_id}' is not a valid item id."
         if quantity < 1:
@@ -83,7 +82,7 @@ class Item:
     @staticmethod
     def delete(owner: int, item_id: str, quantity: int = None):
         # Ensure that the item is an actual item first
-        if not DataMaster.get_or_none(item_id=item_id):
+        if not Master.get_or_none(item_id=item_id):
             log.warn(f"Tried to delete: {item_id}. Error: not a valid item id.")
             return False, f"'{item_id}' is not a valid item id."
         if quantity < 1:
@@ -120,7 +119,7 @@ class Item:
 
 def trade_item(owner: int, new_owner: int, item_id: str, quantity: int = None):
     # Ensure that the item is an actual item first
-    if not DataMaster.get_or_none(item_id=item_id):
+    if not Master.get_or_none(item_id=item_id):
         log.warn(f"Tried to trade: {item_id}. Error: not a valid item id.")
         return False
     try:
