@@ -10,7 +10,6 @@ from cococap import entity_models as m
 from cococap import instance
 from cococap.constants import PartyRoles, DiscordGuilds
 from cococap.constants import GREEN_CHECK_MARK_URL, RED_X_URL
-from cococap.utils.managers import UserManager
 from logging import getLogger
 
 
