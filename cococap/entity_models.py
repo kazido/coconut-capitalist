@@ -7,7 +7,7 @@ from typing import Literal
 from enum import Enum
 from peewee import *
 
-from cococap.constants import DATABASE
+from cococap.constants import URI, DATABASE
 from cococap.item_models import DataAreas, DataTools, DataMaster
 
 # Database setup
