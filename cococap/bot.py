@@ -3,7 +3,7 @@ from logging import getLogger
 
 from cococap import exts, logs
 from cococap.constants import URI
-from cococap.models import User, Parties
+from cococap.models import UserCollection, PartyCollection
 
 from datetime import datetime
 
@@ -30,7 +30,7 @@ class Bot(BotBase):
         
         # Database setup
         client = AsyncIOMotorClient(URI)
-        await init_beanie(database=client.discordbot, document_models=[User, Parties])
+        await init_beanie(database=client.discordbot, document_models=[UserCollection, PartyCollection])
         
         await self.load_extensions(exts)
         
