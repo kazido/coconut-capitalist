@@ -26,8 +26,8 @@ class Tree:
         base_height = random.choices(self.HEIGHTS, self.HEIGHTS_PROBABILITY)[0]
         self.height = base_height * area_difficulty
         self.hitpoints = self.height
-        self.item_pool = DataMaster.select().where(
-            DataMaster.skill == "foraging", DataMaster.drop_rate
+        self.item_pool = Master.select().where(
+            Master.skill == "foraging", Master.drop_rate
         )
 
 
