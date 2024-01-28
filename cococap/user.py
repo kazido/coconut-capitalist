@@ -1,12 +1,12 @@
 import discord
+import time
 
 from discord import utils
+from typing import Literal
 
 from cococap import instance
-
 from cococap.item_models import DataRanks
 from cococap.constants import DiscordGuilds
-
 from cococap.models import UserCollection
 
 from logging import getLogger
@@ -89,3 +89,41 @@ class User:
         if not hasattr(self.document, skill):
             return "Object does not have skill {skill}."
         return getattr(self.document, skill)["equipped_tool"]
+
+    # --- COOLDOWN METHODS ---
+    COMMAND_TYPES = Literal["daily", "work", "weekly"]
+    
+    async def set_cooldown(self, command_type: COMMAND_TYPES):
+        now = time.time()
+        self.document.cooldowns[command_type] = now
+        await self.document.save()
+
+    def check_cooldown(self, command_type: COMMAND_TYPES):
+        """Checks to see if a command is currently on cooldown. Returns boolean result and cooldown, if any"""
+        last_used = self.document.cooldowns[command_type]
+        cooldown_hours = {"work": 6, "daily": 21, "weekly": 167}
+
+        now = time.time()
+        seconds_since_last_used = now - last_used
+        hours_since_last_used = seconds_since_last_used / 3600
+
+        if hours_since_last_used < cooldown_hours:
+            # Cooldown has not yet finished
+            off_cooldown = last_used + float(cooldown_hours * 3600)
+            seconds_remaining = off_cooldown - now
+
+            def format_time(time):
+                if time == 0:
+                    time = "00"
+                return time
+
+            # Calculate and format the remaining cooldown
+            days = int(seconds_remaining // 86400)
+            hours = format_time(int((seconds_remaining % 86400) // 3600))
+            minutes = format_time(int((seconds_remaining % 3600) // 60))
+            seconds = format_time(int(seconds_remaining % 60))
+
+            cooldown = f"{days} days {hours}:{minutes}:{seconds} remaining"
+            return False, cooldown  # The check has been failed
+        else:
+            return True, None  # The check has been passed
