@@ -1,5 +1,5 @@
-from beanie import Document, Link
-from typing import Optional, List
+from beanie import Document
+from typing import Optional
 
 
 class UserCollection(Document):
