@@ -10,7 +10,7 @@ class UserCollection(Document):
     purse: int = 1000
     tokens: int = 0
     in_game: bool = False
-    party_id: Optional[str] = None
+    party_id: Optional[int] = None
     drops_claimed: int = 0
     farming: dict = {
         "xp": 0,
@@ -78,7 +78,7 @@ class UserCollection(Document):
 
 
 class PartyCollection(Document):
-    party_id: str
+    party_id: int
     party_owner: int
     zone: str = ""
     party_members: list = []
