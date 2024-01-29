@@ -120,7 +120,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         if total_balance >= max_balance:
             embed = Cembed(
                 title=random.choice(TOO_RICH_TITLES),
-                description=f"You cannot beg if you have more than 10,000 bits\n"
+                desc=f"You cannot beg if you have more than 10,000 bits\n"
                 f"You have **{total_balance:,}** bits",
                 color=discord.Color.red(),
                 interaction=interaction,
@@ -134,7 +134,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
             embed = Cembed(
                 title=f"Someone kind dropped {beg_amount} bits in your cup.",
-                description=f"You now have {'{:,}'.format(user.total_balance + beg_amount)} bits.",
+                desc=f"You now have {'{:,}'.format(user.total_balance + beg_amount)} bits.",
                 color=discord.Color.green(),
                 interaction=interaction,
                 activity="begging",
@@ -402,7 +402,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                 super().__init__(timeout=timeout)
                 self.embed = Cembed(
                     title="Check-ins",
-                    description="Come back often to claim your rewards.",
+                    desc="Come back often to claim your rewards.",
                     color=discord.Color.dark_blue(),
                     interaction=interaction,
                     activity="checking in",
@@ -586,7 +586,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         if settings["withdraw_warning"]:
             warning_embed = Cembed(
                 title="Are you sure?",
-                description="Withdrawing just to gamble more might not be a good idea.",
+                desc="Withdrawing just to gamble more might not be a good idea.",
                 color=discord.Color.dark_red(),
                 interaction=interaction, 
                 activity="withdrawing"
@@ -628,7 +628,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                         return
                     cancel_embed = Cembed(
                         title="Withdraw cancelled",
-                        description="Withdraw was either cancelled or timed out.",
+                        desc="Withdraw was either cancelled or timed out.",
                         interaction=deny_interaction,
                         activity="cancelled withdraw",
                     )
