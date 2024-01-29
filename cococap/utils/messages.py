@@ -60,6 +60,7 @@ class Cembed(discord.Embed):
     def __init__(
         self,
         *,
+        colour: int | Colour | None = None,
         color: int | Colour | None = None,
         title: Any | None = None,
         type: EmbedType = "rich",
@@ -69,6 +70,7 @@ class Cembed(discord.Embed):
         interaction: Interaction | None = None,
         activity: str = ":)"
     ):
+        color = colour if colour is not None else color
         super().__init__(
             color=color,
             title=title,
