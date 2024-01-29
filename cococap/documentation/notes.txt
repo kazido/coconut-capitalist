@@ -1,8 +1,0 @@
-===MINING===
-xp = ((xp / 100) ** (1/math.e)).__floor__() <-- calculation for level
-prestige level = allows user to mine columns equal to prestige level
-core slots need charged gems in each slot, which then unlocks the prestige upgrade options
-
-
-PET WORK BONUS:
-bonus = work_bonus(1+0.026)^level
