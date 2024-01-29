@@ -59,7 +59,7 @@ class User:
     async def save(self):
         await self.document.save()
 
-    # --- UPDATE METHODS ---
+    # UPDATE METHODS ------------------------------------
     async def inc_purse(self, amount: int):
         self.document.purse += amount
         await self.save()
@@ -82,7 +82,7 @@ class User:
         self.document.in_game = in_game
         await self.save()
 
-    # --- GET METHODS ---
+    # GET METHODS ------------------------------------
     def get_field(self, field: str):
         if not hasattr(self.document, field):
             return "Object does not have field {field}."
@@ -103,7 +103,7 @@ class User:
         return Areas.get_by_id(self.get_field('zone'))
                 
 
-    # --- COOLDOWN METHODS ---
+    # COOLDOWN METHODS ------------------------------------
     COMMAND_TYPES = Literal["daily", "work", "weekly"]
     
     async def set_cooldown(self, command_type: COMMAND_TYPES):
@@ -142,3 +142,18 @@ class User:
             return False, cooldown  # The check has been failed
         else:
             return True, None  # The check has been passed
+    
+    # BET CHECKS ------------------------------------
+    # Checks to make sure the user isn't betting more than they have or 0
+    async def bet_checks(self, bet) -> object:
+        user_balance = self.get_field('purse')
+        # If they try to bet more than they have in their account.
+        if int(bet) > user_balance:
+            return f"You don't have enough to place this bet. Balance: {user_balance} bits", False
+        # If their bet is <= 0, stop the code.
+        elif int(bet) < 0:
+            return f"You can't bet a negative amount.", False
+        elif bet == 0:
+            return "You can't bet 0 bits.", False
+        else:
+            return "Passed", True
