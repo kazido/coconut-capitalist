@@ -6,26 +6,24 @@ import datetime
 from discord import app_commands
 from discord.ext import commands, tasks
 from discord.ext.commands import Cog
-from cococap.classLibrary import RequestUser
 
 from cococap.user import User
 
 from cococap.utils.tasks import get_time_until, est_tz
 from cococap.constants import DiscordGuilds
 
-from cococap.pagination import LinePaginator
 
 
 class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     def __init__(self, bot):
         self.bot = bot
-        
+
         # starts the loop when the cog is loaded
         self.debugging_loop.start()
 
     # 1:07 pm EST
     time = datetime.time(hour=13, minute=7, tzinfo=est_tz)
-    
+
     # function should run at 1:07 PM EST
     @tasks.loop(time=time)
     async def debugging_loop(self):
@@ -43,21 +41,13 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         self.debugging_loop.cancel()
 
     # Testing command
-    @app_commands.guilds(
-        DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value
-    )
+    @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value)
     @app_commands.command()
     async def test(self, interaction: discord.Interaction):
-        
         user = User(interaction.user.id)
         await user.load()
-        
-        user.document.pets["active"] = {
-            "pet_id": "bee_pet",
-            "level": 1,
-            "xp": 0,
-            "name": "Arlo"
-        }
+
+        user.document.pets["active"] = {"pet_id": "bee_pet", "level": 1, "xp": 0, "name": "Arlo"}
         await user.save()
         # Interaction has finished
         await interaction.response.send_message("Done.")
@@ -68,9 +58,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     async def test_echo_message(self, interaction: discord.Interaction):
         content = "Hello"
         embed = discord.Embed(description="What is up!!!")
-        other_channel = discord.utils.get(
-            interaction.guild.channels, id=894664255666802759
-        )
+        other_channel = discord.utils.get(interaction.guild.channels, id=894664255666802759)
         echo_message = await other_channel.send(content=content, embed=embed)
         await interaction.response.send_message(content=content, embed=embed)
         original_response = await interaction.original_response()
@@ -84,9 +72,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
             before in DebuggingCommands.linked_messages.keys()
             and not DebuggingCommands.linked_messages[before][1]
         ):
-            await DebuggingCommands.linked_messages[before][0].edit(
-                content=after.content
-            )
+            await DebuggingCommands.linked_messages[before][0].edit(content=after.content)
             DebuggingCommands.linked_messages[before][1] = True
             return
         inverted_map = {v: k for k, v in DebuggingCommands.linked_messages.items()}
@@ -106,25 +92,21 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     )
 
     @admin_commands.command(name="pay")
-    async def admin_pay(
-        self, interaction: discord.Interaction, user: discord.User, amount: int
-    ):
-        user_to_pay = RequestUser(user.id, interaction=interaction)
+    async def admin_pay(self, interaction: discord.Interaction, user: discord.User, amount: int):
+        user_to_pay = User(user.id)
+        await user_to_pay.load()
+
         paid_embed = discord.Embed(
             title="Updated balance.",
             description=f"Updated {user.name}'s balance by **{amount:,}** bits.",
             color=discord.Color.red(),
         )
-        user_to_pay.update_balance(amount)
+        await user_to_pay.inc_purse(amount)
         await interaction.response.send_message(embed=paid_embed)
 
     @admin_commands.command(name="edit")
-    async def edit(
-        self, interaction: discord.Interaction, message_id: str, new_content: str
-    ):
-        message: discord.Message = await interaction.channel.fetch_message(
-            int(message_id)
-        )
+    async def edit(self, interaction: discord.Interaction, message_id: str, new_content: str):
+        message: discord.Message = await interaction.channel.fetch_message(int(message_id))
         await message.edit(content=new_content)
         await interaction.response.send_message(
             content="Successfully edited message.", ephemeral=True
@@ -170,9 +152,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     @commands.is_owner()
     @commands.command(name="Ping")
     async def ping(self, ctx):
-        sync = await self.bot.tree.sync(
-            guild=discord.Object(id=DiscordGuilds.PRIMARY_GUILD.value)
-        )
+        sync = await self.bot.tree.sync(guild=discord.Object(id=DiscordGuilds.PRIMARY_GUILD.value))
         if sync:
             synced = True
         else:
@@ -211,9 +191,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
 
         await interaction.response.send_modal(EmbedModal())
 
-    @app_commands.command(
-        name="check", description="Check to see if you're on mobile or desktop!"
-    )
+    @app_commands.command(name="check", description="Check to see if you're on mobile or desktop!")
     @app_commands.guilds(856915776345866240, 977351545966432306)
     async def check(self, interaction: discord.Interaction):
         member = interaction.guild.get_member(interaction.user.id)
