@@ -17,4 +17,4 @@ class Entity:
     def die(self):
         self.dead = True
         if not self.player:
-            
+            pass
