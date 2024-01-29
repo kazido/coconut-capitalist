@@ -37,18 +37,17 @@ def drop_double(amount):
 
 
 class ClaimDropButtons(discord.ui.View):
-    def __init__(self, drop: "Drop", megadrop: bool, message, *, timeout):
+    def __init__(self, drop: "Drop", megadrop: bool, *, timeout):
         super().__init__(timeout=timeout)
         self.claimed = False
         self.drop = drop
         self.is_megadrop = megadrop
-        self.message = message
 
     async def on_timeout(self) -> None:
         if self.claimed:
             return
 
-        await self.message.edit(embed=self.drop.expired_embed, view=None)
+        await self.drop.message.edit(embed=self.drop.expired_embed, view=None)
 
         if self.is_megadrop:
             update_data = {"$inc": {"times_missed": 1}}
@@ -102,10 +101,14 @@ class ClaimDropButtons(discord.ui.View):
             claimed_embed.set_footer(
                 text=f"The megadrop has been growing since: {megadrop['date_started']}"
             )
-
+            
+            now_time = datetime.now(timezone("US/Eastern"))
+            date_started = datetime.strftime(now_time, "%m-%d-%Y")
+            
             update_data = {
                 "$set": {
                     "last_winner": claim_interaction.user.id,
+                    "date_started": date_started,
                     "amount": 0,
                     "total_drops": 0,
                     "total_drops_missed": 0,
@@ -159,9 +162,9 @@ class Drop:
         self.timeout = 1800  # 30 minutes for the drop to be claimed
 
     async def release_drop(self):
-        message = await self.channel.send(
+        self.message = await self.channel.send(
             embed=self.embed,
-            view=ClaimDropButtons(self, False, message, self.timeout),
+            view=ClaimDropButtons(self, False, timeout=self.timeout),
         )
 
 
@@ -187,9 +190,9 @@ class MegaDrop(Drop):
     async def release_drop(self):
         megadrop = await collection.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")})
         timeout = 900 + (megadrop['times_missed'] * 900)
-        message = await self.channel.send(
+        self.message = await self.channel.send(
             embed=self.embed,
-            view=ClaimDropButtons(self, True, message, timeout),
+            view=ClaimDropButtons(self, True, timeout=timeout),
         )
 
 class DropsCog(commands.Cog, name="Drops"):
@@ -202,7 +205,7 @@ class DropsCog(commands.Cog, name="Drops"):
 
     @tasks.loop(minutes=randint(30, 60))
     async def drop_task(self):
-        guild = DiscordGuilds.PRIMARY_GUILD.value
+        guild: discord.Guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
         channels = [
             GamblingChannels.DREAMSCAPE.value,
             GamblingChannels.HEAVEN.value,
@@ -235,7 +238,7 @@ class DropsCog(commands.Cog, name="Drops"):
     async def before_drop_tast(self):
         await self.bot.wait_until_ready()
         await asyncio.sleep(seconds_until_tasks())
-
+        
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="megadrop")
     async def megadrop_status(self, interaction: discord.Interaction):
