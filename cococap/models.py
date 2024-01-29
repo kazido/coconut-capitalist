@@ -80,10 +80,9 @@ class UserCollection(Document):
 class PartyCollection(Document):
     party_id: str
     party_owner: int
-    zone: str
+    zone: str = ""
     party_members: list = []
     channel_id: int
-    public: bool = False
 
     class Settings:
         name = "parties"
