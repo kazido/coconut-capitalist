@@ -2,8 +2,7 @@ import random
 import discord
 
 from datetime import datetime
-
-from cococap.item_models import Master
+from cococap.user import User
 
 from cococap.constants import Rarities
 from logging import getLogger
@@ -120,15 +119,14 @@ def construct_embed(item_id, for_shop: bool):
     return embed
 
 
-def check_bet(user_id, bet):
+async def check_bet(user_id: int, bet: int):
     """Ensures that a user is not betting invalid amounts"""
-    user = get_user_data(user_id)
-    balance = user['purse']
-    if int(bet) < 0:
-        return f"The oldest trick in the book... Nice try.", False
+    user = User(user_id)
+    await user.load()
+    balance = user.get_field('purse')
+    if int(bet) <= 0:
+        return f"I sense something fishy... Quit it.", False
     elif int(bet) > balance:
-        return f"No loans. You have {balance} bits.", False
-    elif int(bet) == 0:
-        return "What did you think this was going to do?", False
+        return f"Sorry, but no loans. You only have {balance} bits.", False
     else:
         return "Passed", True

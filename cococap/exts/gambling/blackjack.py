@@ -8,6 +8,7 @@ from cococap.user import User
 from cococap.utils.messages import Cembed
 from discord.ext import commands
 from discord import app_commands
+from cococap.utils.utils import check_bet
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
@@ -52,7 +53,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
         else:
             bet = int(bet)
 
-        message, passed = await user.bet_checks(bet)
+        message, passed = await check_bet(user_id=user.uid, bet=bet)
         if passed is False:
             failed_embed = Cembed(
                 title="Invalid Bet",

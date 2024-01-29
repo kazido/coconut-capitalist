@@ -143,17 +143,3 @@ class User:
         else:
             return True, None  # The check has been passed
     
-    # BET CHECKS ------------------------------------
-    # Checks to make sure the user isn't betting more than they have or 0
-    async def bet_checks(self, bet) -> object:
-        user_balance = self.get_field('purse')
-        # If they try to bet more than they have in their account.
-        if int(bet) > user_balance:
-            return f"You don't have enough to place this bet. Balance: {user_balance} bits", False
-        # If their bet is <= 0, stop the code.
-        elif int(bet) < 0:
-            return f"You can't bet a negative amount.", False
-        elif bet == 0:
-            return "You can't bet 0 bits.", False
-        else:
-            return "Passed", True

@@ -6,6 +6,7 @@ from cococap.user import User
 from discord.ext import commands
 from discord import app_commands
 from cococap.utils.messages import Cembed
+from cococap.utils.utils import check_bet
 from random import randint
 
 
@@ -101,7 +102,7 @@ class HighLow(commands.Cog, name="High Low"):
             await interaction.delete_original_response()
             return
 
-        failed_message, passed = await user.bet_checks(bet)
+        failed_message, passed = await check_bet(user_id=user.uid, bet=bet)
 
         if passed is False:
             bet_not_allowed_embed = (
