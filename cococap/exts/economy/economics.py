@@ -141,93 +141,8 @@ class EconomyCog(commands.Cog, name="Economy"):
             )
             await interaction.response.send_message(embed=embed)
 
-    #
-    # @app_commands.guilds(856915776345866240, 977351545966432306)
-    # @app_commands.command(
-    #     name="unscramble",
-    #     description="Try to unscramble a word for some bits. "
-    #     "The longer the word, the more bits you get!",
-    # )
-    # async def unscramble(self, interaction: discord.Interaction):
-    #     user = RequestUser(
-    #         interaction.user.id, interaction=interaction
-    #     )  # Initialize user object upon request
-
-    #     def get_word():  # Function to pick a word from the word list
-    #         random_word = random.choice(words)
-    #         for (
-    #             letter
-    #         ) in (
-    #             random_word
-    #         ):  # If any letter in the word is uppercase, rerun the function
-    #             if letter.isupper():
-    #                 return get_word()
-    #         while (
-    #             len(random_word) < 4
-    #         ):  # If the word is shorter than 4 letters, rerun the function
-    #             return get_word()
-    #         random_word = list(random_word)
-    #         random_word.remove("\n")
-    #         random_word = "".join(letter for letter in random_word)
-    #         shuffled_word = "".join(random.sample(random_word, len(random_word)))
-    #         while shuffled_word == random_word:
-    #             shuffled_word = "".join(random.sample(random_word, len(random_word)))
-    #         return random_word, shuffled_word
-
-    #     word, scrambled_word = get_word()
-    #     time_limit = 1.4 ** len(word)
-    #     reward = len(word) * (10 * len(word) ** 2) + 300
-    #     unscramble_prompt_embed = discord.Embed(
-    #         title="Unscramble!",
-    #         description=f"You will have {time_limit.__round__()} seconds to unscramble the following word!",
-    #         color=0xA0A39D,
-    #     )
-    #     shuffled_word_embed = discord.Embed(
-    #         title="Unscramble!",
-    #         description=f"You will have {time_limit.__round__()} seconds to unscramble the following word!\n"
-    #         f"***{scrambled_word}***",
-    #         color=0xA0A39D,
-    #     )
-    #     await interaction.response.send_message(embed=unscramble_prompt_embed)
-    #     await asyncio.sleep(2)
-    #     await interaction.edit_original_response(embed=shuffled_word_embed)
-
-    #     def check(m):
-    #         return (
-    #             m.content.lower() == word
-    #             and m.author == interaction.user
-    #             and m.channel == interaction.channel
-    #         )
-
-    #     try:  # Waits for a guess at the correct word
-    #         guess = await self.bot.wait_for(
-    #             "message", timeout=time_limit.__round__(), check=check
-    #         )
-    #         embed = None
-    #         if guess.content.lower() == word:  # If they type in the correct word
-    #             correct_word_embed = discord.Embed(
-    #                 title="Unscramble!",
-    #                 description=f"Correct!\n" f"***{scrambled_word}*** - {word}",
-    #                 color=0xA0F09C,
-    #             )
-    #             correct_word_embed.add_field(
-    #                 name="Reward", value=f"**{reward:,}** bits"
-    #             )
-    #             embed = correct_word_embed
-    #             user.update_balance(reward)
-    #     except asyncio.TimeoutError:
-    #         too_slow_embed = discord.Embed(
-    #             title="Unscramble!",
-    #             description=f"Too slow!\n" f"***{scrambled_word}*** - {word}",
-    #             color=0xA8332F,
-    #         )
-    #         too_slow_embed.set_footer(text=f"User: {interaction.user.name}")
-    #         embed = too_slow_embed
-    #     embed.set_footer(text=f"User: {interaction.user.name}")
-    #     await interaction.edit_original_response(embed=embed)
 
     # Command for the richest members in the server
-
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="top", description="See the top 10 players in each category!")
     @app_commands.describe(category="category of leaderboard")
@@ -541,7 +456,9 @@ class EconomyCog(commands.Cog, name="Economy"):
         else:
             await user.inc_purse(amount=-amount)
             await user.inc_bank(amount=amount)
-            embed = Cembed(colour=discord.Color.dark_blue(), interaction=interaction, activity="depositing")
+            embed = Cembed(
+                colour=discord.Color.dark_blue(), interaction=interaction, activity="depositing"
+            )
             embed.add_field(
                 name="Deposit made!",
                 value=f"You have deposited **{'{:,}'.format(amount)}** bits",
@@ -588,8 +505,8 @@ class EconomyCog(commands.Cog, name="Economy"):
                 title="Are you sure?",
                 desc="Withdrawing just to gamble more might not be a good idea.",
                 color=discord.Color.dark_red(),
-                interaction=interaction, 
-                activity="withdrawing"
+                interaction=interaction,
+                activity="withdrawing",
             )
             warning_embed.set_footer(text=f"User: {interaction.user.name}")
 
@@ -634,30 +551,31 @@ class EconomyCog(commands.Cog, name="Economy"):
                     )
                     await deny_interaction.response.edit_message(embed=cancel_embed, view=None)
                     await asyncio.sleep(3)
+                    return
 
             await interaction.response.send_message(embed=warning_embed, view=WithdrawButtons())
-
-        await user.inc_bank(amount=-amount)
-        await user.inc_purse(amount=amount)
-        withdraw_embed = Cembed(
-            colour=discord.Color.dark_blue(), interaction=interaction, activity="withdrawing"
-        )
-        withdraw_embed.add_field(
-            name="Withdrawal made!",
-            value=f"You withdrew **{'{:,}'.format(amount)}** bits",
-        )
-        await interaction.response.send_message(embed=withdraw_embed, view=None)
-        return
+        else:
+            await user.inc_bank(amount=-amount)
+            await user.inc_purse(amount=amount)
+            withdraw_embed = Cembed(
+                colour=discord.Color.dark_blue(), interaction=interaction, activity="withdrawing"
+            )
+            withdraw_embed.add_field(
+                name="Withdrawal made!",
+                value=f"You withdrew **{'{:,}'.format(amount)}** bits",
+            )
+            await interaction.response.send_message(embed=withdraw_embed, view=None)
+            return
 
     @app_commands.guilds(856915776345866240, 977351545966432306)
-    @app_commands.command(
-        name="pay", description="Pay someone else some bits, if you're feeling nice!"
-    )
-    @app_commands.describe(
-        payee="discord user you want to pay", amount="amount of bits to pay the user"
-    )
-    async def pay(self, interaction: discord.Interaction, payee: discord.Member, amount: int):
-        user = RequestUser(interaction.user.id, interaction=interaction)
+    @app_commands.command(name="pay")
+    @app_commands.describe(recipient="discord user you want to pay", amount="amount")
+    async def pay(self, interaction: discord.Interaction, recipient: discord.Member, amount: int):
+        """Pay someone else some bits, if you're feeling nice!"""
+        # Load the user
+        user = User(interaction.user.id)
+        await user.load()
+
         # If they try to bet more than they have in their account.
         if int(amount) < 100:
             titles = [
@@ -665,40 +583,43 @@ class EconomyCog(commands.Cog, name="Economy"):
                 "Trying to break the system, are we?",
                 "This is what we call pulling a *Botski*",
             ]
-            embed = discord.Embed(
+            embed = Cembed(
                 title=random.choice(titles),
                 description="To avoid '*beg farming*' tactics, you can only send someone amounts over **100**",
                 color=discord.Color.red(),
+                interaction=interaction,
+                activity="paying",
             )
-            await interaction.response.send_message(embed=embed)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             return
-        elif int(amount) > user.instance.money:
+        elif int(amount) > user.get_field("purse"):
             await interaction.response.send_message(
                 f"You don't have enough bits to send. Balance: "
-                f"{'{:,}'.format(user.instance.money)} bits"
+                f"{user.get_field('purse'):,} bits",
+                ephemeral=True,
             )
             return
         elif int(amount) == 0:
-            await interaction.response.send_message("You cannot send someone **0** bits...")
+            await interaction.response.send_message(
+                "You cannot send someone **0** bits...", ephemeral=True
+            )
             return
         elif int(amount) < 0:
-            await interaction.response.send_message("You cannot send someone negative bits either!")
-            return
-        try:
-            user.instance.money -= int(amount)
-            user.instance.save()
-            payee_in_database = mm.Users.get_by_id(payee.id)
-            payee_in_database.money += int(amount)
-            payee_in_database.save()
-            embed = discord.Embed(colour=discord.Color.purple())
-            embed.add_field(
-                name="Payment sent!",
-                value=f"You have sent {payee.mention} **{'{:,}'.format(int(amount))}** bits",
+            await interaction.response.send_message(
+                "You cannot send someone negative bits either!", ephemeral=True
             )
-            await interaction.response.send_message(embed=embed)
-        except pw.DoesNotExist:
-            embed = discord.Embed(title="This user is not yet registered.")
-            await interaction.response.send_message(embed=embed)
+            return
+        payee = User(recipient.id)
+        await payee.load()
+        await user.inc_purse(amount=int(-amount))
+        await payee.inc_purse(amount=amount)
+
+        embed = Cembed(colour=discord.Color.purple())
+        embed.add_field(
+            name="Payment sent!",
+            value=f"You have sent {recipient.mention} **{int(amount):,}** bits",
+        )
+        await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot):
