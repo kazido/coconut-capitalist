@@ -8,7 +8,7 @@ from enum import Enum
 from peewee import *
 
 from cococap.constants import URI, DATABASE
-from cococap.item_models import Areas, Tools, Master
+from cococap.item_models import Areas, Tools
 
 # Database setup
 db_path = os.path.realpath(os.path.join("database", DATABASE))
