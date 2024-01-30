@@ -34,7 +34,7 @@ async def game_results(
         await user.update_game(in_game=False)
 
         # Give the lost money to the house
-        bot = User(956000805578768425)
+        bot = User(1016054559581413457)
         await bot.load()
         await bot.inc_purse(bet)
 

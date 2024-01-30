@@ -133,7 +133,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     await hit_interaction.response.edit_message(embed=lose_embed, view=None)
 
                     await view.user.update_game(in_game=False)
-                    bot = User(956000805578768425)
+                    bot = User(1016054559581413457)
                     await bot.load()
                     await bot.inc_purse(amount=view.bet)
 
@@ -174,7 +174,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
             await asyncio.sleep(1)
 
             await view.user.update_game(in_game=False)
-            bot = User(956000805578768425)
+            bot = User(1016054559581413457)
             await bot.load()
             await bot.inc_purse(amount=round(view.bet / 2))
 
@@ -215,7 +215,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     await stand_interaction.response.edit_message(embed=user_lost_embed, view=None)
 
                     await view.user.update_game(in_game=False)
-                    bot = User(956000805578768425)
+                    bot = User(1016054559581413457)
                     await bot.load()
                     await bot.inc_purse(amount=view.bet)
 
