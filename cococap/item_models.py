@@ -55,7 +55,7 @@ class Master(BaseModel):
     rarity = IntegerField(null=True)
     sell_price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     skill = TextField(null=True)
-    item_type = TextField(null=True)
+    filter_type = TextField(null=True)
 
     class Meta:
         table_name = "data_master"
@@ -149,55 +149,6 @@ class Areas(BaseModel):
 
     class Meta:
         table_name = "data_areas"
-
-
-field_formats = {
-    # General fields section
-    "item_id": {"text": "**Item ID**: *{:}*"},
-    "item_type": {"text": "**Type**: *{:}*"},
-    "rarity": {"text": "**Rarity**: *{:}*", "shop_field": True, "rarity": True},
-    "consumable": {"text": "**Single Use**: *{:}*"},
-    "is_material": {"text": "**Material**: *{:}*"},
-    "skill": {"text": "**Category**: *{:}*"},
-    "drop_rate": {"text": "**Drop Rate**: 1/*{:,}*"},
-    "min_drop": {"text": "**Min Roll**: *{:,}*"},
-    "max_drop": {"text": "**Max Roll**: *{:,}*"},
-    # Crop specific section
-    "pet_xp": {"text": "**Pet XP**: *{:,}*", "shop_field": True},
-    "min_harvest": {"text": "**Min Harvest**: *{:,}*"},
-    "max_harvest": {"text": "**Max Harvest**: *{:,}*"},
-    "grows_from": {
-        "text": "**Grows From**: *{:}*",
-        "shop_field": True,
-        "get_display_name": True,
-    },
-    # Seed specific section
-    "growth_odds": {"text": "**Growth Time**: ~*{:,}* cycles", "shop_field": True},
-    "grows_into": {
-        "text": "**Grows Into**: *{:}*",
-        "shop_field": True,
-        "get_display_name": True,
-    },
-    # Tool specific section
-    "power": {"text": "**Power**: *{:,}*", "shop_field": True},
-    # Pet specific section
-    "max_level": {"text": "**Max Level**: *{:,}*", "shop_field": True},
-    "work_bonus": {"text": "**Work Bonus**: *{:,}* bits", "shop_field": True},
-    "daily_bonus": {"text": "**Daily Bonus**: *{:,}* tokens", "shop_field": True},
-    # Rank specific section
-    "emoji": {"text": "**Emoji**: *{:}*"},
-    "token_price": {"text": "**Price**: *{:,}* tokens", "shop_field": True},
-    "wage": {"text": "**Wage**: *{:,}* bits", "shop_field": True},
-    "next_rank_id": {"text": "**Next Rank**: *{:}*", "shop_field": True},
-    # Area specific section
-    "difficulty": {"text": "**Difficulty**: *{:,}* :star:"},
-    "token_bonus": {"text": "**Daily Bonus**: *{:,}* tokens"},
-    "fuel_requriement": {"text": "**Fuel Type**: *{:}*"},
-    "fuel_amount": {"text": "**Req. Fuel**: *{:,}*"},
-    # Bottom formatting
-    "price": {"text": "**Price**: *{:,}*", "shop_field": True},
-    "sell_price": {"text": "**Sell Price**: *{:,}*"},
-}
 
 
 class ItemType(Enum):
