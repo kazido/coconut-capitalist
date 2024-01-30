@@ -3,6 +3,7 @@ import discord
 
 from datetime import datetime
 from cococap.user import User
+from cococap.item_models import Master
 
 from cococap.constants import Rarities
 from logging import getLogger
@@ -60,6 +61,55 @@ def distribute_drops(user_id, item_pool, bit_multiplier=1):
     return roll, bits_reward
 
 
+field_formats = {
+    # General fields section
+    "item_id": {"text": "**Item ID**: *{:}*"},
+    "item_type": {"text": "**Type**: *{:}*"},
+    "rarity": {"text": "**Rarity**: *{:}*", "shop_field": True, "rarity": True},
+    "consumable": {"text": "**Single Use**: *{:}*"},
+    "is_material": {"text": "**Material**: *{:}*"},
+    "skill": {"text": "**Category**: *{:}*"},
+    "drop_rate": {"text": "**Drop Rate**: 1/*{:,}*"},
+    "min_drop": {"text": "**Min Roll**: *{:,}*"},
+    "max_drop": {"text": "**Max Roll**: *{:,}*"},
+    # Crop specific section
+    "pet_xp": {"text": "**Pet XP**: *{:,}*", "shop_field": True},
+    "min_harvest": {"text": "**Min Harvest**: *{:,}*"},
+    "max_harvest": {"text": "**Max Harvest**: *{:,}*"},
+    "grows_from": {
+        "text": "**Grows From**: *{:}*",
+        "shop_field": True,
+        "get_display_name": True,
+    },
+    # Seed specific section
+    "growth_odds": {"text": "**Growth Time**: ~*{:,}* cycles", "shop_field": True},
+    "grows_into": {
+        "text": "**Grows Into**: *{:}*",
+        "shop_field": True,
+        "get_display_name": True,
+    },
+    # Tool specific section
+    "power": {"text": "**Power**: *{:,}*", "shop_field": True},
+    # Pet specific section
+    "max_level": {"text": "**Max Level**: *{:,}*", "shop_field": True},
+    "work_bonus": {"text": "**Work Bonus**: *{:,}* bits", "shop_field": True},
+    "daily_bonus": {"text": "**Daily Bonus**: *{:,}* tokens", "shop_field": True},
+    # Rank specific section
+    "emoji": {"text": "**Emoji**: *{:}*"},
+    "token_price": {"text": "**Price**: *{:,}* tokens", "shop_field": True},
+    "wage": {"text": "**Wage**: *{:,}* bits", "shop_field": True},
+    "next_rank_id": {"text": "**Next Rank**: *{:}*", "shop_field": True},
+    # Area specific section
+    "difficulty": {"text": "**Difficulty**: *{:,}* :star:"},
+    "token_bonus": {"text": "**Daily Bonus**: *{:,}* tokens"},
+    "fuel_requriement": {"text": "**Fuel Type**: *{:}*"},
+    "fuel_amount": {"text": "**Req. Fuel**: *{:,}*"},
+    # Bottom formatting
+    "price": {"text": "**Price**: *{:,}*", "shop_field": True},
+    "sell_price": {"text": "**Sell Price**: *{:,}*"},
+}
+
+
 def construct_embed(item_id, for_shop: bool):
     """Constructs an embed filled with formatted data about the item that is passed.
 
@@ -70,20 +120,17 @@ def construct_embed(item_id, for_shop: bool):
     Returns:
         discord.Embed: An embed filled with the items data.
     """
-    item_data = get_item_data(item_id, backrefs=True)
-    log.debug(f"Retrieved {item_data} from manager with item_id: {item_id}")
+    item_data: Master = Master.get_by_id(item_id)
 
     # Create an embed with the proper information from the item
     embed = discord.Embed(
-        title=item_data["display_name"],
-        description=item_data["description"],
+        title=item_data.display_name,
+        description=item_data.description,
     )
 
-    def format_value(value, field_format: dict, embed: discord.Embed):
+    def format_value(value, embed: discord.Embed):
         """Takes an unformatted value and formats it by specific tags"""
-        if field_format.get("get_display_name"):
-            formatted_value = get_item_display_name(value)
-        elif field_format.get("rarity"):
+        if field_formats.get("rarity"):
             rarity = Rarities.from_value(value)
             formatted_value = rarity.rarity_name
             embed.color = discord.Color.from_str(rarity.color)
@@ -93,7 +140,7 @@ def construct_embed(item_id, for_shop: bool):
         log.debug(f"Finished formatting value: {formatted_value}")
         return formatted_value
 
-    def construct_stats_string(item_data: dict, field_formats: dict, for_shop: bool):
+    def construct_stats_string(item_data: dict, for_shop: bool):
         """Constructs a string filled with item information."""
         stats_string = ""
         for field_name in field_formats.keys():
@@ -113,7 +160,7 @@ def construct_embed(item_id, for_shop: bool):
 
         return stats_string
 
-    stats_string = construct_stats_string(item_data, field_formats, for_shop)
+    stats_string = construct_stats_string(item_data, for_shop)
     # Add the string to the embed under a field titled "Stats"
     embed.add_field(name="Stats", value=stats_string)
     return embed
