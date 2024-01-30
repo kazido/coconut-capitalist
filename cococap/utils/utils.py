@@ -174,6 +174,6 @@ async def check_bet(user_id: int, bet: int):
     if int(bet) <= 0:
         return f"I sense something fishy... Quit it.", False
     elif int(bet) > balance:
-        return f"Sorry, but no loans. You only have {balance} bits.", False
+        return f"Sorry, but no loans. You only have {balance:,} bits.", False
     else:
         return "Passed", True
