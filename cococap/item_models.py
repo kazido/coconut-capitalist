@@ -115,6 +115,7 @@ class Pets(BaseModel):
         null=True,
         primary_key=True,
     )
+    display_name = TextField(null=True)
     daily_bonus = IntegerField(null=True)
     max_level = IntegerField(null=True)
     work_bonus = IntegerField(null=True)
