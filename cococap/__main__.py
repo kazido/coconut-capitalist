@@ -41,7 +41,7 @@ async def main():
 
     async with cococap.instance as _bot:
         log.info(f"Bot starting in {os.getcwd()}")
-        await _bot.start(constants.TOKEN, reconnect=True)
+        await _bot.start(os.environ.get('BOT_TOKEN'), reconnect=True)
 
 
 if __name__ == "__main__":

@@ -14,14 +14,11 @@ with open(config_path, "r") as f:
 
 
 BOT_PREFIX = "-"
-TOKEN = data["primary_token"]
-URI = data["mongo_uri"]
+URI = f"mongodb+srv://{os.environ.get('MONGO_URI')}@cluster0.i77sksx.mongodb.net/?retryWrites=true&w=majority"
 DATABASE = "livedatabase.db"
 
 if data["DEV"]:
     BOT_PREFIX = "."
-    TOKEN = data["secondary_token"]
-    URI = data["mongo_uri"]
     DATABASE = "testdatabase.db"
 
 
