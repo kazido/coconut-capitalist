@@ -38,7 +38,6 @@ class User:
             raise Exception(f"No discord member with ID {self.uid}.")
         return discord_user
 
-    # NEEDS UPDATING!!!
     async def get_user_rank(self) -> Ranks:
         """Retrieve the corresponding rank of a user based on their roles in a Discord guild."""
         unranked_id = 959850049188298772
@@ -50,6 +49,8 @@ class User:
             # Check to see if the user has any matching role in discord
             if discord_role in self.discord_info.roles:
                 return rank
+            
+        # If we don't find any rank, give them unranked
         unranked = guild.get_role(unranked_id)
         await self.discord_info.add_roles(unranked)
         return Ranks.get_by_id(unranked_id)
