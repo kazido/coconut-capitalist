@@ -1,4 +1,3 @@
-from typing import Any, Coroutine
 import discord
 import random
 import asyncio
@@ -55,7 +54,7 @@ class ClaimDropButtons(discord.ui.View):
         else:
             update_data = {
                 "$inc": {
-                    "amount": 1,
+                    "amount": self.drop.amount,
                     "total_drops": 1,
                     "total_drops_missed": 1,
                     "counter": 1,
