@@ -1,3 +1,4 @@
+from typing import Any, Coroutine
 import discord
 import random
 import asyncio
@@ -201,7 +202,10 @@ class DropsCog(commands.Cog, name="Drops"):
     def __init__(self, bot):
         self.bot = bot
         self.tree = self.bot.tree
+        
+    def cog_load(self):
         self.drop_task.start()
+        
         
     def cog_unload(self):
         self.drop_task.cancel()
