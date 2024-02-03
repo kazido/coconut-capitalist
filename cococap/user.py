@@ -24,9 +24,7 @@ class User:
 
     async def load(self):
         """Loads the object with information from MongoDB"""
-        self.document = await UserCollection.find_one(
-            UserCollection.discord_id == self.uid
-        )
+        self.document = await UserCollection.find_one(UserCollection.discord_id == self.uid)
         if self.document is None:
             self.document = UserCollection(name=self.discord_info.name, discord_id=self.uid)
             await self.document.insert()
@@ -41,8 +39,9 @@ class User:
         return discord_user
 
     # NEEDS UPDATING!!!
-    def get_user_rank(self) -> Ranks:
+    async def get_user_rank(self) -> Ranks:
         """Retrieve the corresponding rank of a user based on their roles in a Discord guild."""
+        unranked_id = 959850049188298772
         guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
 
         for rank in Ranks.select():
@@ -51,11 +50,13 @@ class User:
             # Check to see if the user has any matching role in discord
             if discord_role in self.discord_info.roles:
                 return rank
-        return None
+        unranked = guild.get_role(unranked_id)
+        await self.discord_info.add_roles(unranked)
+        return Ranks.get_by_id(unranked_id)
 
     def __str__(self) -> str:
         return self.discord_info.name
-    
+
     async def save(self):
         await self.document.save()
 
@@ -77,7 +78,7 @@ class User:
             return "Object does not have skill {skill}."
         getattr(self.document, skill)["xp"] += xp
         await self.save()
-        
+
     async def update_game(self, *, in_game: bool):
         self.document.in_game = in_game
         await self.save()
@@ -88,24 +89,37 @@ class User:
             return "Object does not have field {field}."
         return getattr(self.document, field)
 
-    def get_tool(self, *, skill: str):
+    def get_skill(self, *, skill: str):
         if not hasattr(self.document, skill):
             return "Object does not have skill {skill}."
-        return getattr(self.document, skill)["equipped_tool"]
-    
+        return getattr(self.document, skill)
+
+    def get_xp_for_level(self, level):
+        xp = (level / 0.07) ** 2
+        return xp
+
+    def get_level_from_xp(self, xp):
+        level = 0.07 * (xp ** (1 / 2))
+        return level
+
+    def get_xp_for_next_level(self, xp):
+        current_level = self.get_level_from_xp(xp)
+        next_level = current_level + 1
+        xp_required = self.get_xp_for_level(next_level)
+        return xp_required
+
     def get_active_pet(self):
         pets = self.document.pets
         if "active" not in pets.keys():
             return None
         return pets["active"]
-    
+
     def get_zone(self):
-        return Areas.get_by_id(self.get_field('zone'))
-                
+        return Areas.get_by_id(self.get_field("zone"))
 
     # COOLDOWN METHODS ------------------------------------
     COMMAND_TYPES = Literal["daily", "work", "weekly"]
-    
+
     async def set_cooldown(self, command_type: COMMAND_TYPES):
         now = time.time()
         self.document.cooldowns[command_type] = now
@@ -142,4 +156,3 @@ class User:
             return False, cooldown  # The check has been failed
         else:
             return True, None  # The check has been passed
-    
