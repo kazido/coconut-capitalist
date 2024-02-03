@@ -68,6 +68,7 @@ class HighLow(commands.Cog, name="High Low"):
         """Guess if the number will be high (6-10) or low (1-5)."""
         # Load the user
         user = User(interaction.user.id)
+        print("initialized user 1 time")
         await user.load()
         
         if user.get_field("in_game"):
@@ -102,7 +103,7 @@ class HighLow(commands.Cog, name="High Low"):
             await interaction.delete_original_response()
             return
 
-        failed_message, passed = await check_bet(user_id=user.uid, bet=bet)
+        failed_message, passed = await check_bet(user=user, bet=bet)
 
         if passed is False:
             bet_not_allowed_embed = (
