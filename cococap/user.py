@@ -90,7 +90,7 @@ class User:
             return "Object does not have field {field}."
         return getattr(self.document, field)
 
-    def get_skill(self, *, skill: str):
+    def get_skill(self, skill: str):
         if not hasattr(self.document, skill):
             return "Object does not have skill {skill}."
         return getattr(self.document, skill)
