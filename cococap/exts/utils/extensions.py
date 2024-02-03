@@ -128,7 +128,6 @@ class Extensions(commands.Cog):
         embed.set_author(
             name="Extensions List"
         )
-
         lines = []
         categories = self.group_extension_statuses()
         for category, extensions in sorted(categories.items()):
@@ -139,7 +138,7 @@ class Extensions(commands.Cog):
             lines.append(f"**{category}**\n{extensions}\n")
         
         log.debug(f"{ctx.author} requested a list of all cogs. Returning a paginated list.")
-        await LinePaginator.paginate(lines, ctx, embed, scale_to_size=700, empty=False)
+        await LinePaginator.paginate_ctx(lines, ctx, embed, scale_to_size=700, empty=False)
 
     def group_extension_statuses(self) -> t.Mapping[str, str]:
         """Return a mapping of extension names and statuses to their categories."""
