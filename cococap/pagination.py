@@ -5,10 +5,9 @@ from functools import partial
 
 import discord
 from discord.abc import User
-from discord.ext.commands import Paginator
+from discord.ext.commands import Paginator, Context
 from discord import Interaction
 
-from cococap import constants
 from logging import getLogger
 from cococap.utils import messages
 
@@ -21,7 +20,7 @@ DELETE_EMOJI = "🗑"  # [:wastebasket:]
 PAGINATION_EMOJI = (FIRST_EMOJI, LEFT_EMOJI, RIGHT_EMOJI, LAST_EMOJI, DELETE_EMOJI)
 
 log = getLogger(__name__)
-log.setLevel(1)
+log.setLevel(10)
 
 
 class EmptyPaginatorEmbedError(Exception):
@@ -64,21 +63,15 @@ class LinePaginator(Paginator):
         # Embeds that exceed 4096 characters will result in an HTTPException
         # (Discord API limit), so we've set a limit of 4000
         if max_size > 4000:
-            raise ValueError(
-                f"max_size must be <= 4,000 characters. ({max_size} > 4000)"
-            )
+            raise ValueError(f"max_size must be <= 4,000 characters. ({max_size} > 4000)")
 
         super().__init__(prefix, suffix, max_size - len(suffix), linesep)
 
         if scale_to_size < max_size:
-            raise ValueError(
-                f"scale_to_size must be >= max_size. ({scale_to_size} < {max_size})"
-            )
+            raise ValueError(f"scale_to_size must be >= max_size. ({scale_to_size} < {max_size})")
 
         if scale_to_size > 4000:
-            raise ValueError(
-                f"scale_to_size must be <= 4,000 characters. ({scale_to_size} > 4000)"
-            )
+            raise ValueError(f"scale_to_size must be <= 4,000 characters. ({scale_to_size} > 4000)")
 
         self.scale_to_size = scale_to_size - len(suffix)
         self.max_lines = max_lines
@@ -147,9 +140,7 @@ class LinePaginator(Paginator):
         self._count = len(self.prefix) + 1
         self.close_page()
 
-    def _split_remaining_words(
-        self, line: str, max_chars: int
-    ) -> t.Tuple[str, t.Optional[str]]:
+    def _split_remaining_words(self, line: str, max_chars: int) -> t.Tuple[str, t.Optional[str]]:
         """
         Internal: split a line into two strings -- reduced_words and remaining_words.
 
@@ -189,9 +180,7 @@ class LinePaginator(Paginator):
 
         return (
             " ".join(reduced_words) + "..." if remaining_words else "",
-            continuation_header + " ".join(remaining_words)
-            if remaining_words
-            else None,
+            continuation_header + " ".join(remaining_words) if remaining_words else None,
         )
 
     @classmethod
@@ -247,9 +236,7 @@ class LinePaginator(Paginator):
                 log.exception("Pagination asked for empty lines iterable")
                 raise EmptyPaginatorEmbedError("No lines to paginate")
 
-            log.debug(
-                "No lines to add to paginator, adding '(nothing to display)' message"
-            )
+            log.debug("No lines to add to paginator, adding '(nothing to display)' message")
             lines.append("*(nothing to display)*")
 
         for line in lines:
@@ -333,9 +320,7 @@ class LinePaginator(Paginator):
 
                 if reaction.emoji == FIRST_EMOJI:
                     current_page = 0
-                    log.debug(
-                        f"Got first page reaction - changing to page 1/{total_pages}"
-                    )
+                    log.debug(f"Got first page reaction - changing to page 1/{total_pages}")
                 elif reaction.emoji == LAST_EMOJI:
                     current_page = len(paginator.pages) - 1
                     log.debug(
@@ -354,9 +339,7 @@ class LinePaginator(Paginator):
                     )
                 elif reaction.emoji == RIGHT_EMOJI:
                     if current_page >= len(paginator.pages) - 1:
-                        log.debug(
-                            "Got next page reaction, but we're on the last page - ignoring"
-                        )
+                        log.debug("Got next page reaction, but we're on the last page - ignoring")
                         continue
 
                     current_page += 1
@@ -371,9 +354,7 @@ class LinePaginator(Paginator):
                         text=f"{footer_text} (Page {current_page + 1}/{len(paginator.pages)})"
                     )
                 else:
-                    embed.set_footer(
-                        text=f"Page {current_page + 1}/{len(paginator.pages)}"
-                    )
+                    embed.set_footer(text=f"Page {current_page + 1}/{len(paginator.pages)}")
 
                 try:
                     await interaction.message.edit(embed=embed)
@@ -388,6 +369,196 @@ class LinePaginator(Paginator):
         with suppress(discord.NotFound):
             try:
                 await interaction.message.clear_reactions()
+            except discord.HTTPException as e:
+                # Suppress if trying to act on an archived thread.
+                if e.code != 50083:
+                    raise e
+
+    @classmethod
+    async def paginate_ctx(
+        cls,
+        lines: t.List[str],
+        ctx: Context,
+        embed: discord.Embed,
+        prefix: str = "",
+        suffix: str = "",
+        max_lines: t.Optional[int] = None,
+        max_size: int = 500,
+        scale_to_size: int = 4000,
+        empty: bool = True,
+        restrict_to_user: User = None,
+        timeout: int = 300,
+        footer_text: str = None,
+        url: str = None,
+        exception_on_empty_embed: bool = False,
+    ) -> t.Optional[discord.Message]:
+        """
+        Use a paginator and set of reactions to provide pagination over a set of lines.
+
+        The reactions are used to switch page, or to finish with pagination.
+
+        When used, this will send a message using `ctx.send()` and apply a set of reactions to it. These reactions may
+        be used to change page, or to remove pagination from the message.
+
+        Pagination will also be removed automatically if no reaction is added for five minutes (300 seconds).
+
+        The interaction will be limited to `restrict_to_user` (ctx.author by default) or
+        to any user with a moderation role.
+
+        Example:
+        >>> embed = discord.Embed()
+        >>> embed.set_author(name="Some Operation", url=url, icon_url=icon)
+        >>> await LinePaginator.paginate([line for line in lines], ctx, embed)
+        """
+        paginator = cls(
+            prefix=prefix,
+            suffix=suffix,
+            max_size=max_size,
+            max_lines=max_lines,
+            scale_to_size=scale_to_size,
+        )
+        current_page = 0
+
+        if not restrict_to_user:
+            restrict_to_user = ctx.author
+
+        if not lines:
+            if exception_on_empty_embed:
+                log.exception("Pagination asked for empty lines iterable")
+                raise EmptyPaginatorEmbedError("No lines to paginate")
+
+            log.debug("No lines to add to paginator, adding '(nothing to display)' message")
+            lines.append("*(nothing to display)*")
+
+        for line in lines:
+            try:
+                paginator.add_line(line, empty=empty)
+            except Exception:
+                log.exception(f"Failed to add line to paginator: '{line}'")
+                raise  # Should propagate
+            else:
+                log.trace(f"Added line to paginator: '{line}'")
+
+        log.debug(f"Paginator created with {len(paginator.pages)} pages")
+
+        embed.description = paginator.pages[current_page]
+
+        if len(paginator.pages) <= 1:
+            if footer_text:
+                embed.set_footer(text=footer_text)
+                log.trace(f"Setting embed footer to '{footer_text}'")
+
+            if url:
+                embed.url = url
+                log.trace(f"Setting embed url to '{url}'")
+
+            log.debug(
+                "There's less than two pages, so we won't paginate - sending single page on its own"
+            )
+            return await ctx.send(embed=embed)
+        else:
+            if footer_text:
+                embed.set_footer(
+                    text=f"{footer_text} (Page {current_page + 1}/{len(paginator.pages)})"
+                )
+            else:
+                embed.set_footer(text=f"Page {current_page + 1}/{len(paginator.pages)}")
+            log.trace(f"Setting embed footer to '{embed.footer.text}'")
+
+            if url:
+                embed.url = url
+                log.trace(f"Setting embed url to '{url}'")
+
+            log.debug("Sending first page to channel...")
+            message = await ctx.send(embed=embed)
+
+        log.debug("Adding emoji reactions to message...")
+
+        for emoji in PAGINATION_EMOJI:
+            # Add all the applicable emoji to the message
+            log.trace(f"Adding reaction: {repr(emoji)}")
+            await message.add_reaction(emoji)
+
+        check = partial(
+            messages.reaction_check,
+            message_id=message.id,
+            allowed_emoji=PAGINATION_EMOJI,
+            allowed_users=(restrict_to_user.id,),
+        )
+
+        while True:
+            try:
+                reaction, user = await ctx.bot.wait_for(
+                    "reaction_add", timeout=timeout, check=check
+                )
+                log.trace(f"Got reaction: {reaction}")
+            except asyncio.TimeoutError:
+                log.debug("Timed out waiting for a reaction")
+                break  # We're done, no reactions for the last 5 minutes
+
+            if str(reaction.emoji) == DELETE_EMOJI:
+                log.debug("Got delete reaction")
+                return await message.delete()
+            elif reaction.emoji in PAGINATION_EMOJI:
+                total_pages = len(paginator.pages)
+                try:
+                    await message.remove_reaction(reaction.emoji, user)
+                except discord.HTTPException as e:
+                    # Suppress if trying to act on an archived thread.
+                    if e.code != 50083:
+                        raise e
+
+                if reaction.emoji == FIRST_EMOJI:
+                    current_page = 0
+                    log.debug(f"Got first page reaction - changing to page 1/{total_pages}")
+                elif reaction.emoji == LAST_EMOJI:
+                    current_page = len(paginator.pages) - 1
+                    log.debug(
+                        f"Got last page reaction - changing to page {current_page + 1}/{total_pages}"
+                    )
+                elif reaction.emoji == LEFT_EMOJI:
+                    if current_page <= 0:
+                        log.debug(
+                            "Got previous page reaction, but we're on the first page - ignoring"
+                        )
+                        continue
+
+                    current_page -= 1
+                    log.debug(
+                        f"Got previous page reaction - changing to page {current_page + 1}/{total_pages}"
+                    )
+                elif reaction.emoji == RIGHT_EMOJI:
+                    if current_page >= len(paginator.pages) - 1:
+                        log.debug("Got next page reaction, but we're on the last page - ignoring")
+                        continue
+
+                    current_page += 1
+                    log.debug(
+                        f"Got next page reaction - changing to page {current_page + 1}/{total_pages}"
+                    )
+
+                embed.description = paginator.pages[current_page]
+
+                if footer_text:
+                    embed.set_footer(
+                        text=f"{footer_text} (Page {current_page + 1}/{len(paginator.pages)})"
+                    )
+                else:
+                    embed.set_footer(text=f"Page {current_page + 1}/{len(paginator.pages)}")
+
+                try:
+                    await message.edit(embed=embed)
+                except discord.HTTPException as e:
+                    if e.code == 50083:
+                        # Trying to act on an archived thread, just ignore and abort
+                        break
+                    else:
+                        raise e
+
+        log.debug("Ending pagination and clearing reactions.")
+        with suppress(discord.NotFound):
+            try:
+                await message.clear_reactions()
             except discord.HTTPException as e:
                 # Suppress if trying to act on an archived thread.
                 if e.code != 50083:
