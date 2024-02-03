@@ -129,10 +129,8 @@ def construct_embed(item_id, for_shop: bool):
     return embed
 
 
-async def check_bet(user_id: int, bet: int):
+async def check_bet(user: User, bet: int):
     """Ensures that a user is not betting invalid amounts"""
-    user = User(user_id)
-    await user.load()
     balance = user.get_field('purse')
     if int(bet) <= 0:
         return f"I sense something fishy... Quit it.", False
