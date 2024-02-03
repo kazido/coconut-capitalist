@@ -202,12 +202,13 @@ class DropsCog(commands.Cog, name="Drops"):
         self.bot = bot
         self.tree = self.bot.tree
         
-    def cog_load(self):
+    async def cog_load(self):
         self.drop_task.start()
+        return await super().cog_load()
         
-        
-    def cog_unload(self):
+    async def cog_unload(self):
         self.drop_task.cancel()
+        return await super().cog_unload()
 
     @tasks.loop(minutes=randint(30, 60))
     async def drop_task(self):
