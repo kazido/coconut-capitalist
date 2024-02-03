@@ -1,8 +1,7 @@
-import peewee
-
 from cococap.user import User
 from cococap.item_models import Master
 
+import random
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -32,7 +31,7 @@ async def create_item(owner: int, item_id: str, quantity: int = 1):
         return True
     else:
         # If an item was found, add to it's quantity
-        inventory[item_id][quantity] += quantity
+        inventory[item_id]['quantity'] += quantity
         log.info(f"Added {quantity} {item_id} to: {owner}")
         await user.document.save()
         return True
@@ -106,3 +105,20 @@ async def trade_item(owner: int, new_owner: int, item_id: str, quantity: int = N
         # If item doesn't exist, do nothing
         log.warn(f"Tried to trade {item_id} from {owner} to {new_owner}. Item does not exist.")
         return False
+    
+    
+def skewed_roll(min_drop: int, max_drop: int):
+    """Returns an integer between min_drop and max_drop, skewed towards min_drop."""
+    # only to be used in roll_drops
+    range_size = max_drop - min_drop
+    roll = min_drop + round((random.random() ** 3) * range_size)
+    return roll
+
+
+def roll_item(item: Master):
+    """Rolls item and returns the quantity"""
+    # If a 1 is rolled, the item was dropped
+    if random.randint(1, item.drop_rate) == 1:
+        quantity = skewed_roll(item.min_drop, item.max_drop)
+        return quantity
+    return None

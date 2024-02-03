@@ -24,43 +24,6 @@ def seconds_until_tasks():
     return (time_until * 60) - current_time.second
 
 
-def skewed_random(min_drop, max_drop):
-    """Returns an integer between min_drop and max_drop, skewed towards min_drop"""
-    range_size = max_drop - min_drop + 1
-    skewed_random = min_drop + int((random.random() ** 2) * range_size)
-    return skewed_random
-
-
-def roll_drops(item_pool):
-    """Rolls each item in an item pool and returns all items that rolled and their quantity"""
-    drops = []
-    # Roll each item in the pool once
-    for item in item_pool:
-        get_item_data(item.item_id)
-        # If a 1 is rolled, the item was dropped
-        if random.randint(1, item["drop_rate"]) == 1:
-            quantity = skewed_random(item["min_drop"], item["max_drop"])
-            drops.append({"item": item, "quantity": quantity})
-    return drops
-
-
-def distribute_drops(user_id, item_pool, bit_multiplier=1):
-    # TODO: Fix user.get_field, UserManager has changed
-    """Distribute bits and drops to a user"""
-    user = get_user_data(user_id)
-    # Generate rewards
-    bits_reward = bit_multiplier * skewed_random(10, 100)
-    roll = roll_drops(item_pool)
-    # Distribute items to user
-    for item in roll:
-        log.info(f"User rolled {item}")
-        create_entity(user_id, item["item"]["item_id"], item["quantity"])
-    # Distribute bits to user
-    log.info(f"User rolled {bits_reward} bits")
-    set_user_field(user_id, 'purse', user['purse'] + bits_reward)
-    return roll, bits_reward
-
-
 field_formats = {
     # General fields section
     "item_id": {"text": "**Item ID**: *{:}*"},
