@@ -76,7 +76,7 @@ class User:
 
     async def inc_xp(self, *, skill: str, xp: int):
         if not hasattr(self.document, skill):
-            return "Object does not have skill {skill}."
+            return f"Object does not have skill {skill}."
         getattr(self.document, skill)["xp"] += xp
         await self.save()
 
