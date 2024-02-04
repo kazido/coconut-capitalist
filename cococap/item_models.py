@@ -1,4 +1,3 @@
-import discord
 import os
 
 from cococap.constants import DATABASE
@@ -8,7 +7,6 @@ from peewee import (
     SqliteDatabase,
     Model,
     IntegerField,
-    BooleanField,
     TextField,
     ForeignKeyField,
     DoesNotExist,
@@ -45,17 +43,16 @@ class BaseModel(Model):
 class Master(BaseModel):
     item_id = TextField(primary_key=True)
     price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    consumable = BooleanField(constraints=[SQL("DEFAULT 0")], null=True)
     description = TextField(null=True)
     display_name = TextField(null=True)
     drop_rate = IntegerField(null=True)
-    is_material = BooleanField(constraints=[SQL("DEFAULT 0")], null=True)
     max_drop = IntegerField(null=True)
     min_drop = IntegerField(null=True)
     rarity = IntegerField(null=True)
     sell_price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     skill = TextField(null=True)
     filter_type = TextField(null=True)
+    emoji = TextField(null=True)
 
     class Meta:
         table_name = "data_master"
@@ -116,6 +113,9 @@ class Pets(BaseModel):
         primary_key=True,
     )
     display_name = TextField(null=True)
+    description = TextField(null=True)
+    rarity = IntegerField(null=True)
+    price = IntegerField(null=True)
     daily_bonus = IntegerField(null=True)
     max_level = IntegerField(null=True)
     work_bonus = IntegerField(null=True)
