@@ -1,10 +1,12 @@
 import discord
 
-
 from discord.ext import commands
 from discord import app_commands
-from cococap.classLibrary import RequestUser
-from cococap import entity_models as m
+
+from cococap.user import User
+from cococap.item_models import Master
+from cococap.utils.messages import Cembed
+from cococap.utils.items import create_item, delete_item, trade_item
 from cococap.utils.utils import construct_embed
 
 
@@ -60,18 +62,29 @@ class InventoryCog(commands.Cog, name='Inventory'):
     @app_commands.command(name="inventory", description="Check your inventory!")
     @app_commands.guilds(977351545966432306, 856915776345866240)
     async def inventory(self, interaction: discord.Interaction):
-        user = RequestUser(interaction.user.id, interaction=interaction)  # User info
-        inventory = InventoryCog.Inventory(interaction=interaction) # Inventory info
+        # Load the user
+        user = User(interaction.user.id)
+        await user.load()
+        
+        await delete_item(user.uid, "masterwork_axe")
+        
+        inventory: dict = user.get_field('items')
+        
+        if len(inventory) == 0:
+            desc = "You don't have any items!"
+        else:
+            desc = None
 
-        inventory_embed = discord.Embed(
+        inventory_embed = Cembed(
             title=f"{interaction.user.name}'s Inventory",
-            description="Testing description.",
-            color=discord.Color.from_rgb(153, 176, 162)
+            desc=desc,
+            color=discord.Color.from_rgb(153, 176, 162),
+            interaction=interaction, activity="inventory"
         )
-        for item in inventory.get():
-            print(item)
-            # inventory_embed.add_field(name=item['name'], value=item['quantity'])
-        inventory_embed.set_footer(text="Test footer")
+        for k, v in inventory.items():
+            data: Master = Master.get_by_id(k)
+            inventory_embed.add_field(name=data.display_name, value=v['quantity'])
+            
         await interaction.response.send_message(embed=inventory_embed)
         
     @app_commands.command(name="wiki", description="What is this item?")
