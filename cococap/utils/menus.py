@@ -1,6 +1,10 @@
 import discord
 
 from discord import Interaction, ButtonStyle
+from logging import getLogger
+
+log = getLogger(__name__)
+log.setLevel(10)
 
 class Menu(discord.ui.View):
     def __init__(self, embed=None, timeout: float | None = 180):
@@ -8,15 +12,15 @@ class Menu(discord.ui.View):
         self.embed: discord.Embed = embed
 
     async def on_timeout(self) -> None:
-        await self.clear_items()
-        await self.stop()
+        self.clear_items()
+        self.stop()
         
     @discord.ui.button(label="Close", emoji="✖️", style=ButtonStyle.red, row=4)
-    async def back(self, interaction: Interaction, button: discord.ui.Button):
+    async def close(self, interaction: Interaction, button: discord.ui.Button):
         self.embed.color = discord.Color.dark_grey()
         self.embed.set_footer(text=f"Menu has been closed by {interaction.user.name}.")
-        await self.clear_items()
-        await self.stop()
+        self.clear_items()
+        self.stop()
         await interaction.response.edit_message(embed=self.embed, view=self)
         
 class ParentMenu(Menu):
@@ -25,15 +29,17 @@ class ParentMenu(Menu):
         self.current: int = 0
         super().__init__(embed, timeout)
         
-    async def add_submenu(self, submenu: "SubMenu"):
+    def add_submenu(self, submenu: "SubMenu"):
         self.menus.append(submenu)
         
-    async def move_forward(self):
+    def move_forward(self):
         # Should be called whenever we move forward a menu
+        log.debug("Moved forward.")
         self.current += 1
     
-    async def move_backward(self):
+    def move_backward(self):
         # Should be called whenever we move back a menu
+        log.debug("Moved backward.")
         self.current -= 1
         
 class SubMenu(Menu):
@@ -41,6 +47,7 @@ class SubMenu(Menu):
     def __init__(self, embed=None, timeout: float | None = 180):
         super().__init__(timeout=timeout)
         self.embed: discord.Embed = embed
+        print(self.children)
         
     @discord.ui.button(label="Back", emoji="🔙", style=ButtonStyle.gray, row=3)
     async def back(self, interaction: Interaction, button: discord.ui.Button):

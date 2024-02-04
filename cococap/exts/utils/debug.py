@@ -12,6 +12,10 @@ from cococap.user import User
 from cococap.utils.tasks import get_time_until, est_tz
 from cococap.constants import DiscordGuilds
 
+from motor.motor_asyncio import AsyncIOMotorClient
+from cococap.constants import URI
+from bson import ObjectId
+
 
 
 class DebuggingCommands(commands.Cog, name="Debugging Commands"):
@@ -44,11 +48,10 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value)
     @app_commands.command()
     async def test(self, interaction: discord.Interaction):
-        user = User(interaction.user.id)
-        await user.load()
-
-        user.document.pets["active"] = {"pet_id": "bee_pet", "level": 1, "xp": 0, "name": "Arlo"}
-        await user.save()
+        client = AsyncIOMotorClient(URI)
+        collection = client.discordbot.special_entities
+        
+        print(await collection.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")}))
         # Interaction has finished
         await interaction.response.send_message("Done.")
 

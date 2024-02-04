@@ -8,8 +8,10 @@ from logging import getLogger
 from discord.interactions import Interaction
 
 from cococap.constants import RED_X_URL, DiscordGuilds
-from cococap.user import *
-from cococap.utils.items import *
+from cococap.user import User
+from cococap.utils.messages import Cembed
+from cococap.item_models import Master
+from cococap.utils.items import create_item, delete_item, trade_item
 from cococap.utils.utils import distribute_drops
 
 log = getLogger(__name__)
@@ -188,13 +190,27 @@ class ForagingCog(commands.Cog, name="Foraging"):
         guild_ids=[primary_guild],
     )
 
-    @foraging.command(name="chop", description="Grab a buddy and chop down a tree.")
-    async def chop(self, interaction: discord.Interaction):
-        user = get_user_data(interaction.user.id, backrefs=True)
-        user['tool'] = get_user_tool(interaction.user.id, 'foraging')
+    @foraging.command(name="foraging")
+    async def foraging(self, interaction: discord.Interaction):
+        """Grab a buddy and chop down a tree."""
+        # Load the user
+        user = User(interaction.user.id)
+        await user.load()
+        foraging = user.get_field('foraging')
+        
+        skill_xp = foraging['xp']
+        skill_level = user.xp_to_lvl(skill_xp)
+        embed = Cembed(
+            title=f"Foraging level: {skill_level}",
+            color=discord.Color.blue(),
+            interaction=interaction,
+            activity="foraging",
+        )
+    
+        tool_data = Master.get_by_id(foraging['equipped_tool'])
 
         # If the user does not own an axe
-        if not user['tool']:
+        if not tool:
             embed = discord.Embed(
                 description="You need an axe to chop trees!", color=discord.Color.red()
             )
