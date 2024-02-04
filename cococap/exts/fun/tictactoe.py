@@ -5,7 +5,7 @@ import discord
 
 
 class TicTacToeCog(commands.Cog, name='Tic Tac Toe'):
-    """Remember the pattern and try to get a high score."""
+    """Play tic tac toe with your friends."""
 
     def __init__(self, bot):
         self.bot = bot
