@@ -65,12 +65,14 @@ class Cembed(discord.Embed):
         title: Any | None = None,
         type: EmbedType = "rich",
         url: Any | None = None,
+        description: Any | None = None,
         desc: Any | None = None,
         timestamp: datetime | None = None,
         interaction: Interaction | None = None,
         activity: str = ":)"
     ):
         color = colour if colour is not None else color
+        description = desc if desc is not None else description
         super().__init__(
             color=color,
             title=title,
