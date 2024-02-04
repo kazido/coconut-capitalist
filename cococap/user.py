@@ -53,7 +53,7 @@ class User:
         # If we don't find any rank, give them unranked
         unranked = guild.get_role(unranked_id)
         await self.discord_info.add_roles(unranked)
-        return await Ranks.get_by_id(unranked_id)
+        return Ranks.get_by_id(unranked_id)
 
     def __str__(self) -> str:
         return self.discord_info.name
