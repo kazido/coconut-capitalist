@@ -74,12 +74,6 @@ class Rarities(Enum):
     def from_value(cls, value):
         return cls(value)
 
-class CooldownTimes(Enum):
-    WORK = 6
-    DAILY = 21
-    WEEKLY = 167
-
-
 IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images"
 GREEN_CHECK_MARK_URL = f"{IMAGES_REPO}/main/icons/checkmarks/green-checkmark-dist.png"
 RED_X_URL = f"{IMAGES_REPO}/main/icons/checkmarks/red-x.png"
@@ -162,3 +156,16 @@ class Emojis(Enum):
     STATUS_ONLINE = ":white_check_mark:"
     STATUS_OFFLINE = ":x:"
     TRASHCAN = ":wastebasket:"
+    
+NUMBER_EMOJIS = {
+    1: ":one:",
+    2: ":two:",
+    3: ":three:",
+    4: ":four:",
+    5: ":five:",
+    6: ":six:",
+    7: ":seven:",
+    8: ":eight:",
+    9: ":nine:",
+    10: ":ten:"
+}
