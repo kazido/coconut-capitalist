@@ -53,7 +53,7 @@ class User:
         # If we don't find any rank, give them unranked
         unranked = guild.get_role(unranked_id)
         await self.discord_info.add_roles(unranked)
-        return Ranks.get_by_id(unranked_id)
+        return await Ranks.get_by_id(unranked_id)
 
     def __str__(self) -> str:
         return self.discord_info.name
@@ -96,12 +96,12 @@ class User:
         return getattr(self.document, skill)
 
     def get_xp_for_level(self, level):
-        xp = (level / 0.07) ** 2
+        xp = (level - 1 / 0.07) ** 2
         return xp
 
     def get_level_from_xp(self, xp):
         level = 0.07 * (xp ** (1 / 2))
-        return level
+        return level + 1
 
     def get_xp_for_next_level(self, xp):
         current_level = self.get_level_from_xp(xp)
