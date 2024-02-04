@@ -77,7 +77,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         user = User(interaction.user.id)
         await user.load()
 
-        rank = user.get_user_rank()
+        rank = await user.get_user_rank()
         zone = user.get_zone()
 
         embed = Cembed(
@@ -347,7 +347,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
             @discord.ui.button(label="Work")
             async def work_button(self, interaction: Interaction, button: discord.ui.Button):
-                rank = user.get_user_rank()
+                rank = await user.get_user_rank()
                 wage = rank.wage
                 description = f":money_with_wings: **+{wage:,} bits**"
 
@@ -405,12 +405,6 @@ class EconomyCog(commands.Cog, name="Economy"):
             @discord.ui.button(label="Weekly", disabled=True)
             async def weekly_button(self, interaction: Interaction, button: discord.ui.Button):
                 pass
-
-                # Add appropriate fields
-                # # self.embed.add_field(
-                #     name="Your Tokens",
-                #     value=f"You have **{int(user.get_field('tokens')):,}** tokens",
-                # )
 
         menu = CheckInMenu()
 
@@ -585,7 +579,7 @@ class EconomyCog(commands.Cog, name="Economy"):
             ]
             embed = Cembed(
                 title=random.choice(titles),
-                description="To avoid '*beg farming*' tactics, you can only send someone amounts over **100**",
+                desc="To avoid '*beg farming*' tactics, you can only send someone amounts over **100**",
                 color=discord.Color.red(),
                 interaction=interaction,
                 activity="paying",
