@@ -6,7 +6,7 @@ from typing import Literal
 
 from cococap import instance
 from cococap.item_models import Ranks, Areas
-from cococap.constants import DiscordGuilds
+from cococap.constants import DiscordGuilds, NUMBER_EMOJIS
 from cococap.models import UserCollection
 
 from logging import getLogger
@@ -90,24 +90,36 @@ class User:
             return "Object does not have field {field}."
         return getattr(self.document, field)
 
-    def get_skill(self, skill: str):
-        if not hasattr(self.document, skill):
-            return "Object does not have skill {skill}."
-        return getattr(self.document, skill)
+    def lvl_to_xp(self, level):
+        xp = ((level - 1) / 0.07) ** 2
+        return int(xp)
 
-    def get_xp_for_level(self, level):
-        xp = (level - 1 / 0.07) ** 2
-        return xp
-
-    def get_level_from_xp(self, xp):
+    def xp_to_lvl(self, xp):
         level = 0.07 * (xp ** (1 / 2))
         return int(level + 1)
 
-    def get_xp_for_next_level(self, xp):
-        current_level = self.get_level_from_xp(xp)
+    def xp_for_lvl_up(self, xp):
+        current_level = self.xp_to_lvl(xp)
         next_level = current_level + 1
-        xp_required = self.get_xp_for_level(next_level)
-        return xp_required
+        xp_required = self.lvl_to_xp(next_level)
+        return int(xp_required)
+    
+    def create_xp_bar(self, xp) -> str:
+        lvl_up_xp = self.xp_for_lvl_up(xp)
+        ratio = xp/lvl_up_xp
+        next_level = self.xp_to_lvl(lvl_up_xp)
+        xp_bar = ":trident:"
+        xp_bar_size = 5
+        for _ in range(int(ratio*xp_bar_size)):
+            xp_bar += ":small_blue_diamond:"
+        for _ in range(xp_bar_size-int(ratio*xp_bar_size)):
+            xp_bar += ":black_small_square:"
+        if next_level > 10:
+            emoji = ":new:"
+        else:
+            emoji = NUMBER_EMOJIS[int(next_level)]
+        xp_bar += f"{emoji} *({xp:,}/{lvl_up_xp:,} xp)*"
+        return xp_bar
 
     def get_active_pet(self):
         pets = self.document.pets
