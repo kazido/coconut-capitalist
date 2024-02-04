@@ -101,7 +101,7 @@ class User:
 
     def get_level_from_xp(self, xp):
         level = 0.07 * (xp ** (1 / 2))
-        return level + 1
+        return int(level + 1)
 
     def get_xp_for_next_level(self, xp):
         current_level = self.get_level_from_xp(xp)
