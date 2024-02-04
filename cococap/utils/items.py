@@ -8,14 +8,11 @@ log = getLogger(__name__)
 log.setLevel(20)
 
 
-async def create_item(owner: int, item_id: str, quantity: int = 1):
+async def create_item(owner: User, item_id: str, quantity: int = 1):
     """Inserts an item into the database with specified owner and quantity"""
-    # Load the user
-    user = User(uid=owner)
-    await user.load()
-    
-    inventory: dict = user.get_field('items')
-    
+
+    inventory: dict = owner.get_field("items")
+
     # Ensure that the item is an actual item first
     if not Master.get_or_none(item_id=item_id):
         log.warn(f"Tried to create: {quantity} {item_id}. Error: item does not exist.")
@@ -27,22 +24,18 @@ async def create_item(owner: int, item_id: str, quantity: int = 1):
     if item_id not in inventory.keys():
         inventory[item_id] = {"quantity": quantity}
         log.info(f"{quantity} new {item_id} created with owner: {owner}.")
-        await user.document.save()
+        await owner.document.save()
         return True
     else:
         # If an item was found, add to it's quantity
-        inventory[item_id]['quantity'] += quantity
+        inventory[item_id]["quantity"] += quantity
         log.info(f"Added {quantity} {item_id} to: {owner}")
-        await user.document.save()
+        await owner.document.save()
         return True
-        
 
-async def delete_item(owner: int, item_id: str, quantity: int = None):
-    # Load the user
-    user = User(uid=owner)
-    await user.load()
-    
-    inventory: dict = user.get_field('items')
+
+async def delete_item(owner: User, item_id: str, quantity: int = None):
+    inventory: dict = owner.get_field("items")
     # Ensure that the item is an actual item first
     if not Master.get_or_none(item_id=item_id):
         log.warn(f"Tried to delete: {item_id}. Error: not a valid item id.")
@@ -51,15 +44,15 @@ async def delete_item(owner: int, item_id: str, quantity: int = None):
         log.warn(f"Tried to delete: {quantity} {item_id}. Error: less than 1.")
     if item_id in inventory.keys():
         # Try to decrement quantity of existing item
-        if quantity and (inventory[item_id]['quantity'] - quantity > 0):
-            inventory[item_id]['quantity'] -= quantity
+        if quantity and (inventory[item_id]["quantity"] - quantity > 0):
+            inventory[item_id]["quantity"] -= quantity
             log.info(f"Deleted {quantity} {item_id} from {owner}.")
-            await user.document.save()
+            await owner.document.save()
             return True
         else:
             inventory.pop(item_id)
             log.info(f"Deleted all {item_id} from {owner}.")
-            await user.document.save()
+            await owner.document.save()
             return True
     else:
         # If item doesn't exist, do nothing
@@ -67,16 +60,13 @@ async def delete_item(owner: int, item_id: str, quantity: int = None):
         return False
 
 
-async def trade_item(owner: int, new_owner: int, item_id: str, quantity: int = None):
-    # Load the user
-    user = User(uid=owner)
+async def trade_item(owner: User, new_owner: int, item_id: str, quantity: int = None):
     user_2 = User(uid=new_owner)
-    await user.load()
     await user_2.load()
-    
-    inventory: dict = user.get_field('items')
-    inventory_2: dict = user_2.get_field('items')
-    
+
+    inventory: dict = owner.get_field("items")
+    inventory_2: dict = user_2.get_field("items")
+
     # Ensure that the item is an actual item first
     if not Master.get_or_none(item_id=item_id):
         log.warn(f"Tried to trade: {item_id}. Error: not a valid item id.")
@@ -85,8 +75,10 @@ async def trade_item(owner: int, new_owner: int, item_id: str, quantity: int = N
         # Transfer the ownership of the item if it exists
         item = inventory[item_id]
         if quantity:
-            if quantity > item['quantity']:
-                log.warn(f"Trade failed. Tried to trade {quantity} {item_id}. Error: more than owned.")
+            if quantity > item["quantity"]:
+                log.warn(
+                    f"Trade failed. Tried to trade {quantity} {item_id}. Error: more than owned."
+                )
                 return False
             # Inserts same item into tradee's inventory
             create_item(new_owner, item_id, quantity)
@@ -96,7 +88,7 @@ async def trade_item(owner: int, new_owner: int, item_id: str, quantity: int = N
             return True
         else:
             # Inserts same item into tradee's inventory
-            create_item(new_owner, item_id, inventory[item_id]['quantity'])
+            create_item(new_owner, item_id, inventory[item_id]["quantity"])
             # Removes items from trader's inventory
             delete_item(owner, item_id)
             return True
@@ -105,8 +97,8 @@ async def trade_item(owner: int, new_owner: int, item_id: str, quantity: int = N
         # If item doesn't exist, do nothing
         log.warn(f"Tried to trade {item_id} from {owner} to {new_owner}. Item does not exist.")
         return False
-    
-    
+
+
 def skewed_roll(min_drop: int, max_drop: int):
     """Returns an integer between min_drop and max_drop, skewed towards min_drop."""
     # only to be used in roll_drops
@@ -122,3 +114,11 @@ def roll_item(item: Master):
         quantity = skewed_roll(item.min_drop, item.max_drop)
         return quantity
     return None
+
+
+def get_skill_drops(skill: str):
+    drops = {}
+    query = Master.select().where(Master.skill == skill, Master.drop_rate != None)
+    for item in query:
+        drops[item.item_id] = item
+    return drops
