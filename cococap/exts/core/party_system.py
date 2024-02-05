@@ -133,7 +133,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
 
         # Update the user's party id
         user.document.party_id = party_id
-        await user.document.save()
+        await user.save()
 
         # add the party leader role to the user
         await interaction.user.add_roles(self.leader_role)
@@ -188,7 +188,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
             await member.load()
 
             member.document.party_id = None
-            await member.document.save()
+            await member.save()
 
         # Remove party leader role from user who used command
         await interaction.user.remove_roles(self.leader_role)
@@ -254,7 +254,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
 
         # Clear the user's party data in the database
         user.document.party_id = None
-        await user.document.save()
+        await user.save()
         return
 
     # Invites specified user to a party, doesn't need to be registered.
@@ -363,7 +363,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
 
                 # Update invited user's party information in the database
                 invited_user.document.party_id = party_id
-                await invited_user.document.save()
+                await invited_user.save()
                 # Add user to list of party members
                 party.party_members.append(invited_user.uid)
                 await party.save()
@@ -459,7 +459,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
 
         # Clear the user's party data in the database
         user_to_kick.document.party_id = None
-        await user_to_kick.document.save()
+        await user_to_kick.save()
 
         party.party_members.remove(user_to_kick.uid)
         await party.save()

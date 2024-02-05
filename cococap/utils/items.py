@@ -24,13 +24,13 @@ async def create_item(owner: User, item_id: str, quantity: int = 1):
     if item_id not in inventory.keys():
         inventory[item_id] = {"quantity": quantity}
         log.info(f"{quantity} new {item_id} created with owner: {owner}.")
-        await owner.document.save()
+        await owner.save()
         return True
     else:
         # If an item was found, add to it's quantity
         inventory[item_id]["quantity"] += quantity
         log.info(f"Added {quantity} {item_id} to: {owner}")
-        await owner.document.save()
+        await owner.save()
         return True
 
 
@@ -47,12 +47,12 @@ async def delete_item(owner: User, item_id: str, quantity: int = None):
         if quantity and (inventory[item_id]["quantity"] - quantity > 0):
             inventory[item_id]["quantity"] -= quantity
             log.info(f"Deleted {quantity} {item_id} from {owner}.")
-            await owner.document.save()
+            await owner.save()
             return True
         else:
             inventory.pop(item_id)
             log.info(f"Deleted all {item_id} from {owner}.")
-            await owner.document.save()
+            await owner.save()
             return True
     else:
         # If item doesn't exist, do nothing

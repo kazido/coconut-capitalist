@@ -199,7 +199,7 @@ class ForagingCog(commands.Cog, name="Foraging"):
         foraging = user.get_field('foraging')
         
         skill_xp = foraging['xp']
-        skill_level = user.xp_to_lvl(skill_xp)
+        skill_level = user.xp_to_level(skill_xp)
         embed = Cembed(
             title=f"Foraging level: {skill_level}",
             color=discord.Color.blue(),

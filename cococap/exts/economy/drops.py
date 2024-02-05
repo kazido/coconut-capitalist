@@ -70,7 +70,7 @@ class ClaimDropButtons(discord.ui.View):
         await user.load()
 
         user.document.drops_claimed += 1
-        await user.document.save()
+        await user.save()
 
         megadrop = await collection.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")})
 
