@@ -90,35 +90,37 @@ class User:
             return "Object does not have field {field}."
         return getattr(self.document, field)
 
-    def lvl_to_xp(self, level):
+    def level_to_xp(self, level):
         xp = ((level - 1) / 0.07) ** 2
         return int(xp)
 
-    def xp_to_lvl(self, xp):
+    def xp_to_level(self, xp):
         level = 0.07 * (xp ** (1 / 2))
         return int(level + 1)
 
-    def xp_for_lvl_up(self, xp):
-        current_level = self.xp_to_lvl(xp)
-        next_level = current_level + 1
-        xp_required = self.lvl_to_xp(next_level)
-        return int(xp_required)
+    def xp_for_next_level(self, xp):
+        # Get current level and xp needed for current level
+        level = self.xp_to_level(xp)
+        level_xp = self.level_to_xp(level)
+        # Get the next level and xp needed for next level
+        next_level = level + 1
+        next_level_xp = self.level_to_xp(next_level)
+        # Get the overflow of xp above current level
+        overflow_xp_at_level = xp - level_xp
+        xp_between_levels = next_level_xp - level_xp
+        return int(overflow_xp_at_level), int(xp_between_levels)
+        
     
     def create_xp_bar(self, xp) -> str:
-        lvl_up_xp = self.xp_for_lvl_up(xp)
-        ratio = xp/lvl_up_xp
-        next_level = self.xp_to_lvl(lvl_up_xp)
-        xp_bar = ":trident:"
-        xp_bar_size = 5
+        overflow_xp, xp_needed = self.xp_for_next_level(xp)
+        ratio = overflow_xp/xp_needed
+        xp_bar = "<:xp_bar_left:1203894026265428021>"
+        xp_bar_size = 7
         for _ in range(int(ratio*xp_bar_size)):
-            xp_bar += ":small_blue_diamond:"
+            xp_bar += "<:xp_bar_big:1203894024243777546>"
         for _ in range(xp_bar_size-int(ratio*xp_bar_size)):
-            xp_bar += ":black_small_square:"
-        if next_level > 10:
-            emoji = ":new:"
-        else:
-            emoji = NUMBER_EMOJIS[int(next_level)]
-        xp_bar += f"{emoji} *({xp:,}/{lvl_up_xp:,} xp)*"
+            xp_bar += "<:xp_bar_small:1203894025137037443>"
+        xp_bar += f"<:xp_bar_right:1203894027418599505> *({overflow_xp:,}/{xp_needed:,} xp)*"
         return xp_bar
 
     def get_active_pet(self):
