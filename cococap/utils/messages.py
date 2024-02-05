@@ -1,16 +1,12 @@
-from datetime import datetime
-
-from discord.emoji import Emoji
-from discord.enums import ButtonStyle
-from discord.partial_emoji import PartialEmoji
 import cococap
 import discord
 
+from datetime import datetime
 from discord import Interaction
 from discord.colour import Colour
 from discord.types.embed import EmbedType
 from pydis_core.utils import scheduling
-from typing import Any, Coroutine, Optional, Sequence, Union
+from typing import Any, Sequence
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -58,22 +54,18 @@ def reaction_check(
             name=f"remove_reaction-{reaction}-{reaction.message.id}-{user}",
         )
         return False
-    
-class PrivateButton(discord.ui.Button):
-    def __init__(self, *, allowed_user_id: int, style: ButtonStyle = ButtonStyle.secondary, label: str | None = None, disabled: bool = False, custom_id: str | None = None, url: str | None = None, emoji: str | Emoji | PartialEmoji | None = None, row: int | None = None):
-        self.allowed_user_id = allowed_user_id
-        super().__init__(style=style, label=label, disabled=disabled, custom_id=custom_id, url=url, emoji=emoji, row=row)
-        
-    async def callback(self, interaction: Interaction) -> Coroutine[Any, Any, Any]:
-        super().callback(interaction)
-        if interaction.user.id!=self.allowed_user_id:
-            embed = Cembed(
-                title="Who do you think you are?",
-                desc="This isn't your button... Don't hit it.",
-                color=discord.Color.red(),
-                interaction=interaction, activity="mischieving"
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+async def button_check(interaction: Interaction, allowed_users: list[int]):
+    if interaction.user.id not in allowed_users:
+        embed = Cembed(
+            title="Who do you think you are?",
+            desc="This isn't your button... Don't hit it.",
+            color=discord.Color.red(),
+            interaction=interaction,
+            activity="mischieving",
+        )
+        return await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 class Cembed(discord.Embed):
@@ -89,7 +81,7 @@ class Cembed(discord.Embed):
         desc: Any | None = None,
         timestamp: datetime | None = None,
         interaction: Interaction | None = None,
-        activity: str = ":)"
+        activity: str = ":)",
     ):
         color = colour if colour is not None else color
         description = desc if desc is not None else description
@@ -102,4 +94,7 @@ class Cembed(discord.Embed):
             timestamp=timestamp,
         )
         if interaction:
-            self.set_author(name=f"{interaction.user.name} - {activity}", icon_url=interaction.user.display_avatar)
+            self.set_author(
+                name=f"{interaction.user.name} - {activity}",
+                icon_url=interaction.user.display_avatar,
+            )
