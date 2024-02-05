@@ -11,6 +11,43 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
+def timestamp_to_digital(timestamp):
+    def format_time(time: int):
+        if len(str(time)) == 1:
+            time = "0" + str(time)
+        return str(time)
+
+    # Calculate and format the remaining cooldown
+    days = int(timestamp // 86400)
+    hours = format_time(int((timestamp % 86400) // 3600))
+    minutes = format_time(int((timestamp % 3600) // 60))
+    seconds = format_time(int(timestamp % 60))
+
+    cooldown = f"{days}d" if days != 0 else ""
+    cooldown += f"{hours}:{minutes}:{seconds}"
+    
+    return cooldown
+    
+def timestamp_to_english(timestamp):
+    def format_time(time: int):
+        if len(str(time)) == 1:
+            time = "0" + str(time)
+        return str(time)
+
+    # Calculate and format the remaining cooldown
+    days = int(timestamp // 86400)
+    hours = format_time(int((timestamp % 86400) // 3600))
+    minutes = format_time(int((timestamp % 3600) // 60))
+    seconds = format_time(int(timestamp % 60))
+
+    cooldown = f"{days} days" if days != 0 else ""
+    cooldown += f"{hours} hours" if hours else ""
+    cooldown += f"{minutes} minutes" if minutes else ""
+    cooldown += f"{seconds} seconds" if seconds else ""
+    
+    return cooldown
+
+
 # Delay drops until half hour
 def seconds_until_tasks():
     minutes = random.randint(20, 40)
@@ -131,7 +168,7 @@ def construct_embed(item_id, for_shop: bool):
 
 async def check_bet(user: User, bet: int):
     """Ensures that a user is not betting invalid amounts"""
-    balance = user.get_field('purse')
+    balance = user.get_field("purse")
     if int(bet) <= 0:
         return f"I sense something fishy... Quit it.", False
     elif int(bet) > balance:
