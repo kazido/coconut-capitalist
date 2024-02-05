@@ -94,11 +94,11 @@ class User:
         if level_to_be > current_level:
             embed = discord.Embed(
                 title=f"{skill.upper()} level up!",
-                description=f"Congratulations {interaction.user.mention}, 
+                description=f"Congratulations {interaction.user.mention}, \
                 your {skill} level increased from **{current_level}** -> **{level_to_be}**!",
                 color=discord.Color.gold()
             )
-            embed.set_image(url=interaction.user.avatar.url)
+            embed.set_thumbnail(url=interaction.user.avatar.url)
             await interaction.channel.send(embed=embed)
         getattr(self.document, skill)["xp"] += xp
         await self.save()
