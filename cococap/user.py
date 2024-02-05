@@ -95,7 +95,7 @@ class User:
         if in_game:
             self.document.in_game['channel'] = interaction.channel.mention
         else:
-            self.document.in_game['channel'] = None
+            self.document.in_game['channel'] = ""
         self.document.in_game['in_game'] = in_game
         await self.save()
 

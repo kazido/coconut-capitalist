@@ -11,7 +11,7 @@ class UserCollection(Document):
     tokens: int = 0
     in_game: dict =  {
         "in_game": False,
-        "message_id": None
+        "message_id": ""
     }
     party_id: Optional[int] = None
     drops_claimed: int = 0
