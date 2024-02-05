@@ -56,12 +56,12 @@ class User:
         return Ranks.get_by_id(unranked_id)
 
     def is_busy(self) -> bool:
-        in_game = self.get_field('in_game')
-        if in_game['in_game']:
+        in_game = self.get_field("in_game")
+        if in_game["in_game"]:
             embed = discord.Embed(
                 title="You are busy elsewhere!",
                 description=f"You are currently doing something else here: {in_game['channel']}!",
-                color=discord.Color.red()
+                color=discord.Color.red(),
             )
             return embed
         return False
@@ -85,18 +85,30 @@ class User:
         self.document.tokens += tokens
         await self.save()
 
-    async def inc_xp(self, *, skill: str, xp: int):
+    async def inc_xp(self, *, skill: str, xp: int, interaction: discord.Interaction):
         if not hasattr(self.document, skill):
             return f"Object does not have skill {skill}."
+        current_xp = getattr(self.document, skill)["xp"]
+        current_level = self.xp_to_level(current_xp)
+        level_to_be = self.xp_to_level(current_xp + xp)
+        if level_to_be > current_level:
+            embed = discord.Embed(
+                title=f"{skill.upper()} level up!",
+                description=f"Congratulations {interaction.user.mention}, 
+                your {skill} level increased from **{current_level}** -> **{level_to_be}**!",
+                color=discord.Color.gold()
+            )
+            embed.set_image(url=interaction.user.avatar.url)
+            await interaction.channel.send(embed=embed)
         getattr(self.document, skill)["xp"] += xp
         await self.save()
 
     async def update_game(self, *, in_game: bool, interaction: discord.Interaction):
         if in_game:
-            self.document.in_game['channel'] = interaction.channel.mention
+            self.document.in_game["channel"] = interaction.channel.mention
         else:
-            self.document.in_game['channel'] = ""
-        self.document.in_game['in_game'] = in_game
+            self.document.in_game["channel"] = ""
+        self.document.in_game["in_game"] = in_game
         await self.save()
 
     # GET METHODS ------------------------------------
