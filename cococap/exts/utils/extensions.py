@@ -1,5 +1,6 @@
 import functools
 import typing as t
+import discord
 import os
 import sys
 from enum import Enum
@@ -43,6 +44,7 @@ class Extensions(commands.Cog):
     @commands.command(name="restart", aliases=("rs",))
     async def restart(self, ctx: Context) -> None:
         await ctx.send("Restarting bot...")
+        await self.bot.change_presence(status=discord.Status.dnd)
         python = python = sys.executable
         os.execl(python, python, '-m', 'cococap')
         
