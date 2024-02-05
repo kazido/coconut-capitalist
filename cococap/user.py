@@ -92,14 +92,25 @@ class User:
         current_level = self.xp_to_level(current_xp)
         level_to_be = self.xp_to_level(current_xp + xp)
         if level_to_be > current_level:
+            # Give the user rewards
+            bit_reward = level_to_be * 10000
+            token_reward = 1
+            await self.inc_purse(amount=bit_reward)
+            await self.inc_tokens(tokens=token_reward)
+
+            # Send an embed congratulating them
             embed = discord.Embed(
-                title=f"{skill.upper()} level up!",
-                description=f"Congratulations {interaction.user.mention}, \
-                your {skill} level increased from **{current_level}** -> **{level_to_be}**!",
-                color=discord.Color.gold()
+                title=f"{skill.capitalize()} level up! {current_level} -> {level_to_be}",
+                description=f"Congratulations {interaction.user.mention}!",
+                color=discord.Color.gold(),
+            )
+            embed.add_field(
+                name="Rewards",
+                value=f":money_with_wings: +**{level_to_be*10000:,}** bits\n:coin: +**1** token",
             )
             embed.set_thumbnail(url=interaction.user.avatar.url)
             await interaction.channel.send(embed=embed)
+
         getattr(self.document, skill)["xp"] += xp
         await self.save()
 
