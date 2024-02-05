@@ -1,13 +1,13 @@
-from typing import Any
+from typing import Any, Coroutine
 import discord
 
-from discord import app_commands
+from discord import Interaction, app_commands
 from discord.ext import commands
 from logging import getLogger
 from discord.interactions import Interaction
 
 from cococap.utils.menus import ParentMenu
-from cococap.utils.messages import Cembed
+from cococap.utils.messages import Cembed, button_check
 from cococap.utils.items import get_skill_drops, roll_item, create_item
 from cococap.user import User
 from cococap.constants import DiscordGuilds
@@ -98,6 +98,7 @@ class MiningCog(commands.Cog, name="Mining"):
         def __init__(self, interaction: Interaction, user: User, *, timeout: float | None = 180):
             super().__init__(timeout=timeout)
             self.user = user
+            self.lodes_mined = 0
             self.mineshaft = MiningCog.Mineshaft()
             self.grid = []
             for i in range(5):
@@ -106,16 +107,16 @@ class MiningCog(commands.Cog, name="Mining"):
                     new_col.append(self.placeholder)
                 self.grid.append(new_col)
 
+            self.row = 0
             self.cols = []
             for i in range(self.user.get_field("mining")["prestige_level"]):
                 self.cols.append(i)
-            self.row = 0
 
             self.loot_list = {}
 
             self.embed = Cembed(
                 title="Welcome to the mines!",
-                color=discord.Color.fuchsia(),
+                color=discord.Color.blue(),
                 desc="Pick a column to dig out for ores and gems! \
                       \nUpgrade your reactor to dig out more columns.",
                 interaction=interaction,
@@ -128,19 +129,19 @@ class MiningCog(commands.Cog, name="Mining"):
         def update_grid(self):
             # Set 5 notches at the top of the field
             header = [self.marker_notch for _ in range(5)]
-            
+
             # Replace the notches with markers for each reactor level
             for col in self.cols:
                 header[col] = self.marker
-                
+
             # Set the selection header
             self.embed.set_field_at(0, name="Mineshaft", value="".join(header) + "\n")
-            
+
             # Set the grid in the field
             for row in self.grid:
                 value = self.embed.fields[0].value
                 self.embed.set_field_at(0, name="Mineshaft", value=value + "".join(row) + "\n")
-            
+
             # Add all the loot we've gotten to the embed on the side
             loot_string = ""
             for loot, amount in self.loot_list.items():
@@ -164,7 +165,10 @@ class MiningCog(commands.Cog, name="Mining"):
         async def mine_button(self, interaction: Interaction, button: discord.Button):
             self.left_button.disabled = self.right_button.disabled = True
             for col in self.cols:
+                # Retrieve the item that was rolled for that node
                 item, amount = self.mineshaft.columns[col][self.row]
+                # Increase lodes mined by one
+                self.lodes_mined += 1
                 if item:
                     # If we encounter an item, set the grid to it's emoji
                     # and add it to the loot list
@@ -180,11 +184,21 @@ class MiningCog(commands.Cog, name="Mining"):
             self.update_grid()
             self.row += 1
 
-            # We are at the lowest depth, remove the buttons and add items to inventory
+            # We have finished mining the mineshaft, remove the buttons and add items to inventory
             if self.row > 4:
                 self.clear_items()
                 for item, amount in self.loot_list.items():
                     await create_item(self.user, item_id=item.item_id, quantity=amount)
+
+                # Update the amount of lodes mined
+                self.user.get_field("mining")["lodes_mined"] += self.lodes_mined
+                await self.user.save()
+
+                xp = 10 * len(self.cols)
+                # We save here, so no need to save above
+                await self.user.inc_xp(skill="mining", xp=xp)
+                self.embed.set_footer(text=f"You earned +{xp:,} xp!")
+                
             await interaction.response.edit_message(embed=self.embed, view=self)
 
         @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.grey)
@@ -203,10 +217,11 @@ class MiningCog(commands.Cog, name="Mining"):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
+
         mining = user.get_field("mining")
 
         skill_xp = mining["xp"]
-        skill_level = user.xp_to_lvl(skill_xp)
+        skill_level = user.xp_to_level(skill_xp)
 
         embed = Cembed(
             title=f"Mining level: {skill_level}",
@@ -215,19 +230,38 @@ class MiningCog(commands.Cog, name="Mining"):
             interaction=interaction,
             activity="mining",
         )
-        embed.add_field(name="Lodes Mined", value=f"**{mining['lodes_mined']}** lodes")
+        embed.add_field(
+            name="Lodes Mined",
+            value=f"<:covered_grid:1203810768248643605> **{mining['lodes_mined']:,}** lodes",
+        )
+        embed.add_field(
+            name=f"Reactor level: {mining['prestige_level']:,}",
+            value=f"Core 1: {mining['core_slot1']}\nCore 2: {mining['core_slot2']}\nCore 3: {mining['core_slot3']}\nCore 4: {mining['core_slot4']}",
+        )
 
         menu = ParentMenu(embed=embed)
         mine = MiningCog.MiningView(interaction=interaction, user=user)
 
         class MineButton(discord.ui.Button):
             def __init__(self):
-                super().__init__(label="Mine!", style=discord.ButtonStyle.green)
+                super().__init__(label="Mine!", style=discord.ButtonStyle.grey)
 
             async def callback(self, interaction: Interaction) -> Any:
                 await interaction.response.edit_message(embed=mine.embed, view=mine)
 
+        class ReactorButton(discord.ui.Button):
+            def __init__(self):
+                super().__init__(label="Reactor", style=discord.ButtonStyle.grey)
+
+            async def callback(self, reactor_interaction: Interaction) -> Coroutine[Any, Any, Any]:
+                if not await button_check(reactor_interaction, [interaction.user.id]):
+                    return
+                await reactor_interaction.response.edit_message(
+                    content="Hello! I'm not done yet.", view=None
+                )
+
         menu.add_item(MineButton())
+        menu.add_item(ReactorButton())
         await interaction.response.send_message(embed=menu.embed, view=menu)
 
 
