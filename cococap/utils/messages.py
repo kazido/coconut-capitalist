@@ -10,7 +10,6 @@ from typing import Any, Sequence
 from logging import getLogger
 
 log = getLogger(__name__)
-log.setLevel(10)
 
 
 def reaction_check(

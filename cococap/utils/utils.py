@@ -39,9 +39,9 @@ def timestamp_to_english(timestamp):
     minutes = format_time(int((timestamp % 3600) // 60))
     seconds = format_time(int(timestamp % 60))
 
-    cooldown = f"{days} days" if days != 0 else ""
-    cooldown += f"{hours} hours" if hours else ""
-    cooldown += f"{minutes} minutes" if minutes else ""
+    cooldown = f"{days:,} days " if days != 0 else ""
+    cooldown += f"{hours} hours " if hours else ""
+    cooldown += f"{minutes} minutes " if minutes else ""
     cooldown += f"{seconds} seconds" if seconds else ""
     
     return cooldown
