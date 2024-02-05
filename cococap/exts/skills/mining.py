@@ -1,4 +1,4 @@
-from typing import Any, Coroutine
+from typing import Any, Coroutine, Optional
 import discord
 
 from discord import Interaction, app_commands
@@ -89,13 +89,37 @@ class MiningCog(commands.Cog, name="Mining"):
             for _ in range(5):
                 self.columns.append(MiningCog.create_column())
 
+    class FinishedMiningView(discord.ui.View):
+        def __init__(self, user: User, total_loot: dict, *, timeout: float | None = 180):
+            super().__init__(timeout=timeout)
+            self.user = user
+            self.total_loot = total_loot
+
+        @discord.ui.button(label="Leave", style=discord.ButtonStyle.gray)
+        async def leave(self, interaction: Interaction, button: discord.Button):
+            await interaction.response.edit_message(view=None)
+
+        @discord.ui.button(emoji="🔄", style=discord.ButtonStyle.blurple)
+        async def new_mine(self, interaction: Interaction, button: discord.Button):
+            mine = MiningCog.MiningView(
+                interaction=interaction, user=self.user, total_loot=self.total_loot
+            )
+            await interaction.response.edit_message(embed=mine.embed, view=mine)
+
     class MiningView(discord.ui.View):
         marker = ":small_red_triangle_down:"
         marker_notch = ":black_small_square:"
         placeholder = "<:covered_grid:1203810768248643605>"
         empty = "<:empty_grid:1203810769880354987>"
 
-        def __init__(self, interaction: Interaction, user: User, *, timeout: float | None = 180):
+        def __init__(
+            self,
+            interaction: Interaction,
+            user: User,
+            total_loot: dict,
+            *,
+            timeout: float | None = 180,
+        ):
             super().__init__(timeout=timeout)
             self.user = user
             self.lodes_mined = 0
@@ -112,10 +136,12 @@ class MiningCog(commands.Cog, name="Mining"):
             for i in range(self.user.get_field("mining")["prestige_level"]):
                 self.cols.append(i)
 
+            # Handle recreating the view and passing in an old loot list
+            self.total_loot = total_loot
             self.loot_list = {}
 
             self.embed = Cembed(
-                title="Welcome to the mines!",
+                title=":pick: Welcome back to the mines.",
                 color=discord.Color.blue(),
                 desc="Pick a column to dig out for ores and gems! \
                       \nUpgrade your reactor to dig out more columns.",
@@ -124,6 +150,8 @@ class MiningCog(commands.Cog, name="Mining"):
             )
             self.embed.add_field(name="Mineshaft", value="")
             self.embed.add_field(name="Loot", value="", inline=True)
+            xp, xp_needed = self.user.xp_for_next_level(self.user.get_field("mining")["xp"])
+            self.embed.set_footer(text=f"Your mining xp: ({xp:,}/{xp_needed:,} xp)")
             self.update_grid()
 
         def update_grid(self):
@@ -144,7 +172,7 @@ class MiningCog(commands.Cog, name="Mining"):
 
             # Add all the loot we've gotten to the embed on the side
             loot_string = ""
-            for loot, amount in self.loot_list.items():
+            for loot, amount in self.total_loot.items():
                 # If the loot is rare, make it bold
                 if loot.rarity >= 5:
                     loot_string += f"\n{loot.emoji} +{amount} **{loot.display_name}**"
@@ -161,7 +189,7 @@ class MiningCog(commands.Cog, name="Mining"):
             self.update_grid()
             await interaction.response.edit_message(embed=self.embed, view=self)
 
-        @discord.ui.button(label="Mine!", style=discord.ButtonStyle.grey)
+        @discord.ui.button(label="Mine!", style=discord.ButtonStyle.blurple)
         async def mine_button(self, interaction: Interaction, button: discord.Button):
             self.left_button.disabled = self.right_button.disabled = True
             for col in self.cols:
@@ -177,6 +205,10 @@ class MiningCog(commands.Cog, name="Mining"):
                         self.loot_list[item] += amount
                     else:
                         self.loot_list[item] = amount
+                    if item in self.total_loot:
+                        self.total_loot[item] += amount
+                    else:
+                        self.total_loot[item] = amount
                 else:
                     self.grid[self.row][col] = self.empty
 
@@ -186,7 +218,7 @@ class MiningCog(commands.Cog, name="Mining"):
 
             # We have finished mining the mineshaft, remove the buttons and add items to inventory
             if self.row > 4:
-                self.clear_items()
+                # Add items to the user's inventory
                 for item, amount in self.loot_list.items():
                     await create_item(self.user, item_id=item.item_id, quantity=amount)
 
@@ -194,11 +226,17 @@ class MiningCog(commands.Cog, name="Mining"):
                 self.user.get_field("mining")["lodes_mined"] += self.lodes_mined
                 await self.user.save()
 
+                # Give the user xp for columns mined
                 xp = 10 * len(self.cols)
-                # We save here, so no need to save above
-                await self.user.inc_xp(skill="mining", xp=xp)
-                self.embed.set_footer(text=f"You earned +{xp:,} xp!")
-                
+                await self.user.inc_xp(skill="mining", xp=xp, interaction=interaction)
+                xp, xp_needed = self.user.xp_for_next_level(self.user.get_field("mining")["xp"])
+                self.embed.set_footer(text=f"Your mining xp: ({xp:,}/{xp_needed:,} xp)")
+
+                await interaction.response.edit_message(
+                    embed=self.embed, view=MiningCog.FinishedMiningView(self.user, self.total_loot)
+                )
+                return
+
             await interaction.response.edit_message(embed=self.embed, view=self)
 
         @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.grey)
@@ -232,22 +270,28 @@ class MiningCog(commands.Cog, name="Mining"):
         )
         embed.add_field(
             name="Lodes Mined",
-            value=f"<:covered_grid:1203810768248643605> **{mining['lodes_mined']:,}** lodes",
+            value=f":pick: **{mining['lodes_mined']:,}** lodes",
+        )
+        reactor_field = (
+            f"Core 1: {mining['core_slot1']}"
+            f"\nCore 2: {mining['core_slot2']}"
+            f"\nCore 3: {mining['core_slot3']}"
+            f"\nCore 4: {mining['core_slot4']}"
         )
         embed.add_field(
             name=f"Reactor level: {mining['prestige_level']:,}",
-            value=f"Core 1: {mining['core_slot1']}\nCore 2: {mining['core_slot2']}\nCore 3: {mining['core_slot3']}\nCore 4: {mining['core_slot4']}",
+            value=reactor_field,
         )
 
         menu = ParentMenu(embed=embed)
-        mine = MiningCog.MiningView(interaction=interaction, user=user)
+        mine_view = MiningCog.MiningView(interaction=interaction, user=user, total_loot={})
 
         class MineButton(discord.ui.Button):
             def __init__(self):
                 super().__init__(label="Mine!", style=discord.ButtonStyle.grey)
 
             async def callback(self, interaction: Interaction) -> Any:
-                await interaction.response.edit_message(embed=mine.embed, view=mine)
+                await interaction.response.edit_message(embed=mine_view.embed, view=mine_view)
 
         class ReactorButton(discord.ui.Button):
             def __init__(self):
