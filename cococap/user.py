@@ -6,8 +6,9 @@ from typing import Literal
 
 from cococap import instance
 from cococap.item_models import Ranks, Areas
-from cococap.constants import DiscordGuilds, NUMBER_EMOJIS
+from cococap.constants import DiscordGuilds
 from cococap.models import UserCollection
+from cococap.utils.utils import timestamp_to_digital
 
 from logging import getLogger
 
@@ -193,19 +194,8 @@ class User:
             off_cooldown = last_used + float(cooldown_hours * 3600)
             seconds_remaining = off_cooldown - now
 
-            def format_time(time: int):
-                if len(str(time)) == 1:
-                    time = "0" + str(time)
-                return str(time)
+            cooldown = timestamp_to_digital(seconds_remaining)
 
-            # Calculate and format the remaining cooldown
-            days = int(seconds_remaining // 86400)
-            hours = format_time(int((seconds_remaining % 86400) // 3600))
-            minutes = format_time(int((seconds_remaining % 3600) // 60))
-            seconds = format_time(int(seconds_remaining % 60))
-
-            cooldown = f"{days}d" if days != 0 else ""
-            cooldown += f"{hours}:{minutes}:{seconds}"
             return False, cooldown  # The check has been failed
         else:
             return True, None  # The check has been passed
