@@ -2,7 +2,6 @@ import random
 import discord
 
 from datetime import datetime
-from cococap.user import User
 from cococap.item_models import Master
 
 from cococap.constants import Rarities
@@ -166,9 +165,8 @@ def construct_embed(item_id, for_shop: bool):
     return embed
 
 
-async def check_bet(user: User, bet: int):
+async def check_bet(balance: int, bet: int):
     """Ensures that a user is not betting invalid amounts"""
-    balance = user.get_field("purse")
     if int(bet) <= 0:
         return f"I sense something fishy... Quit it.", False
     elif int(bet) > balance:

@@ -84,9 +84,11 @@ class HighLow(commands.Cog, name="High Low"):
             await asyncio.sleep(5)
             await interaction.delete_original_response()
             return
+        
+        balance = user.get_field("purse")
 
         if bet == "max":
-            bet = user.get_field("purse")
+            bet = balance
         try:
             bet = int(bet)
         except ValueError:
@@ -103,7 +105,7 @@ class HighLow(commands.Cog, name="High Low"):
             await interaction.delete_original_response()
             return
 
-        failed_message, passed = await check_bet(user=user, bet=bet)
+        failed_message, passed = await check_bet(balance=balance, bet=bet)
 
         if passed is False:
             bet_not_allowed_embed = (

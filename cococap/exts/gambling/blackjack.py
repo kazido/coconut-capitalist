@@ -53,7 +53,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
         else:
             bet = int(bet)
 
-        message, passed = await check_bet(user=user, bet=bet)
+        message, passed = await check_bet(balance=user.get_field("purse"), bet=bet)
         if passed is False:
             failed_embed = Cembed(
                 title="Invalid Bet",
