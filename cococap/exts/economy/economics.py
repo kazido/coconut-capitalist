@@ -337,8 +337,11 @@ class EconomyCog(commands.Cog, name="Economy"):
 
             def prepare_buttons(self):
                 # Check the readiness of each command and add it to the embed
-                for enum, (command_type, command) in enumerate(self.commands.items()):
-                    ready, cooldown = user.check_cooldown(command_type)
+                for command_type, command in self.commands.items():
+                    # TEMPORARILY DISABLE WEEKLY
+                    if command_type == "weekly":
+                        continue
+                    ready, _ = user.check_cooldown(command_type)
                     command.disabled = False if ready else True
                     command.style = (
                         discord.ButtonStyle.blurple if ready else discord.ButtonStyle.gray
