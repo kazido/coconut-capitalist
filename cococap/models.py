@@ -53,7 +53,7 @@ class UserCollection(Document):
         "core_slot2": None,
         "core_slot3": None,
         "core_slot4": None,
-        "prestige_level": 0,
+        "prestige_level": 1,
         "bonus_type": None,
         "bonuses_remaining": 0,
     }
