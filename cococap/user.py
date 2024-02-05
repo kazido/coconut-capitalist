@@ -49,11 +49,22 @@ class User:
             # Check to see if the user has any matching role in discord
             if discord_role in self.discord_info.roles:
                 return rank
-            
+
         # If we don't find any rank, give them unranked
         unranked = guild.get_role(unranked_id)
         await self.discord_info.add_roles(unranked)
         return Ranks.get_by_id(unranked_id)
+
+    def is_busy(self) -> bool:
+        in_game = self.get_field('in_game')
+        if in_game['in_game']:
+            embed = discord.Embed(
+                title="You are busy elsewhere!",
+                description=f"You are currently doing something else here: {in_game['channel']}!",
+                color=discord.Color.red()
+            )
+            return embed
+        return False
 
     def __str__(self) -> str:
         return self.discord_info.name
@@ -80,8 +91,12 @@ class User:
         getattr(self.document, skill)["xp"] += xp
         await self.save()
 
-    async def update_game(self, *, in_game: bool):
-        self.document.in_game = in_game
+    async def update_game(self, *, in_game: bool, interaction: discord.Interaction):
+        if in_game:
+            self.document.in_game['channel'] = interaction.channel.mention
+        else:
+            self.document.in_game['channel'] = None
+        self.document.in_game['in_game'] = in_game
         await self.save()
 
     # GET METHODS ------------------------------------
@@ -90,6 +105,16 @@ class User:
             return "Object does not have field {field}."
         return getattr(self.document, field)
 
+    def get_active_pet(self):
+        pets = self.document.pets
+        if "active" not in pets.keys():
+            return None
+        return pets["active"]
+
+    def get_zone(self):
+        return Areas.get_by_id(self.get_field("zone"))
+
+    # XP METHODS ------------------------------------
     def level_to_xp(self, level):
         xp = ((level - 1) / 0.07) ** 2
         return int(xp)
@@ -109,28 +134,18 @@ class User:
         overflow_xp_at_level = xp - level_xp
         xp_between_levels = next_level_xp - level_xp
         return int(overflow_xp_at_level), int(xp_between_levels)
-        
-    
+
     def create_xp_bar(self, xp) -> str:
         overflow_xp, xp_needed = self.xp_for_next_level(xp)
-        ratio = overflow_xp/xp_needed
+        ratio = overflow_xp / xp_needed
         xp_bar = "<:xp_bar_left:1203894026265428021>"
         xp_bar_size = 7
-        for _ in range(int(ratio*xp_bar_size)):
+        for _ in range(int(ratio * xp_bar_size)):
             xp_bar += "<:xp_bar_big:1203894024243777546>"
-        for _ in range(xp_bar_size-int(ratio*xp_bar_size)):
+        for _ in range(xp_bar_size - int(ratio * xp_bar_size)):
             xp_bar += "<:xp_bar_small:1203894025137037443>"
         xp_bar += f"<:xp_bar_right:1203894027418599505> *({overflow_xp:,}/{xp_needed:,} xp)*"
         return xp_bar
-
-    def get_active_pet(self):
-        pets = self.document.pets
-        if "active" not in pets.keys():
-            return None
-        return pets["active"]
-
-    def get_zone(self):
-        return Areas.get_by_id(self.get_field("zone"))
 
     # COOLDOWN METHODS ------------------------------------
     COMMAND_TYPES = Literal["daily", "work", "weekly"]
