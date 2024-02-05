@@ -10,6 +10,7 @@ from typing import Any, Sequence
 from logging import getLogger
 
 log = getLogger(__name__)
+log.setLevel(10)
 
 
 def reaction_check(
@@ -57,17 +58,19 @@ def reaction_check(
 
 
 async def button_check(interaction: Interaction, allowed_users: list[int]):
-    if interaction.user.id not in allowed_users:
-        embed = Cembed(
-            title="Who do you think you are?",
-            desc="This isn't your button... Don't hit it.",
-            color=discord.Color.red(),
-            interaction=interaction,
-            activity="mischieving",
-        )
-        await interaction.response.send_message(embed=embed, ephemeral=True)
-        return False
-    return True
+    if interaction.user.id in allowed_users:
+        log.debug(f"{interaction.user.id} ({interaction.user.name}) passed button check.")
+        return True
+    embed = Cembed(
+        title="Who do you think you are?",
+        desc="This isn't your button... Don't hit it.",
+        color=discord.Color.red(),
+        interaction=interaction,
+        activity="mischieving",
+    )
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+    log.debug(f"{interaction.user.id} ({interaction.user.name}) failed button check.")
+    return False
 
 
 class Cembed(discord.Embed):
