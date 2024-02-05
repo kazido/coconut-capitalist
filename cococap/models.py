@@ -9,7 +9,10 @@ class UserCollection(Document):
     bank: int = 0
     purse: int = 1000
     tokens: int = 0
-    in_game: bool = False
+    in_game: dict =  {
+        "in_game": False,
+        "message_id": None
+    }
     party_id: Optional[int] = None
     drops_claimed: int = 0
     farming: dict = {
