@@ -66,8 +66,6 @@ class InventoryCog(commands.Cog, name='Inventory'):
         user = User(interaction.user.id)
         await user.load()
         
-        await delete_item(user.uid, "masterwork_axe")
-        
         inventory: dict = user.get_field('items')
         
         if len(inventory) == 0:
