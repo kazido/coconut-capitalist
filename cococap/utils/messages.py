@@ -65,7 +65,9 @@ async def button_check(interaction: Interaction, allowed_users: list[int]):
             interaction=interaction,
             activity="mischieving",
         )
-        return await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+        return False
+    return True
 
 
 class Cembed(discord.Embed):
