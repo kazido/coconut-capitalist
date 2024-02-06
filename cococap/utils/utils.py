@@ -9,13 +9,12 @@ from logging import getLogger
 
 log = getLogger(__name__)
 
+def format_time(time: int):
+    if len(str(time)) == 1:
+        time = "0" + str(time)
+    return str(time)
 
 def timestamp_to_digital(timestamp):
-    def format_time(time: int):
-        if len(str(time)) == 1:
-            time = "0" + str(time)
-        return str(time)
-
     # Calculate and format the remaining cooldown
     days = int(timestamp // 86400)
     hours = format_time(int((timestamp % 86400) // 3600))
@@ -28,16 +27,12 @@ def timestamp_to_digital(timestamp):
     return cooldown
     
 def timestamp_to_english(timestamp):
-    def format_time(time: int):
-        if len(str(time)) == 1:
-            time = "0" + str(time)
-        return str(time)
-
+    
     # Calculate and format the remaining cooldown
     days = int(timestamp // 86400)
-    hours = format_time(int((timestamp % 86400) // 3600))
-    minutes = format_time(int((timestamp % 3600) // 60))
-    seconds = format_time(int(timestamp % 60))
+    hours = int((timestamp % 86400) // 3600)
+    minutes = int((timestamp % 3600) // 60)
+    seconds = int(timestamp % 60)
 
     cooldown = f"{days:,} days " if days != 0 else ""
     cooldown += f"{hours} hours " if hours else ""
