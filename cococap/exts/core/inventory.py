@@ -69,19 +69,17 @@ class InventoryCog(commands.Cog, name='Inventory'):
         inventory: dict = user.get_field('items')
         
         if len(inventory) == 0:
-            desc = "You don't have any items!"
-        else:
-            desc = None
+            return await interaction.response.send_message("You don't have any items!", ephemeral=True)
 
         inventory_embed = Cembed(
             title=f"{interaction.user.name}'s Inventory",
-            desc=desc,
+            desc="",
             color=discord.Color.from_rgb(153, 176, 162),
             interaction=interaction, activity="inventory"
         )
         for k, v in inventory.items():
             data: Master = Master.get_by_id(k)
-            inventory_embed.add_field(name=data.display_name, value=v['quantity'])
+            inventory_embed.description += f"{data.emoji} {v['quantity']:,} {data.display_name}\n"
             
         await interaction.response.send_message(embed=inventory_embed)
         
