@@ -65,7 +65,7 @@ class Rarities(Enum):
     RARE = (3, "Rare", "0x0C61CF")
     SUPER_RARE = (4, "Super Rare", "0x6E3ADE")
     LEGENDARY = (5, "Legendary", "0xE3AB3B")
-    PREMIUM = (6, "Premium", "0xE3A019")
+    PREMIUM = (6, "Premium", "0xFF3B3B")
     MYTHICAL = (7, "Mythical", "0x9F34FF")
 
     def __new__(cls, value, name, color):
