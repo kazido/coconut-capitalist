@@ -1,14 +1,12 @@
-from typing import Optional
 import discord
 import asyncio
 
-from cococap.utils.utils import construct_embed
-from cococap import instance as i
+from cococap.exts.core.inventory import construct_embed
+from cococap.user import User
 
 from discord import Interaction, ButtonStyle, PartialEmoji, Embed, Color
 from discord.interactions import Interaction
 from discord.ui import View, Button
-from cococap.classLibrary import RequestUser
 
 
 # View for a shop, will list many items that can be selected and bought
@@ -18,20 +16,21 @@ class ShopInterface(View):
         self.items = []
         self.embed = self.create_embed()
         self._hovered_item_index = 0
-        
+
     # @Button(emoji=i.get_emoji(1161002648099618869), style=ButtonStyle.blurple, disabled=True)
     async def next_item(self, interaction: discord.Interaction, button: Button):
         self._hovered_item_index += 1
         await interaction.response.edit_message(embed="")
-        
+
     # @Button(emoji=i.get_emoji(1161002666328068126), style=ButtonStyle.blurple, disabled=False)
     async def back_item(self, interaction: discord.Interaction, button: Button):
         self._hovered_item_index -= 1
-        
+
     def create_embed(self):
         embed = Embed(color=discord.Color.green())
         for item in self.items:
             embed.add_field(name="")
+
 
 # View for the overall shop, with buttons to select subshops
 class ItemMenu(discord.ui.View):
@@ -61,9 +60,7 @@ class ItemMenu(discord.ui.View):
             description=f"Thanks for your business, {self.interaction.user.mention}!\nCome again!",
             color=Color.from_str("0x41a651"),
         )
-        await self.interaction.edit_original_response(
-            embed=shop_closed_embed, view=None
-        )
+        await self.interaction.edit_original_response(embed=shop_closed_embed, view=None)
 
 
 class SelectItem(discord.ui.Select):
@@ -108,7 +105,6 @@ class ItemPage(discord.ui.View):
     def __init__(self, item_id, *, timeout=60):
         super().__init__(timeout=timeout)
         self.embed: Embed = construct_embed(item_id, for_shop=True)
-            
 
     def page_forward(self):
         if (
@@ -116,9 +112,7 @@ class ItemPage(discord.ui.View):
         ):  # If we are on the last page, page_no is first page of pages
             self.page_no = 0
         else:
-            self.page_no += (
-                1  # If we are not on the last page, increase the page_no by 1
-            )
+            self.page_no += 1  # If we are not on the last page, increase the page_no by 1
         for child in self.children:
             if child.custom_id == "purchase":
                 child: PurchaseItemButton
@@ -126,9 +120,7 @@ class ItemPage(discord.ui.View):
         return self.pages[self.page_no]  # return the SubShopPage we should be on
 
     def page_backward(self):
-        if (
-            self.page_no == 0
-        ):  # if we are on the first page, page_no is last page of pages
+        if self.page_no == 0:  # if we are on the first page, page_no is last page of pages
             self.page_no = len(self.pages) - 1
         else:
             self.page_no -= 1  # if not on the last page, decrease the page_no by 1
@@ -144,9 +136,7 @@ class ItemPage(discord.ui.View):
 
 # Page for item in list of items
 class SubShopPage:
-    def __init__(
-        self, entity_ref_id: str, entity_info: dict, command_interaction: Interaction
-    ):
+    def __init__(self, entity_ref_id: str, entity_info: dict, command_interaction: Interaction):
         self.entity_ref_id = entity_ref_id
         self.entity_price = entity_info["price"]
         self.command_interaction = command_interaction
@@ -165,9 +155,7 @@ class SubShopPage:
             name=f"{self.command_interaction.user.name} - Shopping",
             icon_url=self.command_interaction.user.display_avatar,
         )
-        fields = self.get_attributes(
-            entity_info=entity_info, entity_ref_id=self.entity_ref_id
-        )
+        fields = self.get_attributes(entity_info=entity_info, entity_ref_id=self.entity_ref_id)
         for field_name, field_value in fields.items():
             page_embed.add_field(name=field_name, value=field_value)
         return page_embed
@@ -237,9 +225,7 @@ class SwitchButton(discord.ui.Button):
     ):
         self.parent_interaction = parent_interaction
         self.view_to_switch_to = view_to_switch_to
-        super().__init__(
-            label=button_label, style=ButtonStyle.blurple, emoji=emoji, row=row
-        )
+        super().__init__(label=button_label, style=ButtonStyle.blurple, emoji=emoji, row=row)
 
     async def callback(self, switch_interaction: Interaction):
         if switch_interaction.user != self.parent_interaction.user:
@@ -283,11 +269,10 @@ class PurchaseItemButton(discord.ui.Button):
         self.refresh(self.parent_view.page)
 
     async def callback(self, purchase_interaction: Interaction):
-        user = RequestUser(
-            self.parent_interaction.user.id, interaction=self.parent_interaction
-        )
+        user = User(self.parent_interaction.user.id)
+        await user.load()
         # If the user doesn't have enough money to make the purchase
-        if user.instance.money < self.parent_view.page.entity_price:
+        if user.get_field('purse') < self.parent_view.page.entity_price:
             self.disabled = True
             self.label = "Nope, sorry."
             self.style = ButtonStyle.red
@@ -301,11 +286,10 @@ class PurchaseItemButton(discord.ui.Button):
 
         return
 
-    def refresh(self, page):
-        user = RequestUser(
-            self.parent_interaction.user.id, interaction=self.parent_interaction
-        )
-        if user.instance.money >= page.entity_price:
+    async def refresh(self, page):
+        user = User(self.parent_interaction.user.id)
+        await user.load()
+        if user.get_field('purse') >= page.entity_price:
             label = "Purchase!"
             style = ButtonStyle.green
             emoji = "💰"
@@ -346,9 +330,7 @@ class PaginateForwardButton(discord.ui.Button):
             return  # Return if user isn't the same as the one using the command
         page: SubShopPage = view.page_forward()
 
-        await paginate_forward_interaction.response.edit_message(
-            embed=page.embed, view=view
-        )
+        await paginate_forward_interaction.response.edit_message(embed=page.embed, view=view)
 
 
 # Button that returns embed to parent view
@@ -370,6 +352,4 @@ class PaginateReturnButton(discord.ui.Button):
         new_parent_view = ItemMenu(self.parent_interaction)
         for subshop in view.parent_view.pages:
             new_parent_view.add_subshop(subshop=subshop)
-        await interaction.response.edit_message(
-            embed=view.parent_view.embed, view=new_parent_view
-        )
+        await interaction.response.edit_message(embed=view.parent_view.embed, view=new_parent_view)

@@ -1,5 +1,4 @@
 import datetime
-from typing import Any, Coroutine
 import discord
 
 from discord.ext import commands
@@ -8,9 +7,7 @@ from discord.ext import tasks
 
 from cococap.user import User
 from cococap.utils.shop import SubShopPage, ItemPage, ItemMenu
-from cococap import entity_models as m
 from cococap.constants import PROJECT_ROOT
-from cococap import instance
 
 
 
