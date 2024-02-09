@@ -40,6 +40,7 @@ class Extensions(commands.Cog):
     def __init__(self, bot: Bot):
         self.bot = bot
         self.action_in_progress = False
+        self.last_reloaded: Extension = None
         
     @commands.command(name="restart", aliases=("rs",))
     async def restart(self, ctx: Context) -> None:
@@ -107,15 +108,18 @@ class Extensions(commands.Cog):
         If '\*\*' is given as the name, all extensions, including unloaded ones, will be reloaded.
         """  # noqa: W605
         if not extensions:
-            await ctx.send_help(ctx.command)
-            return
+            if self.last_reloaded:
+                await self.batch_manage(Action.RELOAD, ctx, self.last_reloaded)
+            else:
+                await ctx.send_help(ctx.command)
+                return
 
         if "**" in extensions:
             extensions = self.bot.all_extensions
         elif "*" in extensions:
             extensions = set(self.bot.extensions.keys()) | set(extensions)
             extensions.remove("*")
-
+        self.last_reloaded = extensions[0]
         await self.batch_manage(Action.RELOAD, ctx, *extensions)
 
     @extensions_group.command(name="list", aliases=("all",))
