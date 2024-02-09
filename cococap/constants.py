@@ -1,6 +1,10 @@
 import os
 import json
+
 from enum import Enum
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 # Paths
@@ -13,8 +17,9 @@ with open(config_path, "r") as f:
     data = json.load(f)
 
 
+TOKEN = os.getenv("BOT_TOKEN")
+URI = os.getenv("URI")
 BOT_PREFIX = "-"
-URI = f"mongodb+srv://{os.environ.get('MONGO_URI')}@cluster0.i77sksx.mongodb.net/?retryWrites=true&w=majority"
 DATABASE = "livedatabase.db"
 
 if data["DEV"]:
@@ -53,26 +58,27 @@ class ModerationChannels(Enum):
 class PartyRoles(Enum):
     PARTY_LEADER = 1130004841687699487
 
+
 class Rarities(Enum):
-    COMMON = (1, 'Common', '0x99F7A7')
-    UNCOMMON = (2, 'Uncommon', '0x63EFFF')
-    RARE = (3, 'Rare', '0x0C61CF')
-    SUPER_RARE = (4, 'Super Rare', '0x6E3ADE')
-    LEGENDARY = (5, 'Legendary', '0xE3AB3B')
-    PREMIUM = (6, 'Premium', '0xE3A019')
-    MYTHICAL = (7, 'Mythical', '0x9F34FF')
-    
-    
+    COMMON = (1, "Common", "0x99F7A7")
+    UNCOMMON = (2, "Uncommon", "0x63EFFF")
+    RARE = (3, "Rare", "0x0C61CF")
+    SUPER_RARE = (4, "Super Rare", "0x6E3ADE")
+    LEGENDARY = (5, "Legendary", "0xE3AB3B")
+    PREMIUM = (6, "Premium", "0xE3A019")
+    MYTHICAL = (7, "Mythical", "0x9F34FF")
+
     def __new__(cls, value, name, color):
         obj = object.__new__(cls)
         obj._value_ = value
         obj.rarity_name = name
         obj.color = color
         return obj
-    
+
     @classmethod
     def from_value(cls, value):
         return cls(value)
+
 
 IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images"
 GREEN_CHECK_MARK_URL = f"{IMAGES_REPO}/main/icons/checkmarks/green-checkmark-dist.png"
@@ -156,7 +162,8 @@ class Emojis(Enum):
     STATUS_ONLINE = ":white_check_mark:"
     STATUS_OFFLINE = ":x:"
     TRASHCAN = ":wastebasket:"
-    
+
+
 NUMBER_EMOJIS = {
     1: ":one:",
     2: ":two:",
@@ -167,5 +174,5 @@ NUMBER_EMOJIS = {
     7: ":seven:",
     8: ":eight:",
     9: ":nine:",
-    10: ":ten:"
+    10: ":ten:",
 }

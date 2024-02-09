@@ -2,8 +2,8 @@ from pydis_core import BotBase
 from logging import getLogger
 
 from cococap import exts, logs
-from cococap.constants import URI
 from cococap.models import UserCollection, PartyCollection
+from cococap.constants import URI
 
 from datetime import datetime
 
