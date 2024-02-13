@@ -90,12 +90,12 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         guild_ids=[
             DiscordGuilds.PRIMARY_GUILD.value,
             DiscordGuilds.TESTING_GUILD.value,
-        ],
-        default_permissions=None,
+        ]
     )
-
     @admin_commands.command(name="pay")
     async def admin_pay(self, interaction: discord.Interaction, user: discord.User, amount: int):
+        if interaction.user.id != 326903703422500866:
+            return await interaction.response.send_message("No.", ephemeral=True)
         user_to_pay = User(user.id)
         await user_to_pay.load()
 
