@@ -44,6 +44,7 @@ class Master(BaseModel):
     item_id = TextField(primary_key=True)
     price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
     description = TextField(null=True)
+    wiki = TextField(null=True)
     display_name = TextField(null=True)
     drop_rate = IntegerField(null=True)
     max_drop = IntegerField(null=True)
