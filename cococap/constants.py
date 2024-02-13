@@ -80,9 +80,9 @@ class Rarities(Enum):
         return cls(value)
 
 
-IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images"
-GREEN_CHECK_MARK_URL = f"{IMAGES_REPO}/main/icons/checkmarks/green-checkmark-dist.png"
-RED_X_URL = f"{IMAGES_REPO}/main/icons/checkmarks/red-x.png"
+IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images/main"
+GREEN_CHECK_MARK_URL = f"{IMAGES_REPO}/icons/checkmarks/green-checkmark-dist.png"
+RED_X_URL = f"{IMAGES_REPO}/icons/checkmarks/red-x.png"
 
 
 # Default role combinations
