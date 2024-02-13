@@ -31,7 +31,7 @@ async def game_results(
         )
         losing_embed.set_footer(text=f"XP: coming soon.")
         embed = losing_embed
-        await user.update_game(in_game=False)
+        await user.update_game(in_game=False, interaction=interaction)
 
         # Give the lost money to the house
         bot = User(1016054559581413457)
@@ -68,10 +68,9 @@ class HighLow(commands.Cog, name="High Low"):
         """Guess if the number will be high (6-10) or low (1-5)."""
         # Load the user
         user = User(interaction.user.id)
-        print("initialized user 1 time")
         await user.load()
         
-        if user.get_field("in_game"):
+        if user.get_field("in_game")['in_game']:
             in_game_embed = Cembed(
                 title="You are already in game!",
                 desc="Finish your other game before you start another.\n"
@@ -121,7 +120,7 @@ class HighLow(commands.Cog, name="High Low"):
             return
 
         await user.inc_purse(-bet)  # Subtract the bet from the users purse
-        await user.update_game(in_game=True)  # Set the users ingame status to True
+        await user.update_game(in_game=True, interaction=interaction)  # Set the users ingame status to True
 
         class HighLowButtons(discord.ui.View):
             def __init__(self, roll, *, multiplier=0, timeout=120):
@@ -241,7 +240,7 @@ class HighLow(commands.Cog, name="High Low"):
                 )
                 stop_embed.set_footer(text="XP: coming soon")
                 await user.inc_purse(bet * self.multiplier)
-                await user.update_game(in_game=False)
+                await user.update_game(in_game=False, interaction=interaction)
                 await stop_interaction.response.edit_message(embed=stop_embed, view=None)
                 return
 

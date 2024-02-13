@@ -66,7 +66,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
             return
 
         await user.inc_purse(-bet)
-        await user.update_game(in_game=True)
+        await user.update_game(in_game=True, interaction=interaction)
 
         view = BlackJack.BlackJackGame(interaction=interaction, user=user, bet=bet)
         await interaction.response.send_message(embed=view.blackjack_embed, view=view)
@@ -132,7 +132,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
 
                     await hit_interaction.response.edit_message(embed=lose_embed, view=None)
 
-                    await view.user.update_game(in_game=False)
+                    await view.user.update_game(in_game=False, interaction=hit_interaction)
                     bot = User(1016054559581413457)
                     await bot.load()
                     await bot.inc_purse(amount=view.bet)
@@ -173,7 +173,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
             await fold_interaction.response.edit_message(embed=fold_embed, view=None)
             await asyncio.sleep(1)
 
-            await view.user.update_game(in_game=False)
+            await view.user.update_game(in_game=False, interaction=fold_interaction)
             bot = User(1016054559581413457)
             await bot.load()
             await bot.inc_purse(amount=round(view.bet / 2))
@@ -214,7 +214,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     user_lost_embed.set_footer(text="You earned *coming soon* xp")
                     await stand_interaction.response.edit_message(embed=user_lost_embed, view=None)
 
-                    await view.user.update_game(in_game=False)
+                    await view.user.update_game(in_game=False, interaction=stand_interaction)
                     bot = User(1016054559581413457)
                     await bot.load()
                     await bot.inc_purse(amount=view.bet)
@@ -243,7 +243,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     )
                     push_embed.set_footer(text="You earned *coming soon* xp")
                     await stand_interaction.response.edit_message(embed=push_embed, view=None)
-                    await view.user.update_game(in_game=False)
+                    await view.user.update_game(in_game=False, interaction=stand_interaction)
 
                 else:
                     await view.user.inc_purse(amount=view.bet * 2)
@@ -274,13 +274,13 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     await stand_interaction.response.edit_message(
                         embed=dealer_lost_embed, view=None
                     )
-                    await view.user.update_game(in_game=False)
+                    await view.user.update_game(in_game=False, interaction=stand_interaction)
 
             while view.dealer_hand_total < 17:
                 view.draw_card(player=False)
                 if view.dealer_hand_total > 21:
                     await view.user.inc_purse(amount=view.bet * 2)
-                    await view.user.update_game(in_game=False)
+                    await view.user.update_game(in_game=False, interaction=stand_interaction)
                     dealer_bust_embed = discord.Embed(
                         title=f"Blackjack | User: {stand_interaction.user.name} - Bet: {view.bet:,}",
                         colour=discord.Color.green(),
