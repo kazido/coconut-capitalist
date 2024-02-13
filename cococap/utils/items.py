@@ -9,6 +9,9 @@ log.setLevel(20)
 
 field_formats = {
     # General fields section
+    "wiki": {
+        "text": "{:}",
+    },
     "filter_type": {
         "text": "**Type**: *{:}*",
     },
