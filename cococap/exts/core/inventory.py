@@ -58,15 +58,16 @@ class InventoryCog(commands.Cog, name="Inventory"):
     async def wiki(self, interaction: discord.Interaction, category: Choice[str]):
         class WikiView(discord.ui.View):
             def __init__(self):
-                super().__init__(timeout=180)
+                super().__init__(timeout=60)
                 if category.value == "none":
                     category.value = None
                 select_menu = WikiSelect(category=category.value)
                 self.add_item(select_menu)
 
-            def on_timeout(self):
+            async def on_timeout(self):
                 self.clear_items()
                 self.stop()
+                await interaction.edit_original_response(view=self)
                 return
 
         class WikiSelect(discord.ui.Select):
@@ -88,7 +89,7 @@ class InventoryCog(commands.Cog, name="Inventory"):
                 await interaction.response.edit_message(embed=embed)
                 return
 
-        await interaction.response.send_message("Pick one!", view=WikiView())
+        await interaction.response.send_message(view=WikiView())
 
 
 def construct_stats_string(item_data: dict, for_shop: bool):
@@ -123,8 +124,10 @@ def construct_embed(item_id, for_shop: bool):
     # Create an embed with the proper information from the item
     embed = discord.Embed(
         title=f"{item_data.emoji} {item_data.display_name}",
-        description=f"{item_data.description}\n",
+        description=f'"*{item_data.description}*"',
     )
+    divider = "-" * (len(embed.description)-2)
+    embed.description += f"\n{divider}\n"
     rarity = Rarities.from_value(item_data.rarity)
     embed.color = discord.Color.from_str(rarity.color)
     embed.set_footer(text=f"Wiki: {item_id}")
