@@ -163,12 +163,12 @@ class User:
         overflow_xp, xp_needed = self.xp_for_next_level(xp)
         ratio = overflow_xp / xp_needed
         xp_bar = "<:xp_bar_left:1203894026265428021>"
-        xp_bar_size = 7
+        xp_bar_size = 10
         for _ in range(int(ratio * xp_bar_size)):
             xp_bar += "<:xp_bar_big:1203894024243777546>"
         for _ in range(xp_bar_size - int(ratio * xp_bar_size)):
             xp_bar += "<:xp_bar_small:1203894025137037443>"
-        xp_bar += f"<:xp_bar_right:1203894027418599505> *({overflow_xp:,}/{xp_needed:,} xp)*"
+        xp_bar += f"<:xp_bar_right:1203894027418599505>"
         return xp_bar
 
     # COOLDOWN METHODS ------------------------------------
