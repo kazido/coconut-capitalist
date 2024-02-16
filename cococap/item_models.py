@@ -58,22 +58,6 @@ class Master(BaseModel):
     class Meta:
         table_name = "data_master"
 
-
-class Seeds(BaseModel):
-    item_id = ForeignKeyField(
-        column_name="item_id",
-        model=Master,
-        backref="seed_data",
-        null=True,
-        primary_key=True,
-    )
-    grows_into = TextField(null=True)
-    growth_odds = IntegerField(null=True)
-
-    class Meta:
-        table_name = "data_seeds"
-
-
 class Crops(BaseModel):
     item_id = ForeignKeyField(
         column_name="item_id",
@@ -83,9 +67,8 @@ class Crops(BaseModel):
         primary_key=True,
     )
     grows_from = TextField(null=True)
-    max_harvest = IntegerField(null=True)
-    min_harvest = IntegerField(null=True)
     pet_xp = IntegerField(null=True)
+    cycles = IntegerField(null=True)
 
     class Meta:
         table_name = "data_crops"
@@ -158,7 +141,6 @@ class ItemType(Enum):
     CROP = Crops
     PET = Pets
     RANK = Ranks
-    SEED = Seeds
     TOOL = Tools
     master = Master
 
