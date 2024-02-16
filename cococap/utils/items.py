@@ -221,8 +221,10 @@ def roll_item(item: Master):
 
 
 def get_skill_drops(skill: str):
+    """Returns a dictionary of all items related to the passed skill"""
     drops = {}
-    query = Master.select().where(Master.skill == skill, Master.drop_rate != None)
+    query = Master.select().where(Master.skill.contains(skill))
     for item in query:
+        # Add the item in to the dict by it's item_id
         drops[item.item_id] = item
     return drops
