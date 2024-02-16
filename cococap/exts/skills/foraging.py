@@ -12,7 +12,6 @@ from cococap.user import User
 from cococap.utils.messages import Cembed
 from cococap.item_models import Master
 from cococap.utils.items import create_item, delete_item, trade_item
-from cococap.utils.utils import distribute_drops
 
 log = getLogger(__name__)
 log.setLevel(10)

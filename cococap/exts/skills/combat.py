@@ -12,7 +12,6 @@ from discord.interactions import Interaction
 from cococap.constants import RED_X_URL, DiscordGuilds
 from cococap.user import *
 from cococap.utils.items import *
-from cococap.utils.utils import distribute_drops
 from cococap import instance
 
 from logging import getLogger
