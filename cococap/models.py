@@ -3,16 +3,13 @@ from typing import Optional
 
 
 class UserCollection(Document):
-    name: str # Required
-    discord_id: int # Required
+    name: str  # Required
+    discord_id: int  # Required
     zone: str = "the_agora"
     bank: int = 0
     purse: int = 1000
     tokens: int = 0
-    in_game: dict =  {
-        "in_game": False,
-        "message_id": ""
-    }
+    in_game: dict = {"in_game": False, "message_id": ""}
     party_id: Optional[int] = None
     drops_claimed: int = 0
     farming: dict = {
@@ -59,6 +56,8 @@ class UserCollection(Document):
         "prestige_level": 1,
         "bonus_type": None,
         "bonuses_remaining": 0,
+        "reactor_lodes_mined": 0,
+        "last_auto_mine": 0,
     }
     combat: dict = {
         "xp": 0,
