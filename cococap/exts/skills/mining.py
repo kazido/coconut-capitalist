@@ -11,7 +11,7 @@ from discord.interactions import Interaction
 
 from cococap.utils.menus import MenuHandler, Menu
 from cococap.utils.messages import Cembed, button_check
-from cococap.utils.items import get_skill_drops, roll_item, create_item
+from cococap.utils.items import get_skill_drops, roll_item
 from cococap.utils.utils import timestamp_to_english
 from cococap.user import User
 from cococap.constants import DiscordGuilds, IMAGES_REPO
@@ -28,7 +28,7 @@ class MiningCog(commands.Cog, name="Mining"):
         self.bot = bot
 
     # get the possible drops for mining
-    loot_table = get_skill_drops("mining")
+    mining_items = get_skill_drops("mining")
 
     # emojis for mining
     marker = ":small_red_triangle_down:"
@@ -37,9 +37,9 @@ class MiningCog(commands.Cog, name="Mining"):
     empty = "<:empty_grid:1203810769880354987>"
     wyrmhole = "<a:wyrmhole:1204212299804442624>"
 
-    copper = loot_table["copper_ore"].emoji
-    iron = loot_table["iron_ore"].emoji
-    gold = loot_table["gold_ore"].emoji
+    copper_ore = mining_items["copper_ore"].emoji
+    iron_ore = mining_items["iron_ore"].emoji
+    gold_ore = mining_items["gold_ore"].emoji
 
     # Reactor slots
     core_slots = ["core_slot1", "core_slot2", "core_slot3", "core_slot4"]
@@ -93,7 +93,7 @@ class MiningCog(commands.Cog, name="Mining"):
             level = self.levels[depth]
             level.reverse()  # We want to roll the rarest items first
             for item_id in level:
-                item = MiningCog.loot_table[item_id]
+                item = MiningCog.mining_items[item_id]
                 quantity = roll_item(item)
                 if quantity:
                     return item, quantity
@@ -118,13 +118,13 @@ class MiningCog(commands.Cog, name="Mining"):
             for _ in range(self.num_cols):
                 self.nodes.append(self.create_node())
             # Always add 1 implosion gem to the nodes
-            self.nodes[random.randint(0, 4)] = (MiningCog.loot_table["implosion_gemstone"], 1)
+            self.nodes[random.randint(0, 4)] = (MiningCog.mining_items["implosion_gemstone"], 1)
 
         def create_node(self):
             item_pool = self.item_pool
             item_id = random.choice(item_pool.keys())
 
-            item = MiningCog.loot_table[item_id]
+            item = MiningCog.mining_items[item_id]
             quantity = item_pool[item_id]
             return item, quantity
 
@@ -241,7 +241,7 @@ class MiningCog(commands.Cog, name="Mining"):
             # Add items to the user's inventory
             self.embed.set_footer(text="Better luck next time.")
             for item, amount in self.loot.items():
-                await create_item(self.user, item_id=item.item_id, quantity=amount)
+                await self.user.create_item(item_id=item.item_id, quantity=amount)
                 if item.item_id == "implosion_gemstone":
                     self.embed.set_footer(text="Congratulations!")
 
@@ -454,7 +454,7 @@ class MiningCog(commands.Cog, name="Mining"):
             # We have finished mining the mineshaft, remove the buttons and add items to inventory
             # Add items to the user's inventory
             for item, amount in self.loot.items():
-                await create_item(self.user, item_id=item.item_id, quantity=amount)
+                await self.user.create_item(item_id=item.item_id, quantity=amount)
 
             # Update the amount of lodes mined
             self.user.get_field("mining")["lodes_mined"] += self.lodes_mined
@@ -560,11 +560,18 @@ class MiningCog(commands.Cog, name="Mining"):
             interaction=interaction,
             activity="mining",
         )
-        balances = (
-            f"{MiningCog.copper} **COPPER**: {items['copper_ore']['quantity']:,}\n"
-            f"{MiningCog.iron} **IRON**: {items['iron_ore']['quantity']:,}\n"
-            f"{MiningCog.gold} **GOLD**: {items['gold_ore']['quantity']:,}"
-        )
+        balances = ""
+        ore_types = ["copper_ore", "iron_ore", "gold_ore"]
+        for ore_type in ore_types:
+            emoji = getattr(MiningCog, ore_type)
+            name = MiningCog.mining_items[ore_type].display_name
+            balances += f"{emoji} **{name}**: "
+            try:
+                ore_quantity = items[ore_type]["quantity"]
+                balances += f"{ore_quantity:,}\n"
+            except KeyError:
+                balances += "0\n"
+
         embed.add_field(
             name="Balances",
             value=balances,
@@ -624,7 +631,7 @@ class MiningCog(commands.Cog, name="Mining"):
                         self.insert_button.style = discord.ButtonStyle.gray
                     else:
                         reactor_field += (
-                            f"Core `{i+1}`: {MiningCog.loot_table[mining[core]].emoji}\n"
+                            f"Core `{i+1}`: {MiningCog.mining_items[mining[core]].emoji}\n"
                         )
                 self.embed.add_field(name="Cores", value=reactor_field)
                 self.embed.add_field(
@@ -655,13 +662,13 @@ class MiningCog(commands.Cog, name="Mining"):
                     # We want to roll the rarest items first
                     level.reverse()
                     for item_id in level:
-                        item = MiningCog.loot_table[item_id]
+                        item = MiningCog.mining_items[item_id]
                         quantity = roll_item(item)
                         if quantity:
                             item, quantity
                         else:
-                            MiningCog.loot_table["copper_ore"], 5
-                    auto_mined_lodes += f"{MiningCog.loot_table[item_id].emoji}"
+                            MiningCog.mining_items["copper_ore"], 5
+                    auto_mined_lodes += f"{MiningCog.mining_items[item_id].emoji}"
 
                 self.embed.set_field_at(1, name="Auto-miner", value="")
                 self.embed.set_field_at(
