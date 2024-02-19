@@ -17,9 +17,7 @@ pet_shop_embed = Cembed(title="Welcome to the pet shop!", desc=desc, color=disco
 
 embeds = {}
 
-print(Pets.select().dicts())
-
-for pet, stats in Pets.select().dicts():
+for pet in Pets.select():
     embeds[pet] = Cembed(
         title=f"{stats['display_name']}",
         description=f"Purchase a {stats['display_name']}.\n" f"Cost: **{stats['cost']:,}** bits\n",
