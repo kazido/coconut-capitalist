@@ -5,7 +5,7 @@ from discord import utils
 from typing import Literal
 
 from cococap import instance
-from cococap.item_models import Ranks, Areas
+from cococap.item_models import Ranks, Areas, Master
 from cococap.constants import DiscordGuilds
 from cococap.models import UserCollection
 from cococap.utils.utils import timestamp_to_digital
@@ -122,6 +122,97 @@ class User:
             self.document.in_game["channel"] = ""
         self.document.in_game["in_game"] = in_game
         await self.save()
+        
+    # ITEM METHODS -----------------------------------
+    async def create_item(self, item_id: str, quantity: int = 1):
+        """Inserts an item into the database with specified owner and quantity"""
+
+        inventory: dict = self.get_field("items")
+
+        # Ensure that the item is an actual item first
+        if not Master.get_or_none(item_id=item_id):
+            log.warn(f"Tried to create: {quantity} {item_id}. Error: item does not exist.")
+            return False, f"'{item_id}' is not a valid item id."
+        if quantity < 1:
+            log.warn(f"Tried to create {quantity} {item_id}. Less than 1.")
+            return False
+        # Retrieve or create the item in the database
+        if item_id not in inventory.keys():
+            inventory[item_id] = {"quantity": quantity}
+            log.info(f"{quantity} new {item_id} created with owner: {self}.")
+            await self.save()
+            return True
+        else:
+            # If an item was found, add to it's quantity
+            inventory[item_id]["quantity"] += quantity
+            log.info(f"Added {quantity} {item_id} to: {self}")
+            await self.save()
+            return True
+
+
+    async def delete_item(self, item_id: str, quantity: int = None):
+        inventory: dict = self.get_field("items")
+        # Ensure that the item is an actual item first
+        if not Master.get_or_none(item_id=item_id):
+            log.warn(f"Tried to delete: {item_id}. Error: not a valid item id.")
+            return False, f"'{item_id}' is not a valid item id."
+        if quantity < 1:
+            log.warn(f"Tried to delete: {quantity} {item_id}. Error: less than 1.")
+        if item_id in inventory.keys():
+            # Try to decrement quantity of existing item
+            if quantity and (inventory[item_id]["quantity"] - quantity > 0):
+                inventory[item_id]["quantity"] -= quantity
+                log.info(f"Deleted {quantity} {item_id} from {self}.")
+                await self.save()
+                return True
+            else:
+                inventory.pop(item_id)
+                log.info(f"Deleted all {item_id} from {self}.")
+                await self.save()
+                return True
+        else:
+            # If item doesn't exist, do nothing
+            log.warn(f"Tried to delete {quantity} {item_id} from {self}. Does not exist.")
+            return False
+
+
+    async def trade_item(self, new_owner: int, item_id: str, quantity: int = None):
+        user_2 = User(uid=new_owner)
+        await user_2.load()
+
+        inventory: dict = self.get_field("items")
+        inventory_2: dict = user_2.get_field("items")
+
+        # Ensure that the item is an actual item first
+        if not Master.get_or_none(item_id=item_id):
+            log.warn(f"Tried to trade: {item_id}. Error: not a valid item id.")
+            return False
+        if item_id in inventory.keys():
+            # Transfer the ownership of the item if it exists
+            item = inventory[item_id]
+            if quantity:
+                if quantity > item["quantity"]:
+                    log.warn(
+                        f"Trade failed. Tried to trade {quantity} {item_id}. Error: more than owned."
+                    )
+                    return False
+                # Inserts same item into tradee's inventory
+                user_2.create_item(item_id, quantity)
+                # Removes items from trader's inventory
+                self.delete_item(item_id, quantity)
+                log.info(f"Traded {quantity} {item_id} from {self} to {user_2}.")
+                return True
+            else:
+                # Inserts same item into tradee's inventory
+                user_2.create_item(item_id, inventory[item_id]["quantity"])
+                # Removes items from trader's inventory
+                self.delete_item(item_id)
+                return True
+
+        else:
+            # If item doesn't exist, do nothing
+            log.warn(f"Tried to trade {item_id} from {self} to {user_2}. Item does not exist.")
+            return False
 
     # GET METHODS ------------------------------------
     def get_field(self, field: str):
