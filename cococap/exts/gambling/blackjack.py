@@ -128,7 +128,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     lose_embed.add_field(
                         name="Bits", value=f"{view.user.get_field('purse'):,} bits"
                     )
-                    lose_embed.set_footer(text="You earned *coming soon* xp")
 
                     await hit_interaction.response.edit_message(embed=lose_embed, view=None)
 
@@ -169,7 +168,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
                 name="Profit", value=f"{round(-view.bet / 2):,} bits", inline=False
             )
             fold_embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
-            fold_embed.set_footer(text="*coming soon* is xp")
             await fold_interaction.response.edit_message(embed=fold_embed, view=None)
             await asyncio.sleep(1)
 
@@ -211,7 +209,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     user_lost_embed.add_field(
                         name="Bits", value=f"{view.user.get_field('purse'):,} bits"
                     )
-                    user_lost_embed.set_footer(text="You earned *coming soon* xp")
                     await stand_interaction.response.edit_message(embed=user_lost_embed, view=None)
 
                     await view.user.update_game(in_game=False, interaction=stand_interaction)
@@ -241,7 +238,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     push_embed.add_field(
                         name="Bits", value=f"{view.user.get_field('purse'):,} bits"
                     )
-                    push_embed.set_footer(text="You earned *coming soon* xp")
                     await stand_interaction.response.edit_message(embed=push_embed, view=None)
                     await view.user.update_game(in_game=False, interaction=stand_interaction)
 
@@ -270,7 +266,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     dealer_lost_embed.add_field(
                         name="Bits", value=f"{view.user.get_field('purse'):,} bits"
                     )
-                    dealer_lost_embed.set_footer(text="You earned *coming soon* xp")
                     await stand_interaction.response.edit_message(
                         embed=dealer_lost_embed, view=None
                     )
@@ -304,7 +299,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     dealer_bust_embed.add_field(
                         name="Bits", value=f"{view.user.get_field('purse'):,} bits"
                     )
-                    dealer_bust_embed.set_footer(text="You earned *coming soon* xp")
                     await stand_interaction.response.edit_message(
                         embed=dealer_bust_embed, view=None
                     )

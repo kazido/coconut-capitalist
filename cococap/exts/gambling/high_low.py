@@ -29,7 +29,6 @@ async def game_results(
             value=f"You have {user_balance_after_loss:,} bits",
             inline=False,
         )
-        losing_embed.set_footer(text=f"XP: coming soon.")
         embed = losing_embed
         await user.update_game(in_game=False, interaction=interaction)
 
@@ -238,7 +237,6 @@ class HighLow(commands.Cog, name="High Low"):
                     value=f"You have {(user.get_field('purse') + (bet * self.multiplier)):,} bits",
                     inline=False,
                 )
-                stop_embed.set_footer(text="XP: coming soon")
                 await user.inc_purse(bet * self.multiplier)
                 await user.update_game(in_game=False, interaction=interaction)
                 await stop_interaction.response.edit_message(embed=stop_embed, view=None)
