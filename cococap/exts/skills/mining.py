@@ -132,7 +132,7 @@ class MiningCog(commands.Cog, name="Mining"):
         placeholder = "<a:upgraded_grid:1204245792479649863>"
 
         def __init__(self, interaction: Interaction, user: User, session: dict):
-            super().__init__(timeout=180)
+            super().__init__()
             self.user = user
             self.interaction = interaction
 
@@ -274,7 +274,7 @@ class MiningCog(commands.Cog, name="Mining"):
 
     class MiningView(discord.ui.View):
         def __init__(self, interaction: Interaction, user: User, session: dict):
-            super().__init__(timeout=180)
+            super().__init__()
             self.user = user
             self.interaction = interaction
 
@@ -463,12 +463,14 @@ class MiningCog(commands.Cog, name="Mining"):
 
             # Give the user xp for columns mined
             rewarded_xp = 10 * len(self.cols)
-            await self.user.inc_xp(skill="mining", xp=rewarded_xp, interaction=interaction)
+            pet_data = await self.user.inc_xp(
+                skill="mining", xp=rewarded_xp, interaction=interaction
+            )
             xp = self.user.get_field("mining")["xp"]
             overflow_xp, xp_needed = self.user.xp_for_next_level(xp)
             self.embed.set_field_at(
                 2,
-                name=f"Level {self.user.xp_to_level(xp)} - {overflow_xp:,}/{xp_needed:,} xp",
+                name=f"Level {self.user.xp_to_level(xp)} - {overflow_xp:,}/{xp_needed:,} xp {pet_data.emoji if pet_data else ''}",
                 value=self.user.create_xp_bar(xp),
                 inline=False,
             )
@@ -499,7 +501,7 @@ class MiningCog(commands.Cog, name="Mining"):
 
     class FinishedMiningView(discord.ui.View):
         def __init__(self, user: User, parent_view: "MiningCog.MiningView"):
-            super().__init__(timeout=180)
+            super().__init__()
             self.user = user
             self.pv = parent_view
             self.pv.stop()

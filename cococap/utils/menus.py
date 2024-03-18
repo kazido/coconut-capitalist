@@ -31,7 +31,7 @@ class MenuHandler:
         
 class Menu(discord.ui.View):
     def __init__(self,  handler: MenuHandler, embed=None):
-        super().__init__(timeout=180)
+        super().__init__()
         self.embed: discord.Embed = embed
         self.button = self.close
         self.index: int

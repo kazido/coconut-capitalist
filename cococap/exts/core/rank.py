@@ -87,7 +87,7 @@ class RanksCog(commands.Cog):
 
         class RolePurchaseButtons(discord.ui.View):
             def __init__(self):
-                super().__init__(timeout=180)
+                super().__init__()
                 if user.get_field("tokens") < next_rank.token_price:
                     self.purchase.style = discord.ButtonStyle.red
                     self.purchase.disabled = True
