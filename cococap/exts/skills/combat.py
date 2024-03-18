@@ -116,9 +116,6 @@ class CombatView(View):
         self.interaction = interaction
         self.user = get_user_data(user_id, backrefs=True)
 
-        area = self.user["area_id"]
-        difficulty = area["difficulty"]
-
     async def on_timeout(self) -> None:
         embed = discord.Embed(
             title="Really?",

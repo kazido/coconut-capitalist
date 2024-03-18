@@ -88,19 +88,6 @@ field_formats = {
         "text": "**Next Rank**: *{:}*",
         "shop_field": True,
     },
-    # Area specific section
-    "difficulty": {
-        "text": "**Difficulty**: *{:,}* :star:",
-    },
-    "token_bonus": {
-        "text": "**Daily Bonus**: *{:,}* tokens",
-    },
-    "fuel_requriement": {
-        "text": "**Fuel Type**: *{:}*",
-    },
-    "fuel_amount": {
-        "text": "**Req. Fuel**: *{:,}*",
-    },
     # Bottom formatting
     "price": {
         "text": "**Price**: *{:,}*",

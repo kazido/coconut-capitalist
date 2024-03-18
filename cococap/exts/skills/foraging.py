@@ -21,14 +21,11 @@ class Tree:
     HEIGHTS = [randint(20, 40), randint(40, 50), randint(50, 60), randint(90, 100)]
     HEIGHTS_PROBABILITY = [0.499, 0.300, 0.200, 0.001]
 
-    def __init__(self, area_difficulty: int):
+    def __init__(self):
         # Get a random weighted height for the tree
-        base_height = random.choices(self.HEIGHTS, self.HEIGHTS_PROBABILITY)[0]
-        self.height = base_height * area_difficulty
+        self.height = random.choices(self.HEIGHTS, self.HEIGHTS_PROBABILITY)[0]
         self.hitpoints = self.height
-        self.item_pool = Master.select().where(
-            Master.skill == "foraging", Master.drop_rate
-        )
+        self.item_pool = Master.select().where(Master.skill == "foraging", Master.drop_rate)
 
 
 class JoinTreeView(discord.ui.View):
@@ -36,10 +33,8 @@ class JoinTreeView(discord.ui.View):
         super().__init__(timeout=120)
         self.interaction = interaction
         self.user = get_user_data(user_id, backrefs=True)
-        # Generate a tree based on the user
-        area = self.user['area_id']
-        difficulty = area['difficulty']
-        self.tree = Tree(difficulty)
+
+        self.tree = Tree()
         # Add the join button
         self.add_item(JoinTreeButton())
 
@@ -61,9 +56,9 @@ class JoinTreeButton(discord.ui.Button):
         if join_interaction.user == view.interaction.user:
             return
         user_2 = get_user_data(join_interaction.user.id, backrefs=True)
-        user_2['tool'] = get_user_tool(join_interaction.user.id, 'foraging')
+        user_2["tool"] = get_user_tool(join_interaction.user.id, "foraging")
         # Ensure that the second user has a tool
-        if user_2['tool'] is None:
+        if user_2["tool"] is None:
             embed = discord.Embed(
                 title="You don't have an axe!",
                 description="You need an axe to chop trees. Get one at the shop.",
@@ -84,7 +79,7 @@ class TreeView(discord.ui.View):
         super().__init__(timeout=1800)
         self.tree: Tree = tree
         self.interaction: discord.Interaction = interaction
-        # Users and area data
+        # Users data
         self.users = [p1, p2]
         self.current_user = self.users[0]
         # Add the buttons
@@ -114,9 +109,9 @@ class TreeView(discord.ui.View):
         return embed
 
     async def handle_chop(self, interaction: discord.Interaction, next_user):
-        if interaction.user.id != self.current_user['user_id']:
+        if interaction.user.id != self.current_user["user_id"]:
             return
-        user_tool_power = self.current_user['tool']['total_power']
+        user_tool_power = self.current_user["tool"]["total_power"]
         self.tree.hitpoints -= user_tool_power
         if self.tree.hitpoints <= 0:
             await self.handle_tree_down(interaction)
@@ -127,12 +122,8 @@ class TreeView(discord.ui.View):
         user_2_turn = self.current_user == self.users[1]
         self.button_1.disabled = user_2_turn
         self.button_2.disabled = user_1_turn
-        self.button_1.style = (
-            discord.ButtonStyle.green if user_1_turn else discord.ButtonStyle.grey
-        )
-        self.button_2.style = (
-            discord.ButtonStyle.green if user_2_turn else discord.ButtonStyle.grey
-        )
+        self.button_1.style = discord.ButtonStyle.green if user_1_turn else discord.ButtonStyle.grey
+        self.button_2.style = discord.ButtonStyle.green if user_2_turn else discord.ButtonStyle.grey
         embed = self.refresh_embed()
         await interaction.response.edit_message(embed=embed, view=self)
 
@@ -194,9 +185,9 @@ class ForagingCog(commands.Cog, name="Foraging"):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
-        foraging = user.get_field('foraging')
-        
-        skill_xp = foraging['xp']
+        foraging = user.get_field("foraging")
+
+        skill_xp = foraging["xp"]
         skill_level = user.xp_to_level(skill_xp)
         embed = Cembed(
             title=f"Foraging level: {skill_level}",
@@ -204,8 +195,8 @@ class ForagingCog(commands.Cog, name="Foraging"):
             interaction=interaction,
             activity="foraging",
         )
-    
-        tool_data = Master.get_by_id(foraging['equipped_tool'])
+
+        tool_data = Master.get_by_id(foraging["equipped_tool"])
 
         # If the user does not own an axe
         if not tool:

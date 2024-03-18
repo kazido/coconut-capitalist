@@ -123,21 +123,7 @@ class Ranks(BaseModel):
         table_name = "data_ranks"
 
 
-class Areas(BaseModel):
-    area_id = TextField(null=True, primary_key=True)
-    description = TextField(null=True)
-    difficulty = IntegerField(null=True)
-    display_name = TextField(null=True)
-    fuel_amount = IntegerField(null=True)
-    fuel_requirement = TextField(null=True)
-    token_bonus = IntegerField(null=True)
-
-    class Meta:
-        table_name = "data_areas"
-
-
 class ItemType(Enum):
-    AREA = Areas
     CROP = Crops
     PET = Pets
     RANK = Ranks

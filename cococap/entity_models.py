@@ -8,7 +8,7 @@ from enum import Enum
 from peewee import *
 
 from cococap.constants import URI, DATABASE
-from cococap.item_models import Areas, Tools
+from cococap.item_models import Tools
 
 # Database setup
 db_path = os.path.realpath(os.path.join("database", DATABASE))
@@ -60,7 +60,6 @@ class Users(BaseModel):
     in_game = BooleanField(default=False)
     party_id = IntegerField(null=True)
     party_channel_id = IntegerField(null=True)
-    area_id = ForeignKeyField(Areas, backref="area")
     login_streak = IntegerField(constraints=[SQL("DEFAULT 0")])
     drops_claimed = IntegerField(constraints=[SQL("DEFAULT 0")])
 
