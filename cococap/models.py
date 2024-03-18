@@ -20,9 +20,15 @@ class UserCollection(Document):
         "fertilizer": None,
         "rain_god_blessings": 0,
         "plots_unlocked": 3,
-        "plot1": {},
-        "plot2": {},
-        "plot3": {},
+        "plot1": {"crop_id": None, "cycle": 0, "imbued": False},
+        "plot2": {"crop_id": None, "cycle": 0, "imbued": False},
+        "plot3": {"crop_id": None, "cycle": 0, "imbued": False},
+        "plot4": {"crop_id": None, "cycle": 0, "imbued": False},
+        "plot5": {"crop_id": None, "cycle": 0, "imbued": False},
+        "plot6": {"crop_id": None, "cycle": 0, "imbued": False},
+        "plot7": {"crop_id": None, "cycle": 0, "imbued": False},
+        "plot8": {"crop_id": None, "cycle": 0, "imbued": False},
+        "plot9": {"crop_id": None, "cycle": 0, "imbued": False},
     }
     foraging: dict = {
         "xp": 0,
