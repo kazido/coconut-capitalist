@@ -5,7 +5,7 @@ import sys
 import os
 
 from cococap.user import User
-from cococap.utils.messages import Cembed
+from cococap.utils.messages import Cembed, button_check
 from discord.ext import commands
 from discord import app_commands
 from cococap.utils.utils import check_bet
@@ -87,6 +87,8 @@ class BlackJack(commands.Cog, name="Blackjack"):
 
         async def callback(self, hit_interaction: discord.Interaction):
             assert self.view is not None
+            if not await button_check(hit_interaction, [hit_interaction.user.id]):
+                return
             view: BlackJack.BlackJackGame = self.view
 
             game_state = view.draw_card(player=True)
@@ -151,6 +153,8 @@ class BlackJack(commands.Cog, name="Blackjack"):
             super().__init__(label="Fold", style=discord.ButtonStyle.blurple)
 
         async def callback(self, fold_interaction: discord.Interaction):
+            if not await button_check(fold_interaction, [fold_interaction.user.id]):
+                return
             assert self.view is not None
             view: BlackJack.BlackJackGame = self.view
 
@@ -191,6 +195,8 @@ class BlackJack(commands.Cog, name="Blackjack"):
             super().__init__(label="Stand", style=discord.ButtonStyle.blurple)
 
         async def callback(self, stand_interaction: discord.Interaction):
+            if not await button_check(stand_interaction, [stand_interaction.user.id]):
+                return
             assert self.view is not None
             view: BlackJack.BlackJackGame = self.view
 
