@@ -83,11 +83,11 @@ class EconomyCog(commands.Cog, name="Economy"):
 
         else:
             beg_amount = randint(100, 500)
-            user.inc_purse(beg_amount)
+            await user.inc_purse(beg_amount)
 
             embed = Cembed(
                 title=f"Someone kind dropped {beg_amount} bits in your cup.",
-                desc=f"You now have {user.get_field('purse') + beg_amount:,} bits.",
+                desc=f"You now have {user.get_field('purse')} bits.",
                 color=discord.Color.green(),
                 interaction=interaction,
                 activity="begging",
@@ -477,7 +477,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                 name="Withdrawal made!",
                 value=f"You withdrew **{amount:,}** bits",
             )
-            await interaction.response.send_message(embed=withdraw_embed, view=None)
+            await interaction.response.send_message(embed=withdraw_embed)
             return
 
     @app_commands.guilds(856915776345866240, 977351545966432306)
