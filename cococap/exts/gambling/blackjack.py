@@ -49,6 +49,16 @@ class BlackJack(commands.Cog, name="Blackjack"):
         await user.load()
 
         if bet == "max":
+            if user.get_field("settings")["disable_max_bet"]:
+                failed_embed = Cembed(
+                title="Max Bet Disabled",
+                desc="You have disabled betting your purse to protect yourself financially. I won't tell you how to reenable it.",
+                color=discord.Color.red(),
+                interaction=interaction,
+                activity="blackjack",
+            )
+                await interaction.response.send_message(embed=failed_embed, ephemeral=True)
+                return
             bet = user.get_field("purse")
         else:
             bet = int(bet)
