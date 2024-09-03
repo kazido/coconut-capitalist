@@ -433,7 +433,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                     )
                     withdraw_embed.add_field(
                         name="Withdrawal made!",
-                        value=f"You withdrew **{amount:,)}** bits",
+                        value=f"You withdrew **{amount:,}** bits",
                     )
                     await confirm_interaction.response.edit_message(embed=withdraw_embed, view=None)
                     return
