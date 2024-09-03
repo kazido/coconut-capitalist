@@ -272,7 +272,6 @@ class UserSettings(BaseModel):
     Auto Deposit: automatically deposit your bits from working into the bank\n
     Withdraw Warning: when enabled, a warning appears when you try to withdraw bits\n
     Disable Max Bet: prevents the user from betting everything when enabled\n
-    Check-in+: adds work and weekly to the check-in command\n
     More settings to be added soon...
     """
 
@@ -282,13 +281,12 @@ class UserSettings(BaseModel):
     auto_deposit = BooleanField(default=False)
     withdraw_warning = BooleanField(default=False)
     disable_max_bet = BooleanField(default=False)
-    upgraded_check_in = BooleanField(default=False)
 
     class Meta:
         table_name = "user_settings"
 
     ATTRIBUTES = Literal[
-        "auto_deposit", "withdraw_warning", "disable_max_bet", "upgraded_check_in"
+        "auto_deposit", "withdraw_warning", "disable_max_bet"
     ]
 
 
