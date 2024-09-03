@@ -277,6 +277,22 @@ class EconomyCog(commands.Cog, name="Economy"):
                 await user.set_cooldown("work")
                 self.prepare_buttons()
                 await interaction.response.edit_message(embed=self.embed, view=self)
+                
+                if user.get_field("settings")["auto_deposit"]:
+                    purse = user.get_field("purse")
+                    await user.inc_purse(amount=-purse)
+                    await user.inc_bank(amount=purse)
+                    embed = Cembed(
+                        colour=discord.Color.dark_blue(), interaction=interaction, activity="depositing"
+                    )
+                    embed.add_field(
+                        name="Auto deposit made!",
+                        value=f"You have automatically deposited **{purse:,}** bits",
+                    )
+                    embed.set_author(
+                        name=f"{interaction.user.name} - deposit", icon_url=interaction.user.display_avatar
+                    )
+                    await interaction.followup.send(embed=embed, ephemeral=True)
 
             @discord.ui.button(label="Daily")
             async def daily_button(self, interaction: Interaction, button: discord.ui.Button):
@@ -332,7 +348,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         if int(amount) > user.get_field("purse"):
             await interaction.response.send_message(
                 f"You don't have enough bits to deposit. "
-                f"Balance: {user.get_field('purse'):,} bits"
+                f"Balance: {user.get_field('purse'):,} bits", ephemeral=True
             )
             return
         elif int(amount) == 0:
@@ -350,10 +366,6 @@ class EconomyCog(commands.Cog, name="Economy"):
                 "Sorry, deposits must be over 250 bits.", ephemeral=True
             )
             return
-        elif type(amount) == str:
-            await interaction.response.send_message(
-                "Please input an amount to deposit.", ephemeral=True
-            )
         else:
             await user.inc_purse(amount=-amount)
             await user.inc_bank(amount=amount)
