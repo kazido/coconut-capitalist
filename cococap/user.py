@@ -5,7 +5,7 @@ from discord import utils
 from typing import Literal
 
 from cococap import instance
-from cococap.item_models import Ranks, Areas, Master
+from cococap.item_models import Ranks, Master, Pets
 from cococap.constants import DiscordGuilds
 from cococap.models import UserCollection
 from cococap.utils.utils import timestamp_to_digital
@@ -23,6 +23,14 @@ class User:
         self.discord_info = self.get_discord_info()
         self.document: UserCollection
 
+    def __str__(self) -> str:
+        """Returns the user's name in discord"""
+        return self.discord_info.name
+
+    async def save(self):
+        """Save the user document after any changes"""
+        await self.document.save()
+
     async def load(self):
         """Loads the object with information from MongoDB"""
         self.document = await UserCollection.find_one(UserCollection.discord_id == self.uid)
@@ -32,7 +40,7 @@ class User:
 
     def get_discord_info(self) -> discord.Member:
         """Gets a user's discord info"""
-        # If I ever expand the bot to other guilds, this needs to chance
+        # If I ever expand the bot to other guilds, this needs to change
         guild: discord.Guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
         discord_user: discord.Member = guild.get_member(self.uid)
         if discord_user is None:
@@ -43,14 +51,11 @@ class User:
         """Retrieve the corresponding rank of a user based on their roles in a Discord guild."""
         unranked_id = 959850049188298772
         guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
-
         for rank in Ranks.select():
             discord_role = utils.get(guild.roles, id=rank.rank_id)
-
             # Check to see if the user has any matching role in discord
             if discord_role in self.discord_info.roles:
                 return rank
-
         # If we don't find any rank, give them unranked
         unranked = guild.get_role(unranked_id)
         await self.discord_info.add_roles(unranked)
@@ -67,12 +72,6 @@ class User:
             return embed
         return False
 
-    def __str__(self) -> str:
-        return self.discord_info.name
-
-    async def save(self):
-        await self.document.save()
-
     # UPDATE METHODS ------------------------------------
     async def inc_purse(self, amount: int):
         self.document.purse += amount
@@ -87,17 +86,18 @@ class User:
         await self.save()
 
     async def inc_xp(self, *, skill: str, xp: int, interaction: discord.Interaction):
-        if not hasattr(self.document, skill):
-            return f"Object does not have skill {skill}."
         current_xp = getattr(self.document, skill)["xp"]
         current_level = self.xp_to_level(current_xp)
-        level_to_be = self.xp_to_level(current_xp + xp)
+        pet, pet_data = self.get_active_pet()
+        rewarded_xp = xp
+        # if skill in pet_data.skill:
+        #     rewarded_xp = xp + ((pet_data.max_level / 10) * pet["level"])
+        level_to_be = self.xp_to_level(current_xp + rewarded_xp)
         if level_to_be > current_level:
-            # Give the user rewards
+            # If the user will level up, give them rewards
             bit_reward = level_to_be * 10000
-            token_reward = 1
             await self.inc_purse(amount=bit_reward)
-            await self.inc_tokens(tokens=token_reward)
+            await self.inc_tokens(tokens=1)
 
             # Send an embed congratulating them
             embed = discord.Embed(
@@ -112,8 +112,9 @@ class User:
             embed.set_thumbnail(url=interaction.user.avatar.url)
             await interaction.channel.send(embed=embed)
 
-        getattr(self.document, skill)["xp"] += xp
+        getattr(self.document, skill)["xp"] += rewarded_xp
         await self.save()
+        return pet_data
 
     async def update_game(self, *, in_game: bool, interaction: discord.Interaction):
         if in_game:
@@ -122,7 +123,7 @@ class User:
             self.document.in_game["channel"] = ""
         self.document.in_game["in_game"] = in_game
         await self.save()
-        
+
     # ITEM METHODS -----------------------------------
     async def create_item(self, item_id: str, quantity: int = 1):
         """Inserts an item into the database with specified owner and quantity"""
@@ -149,7 +150,6 @@ class User:
             await self.save()
             return True
 
-
     async def delete_item(self, item_id: str, quantity: int = None):
         inventory: dict = self.get_field("items")
         # Ensure that the item is an actual item first
@@ -175,13 +175,11 @@ class User:
             log.warn(f"Tried to delete {quantity} {item_id} from {self}. Does not exist.")
             return False
 
-
     async def trade_item(self, new_owner: int, item_id: str, quantity: int = None):
         user_2 = User(uid=new_owner)
         await user_2.load()
 
         inventory: dict = self.get_field("items")
-        inventory_2: dict = user_2.get_field("items")
 
         # Ensure that the item is an actual item first
         if not Master.get_or_none(item_id=item_id):
@@ -192,27 +190,23 @@ class User:
             item = inventory[item_id]
             if quantity:
                 if quantity > item["quantity"]:
-                    log.warn(
-                        f"Trade failed. Tried to trade {quantity} {item_id}. Error: more than owned."
-                    )
+                    log.warn(f"Tried to trade {quantity} {item_id}. Error: more than owned.")
                     return False
                 # Inserts same item into tradee's inventory
-                user_2.create_item(item_id, quantity)
+                await user_2.create_item(item_id, quantity)
                 # Removes items from trader's inventory
-                self.delete_item(item_id, quantity)
+                await self.delete_item(item_id, quantity)
                 log.info(f"Traded {quantity} {item_id} from {self} to {user_2}.")
                 return True
             else:
                 # Inserts same item into tradee's inventory
-                user_2.create_item(item_id, inventory[item_id]["quantity"])
+                await user_2.create_item(item_id, inventory[item_id]["quantity"])
                 # Removes items from trader's inventory
-                self.delete_item(item_id)
+                await self.delete_item(item_id)
                 return True
-
-        else:
-            # If item doesn't exist, do nothing
-            log.warn(f"Tried to trade {item_id} from {self} to {user_2}. Item does not exist.")
-            return False
+        # If item doesn't exist, do nothing
+        log.warn(f"Tried to trade {item_id} from {self} to {user_2}. Item does not exist.")
+        return False
 
     # GET METHODS ------------------------------------
     def get_field(self, field: str):
@@ -223,35 +217,36 @@ class User:
     def get_active_pet(self):
         pets = self.document.pets
         if "active" not in pets.keys():
-            return None
-        return pets["active"]
-
-    def get_zone(self):
-        return Areas.get_by_id(self.get_field("zone"))
+            return None, None
+        return pets["active"], Pets.get_by_id(pets["active"]["pet_id"])
 
     # XP METHODS ------------------------------------
-    def level_to_xp(self, level):
+    @staticmethod
+    def level_to_xp(level):
         xp = ((level - 1) / 0.07) ** 2
         return int(xp)
 
-    def xp_to_level(self, xp):
+    @staticmethod
+    def xp_to_level(xp):
         level = 0.07 * (xp ** (1 / 2))
         return int(level + 1)
 
-    def xp_for_next_level(self, xp):
+    @staticmethod
+    def xp_for_next_level(xp):
         # Get current level and xp needed for current level
-        level = self.xp_to_level(xp)
-        level_xp = self.level_to_xp(level)
+        level = User.xp_to_level(xp)
+        level_xp = User.level_to_xp(level)
         # Get the next level and xp needed for next level
         next_level = level + 1
-        next_level_xp = self.level_to_xp(next_level)
+        next_level_xp = User.level_to_xp(next_level)
         # Get the overflow of xp above current level
         overflow_xp_at_level = xp - level_xp
         xp_between_levels = next_level_xp - level_xp
         return int(overflow_xp_at_level), int(xp_between_levels)
 
-    def create_xp_bar(self, xp) -> str:
-        overflow_xp, xp_needed = self.xp_for_next_level(xp)
+    @staticmethod
+    def create_xp_bar(xp) -> str:
+        overflow_xp, xp_needed = User.xp_for_next_level(xp)
         ratio = overflow_xp / xp_needed
         xp_bar = "<:xp_bar_left:1203894026265428021>"
         xp_bar_size = 10
