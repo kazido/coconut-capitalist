@@ -33,7 +33,6 @@ class EconomyCog(commands.Cog, name="Economy"):
         await user.load()
 
         rank = await user.get_user_rank()
-        zone = user.get_zone()
 
         embed = Cembed(
             title=f"You are: `{rank.display_name}`",
@@ -56,7 +55,6 @@ class EconomyCog(commands.Cog, name="Economy"):
             f":bank: **BANK**: {user.get_field('bank'):,}\n"
             f":coin: **TOKENS**: {user.get_field('tokens'):,}",
         )
-        embed.set_footer(text=f"You are currently in {zone.display_name}")
         embed.set_thumbnail(url=interaction.user.display_avatar)
         await interaction.response.send_message(embed=embed)
 
