@@ -55,15 +55,15 @@ class UserCollection(Document):
         "xp": 0,
         "equipped_tool": None,
         "lodes_mined": 0,
+        "lodes_auto_mined": 0,
         "core_slot1": None,
         "core_slot2": None,
         "core_slot3": None,
         "core_slot4": None,
         "prestige_level": 1,
-        "bonus_type": None,
-        "bonuses_remaining": 0,
-        "reactor_lodes_mined": 0,
+        "lodes_available": 0,
         "last_auto_mine": 0,
+        "magnet_meter": 0,
     }
     combat: dict = {
         "xp": 0,
