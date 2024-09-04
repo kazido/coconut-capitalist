@@ -1,12 +1,8 @@
-from typing import Coroutine
 import discord
 
 from discord.ext import commands
 from discord import app_commands
-from discord.app_commands import Choice
 
-from cococap.utils.items import field_formats
-from cococap.constants import Rarities
 from cococap.user import User
 from cococap.item_models import Master
 from cococap.utils.messages import Cembed
@@ -44,101 +40,6 @@ class InventoryCog(commands.Cog, name="Inventory"):
             inventory_embed.description += f"{data.emoji} {v['quantity']:,} {data.display_name}\n"
 
         await interaction.response.send_message(embed=inventory_embed)
-
-    @app_commands.command(name="wiki", description="What is this item?")
-    @app_commands.guilds(977351545966432306, 856915776345866240)
-    @app_commands.describe(category="category of item")
-    @app_commands.choices(
-        category=[
-            Choice(name="General", value=""),
-            Choice(name="Mining", value="mining"),
-            Choice(name="Foraging", value="foraging"),
-        ]
-    )
-    async def wiki(self, interaction: discord.Interaction, category: Choice[str] | None):
-        class WikiView(discord.ui.View):
-            def __init__(self):
-                super().__init__(timeout=60)
-                select_menu = WikiSelect(category=category)
-
-                self.add_item(select_menu)
-
-            async def on_timeout(self):
-                self.clear_items()
-                self.stop()
-                await interaction.edit_original_response(view=self)
-                return
-
-        class WikiSelect(discord.ui.Select):
-            def __init__(self, category: str | None):
-                super().__init__(placeholder="Select an item to view")
-                query = Master.select()
-                # If a category was specified, only show those results
-                if category:
-                    query = Master.select().where(Master.skill == category.value)
-                for item in query:
-                    item: Master
-                    if item.emoji:
-                        self.add_option(
-                            label=item.display_name,
-                            description=item.description,
-                            emoji=discord.PartialEmoji.from_str(item.emoji),
-                            value=item.item_id,
-                        )
-
-            async def callback(self, interaction: discord.Interaction):
-                embed: discord.Embed = construct_embed(self.values[0], for_shop=False)
-                await interaction.response.edit_message(embed=embed)
-                return
-
-        await interaction.response.send_message(view=WikiView())
-
-
-def construct_stats_string(item_data: dict, for_shop: bool):
-    """Constructs a string filled with item information."""
-    stats_string = ""
-    for field_name in item_data:
-        if field_name in field_formats.keys():
-            value = item_data[field_name]
-            if field_name == "rarity":
-                rarity = Rarities.from_value(value)
-                value = rarity.rarity_name
-            if not value or (for_shop and not "shop_field" in formatting):
-                continue
-            formatting = field_formats[field_name]
-            stats_string += formatting["text"].format(value) + "\n"
-
-    return stats_string
-
-
-def construct_embed(item_id, for_shop: bool):
-    """Constructs an embed filled with formatted data about the item that is passed.
-
-    Args:
-        item_id: The item ID to create an embed for.
-        for_shop (bool): If True, will only add fields needed for the shop.
-
-    Returns:
-        discord.Embed: An embed filled with the items data.
-    """
-    item_data: Master = Master.get_by_id(item_id)
-
-    # Create an embed with the proper information from the item
-    embed = discord.Embed(
-        title=f"{item_data.emoji} {item_data.display_name}",
-        description=f'"*{item_data.description}*"',
-    )
-    divider = "-" * (len(embed.description)-2)
-    embed.description += f"\n{divider}\n"
-    rarity = Rarities.from_value(item_data.rarity)
-    embed.color = discord.Color.from_str(rarity.color)
-    embed.set_footer(text=f"Wiki: {item_id}")
-
-    stats_string = construct_stats_string(item_data.__dict__["__data__"], for_shop)
-    embed.set_thumbnail(url=discord.PartialEmoji.from_str(item_data.emoji).url)
-    # Add the string to the embed under a field titled "Stats"
-    embed.description += stats_string
-    return embed
 
 
 async def setup(bot):
