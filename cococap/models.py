@@ -31,11 +31,12 @@ class UserCollection(Document):
     }
     foraging: dict = {
         "xp": 0,
-        "equipped_tool": None,
-        "trees_chopped": 0,
-        "double_trees_chopped": 0,
-        "releaf_donations": 0,
-        "releaf_meter": 0,
+        "equipped_tool": None, 
+        "trees_chopped": 0, # Statistic for how many trees the user has chopped
+        "double_trees_chopped": 0, # Statistic for how many double trees the user has chopped
+        "releaf_donations": 0, # Statistic for how many re-leaf donations the user has made
+        "releaf_meter": 0, # When this reaches 50, the next tree drops 10m or a special item
+        "donations_made_today": 0 # Up to 3 donations per day
     }
     fishing: dict = {
         "xp": 0,
@@ -53,15 +54,15 @@ class UserCollection(Document):
     mining: dict = {
         "xp": 0,
         "equipped_tool": None,
-        "lodes_mined": 0,
-        "lodes_auto_mined": 0,
+        "lodes_mined": 0, # Statistic for manual mining
+        "lodes_auto_mined": 0, # Statistic for auto-mining
         "core_slot1": None,
         "core_slot2": None,
         "core_slot3": None,
         "core_slot4": None,
-        "prestige_level": 1,
-        "lodes_available": 0,
-        "last_auto_mine": 0,
+        "prestige_level": 1, # Level of the reactor
+        "lodes_available": 0, # Auto-mined lodes that are available to claim
+        "last_auto_mine": 0, # Last time the user auto-mined -> used to calculate how many auto-mined lodes there are
         "magnet_meter": 0,
     }
     combat: dict = {
@@ -71,13 +72,12 @@ class UserCollection(Document):
         "bosses_slain": 0,
     }
     settings: dict = {
-        "auto_deposit": False,
-        "withdraw_warning": True,
-        "disable_max_bet": False,
-        "comprehensive_checkin": False,
+        "auto_deposit": False, # Will automatically deposit the user's bits into their bank after working
+        "withdraw_warning": True, # Displays a warning when trying to withdraw any bits from the bank
+        "disable_max_bet": False, # Disables the bet "max" option when gambling
     }
-    pets: dict = {}
-    items: dict = {}
+    pets: dict = {} # Empty dict which will contain the user's pets
+    items: dict = {} # Empty dict to contain the user's items
     cooldowns: dict = {"work": 0, "daily": 0, "weekly": 0}
 
     class Settings:
@@ -85,10 +85,10 @@ class UserCollection(Document):
 
 
 class PartyCollection(Document):
-    party_id: int
-    party_owner: int
-    party_members: list = []
-    channel_id: int
+    party_id: int # Custom generated party ID
+    party_owner: int # Discord ID of the party owner
+    party_members: list = [] # Discord IDs of all party members
+    channel_id: int # Channel ID of the party channel (secret to party members)
 
     class Settings:
         name = "parties"
