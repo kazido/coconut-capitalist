@@ -2,7 +2,7 @@ import discord
 
 from discord import Interaction, ButtonStyle
 from logging import getLogger
-from cococap.utils.messages import Cembed, button_check
+from cococap.utils.messages import button_check
 
 log = getLogger(__name__)
 log.setLevel(10)
