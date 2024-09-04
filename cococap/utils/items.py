@@ -1,5 +1,4 @@
 import discord
-from cococap.utils.items import field_formats
 from cococap.constants import Rarities
 
 from cococap.item_models import Master
