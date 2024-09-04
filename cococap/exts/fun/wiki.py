@@ -11,8 +11,7 @@ from cococap.item_models import Master
 class WikiCog(commands.Cog, name="Wiki"):
     def __init__(self, bot):
         self.bot = bot
-        
-        
+
     @app_commands.command(name="wiki", description="What is this item?")
     @app_commands.guilds(977351545966432306, 856915776345866240)
     @app_commands.describe(category="category of item")
@@ -60,3 +59,7 @@ class WikiCog(commands.Cog, name="Wiki"):
                 return
 
         await interaction.response.send_message(view=WikiView())
+
+
+async def setup(bot):
+    await bot.add_cog(WikiCog(bot))
