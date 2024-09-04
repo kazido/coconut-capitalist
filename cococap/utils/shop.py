@@ -1,7 +1,7 @@
 import discord
 import asyncio
 
-from cococap.exts.core.inventory import construct_embed
+from cococap.utils.items.items import construct_embed
 from cococap.user import User
 
 from discord import Interaction, ButtonStyle, PartialEmoji, Embed, Color
@@ -272,7 +272,7 @@ class PurchaseItemButton(discord.ui.Button):
         user = User(self.parent_interaction.user.id)
         await user.load()
         # If the user doesn't have enough money to make the purchase
-        if user.get_field('purse') < self.parent_view.page.entity_price:
+        if user.get_field("purse") < self.parent_view.page.entity_price:
             self.disabled = True
             self.label = "Nope, sorry."
             self.style = ButtonStyle.red
@@ -289,7 +289,7 @@ class PurchaseItemButton(discord.ui.Button):
     async def refresh(self, page):
         user = User(self.parent_interaction.user.id)
         await user.load()
-        if user.get_field('purse') >= page.entity_price:
+        if user.get_field("purse") >= page.entity_price:
             label = "Purchase!"
             style = ButtonStyle.green
             emoji = "💰"
