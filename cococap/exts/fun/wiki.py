@@ -4,6 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 from discord.app_commands import Choice
 
+from cococap.utils.items import construct_embed
 from cococap.item_models import Master
 
 
