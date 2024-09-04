@@ -35,4 +35,4 @@ class Bot(BotBase):
         await self.load_extensions(exts)
         
         fmt = "%m-%d-%Y %H:%M:%S"
-        print(f"-- BOT READY --\nRan at: {datetime.strftime(datetime.now(), fmt)}")
+        print(f"Ran at: {datetime.strftime(datetime.now(), fmt)}")
