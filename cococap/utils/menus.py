@@ -2,13 +2,15 @@ import discord
 
 from discord import Interaction, ButtonStyle
 from logging import getLogger
+from cococap.utils.messages import Cembed, button_check
 
 log = getLogger(__name__)
 log.setLevel(10)
 
 
 class MenuHandler:
-    def __init__(self) -> None:
+    def __init__(self, interaction: Interaction) -> None:
+        self.interaction: Interaction = interaction
         self.menus: list[Menu] = []
         self.current: int = 0
         
@@ -35,7 +37,7 @@ class Menu(discord.ui.View):
         self.embed: discord.Embed = embed
         self.button = self.close
         self.index: int
-        self.handler = handler
+        self.handler: MenuHandler = handler
         self.handler.add_menu(self)
         
     @property
@@ -57,6 +59,8 @@ class Menu(discord.ui.View):
         
     @discord.ui.button(label="Close", emoji="✖️", style=ButtonStyle.red, row=4)
     async def close(self, interaction: Interaction, button: discord.ui.Button):
+        if not await button_check(interaction, [self.handler.interaction.user.id]):
+            return
         self.embed.color = discord.Color.dark_grey()
         self.embed.set_footer(text=f"Menu has been closed by {interaction.user.name}.")
         self.clear_items()
@@ -65,6 +69,8 @@ class Menu(discord.ui.View):
         
     @discord.ui.button(label = "Back", emoji = "🔙", style = discord.ButtonStyle.gray, row=4)
     async def back(self, interaction: Interaction, button: discord.ui.Button):
+        if not await button_check(interaction, [self.handler.interaction.user.id]):
+            return
         self.handler.move_backward()
         menu = self.handler.get_current()
         await interaction.response.edit_message(embed=menu.embed, view=menu)
