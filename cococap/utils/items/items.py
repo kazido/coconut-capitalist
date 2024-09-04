@@ -1,10 +1,11 @@
 import discord
-from cococap.constants import Rarities
+import random
+
 from field_formats import field_formats
 
+from cococap.constants import Rarities
 from cococap.item_models import Master
 
-import random
 from logging import getLogger
 
 log = getLogger(__name__)
