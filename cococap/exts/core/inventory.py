@@ -50,18 +50,17 @@ class InventoryCog(commands.Cog, name="Inventory"):
     @app_commands.describe(category="category of item")
     @app_commands.choices(
         category=[
-            #Choice(name="General", value="none"),
+            Choice(name="General", value=""),
             Choice(name="Mining", value="mining"),
-            #Choice(name="Foraging", value="foraging"),
+            Choice(name="Foraging", value="foraging"),
         ]
     )
-    async def wiki(self, interaction: discord.Interaction, category: Choice[str]):
+    async def wiki(self, interaction: discord.Interaction, category: Choice[str] | None):
         class WikiView(discord.ui.View):
             def __init__(self):
                 super().__init__(timeout=60)
-                if category.value == "none":
-                    category.value = None
-                select_menu = WikiSelect(category=category.value)
+                select_menu = WikiSelect(category=category)
+
                 self.add_item(select_menu)
 
             async def on_timeout(self):
@@ -71,10 +70,13 @@ class InventoryCog(commands.Cog, name="Inventory"):
                 return
 
         class WikiSelect(discord.ui.Select):
-            def __init__(self, category: str):
+            def __init__(self, category: str | None):
                 super().__init__(placeholder="Select an item to view")
-
-                for item in Master.select().where(Master.skill == category):
+                query = Master.select()
+                # If a category was specified, only show those results
+                if category:
+                    query = Master.select().where(Master.skill == category.value)
+                for item in query:
                     item: Master
                     if item.emoji:
                         self.add_option(
