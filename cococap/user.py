@@ -161,7 +161,7 @@ class User:
             message = f"Tried to delete: {item_id}. Error: not a valid item id."
             log.warn(message)
             return False, message
-        if quantity < 1:
+        if (quantity != None) and (quantity < 1):
             message = f"Tried to delete: {quantity} {item_id}. Error: less than 1."
             log.warn(message)
             return False, message
