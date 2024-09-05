@@ -10,12 +10,12 @@ from discord.ext.commands import Cog
 from cococap.user import User
 
 from cococap.utils.tasks import get_time_until, est_tz
-from cococap.constants import DiscordGuilds
+from cococap.utils.messages import Cembed
+from cococap.utils.items.items import item_autocomplete
+from cococap.constants import DiscordGuilds, URI
 
 from motor.motor_asyncio import AsyncIOMotorClient
-from cococap.constants import URI
 from bson import ObjectId
-
 
 
 class DebuggingCommands(commands.Cog, name="Debugging Commands"):
@@ -25,6 +25,8 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         # starts the loop when the cog is loaded
         self.debugging_loop.start()
 
+    # LOOP TESTING!! THIS WILL BE USED FOR THE SHOP!
+    # TODO: Successfully transfer this into a rotating shop and also the farming modules.
     # 1:07 pm EST
     time = datetime.time(hour=13, minute=7, tzinfo=est_tz)
 
@@ -44,16 +46,20 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     def cog_unload(self):
         self.debugging_loop.cancel()
 
+    # END OF LOOP TESTING XD
+
     # Testing command
     @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value)
     @app_commands.command()
     async def test(self, interaction: discord.Interaction):
         client = AsyncIOMotorClient(URI)
         collection = client.discordbot.special_entities
-        
+
         print(await collection.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")}))
         # Interaction has finished
         await interaction.response.send_message("Done.")
+
+    # LINKED MESSAGE TESTING
 
     linked_messages = {}
 
@@ -71,6 +77,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
 
     @Cog.listener()
     async def on_message_edit(self, before, after):
+        # TODO I have no idea what this function is doing. Figure it out later
         if (
             before in DebuggingCommands.linked_messages.keys()
             and not DebuggingCommands.linked_messages[before][1]
@@ -84,6 +91,8 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
             inverted_map[before][1] = True
             return
 
+    # END LINKED MESSAGE TESTING
+
     admin_commands = discord.app_commands.Group(
         name="admin",
         description="Admin only commands.",
@@ -92,20 +101,57 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
             DiscordGuilds.TESTING_GUILD.value,
         ]
     )
+
     @admin_commands.command(name="pay")
     async def admin_pay(self, interaction: discord.Interaction, user: discord.User, amount: int):
         if interaction.user.id != 326903703422500866:
             return await interaction.response.send_message("No.", ephemeral=True)
-        user_to_pay = User(user.id)
-        await user_to_pay.load()
+        payee = User(user.id)
+        await payee.load()
 
         paid_embed = discord.Embed(
             title="Updated balance.",
             description=f"Updated {user.name}'s balance by **{amount:,}** bits.",
             color=discord.Color.red(),
         )
-        await user_to_pay.inc_purse(amount)
+        await payee.inc_purse(amount)
         await interaction.response.send_message(embed=paid_embed)
+
+    @admin_commands.command(name="item")
+    @app_commands.autocomplete(item_id=item_autocomplete)
+    @app_commands.choices(
+        mode=[app_commands.Choice(name="add", value=0), app_commands.Choice(name="delete", value=1)]
+    )
+    async def admin_item(
+        self,
+        interaction: discord.Interaction,
+        user: discord.User,
+        mode: app_commands.Choice[int],
+        item_id: str,
+        quantity: int = None,
+    ):
+        if interaction.user.id != 326903703422500866:
+            return await interaction.response.send_message("No.", ephemeral=True)
+        recipient = User(user.id)
+        await recipient.load()
+        if mode.value == 0:
+            if quantity:
+                success, message = await recipient.create_item(item_id=item_id, quantity=quantity)
+            else:
+                success, message = await recipient.create_item(item_id=item_id)
+        else:
+            if quantity:
+                success, message = await recipient.delete_item(item_id=item_id, quantity=quantity)
+            else:
+                success, message = await recipient.delete_item(item_id=item_id)
+        embed = Cembed(
+            title="Success" if success else "Failed",
+            desc=f"**{message}**",
+            color=discord.Color.green() if success else discord.Color.red(),
+            interaction=interaction,
+        )
+        await interaction.response.send_message(embed=embed)
+        return
 
     @admin_commands.command(name="edit")
     async def edit(self, interaction: discord.Interaction, message_id: str, new_content: str):
@@ -166,7 +212,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
             \nSynced? {synced}",
             color=discord.Color.purple(),
         )
-        embed.set_footer(text=f"{os.path.abspath(__file__)}")
+        embed.set_footer(text=f"Ran from {os.path.abspath(__file__)}")
         await ctx.send(embed=embed)
 
     @commands.command()
