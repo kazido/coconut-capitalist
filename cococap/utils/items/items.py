@@ -1,10 +1,13 @@
 import discord
 import random
 
-from field_formats import field_formats
+from .field_formats import field_formats
+from typing import List
 
 from cococap.constants import Rarities
 from cococap.item_models import Master
+
+from discord.app_commands import Choice
 
 from logging import getLogger
 
@@ -29,10 +32,12 @@ def roll_item(item: Master):
     return None
 
 
-def get_skill_drops(skill: str):
+def get_items_from_db(skill: str = None):
     """Returns a dictionary of all items related to the passed skill"""
     drops = {}
-    query = Master.select().where(Master.skill.contains(skill))
+    query = Master.select()
+    if skill:
+        query = Master.select().where(Master.skill.contains(skill))
     for item in query:
         # Add the item in to the dict by it's item_id
         drops[item.item_id] = item
@@ -84,3 +89,18 @@ def construct_embed(item_id, for_shop: bool):
     # Add the string to the embed under a field titled "Stats"
     embed.description += attributes
     return embed
+
+
+# Item Autocomplete
+items = get_items_from_db()
+
+
+async def item_autocomplete(
+    interaction: discord.Interaction,
+    current: str,
+) -> List[Choice[str]]:
+    return [
+        Choice(name=items[item_id].display_name, value=item_id)
+        for item_id in items.keys()
+        if current.lower() in items[item_id].display_name.lower()
+    ]
