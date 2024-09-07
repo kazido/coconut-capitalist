@@ -82,12 +82,13 @@ class BlackJack(commands.Cog, name="Blackjack"):
         await interaction.response.send_message(embed=view.blackjack_embed, view=view)
 
     class HitButton(discord.ui.Button):
-        def __init__(self):
+        def __init__(self, interaction):
             super().__init__(label="Hit", style=discord.ButtonStyle.blurple)
+            self.interaction = interaction
 
         async def callback(self, hit_interaction: discord.Interaction):
             assert self.view is not None
-            if not await button_check(hit_interaction, [hit_interaction.user.id]):
+            if not await button_check(self.interaction, [hit_interaction.user.id]):
                 return
             view: BlackJack.BlackJackGame = self.view
 
@@ -149,11 +150,12 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     await bot.inc_purse(amount=view.bet)
 
     class FoldButton(discord.ui.Button):
-        def __init__(self):
+        def __init__(self, interaction):
             super().__init__(label="Fold", style=discord.ButtonStyle.blurple)
+            self.interaction = interaction
 
         async def callback(self, fold_interaction: discord.Interaction):
-            if not await button_check(fold_interaction, [fold_interaction.user.id]):
+            if not await button_check(self.interaction, [fold_interaction.user.id]):
                 return
             assert self.view is not None
             view: BlackJack.BlackJackGame = self.view
@@ -191,11 +193,12 @@ class BlackJack(commands.Cog, name="Blackjack"):
             await bot.inc_purse(amount=round(view.bet / 2))
 
     class StandButton(discord.ui.Button):
-        def __init__(self):
+        def __init__(self, interaction):
             super().__init__(label="Stand", style=discord.ButtonStyle.blurple)
+            self.interaction = interaction
 
         async def callback(self, stand_interaction: discord.Interaction):
-            if not await button_check(stand_interaction, [stand_interaction.user.id]):
+            if not await button_check(self.interaction, [stand_interaction.user.id]):
                 return
             assert self.view is not None
             view: BlackJack.BlackJackGame = self.view
