@@ -330,7 +330,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
             self.bet = bet
             self.user: User = user
 
-            buttons = (BlackJack.HitButton(), BlackJack.StandButton(), BlackJack.FoldButton())
+            buttons = (BlackJack.HitButton(interaction), BlackJack.StandButton(interaction), BlackJack.FoldButton(interaction))
             for button in buttons:  # Add the 4 buttons to the view
                 self.add_item(button)
 
