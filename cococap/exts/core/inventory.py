@@ -5,7 +5,9 @@ from discord import app_commands
 
 from cococap.user import User
 from cococap.item_models import Master
-from cococap.utils.messages import Cembed
+from cococap.utils.messages import Cembed, button_check
+from cococap.utils.menus import Menu, MenuHandler, MainMenu
+from cococap.constants import Categories
 
 
 class InventoryCog(commands.Cog, name="Inventory"):
@@ -28,18 +30,72 @@ class InventoryCog(commands.Cog, name="Inventory"):
                 "You don't have any items!", ephemeral=True
             )
 
-        inventory_embed = Cembed(
-            title=f"{interaction.user.name}'s Inventory",
-            desc="",
-            color=discord.Color.from_rgb(153, 176, 162),
-            interaction=interaction,
-            activity="inventory",
-        )
-        for k, v in inventory.items():
-            data: Master = Master.get_by_id(k)
-            inventory_embed.description += f"{data.emoji} {v['quantity']:,} {data.display_name}\n"
+        class Inventory(MainMenu):
+            def __init__(self, handler: MenuHandler):
+                embed = Cembed(
+                    title=f"{interaction.user.name}'s Inventory",
+                    desc="",
+                    color=discord.Color.from_rgb(153, 176, 162),
+                    interaction=interaction,
+                    activity="inventory",
+                )
+                for k, v in inventory.items():
+                    data: Master = Master.get_by_id(k)
+                    embed.description += (
+                        f"{data.emoji} {v['quantity']:,} {data.display_name}\n"
+                    )
+                super().__init__(handler, embed=embed)
+                self.add_item(CategorySelect(self.handler))
 
-        await interaction.response.send_message(embed=inventory_embed)
+        class SubInventory(Menu):
+            def __init__(self, handler: MenuHandler, category: Categories):
+                embed = Cembed(
+                    title=f"{interaction.user.name}'s {category.display_name} Inventory {category.emoji}",
+                    desc="",
+                    color=discord.Color.from_str(category.color),
+                    interaction=interaction,
+                    activity="inventory",
+                )
+                for k, v in inventory.items():
+                    data: Master = Master.get_by_id(k)
+                    if category.display_name.lower() in data.skill:
+                        embed.description += (
+                            f"{data.emoji} {v['quantity']:,} {data.display_name}\n"
+                        )
+                super().__init__(handler, id=category.name.lower(), embed=embed)
+            
+            @discord.ui.button(label = "Back", emoji = "🔙", style = discord.ButtonStyle.gray, row=4)
+            async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+                if not await button_check(interaction, [self.handler.interaction.user.id]):
+                    return
+                self.handler.move_home()
+                menu = self.handler.get_current()
+                await interaction.response.edit_message(embed=menu.embed, view=menu)
+
+        class CategorySelect(discord.ui.Select):
+            def __init__(self, handler: MenuHandler):
+                self.handler = handler
+                super().__init__(placeholder="Select a filter")
+                for category in Categories:
+                    category: Categories
+                    self.add_option(
+                        label=category.display_name,
+                        description=f"Display your {category.display_name.lower()} items.",
+                        emoji=discord.PartialEmoji.from_str(category.emoji),
+                        value=category.display_name.lower(),
+                    )
+
+            async def callback(self, interaction: discord.Interaction):
+                subinventory = SubInventory(self.handler, Categories.from_name(self.values[0]))
+                self.handler.add_menu(subinventory)
+                self.handler.move_to(self.values[0])
+                menu = self.handler.get_current()
+                await interaction.response.edit_message(embed=menu.embed, view=menu)
+                return
+
+        # Initialize a menu handler, allowing us to move back and forth between menu pages
+        inventory_menu = Inventory(handler=MenuHandler(interaction=interaction))
+        await interaction.response.send_message(embed=inventory_menu.embed, view=inventory_menu)
 
 
 async def setup(bot):
