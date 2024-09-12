@@ -76,8 +76,32 @@ class Rarities(Enum):
         return obj
 
     @classmethod
-    def from_value(cls, value):
+    def from_value(cls, value: int):
         return cls(value)
+
+class Categories(Enum):
+    FARMING = ('🌽', "Farming", "0x2f919e")
+    FORAGING = ('🌳', "Foraging", "0x2f9e47")
+    FISHING = ('🐟', "Fishing", "0x2f3a9e")
+    MINING = ('⛏️', "Mining", "0x9e492f")
+    COMBAT = ('⚔️', "Combat", "0x9e2f2f")
+    SHEPHERDING = ('🐑', "Shepherding", "0x5f2f9e")
+    GENERAL = ('📦', "General", "0x8b9a9e")
+    
+    def __new__(cls, emoji, name, color):
+        obj = object.__new__(cls)
+        obj.emoji = emoji
+        obj.display_name = name
+        obj.color = color
+        return obj
+    
+    @classmethod
+    def from_name(cls, name):
+        # Convert name to lowercase and find the matching category
+        for category in cls:
+            if category.display_name.lower() == name.lower():
+                return category
+        return None  # If no match is found
 
 
 IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images/main"
