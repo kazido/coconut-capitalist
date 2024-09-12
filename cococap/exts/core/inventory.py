@@ -27,7 +27,7 @@ class InventoryCog(commands.Cog, name="Inventory"):
 
         if len(inventory) == 0:
             return await interaction.response.send_message(
-                "You don't have any items!", ephemeral=True
+                "You don't have any items! Get to it!", ephemeral=True
             )
 
         class Inventory(MainMenu):
@@ -39,6 +39,7 @@ class InventoryCog(commands.Cog, name="Inventory"):
                     interaction=interaction,
                     activity="inventory",
                 )
+                #TODO: Handle when inventory gets too big
                 for k, v in inventory.items():
                     data: Master = Master.get_by_id(k)
                     embed.description += (
@@ -56,12 +57,17 @@ class InventoryCog(commands.Cog, name="Inventory"):
                     interaction=interaction,
                     activity="inventory",
                 )
+                #TODO: Handle when inventory gets too big
+                has_item = False
                 for k, v in inventory.items():
                     data: Master = Master.get_by_id(k)
                     if category.display_name.lower() in data.skill:
+                        has_item = True
                         embed.description += (
                             f"{data.emoji} {v['quantity']:,} {data.display_name}\n"
                         )
+                if not has_item:
+                    embed.description = "*You have no items in this category...*"
                 super().__init__(handler, id=category.name.lower(), embed=embed)
             
             @discord.ui.button(label = "Back", emoji = "🔙", style = discord.ButtonStyle.gray, row=4)
@@ -72,6 +78,7 @@ class InventoryCog(commands.Cog, name="Inventory"):
                 menu = self.handler.get_current()
                 await interaction.response.edit_message(embed=menu.embed, view=menu)
 
+        #TODO: Maybe add a button to choose to filter to hide the ugly select menu by default 
         class CategorySelect(discord.ui.Select):
             def __init__(self, handler: MenuHandler):
                 self.handler = handler
