@@ -46,7 +46,7 @@ class Extensions(commands.Cog):
     async def restart(self, ctx: Context) -> None:
         await ctx.send("Restarting bot...")
         await self.bot.change_presence(status=discord.Status.dnd)
-        python = python = sys.executable
+        python = sys.executable
         os.execl(python, python, '-m', 'cococap')
         
     @commands.command(name="close")
