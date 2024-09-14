@@ -1,3 +1,4 @@
+from typing import Any
 import discord
 
 from discord import Interaction, ButtonStyle
@@ -17,7 +18,26 @@ class MenuHandler:
 
     def add_menu(self, menu: "Menu"):
         # Adds a menu to the handler for navigation
+        if len(self.menus) != 0:
+            self.menus[self.current].add_item(self._generate_button(menu))
         self.menus.append(menu)
+
+    def _generate_button(self, menu: "Menu"):
+        class Button(discord.ui.Button):
+            def __init__(self, interaction: Interaction):
+                self.interaction = interaction
+                self.menu = menu
+                super().__init__(
+                    label=menu.name, emoji=menu.emoji, style=discord.ButtonStyle.blurple
+                )
+
+            async def callback(self, interaction: Interaction) -> Any:
+                if not await button_check(interaction, [self.interaction.user.id]):
+                    return
+                menu = self.menu.handler.move_to(self.menu.id)
+                await interaction.response.edit_message(embed=menu.embed, view=menu)
+
+        return Button(self.interaction)
 
     def move_forward(self) -> "Menu":
         # Should be called whenever we move forward a menu
@@ -64,11 +84,24 @@ class Menu(discord.ui.View):
     through the list of menus.
     """
 
-    def __init__(self, handler: MenuHandler, id: str = None, embed: discord.Embed = None):
+    def __init__(
+        self,
+        handler: MenuHandler,
+        name: str,
+        emoji: discord.PartialEmoji = None,
+        embed: discord.Embed = None,
+    ):
         super().__init__()
-        self.id: str = id
+        self.id: str = name.lower()
+        self.name: str = name
+        self.emoji: discord.PartialEmoji = emoji
         self.embed: discord.Embed = embed
         self.handler: MenuHandler = handler
+        # Remove the back or close button depending on if we are a menu or a submenu
+        if len(self.handler.menus) == 0:
+            self.remove_item(self.back)
+        else:
+            self.remove_item(self.close)
         self.handler.add_menu(self)
 
     async def on_timeout(self) -> None:
@@ -81,6 +114,16 @@ class Menu(discord.ui.View):
             return
         menu = self.handler.move_backward()
         await interaction.response.edit_message(embed=menu.embed, view=menu)
+
+    @discord.ui.button(label="Close", emoji="✖️", style=ButtonStyle.red, row=4)
+    async def close(self, interaction: Interaction, button: discord.ui.Button):
+        if not await button_check(interaction, [self.handler.interaction.user.id]):
+            return
+        self.embed.color = discord.Color.dark_grey()
+        self.embed.set_footer(text=f"Menu has been closed by {interaction.user.name}.")
+        self.clear_items()
+        self.stop()
+        await interaction.response.edit_message(embed=self.embed, view=self)
 
 
 class PaginationMenu(Menu):
@@ -95,29 +138,6 @@ class PaginationMenu(Menu):
         self.remove_item(self.back)
 
     @discord.ui.button(emoji="✖️", style=ButtonStyle.red, row=4)
-    async def close(self, interaction: Interaction, button: discord.ui.Button):
-        if not await button_check(interaction, [self.handler.interaction.user.id]):
-            return
-        self.embed.color = discord.Color.dark_grey()
-        self.embed.set_footer(text=f"Menu has been closed by {interaction.user.name}.")
-        self.clear_items()
-        self.stop()
-        await interaction.response.edit_message(embed=self.embed, view=self)
-
-
-class MainMenu(Menu):
-    """
-    MainMenu is intended to function as a home menu for the menu handler.
-    The only difference from a normal Menu is that it has a close button
-    which closes the whole menu rather than a back button.
-    """
-
-    def __init__(self, handler: MenuHandler, embed: discord.Embed = None):
-        super().__init__(handler, "home", embed)
-        # Remove the back button because we are the main menu
-        self.remove_item(self.back)
-
-    @discord.ui.button(label="Close", emoji="✖️", style=ButtonStyle.red, row=4)
     async def close(self, interaction: Interaction, button: discord.ui.Button):
         if not await button_check(interaction, [self.handler.interaction.user.id]):
             return
