@@ -59,10 +59,11 @@ class Menu(discord.ui.View):
     """
     A Menu is a discord View that stores an embed.
     Multiple menus can be stored and navigated through using a MenuHandler.
-    A Menu can have an id for precise navigation. 
+    A Menu can have an id for precise navigation.
     If no id is given the menu can only be accessed by linearly moving
     through the list of menus.
     """
+
     def __init__(self, handler: MenuHandler, id: str = None, embed: discord.Embed = None):
         super().__init__()
         self.id: str = id
@@ -78,20 +79,21 @@ class Menu(discord.ui.View):
     async def back(self, interaction: Interaction, button: discord.ui.Button):
         if not await button_check(interaction, [self.handler.interaction.user.id]):
             return
-        self.handler.move_backward()
-        menu = self.handler.get_current()
+        menu = self.handler.move_backward()
         await interaction.response.edit_message(embed=menu.embed, view=menu)
-        
+
+
 class PaginationMenu(Menu):
     """
     A PaginationMenu is similar to a menu, except it provides
     buttons to linearly move through the MenuHandler.
     """
+
     def __init__(self, handler: MenuHandler, embed: discord.Embed = None):
         super().__init__(handler, id, embed)
         # Remove the back button because we just move left and right
         self.remove_item(self.back)
-    
+
     @discord.ui.button(emoji="✖️", style=ButtonStyle.red, row=4)
     async def close(self, interaction: Interaction, button: discord.ui.Button):
         if not await button_check(interaction, [self.handler.interaction.user.id]):
