@@ -16,7 +16,7 @@ from cococap.constants import DiscordGuilds, GamblingChannels, URI
 from bson import ObjectId
 
 
-client = AsyncIOMotorClient(URI)
+client = AsyncIOMotorClient(URI)  # Are we creating a second instance here? Shouldn't be probably...
 collection = client.discordbot.special_entities
 
 DROP_MAX = 20000
@@ -101,10 +101,10 @@ class ClaimDropButtons(discord.ui.View):
             claimed_embed.set_footer(
                 text=f"The megadrop has been growing since: {megadrop['date_started']}"
             )
-            
+
             now_time = datetime.now(timezone("US/Eastern"))
             date_started = datetime.strftime(now_time, "%m-%d-%Y")
-            
+
             update_data = {
                 "$set": {
                     "last_winner": claim_interaction.user.id,
@@ -186,28 +186,29 @@ class MegaDrop(Drop):
             color=0x484A4A,
         )
         self.expired_embed.set_footer(text="Do /megadrop to see its current status.")
-    
+
     async def release_drop(self):
         megadrop = await collection.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")})
-        timeout = 900 + (megadrop['times_missed'] * 900)
+        timeout = 900 + (megadrop["times_missed"] * 900)
         self.message = await self.channel.send(
             embed=self.embed,
             view=ClaimDropButtons(self, True, timeout=timeout),
         )
+
 
 class DropsCog(commands.Cog, name="Drops"):
     """Cog related to Drops and the Mega Drop"""
 
     def __init__(self, bot):
         self.bot = bot
-        
+
     async def cog_load(self):
         self.drop_task.start()
-        
+
     async def cog_unload(self):
         self.drop_task.cancel()
 
-    @tasks.loop(minutes=randint(30, 60))
+    @tasks.loop(minutes=randint(30, 60), reconnect=True)
     async def drop_task(self):
         guild: discord.Guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
         channels = [
@@ -235,6 +236,7 @@ class DropsCog(commands.Cog, name="Drops"):
                     {"_id": ObjectId("65b76d73ee9f83c970604935")}, {"$set": {"counter": 0}}
                 )
         await drop.release_drop()
+
         # Set next drop to come out 1-2 hours from now
         self.drop_task.change_interval(minutes=randint(60, 120))
 
@@ -242,7 +244,7 @@ class DropsCog(commands.Cog, name="Drops"):
     async def before_drop_tast(self):
         await self.bot.wait_until_ready()
         await asyncio.sleep(seconds_until_tasks())
-        
+
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="megadrop")
     async def megadrop_status(self, interaction: discord.Interaction):

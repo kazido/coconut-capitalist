@@ -134,34 +134,8 @@ class EconomyCog(commands.Cog, name="Economy"):
             0: {
                 "column": UserCollection.purse + UserCollection.bank,
                 "title": ":money_with_wings: BITS LEADERBOARD :money_with_wings:",
-                "color": discord.Color.blue(),
-            },
-            1: {
-                "column": "combat",
-                "title": ":crossed_swords: COMBAT LEADERBOARD :crossed_swords:",
-                "color": discord.Color.dark_red(),
-            },
-            2: {
-                "column": "mining",
-                "title": ":pick: MINING LEADERBOARD :pick:",
-                "color": discord.Color.dark_orange(),
-            },
-            3: {
-                "column": "foraging",
-                "title": ":evergreen_tree: FORAGING LEADERBOARD :evergreen_tree:",
-                "color": discord.Color.dark_green(),
-            },
-            4: {
-                "column": "fishing",
-                "title": ":fishing_pole_and_fish: FISHING LEADERBOARD :fishing_pole_and_fish:",
-                "color": discord.Color.dark_blue(),
-            },
-            5: {
-                "column": UserCollection.drops_claimed,
-                "title": ":package: DROPS LEADERBOARD :package:",
-                "color": discord.Color.from_str("0xcc8c16"),
-            },
-        }
+                "color": discord.Color.blue()
+        }}
         category_index = leaderboards[category.value]
 
         query = await UserCollection.find().sort([(category_index["column"], DESCENDING)]).to_list()
