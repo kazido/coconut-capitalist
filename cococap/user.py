@@ -133,11 +133,11 @@ class User:
         # Ensure that the item is an actual item first
         if not Master.get_or_none(item_id=item_id):
             message = f"'{item_id}' is not a valid item id."
-            log.warn(message)
+            log.warning(message)
             return False, message
         if quantity < 1:
             message = f"Tried to create {quantity} {item_id}. Less than 1."
-            log.warn(message)
+            log.warning(message)
             return False, message
         # Retrieve or create the item in the database
         if item_id not in inventory.keys():
@@ -159,11 +159,11 @@ class User:
         # Ensure that the item is an actual item first
         if not Master.get_or_none(item_id=item_id):
             message = f"Tried to delete: {item_id}. Error: not a valid item id."
-            log.warn(message)
+            log.warning(message)
             return False, message
         if (quantity != None) and (quantity < 1):
             message = f"Tried to delete: {quantity} {item_id}. Error: less than 1."
-            log.warn(message)
+            log.warning(message)
             return False, message
         if item_id in inventory.keys():
             # Try to decrement quantity of existing item
@@ -182,7 +182,7 @@ class User:
         else:
             # If item doesn't exist, do nothing
             message = f"Tried to delete {quantity} {item_id} from {self}. Does not exist."
-            log.warn(message)
+            log.warning(message)
             return False, message
 
     async def trade_item(self, new_owner: int, item_id: str, quantity: int = None):
@@ -194,7 +194,7 @@ class User:
         # Ensure that the item is an actual item first
         if not Master.get_or_none(item_id=item_id):
             message = f"Tried to trade: {item_id}. Error: not a valid item id."
-            log.warn(message)
+            log.warning(message)
             return False, message
         if item_id in inventory.keys():
             # Transfer the ownership of the item if it exists
@@ -202,7 +202,7 @@ class User:
             if quantity:
                 if quantity > item["quantity"]:
                     message = f"Tried to trade {quantity} {item_id}. Error: more than owned."
-                    log.warn(message)
+                    log.warning(message)
                     return False, message
                 # Inserts same item into tradee's inventory
                 await user_2.create_item(item_id, quantity)
@@ -221,7 +221,7 @@ class User:
                 return True, message
         # If item doesn't exist, do nothing
         message = f"Tried to trade {item_id} from {self} to {user_2}. Item does not exist."
-        log.warn(message)
+        log.warning(message)
         return False, message
 
     # GET METHODS ------------------------------------
