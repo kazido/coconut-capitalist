@@ -17,9 +17,13 @@ class WikiCog(commands.Cog, name="Wiki"):
     @app_commands.describe(category="category of item")
     @app_commands.choices(
         category=[
-            Choice(name="General", value=""),
+            Choice(name="General", value="general"),
             Choice(name="Mining", value="mining"),
             Choice(name="Foraging", value="foraging"),
+            Choice(name="Fishing", value="fishing"),
+            Choice(name="Farming", value="farming"),
+            Choice(name="Combat", value="combat"),
+            Choice(name="Shepherding", value="shepherding")
         ]
     )
     async def wiki(self, interaction: discord.Interaction, category: Choice[str] | None):
