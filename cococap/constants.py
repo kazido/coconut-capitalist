@@ -90,18 +90,15 @@ class Categories(Enum):
     
     def __new__(cls, emoji, name, color):
         obj = object.__new__(cls)
+        obj._value_ = name.lower()
         obj.emoji = emoji
         obj.display_name = name
         obj.color = color
         return obj
     
     @classmethod
-    def from_name(cls, name):
-        # Convert name to lowercase and find the matching category
-        for category in cls:
-            if category.display_name.lower() == name.lower():
-                return category
-        return None  # If no match is found
+    def from_name(cls, name: str):
+        return cls(name.lower())
 
 
 IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images/main"
