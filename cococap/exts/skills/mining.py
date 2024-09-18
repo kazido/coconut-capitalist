@@ -637,7 +637,7 @@ class MiningCog(commands.Cog, name="Mining"):
                 )
                 balances = ""
                 for ore_type in ["copper_ore", "iron_ore", "gold_ore"]:
-                    item: dict = user_items[ore_type]
+                    item: dict = user_items.get(ore_type, {})
                     emoji = MiningCog.mining_items[ore_type].emoji
                     balances += f"{emoji} x{item.get('quantity', 0):,}\n"
 
