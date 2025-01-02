@@ -8,13 +8,16 @@ from discord import TextChannel, app_commands
 from random import randint
 from datetime import datetime
 from pytz import timezone
+from logging import getLogger
 
 from cococap.user import User
-from cococap import instance
+from cococap import instance, args
 from cococap.utils.utils import seconds_until_tasks
 from cococap.constants import DiscordGuilds, GamblingChannels, URI
 from bson import ObjectId
 
+log = getLogger(__name__)
+log.setLevel(10)
 
 client = AsyncIOMotorClient(URI)  # Are we creating a second instance here? Shouldn't be probably...
 collection = client.discordbot.special_entities
@@ -203,7 +206,9 @@ class DropsCog(commands.Cog, name="Drops"):
         self.bot = bot
 
     async def cog_load(self):
-        self.drop_task.start()
+        if args.drops:
+            log.info("Drops arg passed, dropping drops :D")    
+            self.drop_task.start()
 
     async def cog_unload(self):
         self.drop_task.cancel()
