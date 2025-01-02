@@ -1,5 +1,6 @@
 import cococap
 import discord
+import random
 
 from datetime import datetime
 from discord import Interaction
@@ -8,6 +9,9 @@ from discord.types.embed import EmbedType
 from pydis_core.utils import scheduling
 from typing import Any, Sequence
 from logging import getLogger
+
+from cococap.constants import SUCCESS_REPLIES, FAILURE_REPLIES, ERROR_REPLIES
+
 
 log = getLogger(__name__)
 
@@ -76,19 +80,15 @@ class Cembed(discord.Embed):
     def __init__(
         self,
         *,
-        colour: int | Colour | None = None,
         color: int | Colour | None = None,
         title: Any | None = None,
         type: EmbedType = "rich",
         url: Any | None = None,
-        description: Any | None = None,
         desc: Any | None = None,
         timestamp: datetime | None = None,
         interaction: Interaction | None = None,
         activity: str = ":)",
     ):
-        color = colour if colour is not None else color
-        description = desc if desc is not None else description
         super().__init__(
             color=color,
             title=title,
@@ -102,3 +102,81 @@ class Cembed(discord.Embed):
                 name=f"{interaction.user.name} - {activity}",
                 icon_url=interaction.user.display_avatar,
             )
+
+
+class SuccessEmbed(Cembed):
+    def __init__(
+        self,
+        *,
+        color=discord.Color.green(),
+        title=random.choice(SUCCESS_REPLIES),
+        type="rich",
+        url=None,
+        desc=None,
+        timestamp=None,
+        interaction=None,
+        activity=":D",
+    ):
+
+        super().__init__(
+            color=color,
+            title=title,
+            type=type,
+            url=url,
+            desc=desc,
+            timestamp=timestamp,
+            interaction=interaction,
+            activity=activity,
+        )
+
+
+class FailureEmbed(Cembed):
+    def __init__(
+        self,
+        *,
+        color=discord.Color.dark_gray(),
+        title=random.choice(FAILURE_REPLIES),
+        type="rich",
+        url=None,
+        desc=None,
+        timestamp=None,
+        interaction=None,
+        activity=":(",
+    ):
+
+        super().__init__(
+            color=color,
+            title=title,
+            type=type,
+            url=url,
+            desc=desc,
+            timestamp=timestamp,
+            interaction=interaction,
+            activity=activity,
+        )
+        
+
+class ErrorEmbed(Cembed):
+    def __init__(
+        self,
+        *,
+        color=discord.Color.red(),
+        title=random.choice(ERROR_REPLIES),
+        type="rich",
+        url=None,
+        desc=None,
+        timestamp=None,
+        interaction=None,
+        activity=":)",
+    ):
+
+        super().__init__(
+            color=color,
+            title=title,
+            type=type,
+            url=url,
+            desc=desc,
+            timestamp=timestamp,
+            interaction=interaction,
+            activity=activity,
+        )
