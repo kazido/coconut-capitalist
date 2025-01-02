@@ -2,6 +2,7 @@ import asyncio
 import discord
 import cococap
 import os
+import argparse
 
 from discord.ext import commands
 from pydis_core import StartupError
@@ -39,6 +40,11 @@ async def main():
     # necessary for custom help command
     cococap.instance.remove_command("help")
 
+    parser = argparse.ArgumentParser("Run the discord bot.")
+    parser.add_argument('--drops', action='store_true', help="run the bot with drops enabled")
+    args = parser.parse_args()
+    
+    cococap.args = args
     async with cococap.instance as _bot:
         log.info(f"Bot starting in {os.getcwd()}")
         await _bot.start(constants.TOKEN, reconnect=True)
