@@ -150,16 +150,28 @@ POSITIVE_REPLIES = [
 ]
 
 ERROR_REPLIES = [
-    "Please don't do that.",
-    "You have to stop.",
-    "Do you mind?",
-    "In the future, don't do that.",
-    "That was a mistake.",
-    "You blew it.",
-    "You're bad at computers.",
-    "Are you trying to kill me?",
-    "Noooooo!!",
-    "I can't believe you've done this",
+    "Something went wrong.",
+    "Uh oh.",
+    "Oops!",
+    "Something didn't work properly.",
+    "Are you trying to break something?"
+]
+
+SUCCESS_REPLIES = [
+    "Success!",
+    "Nice job!",
+    "Good job!",
+]
+
+FAILURE_REPLIES = [
+    "Bummer.",
+    "Too bad...",
+    "Sorry!",
+    "Failed.",
+    "RIP :(",
+    "Nice try.",
+    "Good effort.",
+    'I^I "nooo!"'
 ]
 
 TOO_RICH_TITLES = [
