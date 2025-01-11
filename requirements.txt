@@ -27,7 +27,7 @@ multidict==5.2.0
 numpy==1.24.3
 packaging==21.3
 peewee==3.15.4
-Pillow==9.5.0
+Pillow==10.3.0
 pycares==4.3.0
 pycparser==2.21
 pydantic==2.5.3
