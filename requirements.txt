@@ -34,7 +34,7 @@ pydantic==2.10.5
 pydantic_core==2.27.2
 pydealer==1.4.0
 pydis-core==11.5.1
-pymongo==4.10.1
+pymongo
 pyparsing==3.2.1
 python-dateutil==2.9.0
 python-dotenv==1.0.1
