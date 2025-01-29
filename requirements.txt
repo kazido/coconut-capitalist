@@ -22,7 +22,7 @@ idna==3.10
 kiwisolver==1.4.8
 lazy-model==0.2.0
 matplotlib==3.10.0
-motor==3.6.0
+motor==3.6.1
 multidict==6.1.0
 numpy==2.2.1
 packaging==24.2
@@ -34,7 +34,7 @@ pydantic==2.10.5
 pydantic_core==2.27.2
 pydealer==1.4.0
 pydis-core==11.5.1
-pymongo==4.10
+pymongo==4.10.1
 pyparsing==3.2.1
 python-dateutil==2.9.0
 python-dotenv==1.0.1
