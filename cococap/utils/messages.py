@@ -81,14 +81,20 @@ class Cembed(discord.Embed):
         self,
         *,
         color: int | Colour | None = None,
+        colour: int | Colour | None = None,
         title: Any | None = None,
         type: EmbedType = "rich",
         url: Any | None = None,
         desc: Any | None = None,
+        description: Any | None = None,
         timestamp: datetime | None = None,
         interaction: Interaction | None = None,
         activity: str = ":)",
     ):
+        if colour is not None:
+            color = colour
+        if description is not None:
+            desc = description
         super().__init__(
             color=color,
             title=title,
@@ -154,7 +160,7 @@ class FailureEmbed(Cembed):
             interaction=interaction,
             activity=activity,
         )
-        
+
 
 class ErrorEmbed(Cembed):
     def __init__(
