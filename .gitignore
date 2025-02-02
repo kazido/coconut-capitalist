@@ -134,10 +134,7 @@ config.json
 .DS_Store
 .vscode
 .data.json
-database.ini
-database
-database/devdatabase.db
-database/livedatabase.db
+database/examples
 .idea
 /logs
 .logs
