@@ -130,7 +130,6 @@ dmypy.json
 .pyre/
 
 # OTHER FILES
-config.json
 .DS_Store
 .vscode
 .data.json
