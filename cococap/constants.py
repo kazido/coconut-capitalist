@@ -17,24 +17,15 @@ with open(config_path, "r") as f:
     data = json.load(f)
 
 
+# Grab the bot token from the .env file using the load_dotenv function from the dotenv package
 TOKEN = os.getenv("BOT_TOKEN")
+# Same deal, grab the URI for the MongoDB database
 URI = os.getenv("URI")
 BOT_PREFIX = "-"
-DATABASE = "livedatabase.db"
+DATABASE = "itemdatabase.db"
 
-if data["DEV"]:
-    BOT_PREFIX = "."
-    DATABASE = "testdatabase.db"
-
-
-DEBUG_MODE = False
-if data["DEBUG_MODE"]:
-    DEBUG_MODE = True
-
-
-FILE_LOGGING = False
-if data["FILE_LOGGING"]:
-    FILE_LOGGING = True
+DEBUG_MODE = bool(data["DEBUG_MODE"])
+FILE_LOGGING = bool(data["FILE_LOGGING"])
 
 
 class DiscordGuilds(Enum):
