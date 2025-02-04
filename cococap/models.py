@@ -92,3 +92,16 @@ class PartyCollection(Document):
 
     class Settings:
         name = "parties"
+
+class ItemCollection(Document):
+    item_id: int # Custom generated item ID
+    filter_type: str # 
+    rarity: int # (1-7)
+    price: int
+    description: str
+    wiki: str
+    display_name: str
+    drop_rate: int 
+
+    class Settings:
+        name = "items"
