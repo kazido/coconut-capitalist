@@ -1,7 +1,7 @@
 import logging
 
 from cococap import constants
-from logging import Logger, handlers
+from logging import handlers
 from pathlib import Path
 from discord.utils import setup_logging
 
