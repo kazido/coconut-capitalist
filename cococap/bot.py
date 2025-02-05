@@ -2,7 +2,7 @@ from pydis_core import BotBase
 from logging import getLogger
 
 from cococap import exts, logs
-from cococap.models import UserCollection, PartyCollection
+from cococap.models import UserDocument, PartyDocument
 from cococap.constants import URI
 
 from datetime import datetime
@@ -30,7 +30,7 @@ class Bot(BotBase):
         
         # Database setup
         client = AsyncIOMotorClient(URI)
-        await init_beanie(database=client.discordbot, document_models=[UserCollection, PartyCollection])
+        await init_beanie(database=client.discordbot, document_models=[UserDocument, PartyDocument])
         
         await self.load_extensions(exts)
         

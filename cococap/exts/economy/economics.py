@@ -13,7 +13,7 @@ from discord.ext import commands
 from cococap.user import User
 from cococap.item_models import Pets
 from cococap.utils.messages import Cembed
-from cococap.models import UserCollection
+from cococap.models import UserDocument
 
 from cococap.exts.economy.drops import DROP_AVERAGE
 from cococap.constants import DiscordGuilds, TOO_RICH_TITLES
@@ -110,11 +110,11 @@ class EconomyCog(commands.Cog, name="Economy"):
     )
     async def top(self, interaction: Interaction, category: Choice[int], advanced: bool | None):
         # TODO: Update to include bank as well
-        circulation = await UserCollection.find(
-            UserCollection.discord_id != 1016054559581413457
-        ).sum(UserCollection.purse)
+        circulation = await UserDocument.find(
+            UserDocument.discord_id != 1016054559581413457
+        ).sum(UserDocument.purse)
 
-        async def leaderboard_string(user: UserCollection, category: tuple, advanced=False):
+        async def leaderboard_string(user: UserDocument, category: tuple, advanced=False):
             if category[0] == 0:
                 return f"{user.name} - {user.bank + user.purse:,}"
             elif category[0] in range(1, 5):
@@ -132,13 +132,13 @@ class EconomyCog(commands.Cog, name="Economy"):
 
         leaderboards = {
             0: {
-                "column": UserCollection.purse + UserCollection.bank,
+                "column": UserDocument.purse + UserDocument.bank,
                 "title": ":money_with_wings: BITS LEADERBOARD :money_with_wings:",
                 "color": discord.Color.blue()
         }}
         category_index = leaderboards[category.value]
 
-        query = await UserCollection.find().sort([(category_index["column"], DESCENDING)]).to_list()
+        query = await UserDocument.find().sort([(category_index["column"], DESCENDING)]).to_list()
 
         top_embed = discord.Embed(
             title=category_index["title"],

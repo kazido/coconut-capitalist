@@ -7,7 +7,7 @@ from typing import Literal
 from cococap import instance
 from cococap.item_models import Ranks, Master, Pets
 from cococap.constants import DiscordGuilds
-from cococap.models import UserCollection
+from cococap.models import UserDocument
 from cococap.utils.utils import timestamp_to_digital
 
 from logging import getLogger
@@ -21,7 +21,7 @@ class User:
         log.info("Initializing user object with user id: " + str(uid))
         self.uid = uid
         self.discord_info = self.get_discord_info()
-        self.document: UserCollection
+        self.document: UserDocument
 
     def __str__(self) -> str:
         """Returns the user's name in discord"""
@@ -33,9 +33,9 @@ class User:
 
     async def load(self):
         """Loads the object with information from MongoDB"""
-        self.document = await UserCollection.find_one(UserCollection.discord_id == self.uid)
+        self.document = await UserDocument.find_one(UserDocument.discord_id == self.uid)
         if self.document is None:
-            self.document = UserCollection(name=self.discord_info.name, discord_id=self.uid)
+            self.document = UserDocument(name=self.discord_info.name, discord_id=self.uid)
             await self.document.insert()
 
     def get_discord_info(self) -> discord.Member:

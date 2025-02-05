@@ -2,9 +2,9 @@ from beanie import Document
 from typing import Optional
 
 
-class UserCollection(Document):
-    name: str  # Required
-    discord_id: int  # Required
+class UserDocument(Document):
+    name: str # Required
+    discord_id: int # Required
     bank: int = 0
     purse: int = 1000
     tokens: int = 0
@@ -84,7 +84,7 @@ class UserCollection(Document):
         name = "users"
 
 
-class PartyCollection(Document):
+class PartyDocument(Document):
     party_id: int # Custom generated party ID
     party_owner: int # Discord ID of the party owner
     party_members: list = [] # Discord IDs of all party members
@@ -92,8 +92,21 @@ class PartyCollection(Document):
 
     class Settings:
         name = "parties"
+        
+class SpecialEntitiesCollection(Document):
+        
+        
+        class Settings:
+            name = "special_entities"
+class GuildDocument(Document):
+    guild_id: int # Discord ID of the guild that the bot is in
+    channel_list: list = [] # Discord IDs of all channels that the bot should be able to interact with
+    admin_role_id: int # Discord ID of the role that the bot should listen to as admin
+    
+    class Settings:
+        name = "guilds"
 
-class ItemCollection(Document):
+class ItemDocument(Document):
     item_id: int # Custom generated item ID
     filter_type: str # 
     rarity: int # (1-7)

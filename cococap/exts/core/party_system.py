@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord import app_commands
 from cococap.utils.messages import Cembed
 from cococap.user import User
-from cococap.models import UserCollection, PartyCollection
+from cococap.models import UserDocument, PartyDocument
 from cococap import instance
 from cococap.constants import PartyRoles, DiscordGuilds
 from cococap.constants import GREEN_CHECK_MARK_URL, RED_X_URL
@@ -68,8 +68,8 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        party: PartyCollection = await PartyCollection.find_one(
-            PartyCollection.party_id == party_id
+        party: PartyDocument = await PartyDocument.find_one(
+            PartyDocument.party_id == party_id
         )
         party_member_ids = party.party_members
 
@@ -114,7 +114,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         # Generate a random 4 digit ID
         async def generate_party_id():
             party_id = random.randint(1000, 9999)
-            if await PartyCollection.find_one(PartyCollection.party_id == party_id) is None:
+            if await PartyDocument.find_one(PartyDocument.party_id == party_id) is None:
                 # Successfully rolled a unique party ID
                 return party_id
             # Reroll if the party ID already exists
@@ -144,7 +144,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         )
 
         # Create the party and insert it
-        party = PartyCollection(
+        party = PartyDocument(
             party_id=party_id, channel_id=party_channel.id, party_owner=user.uid
         )
         party.party_members.append(user.uid)
@@ -188,8 +188,8 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
             return
 
         # Query to find all users with the same party ID
-        party: PartyCollection = await PartyCollection.find_one(
-            PartyCollection.party_id == party_id
+        party: PartyDocument = await PartyDocument.find_one(
+            PartyDocument.party_id == party_id
         )
         party_members_ids = party.party_members
 
@@ -232,8 +232,8 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         user = User(interaction.user.id)
         await user.load()
         party_id = user.get_field("party_id")
-        party: PartyCollection = await PartyCollection.find_one(
-            PartyCollection.party_id == party_id
+        party: PartyDocument = await PartyDocument.find_one(
+            PartyDocument.party_id == party_id
         )
         party_member_ids = party.party_members
 
@@ -307,8 +307,8 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
             await interaction.response.send_message(embed=error_embed)
             return
 
-        party: PartyCollection = await PartyCollection.find_one(
-            PartyCollection.party_id == party_id
+        party: PartyDocument = await PartyDocument.find_one(
+            PartyDocument.party_id == party_id
         )
         party_members_ids = party.party_members
 
@@ -464,8 +464,8 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
             await interaction.response.send_message(embed=error_embed)
             return
 
-        party: PartyCollection = await PartyCollection.find_one(
-            PartyCollection.party_id == party_id
+        party: PartyDocument = await PartyDocument.find_one(
+            PartyDocument.party_id == party_id
         )
         party_member_ids = party.party_members
         party_role = discord.utils.get(
@@ -501,8 +501,8 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         await user.load()
         party_id = user.get_field("party_id")
 
-        party: PartyCollection = await PartyCollection.find_one(
-            PartyCollection.party_id == party_id
+        party: PartyDocument = await PartyDocument.find_one(
+            PartyDocument.party_id == party_id
         )
         party_member_ids = party.party_members
 
