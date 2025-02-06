@@ -173,7 +173,7 @@ class ErrorEmbed(Cembed):
         desc=None,
         timestamp=None,
         interaction=None,
-        activity=":)",
+        activity=":/",
     ):
 
         super().__init__(
