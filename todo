@@ -1,0 +1,22 @@
+### TODO
+
+# GENERALIZE THE BOT
+[ ] remove all ties from specific guilds, roles, and channels.
+[x] make ranks stored in the database rather than the server
+    - they are now no longer tied to discord role IDs but instead just stored in the itemdatabase.db
+[ ] store valid channels in the database for each guild.
+
+
+# MORE USES FOR TOKENS
+[ ] Add some other functionality to tokens other than ranking up. Perhaps a limited item shop?
+    - Actually, I'm not quite sure about this idea. I think having to choose between using tokens for something or using them to rank up would be awkward for a player, and eventually one meta would rise. Perhaps I could make it so that they have a use, but only after you've hit max rank. They feel pointless since they are linear and one dimensional, but maybe that is a good thing for something like ranking up.
+
+
+# MORE STATISTICS
+[ ] Add a tracker in the database for each possible statistic we can think of
+    - This is simply pure fun for the player, especially in a grindy game. It's always fun to compare with others how many drops you've claimed or how many nodes you've mined.
+    - This will require the user model to get quite large... Maybe pick and choose which statistics are really worth keeping or not.
+
+
+
+##### COMPLETED
