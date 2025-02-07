@@ -115,7 +115,6 @@ class Ranks(BaseModel):
     description = TextField(null=True)
     display_name = TextField(null=True)
     emoji = TextField(null=True)
-    next_rank_id = IntegerField(null=True)
     token_price = IntegerField(null=True)
     wage = IntegerField(null=True)
 
