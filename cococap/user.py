@@ -1,12 +1,10 @@
 import discord
 import time
 
-from discord import utils
 from typing import Literal
 
-from cococap import instance
 from cococap.item_models import Ranks, Master, Pets
-from cococap.constants import DiscordGuilds
+from cococap.utils.messages import ErrorEmbed
 from cococap.models import UserDocument
 from cococap.utils.utils import timestamp_to_digital
 
@@ -16,16 +14,20 @@ log = getLogger(__name__)
 log.setLevel(20)
 
 
+"""
+The user class!
+This class is used to interact with the user document in the database.
+It contains methods to interact with the user's data, such as:
+- Getting user information
+- Updating user information
+"""
+
+
 class User:
     def __init__(self, uid: int) -> None:
         log.info("Initializing user object with user id: " + str(uid))
         self.uid = uid
-        self.discord_info = self.get_discord_info()
         self.document: UserDocument
-
-    def __str__(self) -> str:
-        """Returns the user's name in discord"""
-        return self.discord_info.name
 
     async def save(self):
         """Save the user document after any changes"""
@@ -38,36 +40,17 @@ class User:
             self.document = UserDocument(name=self.discord_info.name, discord_id=self.uid)
             await self.document.insert()
 
-    def get_discord_info(self) -> discord.Member:
-        """Gets a user's discord info"""
-        # If I ever expand the bot to other guilds, this needs to change
-        guild: discord.Guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
-        discord_user: discord.Member = guild.get_member(self.uid)
-        if discord_user is None:
-            raise Exception(f"No discord member with ID {self.uid}.")
-        return discord_user
-
     async def get_user_rank(self) -> Ranks:
-        """Retrieve the corresponding rank of a user based on their roles in a Discord guild."""
-        unranked_id = 959850049188298772
-        guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
-        for rank in Ranks.select():
-            discord_role = utils.get(guild.roles, id=rank.rank_id)
-            # Check to see if the user has any matching role in discord
-            if discord_role in self.discord_info.roles:
-                return rank
-        # If we don't find any rank, give them unranked
-        unranked = guild.get_role(unranked_id)
-        await self.discord_info.add_roles(unranked)
-        return Ranks.get_by_id(unranked_id)
+        """Retrieve the corresponding rank of a user from the database"""
+        return self.document.rank
 
     def is_busy(self) -> bool:
+        """Sets the user's ingame status to True so that they cannot play multiple games at once"""
         in_game = self.get_field("in_game")
         if in_game["in_game"]:
-            embed = discord.Embed(
+            embed = ErrorEmbed(
                 title="You are busy elsewhere!",
                 description=f"You are currently doing something else here: {in_game['channel']}!",
-                color=discord.Color.red(),
             )
             return embed
         return False
@@ -86,6 +69,8 @@ class User:
         await self.save()
 
     async def inc_xp(self, *, skill: str, xp: int, interaction: discord.Interaction):
+        # TODO: Needs an overhaul to work with Tiers and Areas and Pets
+        # ALSO MAYBE WE SHOULD MAKE THIS SIMPLER AND MOVE THE COMPLEX LOGIC ELSEWHERE
         current_xp = getattr(self.document, skill)["xp"]
         current_level = self.xp_to_level(current_xp)
         pet, pet_data = self.get_active_pet()
@@ -118,6 +103,7 @@ class User:
 
     async def update_game(self, *, in_game: bool, interaction: discord.Interaction):
         if in_game:
+            # TODO: Fix this so that the channel gets stored in the database
             self.document.in_game["channel"] = interaction.channel.mention
         else:
             self.document.in_game["channel"] = ""
