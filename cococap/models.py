@@ -9,6 +9,7 @@ class UserDocument(Document):
     bank: int = 0  # The user's bank which gains interest
     purse: int = 1000  # The user's purse for bits to be used readily
     tokens: int = 0  # The user's tokens which are exclusively used to rank up
+    luckbucks: int = 0 # The currency just used for gambling
     in_game: dict = {
         "in_game": False,
         "message_id": "",
