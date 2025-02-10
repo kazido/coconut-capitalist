@@ -3,19 +3,40 @@ from typing import Optional
 
 
 class UserDocument(Document):
+    # BASIC INFO
     name: str  # Required
     discord_id: int  # Required
     rank: int  # Will store the user's rank by rank ID
     bank: int = 0  # The user's bank which gains interest
     purse: int = 1000  # The user's purse for bits to be used readily
     tokens: int = 0  # The user's tokens which are exclusively used to rank up
-    luckbucks: int = 0 # The currency just used for gambling
+    luckbucks: int = 0  # The currency just used for gambling
     in_game: dict = {
         "in_game": False,
         "message_id": "",
     }  # Used to prevent user's from playing multiple games at once (message id is useless right now)
-    party_id: Optional[int] = None # Tracks what party a user is in
-    drops_claimed: int = 0 # Fun statistic
+    party_id: Optional[int] = None  # Tracks what party a user is in
+    
+    # STATISTICS
+    gambling_statistics: dict = {
+        "luckbucks_earned": 0,  # From gambling
+        "gambles_done": 0,  # Gambling games played
+        "longest_hl_streak": 0, # Need a current and a longest to track between games and to update if its longer
+        "current_hl_streak": 0,
+        "longest_hl_l_streak":  0,
+        "current_hl_l_streak": 0,
+        "biggest_hl_win": 0, # Just check if win is bigger than this or if it's smaller than biggest_hl_loss and overwrite
+        "biggest_hl_loss": 0,
+        "blackjack_busts": 0,  # Simply +1 for all the countable stats
+        "blackjack_folds": 0,
+        "blackjack_wins": 0,
+        "longest_sq_streak": 0,
+        "longest_unscramble_streak": 0,
+        "current_unscramble_streak": 0,
+    }
+    drops_claimed: int = 0  # Fun statistic
+    
+    # SKILLS
     farming: dict = {
         "xp": 0,
         "equipped_tool": None,

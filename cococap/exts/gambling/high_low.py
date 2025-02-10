@@ -11,10 +11,10 @@ from random import randint
 
 
 async def game_results(
-    interaction: discord.Interaction, user: User, roll: int, multiplier: int, bet: int, win: int
+    interaction: discord.Interaction, user: User, roll: int, multiplier: int, bet: int, win: bool
 ):
     embed = None
-    if win == 0:
+    if not win:
         user_balance_after_loss = user.get_field("purse")
         losing_embed = Cembed(
             title=f"INCORRECT :x: | User: {interaction.user.name} - Bet: {bet:,}",
@@ -37,7 +37,7 @@ async def game_results(
         await bot.load()
         await bot.inc_purse(bet)
 
-    elif win == 1:
+    elif win:
         success_embed = Cembed(
             title=f"CORRECT :white_check_mark: | User: {interaction.user.name} - Bet: {bet:,}",
             color=discord.Color.green(),
