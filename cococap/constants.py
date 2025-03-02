@@ -21,11 +21,14 @@ with open(config_path, "r") as f:
 TOKEN = os.getenv("BOT_TOKEN")
 # Same deal, grab the URI for the MongoDB database
 URI = os.getenv("URI")
-BOT_PREFIX = "-"
 DATABASE = "itemdatabase.db"
 
 DEBUG_MODE = bool(data["DEBUG_MODE"])
 FILE_LOGGING = bool(data["FILE_LOGGING"])
+DEV_MODE = bool(data["DEV_MODE"])
+
+BOT_ID = 956000805578768425 if DEV_MODE else 1016054559581413457
+BOT_PREFIX = "-" if DEV_MODE else "."
 
 
 class DiscordGuilds(Enum):
@@ -70,15 +73,16 @@ class Rarities(Enum):
     def from_value(cls, value: int):
         return cls(value)
 
+
 class Categories(Enum):
-    FARMING = ('🌽', "Farming", "0x2f919e")
-    FORAGING = ('🌳', "Foraging", "0x2f9e47")
-    FISHING = ('🐟', "Fishing", "0x2f3a9e")
-    MINING = ('⛏️', "Mining", "0x9e492f")
-    COMBAT = ('⚔️', "Combat", "0x9e2f2f")
-    SHEPHERDING = ('🐑', "Shepherding", "0x5f2f9e")
-    GENERAL = ('📦', "General", "0x8b9a9e")
-    
+    FARMING = ("🌽", "Farming", "0x2f919e")
+    FORAGING = ("🌳", "Foraging", "0x2f9e47")
+    FISHING = ("🐟", "Fishing", "0x2f3a9e")
+    MINING = ("⛏️", "Mining", "0x9e492f")
+    COMBAT = ("⚔️", "Combat", "0x9e2f2f")
+    SHEPHERDING = ("🐑", "Shepherding", "0x5f2f9e")
+    GENERAL = ("📦", "General", "0x8b9a9e")
+
     def __new__(cls, emoji, name, color):
         obj = object.__new__(cls)
         obj._value_ = name.lower()
@@ -86,10 +90,42 @@ class Categories(Enum):
         obj.display_name = name
         obj.color = color
         return obj
-    
+
     @classmethod
     def from_name(cls, name: str):
         return cls(name.lower())
+
+
+class LeaderboardCategories(Enum):
+    BITS = ("💸", "Bits", "purse", "0xbbd6ed")
+    LUCKBUCKS = ("🍀", "Luckbucks", "luckbucks", "0x47d858")
+    FARMING = ("🌽", "Farming", "farming.xp", "0x2f919e")
+    FORAGING = ("🌳", "Foraging", "foraging.xp", "0x2f9e47")
+    FISHING = ("🐟", "Fishing", "fishing.xp", "0x2f3a9e")
+    MINING = ("⛏️", "Mining", "mining.xp", "0x9e492f")
+    COMBAT = ("⚔️", "Combat", "combat.xp", "0x9e2f2f")
+    # SHEPHERDING = ("🐑", "Shepherding", ['shepherding'], "0x5f2f9e")  # TO BE ADDED
+    DROPS = ("📦", "Drops", "drops_claimed", "0x8b9a9e")
+
+    def __new__(cls, emoji, name, column: str, color):
+        obj = object.__new__(cls)
+        obj._value_ = name.lower()
+        obj.emoji = emoji
+        obj.display_name = name
+        obj.column = column
+        obj.color = color
+        return obj
+
+    @classmethod
+    def from_name(cls, name: str):
+        return cls(name.lower())
+    
+    
+FIRST_PLACE_ANSI_PREFIX = "\u001b[0;37m"
+SECOND_PLACE_ANSI_PREFIX = "\u001b[0;33m"
+THIRD_PLACE_ANSI_PREFIX = "\u001b[0;31m"
+OTHER_PLACE_ANSI_PREFIX = "\u001b[0;30m"
+RESET_POSTFIX = "\u001b[0m"
 
 
 IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images/main"
@@ -145,7 +181,7 @@ ERROR_REPLIES = [
     "Uh oh.",
     "Oops!",
     "Something didn't work properly.",
-    "Are you trying to break something?"
+    "Are you trying to break something?",
 ]
 
 SUCCESS_REPLIES = [
@@ -162,7 +198,7 @@ FAILURE_REPLIES = [
     "RIP :(",
     "Nice try.",
     "Good effort.",
-    'I^I "nooo!"'
+    'I^I "nooo!"',
 ]
 
 TOO_RICH_TITLES = [

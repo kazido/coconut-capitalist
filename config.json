@@ -1,4 +1,5 @@
 {
     "DEBUG_MODE": 0,
-    "FILE_LOGGING": 0
+    "FILE_LOGGING": 0,
+    "DEV_MODE": 1
 }
