@@ -42,18 +42,18 @@ class BaseModel(Model):
 # region Item data classes
 class Master(BaseModel):
     item_id = TextField(primary_key=True)
-    price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
+    price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True) # If the item can be bought. If not, it will be 0
     description = TextField(null=True)
-    wiki = TextField(null=True)
-    display_name = TextField(null=True)
-    drop_rate = IntegerField(null=True)
-    max_drop = IntegerField(null=True)
-    min_drop = IntegerField(null=True)
-    rarity = IntegerField(null=True)
-    sell_price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True)
-    skill = TextField(null=True)
-    filter_type = TextField(null=True)
-    emoji = TextField(null=True)
+    wiki = TextField(null=True) # Description of what the item is actually used for
+    display_name = TextField(null=True) # Formatted name
+    drop_rate = IntegerField(null=True) # The number which 1 is divided by to get the drop rate
+    max_drop = IntegerField(null=True) # The maximum number of items that can be dropped
+    min_drop = IntegerField(null=True) # The minimum number of items that can be dropped
+    rarity = IntegerField(null=True) # Rarity
+    sell_price = IntegerField(constraints=[SQL("DEFAULT 0")], null=True) # If the item can be sold. If not, it will be 0
+    skill = TextField(null=True) # The skill the item is related to
+    filter_type = TextField(null=True) # Used for sorting I think?
+    emoji = TextField(null=True) # The emoji that represents the item
 
     class Meta:
         table_name = "data_master"
@@ -66,12 +66,12 @@ class Crops(BaseModel):
         null=True,
         primary_key=True,
     )
-    grows_from = TextField(null=True)
-    pet_xp = IntegerField(null=True)
+    grows_from = TextField(null=True) # The item ID of the seed
+    pet_xp = IntegerField(null=True) 
     cycles = IntegerField(null=True)
 
     class Meta:
-        table_name = "data_crops"
+        table_name = "crops"
 
 
 class Tools(BaseModel):
@@ -85,7 +85,7 @@ class Tools(BaseModel):
     power = IntegerField(constraints=[SQL("DEFAULT 1")], null=True)
 
     class Meta:
-        table_name = "data_tools"
+        table_name = "tools"
 
 
 class Pets(BaseModel):
@@ -106,20 +106,20 @@ class Pets(BaseModel):
     emoji = TextField(null=True)
 
     class Meta:
-        table_name = "data_pets"
+        table_name = "pets"
 
 
 class Ranks(BaseModel):
     rank_id = IntegerField(null=True, primary_key=True)
     color = TextField(null=True)
     description = TextField(null=True)
-    display_name = TextField(null=True)
+    display_name = TextField(null=True) 
     emoji = TextField(null=True)
-    token_price = IntegerField(null=True)
-    wage = IntegerField(null=True)
+    token_price = IntegerField(null=True) # The cost in tokens of the rank
+    wage = IntegerField(null=True) # How many bits are given per day
 
     class Meta:
-        table_name = "data_ranks"
+        table_name = "ranks"
 
 
 class ItemType(Enum):

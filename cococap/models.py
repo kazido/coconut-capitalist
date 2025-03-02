@@ -6,7 +6,7 @@ class UserDocument(Document):
     # BASIC INFO
     name: str  # Required
     discord_id: int  # Required
-    rank: int  # Will store the user's rank by rank ID
+    rank: int = 0 # Will store the user's rank by rank ID
     bank: int = 0  # The user's bank which gains interest
     purse: int = 1000  # The user's purse for bits to be used readily
     tokens: int = 0  # The user's tokens which are exclusively used to rank up
@@ -135,17 +135,3 @@ class GuildDocument(Document):
 
     class Settings:
         name = "guilds"
-
-
-class ItemDocument(Document):
-    item_id: int  # Custom generated item ID
-    filter_type: str  #
-    rarity: int  # (1-7)
-    price: int
-    description: str
-    wiki: str
-    display_name: str
-    drop_rate: int
-
-    class Settings:
-        name = "items"
