@@ -3,20 +3,30 @@ import math
 import random
 import discord
 import randfacts
-from pymongo import DESCENDING
+from typing import List
 
 from random import randint
 from discord import app_commands, Interaction
-from discord.app_commands import Choice
 from discord.ext import commands
+from pymongo import DESCENDING, ASCENDING
 
 from cococap.user import User
 from cococap.item_models import Pets
 from cococap.utils.messages import Cembed
-from cococap.models import UserDocument
+from cococap.models import UserDocument as Udoc
 
 from cococap.exts.economy.drops import DROP_AVERAGE
-from cococap.constants import DiscordGuilds, TOO_RICH_TITLES
+from cococap.constants import (
+    DiscordGuilds,
+    TOO_RICH_TITLES,
+    BOT_ID,
+    FIRST_PLACE_ANSI_PREFIX,
+    SECOND_PLACE_ANSI_PREFIX,
+    THIRD_PLACE_ANSI_PREFIX,
+    OTHER_PLACE_ANSI_PREFIX,
+    RESET_POSTFIX,
+)
+from cococap.constants import LeaderboardCategories as LeaderCats
 
 
 class EconomyCog(commands.Cog, name="Economy"):
@@ -32,27 +42,22 @@ class EconomyCog(commands.Cog, name="Economy"):
         user = User(interaction.user.id)
         await user.load()
 
-        rank = await user.get_user_rank()
+        # TODO: Fix ranks
+        # rank = await user.get_user_rank()
 
         embed = Cembed(
-            title=f"You are: `{rank.display_name}`",
+            # title=f"You are: `{rank.display_name}`",
+            title="TEST!",
             color=discord.Color.blue(),
             interaction=interaction,
             activity="profile",
         )
 
-        skills = [
-            {"emoji": ":crossed_swords:", "name": "COMBAT"},
-            {"emoji": ":pick:", "name": "MINING"},
-            {"emoji": ":evergreen_tree:", "name": "FORAGING"},
-            {"emoji": ":fishing_pole_and_fish:", "name": "FISHING"},
-            {"emoji": ":corn:", "name": "FARMING"},
-        ]
-
         embed.add_field(
             name="Balances",
             value=f":money_with_wings: **BITS**: {user.get_field('purse'):,}\n"
             f":bank: **BANK**: {user.get_field('bank'):,}\n"
+            f":four_leaf_clover: **LUCKBUCKS**: {user.get_field('luckbucks'):,}\n"
             f":coin: **TOKENS**: {user.get_field('tokens'):,}",
         )
         embed.set_thumbnail(url=interaction.user.display_avatar)
@@ -94,97 +99,103 @@ class EconomyCog(commands.Cog, name="Economy"):
             )
             await interaction.response.send_message(embed=embed)
 
+    async def category_autocomplete(
+        self, interaction: discord.Interaction, current: str
+    ) -> List[app_commands.Choice[str]]:
+        categories = [category.display_name for category in list(LeaderCats)]
+        return [
+            app_commands.Choice(name=category, value=category)
+            for category in categories
+            if current.lower() in category.lower()
+        ]
+
     # Command for the richest members in the server
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="top", description="See the top 10 players in each category!")
     @app_commands.describe(category="category of leaderboard")
-    @app_commands.choices(
-        category=[
-            Choice(name="bits", value=0),
-            Choice(name="combat", value=1),
-            Choice(name="mining", value=2),
-            Choice(name="foraging", value=3),
-            Choice(name="fishing", value=4),
-            Choice(name="drops", value=5),
-        ]
-    )
-    async def top(self, interaction: Interaction, category: Choice[int], advanced: bool | None):
-        # TODO: Update to include bank as well
-        circulation = await UserDocument.find(
-            UserDocument.discord_id != 1016054559581413457
-        ).sum(UserDocument.purse)
+    @app_commands.autocomplete(category=category_autocomplete)
+    async def top(self, interaction: Interaction, category: str, advanced: bool | None):
+        # Calculate the circulation for the bits leaderboard
+        total_purses = await Udoc.find(Udoc.discord_id != BOT_ID).sum(Udoc.purse)
+        total_banks = await Udoc.find(Udoc.discord_id != BOT_ID).sum(Udoc.bank)
+        circulation = total_purses + total_banks
+        bot_purse = 0
 
-        async def leaderboard_string(user: UserDocument, category: tuple, advanced=False):
-            if category[0] == 0:
-                return f"{user.name} - {user.bank + user.purse:,}"
-            elif category[0] in range(1, 5):
-                xp = getattr(user, category[1])["xp"]
+        category = LeaderCats.from_name(category)
+
+        async def leaderboard_string(user: Udoc, advanced=False):
+            if category == LeaderCats.BITS:
+                return f"{user.name} - {user.purse + user.bank:,}"
+            if category in [LeaderCats.LUCKBUCKS, LeaderCats.DROPS]:
+                return f"{user.name} - {getattr(user, category.column):,}"
+            else:
+                fields = category.column.split(".")
+                result = user
+                while len(fields) > 0:
+                    result = getattr(result, fields.pop(0))
                 if advanced:
-                    return f"{user.name} - Level {User.xp_to_level(xp=xp):,} | {xp:,} xp"
-                return f"{user.name} - Level {User.xp_to_level(xp=xp):,}"
-            elif category[0] == 5:
-                if advanced:
-                    return (
-                        f"{user.name} - {user.drops_claimed} "
-                        f"drops | ~{user.drops_claimed * DROP_AVERAGE:,} bits"
-                    )
-                return f"{user.name} - {user.drops_claimed}"
+                    return f"*{user.name}* - Level {User.xp_to_level(xp=result):,} | {result:,} xp"
+                return f"*{user.name}* - Level {User.xp_to_level(xp=result):,}"
 
-        leaderboards = {
-            0: {
-                "column": UserDocument.purse + UserDocument.bank,
-                "title": ":money_with_wings: BITS LEADERBOARD :money_with_wings:",
-                "color": discord.Color.blue()
-        }}
-        category_index = leaderboards[category.value]
+        # Yes, I am hardcoding this. I don't see a future where I have multiple leaderboard categories
+        # that are based on two fields being summed together like they are here...
+        if category == LeaderCats.BITS:
+            pipeline = [
+                {"$addFields": {"sum_value": {"$add": ["$purse", "$bank"]}}},
+                {"$sort": {"sum_value": -1}},
+            ]
+            query = await Udoc.aggregate(pipeline).to_list()
+        else:
+            query = await Udoc.find().sort((category.column, DESCENDING)).to_list()
 
-        query = await UserDocument.find().sort([(category_index["column"], DESCENDING)]).to_list()
-
-        top_embed = discord.Embed(
-            title=category_index["title"],
-            description="",
-            color=category_index["color"],
+        # START CREATING THE LEADERBOARD DISPLAY ----------------------
+        embed = discord.Embed(
+            title=f"{category.display_name} Leaderboard",
+            description="```ansi\n",
+            color=discord.Color.from_str(category.color),
         )
 
+        # We have to use our own index because we use continue when we encounter a bot, and that would mess up enumerate
         index = 1
         for user in query:
-            discord_member = interaction.guild.get_member(user.discord_id)
-            if discord_member.bot:
+            if user.discord_id in [1016054559581413457, 956000805578768425]:
+                # Detect if the user is either of the bots
                 bot_purse = user.purse
-                # Detect if the user is the bot in Discord
                 continue
-            if index == 1:  # If the user is number one
-                role_to_add = discord.utils.get(interaction.guild.roles, name="RICHEST!")
-                for users in interaction.guild.members:
-                    if role_to_add in users.roles:  # Remove the RICHEST! role from all other users
-                        await users.remove_roles(role_to_add)
-                user_in_discord = discord.utils.get(interaction.guild.members, id=user.discord_id)
-                await user_in_discord.add_roles(role_to_add)
 
             rank_string = await leaderboard_string(
                 user=user,
-                category=(category.value, leaderboards[category.value]["column"]),
                 advanced=advanced,
             )
 
-            if index <= 10 and (user.discord_id == interaction.user.id):
-                # If user is in top 10, bold their name
-                top_embed.description += f"**{index}. {rank_string}**\n"
-            elif index <= 10 and (user.discord_id != interaction.user.id):
-                # Make everyone elses name regular
-                top_embed.description += f"{index}. {rank_string}\n"
+            rank_string = f"[{index}] {rank_string}"
+
+            if user.discord_id == interaction.user.id:
+                rank_string += " (YOU)"
+
+            if index == 1:
+                embed.description += f"{FIRST_PLACE_ANSI_PREFIX}{rank_string}{RESET_POSTFIX}\n"
+            elif index == 2:
+                embed.description += f"{SECOND_PLACE_ANSI_PREFIX}{rank_string}{RESET_POSTFIX}\n"
+            elif index == 3:
+                embed.description += f"{THIRD_PLACE_ANSI_PREFIX}{rank_string}{RESET_POSTFIX}\n"
+            elif index <= 10:
+                embed.description += f"{OTHER_PLACE_ANSI_PREFIX}{rank_string}{RESET_POSTFIX}\n"
+
             elif index > 10 and (user.id == interaction.user.id):
                 # If user didn't get top 10, add their place to the end
-                top_embed.description += "\n" + "Your rank:" + "\n" + f"**{index}. {rank_string}**"
+                embed.description += "\n" + "Your rank:" + "\n" + f"{rank_string}"
             index += 1
 
+        embed.description += "\n```"
+
         if category.value == 0:
-            top_embed.set_footer(text=f"The house has made: {bot_purse:,} bits")
-            top_embed.add_field(
+            embed.set_footer(text=f"The house has made: {bot_purse:,} bits")
+            embed.add_field(
                 name="Current Circulation",
                 value=f"There are currently **{circulation:,}** bits in the economy.",
             )
-        await interaction.response.send_message(embed=top_embed)
+        await interaction.response.send_message(embed=embed)
 
     @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="check-in")
@@ -251,20 +262,23 @@ class EconomyCog(commands.Cog, name="Economy"):
                 await user.set_cooldown("work")
                 self.prepare_buttons()
                 await interaction.response.edit_message(embed=self.embed, view=self)
-                
+
                 if user.get_field("settings")["auto_deposit"]:
                     purse = user.get_field("purse")
                     await user.inc_purse(amount=-purse)
                     await user.inc_bank(amount=purse)
                     embed = Cembed(
-                        colour=discord.Color.dark_blue(), interaction=interaction, activity="depositing"
+                        colour=discord.Color.dark_blue(),
+                        interaction=interaction,
+                        activity="depositing",
                     )
                     embed.add_field(
                         name="Auto deposit made!",
                         value=f"You have automatically deposited **{purse:,}** bits",
                     )
                     embed.set_author(
-                        name=f"{interaction.user.name} - deposit", icon_url=interaction.user.display_avatar
+                        name=f"{interaction.user.name} - deposit",
+                        icon_url=interaction.user.display_avatar,
                     )
                     await interaction.followup.send(embed=embed, ephemeral=True)
 
@@ -322,7 +336,8 @@ class EconomyCog(commands.Cog, name="Economy"):
         if int(amount) > user.get_field("purse"):
             await interaction.response.send_message(
                 f"You don't have enough bits to deposit. "
-                f"Balance: {user.get_field('purse'):,} bits", ephemeral=True
+                f"Balance: {user.get_field('purse'):,} bits",
+                ephemeral=True,
             )
             return
         elif int(amount) == 0:
