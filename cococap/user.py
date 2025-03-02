@@ -212,9 +212,14 @@ class User:
 
     # GET METHODS ------------------------------------
     def get_field(self, field: str):
-        if not hasattr(self.document, field):
-            return "Object does not have field {field}."
-        return getattr(self.document, field)
+        fields = field.split(".")
+        print("FIELDS ", fields)
+        result = self.document
+        while len(fields) > 0:
+            if not hasattr(result, fields[0]):
+                return f"Object does not have field {fields[0]}."
+            result = getattr(result, field.pop(0))
+        return result
 
     def get_active_pet(self):
         pets = self.document.pets
