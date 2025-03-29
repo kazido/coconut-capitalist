@@ -26,7 +26,7 @@ async def main():
     intents.integrations = False
 
     cococap.instance = Bot(
-        guild_id=constants.DiscordGuilds.PRIMARY_GUILD.value,
+        guild_id=856915776345866240,
         command_prefix=commands.when_mentioned_or(constants.BOT_PREFIX),
         activity=discord.Game(name=f"Commands: {constants.BOT_PREFIX}help"),
         case_insensitive=True,

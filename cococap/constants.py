@@ -31,11 +31,6 @@ BOT_ID = 956000805578768425 if DEV_MODE else 1016054559581413457
 BOT_PREFIX = "-" if DEV_MODE else "."
 
 
-class DiscordGuilds(Enum):
-    PRIMARY_GUILD = 856915776345866240
-    TESTING_GUILD = 977351545966432306
-
-
 class GamblingChannels(Enum):
     PARADISE = 858549045613035541
     DREAMSCAPE = 959271607241683044
@@ -47,10 +42,6 @@ class GamblingChannels(Enum):
 
 class ModerationChannels(Enum):
     DATABASE_LOGS = 858606781093511248
-
-
-class PartyRoles(Enum):
-    PARTY_LEADER = 1130004841687699487
 
 
 class Rarities(Enum):
@@ -119,8 +110,8 @@ class LeaderboardCategories(Enum):
     @classmethod
     def from_name(cls, name: str):
         return cls(name.lower())
-    
-    
+
+
 FIRST_PLACE_ANSI_PREFIX = "\u001b[0;37m"
 SECOND_PLACE_ANSI_PREFIX = "\u001b[0;33m"
 THIRD_PLACE_ANSI_PREFIX = "\u001b[0;31m"

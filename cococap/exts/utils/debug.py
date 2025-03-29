@@ -12,7 +12,7 @@ from cococap.user import User
 from cococap.utils.tasks import get_time_until, est_tz
 from cococap.utils.messages import Cembed
 from cococap.utils.items.items import item_autocomplete
-from cococap.constants import DiscordGuilds, URI
+from cococap.constants import URI
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
@@ -22,34 +22,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     def __init__(self, bot):
         self.bot = bot
 
-        # starts the loop when the cog is loaded
-        self.debugging_loop.start()
-
-    # LOOP TESTING!! THIS WILL BE USED FOR THE SHOP!
-    # TODO: Successfully transfer this into a rotating shop and also the farming modules.
-    # 1:07 pm EST
-    time = datetime.time(hour=13, minute=7, tzinfo=est_tz)
-
-    # function should run at 1:07 PM EST
-    @tasks.loop(time=time)
-    async def debugging_loop(self):
-        print("Loop ran.")
-
-    @app_commands.command()
-    async def next_loop(self, interaction: discord.Interaction):
-        next_loop = get_time_until(self.debugging_loop.next_iteration)
-        await interaction.response.send_message(
-            "The loop will run next in: " + str(next_loop).split(".")[0]
-        )
-
-    # If the cog unloads, cancel the loop
-    def cog_unload(self):
-        self.debugging_loop.cancel()
-
-    # END OF LOOP TESTING XD
-
     # Testing command
-    @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value, DiscordGuilds.TESTING_GUILD.value)
     @app_commands.command()
     async def test(self, interaction: discord.Interaction):
         client = AsyncIOMotorClient(URI)
@@ -59,48 +32,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         # Interaction has finished
         await interaction.response.send_message("Done.")
 
-    # LINKED MESSAGE TESTING
-
-    linked_messages = {}
-
-    @app_commands.command()
-    async def test_echo_message(self, interaction: discord.Interaction):
-        content = "Hello"
-        embed = discord.Embed(description="What is up!!!")
-        other_channel = discord.utils.get(interaction.guild.channels, id=894664255666802759)
-        echo_message = await other_channel.send(content=content, embed=embed)
-        await interaction.response.send_message(content=content, embed=embed)
-        original_response = await interaction.original_response()
-        DebuggingCommands.linked_messages[original_response] = [echo_message, False]
-        await asyncio.sleep(1)
-        await interaction.edit_original_response(content="Huh?!?!")
-
-    @Cog.listener()
-    async def on_message_edit(self, before, after):
-        # TODO I have no idea what this function is doing. Figure it out later
-        if (
-            before in DebuggingCommands.linked_messages.keys()
-            and not DebuggingCommands.linked_messages[before][1]
-        ):
-            await DebuggingCommands.linked_messages[before][0].edit(content=after.content)
-            DebuggingCommands.linked_messages[before][1] = True
-            return
-        inverted_map = {v: k for k, v in DebuggingCommands.linked_messages.items()}
-        if before in inverted_map.keys() and not inverted_map[before][1]:
-            await inverted_map[before][0].edit(content=after.content)
-            inverted_map[before][1] = True
-            return
-
-    # END LINKED MESSAGE TESTING
-
-    admin_commands = discord.app_commands.Group(
-        name="admin",
-        description="Admin only commands.",
-        guild_ids=[
-            DiscordGuilds.PRIMARY_GUILD.value,
-            DiscordGuilds.TESTING_GUILD.value,
-        ]
-    )
+    admin_commands = discord.app_commands.Group(name="admin", description="Admin only commands.")
 
     @admin_commands.command(name="pay")
     async def admin_pay(self, interaction: discord.Interaction, user: discord.User, amount: int):
@@ -198,21 +130,35 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         message = await ctx.send(embed=time_to_switch, view=ThanksButtons())
 
     # Sends the path of the bot. Mainly to check for more than one instance, not sure if this works yet
-    @commands.is_owner()
     @commands.command(name="Ping")
     async def ping(self, ctx):
-        sync = await self.bot.tree.sync(guild=discord.Object(id=DiscordGuilds.PRIMARY_GUILD.value))
-        if sync:
-            synced = True
-        else:
-            synced = False
         embed = discord.Embed(
             title="Ping requested.",
-            description=f"**Pong!** {round(self.bot.latency * 1000)}ms\
-            \nSynced? {synced}",
+            description=f"**Pong!** {round(self.bot.latency * 1000)}ms",
             color=discord.Color.purple(),
         )
         embed.set_footer(text=f"Ran from {os.path.abspath(__file__)}")
+        await ctx.send(embed=embed)
+
+    @commands.command(name="check")
+    async def check(self, ctx):
+        member = ctx.guild.get_member(ctx.user.id)
+        if member.is_on_mobile():
+            await ctx.send("I'm a mobile user!")
+            return
+        await ctx.send("I'm not a mobile user...")
+
+    # Syncs the bot's commands to the app. Since an id is passed, it will sync locally meaning there is nothing to worry about.
+    # TODO: When you are ready to move the bot to global, remove the guild kwarg from the sync function call!
+    @commands.is_owner()
+    @commands.command(name="Sync")
+    async def sync(self, ctx):
+        sync = await self.bot.tree.sync(guild=discord.Object(id=856915776345866240))
+        embed = discord.Embed(
+            title="Syncing...",
+            description=f"Job: {'SUCCESS' if sync else 'FAILED'}",
+            color=discord.Color.green() if sync else discord.Color.red(),
+        )
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -222,7 +168,6 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
 
     # A command for sending embeds
     @app_commands.command(name="embed", description="Create an embed.")
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     async def embed(self, interaction: discord.Interaction):
         class EmbedModal(discord.ui.Modal, title="Embed Creation"):
             embed_title = discord.ui.TextInput(label="Title")
@@ -239,15 +184,6 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
                 await interaction.response.send_message(embed=embed)
 
         await interaction.response.send_modal(EmbedModal())
-
-    @app_commands.command(name="check", description="Check to see if you're on mobile or desktop!")
-    @app_commands.guilds(856915776345866240, 977351545966432306)
-    async def check(self, interaction: discord.Interaction):
-        member = interaction.guild.get_member(interaction.user.id)
-        if member.is_on_mobile():
-            await interaction.response.send_message("I'm a mobile user!")
-            return
-        await interaction.response.send_message("I'm not a mobile user...")
 
     # A command for sending embeds with images in them
     @commands.is_owner()
