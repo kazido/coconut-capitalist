@@ -13,7 +13,7 @@ from logging import getLogger
 from cococap.user import User
 from cococap import instance, args
 from cococap.utils.utils import seconds_until_tasks
-from cococap.constants import DiscordGuilds, GamblingChannels, URI
+from cococap.constants import GamblingChannels, URI
 from bson import ObjectId
 
 log = getLogger(__name__)
