@@ -1,12 +1,8 @@
 import discord
 
-from cococap.constants import DiscordGuilds
 from cococap.bot import Bot
 from cococap.user import User
-
 from discord.ext import commands
-from discord import utils
-
 
 
 # King of the Hill related IDs
@@ -19,33 +15,26 @@ class KingOfTheHill(commands.Cog, name="King of the Hill"):
 
     def __init__(self, bot):
         self.bot = bot
-    
+
+    @staticmethod
+    async def update_king(message: discord.Message):
+        koth_role = message.guild.get_role(KOTH_ROLE_ID)
+
+        # Retrieve the guild so we can check everyone's roles
+        guild = message.guild
+        for member in guild.members:
+            if member == message.author:
+                await member.add_roles(koth_role)
+            elif koth_role in member.roles:
+                await member.remove_roles(koth_role)
+            
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if not message.guild:
-            return await self.bot.process_commands(message)
-
-        async def update_king():
-            koth_role = utils.get(message.guild.roles, id=KOTH_ROLE_ID)
-            # Retrieve the guild so we can check everyone's roles
-            guild = self.bot.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
-            for member in guild.members:
-                member: discord.Member
-                if member == message.author:
-                    return await member.add_roles(koth_role)
-                if koth_role in member.roles:
-                    await member.remove_roles(koth_role)
-                    # TODO: Make the user get bits based on how long they've been the king!
-                    # user = User(member.id)
-                    # await user.load()
-                    # user.inc_purse(amount=message.created_at - message.channel.last_message)
-                    
-
+        await self.bot.process_commands(message)
         if message.channel.id == KOTH_CHANNEL_ID:
-            await update_king()
-            return
-        
-        
+            await self.update_king(message)
+
+
 async def setup(bot: Bot):
     await bot.add_cog(KingOfTheHill(bot))
