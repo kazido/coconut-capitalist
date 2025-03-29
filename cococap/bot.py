@@ -1,3 +1,5 @@
+import discord
+
 from pydis_core import BotBase
 from logging import getLogger
 
@@ -13,6 +15,8 @@ from beanie import init_beanie
 log = getLogger('bot')
 
 
+MY_GUILD = discord.Object(id=856915776345866240)
+
 class StartupError(Exception):
     """Exception class for startup errors."""
 
@@ -25,6 +29,10 @@ class Bot(BotBase):
     async def setup_hook(self) -> None:
         await super().setup_hook()
         
+        # Copy the global commands over to my guild TODO: This will need to be changed when global
+        self.tree.copy_global_to(guild=MY_GUILD)
+        await self.tree.sync(guild=MY_GUILD)
+        
         # Logging setup
         logs.setup()
         
@@ -32,7 +40,5 @@ class Bot(BotBase):
         client = AsyncIOMotorClient(URI)
         await init_beanie(database=client.discordbot, document_models=[UserDocument, PartyDocument])
         
+        # Load our own extensions using function from discord.py's own bot
         await self.load_extensions(exts)
-        
-        fmt = "%m-%d-%Y %H:%M:%S"
-        print(f"Ran at: {datetime.strftime(datetime.now(), fmt)}")

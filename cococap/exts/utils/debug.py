@@ -148,12 +148,11 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
             return
         await ctx.send("I'm not a mobile user...")
 
-    # Syncs the bot's commands to the app. Since an id is passed, it will sync locally meaning there is nothing to worry about.
-    # TODO: When you are ready to move the bot to global, remove the guild kwarg from the sync function call!
+    # Syncs the bot's commands to the app globally. New commands won't appear for an hour. Use sparingly to not get rate limited.
     @commands.is_owner()
     @commands.command(name="Sync")
     async def sync(self, ctx):
-        sync = await self.bot.tree.sync(guild=discord.Object(id=856915776345866240))
+        sync = await self.bot.tree.sync()
         embed = discord.Embed(
             title="Syncing...",
             description=f"Job: {'SUCCESS' if sync else 'FAILED'}",
