@@ -11,7 +11,6 @@ class TicTacToeCog(commands.Cog, name='Tic Tac Toe'):
         self.bot = bot
         self.tree = self.bot.tree
 
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="tictactoe", description="Challenge someone in tictactoe")
     async def tic(self, interaction: discord.Interaction, user: discord.User):
         """Starts a tic-tac-toe game with yourself."""

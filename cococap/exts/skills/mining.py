@@ -13,7 +13,7 @@ from cococap.utils.messages import Cembed, button_check
 from cococap.utils.items.items import get_items_from_db, roll_item
 from cococap.utils.utils import timestamp_to_english
 from cococap.user import User
-from cococap.constants import DiscordGuilds, IMAGES_REPO, Categories
+from cococap.constants import IMAGES_REPO, Categories
 
 log = getLogger(__name__)
 log.setLevel(10)
@@ -595,7 +595,6 @@ class MiningCog(commands.Cog, name="Mining"):
             return await interaction.response.edit_message(embed=self.embed, view=None)
 
     @app_commands.command(name="mine")
-    @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value)
     async def mine(self, interaction: Interaction):
         """Displays your mining profile and all available actions."""
         # Load the user

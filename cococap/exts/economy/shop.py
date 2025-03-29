@@ -28,7 +28,6 @@ class ShopCog(commands.Cog, name='Shop'):
         pass
 
     
-    @app_commands.guilds(977351545966432306, 856915776345866240)
     @app_commands.command(name="shop", description="Buy helpful items!")
     async def shop(self, interaction: discord.Interaction):
         shop_view = ItemPage('corrupted_seed')

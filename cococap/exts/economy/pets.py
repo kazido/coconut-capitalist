@@ -55,7 +55,6 @@ class PetsCog(commands.Cog, name="Pets"):
 #         view.children[1].style = page.button_style
 #         view.children[1].emoji = page.button_emoji
 
-#     @app_commands.guilds(856915776345866240, 977351545966432306)
 #     @app_commands.command(name="petshop", description="Purchase a pet for various bonuses!")
 #     async def purchase_pet(self, interaction: discord.Interaction):
 #         # Load the user

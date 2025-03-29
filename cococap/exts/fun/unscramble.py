@@ -23,7 +23,6 @@ class UnscrambleCog(commands.Cog, name='Unscramble'):
             self.words = f.readlines()
         
     
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="unscramble")
     async def unscramble(self, interaction: discord.Interaction):
         """Try to unscramble a word for some bits. The longer the word, the more bits you get!"""

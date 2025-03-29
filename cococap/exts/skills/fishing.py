@@ -13,6 +13,7 @@ from cococap.utils.messages import Cembed, button_check
 from cococap.utils.items.items import get_items_from_db, roll_item
 from cococap.utils.utils import timestamp_to_english
 from cococap.user import User
+from cococap.item_models import Master
 from cococap.constants import DiscordGuilds, IMAGES_REPO, Rarities, Categories
 
 
@@ -22,20 +23,22 @@ class FishingCog(commands.Cog, name="Fishing"):
     def __init__(self, bot):
         self.bot = bot
 
-    # gets all items from the sqlite database that have the tag 'mining'
+    # gets all items from the sqlite database that have the tag 'fishing'
     fishing_items = get_items_from_db("fishing")
 
     class Bite:
         def __init__(self, fish) -> None:
             self.caught = False
-            self.fish = fish
+            self.fish: Master = fish
             self.pattern = [
                 "<" if random.randint(0, 1) == 1 else ">" for _ in range(0, fish.rarity * 2)
             ]
-            print(self.pattern)
 
         def next_in_pattern(self):
-            return self.pattern.pop(0)
+            element = self.pattern.pop(0)
+            if len(self.pattern) == 0:
+                self.caught = True
+            return element
 
     class FishingView(discord.ui.View):
         def __init__(self, bite: "FishingCog.Bite", interaction: Interaction) -> None:
@@ -43,12 +46,21 @@ class FishingCog(commands.Cog, name="Fishing"):
             self.bite: "FishingCog.Bite" = bite
             self.embed = Cembed(
                 title="A bite!",
-                desc="Catch the fish lol...",
+                desc=f"You found a {bite.fish.display_name}...\n{bite.pattern}",
                 color=discord.Color.from_str(Rarities.from_value(bite.fish.rarity).color),
                 interaction=interaction,
                 activity="fishing",
             )
             super().__init__()
+            
+        def update_embed(self):
+            if self.bite.caught:
+                self.embed = Cembed(
+                    title="You caught the fish!"
+                )
+            # Update the description of the embed to show the pattern
+            self.embed.description = f"Keep going, catch the {self.bite.fish.display_name}!\n{self.bite.pattern}"
+            return self.embed
 
         @discord.ui.button(label="<", style=discord.ButtonStyle.blurple)
         async def left(self, l_interaction: Interaction, button: discord.Button):
@@ -56,13 +68,24 @@ class FishingCog(commands.Cog, name="Fishing"):
                 return
             if self.bite.next_in_pattern() != "<":
                 self.embed.title = "Too bad..."
-                self.embed.description = "You failed the pattern..."
+                self.embed.description = "The fish darted > right, not < left..."
                 self.embed.color = discord.Color.red()
                 return await l_interaction.response.edit_message(embed=self.embed, view=None)
-            await l_interaction.response.send_message("good")
+            await l_interaction.response.edit_message(embed=self.update_embed(), view=self)
 
+        @discord.ui.button(label=">", style=discord.ButtonStyle.blurple)
+        async def right(self, r_interaction: Interaction, button: discord.Button):
+            if not await button_check(self.interaction, [r_interaction.user.id]):
+                return
+            if self.bite.next_in_pattern() != ">":
+                self.embed.title = "Too bad..."
+                self.embed.description = "The fish darted < left, not > right..."
+                self.embed.color = discord.Color.red()
+                return await r_interaction.response.edit_message(embed=self.embed, view=None)
+            await r_interaction.response.edit_message(embed=self.update_embed(), view=self)
+
+    # THE COMMAND
     @app_commands.command(name="fish")
-    @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value)
     async def fish(self, interaction: Interaction):
         """Displays your fishing profile and all available actions."""
         # Load the user

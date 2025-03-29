@@ -17,7 +17,6 @@ class InventoryCog(commands.Cog, name="Inventory"):
         self.bot = bot
 
     @app_commands.command(name="inventory", description="Check your inventory!")
-    @app_commands.guilds(977351545966432306, 856915776345866240)
     async def inventory(self, interaction: discord.Interaction, filter: "str" = None):
         # Load the user
         user = User(interaction.user.id)

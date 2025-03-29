@@ -60,7 +60,6 @@ class HighLow(commands.Cog, name="High Low"):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="highlow")
     @app_commands.describe(bet="amount of bits you want to bet | use max for all bits in purse")
     async def high_low(self, interaction: discord.Interaction, bet: str):

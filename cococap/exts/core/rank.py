@@ -14,7 +14,6 @@ class RanksCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="rank")
     async def rank(self, interaction: discord.Interaction):
         """Check your current rank and it's perks."""

@@ -18,7 +18,6 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
         self.bot = bot
         self.tree = self.bot.tree
 
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="sequence", description="Remember the pattern, win some bits!")
     @app_commands.choices(
         difficulty=[

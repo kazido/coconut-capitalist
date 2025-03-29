@@ -13,7 +13,6 @@ class WikiCog(commands.Cog, name="Wiki"):
         self.bot = bot
 
     @app_commands.command(name="wiki", description="What is this item?")
-    @app_commands.guilds(977351545966432306, 856915776345866240)
     @app_commands.describe(category="category of item")
     @app_commands.choices(
         category=[

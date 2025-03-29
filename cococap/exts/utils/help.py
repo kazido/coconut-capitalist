@@ -44,7 +44,6 @@ class Help(commands.Cog, name='Help'):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name='help')
     async def help(self, interaction: discord.Interaction, module: str = None):
         """Shows all modules of that bot"""

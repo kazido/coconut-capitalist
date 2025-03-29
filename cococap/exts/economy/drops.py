@@ -250,7 +250,6 @@ class DropsCog(commands.Cog, name="Drops"):
         await self.bot.wait_until_ready()
         await asyncio.sleep(seconds_until_tasks())
 
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="megadrop")
     async def megadrop_status(self, interaction: discord.Interaction):
         """Check the current status of the Mega Drop"""

@@ -405,7 +405,6 @@ class FarmingCog(commands.Cog, name="Farming"):
 #             await s_interaction.response.edit_message(embed=Farm().farm_module_embed, view=Farm())
 
 #     @app_commands.command(name="farm")
-#     @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value)
 #     async def farm(self, interaction: discord.Interaction):
 #         """Grow crops to feed your pets and make some money."""
 #         # Load the user
