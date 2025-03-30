@@ -114,7 +114,6 @@ class PartyDocument(Document):
     party_id: int  # Custom generated party ID
     party_owner: int  # Discord ID of the party owner
     party_members: list = []  # Discord IDs of all party members
-    channel_id: int  # Channel ID of the party channel (secret to party members)
 
     class Settings:
         name = "parties"
