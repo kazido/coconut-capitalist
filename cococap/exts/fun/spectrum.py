@@ -8,7 +8,7 @@ from discord.ext import commands
 from discord.app_commands import Choice
 
 from cococap.user import User
-from cococap.utils.messages import Cembed
+from utils.messages import Cembed
 
 
 class SpectrumCog(commands.Cog, name="Spectrum"):

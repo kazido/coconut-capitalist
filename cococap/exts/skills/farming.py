@@ -7,8 +7,8 @@ from discord.ext import commands, tasks
 # from cococap.item_models import Master, Crops
 # from cococap.models import UserCollection
 # from cococap.constants import DiscordGuilds, IMAGES_REPO
-# from cococap.utils.messages import Cembed
-# from cococap.utils.items.items import get_items_from_db
+# from utils.messages import Cembed
+# from utils.items.items import get_items_from_db
 
 
 class FarmingCog(commands.Cog, name="Farming"):

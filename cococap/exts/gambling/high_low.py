@@ -5,8 +5,8 @@ from cococap.user import User
 
 from discord.ext import commands
 from discord import app_commands
-from cococap.utils.messages import Cembed
-from cococap.utils.utils import check_bet
+from utils.messages import Cembed
+from utils.utils import check_bet
 from random import randint
 
 

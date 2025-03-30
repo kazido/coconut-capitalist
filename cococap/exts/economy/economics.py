@@ -12,7 +12,7 @@ from pymongo import DESCENDING, ASCENDING
 
 from cococap.user import User
 from cococap.item_models import Pets
-from cococap.utils.messages import Cembed
+from utils.messages import Cembed
 from cococap.models import UserDocument as Udoc
 
 from cococap.exts.economy.drops import DROP_AVERAGE

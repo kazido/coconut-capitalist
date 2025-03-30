@@ -4,7 +4,7 @@ from cococap.bot import Bot
 from cococap.user import User
 from discord.ext import commands
 
-from cococap.utils.utils import timestamp_to_english
+from utils.utils import timestamp_to_english
 
 
 # King of the Hill related IDs

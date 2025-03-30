@@ -5,8 +5,8 @@ from discord import app_commands
 
 from cococap.user import User
 from cococap.item_models import Master
-from cococap.utils.messages import Cembed
-from cococap.utils.menus import Menu, MenuHandler
+from utils.messages import Cembed
+from utils.menus import Menu, MenuHandler
 from cococap.pagination import LinePaginator
 
 

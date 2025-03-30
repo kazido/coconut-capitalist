@@ -6,7 +6,7 @@ from discord import app_commands
 from discord.ext import tasks
 
 from cococap.user import User
-from cococap.utils.shop import SubShopPage, ItemPage, ItemMenu
+from utils.shop import SubShopPage, ItemPage, ItemMenu
 from cococap.constants import PROJECT_ROOT
 
 

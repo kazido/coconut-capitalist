@@ -9,7 +9,7 @@ from discord.ext.commands import Paginator, Context
 from discord import Interaction
 
 from logging import getLogger
-from cococap.utils import messages
+from utils import messages
 
 FIRST_EMOJI = "\u23EE"  # [:track_previous:]
 LEFT_EMOJI = "\u2B05"  # [:arrow_left:]

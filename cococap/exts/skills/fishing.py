@@ -8,10 +8,10 @@ from discord import Interaction, app_commands
 from discord.ext import commands
 from logging import getLogger
 
-from cococap.utils.menus import MenuHandler, Menu
-from cococap.utils.messages import Cembed, button_check
-from cococap.utils.items.items import get_items_from_db, roll_item
-from cococap.utils.utils import timestamp_to_english
+from utils.menus import MenuHandler, Menu
+from utils.messages import Cembed, button_check
+from utils.items.items import get_items_from_db, roll_item
+from utils.utils import timestamp_to_english
 from cococap.user import User
 from cococap.item_models import Master
 from cococap.constants import IMAGES_REPO, Rarities, Categories

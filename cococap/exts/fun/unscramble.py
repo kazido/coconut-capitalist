@@ -9,7 +9,7 @@ from discord.ext import commands
 from discord import app_commands
 
 from cococap.user import User
-from cococap.utils.messages import Cembed
+from utils.messages import Cembed
 
 log = logging.getLogger(__name__)
 

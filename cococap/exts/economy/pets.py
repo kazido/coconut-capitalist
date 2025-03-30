@@ -7,8 +7,8 @@ from discord.ext import commands
 # from discord import app_commands, Interaction
 
 # from cococap.user import User
-# from cococap.utils.messages import Cembed
-# from cococap.utils.menus import Menu, MenuHandler
+# from utils.messages import Cembed
+# from utils.menus import Menu, MenuHandler
 # from cococap.item_models import Pets
 # from cococap.constants import Rarities
 

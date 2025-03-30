@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands, Interaction
 from cococap.user import User
-from cococap.utils.messages import Cembed
+from utils.messages import Cembed
 
 
 class Settings(commands.Cog):

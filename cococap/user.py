@@ -4,9 +4,9 @@ import time
 from typing import Literal
 
 from cococap.item_models import Ranks, Master, Pets
-from cococap.utils.messages import ErrorEmbed
+from utils.messages import ErrorEmbed
 from cococap.models import UserDocument
-from cococap.utils.utils import timestamp_to_digital
+from utils.utils import timestamp_to_digital
 
 from logging import getLogger
 

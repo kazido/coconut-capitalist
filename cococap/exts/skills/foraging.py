@@ -8,7 +8,7 @@ from logging import getLogger
 from discord.interactions import Interaction
 
 from cococap.user import User
-from cococap.utils.messages import Cembed
+from utils.messages import Cembed
 from cococap.item_models import Master
 
 log = getLogger(__name__)

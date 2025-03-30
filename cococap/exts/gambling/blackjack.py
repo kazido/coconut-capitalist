@@ -5,10 +5,10 @@ import sys
 import os
 
 from cococap.user import User
-from cococap.utils.messages import Cembed, button_check
+from utils.messages import Cembed, button_check
 from discord.ext import commands
 from discord import app_commands
-from cococap.utils.utils import check_bet
+from utils.utils import check_bet
 
 current = os.path.dirname(os.path.realpath(__file__))
 parent = os.path.dirname(current)
