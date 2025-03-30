@@ -1,8 +1,9 @@
-from typing import Optional
 import discord
 import random
 import pathlib
 import asyncio
+import logging
+import copy
 
 from discord.ext import commands
 from discord import app_commands
@@ -10,37 +11,37 @@ from discord import app_commands
 from cococap.user import User
 from cococap.utils.messages import Cembed
 
+log = logging.getLogger(__name__)
 
-class UnscrambleCog(commands.Cog, name='Unscramble'):
+
+class UnscrambleCog(commands.Cog, name="Unscramble"):
     """Unscramble a scrambled word for some bits."""
 
     def __init__(self, bot):
         self.bot = bot
         self.tree = self.bot.tree
-        
-        project_files = pathlib.Path.cwd() / 'cococap' / 'resources'
-        with open(project_files / 'unscramble_words.txt', 'r') as f:
+
+        project_files = pathlib.Path.cwd() / "cococap" / "resources"
+        with open(project_files / "unscramble_words.txt", "r") as f:
             self.words = f.readlines()
-        
-    
+
     @app_commands.command(name="unscramble")
     async def unscramble(self, interaction: discord.Interaction):
         """Try to unscramble a word for some bits. The longer the word, the more bits you get!"""
         user = User(interaction.user.id)
         await user.load()
 
-        def get_word():  # Function to pick a word from the word list
+        stats = user.dcmt.gambling_statistics
+
+        # Picks a random word from the file resources.unscramble_words.txt
+        def get_word():
             random_word = random.choice(self.words)
-            for (
-                letter
-            ) in (
-                random_word
-            ):  # If any letter in the word is uppercase, rerun the function
+            # If any letter in the word is uppercase, rerun the function.
+            for letter in random_word:
                 if letter.isupper():
                     return get_word()
-            while (
-                len(random_word) < 4
-            ):  # If the word is shorter than 4 letters, rerun the function
+            # If the word is shorter than 4 letters, rerun the function
+            while len(random_word) < 4:
                 return get_word()
             random_word = list(random_word)
             random_word.remove("\n")
@@ -57,14 +58,16 @@ class UnscrambleCog(commands.Cog, name='Unscramble'):
             title="Unscramble!",
             desc=f"You will have {time_limit.__round__()} seconds to unscramble the following word!",
             color=0xA0A39D,
-            interaction=interaction, activity="unscrambling"
+            interaction=interaction,
+            activity="unscrambling",
         )
         shuffled_word_embed = Cembed(
             title="Unscramble!",
             desc=f"You will have {time_limit.__round__()} seconds to unscramble the following word!\n"
             f"***{scrambled_word}***",
             color=0xA0A39D,
-            interaction=interaction, activity="unscrambling"
+            interaction=interaction,
+            activity="unscrambling",
         )
         await interaction.response.send_message(embed=unscramble_prompt_embed)
         await asyncio.sleep(2)
@@ -78,34 +81,57 @@ class UnscrambleCog(commands.Cog, name='Unscramble'):
             )
 
         try:  # Waits for a guess at the correct word
-            guess = await self.bot.wait_for(
-                "message", timeout=time_limit.__round__(), check=check
-            )
+            guess = await self.bot.wait_for("message", timeout=time_limit.__round__(), check=check)
             embed = None
-            if guess.content.lower() == word:  # If they type in the correct word
+            if guess.content.lower() == word:
+                # The user guessed the word correctly.
+                log.debug(f"User guessed {word} correctly.")
+
                 correct_word_embed = Cembed(
                     title="Unscramble!",
                     desc=f"Correct!\n" f"***{scrambled_word}*** - {word}",
                     color=0xA0F09C,
-                    interaction=interaction, activity="unscrambling"
+                    interaction=interaction,
+                    activity="unscrambling",
                 )
-                correct_word_embed.add_field(
-                    name="Reward", value=f"**{reward:,}** bits"
-                )
+
+                stats["current_unscramble_streak"] += 1
+
+                if stats["current_unscramble_streak"] > stats["longest_unscramble_streak"]:
+                    stats["longest_unscramble_streak"] = stats["current_unscramble_streak"]
+                    correct_word_embed.set_footer(
+                        text=f"New streak record of {stats['current_unscramble_streak']}! Keep going!"
+                    )
+                else:
+                    correct_word_embed.set_footer(
+                        text=f"Current streak: {stats['current_unscramble_streak']}"
+                    )
+                reward = reward * (2 * stats["current_unscramble_streak"])
+                correct_word_embed.add_field(name="Reward", value=f"**{reward:,}** bits")
+
                 embed = correct_word_embed
                 await user.inc_purse(reward)
-        
+
         except asyncio.TimeoutError:
+            # The user took too long to guess and loses.
+            log.debug(f"User took too long to guess {word}.")
+
             too_slow_embed = Cembed(
                 title="Unscramble!",
                 desc=f"Too slow!\n" f"***{scrambled_word}*** - {word}",
                 color=0xA8332F,
-                interaction=interaction, activity="unscrambling"
+                interaction=interaction,
+                activity="unscrambling",
             )
-            too_slow_embed.set_footer(text=f"User: {interaction.user.name}")
+            if stats["current_unscramble_streak"] > 0:
+                too_slow_embed.set_footer(
+                    text=f"You lost your streak of {stats['current_unscramble_streak']}."
+                )
             embed = too_slow_embed
-            view = None
-        embed.set_footer(text="Streaks give more bits!")
+
+            stats["current_unscramble_streak"] = 0
+            await user.save()
+
         await interaction.edit_original_response(embed=embed)
 
 
