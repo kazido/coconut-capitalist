@@ -1,31 +1,31 @@
 import os
-import json
+import configparser
 
-from enum import Enum
 from dotenv import load_dotenv
+from enum import Enum
 
+# Load our environment variables for bot token etc.
 load_dotenv()
-
 
 # Paths
 BOT_DIR = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.abspath(os.path.join(BOT_DIR, os.pardir))
 
-# Opening config file
-config_path = os.path.join(PROJECT_ROOT, "config.json")
-with open(config_path, "r") as f:
-    data = json.load(f)
-
-
 # Grab the bot token from the .env file using the load_dotenv function from the dotenv package
 TOKEN = os.getenv("BOT_TOKEN")
+
 # Same deal, grab the URI for the MongoDB database
 URI = os.getenv("URI")
+
+# TODO: Get rid of this baby
 DATABASE = "itemdatabase.db"
 
-DEBUG_MODE = bool(data["DEBUG_MODE"])
-FILE_LOGGING = bool(data["FILE_LOGGING"])
-DEV_MODE = bool(data["DEV_MODE"])
+# Config stuff
+config = configparser.ConfigParser()
+config.read("config.ini")
+DEBUG_MODE = config["config"].getboolean("debug mode")
+FILE_LOGGING = config["config"].getboolean("file logging")
+DEV_MODE = config["config"].getboolean("dev mode")
 
 BOT_ID = 956000805578768425 if DEV_MODE else 1016054559581413457
 BOT_PREFIX = "-" if DEV_MODE else "."
