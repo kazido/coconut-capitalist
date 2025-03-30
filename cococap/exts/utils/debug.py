@@ -184,30 +184,6 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
 
         await interaction.response.send_modal(EmbedModal())
 
-    # A command for sending embeds with images in them
-    @commands.is_owner()
-    @commands.command()
-    async def embedimage(self, ctx):
-        # Ask for title of embed and image of embed. Set those to the contents of the embed
-        question1 = await ctx.send("What would you like the title of the embed to be.")
-        title = await self.bot.wait_for(event="message")
-        question2 = await ctx.send("Please send the attachment for the image.")
-        file = await self.bot.wait_for("message")
-        if file.attachments is None:
-            # If there is no image attached, tell them to attach an image.
-            await ctx.reply("Please rerun the command and an image.")
-            return
-        else:
-            # Create the embed, set the image to be the url of the first image in attachments.
-            embed = discord.Embed(title=title.content, color=discord.Color.green())
-            embed.set_image(url=file.attachments[0].url)
-            # delete all of the previously asked questions and commands.
-            await question1.delete()
-            await question2.delete()
-            await title.delete()
-            await file.delete()
-            await ctx.send(embed=embed)
-
 
 async def setup(bot):
     await bot.add_cog(DebuggingCommands(bot))
