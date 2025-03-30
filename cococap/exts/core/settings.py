@@ -34,7 +34,7 @@ class Settings(commands.Cog):
             },
         }
 
-        settings: dict = user.get_field("settings")
+        settings: dict = user.dcmt.settings
         keys = list(settings.keys())
 
         class SettingsView(discord.ui.View):

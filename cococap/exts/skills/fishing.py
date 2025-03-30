@@ -14,7 +14,7 @@ from cococap.utils.items.items import get_items_from_db, roll_item
 from cococap.utils.utils import timestamp_to_english
 from cococap.user import User
 from cococap.item_models import Master
-from cococap.constants import DiscordGuilds, IMAGES_REPO, Rarities, Categories
+from cococap.constants import IMAGES_REPO, Rarities, Categories
 
 
 class FishingCog(commands.Cog, name="Fishing"):
@@ -52,14 +52,14 @@ class FishingCog(commands.Cog, name="Fishing"):
                 activity="fishing",
             )
             super().__init__()
-            
+
         def update_embed(self):
             if self.bite.caught:
-                self.embed = Cembed(
-                    title="You caught the fish!"
-                )
+                self.embed = Cembed(title="You caught the fish!")
             # Update the description of the embed to show the pattern
-            self.embed.description = f"Keep going, catch the {self.bite.fish.display_name}!\n{self.bite.pattern}"
+            self.embed.description = (
+                f"Keep going, catch the {self.bite.fish.display_name}!\n{self.bite.pattern}"
+            )
             return self.embed
 
         @discord.ui.button(label="<", style=discord.ButtonStyle.blurple)

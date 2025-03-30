@@ -20,7 +20,7 @@ DELETE_EMOJI = "🗑"  # [:wastebasket:]
 PAGINATION_EMOJI = (FIRST_EMOJI, LEFT_EMOJI, RIGHT_EMOJI, LAST_EMOJI, DELETE_EMOJI)
 
 log = getLogger(__name__)
-log.setLevel(10)
+
 
 
 class EmptyPaginatorEmbedError(Exception):

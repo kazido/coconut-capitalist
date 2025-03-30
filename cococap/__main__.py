@@ -11,7 +11,7 @@ from cococap.bot import Bot
 from logging import getLogger
 
 log = getLogger(__name__)
-log.setLevel(10)
+
 
 
 async def main():

@@ -20,7 +20,7 @@ db_path = os.path.realpath(os.path.join("database", DATABASE))
 db = SqliteDatabase(db_path)
 
 log = getLogger(__name__)
-log.setLevel(10)
+
 
 
 class BaseModel(Model):

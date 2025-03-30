@@ -7,13 +7,12 @@ from random import randint
 from logging import getLogger
 from discord.interactions import Interaction
 
-from cococap.constants import RED_X_URL, DiscordGuilds
 from cococap.user import User
 from cococap.utils.messages import Cembed
 from cococap.item_models import Master
 
 log = getLogger(__name__)
-log.setLevel(10)
+
 
 
 class Tree:
@@ -172,11 +171,9 @@ class ForagingCog(commands.Cog, name="Foraging"):
         self.bot = bot
 
     # Foraging command group
-    primary_guild = DiscordGuilds.PRIMARY_GUILD.value
     foraging = app_commands.Group(
         name="foraging",
         description="Commands related to the foraging skill.",
-        guild_ids=[primary_guild],
     )
 
     @foraging.command(name="foraging")
@@ -203,7 +200,7 @@ class ForagingCog(commands.Cog, name="Foraging"):
             embed = discord.Embed(
                 description="You need an axe to chop trees!", color=discord.Color.red()
             )
-            embed.set_author(name="Slow down, lumberjack.", icon_url=RED_X_URL)
+            embed.set_author(name="Slow down, lumberjack.")
             embed.set_footer(text="Get items from /shop")
             await interaction.response.send_message(embed=embed)
             return

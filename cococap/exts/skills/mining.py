@@ -16,7 +16,7 @@ from cococap.user import User
 from cococap.constants import IMAGES_REPO, Categories
 
 log = getLogger(__name__)
-log.setLevel(10)
+
 
 
 class MiningCog(commands.Cog, name="Mining"):

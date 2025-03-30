@@ -19,8 +19,8 @@ class RanksCog(commands.Cog):
         """Check your current rank and it's perks."""
         # Grabs the ranks from the class library and determines which discord role the user has
         user = User(interaction.user.id)
-        user_rank = await user.get_user_rank()
         await user.load()
+        user_rank = await user.get_user_rank()
 
         # Displays the user's current rank.
         embed = Cembed(

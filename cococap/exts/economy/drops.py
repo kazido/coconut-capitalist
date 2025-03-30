@@ -1,6 +1,7 @@
 import discord
 import random
 import asyncio
+import logging
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from discord.ext import commands, tasks
@@ -8,16 +9,14 @@ from discord import TextChannel, app_commands
 from random import randint
 from datetime import datetime
 from pytz import timezone
-from logging import getLogger
 
 from cococap.user import User
 from cococap import instance, args
-from cococap.utils.utils import seconds_until_tasks
 from cococap.constants import GamblingChannels, URI
 from bson import ObjectId
 
-log = getLogger(__name__)
-log.setLevel(10)
+log = logging.getLogger(__name__)
+
 
 client = AsyncIOMotorClient(URI)  # Are we creating a second instance here? Shouldn't be probably...
 collection = client.discordbot.special_entities
@@ -72,7 +71,7 @@ class ClaimDropButtons(discord.ui.View):
         user = User(claim_interaction.user.id)
         await user.load()
 
-        user.document.drops_claimed += 1
+        user.dcmt.drops_claimed += 1
         await user.save()
 
         megadrop = await collection.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")})
@@ -81,7 +80,7 @@ class ClaimDropButtons(discord.ui.View):
             claimed_embed = discord.Embed(
                 title="🎉 THE MEGADROP HAS BEEN CLAIMED! 🎉",
                 description=f"{claim_interaction.user.name} {self.drop.description}\n"
-                f"You have claimed **{user.document.drops_claimed:,}** drops 📦",
+                f"You have claimed **{user.dcmt.drops_claimed:,}** drops 📦",
                 color=self.drop.color,
             )
             claimed_embed.add_field(
@@ -94,8 +93,9 @@ class ClaimDropButtons(discord.ui.View):
                 value=f"This megadrop had gone unclaimed **{megadrop['times_missed']}** " f"times.",
             )
 
-            guild: discord.Guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
-            last_winner: discord.Member = guild.get_member(megadrop["last_winner"])
+            last_winner: discord.Member = claim_interaction.guild.get_member(
+                megadrop["last_winner"]
+            )
             claimed_embed.add_field(
                 name="Last Winner",
                 value=f"The last winner was {last_winner.mention}",
@@ -126,7 +126,7 @@ class ClaimDropButtons(discord.ui.View):
             claimed_embed = discord.Embed(
                 title="This drop has been claimed!",
                 description=f"{claim_interaction.user.name} {self.drop.description}\n"
-                f"You have claimed **{user.document.drops_claimed:,}** drops 📦",
+                f"You have claimed **{user.dcmt.drops_claimed:,}** drops 📦",
                 color=self.drop.color,
             )
             claimed_embed.set_footer(text="Drops happen randomly and last for 30 minutes!")
@@ -207,7 +207,7 @@ class DropsCog(commands.Cog, name="Drops"):
 
     async def cog_load(self):
         if args.drops:
-            log.info("Drops arg passed, dropping drops :D")    
+            log.info("Drops arg passed, dropping drops :D")
             self.drop_task.start()
 
     async def cog_unload(self):
@@ -215,7 +215,7 @@ class DropsCog(commands.Cog, name="Drops"):
 
     @tasks.loop(minutes=randint(30, 60), reconnect=True)
     async def drop_task(self):
-        guild: discord.Guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
+        guild: discord.Guild = discord.Object(id=856915776345866240)
         channels = [
             GamblingChannels.DREAMSCAPE.value,
             GamblingChannels.HEAVEN.value,
@@ -248,7 +248,7 @@ class DropsCog(commands.Cog, name="Drops"):
     @drop_task.before_loop
     async def before_drop_tast(self):
         await self.bot.wait_until_ready()
-        await asyncio.sleep(seconds_until_tasks())
+        await asyncio.sleep(randint(1200, 2400))
 
     @app_commands.command(name="megadrop")
     async def megadrop_status(self, interaction: discord.Interaction):
@@ -265,7 +265,7 @@ class DropsCog(commands.Cog, name="Drops"):
             value=f"The megadrop has gone unclaimed **{megadrop['times_missed']}** times.",
             inline=False,
         )
-        guild: discord.Guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
+        guild: discord.Guild = discord.Object(id=856915776345866240)
         last_winner: discord.Member = guild.get_member(megadrop["last_winner"])
         status_embed.add_field(name="Last Winner", value=last_winner.mention, inline=True)
 

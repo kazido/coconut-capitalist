@@ -7,7 +7,7 @@ from logging import getLogger
 from cococap.utils.messages import button_check
 
 log = getLogger(__name__)
-log.setLevel(10)
+
 
 
 class MenuHandler:
