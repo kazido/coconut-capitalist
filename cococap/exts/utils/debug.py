@@ -1,7 +1,6 @@
 import asyncio
 import os
 import discord
-import datetime
 
 from discord import app_commands
 from discord.ext import commands
@@ -9,7 +8,8 @@ from discord.ext import commands
 from cococap.user import User
 
 from utils.messages import Cembed
-from utils.items.items import item_autocomplete
+
+# from utils.items.items import item_autocomplete
 from cococap.constants import URI
 
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -48,7 +48,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         await interaction.response.send_message(embed=paid_embed)
 
     @admin_commands.command(name="item")
-    @app_commands.autocomplete(item_id=item_autocomplete)
+    # @app_commands.autocomplete(item_id=item_autocomplete)
     @app_commands.choices(
         mode=[app_commands.Choice(name="add", value=0), app_commands.Choice(name="delete", value=1)]
     )
@@ -148,11 +148,25 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
 
     # Syncs the bot's commands to the app globally. New commands won't appear for an hour. Use sparingly to not get rate limited.
     @commands.is_owner()
-    @commands.command(name="Sync")
+    @commands.command(name="sync")
     async def sync(self, ctx):
         sync = await self.bot.tree.sync()
         embed = discord.Embed(
             title="Syncing...",
+            description=f"Job: {'SUCCESS' if sync else 'FAILED'}",
+            color=discord.Color.green() if sync else discord.Color.red(),
+        )
+        await ctx.send(embed=embed)
+
+    # Syncs the bot's commands to the app globally. New commands won't appear for an hour. Use sparingly to not get rate limited.
+    @commands.is_owner()
+    @commands.command(name="localsync")
+    async def localsync(self, ctx):
+        # Copy the global commands over to my guild TODO: This will need to be changed when global
+        self.bot.tree.copy_global_to(guild=ctx.message.guild)
+        sync = await self.bot.tree.sync(guild=ctx.message.guild)
+        embed = discord.Embed(
+            title="Syncing locally...",
             description=f"Job: {'SUCCESS' if sync else 'FAILED'}",
             color=discord.Color.green() if sync else discord.Color.red(),
         )
