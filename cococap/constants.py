@@ -17,9 +17,6 @@ TOKEN = os.getenv("BOT_TOKEN")
 # Same deal, grab the URI for the MongoDB database
 URI = os.getenv("URI")
 
-# TODO: Get rid of this baby
-DATABASE = "itemdatabase.db"
-
 # Config stuff
 config = configparser.ConfigParser()
 config.read("config.ini")
