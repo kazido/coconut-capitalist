@@ -1,5 +1,5 @@
-import asyncio
 import math
+import asyncio
 import random
 import discord
 import randfacts
@@ -17,7 +17,6 @@ from cococap.models import UserDocument as Udoc
 
 from cococap.exts.economy.drops import DROP_AVERAGE
 from cococap.constants import (
-    DiscordGuilds,
     TOO_RICH_TITLES,
     BOT_ID,
     FIRST_PLACE_ANSI_PREFIX,
@@ -33,10 +32,10 @@ class EconomyCog(commands.Cog, name="Economy"):
     """Your primary stop for making and losing bits!"""
 
     def __init__(self, bot):
+        """Standard cog initialiser"""
         self.bot = bot
         self.tree = self.bot.tree
 
-    @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value)
     @app_commands.command(name="profile", description="Check your profile, pets, etc.")
     async def bits(self, interaction: discord.Interaction):
         user = User(interaction.user.id)
@@ -63,7 +62,6 @@ class EconomyCog(commands.Cog, name="Economy"):
         embed.set_thumbnail(url=interaction.user.display_avatar)
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.guilds(DiscordGuilds.PRIMARY_GUILD.value)
     @app_commands.command(name="beg")
     async def beg(self, interaction: Interaction):
         """Beg for some money! Must have less than 10,000 bits."""
@@ -110,7 +108,6 @@ class EconomyCog(commands.Cog, name="Economy"):
         ]
 
     # Command for the richest members in the server
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="top", description="See the top 10 players in each category!")
     @app_commands.describe(category="category of leaderboard")
     @app_commands.autocomplete(category=category_autocomplete)
@@ -197,7 +194,6 @@ class EconomyCog(commands.Cog, name="Economy"):
             )
         await interaction.response.send_message(embed=embed)
 
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="check-in")
     async def check_in(self, interaction: discord.Interaction):
         """Claim your work, daily, and weekly!"""
@@ -322,7 +318,6 @@ class EconomyCog(commands.Cog, name="Economy"):
         await interaction.response.send_message(embed=menu.embed, view=menu)
         return
 
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="deposit")
     @app_commands.describe(amount="amount of bits to deposit | enter max for all")
     async def deposit(self, interaction: discord.Interaction, amount: int | None):
@@ -370,7 +365,6 @@ class EconomyCog(commands.Cog, name="Economy"):
             )
             await interaction.response.send_message(embed=embed)
 
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="withdraw", description="Withdraw bits from the bank.")
     @app_commands.describe(amount="amount of bits you want to withdraw")
     async def withdraw(self, interaction: discord.Interaction, amount: str):
@@ -469,7 +463,6 @@ class EconomyCog(commands.Cog, name="Economy"):
             await interaction.response.send_message(embed=withdraw_embed)
             return
 
-    @app_commands.guilds(856915776345866240, 977351545966432306)
     @app_commands.command(name="pay")
     @app_commands.describe(recipient="discord user you want to pay", amount="amount")
     async def pay(self, interaction: discord.Interaction, recipient: discord.Member, amount: int):
