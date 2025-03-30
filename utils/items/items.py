@@ -22,7 +22,7 @@ def skewed_roll(min_drop: int, max_drop: int):
     return roll
 
 
-def roll_item(item: Master):
+def roll_item(item):
     """Rolls item and returns the quantity"""
     # If a 1 is rolled, the item was dropped
     if random.randint(1, item.drop_rate) == 1:

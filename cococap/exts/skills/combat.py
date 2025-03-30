@@ -2,17 +2,34 @@ import discord
 import random
 import datetime
 
-from cococap import instance
 from discord import app_commands, ButtonStyle
 from discord.ui import Button, View
 from discord.ext import commands
 from discord.interactions import Interaction
 
-from ini.converters.weapon import Weapon
+from ini.converters import thing_converter, weapon_converter
 
 from logging import getLogger
 
 log = getLogger(__name__)
+
+
+# Players will be custom objects to handle turns, equipped weapons, etc.
+class Player:
+    def __init__(self):
+        pass
+    
+    
+class Enemy:
+    def __init__(self):
+        pass
+
+
+# Battles will have players and enemies
+class Battle:
+    def __init__(self):
+        pass
+
 
 
 class CombatCog(commands.Cog, name="Combat"):
@@ -21,16 +38,15 @@ class CombatCog(commands.Cog, name="Combat"):
     def __init__(self, bot):
         self.bot = bot
 
-    # Combat command group
-    combat = app_commands.Group(name="combat", description="Commands related to the combat skill.")
-
-    @combat.command(name="fight", description="Fight, fight, fight!")
-    async def fight(self, interaction: discord.Interaction):
+    @app_commands.command(name="dungeon", description="Fight, fight, fight!")
+    async def dungeon(self, interaction: discord.Interaction):
         # TESTING
-        rusted_broadsword = Weapon("swords.rustedbroadsword")
-        print(rusted_broadsword.__dict__)
+        rusted_broadsword = thing_converter.Item("swords.rustedbroadsword")
+        print(rusted_broadsword.item.items())
+        
+        hello()
 
-        view: CombatCog.GridView = CombatCog.DungeonView(CombatCog.map_2)
+        view: CombatCog.GridView = CombatCog.DungeonView(CombatCog.map_1)
         embed = view.create_embed()
         await interaction.response.send_message(embed=embed, view=view)
 
@@ -62,21 +78,41 @@ class CombatCog(commands.Cog, name="Combat"):
         [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
     ]
 
+    class Battle:
+        def __init__(self):
+            self.players
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     class Player:
         def __init__(self, action_points, movement_power=1) -> None:
             self.action_points = action_points
             self.movement_power = movement_power
-            self.pos = []
+            self.pos = [2, 2]
 
     class Dungeon:
         mapping_values = {
-            0: str(instance.get_emoji(1160332976924663879)),  # out of bounds
-            1: str(instance.get_emoji(1160322480532103288)),  # dungeon tile
-            2: str(instance.get_emoji(1160329891129065532)),  # dungeon wall
-            3: str(instance.get_emoji(1160449921992900618)),  # player icon
-            4: str(instance.get_emoji(1160449902069960805)),  # ally icon
-            5: str(instance.get_emoji(1160440231233859604)),  # enemy icon
-            6: str(instance.get_emoji(1160439007726010461)),  # boss door
+            0: ":orange_square:",  # out of bounds
+            1: ":blue_square:",  # dungeon tile
+            2: ":purple_square:",  # dungeon wall
+            3: ":apple:",  # player icon
+            4: ":lemon:",  # ally icon
+            5: ":dog:",  # enemy icon
+            6: ":red_square:",  # boss door
         }
 
         def __init__(self, level_map, spawn_point=None, vision_level: int = 5):
@@ -144,7 +180,7 @@ class CombatCog(commands.Cog, name="Combat"):
         def create_embed(self):
             embed = discord.Embed(
                 title="Dungeon Title Sample",
-                description=self.dungeon.display(),
+                description=self.dungeon.display(player=CombatCog.Player(5)),
                 color=discord.Color.light_grey(),
             )
             return embed
@@ -152,6 +188,7 @@ class CombatCog(commands.Cog, name="Combat"):
     class DungeonView(GridView):
         def __init__(self, level_map):
             super().__init__(level_map)
+            self.player = CombatCog.Player(5)
             self.embed = self.create_embed()
             self.create_buttons()
 
@@ -172,7 +209,7 @@ class CombatCog(commands.Cog, name="Combat"):
                 button = discord.ui.Button(
                     emoji=emoji, style=discord.ButtonStyle.blurple, row=index // 3
                 )
-                button.callback = self.create_move_callback(row_diff, col_diff)
+                button.callback = self.create_move_callback(self.player, row_diff, col_diff)
                 self.add_item(button)
 
         def create_move_callback(self, player: "CombatCog.Player", row_diff, col_diff):
@@ -197,13 +234,13 @@ class CombatCog(commands.Cog, name="Combat"):
                     1 <= new_row < self.dungeon.row_size - 1
                     and 1 <= new_col < self.dungeon.col_size - 1
                 ):
-                    self.dungeon.player_pos = (new_row, new_col)
-                    self.action_points -= 1
+                    self.player.pos = [new_row, new_col]
+                    player.action_points -= 1
                     await interaction.response.edit_message(embed=self.create_embed())
                 else:
                     await interaction.response.send_message("Invalid move!", ephemeral=True)
 
-                if self.action_points <= 0:
+                if player.action_points <= 0:
                     for button in self.children:
                         button.disabled = True
 
