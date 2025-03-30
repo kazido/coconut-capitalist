@@ -29,10 +29,6 @@ class Bot(BotBase):
     async def setup_hook(self) -> None:
         await super().setup_hook()
         
-        # Copy the global commands over to my guild TODO: This will need to be changed when global
-        self.tree.copy_global_to(guild=MY_GUILD)
-        await self.tree.sync(guild=MY_GUILD)
-        
         # Logging setup
         logs.setup()
         
