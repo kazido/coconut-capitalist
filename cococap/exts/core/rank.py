@@ -4,7 +4,6 @@ from discord.ext import commands
 from discord import app_commands
 
 from cococap.user import User
-from cococap.item_models import Ranks
 from utils.messages import Cembed, button_check
 
 

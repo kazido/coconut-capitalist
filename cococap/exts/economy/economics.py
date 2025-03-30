@@ -8,14 +8,12 @@ from typing import List
 from random import randint
 from discord import app_commands, Interaction
 from discord.ext import commands
-from pymongo import DESCENDING, ASCENDING
+from pymongo import DESCENDING
 
 from cococap.user import User
-from cococap.item_models import Pets
 from utils.messages import Cembed
 from cococap.models import UserDocument as Udoc
 
-from cococap.exts.economy.drops import DROP_AVERAGE
 from cococap.constants import (
     TOO_RICH_TITLES,
     BOT_ID,

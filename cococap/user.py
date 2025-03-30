@@ -3,7 +3,6 @@ import time
 
 from typing import Literal
 
-from cococap.item_models import Ranks, Master, Pets
 from utils.messages import ErrorEmbed
 from cococap.models import UserDocument
 from utils.utils import timestamp_to_digital
@@ -48,7 +47,7 @@ class User:
         """Save the user document after any changes"""
         await self.dcmt.save()
 
-    async def get_user_rank(self) -> Ranks:
+    async def get_user_rank(self):
         """Retrieve the corresponding rank of a user from the database"""
         return self.dcmt.rank
 

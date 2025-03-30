@@ -5,7 +5,6 @@ from .field_formats import field_formats
 from typing import List
 
 from cococap.constants import Rarities
-from cococap.item_models import Master
 
 from discord.app_commands import Choice
 
