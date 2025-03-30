@@ -27,9 +27,10 @@ class Weapon:
     # Need to pass in a weapon id so we can build it from the weapon.ini file
     def __init__(self, weapon_id: str):
         split = weapon_id.split(".", 1)
+        print(split)
         file = split[0]
         config.read(f"ini.{file}")
-        print(config)
+        print(config.sections())
         weapon = config[split[1]]
         # Basic Stats
         self.data = weapon
