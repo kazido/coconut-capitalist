@@ -21,7 +21,7 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
         self.bot = bot
         self.tree = self.bot.tree
 
-        project_files = pathlib.Path.cwd() / "cococap" / "resources"
+        project_files = pathlib.Path.cwd() / "resources"
         with open(project_files / "unscramble_words.txt", "r") as f:
             self.words = f.readlines()
 
