@@ -4,10 +4,9 @@ import discord
 from discord import Interaction, ButtonStyle
 from logging import getLogger
 
-from cococap.utils.messages import button_check
+from utils.messages import button_check
 
 log = getLogger(__name__)
-
 
 
 class MenuHandler:
