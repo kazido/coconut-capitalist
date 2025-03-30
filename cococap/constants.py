@@ -120,8 +120,6 @@ RESET_POSTFIX = "\u001b[0m"
 
 
 IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images/main"
-GREEN_CHECK_MARK_URL = f"{IMAGES_REPO}/icons/checkmarks/green-checkmark-dist.png"
-RED_X_URL = f"{IMAGES_REPO}/icons/checkmarks/red-x.png"
 
 
 # Default role combinations
