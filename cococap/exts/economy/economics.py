@@ -52,10 +52,10 @@ class EconomyCog(commands.Cog, name="Economy"):
 
         embed.add_field(
             name="Balances",
-            value=f":money_with_wings: **BITS**: {user.get_field('purse'):,}\n"
-            f":bank: **BANK**: {user.get_field('bank'):,}\n"
-            f":four_leaf_clover: **LUCKBUCKS**: {user.get_field('luckbucks'):,}\n"
-            f":coin: **TOKENS**: {user.get_field('tokens'):,}",
+            value=f":money_with_wings: **BITS**: {user.dcmt.purse:,}\n"
+            f":bank: **BANK**: {user.dcmt.bank:,}\n"
+            f":four_leaf_clover: **LUCKBUCKS**: {user.dcmt.luckbucks:,}\n"
+            f":coin: **TOKENS**: {user.dcmt.tokens:,}",
         )
         embed.set_thumbnail(url=interaction.user.display_avatar)
         await interaction.response.send_message(embed=embed)
