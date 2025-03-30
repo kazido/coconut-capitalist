@@ -1,15 +1,12 @@
-import discord
+import discord as d
 import random
 import asyncio
 
 from discord.ext import commands
-from discord import app_commands
+from discord import app_commands as ac
 from cococap.utils.messages import Cembed
 from cococap.user import User
-from cococap.models import UserDocument, PartyDocument
-from cococap import instance
-from cococap.constants import PartyRoles, DiscordGuilds
-from cococap.constants import GREEN_CHECK_MARK_URL, RED_X_URL
+from cococap.models import PartyDocument
 from logging import getLogger
 
 
@@ -24,18 +21,13 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
 
     def __init__(self, bot):
         self.bot = bot
-        self.guild = instance.get_guild(DiscordGuilds.PRIMARY_GUILD.value)
-        self.role_prefix = "PRTY"
-        self.leader_role = discord.utils.get(self.guild.roles, id=PartyRoles.PARTY_LEADER.value)
 
-        self.invite_command = app_commands.ContextMenu(
-            name="invite to party",
-            callback=self.invite,
-        )
-        self.kick_command = app_commands.ContextMenu(name="kick from party", callback=self.kick)
-        self.promote_command = app_commands.ContextMenu(
-            name="promote to leader", callback=self.promote
-        )
+        # These are context menu commands which can be used when right clicking a user in discord
+        self.invite_command = ac.ContextMenu(name="invite to party", callback=self.invite)
+        self.kick_command = ac.ContextMenu(name="kick from party", callback=self.kick)
+        self.promote_command = ac.ContextMenu(name="promote to leader", callback=self.promote)
+
+    async def cog_load(self) -> None:
         self.bot.tree.add_command(self.invite_command)
         self.bot.tree.add_command(self.kick_command)
         self.bot.tree.add_command(self.promote_command)
@@ -46,15 +38,11 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         self.bot.tree.remove_command(self.promote_command)
 
     # Party command group
-    party = app_commands.Group(
-        name="party",
-        description="Party up with other players.",
-        guild_ids=[DiscordGuilds.PRIMARY_GUILD.value],
-    )
+    party = ac.Group(name="party", description="Party up with other players.")
 
     # Lists the members of a player's party
     @party.command(name="list")
-    async def list(self, interaction: discord.Interaction):
+    async def list(self, interaction: d.Interaction):
         """See who is in your party."""
         # Load the user
         user = User(interaction.user.id)
@@ -63,40 +51,33 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         party_id = user.get_field("party_id")
 
         if not party_id:
-            embed = Cembed(desc="You are not currently in a party.", color=discord.Color.red())
-            embed.set_author(name="Cannot list party", icon_url=RED_X_URL)
+            embed = Cembed(desc="You are not currently in a party.", color=d.Color.red())
+            embed.set_author(name="Cannot list party")
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
-        party: PartyDocument = await PartyDocument.find_one(
-            PartyDocument.party_id == party_id
-        )
+        party: PartyDocument = await PartyDocument.find_one(PartyDocument.party_id == party_id)
         party_member_ids = party.party_members
 
-        # Get the party channel
-        party_channel = discord.utils.get(interaction.guild.channels, id=party.channel_id)
-
-        embed = discord.Embed(
+        embed = d.Embed(
             title=":busts_in_silhouette: Party Members",
             description="**Members**",
-            color=discord.Color.from_rgb(84, 178, 209),
+            color=d.Color.from_rgb(84, 178, 209),
         )
-        embed.add_field(name="Channel", value=party_channel.mention, inline=False)
-        embed.set_footer(text="Your very own party, complete with a channel!")
+        embed.set_footer(text="Your very own party!")
 
         for member_id in party_member_ids:
-            discord_member = discord.utils.get(interaction.guild.members, id=member_id)
-            if self.leader_role in discord_member.roles:
+            discord_member = d.utils.get(interaction.guild.members, id=member_id)
+            if party.party_owner == discord_member.id:
                 embed.description += f"\n:trident: • {discord_member.mention}"
             else:
                 embed.description += f"\n:bust_in_silhouette: • {discord_member.mention}"
         await interaction.response.send_message(embed=embed)
 
-    # Creates a unique party ID and adds user. Also creates a private party channel.
+    # Creates a unique party ID and adds user
     @party.command(name="create")
-    async def create(self, interaction: discord.Interaction):
+    async def create(self, interaction: d.Interaction):
         """Creates a private party, complete with a private party channel."""
-        # Party leadership should be done through discord roles only.
         # Load the user
         user = User(interaction.user.id)
         await user.load()
@@ -104,10 +85,8 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         party_id = user.get_field("party_id")
 
         if party_id:
-            embed = discord.Embed(
-                description="You are already in a party!", color=discord.Color.red()
-            )
-            embed.set_author(name="Cannot create a party", icon_url=RED_X_URL)
+            embed = d.Embed(description="You are already in a party!", color=d.Color.red())
+            embed.set_author(name="Cannot create a party")
             await interaction.response.send_message(embed=embed, ephemeral=True)
             return
 
@@ -122,31 +101,8 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
 
         party_id = await generate_party_id()
 
-        party_role = await interaction.guild.create_role(
-            name=f"{self.role_prefix} {party_id}", reason="Party created."
-        )
-        await interaction.user.add_roles(party_role)
-
-        overwrites = {
-            interaction.guild.default_role: discord.PermissionOverwrite(
-                read_messages=False, read_message_history=False
-            ),
-            party_role: discord.PermissionOverwrite(read_messages=True, read_message_history=False),
-        }
-
-        party_channels_category = discord.utils.get(
-            interaction.guild.categories, id=1130405873475387502
-        )
-        party_channel = await interaction.guild.create_text_channel(
-            name=f"💠︱{interaction.user.display_name}'s-party",
-            overwrites=overwrites,
-            category=party_channels_category,
-        )
-
         # Create the party and insert it
-        party = PartyDocument(
-            party_id=party_id, channel_id=party_channel.id, party_owner=user.uid
-        )
+        party = PartyDocument(party_id=party_id, party_owner=user.uid)
         party.party_members.append(user.uid)
         await party.insert()
 
@@ -154,56 +110,42 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         user.document.party_id = party_id
         await user.save()
 
-        # add the party leader role to the user
-        await interaction.user.add_roles(self.leader_role)
-
-        embed = discord.Embed(
-            description=f"Your party has been created! {party_channel.mention}",
-            color=discord.Color.green(),
+        embed = d.Embed(
+            description=f"Your party has been created!",
+            color=d.Color.green(),
         )
-        embed.set_author(name="Party created!", icon_url=GREEN_CHECK_MARK_URL)
+        embed.set_author(name="Party created")
         embed.set_footer(text=NEW_PARTY_FOOTER)
         await interaction.response.send_message(embed=embed)
         return
 
     # Removes user and everyone else from party and deletes party ID.
     @party.command(name="disband", description="Disbands your current party.")
-    async def disband(self, interaction: discord.Interaction):
+    async def disband(self, interaction: d.Interaction):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
         party_id = user.get_field("party_id")
 
-        error_embed = discord.Embed(color=discord.Color.red())
-        error_embed.set_author(name="Cannot disband party", icon_url=RED_X_URL)
+        error_embed = d.Embed(color=d.Color.red())
+        error_embed.set_author(name="Cannot disband party")
+
+        # Query to find all users with the same party ID
+        party: PartyDocument = await PartyDocument.find_one(PartyDocument.party_id == party_id)
+        party_members_ids = party.party_members
 
         if not party_id:
             error_embed.description = "You are not in a party."
             await interaction.response.send_message(embed=error_embed)
             return
 
-        elif not self.leader_role in interaction.user.roles:
+        elif party.party_owner != interaction.user.id:
             error_embed.description = "You are not the leader of your party!"
             await interaction.response.send_message(embed=error_embed)
             return
 
-        # Query to find all users with the same party ID
-        party: PartyDocument = await PartyDocument.find_one(
-            PartyDocument.party_id == party_id
-        )
-        party_members_ids = party.party_members
-
-        party_role = discord.utils.get(
-            interaction.guild.roles, name=f"{self.role_prefix} {party_id}"
-        )
-        party_channel = discord.utils.get(interaction.guild.channels, id=party.channel_id)
-
         # Go through every user in the party and clear their party data
         for member_id in party_members_ids:
-            # Remove the party role
-            discord_member = discord.utils.get(interaction.guild.members, id=member_id)
-            await discord_member.remove_roles(party_role)
-
             # Clear the party data in the database
             member = User(member_id)
             await member.load()
@@ -211,69 +153,50 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
             member.document.party_id = None
             await member.save()
 
-        # Remove party leader role from user who used command
-        await interaction.user.remove_roles(self.leader_role)
-
         # Delete party role and channel from discord guild
         await party.delete()
-        await party_role.delete()
-        await party_channel.delete()
 
-        success_embed = discord.Embed(color=discord.Color.green())
-        success_embed.set_author(name="Party successfully disbanded", icon_url=GREEN_CHECK_MARK_URL)
+        success_embed = d.Embed(color=d.Color.green())
+        success_embed.set_author(name="Party successfully disbanded")
         await interaction.response.send_message(embed=success_embed)
         return
 
     # Leaves party if user isn't the leader.
     @party.command(name="leave", description="Leave your current party.")
-    async def leave(self, interaction: discord.Interaction):
-        guild = interaction.guild
+    async def leave(self, interaction: d.Interaction):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
         party_id = user.get_field("party_id")
-        party: PartyDocument = await PartyDocument.find_one(
-            PartyDocument.party_id == party_id
-        )
+        party: PartyDocument = await PartyDocument.find_one(PartyDocument.party_id == party_id)
         party_member_ids = party.party_members
 
-        # Fetch proper role and channel for the party
-        party_channel = discord.utils.get(guild.channels, id=party.channel_id)
-        party_role = discord.utils.get(guild.roles, name=f"{self.role_prefix} {party_id}")
-
-        if self.leader_role in interaction.user.roles and len(party_member_ids) > 1:
-            embed = discord.Embed(
+        if party.party_owner == interaction.user.id and len(party_member_ids) > 1:
+            embed = d.Embed(
                 description="You are the leader of the party. \
                 \nPromote someone else to party leader or disband the party.",
-                color=discord.Color.red(),
+                color=d.Color.red(),
             )
-            embed.set_author(name="You cannot leave the party", icon_url=RED_X_URL)
+            embed.set_author(name="You cannot leave the party")
             await interaction.response.send_message(embed=embed)
-            log.debug(
-                f"{self.role_prefix} {party_id} - Leader cannot leave party with more than 1 member."
-            )
+            log.debug(f"{party_id} - Leader cannot leave party with more than 1 member.")
             return
-        elif self.leader_role in interaction.user.roles and len(party_member_ids) == 1:
+
+        elif party.party_owner == interaction.user.id and len(party_member_ids) == 1:
             # Remove and delete appropriate roles
-            await interaction.user.remove_roles(self.leader_role)
-            await party_role.delete()
             await interaction.response.send_message("*You left the party.*", ephemeral=True)
-            # Delete the party channel
-            await party_channel.delete()
             await party.delete()
-            log.debug(f"{self.role_prefix} {party_id} - Solo leader left.")
+            log.debug(f"{party_id} - Solo leader left.")
         else:
-            await interaction.user.remove_roles(party_role)
             party.party_members.remove(user.uid)
             await party.save()
-            left_party_embed = discord.Embed(
+            left_party_embed = d.Embed(
                 title="Party member left.",
                 description=f"{interaction.user.mention} has left the party.",
-                color=discord.Color.light_gray(),
+                color=d.Color.light_gray(),
             )
-            await party_channel.send(embed=left_party_embed)
-            await interaction.response.send_message("*You left the party.*", ephemeral=True)
-            log.debug(f"{self.role_prefix} {party_id} - {interaction.user.name} left party.")
+            await interaction.response.send_message(embed=left_party_embed)
+            log.debug(f"{party_id} - {interaction.user.name} left party.")
 
         # Clear the user's party data in the database
         user.document.party_id = None
@@ -281,22 +204,24 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         return
 
     # Invites specified user to a party, doesn't need to be registered.
-    async def invite(self, interaction: discord.Interaction, member: discord.Member):
-        guild = interaction.guild
+    async def invite(self, interaction: d.Interaction, member: d.Member):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
         party_id = user.get_field("party_id")
 
-        error_embed = discord.Embed(color=discord.Color.red())
-        error_embed.set_author(name=f"Cannot invite user to party", icon_url=RED_X_URL)
+        error_embed = d.Embed(color=d.Color.red())
+        error_embed.set_author(name=f"Cannot invite user to party")
+
+        party: PartyDocument = await PartyDocument.find_one(PartyDocument.party_id == party_id)
+        party_members_ids = party.party_members
 
         if not party_id:
             error_embed.description = "You are not in a party."
             await interaction.response.send_message(embed=error_embed)
             return
 
-        elif not self.leader_role in interaction.user.roles:
+        elif party.party_owner != interaction.user.id:
             error_embed.description = "You are not the leader of your party!"
             await interaction.response.send_message(embed=error_embed)
             return
@@ -306,11 +231,6 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
             error_embed.description = "You can't invite yourself."
             await interaction.response.send_message(embed=error_embed)
             return
-
-        party: PartyDocument = await PartyDocument.find_one(
-            PartyDocument.party_id == party_id
-        )
-        party_members_ids = party.party_members
 
         invited_user = User(member.id)
         await invited_user.load()
@@ -326,61 +246,31 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
             await interaction.response.send_message(embed=error_embed)
             return
 
-        invite_embed = discord.Embed(
+        invite_embed = d.Embed(
             title=f"Party invite!",
             description=f"{interaction.user.mention} invited you to join the party!",
-            color=discord.Color.from_rgb(84, 178, 209),
+            color=d.Color.from_rgb(84, 178, 209),
         )
 
-        party_category = discord.utils.get(guild.categories, id=1130405873475387502)
-
-        # Create a temporary role to privately invite the user to the party
-        invite_role = await guild.create_role(
-            name=f"INVT {party_id}-{member.id}", reason="Party invite."
-        )
-        await member.add_roles(invite_role)
-
-        overwrites = {
-            guild.default_role: discord.PermissionOverwrite(
-                read_messages=False, read_message_history=False
-            ),
-            invite_role: discord.PermissionOverwrite(
-                read_messages=True, read_message_history=True, send_messages=False
-            ),
-        }
-
-        # Create a temporary party channel to
-        invite_channel = await guild.create_text_channel(
-            name=f"party-invite", overwrites=overwrites, category=party_category
-        )
-
-        # Get the channel and the role that the user will recieve upon joining the party
-        party_channel = discord.utils.get(guild.channels, id=party.channel_id)
-        party_role = discord.utils.get(guild.roles, name=f"{self.role_prefix} {party_id}")
-
-        class InviteView(discord.ui.View):
-            def __init__(self, member: discord.Member, timeout: float | None = 180):
+        class InviteView(d.ui.View):
+            def __init__(self, member: d.Member, timeout: float | None = 180):
                 super().__init__(timeout=timeout)
                 self.member = member
 
-            @discord.ui.button(label="Join", style=discord.ButtonStyle.green)
-            async def join_button(
-                self, join_interaction: discord.Interaction, button: discord.ui.Button
-            ):
-                if join_interaction.user != self.member:
+            @d.ui.button(label="Join", style=d.ButtonStyle.green)
+            async def join_button(self, join_inter: d.Interaction, button: d.ui.Button):
+                if join_inter.user != self.member:
                     return
-                # Fetch the invited user from the guild
-                member = discord.utils.get(guild.members, id=join_interaction.user.id)
 
-                # Delete the invite role and allow user to see the party channel
-                try:
-                    await member.add_roles(party_role)
-                except discord.errors.NotFound:
-                    failed_invite_embed = discord.Embed(
+                party: PartyDocument = await PartyDocument.find_one(
+                    PartyDocument.party_id == party_id
+                )
+                if not party:
+                    failed_invite_embed = d.Embed(
                         description=f"The party you were attempting to join has been disbanded.",
-                        color=discord.Color.red(),
+                        color=d.Color.red(),
                     )
-                    failed_invite_embed.set_author(name="Party invited failed", icon_url=RED_X_URL)
+                    failed_invite_embed.set_author(name="Party invited failed")
                     await invite_message.edit(embed=failed_invite_embed, view=None)
                     return
 
@@ -392,52 +282,29 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
                 await party.save()
 
                 # Embed to inform the party that a new member has joined
-                success_embed = discord.Embed(
-                    title=f"New party member!",
+                success_embed = d.Embed(
+                    title=f"Welcome to the party!",
                     description=f"{member.mention} has joined the party!",
-                    color=discord.Color.from_rgb(84, 178, 209),
+                    color=d.Color.from_rgb(84, 178, 209),
                 )
-                await party_channel.send(
-                    content=f"Welcome to the party, {member.mention}!",
-                    embed=success_embed,
-                )
-                fulfilled_invite_embed = discord.Embed(
-                    title=f"Party joined!",
-                    description=f"You joined {interaction.user.mention}'s party! \
-                                Join the channel here: {party_channel.mention}",
-                    color=discord.Color.from_rgb(84, 178, 209),
-                )
-                await invite_message.edit(embed=fulfilled_invite_embed, view=None)
-                await asyncio.sleep(10)
-                await invite_channel.delete()
-                await invite_role.delete()
+                await interaction.channel.send(embed=success_embed)
                 return
 
-            @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
-            async def decline_button(
-                self, decline_interaction: discord.Interaction, button: discord.ui.Button
-            ):
+            @d.ui.button(label="Decline", style=d.ButtonStyle.red)
+            async def decline_button(self, decline_interaction: d.Interaction, button: d.ui.Button):
                 if decline_interaction.user != member:
                     return
-                # Delete the role
-                await invite_channel.delete()
-                await invite_role.delete()
                 return
 
         await interaction.response.send_message(f"Party invite sent to {member.mention}")
-        invite_message = await invite_channel.send(
+        invite_message = await interaction.channel.send(
             content=f"Hey, {member.mention}!", embed=invite_embed, view=InviteView(member=member)
         )
-        await asyncio.sleep(60)
-        try:
-            await invite_channel.delete()
-            await invite_role.delete()
-        except discord.errors.NotFound:
-            log.debug("Channel already deleted.")
+        await invite_message.delete(60)
         return
 
     # Removes specified user from the party.
-    async def kick(self, interaction: discord.Interaction, member_to_kick: discord.Member):
+    async def kick(self, interaction: d.Interaction, member_to_kick: d.Member):
         # Load the users
         user = User(interaction.user.id)
         user_to_kick = User(member_to_kick.id)
@@ -446,8 +313,8 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
 
         party_id = user.get_field("party_id")
 
-        error_embed = discord.Embed(color=discord.Color.red())
-        error_embed.set_author(name=f"Cannot kick user from the party", icon_url=RED_X_URL)
+        error_embed = d.Embed(color=d.Color.red())
+        error_embed.set_author(name=f"Cannot kick user from the party")
 
         if not party_id:
             error_embed.description = "You are not in a party."
@@ -464,13 +331,9 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
             await interaction.response.send_message(embed=error_embed)
             return
 
-        party: PartyDocument = await PartyDocument.find_one(
-            PartyDocument.party_id == party_id
-        )
+        party: PartyDocument = await PartyDocument.find_one(PartyDocument.party_id == party_id)
         party_member_ids = party.party_members
-        party_role = discord.utils.get(
-            interaction.guild.roles, name=f"{self.role_prefix} {party_id}"
-        )
+        party_role = d.utils.get(interaction.guild.roles, name=f"{self.role_prefix} {party_id}")
 
         if member_to_kick.id not in party_member_ids:
             error_embed.description = f"{member_to_kick.mention} is not in your party."
@@ -486,28 +349,26 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         party.party_members.remove(user_to_kick.uid)
         await party.save()
 
-        kicked_embed = discord.Embed(
+        kicked_embed = d.Embed(
             title="User kicked from party.",
             description=f"{member_to_kick.mention} has been kicked from the party.",
-            color=discord.Color.light_gray(),
+            color=d.Color.light_gray(),
         )
         await interaction.response.send_message(embed=kicked_embed)
         return
 
-    # Promotes a user as the party leader. Done exclusively through discord roles.
-    async def promote(self, interaction: discord.Interaction, member: discord.Member):
+    # Promotes a user as the party leader. Done exclusively through d roles.
+    async def promote(self, interaction: d.Interaction, member: d.Member):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
         party_id = user.get_field("party_id")
 
-        party: PartyDocument = await PartyDocument.find_one(
-            PartyDocument.party_id == party_id
-        )
+        party: PartyDocument = await PartyDocument.find_one(PartyDocument.party_id == party_id)
         party_member_ids = party.party_members
 
-        error_embed = discord.Embed(color=discord.Color.red())
-        error_embed.set_author(name=f"Cannot promote user", icon_url=RED_X_URL)
+        error_embed = d.Embed(color=d.Color.red())
+        error_embed.set_author(name=f"Cannot promote user")
 
         if not party_id:
             error_embed.description = "You are not in a party."
@@ -538,16 +399,16 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         await party.save()
 
         # Change the party channel's name
-        party_channel = discord.utils.get(interaction.guild.channels, id=party.channel_id)
+        party_channel = d.utils.get(interaction.guild.channels, id=party.channel_id)
         await party_channel.edit(
             name=f"💠︱{member.display_name}'s-party", reason="Party leader changed."
         )
 
-        success_embed = discord.Embed(
+        success_embed = d.Embed(
             description=f"{member.mention} has been promoted to party leader!",
-            color=discord.Color.green(),
+            color=d.Color.green(),
         )
-        success_embed.set_author(name="Promotion successful", icon_url=GREEN_CHECK_MARK_URL)
+        success_embed.set_author(name="Promotion successful")
 
         await interaction.response.send_message(embed=success_embed)
         return
