@@ -1,7 +1,7 @@
 import discord
 import asyncio
 
-from cococap.utils.items.items import construct_embed
+from utils.items.items import construct_embed
 from cococap.user import User
 
 from discord import Interaction, ButtonStyle, PartialEmoji, Embed, Color
