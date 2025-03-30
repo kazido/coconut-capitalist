@@ -2,22 +2,17 @@ import discord
 import random
 import datetime
 
-from random import randint
-
+from cococap import instance
 from discord import app_commands, ButtonStyle
 from discord.ui import Button, View
 from discord.ext import commands
 from discord.interactions import Interaction
 
-from cococap.constants import RED_X_URL, DiscordGuilds
-from cococap.user import *
-from cococap.utils.items.items import *
-from cococap import instance
+from ini.converters.weapon import Weapon
 
 from logging import getLogger
 
 log = getLogger(__name__)
-log.setLevel(10)
 
 
 class CombatCog(commands.Cog, name="Combat"):
@@ -27,15 +22,14 @@ class CombatCog(commands.Cog, name="Combat"):
         self.bot = bot
 
     # Combat command group
-    primary_guild = DiscordGuilds.PRIMARY_GUILD.value
-    combat = app_commands.Group(
-        name="combat",
-        description="Commands related to the combat skill.",
-        guild_ids=[primary_guild],
-    )
+    combat = app_commands.Group(name="combat", description="Commands related to the combat skill.")
 
     @combat.command(name="fight", description="Fight, fight, fight!")
     async def fight(self, interaction: discord.Interaction):
+        # TESTING
+        rusted_broadsword = Weapon("swords.rustedbroadsword")
+        print(rusted_broadsword.__dict__)
+
         view: CombatCog.GridView = CombatCog.DungeonView(CombatCog.map_2)
         embed = view.create_embed()
         await interaction.response.send_message(embed=embed, view=view)
