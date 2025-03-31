@@ -163,8 +163,9 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     @commands.command(name="localsync")
     async def localsync(self, ctx):
         # Copy the global commands over to my guild TODO: This will need to be changed when global
-        self.bot.tree.copy_global_to(guild=ctx.message.guild)
-        sync = await self.bot.tree.sync(guild=ctx.message.guild)
+        guild = discord.Object(id=856915776345866240)
+        self.bot.tree.copy_global_to(guild=guild)
+        sync = await self.bot.tree.sync(guild=guild)
         embed = discord.Embed(
             title="Syncing locally...",
             description=f"Job: {'SUCCESS' if sync else 'FAILED'}",
