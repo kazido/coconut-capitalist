@@ -39,16 +39,3 @@ class Weapon:
         self.ability_name = weapon["ability_name"]
         self.ability_description = weapon["ability_description"]
 
-    def attack(self):
-        # Returns strength to be used for damaging the enemy
-        # You can also add custom abilities here to make each weapon unique
-        return self.strength
-
-    def use_ability(self):
-        """Calls the ability function."""
-        return self.ability()
-
-    def _retrieve_ability(self):
-        """Retrieves the ability function from the appropriate file."""
-        abilities = importlib.import_module(f"abilities.{self.type}")
-        return getattr(abilities, self.data["ability"])

@@ -14,7 +14,7 @@ class _DynamicObject:
         return representation.strip()
 
 
-def convert(identifier):
+def fetch(identifier):
     ini_directory = "ini"
     try:
         filename, obj_id = identifier.split(".")
@@ -38,4 +38,4 @@ def convert(identifier):
 
 
 if __name__ == "__main__":
-    print(convert("swords.rustedbroadsword"))
+    print(fetch("swords.rustedbroadsword"))

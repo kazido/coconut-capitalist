@@ -67,8 +67,8 @@ class HighLow(commands.Cog, name="High Low"):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
-        
-        if user.get_field("in_game")['in_game']:
+
+        if user.get_field("in_game"):
             in_game_embed = Cembed(
                 title="You are already in game!",
                 desc="Finish your other game before you start another.\n"
@@ -81,18 +81,18 @@ class HighLow(commands.Cog, name="High Low"):
             await asyncio.sleep(5)
             await interaction.delete_original_response()
             return
-        
+
         balance = user.get_field("purse")
 
         if bet == "max":
             if user.get_field("settings")["disable_max_bet"]:
                 failed_embed = Cembed(
-                title="Max Bet Disabled",
-                desc="You have disabled betting your purse to protect yourself financially. I won't tell you how to reenable it.",
-                color=discord.Color.red(),
-                interaction=interaction,
-                activity="highlow",
-            )
+                    title="Max Bet Disabled",
+                    desc="You have disabled betting your purse to protect yourself financially. I won't tell you how to reenable it.",
+                    color=discord.Color.red(),
+                    interaction=interaction,
+                    activity="highlow",
+                )
                 await interaction.response.send_message(embed=failed_embed, ephemeral=True)
                 return
             bet = balance
@@ -128,7 +128,9 @@ class HighLow(commands.Cog, name="High Low"):
             return
 
         await user.inc_purse(-bet)  # Subtract the bet from the users purse
-        await user.update_game(in_game=True, interaction=interaction)  # Set the users ingame status to True
+        await user.update_game(
+            in_game=True, interaction=interaction
+        )  # Set the users ingame status to True
 
         class HighLowButtons(discord.ui.View):
             def __init__(self, roll, *, multiplier=0, timeout=120):
@@ -165,7 +167,9 @@ class HighLow(commands.Cog, name="High Low"):
                     await high_interaction.response.edit_message(embed=success_embed, view=None)
                     await asyncio.sleep(1)  # Add a delay so the user can tell if they won or not
 
-                    success_embed.title = f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {bet:,}"
+                    success_embed.title = (
+                        f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {bet:,}"
+                    )
                     success_embed.color = discord.Color.from_str("0x666666")
                     await high_interaction.edit_original_response(embed=success_embed, view=self)
 
@@ -175,7 +179,9 @@ class HighLow(commands.Cog, name="High Low"):
                     )
                     await high_interaction.response.edit_message(embed=losing_embed, view=None)
                     await asyncio.sleep(1)  # Add a delay so the user can tell if they won or not
-                    losing_embed.title = f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {bet:,}"
+                    losing_embed.title = (
+                        f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {bet:,}"
+                    )
                     await high_interaction.edit_original_response(embed=losing_embed)
 
             @discord.ui.button(label="Low", style=discord.ButtonStyle.blurple, emoji="⬇️")
@@ -208,7 +214,9 @@ class HighLow(commands.Cog, name="High Low"):
                     await low_interaction.response.edit_message(embed=success_embed, view=None)
                     await asyncio.sleep(1)  # Add a delay so the user can tell if they won or not
 
-                    success_embed.title = f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {bet:,}"
+                    success_embed.title = (
+                        f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {bet:,}"
+                    )
                     success_embed.color = discord.Color.from_str("0x666666")
                     await low_interaction.edit_original_response(embed=success_embed, view=self)
 
@@ -218,7 +226,9 @@ class HighLow(commands.Cog, name="High Low"):
                     )
                     await low_interaction.response.edit_message(embed=losing_embed, view=None)
                     await asyncio.sleep(1)  # Add a delay so the user can tell if they won or not
-                    losing_embed.title = f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {bet:,}"
+                    losing_embed.title = (
+                        f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {bet:,}"
+                    )
                     await low_interaction.edit_original_response(embed=losing_embed)
 
             @discord.ui.button(

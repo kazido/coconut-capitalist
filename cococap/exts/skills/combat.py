@@ -7,7 +7,7 @@ from discord.ui import Button, View
 from discord.ext import commands
 from discord.interactions import Interaction
 
-from ini.converters import thing_converter, weapon_converter
+from ini.converters.thing_converter import fetch
 
 from logging import getLogger
 

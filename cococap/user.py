@@ -219,10 +219,7 @@ class User:
 
     # GET METHODS ------------------------------------
     def get_field(self, field: str):
-        result = self.dcmt
-        if not hasattr(result, field):
-            return f"{result} does not have field {field}."
-        return result
+        return getattr(self.dcmt, field, f"{self.dcmt} does not have field {field}.")
 
     def get_active_pet(self):
         pets = self.dcmt.pets

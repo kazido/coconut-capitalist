@@ -1,8 +1,6 @@
 import discord
 import pydealer
 import asyncio
-import sys
-import os
 
 from cococap.user import User
 from utils.messages import Cembed, button_check
@@ -10,31 +8,15 @@ from discord.ext import commands
 from discord import app_commands
 from utils.utils import check_bet
 
-current = os.path.dirname(os.path.realpath(__file__))
-parent = os.path.dirname(current)
-sys.path.append(parent)
 
-
-# Function for formatting cards to give points values if they are face cards
-def format_cards(card_input):
+def format_card(card: pydealer.Card):
     """Format a card and determine its worth."""
-    suit_emoji = f":{card_input.suit.lower()}:"
-    name = (
-        card_input.value[0]
-        if card_input.value in ["King", "Queen", "Jack", "Ace"]
-        else card_input.value
-    )
-    card_worth = (
-        10
-        if card_input.value in ["King", "Queen", "Jack"]
-        else 11 if card_input.value == "Ace" else int(card_input.value)
-    )
-    formatted_card = f"{name}{suit_emoji}"
-    return formatted_card, card_worth
+    suit_emoji = f":{card.suit.lower()}:"
+    return f"{card.value[0]}{suit_emoji}"
 
 
 def create_blackjack_embed(
-    title, user_name, bet, player_hand, player_total, dealer_hand, dealer_total, color, footer=None
+    user_name, bet, player_hand, player_total, dealer_hand, dealer_total, color, footer=None
 ):
     """Create a blackjack embed with common fields."""
     embed = Cembed(
@@ -127,7 +109,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
             match game_state:
                 case "safe":
                     hit_embed = create_blackjack_embed(
-                        title="Blackjack",
                         user_name=hit_interaction.user.name,
                         bet=view.bet,
                         player_hand=view.p_hand,
@@ -142,7 +123,6 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     while view.d_hand_total < 17:
                         view.draw_card(player=False)
                     lose_embed = create_blackjack_embed(
-                        title="Blackjack",
                         user_name=hit_interaction.user.name,
                         bet=view.bet,
                         player_hand=view.p_hand,
@@ -168,8 +148,8 @@ class BlackJack(commands.Cog, name="Blackjack"):
             super().__init__(label="Fold", style=discord.ButtonStyle.blurple)
             self.interaction = interaction
 
-        async def callback(self, fold_interaction: discord.Interaction):
-            if not await button_check(self.interaction, [fold_interaction.user.id]):
+        async def callback(self, fold_intr: discord.Interaction):
+            if not await button_check(self.interaction, [fold_intr.user.id]):
                 return
             assert self.view is not None
             view: BlackJack.BlackJackGame = self.view
@@ -181,7 +161,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
             while view.d_hand_total < 17:
                 view.draw_card(player=False)
             fold_embed = discord.Embed(
-                title=f"Blackjack | User: {fold_interaction.user.name} - Bet: {view.bet:,}",
+                title=f"Blackjack | User: {fold_intr.user.name} - Bet: {view.bet:,}",
                 colour=0xFF0000,
             )
             fold_embed.add_field(
@@ -198,10 +178,10 @@ class BlackJack(commands.Cog, name="Blackjack"):
                 name="Profit", value=f"{round(-view.bet / 2):,} bits", inline=False
             )
             fold_embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
-            await fold_interaction.response.edit_message(embed=fold_embed, view=None)
+            await fold_intr.response.edit_message(embed=fold_embed, view=None)
             await asyncio.sleep(1)
 
-            await view.user.update_game(in_game=False, interaction=fold_interaction)
+            await view.user.update_game(in_game=False, interaction=fold_intr)
             bot = User(1016054559581413457)
             await bot.load()
             await bot.inc_purse(amount=round(view.bet / 2))
@@ -211,8 +191,8 @@ class BlackJack(commands.Cog, name="Blackjack"):
             super().__init__(label="Stand", style=discord.ButtonStyle.blurple)
             self.interaction = interaction
 
-        async def callback(self, stand_interaction: discord.Interaction):
-            if not await button_check(self.interaction, [stand_interaction.user.id]):
+        async def callback(self, stand_intr: discord.Interaction):
+            if not await button_check(self.interaction, [stand_intr.user.id]):
                 return
             assert self.view is not None
             view: BlackJack.BlackJackGame = self.view
@@ -220,7 +200,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
             async def compare_hands():
                 if view.player_hand_total < view.d_hand_total <= 21:
                     user_lost_embed = discord.Embed(
-                        title=f"Blackjack | User: {stand_interaction.user.name} - Bet: {view.bet:,}",
+                        title=f"Blackjack | User: {stand_intr.user.name} - Bet: {view.bet:,}",
                         colour=0xFF0000,
                     )
 
@@ -240,9 +220,9 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     user_lost_embed.add_field(
                         name="Bits", value=f"{view.user.get_field('purse'):,} bits"
                     )
-                    await stand_interaction.response.edit_message(embed=user_lost_embed, view=None)
+                    await stand_intr.response.edit_message(embed=user_lost_embed, view=None)
 
-                    await view.user.update_game(in_game=False, interaction=stand_interaction)
+                    await view.user.update_game(in_game=False, interaction=stand_intr)
                     bot = User(1016054559581413457)
                     await bot.load()
                     await bot.inc_purse(amount=view.bet)
@@ -250,7 +230,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
                 elif view.d_hand_total == view.player_hand_total:
                     await view.user.inc_purse(amount=view.bet)
                     push_embed = discord.Embed(
-                        title=f"Blackjack | User: {stand_interaction.user.name} - Bet: {view.bet:,}",
+                        title=f"Blackjack | User: {stand_intr.user.name} - Bet: {view.bet:,}",
                         colour=discord.Color.light_gray(),
                     )
                     push_embed.add_field(
@@ -267,14 +247,14 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     push_embed.add_field(
                         name="Bits", value=f"{view.user.get_field('purse'):,} bits"
                     )
-                    await stand_interaction.response.edit_message(embed=push_embed, view=None)
-                    await view.user.update_game(in_game=False, interaction=stand_interaction)
+                    await stand_intr.response.edit_message(embed=push_embed, view=None)
+                    await view.user.update_game(in_game=False, interaction=stand_intr)
 
                 else:
                     await view.user.inc_purse(amount=view.bet * 2)
 
                     dealer_lost_embed = discord.Embed(
-                        title=f"Blackjack | User: {stand_interaction.user.name} - Bet: {view.bet:,}",
+                        title=f"Blackjack | User: {stand_intr.user.name} - Bet: {view.bet:,}",
                         colour=discord.Color.green(),
                     )
                     dealer_lost_embed.add_field(
@@ -293,18 +273,16 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     dealer_lost_embed.add_field(
                         name="Bits", value=f"{view.user.get_field('purse'):,} bits"
                     )
-                    await stand_interaction.response.edit_message(
-                        embed=dealer_lost_embed, view=None
-                    )
-                    await view.user.update_game(in_game=False, interaction=stand_interaction)
+                    await stand_intr.response.edit_message(embed=dealer_lost_embed, view=None)
+                    await view.user.update_game(in_game=False, interaction=stand_intr)
 
             while view.d_hand_total < 17:
                 view.draw_card(player=False)
                 if view.d_hand_total > 21:
                     await view.user.inc_purse(amount=view.bet * 2)
-                    await view.user.update_game(in_game=False, interaction=stand_interaction)
+                    await view.user.update_game(in_game=False, interaction=stand_intr)
                     dealer_bust_embed = discord.Embed(
-                        title=f"Blackjack | User: {stand_interaction.user.name} - Bet: {view.bet:,}",
+                        title=f"Blackjack | User: {stand_intr.user.name} - Bet: {view.bet:,}",
                         colour=discord.Color.green(),
                     )
 
@@ -324,11 +302,22 @@ class BlackJack(commands.Cog, name="Blackjack"):
                     dealer_bust_embed.add_field(
                         name="Bits", value=f"{view.user.get_field('purse'):,} bits"
                     )
-                    await stand_interaction.response.edit_message(
-                        embed=dealer_bust_embed, view=None
-                    )
+                    await stand_intr.response.edit_message(embed=dealer_bust_embed, view=None)
                     return
             await compare_hands()
+
+    class Player:
+        def __init__(self):
+            self.hand = []
+            self.aces = 0
+            self.converted_aces = 0
+
+        def hand_total(self):
+            total = 0
+            for card in self.hand:
+                value = 10 if card in ["K", "Q", "J"] else 11 if card == "A" else int(card)
+                total += value
+            return total
 
     class BlackJackGame(discord.ui.View):
         def __init__(self, interaction: discord.Interaction, user: User, bet: int):
@@ -355,9 +344,9 @@ class BlackJack(commands.Cog, name="Blackjack"):
             self.d_aces_converted = 0
             self.d_hand_total = 0
 
-            self.draw_card(player=True)
-            self.draw_card(player=True)
-            self.draw_card(player=False)
+            self.p_draw_card()
+            self.p_draw_card()
+            self.d_draw_card()
 
             if self.player_hand_total > 21:  # If player hand goes over 21 and the player has aces
                 if self.p_aces > 0 and (
@@ -388,7 +377,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
         def p_draw_card(self):
             """Draw a card and add it to the player's or dealer's hand."""
             drawn_card = self.deck.deal(1)[0]
-            formatted_card, points = format_cards(drawn_card)
+            formatted_card, points = format_card(drawn_card)
 
             self.player_hand_total += points
             self.p_hand.append(formatted_card)
@@ -402,7 +391,7 @@ class BlackJack(commands.Cog, name="Blackjack"):
         def d_draw_card(self):
             """Draw a card and add it to the dealer's hand."""
             drawn_card = self.deck.deal(1)
-            formatted_card, points = format_cards(drawn_card[0])
+            formatted_card, points = format_card(drawn_card[0])
 
             self.d_hand_total += points
             self.d_hand.append(formatted_card)
