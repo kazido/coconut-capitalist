@@ -3,7 +3,7 @@ import discord
 from pydis_core import BotBase
 from logging import getLogger
 
-from cococap import exts, logs
+from cococap import exts
 from cococap.models import UserDocument, PartyDocument
 from cococap.constants import URI
 
@@ -11,6 +11,8 @@ from datetime import datetime
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
+
+from utils import logs
 
 log = getLogger('bot')
 

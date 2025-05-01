@@ -13,8 +13,8 @@ from discord.ext.commands import Bot
 
 from cococap import exts
 from cococap.constants import Emojis, MODERATION_ROLES
-from cococap.converters import Extension
-from cococap.pagination import LinePaginator
+from utils.converters import Extension
+from utils.pagination import LinePaginator
 
 
 
