@@ -63,11 +63,11 @@ def timestamp_to_english(timestamp):
     return cooldown
 
 
-async def check_bet(balance: int, bet: int):
-    """Ensures that a user is not betting invalid amounts"""
+async def validate_bet(balance: int, bet: int):
+    """Ensures that a user is not betting invalid amounts. Will return nothing if bet is valid."""
     if int(bet) <= 0:
-        return f"I sense something fishy... Quit it.", False
+        return f"I sense something fishy... Quit it."
     elif int(bet) > balance:
-        return f"Sorry, but no loans. You only have {balance:,} bits.", False
+        return f"Sorry, but no loans. You only have {balance:,} bits."
     else:
-        return "Passed", True
+        return
