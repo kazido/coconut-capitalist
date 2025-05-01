@@ -43,6 +43,9 @@ class User:
             self.dcmt = UserDocument(name=user.name, discord_id=self.uid)
             await self.dcmt.insert()
 
+    def __str__(self):
+        return self.dcmt.name
+
     async def save(self):
         """Save the user document after any changes"""
         await self.dcmt.save()
