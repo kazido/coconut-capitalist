@@ -6,7 +6,7 @@ from cococap.user import User
 from discord.ext import commands
 from discord import app_commands
 from utils.messages import Cembed
-from utils.utils import check_bet
+from utils.utils import validate_bet
 from random import randint
 
 
@@ -100,32 +100,29 @@ class HighLow(commands.Cog, name="High Low"):
             bet = int(bet)
         except ValueError:
             if type(bet) == str:
-                invalid_input = Cembed(
+                embed = Cembed(
                     title="Invalid input!",
                     desc="You can either input an integer or 'max' as your bet.",
                     color=discord.Color.red(),
                     interaction=interaction,
                     activity="high low",
                 )
-            await interaction.response.send_message(embed=invalid_input, ephemeral=True)
+            await interaction.response.send_message(embed=embed, ephemeral=True)
             await asyncio.sleep(4)
             await interaction.delete_original_response()
             return
 
-        failed_message, passed = await check_bet(balance=balance, bet=bet)
+        message = await validate_bet(balance=balance, bet=bet)
 
-        if passed is False:
-            bet_not_allowed_embed = (
-                Cembed(  # Embed for when a user bets more than they have in purse
-                    title=failed_message,
-                    desc="Try again with a valid bet.",
-                    color=discord.Color.red(),
-                    interaction=interaction,
-                    activity="high low",
-                )
+        if message:
+            embed = Cembed(  # Embed for when a user bets more than they have in purse
+                title=message,
+                desc="Try again with a valid bet.",
+                color=discord.Color.red(),
+                interaction=interaction,
+                activity="high low",
             )
-            await interaction.response.send_message(embed=bet_not_allowed_embed, ephemeral=True)
-            return
+            return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         await user.inc_purse(-bet)  # Subtract the bet from the users purse
         await user.update_game(
