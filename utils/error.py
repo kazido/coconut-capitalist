@@ -8,6 +8,7 @@ from discord.ext.commands import Cog
 from discord import app_commands
 
 from cococap.bot import Bot
+from utils.decorators import AlreadyInGame
 
 
 class ErrorHandler(Cog):
@@ -28,7 +29,16 @@ class ErrorHandler(Cog):
             await asyncio.sleep(2)
             await interaction.delete_original_response()
 
+        elif isinstance(error, AlreadyInGame):
+            error_embed = discord.Embed(title=error, color=discord.Color.red())
+            await interaction.response.send_message(embed=error_embed)
+            await asyncio.sleep(2)
+            await interaction.delete_original_response()
+
         else:  # If it's a regular error, send the normal traceback
+            error_embed = discord.Embed(title=error, color=discord.Color.dark_gray())
+            await interaction.response.send_message(embed=error_embed)
+            await interaction.delete_original_response()
             print(
                 "Ignoring exception in [SLASH] command {}:".format(
                     interaction.command.qualified_name
