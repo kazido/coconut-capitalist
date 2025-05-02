@@ -34,7 +34,7 @@ class User:
         self.uid = uid
         self.dcmt: UserDocument
 
-    async def load(self):
+    async def load(self) -> "User":
         """Method to load a user object with information from MongoDB, taking in a discord uid"""
         self.dcmt = await UserDocument.find_one(UserDocument.discord_id == self.uid)
         if self.dcmt is None:
@@ -42,6 +42,7 @@ class User:
             user = discord.Object(id=self.uid, type=discord.abc.User)
             self.dcmt = UserDocument(name=user.name, discord_id=self.uid)
             await self.dcmt.insert()
+        return self
 
     def __str__(self):
         return self.dcmt.name
@@ -53,17 +54,6 @@ class User:
     async def get_user_rank(self):
         """Retrieve the corresponding rank of a user from the database"""
         return self.dcmt.rank
-
-    def is_busy(self) -> bool:
-        """Sets the user's ingame status to True so that they cannot play multiple games at once"""
-        in_game = self.get_field("in_game")
-        if in_game["in_game"]:
-            embed = ErrorEmbed(
-                title="You are busy elsewhere!",
-                description=f"You are currently doing something else here: {in_game['channel']}!",
-            )
-            return embed
-        return False
 
     # UPDATE METHODS ------------------------------------
     async def inc_purse(self, amount: int):
@@ -111,13 +101,8 @@ class User:
         await self.save()
         return pet_data
 
-    async def update_game(self, *, in_game: bool, interaction: discord.Interaction):
-        if in_game:
-            # TODO: Fix this so that the channel gets stored in the database
-            self.dcmt.in_game["channel"] = interaction.channel.mention
-        else:
-            self.dcmt.in_game["channel"] = ""
-        self.dcmt.in_game["in_game"] = in_game
+    async def update_game(self, *, in_game: bool):
+        self.dcmt.in_game = in_game
         await self.save()
 
     # ITEM METHODS -----------------------------------
