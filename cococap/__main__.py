@@ -13,7 +13,6 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-
 async def main():
     # discord bot permissions
     intents = discord.Intents.all()
@@ -41,9 +40,9 @@ async def main():
     cococap.instance.remove_command("help")
 
     parser = argparse.ArgumentParser("Run the discord bot.")
-    parser.add_argument('--drops', action='store_true', help="run the bot with drops enabled")
+    parser.add_argument("--drops", action="store_true", help="run the bot with drops enabled")
     args = parser.parse_args()
-    
+
     cococap.args = args
     async with cococap.instance as _bot:
         log.info(f"Bot starting in {os.getcwd()}")
