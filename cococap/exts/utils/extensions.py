@@ -17,7 +17,6 @@ from utils.converters import Extension
 from utils.pagination import LinePaginator
 
 
-
 log = getLogger(__name__)
 
 
@@ -41,21 +40,22 @@ class Extensions(commands.Cog):
         self.bot = bot
         self.action_in_progress = False
         self.last_reloaded: Extension = None
-        
+
     @commands.command(name="restart", aliases=("rs",))
     async def restart(self, ctx: Context) -> None:
         await ctx.send("Restarting bot...")
         await self.bot.change_presence(status=discord.Status.dnd)
         python = sys.executable
-        os.execl(python, python, '-m', 'cococap')
-        
+        os.execl(python, python, "-m", "cococap")
+
     @commands.command(name="close")
     async def close(self, ctx: Context) -> None:
         await ctx.send("Bye bye!")
         await self.bot.close()
-        
 
-    @group(name="extensions", aliases=("ext", "exts", "c", "cog", "cogs"), invoke_without_command=True)
+    @group(
+        name="extensions", aliases=("ext", "exts", "c", "cog", "cogs"), invoke_without_command=True
+    )
     async def extensions_group(self, ctx: Context) -> None:
         """Load, unload, reload, and list loaded extensions."""
         await ctx.send_help(ctx.command)
@@ -90,7 +90,9 @@ class Extensions(commands.Cog):
         blacklisted = "\n".join(UNLOAD_BLACKLIST & set(extensions))
 
         if blacklisted:
-            await ctx.send(f":x: The following extension(s) may not be unloaded:```\n{blacklisted}```")
+            await ctx.send(
+                f":x: The following extension(s) may not be unloaded:```\n{blacklisted}```"
+            )
         else:
             if "*" in extensions or "**" in extensions:
                 extensions = set(self.bot.extensions.keys()) - UNLOAD_BLACKLIST
@@ -131,9 +133,7 @@ class Extensions(commands.Cog):
         Green indicates that the extension is currently loaded.
         """
         embed = Embed(colour=Colour.og_blurple())
-        embed.set_author(
-            name="Extensions List"
-        )
+        embed.set_author(name="Extensions List")
         lines = []
         categories = self.group_extension_statuses()
         for category, extensions in sorted(categories.items()):
@@ -142,7 +142,7 @@ class Extensions(commands.Cog):
             category = category.replace("_", " ").title()
             extensions = "\n".join(sorted(extensions))
             lines.append(f"**{category}**\n{extensions}\n")
-        
+
         log.debug(f"{ctx.author} requested a list of all cogs. Returning a paginated list.")
         await LinePaginator.paginate_ctx(lines, ctx, embed, scale_to_size=700, empty=False)
 
@@ -154,13 +154,13 @@ class Extensions(commands.Cog):
                 status = Emojis.STATUS_ONLINE.value
             else:
                 status = Emojis.STATUS_OFFLINE.value
-            
+
             path = ext.split(".")
             if len(path) > BASE_PATH_LEN + 1:
                 category = " - ".join(path[BASE_PATH_LEN:-1])
             else:
                 category = "uncategorised"
-            
+
             categories.setdefault(category, []).append(f"{status}  {path[-1]}")
 
         return categories
@@ -178,7 +178,9 @@ class Extensions(commands.Cog):
         verb = action.name.lower()
 
         self.action_in_progress = True
-        loading_message = await ctx.send(f":hourglass_flowing_sand: {verb} in progress, please wait...")
+        loading_message = await ctx.send(
+            f":hourglass_flowing_sand: {verb} in progress, please wait..."
+        )
 
         if len(extensions) == 1:
             msg, _ = await self.manage(action, extensions[0])
