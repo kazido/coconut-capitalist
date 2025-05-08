@@ -9,7 +9,8 @@ from discord.ext import commands
 from logging import getLogger
 
 from utils.menus import MenuHandler, Menu
-from utils.custom_embeds import Cembed, button_check
+from utils.custom_embeds import Cembed
+from utils.checks import button_check
 from utils.items.items import get_items_from_db, roll_item
 from utils.utils import timestamp_to_english
 from cococap.user import User
