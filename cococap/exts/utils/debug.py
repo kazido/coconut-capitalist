@@ -7,7 +7,7 @@ from discord.ext import commands
 
 from cococap.user import User
 
-from utils.messages import Cembed
+from utils.custom_embeds import Cembed
 
 # from utils.items.items import item_autocomplete
 from cococap.constants import URI

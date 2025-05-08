@@ -1,5 +1,6 @@
 # import discord
 from discord.ext import commands, tasks
+
 # from discord import app_commands
 
 # from random import randint
@@ -7,7 +8,7 @@ from discord.ext import commands, tasks
 # from cococap.item_models import Master, Crops
 # from cococap.models import UserCollection
 # from cococap.constants import DiscordGuilds, IMAGES_REPO
-# from utils.messages import Cembed
+# from utils.custom_embeds import Cembed
 # from utils.items.items import get_items_from_db
 
 
@@ -16,6 +17,7 @@ class FarmingCog(commands.Cog, name="Farming"):
 
     def __init__(self, bot):
         self.bot = bot
+
 
 #     async def cog_load(self) -> None:
 #         self.farm_task.start()
@@ -115,7 +117,7 @@ class FarmingCog(commands.Cog, name="Farming"):
 #                 self.current_cycle += 1
 #             if self.current_cycle >= self.cycles:
 #                 # The crop has grown
-#                 # TODO: Switch the 
+#                 # TODO: Switch the
 #                 self.item = None
 #                 return -1
 #             return self.current_cycle
@@ -143,7 +145,7 @@ class FarmingCog(commands.Cog, name="Farming"):
 #                     value += self.item.emoji or "5"
 #                 for _ in range(plot_size - int(ratio * plot_size)):
 #                     value += FarmingCog.empty_plot or "0"
-#                 return value 
+#                 return value
 #             return self.content
 
 #     class Farm(discord.ui.View):

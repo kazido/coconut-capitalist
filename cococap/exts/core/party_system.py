@@ -4,7 +4,7 @@ import asyncio
 
 from discord.ext import commands
 from discord import app_commands as ac
-from utils.messages import Cembed
+from utils.custom_embeds import Cembed
 from cococap.user import User
 from cococap.models import PartyDocument
 from logging import getLogger

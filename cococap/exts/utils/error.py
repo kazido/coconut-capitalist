@@ -5,7 +5,7 @@ import discord
 from discord import Interaction
 from discord.ext import commands
 from discord.app_commands import AppCommandError, CheckFailure
-from utils.messages import ErrorEmbed
+from utils.custom_embeds import ErrorEmbed
 
 
 class AlreadyInGame(CheckFailure):

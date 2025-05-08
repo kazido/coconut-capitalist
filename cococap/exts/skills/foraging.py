@@ -8,11 +8,10 @@ from logging import getLogger
 from discord.interactions import Interaction
 
 from cococap.user import User
-from utils.messages import Cembed
+from utils.custom_embeds import Cembed
 from cococap.item_models import Master
 
 log = getLogger(__name__)
-
 
 
 class Tree:

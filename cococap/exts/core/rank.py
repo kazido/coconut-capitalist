@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 
 from cococap.user import User
-from utils.messages import Cembed, button_check
+from utils.custom_embeds import Cembed, button_check
 
 
 class RanksCog(commands.Cog):
@@ -56,7 +56,9 @@ class RanksCog(commands.Cog):
                     self.purchase.disabled = True
 
             @discord.ui.button(
-                label=f"Rankup: {next_rank.token_price:,}", style=discord.ButtonStyle.green, emoji="🪙"
+                label=f"Rankup: {next_rank.token_price:,}",
+                style=discord.ButtonStyle.green,
+                emoji="🪙",
             )
             async def purchase(self, p_interaction: discord.Interaction, button: discord.ui.Button):
                 if not await button_check(p_interaction, [interaction.user.id]):
@@ -82,6 +84,7 @@ class RanksCog(commands.Cog):
 
         embed.set_thumbnail(url=interaction.user.display_avatar)
         await interaction.response.send_message(embed=embed, view=RolePurchaseButton())
+
 
 async def setup(bot):
     await bot.add_cog(RanksCog(bot))

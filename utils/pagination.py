@@ -9,7 +9,7 @@ from discord.ext.commands import Paginator, Context
 from discord import Interaction
 
 from logging import getLogger
-from utils import messages
+from utils import checks
 
 FIRST_EMOJI = "\u23EE"  # [:track_previous:]
 LEFT_EMOJI = "\u2B05"  # [:arrow_left:]
@@ -289,7 +289,7 @@ class LinePaginator(Paginator):
             await message.add_reaction(emoji)
 
         check = partial(
-            messages.reaction_check,
+            checks.reaction_check,
             message_id=interaction.message.id,
             allowed_emoji=PAGINATION_EMOJI,
             allowed_users=(restrict_to_user.id,),
@@ -480,7 +480,7 @@ class LinePaginator(Paginator):
             await message.add_reaction(emoji)
 
         check = partial(
-            messages.reaction_check,
+            checks.reaction_check,
             message_id=message.id,
             allowed_emoji=PAGINATION_EMOJI,
             allowed_users=(restrict_to_user.id,),

@@ -4,7 +4,7 @@ import discord
 from discord import Interaction, ButtonStyle
 from logging import getLogger
 
-from utils.messages import button_check
+from utils.checks import button_check
 
 log = getLogger(__name__)
 

@@ -11,7 +11,7 @@ from discord.ext import commands
 from pymongo import DESCENDING
 
 from cococap.user import User
-from utils.messages import Cembed
+from utils.custom_embeds import Cembed
 from cococap.models import UserDocument as Udoc
 
 from cococap.constants import (
@@ -28,11 +28,6 @@ from cococap.constants import LeaderboardCategories as LeaderCats
 
 class EconomyCog(commands.Cog, name="Economy"):
     """Your primary stop for making and losing bits!"""
-
-    def __init__(self, bot):
-        """Standard cog initialiser"""
-        self.bot = bot
-        self.tree = self.bot.tree
 
     @app_commands.command(name="profile", description="Check your profile, pets, etc.")
     async def bits(self, interaction: discord.Interaction):

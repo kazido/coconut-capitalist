@@ -3,7 +3,6 @@ import time
 
 from typing import Literal
 
-from utils.messages import ErrorEmbed
 from cococap.models import UserDocument
 from utils.utils import timestamp_to_digital
 

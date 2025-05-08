@@ -5,7 +5,7 @@ from discord import app_commands
 
 from cococap.user import User
 from cococap.item_models import Master
-from utils.messages import Cembed
+from utils.custom_embeds import Cembed
 from utils.menus import Menu, MenuHandler
 from utils.pagination import LinePaginator
 
@@ -45,7 +45,14 @@ class InventoryCog(commands.Cog, name="Inventory"):
                     data: Master = Master.get_by_id(k)
                     if not filter:
                         embed.description += f"{data.emoji} {v['quantity']:,} {data.display_name}\n"
-                    elif any(filter.lower() in x for x in (data.display_name.lower(), data.item_id.lower(), data.skill.lower())):
+                    elif any(
+                        filter.lower() in x
+                        for x in (
+                            data.display_name.lower(),
+                            data.item_id.lower(),
+                            data.skill.lower(),
+                        )
+                    ):
                         has_item = True
                         # self.lines.append(f"{data.emoji} {v['quantity']:,} {data.display_name}")
                         embed.description += f"{data.emoji} {v['quantity']:,} {data.display_name}\n"
@@ -54,7 +61,7 @@ class InventoryCog(commands.Cog, name="Inventory"):
                     print(not has_item)
                     embed.description = f"*No items found using this filter:* {filter}"
                 super().__init__(handler, "inventory", embed=embed)
-                
+
         # Initialize a menu handler, allowing us to move back and forth between menu pages
         inventory_menu = Inventory(handler=MenuHandler(interaction=interaction))
         await interaction.response.send_message(embed=inventory_menu.embed, view=inventory_menu)

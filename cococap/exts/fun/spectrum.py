@@ -8,7 +8,7 @@ from discord.ext import commands
 from discord.app_commands import Choice
 
 from cococap.user import User
-from utils.messages import Cembed
+from utils.custom_embeds import Cembed
 
 
 class SpectrumCog(commands.Cog, name="Spectrum"):
@@ -28,19 +28,9 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
     )
     async def spectrum(self, interaction: discord.Interaction, difficulty: Choice[int]):
         difficulties = {
-            0: {
-                "options": ["😂", "😍"],
-                "reward_multiplier": 5
-            },
-            1: {
-                "options": ["🟥", "🟦", "🟧", "🟩"],
-                "reward_multiplier":10
-            },
-            2: {
-                "options": ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣"],
-                "reward_multiplier": 40
-            }
-
+            0: {"options": ["😂", "😍"], "reward_multiplier": 5},
+            1: {"options": ["🟥", "🟦", "🟧", "🟩"], "reward_multiplier": 10},
+            2: {"options": ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣"], "reward_multiplier": 40},
         }
         # Load the user
         user = User(interaction.user.id)

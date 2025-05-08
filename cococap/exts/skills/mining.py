@@ -9,14 +9,13 @@ from discord.ext import commands
 from logging import getLogger
 
 from utils.menus import MenuHandler, Menu
-from utils.messages import Cembed, button_check
+from utils.custom_embeds import Cembed, button_check
 from utils.items.items import get_items_from_db, roll_item
 from utils.utils import timestamp_to_english
 from cococap.user import User
 from cococap.constants import IMAGES_REPO, Categories
 
 log = getLogger(__name__)
-
 
 
 class MiningCog(commands.Cog, name="Mining"):
