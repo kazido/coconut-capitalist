@@ -14,10 +14,11 @@ from beanie import init_beanie
 
 from utils import logs
 
-log = getLogger('bot')
+log = getLogger("bot")
 
 
 MY_GUILD = discord.Object(id=856915776345866240)
+
 
 class StartupError(Exception):
     """Exception class for startup errors."""
@@ -30,13 +31,13 @@ class StartupError(Exception):
 class Bot(BotBase):
     async def setup_hook(self) -> None:
         await super().setup_hook()
-        
+
         # Logging setup
         logs.setup()
-        
+
         # Database setup
         client = AsyncIOMotorClient(URI)
         await init_beanie(database=client.discordbot, document_models=[UserDocument, PartyDocument])
-        
+
         # Load our own extensions using function from discord.py's own bot
         await self.load_extensions(exts)
