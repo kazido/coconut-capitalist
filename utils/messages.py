@@ -6,6 +6,7 @@ from datetime import datetime
 from discord import Interaction
 from discord.colour import Colour
 from discord.types.embed import EmbedType
+from cococap.exts.utils.error import ButtonCheckFailure
 from pydis_core.utils import scheduling
 from typing import Any, Sequence
 from logging import getLogger
@@ -64,16 +65,7 @@ async def button_check(interaction: Interaction, allowed_users: list[int]):
     if interaction.user.id in allowed_users:
         log.debug(f"{interaction.user.id} ({interaction.user.name}) passed button check.")
         return True
-    embed = Cembed(
-        title="Who do you think you are?",
-        desc="This isn't your button... Don't hit it.",
-        color=discord.Color.red(),
-        interaction=interaction,
-        activity="mischieving",
-    )
-    await interaction.response.send_message(embed=embed, ephemeral=True)
-    log.debug(f"{interaction.user.id} ({interaction.user.name}) failed button check.")
-    return False
+    raise ButtonCheckFailure("You are allowed to click this button. It's not yours!")
 
 
 class Cembed(discord.Embed):

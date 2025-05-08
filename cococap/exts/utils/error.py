@@ -5,6 +5,7 @@ import discord
 from discord import Interaction
 from discord.ext import commands
 from discord.app_commands import AppCommandError, CheckFailure
+from utils.messages import ErrorEmbed
 
 
 class AlreadyInGame(CheckFailure):
@@ -24,7 +25,7 @@ class ErrorHandler(commands.Cog):
 
     def __init__(self):
         self.bot.tree.on_error = self.on_app_command_error
-        self.embed = discord.Embed(color=discord.Color.red())
+        self.embed = ErrorEmbed()
 
     # APP/SLASH COMMAND ERRORS
     @commands.Cog.listener()
