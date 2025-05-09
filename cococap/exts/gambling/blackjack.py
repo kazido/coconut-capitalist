@@ -5,24 +5,34 @@ import asyncio
 from cococap.user import User
 from discord import app_commands
 from discord.ext import commands
-from utils.messages import Cembed, button_check
-from utils.utils import validate_bet
-from utils.decorators import not_in_game_check
+from utils.custom_embeds import Cembed
+from utils.checks import button_check
+from cococap.exts.utils.error import InvalidBet
+from utils.decorators import not_in_game_check, load_user, start_game
 from enum import Enum
 
 
-class GameStates(Enum):
-    WIN = ("WIN", discord.Color.green(), "Nice win!")
-    SAFE = ("Blackjack", discord.Color.blue(), "Will you hit or stand?")
-    LOSE = ("LOSE", discord.Color.red(), "Better luck next time...")
-    PUSH = ("PUSH", discord.Color.light_gray(), "Bruh.")
-    BLACKJACK = ("BLACKJACK", discord.Color.purple(), "Easy money.")
+class Actions(Enum):
+    HIT = "hit"
+    STAND = "stand"
+    FOLD = "fold"
+    DEAL = "deal"
 
-    def __new__(cls, title: str, color: discord.Color, footer: str):
+
+class GameStates(Enum):
+    WIN = ("WIN", discord.Color.green(), ("WIN", "LOSE"), "Nice win!")
+    SAFE = ("Blackjack", discord.Color.blue(), ("Your hand", "Dealer's hand"), "Hit or stand?")
+    LOSE = ("LOSE", discord.Color.red(), ("LOSE", "WIN"), "Better luck next time...")
+    PUSH = ("PUSH", discord.Color.light_gray(), ("PUSH", "PUSH"), "Bruh.")
+    BLACKJACK = ("BLACKJACK!", discord.Color.purple(), ("BLACKJACK!", "LOSE"), "Easy money.")
+    DEALER_REVEAL = ("Blackjack", discord.Color.blue(), ("STOOD", "Drawing..."), "Revealing...")
+
+    def __new__(cls, title: str, color: discord.Color, hand_titles: tuple, footer: str):
         obj = object.__new__(cls)
         obj._value_ = title.lower()
         obj.title = title
         obj.color = color
+        obj.hand_titles = hand_titles
         obj.footer = footer
         return obj
 
@@ -58,9 +68,9 @@ class Player:
 
 
 class BlackJackGame(discord.ui.View):
-    def __init__(self, interaction: discord.Interaction, user: User, bet: int):
+    def __init__(self, interaction: discord.Interaction, bet: int):
         super().__init__()
-        self.user: User = user
+        self.user: User = interaction.extras.get("user")
 
         # Add the 3 game buttons to the View
         self.add_item(BlackJack.HitButton(interaction))
@@ -70,313 +80,212 @@ class BlackJackGame(discord.ui.View):
         self.deck = pydealer.Deck()
         self.deck.shuffle()
 
+        self.state: GameStates = GameStates.SAFE
+
         self.player = Player(bet=bet)
         self.dealer = Player()
 
-    def deal_card(self, player: Player):
+    def _deal_card(self, player: Player):
         card = self.deck.deal(1)[0]
-        player.hand.append(card)
+        return player.hand.append(card)
 
-    def embed(self):
+    async def deal_card_animated(self, player: Player):
+        await asyncio.sleep(0.25)
+        self._deal_card(player)
+        await self.interaction.edit_original_response(embed=self.update_embed("hit"), view=self)
+        
+    def payout(self):
+        if self.state
+
+    def update_embed(self, action: str):
         """Generate an game state themed embed with player and dealer's hands."""
-        state: GameStates = GameStates.from_state(self.hit_check())
+        self._update_state(action)
+        self._update_view()
         embed = Cembed(
-            title=f"{state.title} | User: {str(self.user)} - Bet: {self.player.bet}",
-            color=state.color,
+            title=f"{self.state.title} | User: {str(self.user)} - Bet: {self.player.bet:,}",
+            color=self.state.color,
         )
         embed.add_field(
-            name="Your hand",
+            name=self.state.hand_titles[0],
             value=f"{self.player.hand_to_string()}\nTotal: {self.player.total_hand()}",
             inline=True,
         )
         embed.add_field(
-            name="Dealer's hand",
+            name=self.state.hand_titles[1],
             value=f"{self.dealer.hand_to_string()}\nTotal: {self.dealer.total_hand()}",
             inline=True,
         )
-        return embed.set_footer(text=state.footer)
+        embed.set_footer(text=self.state.footer)
+        return embed
 
-    def _check_game_state(self, action: str) -> GameStates:
+    def _update_state(self, action: str) -> GameStates:
         """Evaluate the game state based on the current player and dealer hands."""
         player_total = self.player.total_hand()
         dealer_total = self.dealer.total_hand()
 
         if player_total > 21:
-            return GameStates.LOSE
-        if action == "stand":
-            if dealer_total > 21 or player_total > dealer_total:
-                return GameStates.WIN
+            state = GameStates.LOSE
+        elif action == Actions.STAND:
+            if player_total > dealer_total:
+                if dealer_total < 17:
+                    state = GameStates.DEALER_REVEAL
+                else:
+                    state = GameStates.WIN
             elif player_total == dealer_total:
-                return GameStates.PUSH
+                state = GameStates.PUSH
             else:
-                return GameStates.LOSE
-        if action == "hit":
+                state = GameStates.LOSE
+        elif action == "hit":
             if player_total == 21 and len(self.player.hand) == 2:
-                return GameStates.BLACKJACK
-            return GameStates.SAFE if player_total <= 21 else GameStates.LOSE
-        return GameStates.LOSE  # Default fallback
+                state = GameStates.BLACKJACK
+            else:
+                state = GameStates.SAFE if player_total <= 21 else GameStates.LOSE
+        elif action == "fold":
+            if dealer_total < 17:
+                state = GameStates.DEALER_REVEAL
+            else:
+                state = GameStates.LOSE  # Default fallback
+        self.state = state
 
-    # Update existing methods to use check_game_state
-    def hit_check(self):
-        """Return the game state for a hit action."""
-        return self._check_game_state("hit")
+    def _update_view(self):
+        if self.state != GameStates.SAFE:
+            for child in self.children:
+                self.remove_item(child)
 
-    def stand_check(self):
-        """Return the game state for a stand action."""
-        return self._check_game_state("stand")
 
-    def fold_check(self):
-        return GameStates.LOSE
+class HitButton(discord.ui.Button):
+    def __init__(self, interaction):
+        super().__init__(label="Hit", style=discord.ButtonStyle.blurple, emoji="🃏")
+        self.interaction = interaction
+
+    async def callback(self, interaction: discord.Interaction):
+        assert self.view is not None
+        view: BlackJackGame = self.view
+        if not await button_check(self.interaction, [interaction.user.id]):
+            return
+
+        embed = view.update_embed("hit")
+
+        if view.state == GameStates.LOSE:
+            embed.add_field(name="Profit", value=f"{-view.player.bet:,} bits", inline=False)
+            embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
+
+        await interaction.response.edit_message(embed=embed, view=view)
+
+        await view.user.update_game(in_game=False)
+        bot = User(1016054559581413457)
+        await bot.load()
+        # await bot.inc_purse(amount=view.player.bet)
+
+
+class FoldButton(discord.ui.Button):
+    def __init__(self, interaction):
+        super().__init__(label="Fold", style=discord.ButtonStyle.red, emoji="🏳️")
+        self.interaction = interaction
+
+    async def callback(self, interaction: discord.Interaction):
+        assert self.view is not None
+        view: BlackJackGame = self.view
+        if not await button_check(self.interaction, [interaction.user.id]):
+            return
+
+        embed = view.update_embed("fold")
+
+        # Keep half of your bet
+        while view.dealer.total_hand() < 17:
+            await view.deal_card_animated(view.dealer)
+
+        # Give the user half of their bet back
+        await view.user.inc_purse(amount=round(view.player.bet / 2))
+
+        embed.add_field(name="Profit", value=f"{round(-view.player.bet / 2):,} bits", inline=False)
+        embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
+
+        await interaction.response.edit_message(embed=embed, view=self)
+
+        bot = await User(1016054559581413457).load()
+        await bot.inc_purse(amount=round(view.player.bet / 2))
+
+
+class StandButton(discord.ui.Button):
+    def __init__(self, interaction):
+        super().__init__(label="Stand", style=discord.ButtonStyle.green, emoji="✅")
+        self.interaction = interaction
+
+    async def callback(self, interaction: discord.Interaction):
+        assert self.view is not None
+        view: BlackJackGame = self.view
+        if not await button_check(self.interaction, [interaction.user.id]):
+            return
+
+        embed = view.update_embed("stand")
+
+        if view.state == GameStates.LOSE:
+            embed.add_field(name="Profit", value=f"{-view.player.bet:,} bits", inline=False)
+            # Give the bot the lost money
+            bot = await User(1016054559581413457).load()
+            await bot.inc_purse(amount=view.player.bet)
+
+        elif view.state == GameStates.PUSH:
+            embed.add_field(name="Profit", value=f"0 bits", inline=False)
+            await view.user.inc_purse(amount=view.player.bet)
+
+        elif view.state == GameStates.WIN:
+            embed.add_field(name="Profit", value=f"{view.player.bet * 2:,} bits", inline=False)
+            await view.user.inc_purse(amount=view.player.bet * 2)
+
+        embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
+
+        while view.dealer.total_hand() < 17:
+            await view.deal_card_animated(view.dealer)
+            if view.d_hand_total > 21:
+                await view.user.inc_purse(amount=view.player.bet * 2)
+                await view.user.update_game(in_game=False, interaction=interaction)
+                dealer_bust_embed = discord.Embed(
+                    title=f"Blackjack | User: {interaction.user.name} - Bet: {view.player.bet:,}",
+                    colour=discord.Color.green(),
+                )
+
+                await interaction.response.edit_message(embed=dealer_bust_embed, view=None)
+                return
+        await compare_hands()
 
 
 class BlackJack(commands.Cog, name="Blackjack"):
     """Basic Blackjack. HIT, STAND, FOLD, or DOUBLE DOWN!"""
 
-    def __init__(self, bot):
-        self.bot = bot
-
-    @not_in_game_check()
     @app_commands.command(name="blackjack")
     @app_commands.describe(bet="amount of bits you want to bet | use max for all bits in purse")
+    @load_user  # Loads the user
+    @start_game  # Starts the user's game and finishes it when command is over
+    @not_in_game_check()  # Ensures that the user is not already playing a game
     async def blackjack(self, interaction: discord.Interaction, bet: str):
         """Classic blackjack. Get as close to 21 as possible, but not over."""
-        # Load the user
-        user = User(interaction.user.id)
-        await user.load()
+        user: User = interaction.extras.get("user")
+        purse = user.get_field("purse")
 
-        try:
-            bet = int(bet)
-        except ValueError:
+        # Bet validation
+        if bet.isalpha():
             if bet != "max":
-                return await interaction.response.send_message("Invalid bet.", ephemeral=True)
-            if user.get_field("settings")["disable_max_bet"]:
-                embed = Cembed(
-                    title="Max Bet Disabled",
-                    desc="You have disabled betting your purse to protect yourself financially. I won't tell you how to reenable it.",
-                    color=discord.Color.red(),
-                    interaction=interaction,
-                    activity="blackjack",
-                )
-                await interaction.response.send_message(embed=embed, ephemeral=True)
-                return
-            bet = user.get_field("purse")
+                raise InvalidBet("Only 'max' is a valid non-integer.")
+            bet = purse
+        elif int(bet) <= 0:
+            raise InvalidBet("I sense something fishy...")
+        elif int(bet) > purse:
+            raise InvalidBet(f"You only have {purse:,} bits.")
 
-        message = await validate_bet(balance=user.get_field("purse"), bet=bet)
-        if message:
-            embed = Cembed(
-                title="Invalid Bet",
-                desc=message,
-                color=discord.Color.red(),
-                interaction=interaction,
-                activity="blackjack",
-            )
-            return await interaction.response.send_message(embed=embed, ephemeral=True)
+        bet = int(bet)
 
         # Collect their bet and set their status to in_game
         await user.inc_purse(-bet)
-        await user.update_game(in_game=True)
 
-        game = BlackJackGame(interaction=interaction, user=user, bet=bet)
-        await interaction.response.send_message(embed=game.embed(), view=game)
+        game = BlackJackGame(interaction=interaction, bet=bet)
+        await interaction.response.send_message(embed=game.update_embed(), view=game)
 
         # Deal out starting hands for dealer and player
-        for _ in range(2):
-            await asyncio.sleep(0.25)
-            game.deal_card(game.player)
-            await interaction.edit_original_response(embed=game.embed(), view=game)
-
-        await asyncio.sleep(0.25)
-        game.deal_card(game.dealer)
-        await interaction.edit_original_response(embed=game.embed(), view=game)
-
-    class HitButton(discord.ui.Button):
-        def __init__(self, interaction):
-            super().__init__(label="Hit", style=discord.ButtonStyle.blurple)
-            self.interaction = interaction
-
-        async def callback(self, intr: discord.Interaction):
-            assert self.view is not None
-            if not await button_check(self.interaction, [intr.user.id]):
-                return
-            view: BlackJackGame = self.view
-
-            game_state = view.hit_check()
-
-            if game_state == GameStates.SAFE:
-                pass
-
-            # lose_embed.add_field(name="Profit", value=f"{-view.bet:,} bits", inline=False)
-            # lose_embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
-
-            # await intr.response.edit_message(embed=lose_embed, view=None)
-
-            await view.user.update_game(in_game=False)
-            bot = User(1016054559581413457)
-            await bot.load()
-            await bot.inc_purse(amount=view.bet)
-
-    class FoldButton(discord.ui.Button):
-        def __init__(self, interaction):
-            super().__init__(label="Fold", style=discord.ButtonStyle.blurple)
-            self.interaction = interaction
-
-        async def callback(self, fold_intr: discord.Interaction):
-            assert self.view is not None
-            if not await button_check(self.interaction, [fold_intr.user.id]):
-                return
-            view: BlackJackGame = self.view
-
-            # Give the user half of their bet back
-            await view.user.inc_purse(amount=round(view.bet / 2))
-
-            # Keep half of your bet
-            while view.d_hand_total < 17:
-                view.draw_card(player=False)
-            fold_embed = discord.Embed(
-                title=f"Blackjack | User: {fold_intr.user.name} - Bet: {view.bet:,}",
-                colour=0xFF0000,
-            )
-            fold_embed.add_field(
-                name="FOLD",
-                value=f"{''.join(view.p_hand)}\n" f"Total: {view.p_hand_total}",
-                inline=True,
-            )
-            fold_embed.add_field(
-                name="WIN",
-                value=f"{''.join(view.d_hand)}\n" f"Total: {view.d_hand_total}",
-                inline=True,
-            )
-            fold_embed.add_field(
-                name="Profit", value=f"{round(-view.bet / 2):,} bits", inline=False
-            )
-            fold_embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
-            await fold_intr.response.edit_message(embed=fold_embed, view=None)
-            await asyncio.sleep(1)
-
-            await view.user.update_game(in_game=False, interaction=fold_intr)
-            bot = User(1016054559581413457)
-            await bot.load()
-            await bot.inc_purse(amount=round(view.bet / 2))
-
-    class StandButton(discord.ui.Button):
-        def __init__(self, interaction):
-            super().__init__(label="Stand", style=discord.ButtonStyle.blurple)
-            self.interaction = interaction
-
-        async def callback(self, stand_intr: discord.Interaction):
-            assert self.view is not None
-            if not await button_check(self.interaction, [stand_intr.user.id]):
-                return
-            view: BlackJackGame = self.view
-
-            async def compare_hands():
-                if view.p_hand_total < view.d_hand_total <= 21:
-                    user_lost_embed = discord.Embed(
-                        title=f"Blackjack | User: {stand_intr.user.name} - Bet: {view.bet:,}",
-                        colour=0xFF0000,
-                    )
-
-                    user_lost_embed.add_field(
-                        name="Your hand",
-                        value=f"{''.join(view.p_hand)}\n" f"Total: {view.p_hand_total}",
-                        inline=True,
-                    )
-                    user_lost_embed.add_field(
-                        name="WIN",
-                        value=f"{''.join(view.d_hand)}\n" f"Total: {view.d_hand_total}",
-                        inline=True,
-                    )
-                    user_lost_embed.add_field(
-                        name="Profit", value=f"{-view.bet:,} bits", inline=False
-                    )
-                    user_lost_embed.add_field(
-                        name="Bits", value=f"{view.user.get_field('purse'):,} bits"
-                    )
-                    await stand_intr.response.edit_message(embed=user_lost_embed, view=None)
-
-                    await view.user.update_game(in_game=False, interaction=stand_intr)
-                    bot = User(1016054559581413457)
-                    await bot.load()
-                    await bot.inc_purse(amount=view.bet)
-
-                elif view.d_hand_total == view.p_hand_total:
-                    await view.user.inc_purse(amount=view.bet)
-                    push_embed = discord.Embed(
-                        title=f"Blackjack | User: {stand_intr.user.name} - Bet: {view.bet:,}",
-                        colour=discord.Color.light_gray(),
-                    )
-                    push_embed.add_field(
-                        name="PUSH",
-                        value=f"{''.join(view.p_hand)}\n" f"Total: {view.p_hand_total}",
-                        inline=True,
-                    )
-                    push_embed.add_field(
-                        name="PUSH",
-                        value=f"{''.join(view.d_hand)}\n" f"Total: {view.d_hand_total}",
-                        inline=True,
-                    )
-                    push_embed.add_field(name="Profit", value=f"0 bits", inline=False)
-                    push_embed.add_field(
-                        name="Bits", value=f"{view.user.get_field('purse'):,} bits"
-                    )
-                    await stand_intr.response.edit_message(embed=push_embed, view=None)
-                    await view.user.update_game(in_game=False, interaction=stand_intr)
-
-                else:
-                    await view.user.inc_purse(amount=view.bet * 2)
-
-                    dealer_lost_embed = discord.Embed(
-                        title=f"Blackjack | User: {stand_intr.user.name} - Bet: {view.bet:,}",
-                        colour=discord.Color.green(),
-                    )
-                    dealer_lost_embed.add_field(
-                        name="WIN",
-                        value=f"{''.join(view.p_hand)}\n" f"Total: {view.p_hand_total}",
-                        inline=True,
-                    )
-                    dealer_lost_embed.add_field(
-                        name="Dealer's hand",
-                        value=f"{''.join(view.d_hand)}\n" f"Total: {view.d_hand_total}",
-                        inline=True,
-                    )
-                    dealer_lost_embed.add_field(
-                        name="Profit", value=f"{view.bet * 2:,} bits", inline=False
-                    )
-                    dealer_lost_embed.add_field(
-                        name="Bits", value=f"{view.user.get_field('purse'):,} bits"
-                    )
-                    await stand_intr.response.edit_message(embed=dealer_lost_embed, view=None)
-                    await view.user.update_game(in_game=False, interaction=stand_intr)
-
-            while view.d_hand_total < 17:
-                view.draw_card(player=False)
-                if view.d_hand_total > 21:
-                    await view.user.inc_purse(amount=view.bet * 2)
-                    await view.user.update_game(in_game=False, interaction=stand_intr)
-                    dealer_bust_embed = discord.Embed(
-                        title=f"Blackjack | User: {stand_intr.user.name} - Bet: {view.bet:,}",
-                        colour=discord.Color.green(),
-                    )
-
-                    dealer_bust_embed.add_field(
-                        name="Your hand",
-                        value=f"{''.join(view.p_hand)}\n" f"Total: {view.p_hand_total}",
-                        inline=True,
-                    )
-                    dealer_bust_embed.add_field(
-                        name="BUSTED",
-                        value=f"{''.join(view.d_hand)}\n" f"Total: {view.d_hand_total}",
-                        inline=True,
-                    )
-                    dealer_bust_embed.add_field(
-                        name="Profit", value=f"{view.bet * 2:,} bits", inline=False
-                    )
-                    dealer_bust_embed.add_field(
-                        name="Bits", value=f"{view.user.get_field('purse'):,} bits"
-                    )
-                    await stand_intr.response.edit_message(embed=dealer_bust_embed, view=None)
-                    return
-            await compare_hands()
+        await game.deal_card_animated(game.player)
+        await game.deal_card_animated(game.player)
+        await game.deal_card_animated(game.dealer)
 
 
 async def setup(bot):

@@ -1,6 +1,5 @@
 import traceback
 import sys
-import discord
 
 from discord import Interaction
 from discord.ext import commands
