@@ -6,8 +6,7 @@ from logging import getLogger
 from cococap import exts
 from cococap.models import UserDocument, PartyDocument
 from cococap.constants import URI
-
-from datetime import datetime
+from cococap.persistent import PersistentView
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
@@ -31,6 +30,7 @@ class StartupError(Exception):
 class Bot(BotBase):
     async def setup_hook(self) -> None:
         await super().setup_hook()
+        self.add_view(PersistentView(), message_id=1371094892805361674)
 
         # Logging setup
         logs.setup()

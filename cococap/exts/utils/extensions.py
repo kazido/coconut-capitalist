@@ -111,17 +111,16 @@ class Extensions(commands.Cog):
         """  # noqa: W605
         if not extensions:
             if self.last_reloaded:
-                await self.batch_manage(Action.RELOAD, ctx, self.last_reloaded)
+                await self.batch_manage(Action.RELOAD, ctx, *self.last_reloaded)
             else:
-                await ctx.send_help(ctx.command)
-                return
+                return await ctx.send_help(ctx.command)
 
         if "**" in extensions:
             extensions = self.bot.all_extensions
         elif "*" in extensions:
             extensions = set(self.bot.extensions.keys()) | set(extensions)
             extensions.remove("*")
-        self.last_reloaded = extensions[0]
+        self.last_reloaded = extensions
         await self.batch_manage(Action.RELOAD, ctx, *extensions)
 
     @extensions_group.command(name="list", aliases=("all",))

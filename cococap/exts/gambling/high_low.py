@@ -30,7 +30,7 @@ async def game_results(
             inline=False,
         )
         embed = losing_embed
-        await user.update_game(in_game=False, interaction=interaction)
+        await user.in_game(in_game=False)
 
         # Give the lost money to the house
         bot = User(1016054559581413457)
@@ -125,9 +125,7 @@ class HighLow(commands.Cog, name="High Low"):
             return await interaction.response.send_message(embed=embed, ephemeral=True)
 
         await user.inc_purse(-bet)  # Subtract the bet from the users purse
-        await user.update_game(
-            in_game=True, interaction=interaction
-        )  # Set the users ingame status to True
+        await user.in_game(in_game=True)  # Set the users ingame status to True
 
         class HighLowButtons(discord.ui.View):
             def __init__(self, roll, *, multiplier=0, timeout=120):
@@ -254,7 +252,7 @@ class HighLow(commands.Cog, name="High Low"):
                     inline=False,
                 )
                 await user.inc_purse(bet * self.multiplier)
-                await user.update_game(in_game=False, interaction=interaction)
+                await user.in_game(in_game=False)
                 await stop_interaction.response.edit_message(embed=stop_embed, view=None)
                 return
 

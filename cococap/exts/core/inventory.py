@@ -22,7 +22,7 @@ class InventoryCog(commands.Cog, name="Inventory"):
         user = User(interaction.user.id)
         await user.load()
 
-        inventory: dict = user.dcmt.items
+        inventory: dict = user.document.items
 
         if len(inventory) == 0:
             return await interaction.response.send_message(

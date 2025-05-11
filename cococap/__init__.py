@@ -11,4 +11,4 @@ if os.name == "nt":
 
 
 instance: "Bot" = None  # Global Bot instance.
-args = None # Global argparse instance.
+args = None  # Global argparse instance.

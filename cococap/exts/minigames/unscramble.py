@@ -31,7 +31,7 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
         user = User(interaction.user.id)
         await user.load()
 
-        stats = user.dcmt.gambling_statistics
+        stats = user.document.gambling_statistics
 
         # Picks a random word from the file resources.unscramble_words.txt
         def get_word():

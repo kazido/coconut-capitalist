@@ -5,7 +5,6 @@ from discord import app_commands
 
 from cococap.user import User
 from utils.custom_embeds import Cembed
-from utils.checks import button_check
 
 
 class RanksCog(commands.Cog):

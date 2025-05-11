@@ -48,7 +48,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         user = User(interaction.user.id)
         await user.load()
 
-        party_id = user.dcmt.party_id
+        party_id = user.document.party_id
 
         if not party_id:
             embed = Cembed(desc="You are not currently in a party.", color=d.Color.red())
@@ -82,7 +82,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         user = User(interaction.user.id)
         await user.load()
 
-        party_id = user.dcmt.party_id
+        party_id = user.document.party_id
 
         if party_id:
             embed = d.Embed(description="You are already in a party!", color=d.Color.red())
@@ -107,7 +107,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         await party.insert()
 
         # Update the user's party id
-        user.dcmt.party_id = party_id
+        user.document.party_id = party_id
         await user.save()
 
         embed = d.Embed(
@@ -125,7 +125,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
-        party_id = user.dcmt.party_id
+        party_id = user.document.party_id
 
         error_embed = d.Embed(color=d.Color.red())
         error_embed.set_author(name="Cannot disband party")
@@ -150,7 +150,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
             member = User(member_id)
             await member.load()
 
-            member.dcmt.party_id = None
+            member.document.party_id = None
             await member.save()
 
         # Delete party role and channel from discord guild
@@ -167,7 +167,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
-        party_id = user.dcmt.party_id
+        party_id = user.document.party_id
         party: PartyDocument = await PartyDocument.find_one(PartyDocument.party_id == party_id)
         party_member_ids = party.party_members
 
@@ -199,7 +199,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
             log.debug(f"{party_id} - {interaction.user.name} left party.")
 
         # Clear the user's party data in the database
-        user.dcmt.party_id = None
+        user.document.party_id = None
         await user.save()
         return
 
@@ -208,7 +208,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
-        party_id = user.dcmt.party_id
+        party_id = user.document.party_id
 
         error_embed = d.Embed(color=d.Color.red())
         error_embed.set_author(name=f"Cannot invite user to party")
@@ -234,7 +234,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
 
         invited_user = User(member.id)
         await invited_user.load()
-        invited_user_party_id = invited_user.dcmt.party_id
+        invited_user_party_id = invited_user.document.party_id
 
         # If the person they invited is already in a party
         if invited_user_party_id:
@@ -275,7 +275,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
                     return
 
                 # Update invited user's party information in the database
-                invited_user.dcmt.party_id = party_id
+                invited_user.document.party_id = party_id
                 await invited_user.save()
                 # Add user to list of party members
                 party.party_members.append(invited_user.uid)
@@ -311,7 +311,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         await user.load()
         await user_to_kick.load()
 
-        party_id = user.dcmt.party_id
+        party_id = user.document.party_id
 
         error_embed = d.Embed(color=d.Color.red())
         error_embed.set_author(name=f"Cannot kick user from the party")
@@ -343,7 +343,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         await member_to_kick.remove_roles(party_role)
 
         # Clear the user's party data in the database
-        user_to_kick.dcmt.party_id = None
+        user_to_kick.document.party_id = None
         await user_to_kick.save()
 
         party.party_members.remove(user_to_kick.uid)
@@ -362,7 +362,7 @@ class PartySystemCog(commands.Cog, name="PartySystem"):
         # Load the user
         user = User(interaction.user.id)
         await user.load()
-        party_id = user.dcmt.party_id
+        party_id = user.document.party_id
 
         party: PartyDocument = await PartyDocument.find_one(PartyDocument.party_id == party_id)
         party_member_ids = party.party_members

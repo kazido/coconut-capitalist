@@ -31,46 +31,46 @@ class User:
         """
         log.info(f"Initializing user with uid: {str(uid)}")
         self.uid = uid
-        self.dcmt: UserDocument
+        self.document: UserDocument
 
     async def load(self) -> "User":
         """Method to load a user object with information from MongoDB, taking in a discord uid"""
-        self.dcmt = await UserDocument.find_one(UserDocument.discord_id == self.uid)
-        if self.dcmt is None:
+        self.document = await UserDocument.find_one(UserDocument.discord_id == self.uid)
+        if not self.document:
             # TODO: Handle tutorial here I think, probably needs to be moved out of this though
             user = discord.Object(id=self.uid, type=discord.abc.User)
-            self.dcmt = UserDocument(name=user.name, discord_id=self.uid)
-            await self.dcmt.insert()
+            self.document = UserDocument(name=user.name, discord_id=self.uid)
+            await self.document.insert()
         return self
 
     def __str__(self):
-        return self.dcmt.name
+        return self.document.name
 
     async def save(self):
         """Save the user document after any changes"""
-        await self.dcmt.save()
+        await self.document.save()
 
     async def get_user_rank(self):
         """Retrieve the corresponding rank of a user from the database"""
-        return self.dcmt.rank
+        return self.document.rank
 
     # UPDATE METHODS ------------------------------------
     async def inc_purse(self, amount: int):
-        self.dcmt.purse += amount
+        self.document.purse += amount
         await self.save()
 
     async def inc_bank(self, amount: int):
-        self.dcmt.bank += amount
+        self.document.bank += amount
         await self.save()
 
     async def inc_tokens(self, *, tokens: int):
-        self.dcmt.tokens += tokens
+        self.document.tokens += tokens
         await self.save()
 
     async def inc_xp(self, *, skill: str, xp: int, interaction: discord.Interaction):
         # TODO: Needs an overhaul to work with Tiers and Areas and Pets
         # ALSO MAYBE WE SHOULD MAKE THIS SIMPLER AND MOVE THE COMPLEX LOGIC ELSEWHERE
-        current_xp = getattr(self.dcmt, skill)["xp"]
+        current_xp = getattr(self.document, skill)["xp"]
         current_level = self.xp_to_level(current_xp)
         pet, pet_data = self.get_active_pet()
         rewarded_xp = xp
@@ -96,12 +96,12 @@ class User:
             embed.set_thumbnail(url=interaction.user.avatar.url)
             await interaction.channel.send(embed=embed)
 
-        getattr(self.dcmt, skill)["xp"] += rewarded_xp
+        getattr(self.document, skill)["xp"] += rewarded_xp
         await self.save()
         return pet_data
 
-    async def update_game(self, *, in_game: bool):
-        self.dcmt.in_game = in_game
+    async def in_game(self, in_game: bool):
+        self.document.in_game = in_game
         await self.save()
 
     # ITEM METHODS -----------------------------------
@@ -206,10 +206,10 @@ class User:
 
     # GET METHODS ------------------------------------
     def get_field(self, field: str):
-        return getattr(self.dcmt, field, f"{self.dcmt} does not have field {field}.")
+        return getattr(self.document, field, f"{self.document} does not have field {field}.")
 
     def get_active_pet(self):
-        pets = self.dcmt.pets
+        pets = self.document.pets
         if "active" not in pets.keys():
             return None, None
         return pets["active"], Pets.get_by_id(pets["active"]["pet_id"])
@@ -256,12 +256,12 @@ class User:
 
     async def set_cooldown(self, command_type: COMMAND_TYPES):
         now = time.time()
-        self.dcmt.cooldowns[command_type] = now
+        self.document.cooldowns[command_type] = now
         await self.save()
 
     def check_cooldown(self, command_type: COMMAND_TYPES):
         """Checks to see if a command is currently on cooldown. Returns boolean result and cooldown, if any"""
-        last_used = self.dcmt.cooldowns[command_type]
+        last_used = self.document.cooldowns[command_type]
         cooldowns = {"work": 6, "daily": 21, "weekly": 167}
         cooldown_hours = cooldowns[command_type]
 

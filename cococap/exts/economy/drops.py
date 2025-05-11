@@ -71,7 +71,7 @@ class ClaimDropButtons(discord.ui.View):
         user = User(claim_interaction.user.id)
         await user.load()
 
-        user.dcmt.drops_claimed += 1
+        user.document.drops_claimed += 1
         await user.save()
 
         megadrop = await collection.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")})
@@ -80,7 +80,7 @@ class ClaimDropButtons(discord.ui.View):
             claimed_embed = discord.Embed(
                 title="🎉 THE MEGADROP HAS BEEN CLAIMED! 🎉",
                 description=f"{claim_interaction.user.name} {self.drop.description}\n"
-                f"You have claimed **{user.dcmt.drops_claimed:,}** drops 📦",
+                f"You have claimed **{user.document.drops_claimed:,}** drops 📦",
                 color=self.drop.color,
             )
             claimed_embed.add_field(
@@ -126,7 +126,7 @@ class ClaimDropButtons(discord.ui.View):
             claimed_embed = discord.Embed(
                 title="This drop has been claimed!",
                 description=f"{claim_interaction.user.name} {self.drop.description}\n"
-                f"You have claimed **{user.dcmt.drops_claimed:,}** drops 📦",
+                f"You have claimed **{user.document.drops_claimed:,}** drops 📦",
                 color=self.drop.color,
             )
             claimed_embed.set_footer(text="Drops happen randomly and last for 30 minutes!")

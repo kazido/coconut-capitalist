@@ -14,10 +14,6 @@ from utils.custom_embeds import Cembed
 class SpectrumCog(commands.Cog, name="Spectrum"):
     """Remember the pattern and try to get a high score."""
 
-    def __init__(self, bot):
-        self.bot = bot
-        self.tree = self.bot.tree
-
     @app_commands.command(name="sequence", description="Remember the pattern, win some bits!")
     @app_commands.choices(
         difficulty=[
@@ -147,7 +143,7 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
         class SequenceGame(discord.ui.View):
             def __init__(self, sequence, index, total_score, selected_difficulty: int):
                 super().__init__()
-                self.sequence: list[options] = sequence
+                self.sequence: list = sequence
                 self.index = index
                 self.total_score = total_score
                 for emoji_number, emoji in enumerate(
@@ -170,7 +166,7 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
                 )
 
         # When game is ready to begin, send the initial embed and show the pattern
-        async def show_pattern(inter: discord.Interaction, seq: list[options], tot_score: int):
+        async def show_pattern(inter: discord.Interaction, seq: list, tot_score: int):
             pattern_interval = 0.4 if len(seq) < 15 else 0.2
             for element in seq:  # show each element in the pattern
                 embed = Cembed(
@@ -209,7 +205,3 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
         await interaction.response.send_message(embed=initial_ready_embed)
         await asyncio.sleep(1.5)
         await show_pattern(interaction, pattern, 0)
-
-
-async def setup(bot):
-    await bot.add_cog(SpectrumCog(bot))

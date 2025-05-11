@@ -1,12 +1,9 @@
 import cococap
 import discord
 
-from discord import Interaction
-
 from pydis_core.utils import scheduling
 from typing import Sequence
 from logging import getLogger
-from cococap.exts.utils.error import ButtonCheckFailure
 
 
 log = getLogger(__name__)
@@ -54,10 +51,3 @@ def reaction_check(
             name=f"remove_reaction-{reaction}-{reaction.message.id}-{user}",
         )
         return False
-
-
-async def button_check(interaction: Interaction, allowed_users: list[int]):
-    if interaction.user.id in allowed_users:
-        log.debug(f"{interaction.user.id} ({interaction.user.name}) passed button check.")
-        return True
-    raise ButtonCheckFailure("You are allowed to click this button. It's not yours!")
