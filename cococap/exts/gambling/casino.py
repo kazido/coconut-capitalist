@@ -1,5 +1,3 @@
-import discord
-
 from discord import app_commands, Interaction
 from discord.ext import commands
 
@@ -10,6 +8,9 @@ from .blackjack import Blackjack, Actions
 
 class Casino(commands.Cog, name="Casino"):
     """Casino games. The house always wins..."""
+
+    def __init__(self):
+        super().__init__()
 
     async def cog_before_invoke(self, ctx):
         # Load user data before each command
@@ -49,3 +50,7 @@ class Casino(commands.Cog, name="Casino"):
     async def highlow(self, interaction: Interaction, bet: int):
         user: User = interaction.extras.get("user")
         purse = user.get_field("purse")
+
+
+async def setup(bot):
+    bot.add_cog(Casino())
