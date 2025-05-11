@@ -54,7 +54,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
 
     @commands.is_owner()
     @commands.command(name="sync")
-    async def sync(self, ctx, scope: str):
+    async def sync(self, ctx, scope: str = None):
         # Copy the global commands over to my guild TODO: This will need to be changed when global
         if scope == "global":
             sync = await self.bot.tree.sync()
