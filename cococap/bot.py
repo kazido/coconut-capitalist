@@ -30,7 +30,6 @@ class StartupError(Exception):
 class Bot(BotBase):
     async def setup_hook(self) -> None:
         await super().setup_hook()
-        self.add_view(PersistentView(), message_id=1371094892805361674)
 
         # Logging setup
         logs.setup()
