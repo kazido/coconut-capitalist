@@ -42,8 +42,14 @@ class ErrorHandler(commands.Cog):
             error_embed.title = e.title
         if hasattr(e, "footer") and e.footer:
             error_embed.set_footer(text=e.footer)
-        # Send default traceback and have user check logs.
-        # traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
+        # Print a simple error note to the terminal
+        print(
+            f"App command error occurred with command {i.command.qualified_name}: {e}",
+            file=sys.stderr,
+        )
+        # Write the full traceback to a log file
+        with open("logs/app_command_errors.log", "a") as log_file:
+            traceback.print_exception(type(e), e, e.__traceback__, file=log_file)
         # Attempt to send the message, if it's already been responded to, followup.
         try:
             return await i.response.send_message(embed=error_embed)
@@ -56,10 +62,13 @@ class ErrorHandler(commands.Cog):
         error_embed = ErrorEmbed()
         if isinstance(e, commands.CommandNotFound):
             error_embed.description = f"I couldn't find that command. Typo?"
+            return await ctx.send(embed=error_embed)
         else:
-            print("Ignoring exception in [PREFIX] command {}:".format(ctx.command), file=sys.stderr)
-            traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
-        return await ctx.send(embed=error_embed)
+            # Print a simple error note to the terminal
+            print(f"Prefix command error occurred: {e}", file=sys.stderr)
+            # Write the full traceback to a log file
+            with open("logs/command_errors.log", "a") as log_file:
+                traceback.print_exception(type(e), e, e.__traceback__, file=log_file)
 
 
 async def setup(bot) -> None:
