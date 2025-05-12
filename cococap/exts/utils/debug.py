@@ -80,6 +80,25 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     async def clear(self, ctx: commands.Context, amount):
         await ctx.channel.purge(limit=int(amount) + 1)
 
+    # A command for sending embeds
+    @app_commands.command(name="embed", description="Create an embed.")
+    async def embed(self, interaction: discord.Interaction):
+        class EmbedModal(discord.ui.Modal, title="Embed Creation"):
+            embed_title = discord.ui.TextInput(label="Title")
+            description = discord.ui.TextInput(
+                label="Description", style=discord.TextStyle.paragraph
+            )
+
+            async def on_submit(self, interaction: discord.Interaction) -> None:
+                embed = discord.Embed(
+                    title=self.embed_title,
+                    description=self.description,
+                    color=discord.Color.green(),
+                )
+                await interaction.response.send_message(embed=embed)
+
+        await interaction.response.send_modal(EmbedModal())
+
 
 async def setup(bot):
     await bot.add_cog(DebuggingCommands(bot))
