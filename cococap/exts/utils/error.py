@@ -1,9 +1,9 @@
-import traceback
 import sys
+import traceback
 
 from discord import Interaction, InteractionResponded
-from discord.ext import commands
 from discord.app_commands import AppCommandError
+from discord.ext import commands
 from utils.custom_embeds import ErrorEmbed
 
 
@@ -42,14 +42,15 @@ class ErrorHandler(commands.Cog):
             error_embed.title = e.title
         if hasattr(e, "footer") and e.footer:
             error_embed.set_footer(text=e.footer)
+
         # Print a simple error note to the terminal
-        print(
-            f"App command error occurred with command {i.command.qualified_name}: {e}",
-            file=sys.stderr,
-        )
+        command_name = "/" + i.command.qualified_name
+        print(f"{command_name} failed: {e}", file=sys.stderr)
+
         # Write the full traceback to a log file
         with open("logs/app_command_errors.log", "a") as log_file:
             traceback.print_exception(type(e), e, e.__traceback__, file=log_file)
+
         # Attempt to send the message, if it's already been responded to, followup.
         try:
             return await i.response.send_message(embed=error_embed)
@@ -60,15 +61,25 @@ class ErrorHandler(commands.Cog):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, e: commands.CommandError):
         error_embed = ErrorEmbed()
+        error_embed.description = e.args[0]
+        if hasattr(e, "title") and e.title:
+            error_embed.title = e.title
+        if hasattr(e, "footer") and e.footer:
+            error_embed.set_footer(text=e.footer)
+
+        # Print a simple error note to the terminal
+        command_name = ctx.prefix + ctx.command.qualified_name
+        print(f"{command_name} failed: {e}", file=sys.stderr)
+
         if isinstance(e, commands.CommandNotFound):
             error_embed.description = f"I couldn't find that command. Typo?"
-            return await ctx.send(embed=error_embed)
-        else:
-            # Print a simple error note to the terminal
-            print(f"Prefix command error occurred: {e}", file=sys.stderr)
-            # Write the full traceback to a log file
-            with open("logs/command_errors.log", "a") as log_file:
-                traceback.print_exception(type(e), e, e.__traceback__, file=log_file)
+
+        # Write the full traceback to a log file
+        with open("logs/command_errors.log", "a") as log_file:
+            traceback.print_exception(type(e), e, e.__traceback__, file=log_file)
+
+        # Send a message with error
+        return await ctx.send(embed=error_embed)
 
 
 async def setup(bot) -> None:
