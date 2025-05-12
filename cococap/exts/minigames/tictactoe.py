@@ -4,7 +4,7 @@ from discord import app_commands
 import discord
 
 
-class TicTacToeCog(commands.Cog, name='Tic Tac Toe'):
+class TicTacToeCog(commands.Cog, name="Tic Tac Toe"):
     """Play tic tac toe with your friends."""
 
     def __init__(self, bot):
@@ -14,18 +14,20 @@ class TicTacToeCog(commands.Cog, name='Tic Tac Toe'):
     @app_commands.command(name="tictactoe", description="Challenge someone in tictactoe")
     async def tic(self, interaction: discord.Interaction, user: discord.User):
         """Starts a tic-tac-toe game with yourself."""
-        await interaction.response.send_message(f'Tic Tac Toe:  ', view=TicTacToeCog.TicTacToe(interaction.user, user))
+        await interaction.response.send_message(
+            f"Tic Tac Toe:  ", view=TicTacToeCog.TicTacToe(interaction.user, user)
+        )
 
     # Defines a custom button that contains the logic of the game.
     # The ['TicTacToe'] bit is for type hinting purposes to tell your IDE or linter
     # what the type of `self.view` is. It is not required.
-    class TicTacToeButton(discord.ui.Button['TicTacToe']):
+    class TicTacToeButton(discord.ui.Button["TicTacToe"]):
         def __init__(self, x: int, y: int):
             # A label is required, but we don't need one so a zero-width space is used
             # The row parameter tells the View which row to place the button under.
             # A View can only contain up to 5 rows -- each row can only have 5 buttons.
             # Since a Tic Tac Toe grid is 3x3 that means we have 3 rows and 3 columns.
-            super().__init__(style=discord.ButtonStyle.secondary, label='\u200b', row=y)
+            super().__init__(style=discord.ButtonStyle.secondary, label="\u200b", row=y)
             self.x_pos = x
             self.y_pos = y
 
@@ -46,25 +48,25 @@ class TicTacToeCog(commands.Cog, name='Tic Tac Toe'):
 
             if view.current_player == view.player1:
                 self.style = discord.ButtonStyle.red
-                self.label = 'X'
+                self.label = "X"
                 self.disabled = True
                 view.board[self.y_pos][self.x_pos] = view.X_value
                 view.current_player = view.player2
-                content = f"It is now {view.player2.name}'s turn"
+                content = f"It is now {view.player2.display_name}'s turn"
             elif view.current_player == view.player2:
                 self.style = discord.ButtonStyle.green
-                self.label = 'O'
+                self.label = "O"
                 self.disabled = True
                 view.board[self.y_pos][self.x_pos] = view.O_value
                 view.current_player = view.player1
-                content = f"It is now {view.player1.name}'s turn"
+                content = f"It is now {view.player1.display_name}'s turn"
 
             winner = view.check_board_winner()
             if winner is not None:
                 if winner == view.X_value:
-                    content = f'**{view.player1.name} won!**'
+                    content = f"**{view.player1.name} won!**"
                 elif winner == view.O_value:
-                    content = f'**{view.player2.name} won!**'
+                    content = f"**{view.player2.name} won!**"
                 else:
                     content = "It's a tie!"
 
