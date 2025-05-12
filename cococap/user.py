@@ -11,66 +11,49 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-"""
-The user class!
-This class is used to interact with the user document in the database.
-It contains methods to interact with the user's data, such as:
-- Getting user information
-- Updating user information
-"""
-
-
 class User:
     def __init__(self, uid: int):
-        """
-        - self.uid: The discord id of the user.
-        - self.d (UserDocument): The database document of the user, containing all of their game data.
-
-        Args:
-            uid (int): _description_
-        """
         log.info(f"Initializing user with uid: {str(uid)}")
         self.uid = uid
-        self.document: UserDocument
+        self._document: UserDocument
 
-    async def load(self) -> "User":
+    async def load(self):
         """Method to load a user object with information from MongoDB, taking in a discord uid"""
-        self.document = await UserDocument.find_one(UserDocument.discord_id == self.uid)
-        if not self.document:
+        self._document = await UserDocument.find_one(UserDocument.discord_id == self.uid)
+        if not self._document:
             # TODO: Handle tutorial here I think, probably needs to be moved out of this though
-            user = discord.Object(id=self.uid, type=discord.abc.User)
-            self.document = UserDocument(name=user.name, discord_id=self.uid)
-            await self.document.insert()
+            self._document = UserDocument(name="unnamed user", discord_id=self.uid)
+            await self._document.insert()
         return self
 
     def __str__(self):
-        return self.document.name
+        return self._document.name
 
     async def save(self):
         """Save the user document after any changes"""
-        await self.document.save()
+        await self._document.save()
 
     async def get_user_rank(self):
         """Retrieve the corresponding rank of a user from the database"""
-        return self.document.rank
+        return self._document.rank
 
     # UPDATE METHODS ------------------------------------
     async def inc_purse(self, amount: int):
-        self.document.purse += amount
+        self._document.purse += amount
         await self.save()
 
     async def inc_bank(self, amount: int):
-        self.document.bank += amount
+        self._document.bank += amount
         await self.save()
 
     async def inc_tokens(self, *, tokens: int):
-        self.document.tokens += tokens
+        self._document.tokens += tokens
         await self.save()
 
     async def inc_xp(self, *, skill: str, xp: int, interaction: discord.Interaction):
         # TODO: Needs an overhaul to work with Tiers and Areas and Pets
         # ALSO MAYBE WE SHOULD MAKE THIS SIMPLER AND MOVE THE COMPLEX LOGIC ELSEWHERE
-        current_xp = getattr(self.document, skill)["xp"]
+        current_xp = getattr(self._document, skill)["xp"]
         current_level = self.xp_to_level(current_xp)
         pet, pet_data = self.get_active_pet()
         rewarded_xp = xp
@@ -96,12 +79,12 @@ class User:
             embed.set_thumbnail(url=interaction.user.avatar.url)
             await interaction.channel.send(embed=embed)
 
-        getattr(self.document, skill)["xp"] += rewarded_xp
+        getattr(self._document, skill)["xp"] += rewarded_xp
         await self.save()
         return pet_data
 
     async def in_game(self, in_game: bool):
-        self.document.in_game = in_game
+        self._document.in_game = in_game
         await self.save()
 
     # ITEM METHODS -----------------------------------
@@ -206,10 +189,19 @@ class User:
 
     # GET METHODS ------------------------------------
     def get_field(self, field: str):
-        return getattr(self.document, field, f"{self.document} does not have field {field}.")
+        if not hasattr(self._document, field):
+            raise AttributeError(f"{self._document} does not have field '{field}'.")
+        return getattr(self._document, field)
+
+    def update_field(self, field: str, value, save: bool = False):
+        if not hasattr(self._document, field):
+            raise AttributeError(f"{self._document} does not have field '{field}'.")
+        setattr(self._document, field, value)
+        if save:
+            return self.save()
 
     def get_active_pet(self):
-        pets = self.document.pets
+        pets = self._document.pets
         if "active" not in pets.keys():
             return None, None
         return pets["active"], Pets.get_by_id(pets["active"]["pet_id"])
@@ -256,12 +248,12 @@ class User:
 
     async def set_cooldown(self, command_type: COMMAND_TYPES):
         now = time.time()
-        self.document.cooldowns[command_type] = now
+        self._document.cooldowns[command_type] = now
         await self.save()
 
     def check_cooldown(self, command_type: COMMAND_TYPES):
         """Checks to see if a command is currently on cooldown. Returns boolean result and cooldown, if any"""
-        last_used = self.document.cooldowns[command_type]
+        last_used = self._document.cooldowns[command_type]
         cooldowns = {"work": 6, "daily": 21, "weekly": 167}
         cooldown_hours = cooldowns[command_type]
 
