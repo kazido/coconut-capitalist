@@ -8,7 +8,7 @@ from discord.ext import commands
 from discord.app_commands import Choice
 
 from cococap.user import User
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 
 
 class Minigames(commands.Cog, name="Minigames"):

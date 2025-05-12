@@ -9,7 +9,7 @@ from discord.ext import commands
 from logging import getLogger
 
 from utils.menus import MenuHandler, Menu
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 from utils.checks import button_check
 from utils.items.items import get_items_from_db, roll_item
 from utils.utils import timestamp_to_english
@@ -164,7 +164,7 @@ class MiningCog(commands.Cog, name="Mining"):
                 self.column_cursors.append(col_order[depth])
 
             # create the embed
-            self.embed = Cembed(
+            self.embed = CustomEmbed(
                 title=":pick: Welcome back to the mines.",
                 color=discord.Color.blue(),
                 desc="Pick a column to dig out for ores and gems! \
@@ -342,7 +342,7 @@ class MiningCog(commands.Cog, name="Mining"):
             self.cols = [2]
 
             # Create the embed
-            self.embed = Cembed(
+            self.embed = CustomEmbed(
                 title=f"You found a Wyrmhole! {MiningCog.wyrmhole_emoji}",
                 color=discord.Color.purple(),
                 desc="You can only choose one node! Good luck!",
@@ -507,7 +507,7 @@ class MiningCog(commands.Cog, name="Mining"):
             self.user = user
             self.user_mining = user.get_field("mining")
             self.reactor_level = self.user_mining["prestige_level"]
-            self.embed = Cembed(
+            self.embed = CustomEmbed(
                 title=f"Reactor Level: 🌟 {self.reactor_level:,}",
                 description="Level up your reactor for passive mining and to mine more nodes!",
                 color=discord.Color.from_str("0x0408dd"),
@@ -628,7 +628,7 @@ class MiningCog(commands.Cog, name="Mining"):
                 )  # Create the reactor menu when the Main Menu is made
 
                 # GENERAL CREATION OF THE EMBED!! COPY THIS AS A TEMPLATE FOR OTHER SKILLS!
-                self.embed = Cembed(
+                self.embed = CustomEmbed(
                     title=f"Level: 🌟 {user.xp_to_level(user_mining['xp']):,}",
                     color=discord.Color.from_str(Categories.MINING.color),
                     interaction=interaction,

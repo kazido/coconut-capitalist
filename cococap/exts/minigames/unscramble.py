@@ -9,7 +9,7 @@ from discord.ext import commands
 from discord import app_commands
 
 from cococap.user import User
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
         user = User(interaction.user.id)
         await user.load()
 
-        stats = user.document.gambling_statistics
+        stats = user._document.gambling_statistics
 
         # Picks a random word from the file resources.unscramble_words.txt
         def get_word():
@@ -54,14 +54,14 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
         word, scrambled_word = get_word()
         time_limit = 1.4 ** len(word)
         reward = len(word) * (10 * len(word) ** 2) + 300
-        unscramble_prompt_embed = Cembed(
+        unscramble_prompt_embed = CustomEmbed(
             title="Unscramble!",
             desc=f"You will have {time_limit.__round__()} seconds to unscramble the following word!",
             color=0xA0A39D,
             interaction=interaction,
             activity="unscrambling",
         )
-        shuffled_word_embed = Cembed(
+        shuffled_word_embed = CustomEmbed(
             title="Unscramble!",
             desc=f"You will have {time_limit.__round__()} seconds to unscramble the following word!\n"
             f"***{scrambled_word}***",
@@ -87,7 +87,7 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
                 # The user guessed the word correctly.
                 log.debug(f"User guessed {word} correctly.")
 
-                correct_word_embed = Cembed(
+                correct_word_embed = CustomEmbed(
                     title="Unscramble!",
                     desc=f"Correct!\n" f"***{scrambled_word}*** - {word}",
                     color=0xA0F09C,
@@ -116,7 +116,7 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
             # The user took too long to guess and loses.
             log.debug(f"User took too long to guess {word}.")
 
-            too_slow_embed = Cembed(
+            too_slow_embed = CustomEmbed(
                 title="Unscramble!",
                 desc=f"Too slow!\n" f"***{scrambled_word}*** - {word}",
                 color=0xA8332F,

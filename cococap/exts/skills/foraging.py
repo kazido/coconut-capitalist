@@ -8,7 +8,7 @@ from logging import getLogger
 from discord.interactions import Interaction
 
 from cococap.user import User
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 from cococap.item_models import Master
 
 log = getLogger(__name__)
@@ -185,7 +185,7 @@ class ForagingCog(commands.Cog, name="Foraging"):
 
         skill_xp = foraging["xp"]
         skill_level = user.xp_to_level(skill_xp)
-        embed = Cembed(
+        embed = CustomEmbed(
             title=f"Foraging level: {skill_level}",
             color=discord.Color.blue(),
             interaction=interaction,

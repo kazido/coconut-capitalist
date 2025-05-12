@@ -8,7 +8,7 @@ from discord.ext import commands
 from discord.app_commands import Choice
 
 from cococap.user import User
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 
 
 class SpectrumCog(commands.Cog, name="Spectrum"):
@@ -54,7 +54,7 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
                 reward = view.total_score * (difficulty_multiplier * view.total_score**2) + (
                     300 * played
                 )  # Score calculation
-                wrong_embed = Cembed(
+                wrong_embed = CustomEmbed(
                     title="GAME OVER!",
                     desc=f"You got the pattern wrong :sob:",
                     colour=discord.Color.blurple(),
@@ -105,7 +105,7 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
             for child in view.children:
                 child.disabled = True
 
-            embed = Cembed(
+            embed = CustomEmbed(
                 title="Recall the order!",
                 desc="" + f"{view.sequence[view.index]}" * 6,
                 color=discord.Color.blue(),
@@ -118,7 +118,7 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
             embed.description = "" + (":black_large_square:" * 6)
             if view.index + 1 == len(view.sequence):  # If element is last element in the list
                 view.total_score += 1
-                embed = Cembed(
+                embed = CustomEmbed(
                     title="Pattern Remembered!",
                     desc=f"Current score: **{view.total_score}** elements :white_check_mark:\n"
                     f"Next round starting!",
@@ -169,7 +169,7 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
         async def show_pattern(inter: discord.Interaction, seq: list, tot_score: int):
             pattern_interval = 0.4 if len(seq) < 15 else 0.2
             for element in seq:  # show each element in the pattern
-                embed = Cembed(
+                embed = CustomEmbed(
                     title="Remember this!",
                     desc="" + (f"{element}" * 6),
                     color=discord.Color.blue(),
@@ -182,7 +182,7 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
 
                 await inter.edit_original_response(embed=embed)
                 await asyncio.sleep(0.05)
-            user_ready_embed = Cembed(
+            user_ready_embed = CustomEmbed(
                 title="Recall the order!",
                 desc="Push the buttons in the order they are shown!\n"
                 "Mess up the order and the **game will end**.",
@@ -194,7 +194,7 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
                 embed=user_ready_embed, view=SequenceGame(seq, 0, tot_score, difficulty.value)
             )
 
-        initial_ready_embed = Cembed(
+        initial_ready_embed = CustomEmbed(
             title="Welcome to Spectrum Sequence!",
             desc="Push the buttons in the order they are shown!\n"
             "Mess up the order and the **game will end**.",

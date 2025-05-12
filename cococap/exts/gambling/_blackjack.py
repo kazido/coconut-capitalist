@@ -5,7 +5,7 @@ import asyncio
 
 from enum import Enum
 from cococap.user import User
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 
 
 class GameStates(Enum):
@@ -148,7 +148,7 @@ class Blackjack(discord.ui.View):
         if self.state != GameStates.READY:
             self.clear_items()
 
-        embed = Cembed(
+        embed = CustomEmbed(
             title=f"{self.state.title} | Bet: {self.player.bet:,}",
             color=self.state.color,
             interaction=self.interaction,

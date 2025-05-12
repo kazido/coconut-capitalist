@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands, Interaction
 from cococap.user import User
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 
 
 class Settings(commands.Cog):
@@ -34,14 +34,14 @@ class Settings(commands.Cog):
             },
         }
 
-        settings: dict = user.document.settings
+        settings: dict = user._document.settings
         keys = list(settings.keys())
 
         class SettingsView(discord.ui.View):
             def __init__(self, *, timeout: float | None = 180):
                 super().__init__(timeout=timeout)
                 self.current = keys[0]
-                self.embed = Cembed(
+                self.embed = CustomEmbed(
                     title=f"{interaction.user.name}'s Settings",
                     color=discord.Color.green() if settings[self.current] else discord.Color.red(),
                     interaction=interaction,

@@ -9,7 +9,7 @@ from discord.ext import commands
 from logging import getLogger
 
 from utils.menus import MenuHandler, Menu
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 from utils.checks import button_check
 from utils.items.items import get_items_from_db, roll_item
 from utils.utils import timestamp_to_english
@@ -45,7 +45,7 @@ class FishingCog(commands.Cog, name="Fishing"):
         def __init__(self, bite: "FishingCog.Bite", interaction: Interaction) -> None:
             self.interaction = interaction
             self.bite: "FishingCog.Bite" = bite
-            self.embed = Cembed(
+            self.embed = CustomEmbed(
                 title="A bite!",
                 desc=f"You found a {bite.fish.display_name}...\n{bite.pattern}",
                 color=discord.Color.from_str(Rarities.from_value(bite.fish.rarity).color),
@@ -56,7 +56,7 @@ class FishingCog(commands.Cog, name="Fishing"):
 
         def update_embed(self):
             if self.bite.caught:
-                self.embed = Cembed(title="You caught the fish!")
+                self.embed = CustomEmbed(title="You caught the fish!")
             # Update the description of the embed to show the pattern
             self.embed.description = (
                 f"Keep going, catch the {self.bite.fish.display_name}!\n{self.bite.pattern}"
@@ -106,7 +106,7 @@ class FishingCog(commands.Cog, name="Fishing"):
                 super().__init__(handler, "Home")
 
                 # GENERAL CREATION OF THE EMBED!! COPY THIS AS A TEMPLATE FOR OTHER SKILLS!
-                self.embed = Cembed(
+                self.embed = CustomEmbed(
                     title=f"Level: 🌟 {user.xp_to_level(user_fishing['xp']):,}",
                     color=discord.Color.from_str(Categories.FISHING.color),
                     interaction=interaction,

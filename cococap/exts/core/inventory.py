@@ -5,7 +5,7 @@ from discord import app_commands
 
 from cococap.user import User
 from cococap.item_models import Master
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 from utils.menus import Menu, MenuHandler
 from utils.pagination import LinePaginator
 
@@ -22,7 +22,7 @@ class InventoryCog(commands.Cog, name="Inventory"):
         user = User(interaction.user.id)
         await user.load()
 
-        inventory: dict = user.document.items
+        inventory: dict = user._document.items
 
         if len(inventory) == 0:
             return await interaction.response.send_message(
@@ -32,7 +32,7 @@ class InventoryCog(commands.Cog, name="Inventory"):
         class Inventory(Menu):
             def __init__(self, handler: MenuHandler):
                 self.lines = []  # This is to work with pagination, currently not working
-                embed = Cembed(
+                embed = CustomEmbed(
                     title=f"{interaction.user.name}'s Inventory",
                     desc="",
                     color=discord.Color.from_rgb(153, 176, 162),

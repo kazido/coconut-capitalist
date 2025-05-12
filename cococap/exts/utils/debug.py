@@ -5,7 +5,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from cococap.user import User
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 
 
 class DebuggingCommands(commands.Cog, name="Debugging Commands"):
@@ -50,7 +50,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     async def stuck(self, ctx):
         user = await User(ctx.author.id).load()
         await user.in_game(in_game=False)
-        embed = Cembed(desc="Unstuck now!")
+        embed = CustomEmbed(desc="Unstuck now!")
         await ctx.send(embed=embed)
 
     @commands.is_owner()

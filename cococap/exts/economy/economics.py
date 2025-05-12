@@ -11,7 +11,7 @@ from discord.ext import commands
 from pymongo import DESCENDING
 
 from cococap.user import User
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 from cococap.models import UserDocument as Udoc
 
 from cococap.constants import (
@@ -31,15 +31,17 @@ class EconomyCog(commands.Cog, name="Economy"):
 
     @app_commands.command(name="profile", description="Check your profile, pets, etc.")
     async def bits(self, interaction: discord.Interaction):
-        user = User(interaction.user.id)
-        await user.load()
+        user = await User(interaction.user.id).load()
+        if user.get_field("name") == "unnamed user":
+            user._document.name = interaction.user.display_name
+            await user.save()
 
         # TODO: Fix ranks
         # rank = await user.get_user_rank()
 
-        embed = Cembed(
+        embed = CustomEmbed(
             # title=f"You are: `{rank.display_name}`",
-            title="TEST!",
+            title="Profile!",
             color=discord.Color.blue(),
             interaction=interaction,
             activity="profile",
@@ -47,10 +49,10 @@ class EconomyCog(commands.Cog, name="Economy"):
 
         embed.add_field(
             name="Balances",
-            value=f":money_with_wings: **BITS**: {user.document.purse:,}\n"
-            f":bank: **BANK**: {user.document.bank:,}\n"
-            f":four_leaf_clover: **LUCKBUCKS**: {user.document.luckbucks:,}\n"
-            f":coin: **TOKENS**: {user.document.tokens:,}",
+            value=f":money_with_wings: **BITS**: {user.get_field('purse'):,}\n"
+            f":bank: **BANK**: {user.get_field('bank'):,}\n"
+            f":four_leaf_clover: **LUCKBUCKS**: {user.get_field('luckbucks'):,}\n"
+            f":coin: **TOKENS**: {user.get_field('tokens'):,}",
         )
         embed.set_thumbnail(url=interaction.user.display_avatar)
         await interaction.response.send_message(embed=embed)
@@ -67,7 +69,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
         # If user has 10,000 bits or more in their purse or bank
         if total_balance >= max_balance:
-            embed = Cembed(
+            embed = CustomEmbed(
                 title=random.choice(TOO_RICH_TITLES),
                 desc=f"You cannot beg if you have more than 10,000 bits\n"
                 f"You have **{total_balance:,}** bits",
@@ -81,9 +83,9 @@ class EconomyCog(commands.Cog, name="Economy"):
             beg_amount = randint(100, 500)
             await user.inc_purse(beg_amount)
 
-            embed = Cembed(
+            embed = CustomEmbed(
                 title=f"Someone kind dropped {beg_amount} bits in your cup.",
-                desc=f"You now have {user.get_field('purse')} bits.",
+                desc=f"You now have {user.get_field('purse'):,} bits.",
                 color=discord.Color.green(),
                 interaction=interaction,
                 activity="begging",
@@ -197,7 +199,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         class CheckInMenu(discord.ui.View):
             def __init__(self, *, timeout: float | None = 180):
                 super().__init__(timeout=timeout)
-                self.embed = Cembed(
+                self.embed = CustomEmbed(
                     title="Check-ins",
                     desc="Come back often to claim your rewards.",
                     color=discord.Color.dark_blue(),
@@ -256,7 +258,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                     purse = user.get_field("purse")
                     await user.inc_purse(amount=-purse)
                     await user.inc_bank(amount=purse)
-                    embed = Cembed(
+                    embed = CustomEmbed(
                         colour=discord.Color.dark_blue(),
                         interaction=interaction,
                         activity="depositing",
@@ -346,7 +348,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         else:
             await user.inc_purse(amount=-amount)
             await user.inc_bank(amount=amount)
-            embed = Cembed(
+            embed = CustomEmbed(
                 colour=discord.Color.dark_blue(), interaction=interaction, activity="depositing"
             )
             embed.add_field(
@@ -390,7 +392,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
         settings = user.get_field("settings")
         if settings["withdraw_warning"]:
-            warning_embed = Cembed(
+            warning_embed = CustomEmbed(
                 title="Are you sure?",
                 desc="Withdrawing just to gamble more might not be a good idea.",
                 color=discord.Color.dark_red(),
@@ -414,7 +416,7 @@ class EconomyCog(commands.Cog, name="Economy"):
 
                     await user.inc_bank(amount=-amount)
                     await user.inc_purse(amount=amount)
-                    withdraw_embed = Cembed(
+                    withdraw_embed = CustomEmbed(
                         colour=discord.Color.dark_blue(),
                         interaction=confirm_interaction,
                         activity="withdrawing",
@@ -432,7 +434,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                 ):
                     if deny_interaction.user != interaction.user:
                         return
-                    cancel_embed = Cembed(
+                    cancel_embed = CustomEmbed(
                         title="Withdraw cancelled",
                         desc="Withdraw was either cancelled or timed out.",
                         interaction=deny_interaction,
@@ -446,7 +448,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         else:
             await user.inc_bank(amount=-amount)
             await user.inc_purse(amount=amount)
-            withdraw_embed = Cembed(
+            withdraw_embed = CustomEmbed(
                 colour=discord.Color.dark_blue(), interaction=interaction, activity="withdrawing"
             )
             withdraw_embed.add_field(
@@ -471,7 +473,7 @@ class EconomyCog(commands.Cog, name="Economy"):
                 "Trying to break the system, are we?",
                 "This is what we call pulling a *Botski*",
             ]
-            embed = Cembed(
+            embed = CustomEmbed(
                 title=random.choice(titles),
                 desc="To avoid '*beg farming*' tactics, you can only send someone amounts over **100**",
                 color=discord.Color.red(),
@@ -502,7 +504,7 @@ class EconomyCog(commands.Cog, name="Economy"):
         await user.inc_purse(amount=int(-amount))
         await payee.inc_purse(amount=amount)
 
-        embed = Cembed(colour=discord.Color.purple())
+        embed = CustomEmbed(colour=discord.Color.purple())
         embed.add_field(
             name="Payment sent!",
             value=f"You have sent {recipient.mention} **{int(amount):,}** bits",

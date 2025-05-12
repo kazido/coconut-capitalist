@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands
 
 from cococap.user import User
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 
 
 class RanksCog(commands.Cog):
@@ -22,7 +22,7 @@ class RanksCog(commands.Cog):
         user_rank = await user.get_user_rank()
 
         # Displays the user's current rank.
-        embed = Cembed(
+        embed = CustomEmbed(
             title=f"Current Rank: *{user_rank.display_name}* {user_rank.emoji}",
             desc=f"{user_rank.description}",
             color=discord.Color.from_str("#" + user_rank.color),
@@ -69,7 +69,7 @@ class RanksCog(commands.Cog):
                 role_to_remove = discord.utils.get(
                     p_interaction.guild.roles, id=self.user_rank.rank_id
                 )
-                purchased_embed = Cembed(
+                purchased_embed = CustomEmbed(
                     title="Purchased!",
                     description=f"You are now rank: **{self.next_rank.display_name}** "
                     f"{self.next_rank.emoji}!",

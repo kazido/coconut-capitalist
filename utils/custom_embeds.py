@@ -8,7 +8,7 @@ from discord.types.embed import EmbedType
 from cococap.constants import SUCCESS_REPLIES, FAILURE_REPLIES, ERROR_REPLIES
 
 
-class Cembed(discord.Embed):
+class CustomEmbed(discord.Embed):
     def __init__(
         self,
         *,
@@ -21,7 +21,7 @@ class Cembed(discord.Embed):
         description: Any | None = None,
         timestamp: datetime | None = None,
         interaction: discord.Interaction | None = None,
-        activity: str = ":)",
+        activity: str,
     ):
         if colour is not None:
             color = colour
@@ -42,7 +42,7 @@ class Cembed(discord.Embed):
             )
 
 
-class SuccessEmbed(Cembed):
+class SuccessEmbed(CustomEmbed):
     def __init__(
         self,
         *,
@@ -68,7 +68,7 @@ class SuccessEmbed(Cembed):
         )
 
 
-class FailureEmbed(Cembed):
+class FailureEmbed(CustomEmbed):
     def __init__(
         self,
         *,
@@ -94,7 +94,7 @@ class FailureEmbed(Cembed):
         )
 
 
-class ErrorEmbed(Cembed):
+class ErrorEmbed(CustomEmbed):
     def __init__(
         self,
         *,
