@@ -13,7 +13,7 @@ def load_user(func):
         if "user" not in interaction.extras:
             user = await User(interaction.user.id).load()  # Store user in 'extras'
             if user.get_field("name") != interaction.user.display_name:
-                user.document.name = interaction.user.display_name
+                user._document.name = interaction.user.display_name
                 user.save()
             interaction.extras["user"] = user
 
