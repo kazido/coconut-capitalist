@@ -99,7 +99,7 @@ class ErrorEmbed(Cembed):
         self,
         *,
         color=discord.Color.red(),
-        title=random.choice(ERROR_REPLIES),
+        title=None,
         type="rich",
         url=None,
         desc="Error! Check logs!",
@@ -107,6 +107,8 @@ class ErrorEmbed(Cembed):
         interaction=None,
         activity=":/",
     ):
+        if title is None:
+            title = random.choice(ERROR_REPLIES)
 
         super().__init__(
             color=color,
