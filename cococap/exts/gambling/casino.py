@@ -3,7 +3,12 @@ from discord.ext import commands
 
 from cococap.user import User
 from cococap.exts.utils.error import InvalidBet
-from .blackjack import Blackjack, Actions
+from ._blackjack import Blackjack, Actions
+
+
+def validate_bet(bet: int, purse: int):
+    if bet <= 0 or bet > purse:
+        raise InvalidBet(f"Invalid bet. You have {purse:,} bits in your purse.")
 
 
 class Casino(commands.Cog, name="Casino"):
@@ -12,33 +17,32 @@ class Casino(commands.Cog, name="Casino"):
     def __init__(self):
         super().__init__()
 
-    async def cog_before_invoke(self, ctx):
+    async def interaction_check(self, interaction: Interaction):
         # Load user data before each command
-        user = await User(ctx.author.id).load()
-        ctx.interaction.extras.update(user=user)
-        return await super().cog_before_invoke(ctx)
+        user = await User(interaction.user.id).load()
+        interaction.extras.update(user=user)
+        return super().interaction_check(interaction)
 
     @app_commands.command(name="blackjack")
     @app_commands.describe(bet="amount of bits you want to bet")
-    async def blackjack(self, interaction: Interaction, bet: int):
+    async def _blackjack(self, interaction: Interaction, bet: int):
         """Classic blackjack. Get as close to 21 as possible, but not over."""
         user: User = interaction.extras.get("user")
         purse = user.get_field("purse")
 
         # Bet validation
-        if bet <= 0 or bet > purse:
-            raise InvalidBet(f"Invalid bet. You have {purse:,} bits in your purse.")
+        validate_bet(bet, purse)
 
         # Collect their bet immediately
         await user.inc_purse(-bet)
 
         view = Blackjack(interaction=interaction, bet=bet)
-        await interaction.response.send_message(embed=view.update(Actions.DEAL), view=view)
+        await interaction.response.send_message(embed=await view.update(Actions.DEAL), view=view)
 
         # Deal out starting hands for dealer and player
-        await view.deal_card_animated(view.player)
-        await view.deal_card_animated(view.player)
-        await view.deal_card_animated(view.dealer)
+        await view.deal_card(view.player)
+        await view.deal_card(view.player)
+        await view.deal_card(view.dealer)
 
         for item in view.children:
             item.disabled = False
@@ -48,9 +52,13 @@ class Casino(commands.Cog, name="Casino"):
     @app_commands.command(name="highlow")
     @app_commands.describe(bet="amount of bits you want to bet")
     async def highlow(self, interaction: Interaction, bet: int):
+        """Guess if the number will be high (6-10) or low (1-5)."""
         user: User = interaction.extras.get("user")
         purse = user.get_field("purse")
 
+        # Bet validation
+        validate_bet(bet, purse)
+
 
 async def setup(bot):
-    bot.add_cog(Casino())
+    await bot.add_cog(Casino())

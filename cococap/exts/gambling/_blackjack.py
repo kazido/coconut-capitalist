@@ -135,9 +135,11 @@ class Blackjack(discord.ui.View):
         await asyncio.sleep(0.25)
         card = self.deck.deal(1)[0]  # Pull a card from the virtual deck
         player.hand.append(card)  # Add it to passed player's hand
-        await self.interaction.edit_original_response(embed=self.update(Actions.DEAL), view=self)
+        await self.interaction.edit_original_response(
+            embed=await self.update(Actions.DEAL), view=self
+        )
 
-    def update(self, action: Actions):
+    async def update(self, action: Actions):
         """Generate an game state themed embed with player and dealer's hands."""
         p_total = self.player.total_hand()
         d_total = self.dealer.total_hand()
@@ -163,6 +165,13 @@ class Blackjack(discord.ui.View):
             inline=True,
         )
         embed.set_footer(text=self.state.footer)
+
+        if self.state == GameStates.BLACKJACK:
+            profit = self.player.bet * 2
+            await self.user.inc_purse(amount=self.player.bet * 2)
+            embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
+            embed.add_field(name="Bits", value=f"{self.user.get_field('purse'):,} bits")
+
         return embed
 
 
@@ -174,18 +183,15 @@ class HitButton(discord.ui.Button):
         view: Blackjack = self.view
 
         await view.deal_card(view.player)
-        embed = view.update(Actions.HIT)
+        embed = await view.update(Actions.HIT)
 
         if view.state == GameStates.LOSE:
             profit = -view.player.bet
+            embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
+            embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
             # Pay the bot
             view.dealer.winnings += view.player.bet
 
-        elif view.state == GameStates.BLACKJACK:
-            profit = view.player.bet * 2
-
-        embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
-        embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
         await interaction.response.edit_message(embed=embed, view=view)
 
 
@@ -196,12 +202,12 @@ class FoldButton(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction):
         view: Blackjack = self.view
 
-        embed = view.update(Actions.FOLD)
+        embed = await view.update(Actions.FOLD)
 
         # Dealer draws if needed
         while view.state == GameStates.DEALER_REVEAL:
             await view.deal_card(view.dealer)
-            embed = view.update(Actions.FOLD)
+            embed = await view.update(Actions.FOLD)
 
         # Give the user half of their bet back
         await view.user.inc_purse(amount=round(view.player.bet / 2))
@@ -222,12 +228,12 @@ class StandButton(discord.ui.Button):
         view: Blackjack = self.view
 
         # Updates the game state
-        embed = view.update(Actions.STAND)
+        embed = await view.update(Actions.STAND)
 
         # Dealer draws if needed
         while view.state == GameStates.DEALER_REVEAL:
             await view.deal_card(view.dealer)
-            embed = view.update(Actions.STAND)
+            embed = await view.update(Actions.STAND)
 
         # Now resolve the final state
         if view.state == GameStates.LOSE:
