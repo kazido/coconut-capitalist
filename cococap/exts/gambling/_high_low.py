@@ -3,7 +3,7 @@ import functools
 import discord
 
 from discord import Interaction
-from utils.custom_embeds import Cembed
+from utils.custom_embeds import CustomEmbed
 from random import randint
 
 from enum import Enum
@@ -12,8 +12,8 @@ from cococap.user import User
 
 
 class GameStates(Enum):
-    CORRECT = ("CORRECT", discord.Color.green(), "Good guess!")
-    INCORRECT = ("INCORRECT", discord.Color.red(), "Unlucky...")
+    CORRECT = ("CORRECT :white_check_mark:", discord.Color.green(), "Good guess!")
+    INCORRECT = ("INCORRECT :x:", discord.Color.red(), "Unlucky...")
     GUESSING = ("Will it be High or Low?", discord.Color.gray(), "It's definitely the other one...")
     CASHED_OUT = ("Quitting while you're ahead, huh?", discord.Color.purple(), "Come again soon!")
 
@@ -59,8 +59,8 @@ async def game_results(
     embed = None
     if not win:
         user_balance_after_loss = user.get_field("purse")
-        losing_embed = Cembed(
-            title=f"INCORRECT :x: | User: {interaction.user.name} - Bet: {bet:,}",
+        losing_embed = CustomEmbed(
+            title=f"INCORRECT :x: | Bet: {bet:,}",
             color=discord.Color.red(),
             interaction=interaction,
             activity="high low",
@@ -81,7 +81,7 @@ async def game_results(
         await bot.inc_purse(bet)
 
     elif win:
-        success_embed = Cembed(
+        success_embed = CustomEmbed(
             title=f"CORRECT :white_check_mark: | User: {interaction.user.name} - Bet: {bet:,}",
             color=discord.Color.green(),
             interaction=interaction,
@@ -141,7 +141,7 @@ class Highlow(discord.ui.View):
         if self.state != GameStates.READY:
             self.clear_items()
 
-        embed = Cembed(
+        embed = CustomEmbed(
             title=f"{self.state.title} | User: {str(self.user)} - Bet: {self.player.bet:,}",
             color=self.state.color,
             interaction=self.interaction,
@@ -255,7 +255,7 @@ class Highlow(discord.ui.View):
         return
 
 
-game_begin_embed = Cembed(
+game_begin_embed = CustomEmbed(
     title=f"HIGHLOW :arrows_clockwise: | User: {interaction.user.name} - Bet: {bet:,}",
     desc="Guess high if you think the number will be 6-10\n"
     "Guess low if you think the number will be 1-5\n"
