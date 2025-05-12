@@ -147,9 +147,10 @@ class Blackjack(discord.ui.View):
             self.clear_items()
 
         embed = Cembed(
-            title=f"{self.state.title} | User: {str(self.user)} - Bet: {self.player.bet:,}",
+            title=f"{self.state.title} | Bet: {self.player.bet:,}",
             color=self.state.color,
             interaction=self.interaction,
+            activity="blackjack",
         )
         embed.add_field(
             name=self.state.hand_titles[0],
@@ -176,11 +177,15 @@ class HitButton(discord.ui.Button):
         embed = view.update(Actions.HIT)
 
         if view.state == GameStates.LOSE:
-            embed.add_field(name="Profit", value=f"{-view.player.bet:,} bits", inline=False)
-            embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
+            profit = -view.player.bet
             # Pay the bot
             view.dealer.winnings += view.player.bet
 
+        elif view.state == GameStates.BLACKJACK:
+            profit = view.player.bet * 2
+
+        embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
+        embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
         await interaction.response.edit_message(embed=embed, view=view)
 
 
@@ -226,19 +231,19 @@ class StandButton(discord.ui.Button):
 
         # Now resolve the final state
         if view.state == GameStates.LOSE:
-            embed.add_field(name="Profit", value=f"{-view.player.bet:,} bits", inline=False)
-
+            profit = -view.player.bet
             # Give the bot the lost money
             view.dealer.winnings += view.player.bet
 
         elif view.state == GameStates.PUSH:
-            embed.add_field(name="Profit", value=f"0 bits", inline=False)
-            await view.user.inc_purse(amount=view.player.bet)
+            profit = 0
+            await view.user.inc_purse(amount=view.player.bet)  # Pay the user back their bet
 
         elif view.state == GameStates.WIN:
-            embed.add_field(name="Profit", value=f"{view.player.bet * 2:,} bits", inline=False)
+            profit = view.player.bet * 2
             await view.user.inc_purse(amount=view.player.bet * 2)
 
+        embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
         embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
         await asyncio.sleep(0.5)
         await interaction.response.edit_message(embed=embed, view=None)
