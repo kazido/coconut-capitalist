@@ -6,7 +6,7 @@ from discord import app_commands, Interaction
 from cococap.user import User
 from cococap.models import PartyDocument
 from cococap.exts.utils.error import CustomError
-from utils.custom_embeds import SuccessEmbed
+from utils.custom_embeds import SuccessEmbed, CustomEmbed
 from logging import getLogger
 
 
@@ -45,10 +45,11 @@ class Party:
         party: PartyDocument = await PartyDocument.find_one(PartyDocument.party_id == party_id)
         if not party:
             return None
+        self._id = party_id
         self._members = party.party_members
         self._owner_id = party.party_owner
         self._document = party
-        return self._document
+        return self
 
     async def save(self):
         await self._document.save()
@@ -76,8 +77,8 @@ class Party:
                 title=f"Failed to invite the specified user",
                 footer="Tell them to do /party leave.",
             )
-        member.update_field("party_id", self.party_id, save=True)
         self._members.append(user_id)
+        await member.update_field("party_id", self.party_id, save=True)
         return await self.save()
 
     async def remove_member(self, user_id: int):
@@ -85,7 +86,7 @@ class Party:
         if not self.is_member(user_id):
             raise UserNotInParty("The specified user is not in your party...")
         member: User = await User(user_id).load()
-        member.update_field("party_id", None, save=True)
+        await member.update_field("party_id", None, save=True)
         self._members.remove(user_id)
         return await self.save()
 
@@ -112,13 +113,20 @@ class Party:
     @staticmethod
     async def create(owner_id: int):
         party_id = random.randint(1000, 9999)
-        if await PartyDocument.find_one(PartyDocument.party_id == party_id) is None:
+        party_exists = await PartyDocument.find_one(PartyDocument.party_id == party_id)
+        owns_party = await PartyDocument.find_one(PartyDocument.party_owner == owner_id)
+        if owns_party:
+            raise AlreadyInParty(
+                "You are already in a party.",
+                footer="Use /party leave to leave your current party.",
+            )
+        if not party_exists:
             # Create the party
-            await PartyDocument(party_id=party_id, owner_id=owner_id).insert()
+            await PartyDocument(party_id=party_id, party_owner=owner_id).insert()
             party: Party = await Party().load(party_id)
-            await party.add_member(owner_id)
+            return await party.add_member(owner_id)
 
-        return Party.create()
+        return await Party.create(owner_id=owner_id)
 
 
 async def ensure_party(interaction: Interaction):
@@ -128,6 +136,7 @@ async def ensure_party(interaction: Interaction):
             "You are not in a party.",
             footer="Create a party with /party create or ask someone to invite you (right click your name -> apps)!",
         )
+    return True
 
 
 class PartySystemCog(commands.GroupCog, name="party"):
@@ -167,7 +176,7 @@ class PartySystemCog(commands.GroupCog, name="party"):
         """See who is in your party."""
         party: Party = interaction.extras.get("party")
 
-        embed = discord.Embed(
+        embed = CustomEmbed(
             title=":busts_in_silhouette: Party Members",
             description=f"**Party ID:** {party.party_id}\n**Members ({party.member_count()}):**",
             color=discord.Color.from_rgb(84, 178, 209),
@@ -197,7 +206,9 @@ class PartySystemCog(commands.GroupCog, name="party"):
             )
 
         await Party.create(interaction.user.id)
-        embed = SuccessEmbed(desc=f"Your party has been created!")
+        embed = SuccessEmbed(
+            desc=f"Your party has been created!", interaction=interaction, activity="partying"
+        )
         return await interaction.response.send_message(embed=embed)
 
     # Removes user and everyone else from party and deletes party ID.
