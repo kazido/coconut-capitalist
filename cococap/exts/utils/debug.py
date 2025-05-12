@@ -11,6 +11,7 @@ from utils.custom_embeds import Cembed
 class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     def __init__(self, bot):
         self.bot = bot
+        self.bot.tree.add_command(self.AdminCommands())
 
     class AdminCommands(discord.app_commands.Group):
         def __init__(self):
@@ -28,7 +29,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
 
             paid_embed = discord.Embed(
                 title="Updated balance.",
-                description=f"Updated {user.name}'s balance by **{amount:,}** bits.",
+                description=f"Updated {user.name}'s ({user.display_name}) balance by **{amount:,}** bits.",
                 color=discord.Color.red(),
             )
             await i.response.send_message(embed=paid_embed)
@@ -64,7 +65,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
                 color=discord.Color.green() if sync else discord.Color.red(),
             )
         else:
-            guild = discord.Object(id=856915776345866240)
+            guild = discord.Object(id=1310808494299156482)
             self.bot.tree.copy_global_to(guild=guild)
             sync = await self.bot.tree.sync(guild=guild)
             embed = discord.Embed(
