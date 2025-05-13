@@ -46,7 +46,7 @@ class SuccessEmbed(CustomEmbed):
     def __init__(
         self,
         *,
-        color=discord.Color.green(),
+        color=0xA0F09C,
         title=random.choice(SUCCESS_REPLIES),
         type="rich",
         url=None,
