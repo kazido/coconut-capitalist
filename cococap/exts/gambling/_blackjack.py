@@ -2,7 +2,6 @@ import discord
 import pydealer
 import asyncio
 
-
 from enum import Enum
 from cococap.user import User
 from utils.custom_embeds import CustomEmbed
