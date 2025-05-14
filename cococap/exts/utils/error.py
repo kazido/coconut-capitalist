@@ -18,7 +18,7 @@ class AlreadyInGame(AppCommandError):
     pass
 
 
-class InvalidBet(AppCommandError):
+class InvalidAmount(AppCommandError):
     pass
 
 

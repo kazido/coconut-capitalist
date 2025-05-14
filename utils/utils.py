@@ -61,3 +61,18 @@ def timestamp_to_english(timestamp):
     cooldown += f"{seconds} seconds" if seconds else ""
 
     return cooldown
+
+
+def parse_number(number: str):
+    suffixes = {"k": "000", "m": "000000"}
+    number = number.lower()
+    last_char = number[-1]
+
+    if number == "max":
+        return "max"
+    if last_char in suffixes and number[:-1].isdigit():
+        return int(number[:-1] + suffixes[last_char])
+    if number.isdigit():
+        return int(number)
+    else:
+        return False
