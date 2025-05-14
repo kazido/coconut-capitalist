@@ -15,7 +15,7 @@ class _DynamicObject:
 
 
 def fetch(identifier):
-    ini_directory = "ini"
+    ini_directory = "game_data"
     try:
         filename, obj_id = identifier.split(".")
     except ValueError:

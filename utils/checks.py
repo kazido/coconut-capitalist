@@ -16,7 +16,6 @@ def reaction_check(
     message_id: int,
     allowed_emoji: Sequence[str],
     allowed_users: Sequence[int],
-    allow_mods: bool = True,
 ) -> bool:
     """
     Check if a reaction's emoji and author are allowed and the message is `message_id`.
@@ -33,10 +32,6 @@ def reaction_check(
     if not right_reaction:
         log.debug(f"Improper reaction by {user} on {reaction.message.id}.")
         return False
-
-    # is_moderator = allow_mods and any(
-    #     role.id in MODERATION_ROLES for role in getattr(user, "roles", [])
-    # )
 
     if user.id in allowed_users:
         log.info(f"Allowed reaction {reaction} by {user} on {reaction.message.id}.")
