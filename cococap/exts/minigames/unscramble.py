@@ -3,13 +3,12 @@ import random
 import pathlib
 import asyncio
 import logging
-import copy
 
 from discord.ext import commands
 from discord import app_commands
 
 from cococap.user import User
-from utils.custom_embeds import CustomEmbed
+from utils.custom_embeds import CustomEmbed, FailureEmbed, SuccessEmbed
 
 log = logging.getLogger(__name__)
 
@@ -54,24 +53,18 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
         word, scrambled_word = get_word()
         time_limit = 1.4 ** len(word)
         reward = len(word) * (10 * len(word) ** 2) + 300
-        unscramble_prompt_embed = CustomEmbed(
+        embed = CustomEmbed(
             title="Unscramble!",
             desc=f"You will have {time_limit.__round__()} seconds to unscramble the following word!",
             color=0xA0A39D,
             interaction=interaction,
             activity="unscrambling",
         )
-        shuffled_word_embed = CustomEmbed(
-            title="Unscramble!",
-            desc=f"You will have {time_limit.__round__()} seconds to unscramble the following word!\n"
-            f"***{scrambled_word}***",
-            color=0xA0A39D,
-            interaction=interaction,
-            activity="unscrambling",
-        )
-        await interaction.response.send_message(embed=unscramble_prompt_embed)
+        await interaction.response.send_message(embed=embed)
         await asyncio.sleep(2)
-        await interaction.edit_original_response(embed=shuffled_word_embed)
+        embed.color = discord.Color.blue()
+        embed.description += f"\n***{scrambled_word}***"
+        await interaction.edit_original_response(embed=embed)
 
         def check(m):
             return (
@@ -82,15 +75,13 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
 
         try:  # Waits for a guess at the correct word
             guess = await self.bot.wait_for("message", timeout=time_limit.__round__(), check=check)
-            embed = None
             if guess.content.lower() == word:
                 # The user guessed the word correctly.
                 log.debug(f"User guessed {word} correctly.")
 
-                correct_word_embed = CustomEmbed(
+                embed = SuccessEmbed(
                     title="Unscramble!",
                     desc=f"Correct!\n" f"***{scrambled_word}*** - {word}",
-                    color=0xA0F09C,
                     interaction=interaction,
                     activity="unscrambling",
                 )
@@ -99,36 +90,29 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
 
                 if stats["current_unscramble_streak"] > stats["longest_unscramble_streak"]:
                     stats["longest_unscramble_streak"] = stats["current_unscramble_streak"]
-                    correct_word_embed.set_footer(
+                    embed.set_footer(
                         text=f"New streak record of {stats['current_unscramble_streak']}! Keep going!"
                     )
                 else:
-                    correct_word_embed.set_footer(
-                        text=f"Current streak: {stats['current_unscramble_streak']}"
-                    )
+                    embed.set_footer(text=f"Current streak: {stats['current_unscramble_streak']}")
                 reward = reward * (2 * stats["current_unscramble_streak"])
-                correct_word_embed.add_field(name="Reward", value=f"**{reward:,}** bits")
-
-                embed = correct_word_embed
+                embed.add_field(name="Reward", value=f"**{reward:,}** bits")
                 await user.inc_purse(reward)
 
         except asyncio.TimeoutError:
             # The user took too long to guess and loses.
             log.debug(f"User took too long to guess {word}.")
 
-            too_slow_embed = CustomEmbed(
+            embed = FailureEmbed(
                 title="Unscramble!",
                 desc=f"Too slow!\n" f"***{scrambled_word}*** - {word}",
-                color=0xA8332F,
                 interaction=interaction,
                 activity="unscrambling",
             )
             if stats["current_unscramble_streak"] > 0:
-                too_slow_embed.set_footer(
+                embed.set_footer(
                     text=f"You lost your streak of {stats['current_unscramble_streak']}."
                 )
-            embed = too_slow_embed
-
             stats["current_unscramble_streak"] = 0
             await user.save()
 
