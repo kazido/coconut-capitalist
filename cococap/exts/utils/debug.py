@@ -5,12 +5,12 @@ from discord import app_commands
 from discord.ext import commands
 
 from cococap.user import User
-from utils.custom_embeds import CustomEmbed
+from utils.custom_embeds import CustomEmbed, SuccessEmbed, ErrorEmbed
 
 
 class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: commands.Bot = bot
         self.bot.tree.add_command(self.AdminCommands())
 
     class AdminCommands(discord.app_commands.Group):
@@ -19,7 +19,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
 
         async def interaction_check(self, interaction):
             if interaction.user.id != 326903703422500866:
-                await interaction.response.send_message("No.", ephemeral=True)
+                return False
             return super().interaction_check(interaction)
 
         @app_commands.command(name="pay")
@@ -56,7 +56,6 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     @commands.is_owner()
     @commands.command(name="sync")
     async def sync(self, ctx, scope: str = None):
-        # Copy the global commands over to my guild TODO: This will need to be changed when global
         if scope == "global":
             sync = await self.bot.tree.sync()
             embed = discord.Embed(
@@ -66,13 +65,11 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
             )
         else:
             guild = discord.Object(id=1310808494299156482)
-            self.bot.tree.copy_global_to(guild=guild)
+            self.bot.tree.clear_commands(guild=guild)
             sync = await self.bot.tree.sync(guild=guild)
-            embed = discord.Embed(
-                title="Syncing locally...",
-                description=f"Job: {'SUCCESS' if sync else 'FAILED'}",
-                color=discord.Color.green() if sync else discord.Color.red(),
-            )
+            print(sync)
+            title = "Syncing locally..."
+            embed = SuccessEmbed(title=title, desc=f"Synced commands: {sync}")
         await ctx.send(embed=embed)
 
     @commands.command()
