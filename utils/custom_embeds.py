@@ -50,10 +50,10 @@ class SuccessEmbed(CustomEmbed):
         title=random.choice(SUCCESS_REPLIES),
         type="rich",
         url=None,
-        desc="I don't know *what* we're happy about, but **LET'S GO!**",
+        desc=None,
         timestamp=None,
         interaction=None,
-        activity=":D",
+        activity=None,
     ):
 
         super().__init__(
@@ -76,10 +76,10 @@ class FailureEmbed(CustomEmbed):
         title=random.choice(FAILURE_REPLIES),
         type="rich",
         url=None,
-        desc="Something goofed! Not sure what it is though...",
+        desc=None,
         timestamp=None,
         interaction=None,
-        activity=":(",
+        activity=None,
     ):
 
         super().__init__(
@@ -105,7 +105,7 @@ class ErrorEmbed(CustomEmbed):
         desc="Error! Check logs!",
         timestamp=None,
         interaction=None,
-        activity=":/",
+        activity="Erring",
     ):
         if title is None:
             title = random.choice(ERROR_REPLIES)
