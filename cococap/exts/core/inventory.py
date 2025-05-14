@@ -7,7 +7,6 @@ from cococap.user import User
 from cococap.item_models import Master
 from utils.custom_embeds import CustomEmbed
 from utils.menus import Menu, MenuHandler
-from utils.pagination import LinePaginator
 
 
 class InventoryCog(commands.Cog, name="Inventory"):

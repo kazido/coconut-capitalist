@@ -7,7 +7,7 @@ from discord.ui import Button, View
 from discord.ext import commands
 from discord.interactions import Interaction
 
-from ini.converters.thing_converter import fetch
+from game_data.converters.data_converter import fetch
 
 from logging import getLogger
 
@@ -18,8 +18,8 @@ log = getLogger(__name__)
 class Player:
     def __init__(self):
         pass
-    
-    
+
+
 class Enemy:
     def __init__(self):
         pass
@@ -29,7 +29,6 @@ class Enemy:
 class Battle:
     def __init__(self):
         pass
-
 
 
 class CombatCog(commands.Cog, name="Combat"):
@@ -43,7 +42,7 @@ class CombatCog(commands.Cog, name="Combat"):
         # TESTING
         rusted_broadsword = thing_converter.Item("swords.rustedbroadsword")
         print(rusted_broadsword.item.items())
-        
+
         hello()
 
         view: CombatCog.GridView = CombatCog.DungeonView(CombatCog.map_1)
@@ -81,22 +80,6 @@ class CombatCog(commands.Cog, name="Combat"):
     class Battle:
         def __init__(self):
             self.players
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     class Player:
         def __init__(self, action_points, movement_power=1) -> None:

@@ -125,20 +125,20 @@ class SequenceGame(discord.ui.View):
     async def interaction_check(self, interaction):
         return self.interaction.user == interaction.user
 
-    async def show_pattern(self, inter: discord.Interaction, seq: list, tot_score: int):
-        pattern_interval = 0.4 if len(seq) < 15 else 0.2
+    async def show_pattern(self, interaction: discord.Interaction, seq: list, tot_score: int):
+        pattern_interval = 0.4 if len(seq) < 5 else 0.2
+        embed = CustomEmbed(
+            title="Remember this!",
+            color=discord.Color.blue(),
+            interaction=self.interaction,
+            activity="sequence",
+        )
         for element in seq:
-            embed = CustomEmbed(
-                title="Remember this!",
-                desc=f"{element}" * 6,
-                color=discord.Color.blue(),
-                interaction=self.interaction,
-                activity="sequence",
-            )
-            await inter.edit_original_response(embed=embed)
+            embed.description = f"{element}" * 6
+            await interaction.edit_original_response(embed=embed)
             embed.description = ":black_large_square:" * 6
             await asyncio.sleep(pattern_interval)
-            await inter.edit_original_response(embed=embed)
+            await interaction.edit_original_response(embed=embed)
             await asyncio.sleep(0.05)
         user_ready_embed = CustomEmbed(
             title="Recall the order!",
@@ -147,7 +147,7 @@ class SequenceGame(discord.ui.View):
             interaction=self.interaction,
             activity="sequence",
         )
-        await inter.edit_original_response(
+        await interaction.edit_original_response(
             embed=user_ready_embed,
             view=SequenceGame(
                 self.interaction, seq, 0, tot_score, self.selected_difficulty, self.user
