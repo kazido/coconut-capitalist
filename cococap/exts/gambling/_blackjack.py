@@ -175,7 +175,10 @@ class Blackjack(discord.ui.View):
 # Button for hitting (drawing a card)
 class HitButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="Hit", style=discord.ButtonStyle.blurple, emoji="🃏")
+        label = "Hit"
+        style = discord.ButtonStyle.blurple
+        emoji = "🃏"
+        super().__init__(label=label, style=style, emoji=emoji)
 
     async def callback(self, interaction: discord.Interaction):
         view: Blackjack = self.view
@@ -196,7 +199,10 @@ class HitButton(discord.ui.Button):
 # Button for folding (giving up half the bet)
 class FoldButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="Fold", style=discord.ButtonStyle.red, emoji="🏳️")
+        label = "Fold"
+        style = discord.ButtonStyle.red
+        emoji = "🏳️"
+        super().__init__(label=label, style=style, emoji=emoji)
 
     async def callback(self, interaction: discord.Interaction):
         view: Blackjack = self.view
@@ -217,7 +223,10 @@ class FoldButton(discord.ui.Button):
 # Button for standing (ending turn, dealer plays out hand)
 class StandButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="Stand", style=discord.ButtonStyle.green, emoji="✅")
+        label = "Stand"
+        style = discord.ButtonStyle.green
+        emoji = "✅"
+        super().__init__(label=label, style=style, emoji=emoji)
 
     async def callback(self, interaction: discord.Interaction):
         view: Blackjack = self.view

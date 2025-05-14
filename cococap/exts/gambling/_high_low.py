@@ -123,7 +123,10 @@ class HighLow(discord.ui.View):
 
 class HighButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="High", style=discord.ButtonStyle.primary, emoji="⬆️")
+        label = "High"
+        style = discord.ButtonStyle.primary
+        emoji = "⬆️"
+        super().__init__(label=label, style=style, emoji=emoji)
 
     async def callback(self, interaction: discord.Interaction):
         await self.view.process_guess(Actions.GUESS_HIGH, interaction)
@@ -131,7 +134,10 @@ class HighButton(discord.ui.Button):
 
 class LowButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="Low", style=discord.ButtonStyle.blurple, emoji="⬇️")
+        label = "Low"
+        style = discord.ButtonStyle.blurple
+        emoji = "⬇️"
+        super().__init__(label=label, style=style, emoji=emoji)
 
     async def callback(self, interaction: discord.Interaction):
         await self.view.process_guess(Actions.GUESS_LOW, interaction)
@@ -139,7 +145,10 @@ class LowButton(discord.ui.Button):
 
 class CashOutButton(discord.ui.Button):
     def __init__(self):
-        super().__init__(label="Cash Out", style=discord.ButtonStyle.gray, emoji="💰")
+        label = "Cash Out"
+        style = discord.ButtonStyle.gray
+        emoji = "💰"
+        super().__init__(label=label, style=style, emoji=emoji)
 
     async def callback(self, interaction: discord.Interaction):
         await self.view.process_cashout(interaction)
