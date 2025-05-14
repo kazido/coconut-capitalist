@@ -107,7 +107,7 @@ class Extensions(commands.Cog):
 
     def _find_relative_imports(self, ext: str) -> list[str]:
         """Parse the extension's file for relative and absolute imports from project code, return their full module names (no duplicates, only modules)."""
-        PROJECT_PREFIXES = ("cococap.", "utils.")
+        PROJECT_PREFIXES = ("cococap.", "utils.", "game_data.")
         try:
             module = importlib.import_module(ext)
             file = getattr(module, "__file__", None)
