@@ -11,16 +11,15 @@ from discord import Interaction
 from logging import getLogger
 from utils import checks
 
-FIRST_EMOJI = "\u23EE"  # [:track_previous:]
-LEFT_EMOJI = "\u2B05"  # [:arrow_left:]
-RIGHT_EMOJI = "\u27A1"  # [:arrow_right:]
-LAST_EMOJI = "\u23ED"  # [:track_next:]
+FIRST_EMOJI = "\u23ee"  # [:track_previous:]
+LEFT_EMOJI = "\u2b05"  # [:arrow_left:]
+RIGHT_EMOJI = "\u27a1"  # [:arrow_right:]
+LAST_EMOJI = "\u23ed"  # [:track_next:]
 DELETE_EMOJI = "🗑"  # [:wastebasket:]
 
 PAGINATION_EMOJI = (FIRST_EMOJI, LEFT_EMOJI, RIGHT_EMOJI, LAST_EMOJI, DELETE_EMOJI)
 
 log = getLogger(__name__)
-
 
 
 class EmptyPaginatorEmbedError(Exception):
