@@ -21,7 +21,7 @@ class CustomEmbed(discord.Embed):
         description: Any | None = None,
         timestamp: datetime | None = None,
         interaction: discord.Interaction | None = None,
-        activity: str,
+        activity: str = None,
     ):
         if colour is not None:
             color = colour
