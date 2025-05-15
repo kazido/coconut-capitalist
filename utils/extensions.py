@@ -37,7 +37,9 @@ def walk_extensions(module: types.ModuleType) -> frozenset[str]:
 
     modules = set()
 
-    for module_info in pkgutil.walk_packages(module.__path__, f"{module.__name__}.", onerror=on_error):
+    for module_info in pkgutil.walk_packages(
+        module.__path__, f"{module.__name__}.", onerror=on_error
+    ):
         if ignore_module(module_info):
             # Ignore modules/packages that have a name starting with an underscore anywhere in their trees.
             continue
