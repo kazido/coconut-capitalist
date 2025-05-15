@@ -1,6 +1,8 @@
 from datetime import datetime
 from dateutil import tz
 
+from cococap.exts.utils.error import InvalidAmount
+
 """
 An example of how to run a loop at a certain time:
 
@@ -40,9 +42,9 @@ def timestamp_to_digital(timestamp):
     hours = _format_time(int((timestamp % 86400) // 3600))
     minutes = _format_time(int((timestamp % 3600) // 60))
     seconds = _format_time(int(timestamp % 60))
-
-    cooldown = f"{days}d" if days != 0 else ""
-    cooldown += f"{hours}:{minutes}:{seconds}"
+    cooldown = f"{hours}:{minutes}:{seconds}"
+    if days:
+        cooldown = f"{days}:" + cooldown
 
     return cooldown
 
@@ -63,16 +65,29 @@ def timestamp_to_english(timestamp):
     return cooldown
 
 
-def parse_number(number: str):
+def _parse_number(number: int | str):
     suffixes = {"k": "000", "m": "000000"}
-    number = number.lower()
+    number = str(number).lower()
     last_char = number[-1]
 
-    if number == "max":
-        return "max"
     if last_char in suffixes and number[:-1].isdigit():
         return int(number[:-1] + suffixes[last_char])
     if number.isdigit():
         return int(number)
     else:
         return False
+
+
+def validate_bits(user, amount: int | str = None, field: str = "purse"):
+    # Parse and validate amount
+    if amount is None or str(amount).lower() in ["max", "all"]:
+        return user.get_field(field)
+
+    amount = _parse_number(amount)
+    if not isinstance(amount, int) or amount <= 0:
+        raise InvalidAmount("Please enter a valid number or 'max'.")
+    if amount > user.get_field(field):
+        raise InvalidAmount(f"Not enough bits! Balance: {user.get_field(field):,} bits")
+    if amount == 0:
+        raise InvalidAmount("You cannot enter 0 bits...")
+    return amount
