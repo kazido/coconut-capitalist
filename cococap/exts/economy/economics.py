@@ -7,7 +7,6 @@ from typing import List
 
 from random import randint
 from discord import app_commands, Interaction
-from discord.ext import commands
 from game_data.converters.data_converter import fetch
 from pymongo import DESCENDING
 
@@ -16,17 +15,8 @@ from cococap.user import User, Cooldowns
 from utils.custom_embeds import CustomEmbed, ErrorEmbed
 from utils.base_cog import BaseCog
 from utils.utils import validate_bits
-from cococap.models import UserDocument as Udoc
 
-from cococap.constants import (
-    TOO_RICH_TITLES,
-    BOT_ID,
-    FIRST_PLACE_ANSI_PREFIX,
-    SECOND_PLACE_ANSI_PREFIX,
-    THIRD_PLACE_ANSI_PREFIX,
-    OTHER_PLACE_ANSI_PREFIX,
-    RESET_POSTFIX,
-)
+from cococap.constants import TOO_RICH_TITLES
 from cococap.constants import LeaderboardCategories as LeaderCats
 
 MAX_BALANCE = 10_000
@@ -293,93 +283,6 @@ class EconomyCog(BaseCog, name="Economy"):
             for category in categories
             if current.lower() in category.lower()
         ]
-
-    # Command for the richest members in the server
-    @app_commands.command(name="top", description="See the top 10 players in each category!")
-    @app_commands.describe(category="category of leaderboard")
-    @app_commands.autocomplete(category=category_autocomplete)
-    async def top(self, interaction: Interaction, category: str, advanced: bool | None):
-        # Calculate the circulation for the bits leaderboard
-        total_purses = await Udoc.find(Udoc.discord_id != BOT_ID).sum(Udoc.purse)
-        total_banks = await Udoc.find(Udoc.discord_id != BOT_ID).sum(Udoc.bank)
-        circulation = total_purses + total_banks
-        bot_purse = 0
-
-        category = LeaderCats.from_name(category)
-
-        async def leaderboard_string(user: Udoc, advanced=False):
-            if category == LeaderCats.BITS:
-                return f"{user.name} - {user.purse + user.bank:,}"
-            if category in [LeaderCats.LUCKBUCKS, LeaderCats.DROPS]:
-                return f"{user.name} - {getattr(user, category.column):,}"
-            else:
-                fields = category.column.split(".")
-                result = user
-                while len(fields) > 0:
-                    result = getattr(result, fields.pop(0))
-                if advanced:
-                    return f"*{user.name}* - Level {User.xp_to_level(xp=result):,} | {result:,} xp"
-                return f"*{user.name}* - Level {User.xp_to_level(xp=result):,}"
-
-        # Yes, I am hardcoding this. I don't see a future where I have multiple leaderboard categories
-        # that are based on two fields being summed together like they are here...
-        if category == LeaderCats.BITS:
-            pipeline = [
-                {"$addFields": {"sum_value": {"$add": ["$purse", "$bank"]}}},
-                {"$sort": {"sum_value": -1}},
-            ]
-            query = await Udoc.aggregate(pipeline).to_list()
-        else:
-            query = await Udoc.find().sort((category.column, DESCENDING)).to_list()
-
-        # START CREATING THE LEADERBOARD DISPLAY ----------------------
-        embed = discord.Embed(
-            title=f"{category.display_name} Leaderboard",
-            description="```ansi\n",
-            color=discord.Color.from_str(category.color),
-        )
-
-        # We have to use our own index because we use continue when we encounter a bot, and that would mess up enumerate
-        index = 1
-        for user in query:
-            if user.discord_id in [1016054559581413457, 956000805578768425]:
-                # Detect if the user is either of the bots
-                bot_purse = user.purse
-                continue
-
-            rank_string = await leaderboard_string(
-                user=user,
-                advanced=advanced,
-            )
-
-            rank_string = f"[{index}] {rank_string}"
-
-            if user.discord_id == interaction.user.id:
-                rank_string += " (YOU)"
-
-            if index == 1:
-                embed.description += f"{FIRST_PLACE_ANSI_PREFIX}{rank_string}{RESET_POSTFIX}\n"
-            elif index == 2:
-                embed.description += f"{SECOND_PLACE_ANSI_PREFIX}{rank_string}{RESET_POSTFIX}\n"
-            elif index == 3:
-                embed.description += f"{THIRD_PLACE_ANSI_PREFIX}{rank_string}{RESET_POSTFIX}\n"
-            elif index <= 10:
-                embed.description += f"{OTHER_PLACE_ANSI_PREFIX}{rank_string}{RESET_POSTFIX}\n"
-
-            elif index > 10 and (user.id == interaction.user.id):
-                # If user didn't get top 10, add their place to the end
-                embed.description += "\n" + "Your rank:" + "\n" + f"{rank_string}"
-            index += 1
-
-        embed.description += "\n```"
-
-        if category.value == 0:
-            embed.set_footer(text=f"The house has made: {bot_purse:,} bits")
-            embed.add_field(
-                name="Current Circulation",
-                value=f"There are currently **{circulation:,}** bits in the economy.",
-            )
-        await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="check-in", description="Get your daily rewards!")
     async def check_in(self, interaction: Interaction):
