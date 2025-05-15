@@ -1,40 +1,37 @@
 import os
 import discord
-
 from discord import app_commands
 from discord.ext import commands
-
 from cococap.user import User
-from utils.custom_embeds import CustomEmbed, SuccessEmbed, ErrorEmbed
+from utils.custom_embeds import CustomEmbed, SuccessEmbed
+
+ADMIN_ID = 326903703422500866
 
 
 class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     def __init__(self, bot):
         self.bot: commands.Bot = bot
-        self.bot.tree.add_command(self.AdminCommands())
 
-    class AdminCommands(discord.app_commands.Group):
-        def __init__(self):
-            super().__init__(name="admin", description="Admin only commands.")
+    async def cog_check(self, ctx: commands.Context):
+        # Only admin can use prefixed commands in here
+        return ctx.author.id == ADMIN_ID
 
-        async def interaction_check(self, interaction):
-            if interaction.user.id != 326903703422500866:
-                return False
-            return super().interaction_check(interaction)
+    async def interaction_check(self, interaction):
+        # Only admins can use slash commands in here
+        return interaction.user.id == ADMIN_ID
 
-        @app_commands.command(name="pay")
-        async def admin_pay(self, i: discord.Interaction, user: discord.User, amount: int):
-            payee = await User(user.id).load()
-            await payee.inc_purse(amount)
+    @app_commands.command(name="admin_pay", description="Admin: Pay any user bits.")
+    @app_commands.checks.has_permissions(administrator=True)  # Only admins see it
+    async def admin_pay(self, interaction: discord.Interaction, user: discord.User, amount: int):
+        payee = await User(user.id).load()
+        await payee.inc_purse(amount)
+        paid_embed = discord.Embed(
+            title="Updated balance.",
+            description=f"Updated {user.name}'s ({user.display_name}) balance by **{amount:,}** bits.",
+            color=discord.Color.red(),
+        )
+        await interaction.response.send_message(embed=paid_embed)
 
-            paid_embed = discord.Embed(
-                title="Updated balance.",
-                description=f"Updated {user.name}'s ({user.display_name}) balance by **{amount:,}** bits.",
-                color=discord.Color.red(),
-            )
-            await i.response.send_message(embed=paid_embed)
-
-    # Sends the path of the bot. Mainly to check for more than one instance, not sure if this works yet
     @commands.command(name="Ping")
     async def ping(self, ctx):
         embed = discord.Embed(
@@ -45,15 +42,16 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
         embed.set_footer(text=f"Ran from {os.path.abspath(__file__)}")
         await ctx.send(embed=embed)
 
-    # Sets users in-game status to false
-    @commands.command(name="Stuck")
-    async def stuck(self, ctx):
+    @commands.command(name="Reset")
+    async def reset(self, ctx):
         user = await User(ctx.author.id).load()
         await user.in_game(in_game=False)
-        embed = CustomEmbed(desc="Unstuck now!")
+        user.update_field("cooldowns.work", 0)
+        user.update_field("cooldowns.daily", 0)
+        await user.update_field("cooldowns.weekly", 0, save=True)
+        embed = CustomEmbed(desc="RESET! RESET! RESET!")
         await ctx.send(embed=embed)
 
-    @commands.is_owner()
     @commands.command(name="sync")
     async def sync(self, ctx, scope: str = None):
         if scope == "global":
@@ -67,7 +65,6 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
             guild = discord.Object(id=1310808494299156482)
             self.bot.tree.clear_commands(guild=guild)
             sync = await self.bot.tree.sync(guild=guild)
-            print(sync)
             title = "Syncing locally..."
             embed = SuccessEmbed(title=title, desc=f"Synced commands: {sync}")
         await ctx.send(embed=embed)
@@ -77,7 +74,6 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     async def clear(self, ctx: commands.Context, amount):
         await ctx.channel.purge(limit=int(amount) + 1)
 
-    # A command for sending embeds
     @app_commands.command(name="embed", description="Create an embed.")
     async def embed(self, interaction: discord.Interaction):
         class EmbedModal(discord.ui.Modal, title="Embed Creation"):
