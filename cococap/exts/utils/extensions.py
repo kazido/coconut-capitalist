@@ -105,40 +105,6 @@ class Extensions(commands.Cog):
 
             await self.batch_manage(Action.UNLOAD, ctx, *extensions)
 
-    def _find_relative_imports(self, ext: str) -> list[str]:
-        """Parse the extension's file for relative and absolute imports from project code, return their full module names (no duplicates, only modules)."""
-        PROJECT_PREFIXES = ("cococap.", "utils.", "game_data.")
-        try:
-            module = importlib.import_module(ext)
-            file = getattr(module, "__file__", None)
-            if not file or not file.endswith(".py"):
-                return []
-            with open(file, "r") as f:
-                tree = ast.parse(f.read(), filename=file)
-            imports = set()
-            pkg = ext.rsplit(".", 1)[0]
-            for node in ast.walk(tree):
-                # Handle relative imports (from .foo import ...)
-                if isinstance(node, ast.ImportFrom):
-                    if node.level == 1 and node.module:
-                        mod = f"{pkg}.{node.module}"
-                        imports.add(mod)
-                    elif node.level == 0 and node.module:
-                        # Absolute import: from cococap.something import ...
-                        for prefix in PROJECT_PREFIXES:
-                            if node.module.startswith(prefix):
-                                imports.add(node.module)
-                # Handle direct imports (import cococap.something)
-                elif isinstance(node, ast.Import):
-                    for alias in node.names:
-                        for prefix in PROJECT_PREFIXES:
-                            if alias.name.startswith(prefix):
-                                imports.add(alias.name)
-            return list(imports)
-        except Exception as e:
-            log.warning(f"Failed to parse imports for {ext}: {e}")
-            return []
-
     @commands.is_owner()
     @extensions_group.command(name="reload", aliases=("r",), root_aliases=("reload",))
     async def reload_command(self, ctx: Context, *extensions: Extension) -> None:
@@ -162,20 +128,6 @@ class Extensions(commands.Cog):
             extensions = set(self.bot.extensions.keys()) | set(extensions)
             extensions.remove("*")
         self.last_reloaded = extensions
-
-        # --- Begin: auto importlib reload dependencies ---
-        for ext in extensions:
-            deps = self._find_relative_imports(ext)
-            for dep in deps:
-                print(f"Dependency: {dep}")
-                try:
-                    module = importlib.import_module(dep)
-                    importlib.reload(module)
-                    log.debug(f"Reloaded dependency module: {dep}")
-                except Exception as e:
-                    log.warning(f"Failed to reload dependency module {dep}: {e}")
-        # --- End: auto importlib reload dependencies ---
-
         await self.batch_manage(Action.RELOAD, ctx, *extensions)
 
     @commands.is_owner()
