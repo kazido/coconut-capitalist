@@ -109,13 +109,6 @@ class LeaderboardCategories(Enum):
         return cls(name.lower())
 
 
-FIRST_PLACE_ANSI_PREFIX = "\u001b[0;37m"
-SECOND_PLACE_ANSI_PREFIX = "\u001b[0;33m"
-THIRD_PLACE_ANSI_PREFIX = "\u001b[0;31m"
-OTHER_PLACE_ANSI_PREFIX = "\u001b[0;30m"
-RESET_POSTFIX = "\u001b[0m"
-
-
 IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images/main"
 
 
