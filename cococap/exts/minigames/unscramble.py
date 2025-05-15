@@ -20,15 +20,13 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
         self.bot = bot
         self.tree = self.bot.tree
 
-        project_files = pathlib.Path.cwd() / "resources"
-        with open(project_files / "unscramble_words.txt", "r") as f:
+        with open(pathlib.Path.cwd() / "resources" / "unscramble_words.txt", "r") as f:
             self.words = f.readlines()
 
     @app_commands.command(name="unscramble")
     async def unscramble(self, interaction: discord.Interaction):
         """Try to unscramble a word for some bits. The longer the word, the more bits you get!"""
-        user = User(interaction.user.id)
-        await user.load()
+        user = await User(interaction.user.id).load()
 
         stats = user._document.gambling_statistics
 
