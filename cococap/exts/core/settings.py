@@ -15,22 +15,12 @@ class Settings(commands.Cog):
     @app_commands.command(name="settings")
     async def settings(self, interaction: Interaction):
         """Change your account settings."""
-        # Load the user
-        user = User(uid=interaction.user.id)
-        await user.load()
+        user = await User(uid=interaction.user.id).load()
 
         settings_dict = {
             "auto_deposit": {
                 "name": "Auto Deposit",
                 "description": "Automatically deposit your bits after working",
-            },
-            "withdraw_warning": {
-                "name": "Withdraw Warning",
-                "description": "Enables the warning when withdrawing bits from the bank",
-            },
-            "disable_max_bet": {
-                "name": "Disable Max Bet",
-                "description": "Prevents you from betting all the bits in your purse",
             },
         }
 

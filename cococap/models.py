@@ -96,8 +96,6 @@ class UserDocument(Document):
     }
     settings: dict = {
         "auto_deposit": False,  # Will automatically deposit the user's bits into their bank after working
-        "withdraw_warning": True,  # Displays a warning when trying to withdraw any bits from the bank
-        "disable_max_bet": False,  # Disables the bet "max" option when gambling
     }
     pets: dict = {}  # Empty dict which will contain the user's pets
     items: dict = {}  # Empty dict to contain the user's items
