@@ -1,7 +1,7 @@
 import discord
 import time
 
-from typing import Literal
+from enum import Enum
 
 from cococap.models import UserDocument
 from utils.utils import timestamp_to_digital
@@ -9,6 +9,12 @@ from utils.utils import timestamp_to_digital
 from logging import getLogger
 
 log = getLogger(__name__)
+
+
+class Cooldowns(Enum):
+    WORK = 6
+    DAILY = 21
+    WEEKLY = 167
 
 
 class User:
@@ -33,10 +39,6 @@ class User:
         """Save the user document after any changes"""
         await self._document.save()
 
-    async def get_user_rank(self):
-        """Retrieve the corresponding rank of a user from the database"""
-        return self._document.rank
-
     # UPDATE METHODS ------------------------------------
     async def inc_purse(self, amount: int):
         self._document.purse += amount
@@ -48,6 +50,10 @@ class User:
 
     async def inc_tokens(self, *, tokens: int):
         self._document.tokens += tokens
+        await self.save()
+
+    async def inc_luckbucks(self, *, amount: int):
+        self._document.luckbucks += amount
         await self.save()
 
     async def inc_xp(self, *, skill: str, xp: int, interaction: discord.Interaction):
@@ -194,17 +200,25 @@ class User:
         return getattr(self._document, field)
 
     def update_field(self, field: str, value, save: bool = False):
-        if not hasattr(self._document, field):
-            raise AttributeError(f"{self._document} does not have field '{field}'.")
-        setattr(self._document, field, value)
+        """Update a (possibly nested) field in the user document."""
+        parts = field.split(".")
+        obj = self._document
+        for part in parts[:-1]:
+            if isinstance(obj, dict):
+                if part not in obj:
+                    raise AttributeError(f"{obj} does not have key '{part}'.")
+                obj = obj[part]
+            else:
+                if not hasattr(obj, part):
+                    raise AttributeError(f"{obj} does not have attribute '{part}'.")
+                obj = getattr(obj, part)
+        last_part = parts[-1]
+        if isinstance(obj, dict):
+            obj[last_part] = value
+        else:
+            setattr(obj, last_part, value)
         if save:
             return self.save()
-
-    def get_active_pet(self):
-        pets = self._document.pets
-        if "active" not in pets.keys():
-            return None, None
-        return pets["active"], Pets.get_by_id(pets["active"]["pet_id"])
 
     # XP METHODS ------------------------------------
     @staticmethod
@@ -244,30 +258,10 @@ class User:
         return xp_bar
 
     # COOLDOWN METHODS ------------------------------------
-    COMMAND_TYPES = Literal["daily", "work", "weekly"]
-
-    async def set_cooldown(self, command_type: COMMAND_TYPES):
+    async def set_cooldown(self, command: Cooldowns):
         now = time.time()
-        self._document.cooldowns[command_type] = now
+        self._document.cooldowns[command.name.lower()] = now
         await self.save()
 
-    def check_cooldown(self, command_type: COMMAND_TYPES):
-        """Checks to see if a command is currently on cooldown. Returns boolean result and cooldown, if any"""
-        last_used = self._document.cooldowns[command_type]
-        cooldowns = {"work": 6, "daily": 21, "weekly": 167}
-        cooldown_hours = cooldowns[command_type]
-
-        now = time.time()
-        seconds_since_last_used = now - last_used
-        hours_since_last_used = seconds_since_last_used / 3600
-
-        if hours_since_last_used < cooldown_hours:
-            # Cooldown has not yet finished
-            off_cooldown = last_used + float(cooldown_hours * 3600)
-            seconds_remaining = off_cooldown - now
-
-            cooldown = timestamp_to_digital(seconds_remaining)
-
-            return False, cooldown  # The check has been failed
-        else:
-            return True, None  # The check has been passed
+    def get_cooldown(self, cooldown: Cooldowns):
+        return self._document.cooldowns.get(cooldown.name.lower())
