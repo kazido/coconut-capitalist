@@ -3,12 +3,10 @@ import random
 import discord
 import randfacts
 import time
-from typing import List
 
 from random import randint
 from discord import app_commands, Interaction
 from game_data.converters.data_converter import fetch
-from pymongo import DESCENDING
 
 from utils.utils import timestamp_to_digital
 from cococap.user import User, Cooldowns
@@ -17,7 +15,6 @@ from utils.base_cog import BaseCog
 from utils.utils import validate_bits
 
 from cococap.constants import TOO_RICH_TITLES
-from cococap.constants import LeaderboardCategories as LeaderCats
 
 MAX_BALANCE = 10_000
 
@@ -273,16 +270,6 @@ class EconomyCog(BaseCog, name="Economy"):
     async def beg(self, interaction: Interaction):
         """Beg for some money! Must have less than 10,000 bits."""
         await process_beg(interaction=interaction)
-
-    async def category_autocomplete(
-        self, interaction: Interaction, current: str
-    ) -> List[app_commands.Choice[str]]:
-        categories = [category.display_name for category in list(LeaderCats)]
-        return [
-            app_commands.Choice(name=category, value=category)
-            for category in categories
-            if current.lower() in category.lower()
-        ]
 
     @app_commands.command(name="check-in", description="Get your daily rewards!")
     async def check_in(self, interaction: Interaction):

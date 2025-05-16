@@ -84,31 +84,6 @@ class Categories(Enum):
         return cls(name.lower())
 
 
-class LeaderboardCategories(Enum):
-    BITS = ("💸", "Bits", "purse", "0xbbd6ed")
-    LUCKBUCKS = ("🍀", "Luckbucks", "luckbucks", "0x47d858")
-    FARMING = ("🌽", "Farming", "farming.xp", "0x2f919e")
-    FORAGING = ("🌳", "Foraging", "foraging.xp", "0x2f9e47")
-    FISHING = ("🐟", "Fishing", "fishing.xp", "0x2f3a9e")
-    MINING = ("⛏️", "Mining", "mining.xp", "0x9e492f")
-    COMBAT = ("⚔️", "Combat", "combat.xp", "0x9e2f2f")
-    # SHEPHERDING = ("🐑", "Shepherding", ['shepherding'], "0x5f2f9e")  # TO BE ADDED
-    DROPS = ("📦", "Drops", "drops_claimed", "0x8b9a9e")
-
-    def __new__(cls, emoji, name, column: str, color):
-        obj = object.__new__(cls)
-        obj._value_ = name.lower()
-        obj.emoji = emoji
-        obj.display_name = name
-        obj.column = column
-        obj.color = color
-        return obj
-
-    @classmethod
-    def from_name(cls, name: str):
-        return cls(name.lower())
-
-
 IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images/main"
 
 
