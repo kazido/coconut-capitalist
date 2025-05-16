@@ -45,54 +45,6 @@ LEADERBOARD_CATEGORIES = [
 ]
 
 
-class LeaderboardView(discord.ui.View):
-    def __init__(self, author_id, current_category, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.author_id = author_id
-        self.current_category = current_category
-        self.category_index = LEADERBOARD_CATEGORIES.index(current_category)
-        self.add_item(PrevBoardButton(self))
-        self.add_item(NextBoardButton(self))
-
-    async def interaction_check(self, interaction):
-        return interaction.user.id == self.author_id
-
-
-class PrevBoardButton(discord.ui.Button):
-    def __init__(self, view):
-        super().__init__(label="<", style=discord.ButtonStyle.blurple)
-        self.view_ref = view
-
-    async def callback(self, interaction: Interaction):
-        view = self.view_ref
-        idx = (view.category_index - 1) % len(LEADERBOARD_CATEGORIES)
-        new_category = LEADERBOARD_CATEGORIES[idx]
-        view.category_index = idx
-        view.current_category = new_category
-        await update_leaderboard_message(interaction, new_category, view)
-
-
-class NextBoardButton(discord.ui.Button):
-    def __init__(self, view):
-        super().__init__(label=">", style=discord.ButtonStyle.blurple)
-        self.view_ref = view
-
-    async def callback(self, interaction: Interaction):
-        view = self.view_ref
-        idx = (view.category_index + 1) % len(LEADERBOARD_CATEGORIES)
-        new_category = LEADERBOARD_CATEGORIES[idx]
-        view.category_index = idx
-        view.current_category = new_category
-        await update_leaderboard_message(interaction, new_category, view)
-
-
-async def update_leaderboard_message(
-    interaction: Interaction, category: TopCategories, view: LeaderboardView
-):
-    embed = await build_leaderboard_embed(interaction, category)
-    await interaction.response.edit_message(embed=embed, view=view)
-
-
 def get_leaderboard_query_and_accessors(category: TopCategories):
     if category == TopCategories.BITS:
         pipeline = [
@@ -117,12 +69,12 @@ def get_leaderboard_query_and_accessors(category: TopCategories):
 async def build_leaderboard_embed(interaction: Interaction, category: TopCategories):
     query, get_value, get_id, get_name = get_leaderboard_query_and_accessors(category)
     query = await query
-    for user in query:
-        if get_id(user) == 1016054559581413457:
-            query.remove(user)
-            break
+    # Remove bot user(s) if present (use a set of known bot IDs if needed)
+    bot_id = 1016054559581413457
+    query = [u for u in query if get_id(u) != bot_id]
+    medals = ["🥇", "🥈", "🥉"]
     embed = discord.Embed(
-        title=f"{category.display_name} Leaderboard",
+        title=f"{category.emoji} {category.display_name} Leaderboard",
         color=discord.Color.from_str(category.color),
         description="",
     )
@@ -130,33 +82,47 @@ async def build_leaderboard_embed(interaction: Interaction, category: TopCategor
     lines = []
     for idx, user in enumerate(query[:10], start=1):
         value = get_value(user)
-        line = f"`{idx}.` {get_name(user)} - `{value:,}`"
+        medal = medals[idx - 1] if idx <= 3 else f"{idx}."
         if get_id(user) == interaction.user.id:
-            line = f"`{idx}.` **{get_name(user)}** - `{value:,}` [YOU]"
+            line = f"{medal} **{get_name(user)} — {value:,} (you)**"
             user_found = True
+        else:
+            line = f"{medal} {get_name(user)} — {value:,}"
         lines.append(line)
     if not user_found:
         for idx, user in enumerate(query, start=1):
             if get_id(user) == interaction.user.id:
                 value = get_value(user)
-                line = f"**{idx}. {get_name(user)} - {value:,}**"
+                line = f"**{idx}. {get_name(user)} — {value:,}**  **(you)**"
                 lines.append("\nYour rank:\n" + line)
                 break
     embed.description = "\n".join(lines)
+
+    # Add circulation and bot profit for BITS leaderboard
+    if category == TopCategories.BITS:
+        # Get all users (including bot) for totals
+        all_users, _, _, _ = get_leaderboard_query_and_accessors(category)
+        all_users = await all_users
+        total_purse = sum(u["purse"] for u in all_users)
+        total_bank = sum(u["bank"] for u in all_users)
+        circulation = total_purse + total_bank
+        bot_user = next((u for u in all_users if u["discord_id"] == bot_id), None)
+        bot_purse = bot_user["purse"] if bot_user else 0
+        embed.add_field(
+            name="Current Circulation",
+            value=f"There are currently **{circulation - bot_purse:,}** bits in the economy.",
+            inline=False,
+        )
+        embed.set_footer(text=f"The house has made: {bot_purse:,} bits")
     return embed
 
 
-async def send_leaderboard(interaction: Interaction, category: TopCategories):
-    embed = await build_leaderboard_embed(interaction, category)
-    view = LeaderboardView(interaction.user.id, category)
-    await interaction.response.send_message(embed=embed, view=view)
-
-
 class LeaderboardCog(commands.Cog):
-    @app_commands.command(name="top", description="See the top 10 players in each category!")
-    @app_commands.describe(category="category of leaderboard")
+    @app_commands.command(name="top", description="See the top 10 players in a category!")
+    @app_commands.describe(category="The leaderboard category to view")
     async def top(self, interaction: Interaction, category: TopCategories = TopCategories.BITS):
-        await send_leaderboard(interaction, category)
+        embed = await build_leaderboard_embed(interaction, category)
+        await interaction.response.send_message(embed=embed)
 
 
 async def setup(bot):
