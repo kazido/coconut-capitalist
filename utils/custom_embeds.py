@@ -72,7 +72,7 @@ class FailureEmbed(CustomEmbed):
     def __init__(
         self,
         *,
-        color=discord.Color.dark_gray(),
+        color=discord.Color.red(),
         title=random.choice(FAILURE_REPLIES),
         type="rich",
         url=None,
@@ -98,7 +98,7 @@ class ErrorEmbed(CustomEmbed):
     def __init__(
         self,
         *,
-        color=discord.Color.red(),
+        color=discord.Color.dark_red(),
         title=None,
         type="rich",
         url=None,
