@@ -36,6 +36,14 @@ def _format_time(time: int):
     return str(time)
 
 
+def isfloat(s):
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+
 def timestamp_to_digital(timestamp):
     # Calculate and format the remaining cooldown
     days = int(timestamp // 86400)
@@ -66,12 +74,12 @@ def timestamp_to_english(timestamp):
 
 
 def _parse_number(number: int | str):
-    suffixes = {"k": "000", "m": "000000"}
+    suffixes = {"k": 1_000, "m": 1_000_000}
     number = str(number).lower()
     last_char = number[-1]
 
-    if last_char in suffixes and number[:-1].isdigit():
-        return int(number[:-1] + suffixes[last_char])
+    if last_char in suffixes and isfloat(number[:-1]):
+        return int(float(number[:-1]) * suffixes[last_char])
     if number.isdigit():
         return int(number)
     else:
@@ -80,14 +88,18 @@ def _parse_number(number: int | str):
 
 def validate_bits(user, amount: int | str = None, field: str = "purse"):
     # Parse and validate amount
-    if amount is None or str(amount).lower() in ["max", "all"]:
+    if amount is None or str(amount).lower() in ["max", "all", "doitall"]:
         return user.get_field(field)
 
+    if amount[-1] == "%" and amount[:-1].isdigit():
+        return round(user.get_field(field) * (int(amount[:-1]) / 100))
+
     amount = _parse_number(amount)
+    print(amount, type(amount))
     if not isinstance(amount, int) or amount <= 0:
         raise InvalidAmount("Please enter a valid number or 'max'.")
     if amount > user.get_field(field):
         raise InvalidAmount(f"Not enough bits! Balance: {user.get_field(field):,} bits")
-    if amount == 0:
+    if not amount:
         raise InvalidAmount("You cannot enter 0 bits...")
     return amount
