@@ -65,18 +65,17 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
         await interaction.edit_original_response(embed=embed)
 
         def check(m):
-            return (
-                m.content.lower() == word
-                and m.author == interaction.user
-                and m.channel == interaction.channel
-            )
+            return m.content.lower() == word and m.channel == interaction.channel
 
         try:  # Waits for a guess at the correct word
-            guess = await self.bot.wait_for("message", timeout=time_limit.__round__(), check=check)
+            guess: discord.Message = await self.bot.wait_for(
+                "message", timeout=time_limit.__round__(), check=check
+            )
+            helper = None
+            if guess.author != interaction.user:
+                helper = guess.author
             if guess.content.lower() == word:
                 # The user guessed the word correctly.
-                log.debug(f"User guessed {word} correctly.")
-
                 embed = SuccessEmbed(
                     title="Unscramble!",
                     desc=f"Correct!\n" f"***{scrambled_word}*** - {word}",
@@ -94,13 +93,18 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
                 else:
                     embed.set_footer(text=f"Current streak: {stats['current_unscramble_streak']}")
                 reward = reward * (2 * stats["current_unscramble_streak"])
-                embed.add_field(name="Reward", value=f"**{reward:,}** bits")
-                await user.inc_purse(reward)
+                if helper:
+                    embed.add_field(name="Reward", value=f"**{reward:,}** bits (shared)")
+                    embed.add_field(name="Helper", value=f"Helper: {helper.mention}")
+                    helper_user = await User(helper.id).load()
+                    await helper_user.inc_purse(reward / 2)
+                    await user.inc_purse(reward / 2)
+                else:
+                    embed.add_field(name="Reward", value=f"**{reward:,}** bits")
+                    await user.inc_purse(reward)
 
         except asyncio.TimeoutError:
             # The user took too long to guess and loses.
-            log.debug(f"User took too long to guess {word}.")
-
             embed = FailureEmbed(
                 title="Unscramble!",
                 desc=f"Too slow!\n" f"***{scrambled_word}*** - {word}",
