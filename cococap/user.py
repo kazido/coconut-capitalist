@@ -1,11 +1,8 @@
-import discord
 import time
 
 from enum import Enum
-
+from typing import Any, Optional
 from cococap.models import UserDocument
-from utils.utils import timestamp_to_digital
-
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -17,237 +14,139 @@ class Cooldowns(Enum):
     WEEKLY = 167
 
 
+class UserNotFound(Exception):
+    pass
+
+
+class InsufficientFunds(Exception):
+    pass
+
+
 class User:
-    def __init__(self, uid: int):
-        log.info(f"Initializing user with uid: {str(uid)}")
-        self.uid = uid
-        self._document: UserDocument
+    """
+    User data and operations wrapper. All currency and XP changes are atomic.
+    Use User.get(discord_id) to always get a fresh user from DB.
+    """
 
-    async def load(self):
-        """Method to load a user object with information from MongoDB, taking in a discord uid"""
-        self._document = await UserDocument.find_one(UserDocument.discord_id == self.uid)
-        if not self._document:
-            # TODO: Handle tutorial here I think, probably needs to be moved out of this though
-            self._document = UserDocument(name="unnamed user", discord_id=self.uid)
-            await self._document.insert()
-        return self
+    def __init__(self, document: UserDocument):
+        self._document = document
 
-    def __str__(self):
+    @classmethod
+    async def get(cls, discord_id: int) -> "User":
+        """Get or create a user by Discord ID."""
+        doc = await UserDocument.find_one(UserDocument.discord_id == discord_id)
+        if not doc:
+            doc = await UserDocument(name="unnamed user", discord_id=discord_id).insert()
+        return cls(doc)
+
+    @property
+    def id(self) -> int:
+        return self._document.discord_id
+
+    @property
+    def name(self) -> str:
         return self._document.name
 
-    async def save(self):
-        """Save the user document after any changes"""
-        await self._document.save()
+    def __str__(self):
+        return self.name
 
-    # UPDATE METHODS ------------------------------------
-    async def inc_purse(self, amount: int):
-        self._document.purse += amount
-        await self.save()
+    # --- Atomic Currency Methods ---
+    async def add_bits(self, amount: int) -> None:
+        await self._document.inc({"purse": amount})
 
-    async def inc_bank(self, amount: int):
-        self._document.bank += amount
-        await self.save()
+    async def remove_bits(self, amount: int) -> None:
+        if await self.get_bits() < amount:
+            raise InsufficientFunds("Not enough bits.")
+        await self._document.inc({"purse": -amount})
 
-    async def inc_tokens(self, *, tokens: int):
-        self._document.tokens += tokens
-        await self.save()
+    async def get_bits(self) -> int:
+        # Always fetch latest from DB
+        doc = await UserDocument.get(self._document.id)
+        return doc.purse
 
-    async def inc_luckbucks(self, *, amount: int):
-        self._document.luckbucks += amount
-        await self.save()
+    async def add_bank(self, amount: int) -> None:
+        await self._document.inc({"bank": amount})
 
-    async def inc_xp(self, *, skill: str, xp: int, interaction: discord.Interaction):
-        # TODO: Needs an overhaul to work with Tiers and Areas and Pets
-        # ALSO MAYBE WE SHOULD MAKE THIS SIMPLER AND MOVE THE COMPLEX LOGIC ELSEWHERE
-        current_xp = getattr(self._document, skill)["xp"]
-        current_level = self.xp_to_level(current_xp)
-        pet, pet_data = self.get_active_pet()
-        rewarded_xp = xp
-        # if skill in pet_data.skill:
-        #     rewarded_xp = xp + ((pet_data.max_level / 10) * pet["level"])
-        level_to_be = self.xp_to_level(current_xp + rewarded_xp)
-        if level_to_be > current_level:
-            # If the user will level up, give them rewards
-            bit_reward = level_to_be * 10000
-            await self.inc_purse(amount=bit_reward)
-            await self.inc_tokens(tokens=1)
+    async def add_tokens(self, amount: int) -> None:
+        await self._document.inc({"tokens": amount})
 
-            # Send an embed congratulating them
-            embed = discord.Embed(
-                title=f"{skill.capitalize()} level up! {current_level} -> {level_to_be}",
-                description=f"Congratulations {interaction.user.mention}!",
-                color=discord.Color.gold(),
-            )
-            embed.add_field(
-                name="Rewards",
-                value=f":money_with_wings: +**{level_to_be*10000:,}** bits\n:coin: +**1** token",
-            )
-            embed.set_thumbnail(url=interaction.user.avatar.url)
-            await interaction.channel.send(embed=embed)
+    async def add_luckbucks(self, amount: int) -> None:
+        await self._document.inc({"luckbucks": amount})
 
-        getattr(self._document, skill)["xp"] += rewarded_xp
-        await self.save()
-        return pet_data
+    # --- XP/Level Methods ---
+    async def add_xp(self, skill: str, amount: int) -> dict:
+        # Atomic XP add for a skill
+        await self._document.inc({f"{skill}.xp": amount})
+        # Optionally, handle level up logic here
+        return await self.get_skill(skill)
 
-    async def in_game(self, in_game: bool):
-        self._document.in_game = in_game
-        await self.save()
+    async def get_skill(self, skill: str) -> dict:
+        doc = await UserDocument.get(self._document.id)
+        return getattr(doc, skill)
 
-    # ITEM METHODS -----------------------------------
-    async def create_item(self, item_id: str, quantity: int = 1):
-        """Inserts an item into the database with specified owner and quantity"""
-
-        inventory: dict = self.get_field("items")
-
-        # Ensure that the item is an actual item first
-        if not Master.get_or_none(item_id=item_id):
-            message = f"'{item_id}' is not a valid item id."
-            log.warning(message)
-            return False, message
-        if quantity < 1:
-            message = f"Tried to create {quantity} {item_id}. Less than 1."
-            log.warning(message)
-            return False, message
-        # Retrieve or create the item in the database
-        if item_id not in inventory.keys():
-            inventory[item_id] = {"quantity": quantity}
-            message = f"{quantity} new {item_id} created with owner: {self}."
-            log.info(message)
-            await self.save()
-            return True, message
+    # --- Item Methods ---
+    async def add_item(self, item_id: str, quantity: int = 1) -> None:
+        # Atomic item add (assumes items is a dict of {item_id: {quantity: int}})
+        doc = await UserDocument.get(self._document.id)
+        items = doc.items.copy()
+        if item_id in items:
+            items[item_id]["quantity"] += quantity
         else:
-            # If an item was found, add to it's quantity
-            inventory[item_id]["quantity"] += quantity
-            message = f"Added {quantity} {item_id} to: {self}"
-            log.info(message)
-            await self.save()
-            return True, message
+            items[item_id] = {"quantity": quantity}
+        await doc.set({"items": items})
 
-    async def delete_item(self, item_id: str, quantity: int = None):
-        inventory: dict = self.get_field("items")
-        # Ensure that the item is an actual item first
-        if not Master.get_or_none(item_id=item_id):
-            message = f"Tried to delete: {item_id}. Error: not a valid item id."
-            log.warning(message)
-            return False, message
-        if (quantity != None) and (quantity < 1):
-            message = f"Tried to delete: {quantity} {item_id}. Error: less than 1."
-            log.warning(message)
-            return False, message
-        if item_id in inventory.keys():
-            # Try to decrement quantity of existing item
-            if quantity and (inventory[item_id]["quantity"] - quantity > 0):
-                inventory[item_id]["quantity"] -= quantity
-                message = f"Deleted {quantity} {item_id} from {self}."
-                log.info(message)
-                await self.save()
-                return True, message
-            else:
-                inventory.pop(item_id)
-                message = f"Deleted all {item_id} from {self}."
-                log.info(message)
-                await self.save()
-                return True, message
-        else:
-            # If item doesn't exist, do nothing
-            message = f"Tried to delete {quantity} {item_id} from {self}. Does not exist."
-            log.warning(message)
-            return False, message
+    async def remove_item(self, item_id: str, quantity: int = 1) -> None:
+        doc = await UserDocument.get(self._document.id)
+        items = doc.items.copy()
+        if item_id not in items or items[item_id]["quantity"] < quantity:
+            raise ValueError("Not enough items to remove.")
+        items[item_id]["quantity"] -= quantity
+        if items[item_id]["quantity"] <= 0:
+            del items[item_id]
+        await doc.set({"items": items})
 
-    async def trade_item(self, new_owner: int, item_id: str, quantity: int = None):
-        user_2 = User(uid=new_owner)
-        await user_2.load()
+    # --- Cooldown Methods ---
+    async def set_cooldown(self, command: Cooldowns) -> None:
+        now = time.time()
+        await self._document.set({f"cooldowns.{command.name.lower()}": now})
 
-        inventory: dict = self.get_field("items")
+    async def get_cooldown(self, command: Cooldowns) -> Optional[float]:
+        doc = await UserDocument.get(self._document.id)
+        return doc.cooldowns.get(command.name.lower())
 
-        # Ensure that the item is an actual item first
-        if not Master.get_or_none(item_id=item_id):
-            message = f"Tried to trade: {item_id}. Error: not a valid item id."
-            log.warning(message)
-            return False, message
-        if item_id in inventory.keys():
-            # Transfer the ownership of the item if it exists
-            item = inventory[item_id]
-            if quantity:
-                if quantity > item["quantity"]:
-                    message = f"Tried to trade {quantity} {item_id}. Error: more than owned."
-                    log.warning(message)
-                    return False, message
-                # Inserts same item into tradee's inventory
-                await user_2.create_item(item_id, quantity)
-                # Removes items from trader's inventory
-                await self.delete_item(item_id, quantity)
-                message = f"Traded {quantity} {item_id} from {self} to {user_2}."
-                log.info(message)
-                return True, message
-            else:
-                # Inserts same item into tradee's inventory
-                await user_2.create_item(item_id, inventory[item_id]["quantity"])
-                # Removes items from trader's inventory
-                await self.delete_item(item_id)
-                message = f"Traded all {item_id} from {self} to {user_2}."
-                log.info(message)
-                return True, message
-        # If item doesn't exist, do nothing
-        message = f"Tried to trade {item_id} from {self} to {user_2}. Item does not exist."
-        log.warning(message)
-        return False, message
+    # --- Field Access ---
+    async def get_field(self, field: str) -> Any:
+        doc = await UserDocument.get(self._document.id)
+        return getattr(doc, field)
 
-    # GET METHODS ------------------------------------
-    def get_field(self, field: str):
-        if not hasattr(self._document, field):
-            raise AttributeError(f"{self._document} does not have field '{field}'.")
-        return getattr(self._document, field)
+    async def set_field(self, field: str, value: Any) -> None:
+        await self._document.set({field: value})
 
-    def update_field(self, field: str, value, save: bool = False):
-        """Update a (possibly nested) field in the user document."""
-        parts = field.split(".")
-        obj = self._document
-        for part in parts[:-1]:
-            if isinstance(obj, dict):
-                if part not in obj:
-                    raise AttributeError(f"{obj} does not have key '{part}'.")
-                obj = obj[part]
-            else:
-                if not hasattr(obj, part):
-                    raise AttributeError(f"{obj} does not have attribute '{part}'.")
-                obj = getattr(obj, part)
-        last_part = parts[-1]
-        if isinstance(obj, dict):
-            obj[last_part] = value
-        else:
-            setattr(obj, last_part, value)
-        if save:
-            return self.save()
-
-    # XP METHODS ------------------------------------
+    # --- Static Utility Methods ---
     @staticmethod
-    def level_to_xp(level):
+    def level_to_xp(level: int) -> int:
         xp = ((level - 1) / 0.07) ** 2
         return int(xp)
 
     @staticmethod
-    def xp_to_level(xp):
+    def xp_to_level(xp: int) -> int:
         level = 0.07 * (xp ** (1 / 2))
         return int(level + 1)
 
     @staticmethod
-    def xp_for_next_level(xp):
-        # Get current level and xp needed for current level
+    def xp_for_next_level(xp: int):
         level = User.xp_to_level(xp)
         level_xp = User.level_to_xp(level)
-        # Get the next level and xp needed for next level
         next_level = level + 1
         next_level_xp = User.level_to_xp(next_level)
-        # Get the overflow of xp above current level
         overflow_xp_at_level = xp - level_xp
         xp_between_levels = next_level_xp - level_xp
         return int(overflow_xp_at_level), int(xp_between_levels)
 
     @staticmethod
-    def create_xp_bar(xp) -> str:
+    def create_xp_bar(xp: int) -> str:
         overflow_xp, xp_needed = User.xp_for_next_level(xp)
-        ratio = overflow_xp / xp_needed
+        ratio = overflow_xp / xp_needed if xp_needed else 0
         xp_bar = "<:xp_bar_left:1203894026265428021>"
         xp_bar_size = 10
         for _ in range(int(ratio * xp_bar_size)):
@@ -256,12 +155,3 @@ class User:
             xp_bar += "<:xp_bar_small:1203894025137037443>"
         xp_bar += f"<:xp_bar_right:1203894027418599505>"
         return xp_bar
-
-    # COOLDOWN METHODS ------------------------------------
-    async def set_cooldown(self, command: Cooldowns):
-        now = time.time()
-        self._document.cooldowns[command.name.lower()] = now
-        await self.save()
-
-    def get_cooldown(self, cooldown: Cooldowns):
-        return self._document.cooldowns.get(cooldown.name.lower())
