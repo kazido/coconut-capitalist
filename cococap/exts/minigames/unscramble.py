@@ -92,7 +92,7 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
                     )
                 else:
                     embed.set_footer(text=f"Current streak: {stats['current_unscramble_streak']}")
-                reward = reward * (2 * stats["current_unscramble_streak"])
+                reward = reward * stats["current_unscramble_streak"]
                 if helper:
                     embed.add_field(name="Reward", value=f"**{reward:,}** bits (shared)")
                     embed.add_field(name="Helper", value=f"Helper: {helper.mention}")
