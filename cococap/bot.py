@@ -6,7 +6,6 @@ from logging import getLogger
 from cococap import exts
 from cococap.models import UserDocument, PartyDocument
 from cococap.constants import URI
-from cococap.persistent import PersistentView
 
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
