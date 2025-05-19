@@ -56,6 +56,7 @@ class WorkButton(discord.ui.Button):
         user: User = self.view.user
         # Put the command on cooldown!
         await user.set_cooldown(Cooldowns.WORK)
+        await user.inc_stat("claimed_work")
         self.update(user=user)
 
         rank = fetch("ranks." + str(user.get_field("rank")))
@@ -82,6 +83,7 @@ class DailyButton(discord.ui.Button):
         user: User = self.view.user
         embed = self.view.embed
         await user.set_cooldown(Cooldowns.DAILY)
+        await user.inc_stat("claimed_daily")
         self.update(user)
 
         # Calculate and add bank interest rate
@@ -116,6 +118,7 @@ class WeeklyButton(discord.ui.Button):
     async def callback(self, interaction):
         user: User = self.view.user
         await user.set_cooldown(Cooldowns.WEEKLY)
+        await user.inc_stat("claimed_weekly")
         self.update(user)
 
         self.label = f"+7 luckbucks"
@@ -178,6 +181,7 @@ async def process_deposit(interaction: Interaction, amount: int | str = None):
     # Perform deposit
     await user.remove_bits(amount=amount)
     await user.add_bank(amount=amount)
+    await user.inc_stat("deposits")
     embed = CustomEmbed(
         colour=discord.Color.dark_blue(), interaction=interaction, activity="depositing"
     ).add_field(
@@ -194,6 +198,7 @@ async def process_withdrawal(interaction: Interaction, amount: int | str = None)
     # Perform withdrawal
     await user.add_bank(amount=-amount)
     await user.add_bits(amount=amount)
+    await user.inc_stat("withdraws")
 
     embed = CustomEmbed(
         colour=discord.Color.dark_blue(), interaction=interaction, activity="withdrawing"
@@ -219,6 +224,7 @@ async def process_beg(interaction: Interaction):
         )
         return await interaction.response.send_message(embed=embed)
 
+    await user.inc_stat("times_begged")
     beg_amount = randint(100, 1000)
     await user.add_bits(beg_amount)
 
