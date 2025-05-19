@@ -25,6 +25,7 @@ class Casino(commands.Cog, name="Casino"):
         # Collect their bet immediately
         await user.remove_bits(bet)
         interaction.extras.update(bet=bet)
+        await user.inc_stat("gambles_done")
 
         return super().interaction_check(interaction)
 
