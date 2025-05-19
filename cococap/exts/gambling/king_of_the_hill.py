@@ -39,9 +39,8 @@ class KingOfTheHill(commands.Cog, name="King of the Hill"):
             bit_reward = difference * 10
 
             # Load the user and update their purse
-            user = User(last_message.author.id)
-            await user.load()
-            await user.inc_purse(bit_reward)
+            user = await User.get(last_message.author.id)
+            await user.add_bits(bit_reward)
 
             await last_message.reply(
                 f"You earned *+{bit_reward:,} bits* for holding the position for {timestamp_to_english(now - then)}."
