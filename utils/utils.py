@@ -86,20 +86,21 @@ def _parse_number(number: int | str):
         return False
 
 
-def validate_bits(user, amount: int | str = None, field: str = "purse"):
+async def validate_bits(user, amount: int | str = None, field: str = "purse"):
     # Parse and validate amount
+    balance = await user.get_field_fresh(field)
     if amount is None or str(amount).lower() in ["max", "all", "doitall"]:
-        return user.get_field(field)
+        return balance
 
     if amount[-1] == "%" and amount[:-1].isdigit():
-        return round(user.get_field(field) * (int(amount[:-1]) / 100))
+        return round(balance * (int(amount[:-1]) / 100))
 
     amount = _parse_number(amount)
     print(amount, type(amount))
     if not isinstance(amount, int) or amount <= 0:
         raise InvalidAmount("Please enter a valid number or 'max'.")
-    if amount > user.get_field(field):
-        raise InvalidAmount(f"Not enough bits! Balance: {user.get_field(field):,} bits")
+    if amount > balance:
+        raise InvalidAmount(f"Not enough bits! Balance: {balance:,} bits")
     if not amount:
         raise InvalidAmount("You cannot enter 0 bits...")
     return amount

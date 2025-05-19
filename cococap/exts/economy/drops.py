@@ -68,8 +68,7 @@ class ClaimDropButtons(discord.ui.View):
     @discord.ui.button(label="CLAIM", emoji="📦", style=discord.ButtonStyle.green)
     async def claim_button(self, claim_interaction: discord.Interaction, button: discord.ui.Button):
         # Load the user
-        user = User(claim_interaction.user.id)
-        await user.load()
+        user = await User.get(claim_interaction.user.id)
 
         user._document.drops_claimed += 1
         await user.save()
@@ -138,7 +137,7 @@ class ClaimDropButtons(discord.ui.View):
             }
             await collection.update_one({"_id": ObjectId("65b76d73ee9f83c970604935")}, update_data)
 
-        await user.inc_purse(amount=int(self.drop.amount))
+        await user.add_bits(amount=int(self.drop.amount))
         await claim_interaction.response.edit_message(embed=claimed_embed, view=None)
         self.claimed = True
 

@@ -15,7 +15,7 @@ class Settings(commands.Cog):
     @app_commands.command(name="settings")
     async def settings(self, interaction: Interaction):
         """Change your account settings."""
-        user = await User(uid=interaction.user.id).load()
+        user = await User.get(discord_id=interaction.user.id)
 
         settings_dict = {
             "auto_deposit": {

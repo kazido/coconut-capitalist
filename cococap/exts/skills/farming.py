@@ -410,8 +410,7 @@ class FarmingCog(commands.Cog, name="Farming"):
 #     async def farm(self, interaction: discord.Interaction):
 #         """Grow crops to feed your pets and make some money."""
 #         # Load the user
-#         user = User(interaction.user.id)
-#         await user.load()
+#         user = await User.get(interaction.user.id)
 
 #         # Get farming data
 #         farming = user.get_field("farming")

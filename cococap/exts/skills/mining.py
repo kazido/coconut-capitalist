@@ -1,12 +1,12 @@
 import discord
 import random
 import time
-import math
 
 from typing import Any, Coroutine
 from discord import Interaction, app_commands
 from discord.ext import commands
 from logging import getLogger
+from enum import Enum
 
 from utils.menus import MenuHandler, Menu
 from utils.custom_embeds import CustomEmbed
@@ -16,7 +16,56 @@ from utils.utils import timestamp_to_english
 from cococap.user import User
 from cococap.constants import IMAGES_REPO, Categories
 
+from game_data.converters.data_converter import fetch
+
 log = getLogger(__name__)
+
+
+class Emojis(Enum):
+    SELECTED_COLUMN = ":small_red_triangle_down:"
+    NOTCH = ":black_small_square:"
+    CELL = "<:cell:1280658009306959893>"
+    CELL_EMPTY = "<:cell_empty:1280658029703860244>"
+    WYRMHOLE = "<a:wyrmhole:1280656910290260038>"
+
+
+class ReactorSlots(Enum):
+    SLOT1 = "core_slot1"
+    SLOT2 = "core_slot2"
+    SLOT3 = "core_slot3"
+    SLOT4 = "core_slot4"
+
+
+class Mineshaft:
+    LEVEL1 = ["copper_ore"]
+    LEVEL2 = ["iron_ore"].extend(LEVEL1)
+    LEVEL3 = ["gold_ore", "dusty_dandelion.seed"].extend(LEVEL2)
+    LEVEL4 = ["sanity", "rage", "peace", "balance"].extend(LEVEL3)
+    LEVEL5 = ["spirit_of_the_mines"].extend(LEVEL4)
+
+    depths = [LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5]
+    num_columns = 5
+
+    def __init__(self) -> None:
+        self.cols = []  # columns that hold 5 nodes each
+        self._generate_columns()
+
+    def _generate_columns(self):
+        for _ in range(self.num_columns):
+            # for each row, generate a column and add it to the list
+            for level in range(self.depths):
+                node = self._create_node(depth=self.depths[level])
+                self.cols.append(node)
+
+    def _create_node(self, depth: list):
+        # creates a node with loot based on the passed level
+        for item_id in depth:
+            item = fetch(item_id)
+            quantity = roll_item(item)
+            if quantity:
+                return item, quantity
+        # if nothing was rolled, return no item and no quantity
+        return None, 0
 
 
 class MiningCog(commands.Cog, name="Mining"):
@@ -25,65 +74,6 @@ class MiningCog(commands.Cog, name="Mining"):
 
     def __init__(self, bot):
         self.bot = bot
-
-    # gets all items from the sqlite database that have the tag 'mining'
-    mining_items = get_items_from_db("mining")
-
-    # emojis that get displayed during the mining minigame
-    selected_column_emoji = ":small_red_triangle_down:"  # selecting column to mine
-    notch_emoji = ":black_small_square:"  # placeholder for the marker emoji
-    cell_emoji = "<:cell:1280658009306959893>"  # a mineable cell with its contents hidden
-    cell_empty_emoji = "<:cell_empty:1280658029703860244>"  # a mined cell that is empty
-    wyrmhole_emoji = "<a:wyrmhole:1280656910290260038>"  # a wyrmhole
-
-    # reactor slots
-    core_slots = ["core_slot1", "core_slot2", "core_slot3", "core_slot4"]
-
-    class Mineshaft:
-        """the structure of the mineshaft. just lists of nodes with items and quantities."""
-
-        levels = [
-            [
-                "copper_ore",
-            ],
-            [
-                "iron_ore",
-            ],
-            [
-                "gold_ore",
-                "weathered_seed",
-            ],
-            [
-                "sanity_gemstone",
-                "rage_gemstone",
-                "peace_gemstone",
-                "balance_gemstone",
-            ],
-            [
-                "oreo_gemstone",
-            ],
-        ]
-        num_rows = 5
-        num_cols = 5
-
-        def __init__(self) -> None:
-            self.columns = []  # columns that hold 5 nodes each
-            for _ in range(self.num_cols):
-                # for each row, generate a column and add it to the list
-                self.columns.append([self.create_node(depth=i) for i in range(self.num_rows)])
-
-        def create_node(self, depth: int):
-            # creates a node with loot based on the passed level
-            level = []
-            for i in range(depth, -1, -1):
-                level.extend(self.levels[i])
-            for item_id in level:
-                item = MiningCog.mining_items[item_id]
-                quantity = roll_item(item)
-                if quantity:
-                    return item, quantity
-            # if nothing was rolled, return no item and no quantity
-            return None, 0
 
     class DeeperMineshaft(Mineshaft):
         """the structure of the wyrmhole mineshaft. just lists of nodes with items and quantities and an implosion gemstone."""
@@ -99,14 +89,14 @@ class MiningCog(commands.Cog, name="Mining"):
         def __init__(self) -> None:
             self.nodes = []
             for _ in range(self.num_cols):
-                self.nodes.append(self.create_node())
+                self.nodes.append(self._create_node())
             # always add 1 implosion gem to the nodes
             self.nodes[random.randint(0, 4)] = (
                 MiningCog.mining_items["implosion_gemstone"],
                 1,
             )
 
-        def create_node(self):
+        def _create_node(self):
             # choose a random item from the wyrmhole item pool
             item_id = random.choice(self.item_pool.keys())
             item = MiningCog.mining_items[item_id]
@@ -598,8 +588,7 @@ class MiningCog(commands.Cog, name="Mining"):
     async def mine(self, interaction: Interaction):
         """Displays your mining profile and all available actions."""
         # Load the user
-        user = User(interaction.user.id)
-        await user.load()
+        user = await User.get(interaction.user.id)
 
         # Load the user's items and mining data
         user_items = user.get_field("items")

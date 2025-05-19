@@ -16,8 +16,8 @@ async def process_rank_purchase(interaction, rank):
         interaction=interaction,
         activity="ranking up",
     )
-    user.update_field("rank", int(rank.rank_id))
-    await user.inc_tokens(tokens=-int(rank.token_price))
+    await user.set_field("rank", int(rank.rank_id))
+    await user.add_tokens(tokens=-int(rank.token_price))
     await interaction.edit_original_response(embed=embed, view=None)
 
 
@@ -65,7 +65,7 @@ class RanksCog(commands.Cog):
     """Rank up for a higher wage!"""
 
     async def interaction_check(self, interaction: discord.Interaction):
-        user = await User(interaction.user.id).load()
+        user = await User.get(interaction.user.id)
         interaction.extras.update(user=user)
         rank = fetch("ranks." + str(user.get_field("rank")))
         next_rank = fetch("ranks." + str(int(rank.rank_id) + 1))

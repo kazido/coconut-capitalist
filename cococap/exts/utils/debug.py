@@ -23,8 +23,8 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     @app_commands.command(name="admin_pay", description="Admin: Pay any user bits.")
     @app_commands.checks.has_permissions(administrator=True)  # Only admins see it
     async def admin_pay(self, interaction: discord.Interaction, user: discord.User, amount: int):
-        payee = await User(user.id).load()
-        await payee.inc_purse(amount)
+        payee = await User.get(user.id)
+        await payee.add_bits(amount)
         paid_embed = discord.Embed(
             title="Updated balance.",
             description=f"Updated {user.name}'s ({user.display_name}) balance by **{amount:,}** bits.",
@@ -44,11 +44,10 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
 
     @commands.command(name="Reset")
     async def reset(self, ctx):
-        user = await User(ctx.author.id).load()
-        await user.in_game(in_game=False)
-        user.update_field("cooldowns.work", 0)
-        user.update_field("cooldowns.daily", 0)
-        await user.update_field("cooldowns.weekly", 0, save=True)
+        user = await User.get(ctx.author.id)
+        await user.set_field("cooldowns.work", 0)
+        await user.set_field("cooldowns.daily", 0)
+        await user.set_field("cooldowns.weekly", 0)
         embed = CustomEmbed(desc="RESET! RESET! RESET!")
         await ctx.send(embed=embed)
 

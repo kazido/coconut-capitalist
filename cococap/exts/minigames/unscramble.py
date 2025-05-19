@@ -26,7 +26,7 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
     @app_commands.command(name="unscramble")
     async def unscramble(self, interaction: discord.Interaction):
         """Try to unscramble a word for some bits. The longer the word, the more bits you get!"""
-        user = await User(interaction.user.id).load()
+        user = await User.get(interaction.user.id)
 
         stats = user._document.gambling_statistics
 
@@ -96,12 +96,12 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
                 if helper:
                     embed.add_field(name="Reward", value=f"**{reward:,}** bits (shared)")
                     embed.add_field(name="Helper", value=f"Helper: {helper.mention}")
-                    helper_user = await User(helper.id).load()
-                    await helper_user.inc_purse(reward / 2)
-                    await user.inc_purse(reward / 2)
+                    helper_user = await User.get(helper.id)
+                    await helper_user.add_bits(reward / 2)
+                    await user.add_bits(reward / 2)
                 else:
                     embed.add_field(name="Reward", value=f"**{reward:,}** bits")
-                    await user.inc_purse(reward)
+                    await user.add_bits(reward)
 
         except asyncio.TimeoutError:
             # The user took too long to guess and loses.

@@ -10,6 +10,6 @@ class BaseCog(commands.Cog):
     async def interaction_check(self, interaction: discord.Interaction):
         """Globally load the user and attach to interaction.extras for all cogs inheriting BaseCog.
         This allows us to load a user once and access it anywhere within our command lifecycle."""
-        user = await User(interaction.user.id).load()
+        user = await User.get(interaction.user.id)
         interaction.extras.update(user=user)
         return super().interaction_check(interaction)

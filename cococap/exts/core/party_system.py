@@ -70,7 +70,7 @@ class Party:
         """Add a member to the party and update their document."""
         if self.is_member(user_id):
             raise AlreadyInParty(f"The specified user is in already your party.")
-        member: User = await User(user_id).load()
+        member: User = await User.get(user_id)
         if member.get_field("party_id"):
             raise AlreadyInParty(
                 f"The specified user is already in a party.",
@@ -78,15 +78,15 @@ class Party:
                 footer="Tell them to do /party leave.",
             )
         self._members.append(user_id)
-        await member.update_field("party_id", self.party_id, save=True)
+        await member.set_field("party_id", self.party_id)
         return await self.save()
 
     async def remove_member(self, user_id: int):
         """Remove a member from the party and update their document."""
         if not self.is_member(user_id):
             raise UserNotInParty("The specified user is not in your party...")
-        member: User = await User(user_id).load()
-        await member.update_field("party_id", None, save=True)
+        member: User = await User.get(user_id)
+        await member.set_field("party_id", None)
         self._members.remove(user_id)
         return await self.save()
 
@@ -97,8 +97,8 @@ class Party:
     async def delete(self):
         """Delete the party and update all affected members."""
         for member in self.members:
-            user = await User(member).load()
-            await user.update_field("party_id", None, save=True)
+            user = await User.get(member)
+            await user.set_field("party_id", None)
         await self._document.delete()
 
     def is_member(self, user_id: int) -> bool:
@@ -163,7 +163,7 @@ class PartySystemCog(commands.GroupCog, name="party"):
         self.bot.tree.remove_command(self.promote_command)
 
     async def interaction_check(self, interaction: Interaction):
-        user = await User(interaction.user.id).load()
+        user = await User.get(interaction.user.id)
         interaction.extras.update(user=user)
         party = await Party().load(user.get_field("party_id"))
         interaction.extras.update(party=party)

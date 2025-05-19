@@ -14,33 +14,17 @@ log = getLogger(__name__)
 log.setLevel(20)
 
 
-def skewed_roll(min_drop: int, max_drop: int):
+def _skewed_roll(min_drop: int, max_drop: int):
     """Returns an integer between min_drop and max_drop, skewed towards min_drop."""
-    # only to be used in roll_drops
     range_size = max_drop - min_drop
-    roll = min_drop + round((random.random() ** 3) * range_size)
-    return roll
+    return min_drop + round((random.random() ** 3) * range_size)
 
 
-def roll_item(item):
+def roll_item(item: object):
     """Rolls item and returns the quantity"""
-    # If a 1 is rolled, the item was dropped
     if random.randint(1, item.drop_rate) == 1:
-        quantity = skewed_roll(item.min_drop, item.max_drop)
-        return quantity
+        return _skewed_roll(item.min_drop, item.max_drop)
     return None
-
-
-def get_items_from_db(skill: str = None):
-    """Returns a dictionary of all items related to the passed skill"""
-    drops = {}
-    query = Master.select()
-    if skill:
-        query = Master.select().where(Master.skill.contains(skill))
-    for item in query:
-        # Add the item in to the dict by it's item_id
-        drops[item.item_id] = item
-    return drops
 
 
 def item_attributes(item_data: dict, for_shop: bool):

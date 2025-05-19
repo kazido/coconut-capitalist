@@ -90,8 +90,7 @@ class FishingCog(commands.Cog, name="Fishing"):
     async def fish(self, interaction: Interaction):
         """Displays your fishing profile and all available actions."""
         # Load the user
-        user = User(interaction.user.id)
-        await user.load()
+        user = await User.get(interaction.user.id)
 
         # Load the user's items and mining data
         user_items = user.get_field("items")

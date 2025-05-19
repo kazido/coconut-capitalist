@@ -179,8 +179,7 @@ class ForagingCog(commands.Cog, name="Foraging"):
     async def foraging(self, interaction: discord.Interaction):
         """Grab a buddy and chop down a tree."""
         # Load the user
-        user = User(interaction.user.id)
-        await user.load()
+        user = await User.get(interaction.user.id)
         foraging = user.get_field("foraging")
 
         skill_xp = foraging["xp"]

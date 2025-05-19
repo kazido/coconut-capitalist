@@ -41,7 +41,7 @@ class HighLow(discord.ui.View):
     def __init__(self, interaction: discord.Interaction):
         super().__init__(timeout=120)
         self.interaction = interaction
-        self.user = interaction.extras.get("user")
+        self.user: User = interaction.extras.get("user")
         self.bet = interaction.extras.get("bet")
         self.multiplier = 1
         self.roll = randint(1, 10)
@@ -82,7 +82,7 @@ class HighLow(discord.ui.View):
             )
             embed.add_field(
                 name="Purse",
-                value=f"{self.user.get_field('purse'):,} bits *({-self.bet:,})*",
+                value=f"{await self.user.get_bits():,} bits *({-self.bet:,})*",
                 inline=False,
             )
             embed.set_footer(text="Better luck next time!")
@@ -100,14 +100,14 @@ class HighLow(discord.ui.View):
             self.multiplier = 0
             await self._update_embed(win=False)
             # Give the lost money to the house
-            bot = await User(1016054559581413457).load()
-            await bot.inc_purse(self.bet)
+            bot = await User.get(1016054559581413457)
+            await bot.add_bits(self.bet)
             self.clear_items()  # Remove buttons from embed
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     async def process_cashout(self, interaction: discord.Interaction):
         profit = self.bet * self.multiplier
-        await self.user.inc_purse(profit)
+        await self.user.add_bits(profit)
         embed = discord.Embed(
             title=f"HIGHLOW :arrows_clockwise: | Bet: {self.bet:,}",
             color=discord.Color.blue(),
@@ -115,7 +115,7 @@ class HighLow(discord.ui.View):
         embed.add_field(name="Stopped at", value=f"**{self.multiplier:,}x**", inline=True)
         embed.add_field(
             name="Purse",
-            value=f"{self.user.get_field('purse'):,} bits *(+{profit:,})*",
+            value=f"{await self.user.get_bits():,} bits *(+{profit:,})*",
             inline=False,
         )
         await interaction.response.edit_message(embed=embed, view=None)

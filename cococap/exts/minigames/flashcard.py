@@ -22,7 +22,7 @@ class FlashcardCog(commands.Cog, name="Flashcard"):
     @app_commands.command(name="flashcard")
     async def flashcard(self, interaction: discord.Interaction):
         """Try to solve a math problem for some bits!"""
-        user = await User(interaction.user.id).load()
+        user = await User.get(interaction.user.id)
 
         stats = user._document.gambling_statistics
 
@@ -87,12 +87,12 @@ class FlashcardCog(commands.Cog, name="Flashcard"):
                 if helper:
                     embed.add_field(name="Reward", value=f"**{reward:,}** bits (shared)")
                     embed.add_field(name="Helper", value=f"Helper: {helper.mention}")
-                    helper_user = await User(helper.id).load()
-                    await helper_user.inc_purse(reward / 2)
-                    await user.inc_purse(reward / 2)
+                    helper_user = await User.get(helper.id)
+                    await helper_user.add_bits(reward / 2)
+                    await user.add_bits(reward / 2)
                 else:
                     embed.add_field(name="Reward", value=f"**{reward:,}** bits")
-                    await user.inc_purse(reward)
+                    await user.add_bits(reward)
 
         except asyncio.TimeoutError:
             embed = FailureEmbed(

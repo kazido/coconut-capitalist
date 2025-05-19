@@ -39,7 +39,7 @@ class SequenceButton(discord.ui.Button):
                 value=f"**{view.total_score}** elements :white_check_mark:",
             )
             embed.add_field(name="Reward", value=f"**{reward:,}** bits :money_with_wings:")
-            await view.user.inc_purse(amount=reward)
+            await view.user.add_bits(amount=reward)
             await interaction.response.edit_message(embed=embed, view=None)
             await asyncio.sleep(0.7)
             # Show the pattern at the end
@@ -168,7 +168,7 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
     )
     async def spectrum(self, interaction: discord.Interaction, difficulty: Choice[int]):
         # Load the user
-        user = await User(interaction.user.id).load()
+        user = await User.get(interaction.user.id)
         options = DIFFICULTIES[difficulty.value]["options"]
         pattern = [random.choice(options)]
         embed = CustomEmbed(

@@ -18,8 +18,7 @@ class InventoryCog(commands.Cog, name="Inventory"):
     @app_commands.command(name="inventory", description="Check your inventory!")
     async def inventory(self, interaction: discord.Interaction, filter: "str" = None):
         # Load the user
-        user = User(interaction.user.id)
-        await user.load()
+        user = await User.get(interaction.user.id)
 
         inventory: dict = user._document.items
 

@@ -33,9 +33,9 @@ class Actions(Enum):
     FOLD = "fold"
 
 
-# Determine the next game state based on player/dealer totals and action
-# This is the core blackjack rules logic
 def act(p_total: int, d_total: int, p_hand: list, action: Actions = None) -> GameStates:
+    # Determine the next game state based on player/dealer totals and action
+    # This is the core blackjack rules logic
     if action == Actions.DEAL:
         # Check for natural blackjack
         if p_total == 21 and len(p_hand) == 2:
@@ -126,8 +126,8 @@ class Blackjack(discord.ui.View):
 
     async def on_timeout(self):
         # On timeout, give the dealer's winnings to the house bot
-        bot = await User(1016054559581413457).load()
-        await bot.inc_purse(self.dealer.winnings)
+        bot = await User.get(1016054559581413457)
+        await bot.add_bits(self.dealer.winnings)
         self.clear_items()
 
     async def deal_card(self, player: Player):
@@ -166,9 +166,9 @@ class Blackjack(discord.ui.View):
         # Handle blackjack payout
         if self.state == GameStates.BLACKJACK:
             profit = self.player.bet * 2
-            await self.user.inc_purse(amount=self.player.bet * 2)
+            await self.user.add_bits(amount=self.player.bet * 2)
             embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
-            embed.add_field(name="Bits", value=f"{self.user.get_field('purse'):,} bits")
+            embed.add_field(name="Bits", value=f"{await self.user.get_bits():,} bits")
         return embed
 
 
@@ -188,7 +188,7 @@ class HitButton(discord.ui.Button):
         if view.state == GameStates.LOSE:
             profit = -view.player.bet
             embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
-            embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
+            embed.add_field(name="Bits", value=f"{await view.user.get_bits():,} bits")
             view.dealer.winnings += view.player.bet
             view.clear_items()
         await interaction.response.edit_message(
@@ -212,9 +212,9 @@ class FoldButton(discord.ui.Button):
             await view.deal_card(view.dealer)
             embed = await view.update(Actions.FOLD)
         # Refund half the bet
-        await view.user.inc_purse(amount=round(view.player.bet / 2))
+        await view.user.add_bits(amount=round(view.player.bet / 2))
         embed.add_field(name="Profit", value=f"{round(-view.player.bet / 2):,} bits", inline=False)
-        embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
+        embed.add_field(name="Bits", value=f"{await view.user.get_bits():,} bits")
         view.dealer.winnings += round(view.player.bet / 2)
         view.clear_items()
         await interaction.response.edit_message(embed=embed, view=None)
@@ -241,12 +241,12 @@ class StandButton(discord.ui.Button):
             view.dealer.winnings += view.player.bet
         elif view.state == GameStates.PUSH:
             profit = 0
-            await view.user.inc_purse(amount=view.player.bet)
+            await view.user.add_bits(amount=view.player.bet)
         elif view.state == GameStates.WIN:
             profit = view.player.bet * 2
-            await view.user.inc_purse(amount=view.player.bet * 2)
+            await view.user.add_bits(amount=view.player.bet * 2)
         embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
-        embed.add_field(name="Bits", value=f"{view.user.get_field('purse'):,} bits")
+        embed.add_field(name="Bits", value=f"{await view.user.get_bits():,} bits")
         view.clear_items()
         await asyncio.sleep(0.5)
         await interaction.response.edit_message(embed=embed, view=None)

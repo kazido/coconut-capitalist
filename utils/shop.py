@@ -269,8 +269,7 @@ class PurchaseItemButton(discord.ui.Button):
         self.refresh(self.parent_view.page)
 
     async def callback(self, purchase_interaction: Interaction):
-        user = User(self.parent_interaction.user.id)
-        await user.load()
+        user = await User.get(self.parent_interaction.user.id)
         # If the user doesn't have enough money to make the purchase
         if user.get_field("purse") < self.parent_view.page.entity_price:
             self.disabled = True
@@ -287,8 +286,7 @@ class PurchaseItemButton(discord.ui.Button):
         return
 
     async def refresh(self, page):
-        user = User(self.parent_interaction.user.id)
-        await user.load()
+        user = await User.get(self.parent_interaction.user.id)
         if user.get_field("purse") >= page.entity_price:
             label = "Purchase!"
             style = ButtonStyle.green
