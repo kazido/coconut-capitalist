@@ -1,5 +1,4 @@
 import time
-
 from enum import Enum
 from typing import Any, Optional
 from cococap.models import UserDocument
@@ -47,20 +46,22 @@ class User:
     def name(self) -> str:
         return self._document.name
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
     # --- Atomic Currency Methods ---
     async def add_bits(self, amount: int) -> None:
+        """Add bits to the user's purse (atomic)."""
         await self._document.inc({"purse": amount})
 
     async def remove_bits(self, amount: int) -> None:
+        """Remove bits from the user's purse (atomic). Raises if insufficient."""
         if await self.get_bits() < amount:
             raise InsufficientFunds("Not enough bits.")
         await self._document.inc({"purse": -amount})
 
     async def get_bits(self) -> int:
-        # Always fetch latest from DB
+        """Get the latest purse value from the DB."""
         doc = await UserDocument.get(self._document.id)
         return doc.purse
 
@@ -75,9 +76,8 @@ class User:
 
     # --- XP/Level Methods ---
     async def add_xp(self, skill: str, amount: int) -> dict:
-        # Atomic XP add for a skill
+        """Add XP to a skill (atomic). Returns updated skill dict."""
         await self._document.inc({f"{skill}.xp": amount})
-        # Optionally, handle level up logic here
         return await self.get_skill(skill)
 
     async def get_skill(self, skill: str) -> dict:
@@ -86,7 +86,7 @@ class User:
 
     # --- Item Methods ---
     async def add_item(self, item_id: str, quantity: int = 1) -> None:
-        # Atomic item add (assumes items is a dict of {item_id: {quantity: int}})
+        """Add an item to the user's inventory (atomic)."""
         doc = await UserDocument.get(self._document.id)
         items = doc.items.copy()
         if item_id in items:
@@ -96,6 +96,7 @@ class User:
         await doc.set({"items": items})
 
     async def remove_item(self, item_id: str, quantity: int = 1) -> None:
+        """Remove an item from the user's inventory (atomic). Raises if not enough."""
         doc = await UserDocument.get(self._document.id)
         items = doc.items.copy()
         if item_id not in items or items[item_id]["quantity"] < quantity:
@@ -110,14 +111,16 @@ class User:
         now = time.time()
         await self._document.set({f"cooldowns.{command.name.lower()}": now})
 
-    async def get_cooldown(self, command: Cooldowns) -> Optional[float]:
-        doc = await UserDocument.get(self._document.id)
-        return doc.cooldowns.get(command.name.lower())
+    def get_cooldown(self, command: Cooldowns) -> Optional[float]:
+        return self._document.cooldowns.get(command.name.lower())
 
     # --- Field Access ---
-    async def get_field(self, field: str) -> Any:
+    async def get_field_fresh(self, field: str) -> Any:
         doc = await UserDocument.get(self._document.id)
         return getattr(doc, field)
+
+    def get_field(self, field: str) -> Any:
+        return getattr(self._document, field)
 
     async def set_field(self, field: str, value: Any) -> None:
         await self._document.set({field: value})
