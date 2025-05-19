@@ -90,7 +90,11 @@ class User:
 
     # --- Statistics Updating --- #
     async def inc_stat(self, statistic: str, amount: int = 1):
-        await self._document.inc({f"statistics.{statistic}": 1})
+        await self._document.inc({f"statistics.{statistic}": amount})
+
+    async def get_stat(self, statistic: str):
+        doc = await UserDocument.get(self._document.id)
+        return doc.statistics.get(statistic)
 
     async def reset_stat(self, statistic: str):
         await self._document.set({f"statistics.{statistic}": 0})
