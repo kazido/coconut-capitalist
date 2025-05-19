@@ -62,7 +62,7 @@ class WorkButton(discord.ui.Button):
 
         self.label = f"+{int(rank.wage):,} bits"
         self.emoji = "💸"
-        await user.inc_purse(int(rank.wage))
+        await user.add_bits(int(rank.wage))
         return await interaction.response.edit_message(view=self.view)
 
 
@@ -87,7 +87,7 @@ class DailyButton(discord.ui.Button):
         # Calculate and add bank interest rate
         interest = 0.003 + 0.027 * (math.e ** (-(user.get_field("bank") / 20_000_000)))
         bonus = round(user.get_field("bank") * interest)
-        await user.inc_bank(amount=int(bonus))
+        await user.add_bank(amount=int(bonus))
 
         # Update the embed
         embed.add_field(name="Random Fact", value=f"{randfacts.get_fact()}")
@@ -96,7 +96,7 @@ class DailyButton(discord.ui.Button):
         # Put the command on cooldown!
         self.label = f"+1 tokens"
         self.emoji = "🪙"
-        await user.inc_tokens(tokens=1)
+        await user.add_tokens(amount=1)
         await interaction.response.edit_message(embed=embed, view=self.view)
         return await super().callback(interaction)
 
@@ -120,7 +120,7 @@ class WeeklyButton(discord.ui.Button):
 
         self.label = f"+7 luckbucks"
         self.emoji = "🍀"
-        await user.inc_luckbucks(amount=7)
+        await user.add_luckbucks(amount=7)
         await interaction.response.edit_message(view=self.view)
         return await super().callback(interaction)
 
@@ -151,7 +151,7 @@ async def display_profile(interaction: Interaction):
     user: User = interaction.extras.get("user")
     rank = fetch("ranks." + str(user.get_field("rank")))
     if user.get_field("name") != interaction.user.display_name:
-        await user.update_field("name", interaction.user.display_name, save=True)
+        await user.set_field("name", interaction.user.display_name)
 
     embed = CustomEmbed(
         title=f"You are: `{rank.display_name}`",
@@ -162,7 +162,7 @@ async def display_profile(interaction: Interaction):
 
     embed.add_field(
         name="Balances",
-        value=f":money_with_wings: **BITS**: {user.get_field('purse'):,}\n"
+        value=f":money_with_wings: **BITS**: {await user.get_bits():,}\n"
         f":bank: **BANK**: {user.get_field('bank'):,}\n"
         f":four_leaf_clover: **LUCKBUCKS**: {user.get_field('luckbucks'):,}\n"
         f":coin: **TOKENS**: {user.get_field('tokens'):,}",
@@ -173,11 +173,11 @@ async def display_profile(interaction: Interaction):
 
 async def process_deposit(interaction: Interaction, amount: int | str = None):
     user: User = interaction.extras.get("user")
-    amount = validate_bits(user=user, amount=amount)
+    amount = await validate_bits(user=user, amount=amount)
 
     # Perform deposit
-    await user.inc_purse(amount=-amount)
-    await user.inc_bank(amount=amount)
+    await user.remove_bits(amount=amount)
+    await user.add_bank(amount=amount)
     embed = CustomEmbed(
         colour=discord.Color.dark_blue(), interaction=interaction, activity="depositing"
     ).add_field(
@@ -189,11 +189,11 @@ async def process_deposit(interaction: Interaction, amount: int | str = None):
 
 async def process_withdrawal(interaction: Interaction, amount: int | str = None):
     user: User = interaction.extras.get("user")
-    amount = validate_bits(user=user, amount=amount, field="bank")
+    amount = await validate_bits(user=user, amount=amount, field="bank")
 
     # Perform withdrawal
-    await user.inc_bank(amount=-amount)
-    await user.inc_purse(amount=amount)
+    await user.add_bank(amount=-amount)
+    await user.add_bits(amount=amount)
 
     embed = CustomEmbed(
         colour=discord.Color.dark_blue(), interaction=interaction, activity="withdrawing"
@@ -220,11 +220,11 @@ async def process_beg(interaction: Interaction):
         return await interaction.response.send_message(embed=embed)
 
     beg_amount = randint(100, 1000)
-    await user.inc_purse(beg_amount)
+    await user.add_bits(beg_amount)
 
     embed = CustomEmbed(
         title=f"Someone kind dropped {beg_amount} bits in your cup.",
-        desc=f"You now have {user.get_field('purse'):,} bits.",
+        desc=f"You now have {await user.get_bits():,} bits.",
         color=discord.Color.green(),
         interaction=interaction,
         activity="begging",
@@ -235,7 +235,7 @@ async def process_beg(interaction: Interaction):
 async def process_payment(interaction: Interaction, recipient: discord.Member, amount: int | str):
     user: User = interaction.extras.get("user")
 
-    amount = validate_bits(user=user, amount=amount)
+    amount = await validate_bits(user=user, amount=amount)
     # If they try to bet more than they have in their account.
     if int(amount) < 100:
         embed = ErrorEmbed(
@@ -246,9 +246,9 @@ async def process_payment(interaction: Interaction, recipient: discord.Member, a
         )
         return await interaction.response.send_message(embed=embed)
 
-    payee = await User(recipient.id).load()
-    await user.inc_purse(amount=-amount)
-    await payee.inc_purse(amount=amount)
+    payee = await User.get(recipient.id)
+    await user.add_bits(amount=-amount)
+    await payee.add_bits(amount=amount)
 
     embed = CustomEmbed(colour=discord.Color.purple())
     embed.add_field(
