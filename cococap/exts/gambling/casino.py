@@ -2,7 +2,6 @@ from discord import app_commands, Interaction
 from discord.ext import commands
 
 from cococap.user import User
-from cococap.exts.utils.error import InvalidAmount
 from utils.utils import validate_bits
 from ._blackjack import Blackjack, Actions
 from ._high_low import HighLow
@@ -16,15 +15,15 @@ class Casino(commands.Cog, name="Casino"):
 
     async def interaction_check(self, interaction: Interaction):
         # Load user data before each command
-        user = await User(interaction.user.id).load()
+        user = await User.get(interaction.user.id)
         interaction.extras.update(user=user)
 
         # Validate the user's bet so they can't bet more than they have
         args = {opt["name"]: opt["value"] for opt in interaction.data.get("options", [])}
-        bet = validate_bits(user=user, amount=args["bet"])
+        bet = await validate_bits(user=user, amount=args["bet"])
 
         # Collect their bet immediately
-        await user.inc_purse(-bet)
+        await user.remove_bits(bet)
         interaction.extras.update(bet=bet)
 
         return super().interaction_check(interaction)
