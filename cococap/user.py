@@ -52,12 +52,14 @@ class User:
     # --- Atomic Currency Methods ---
     async def add_bits(self, amount: int) -> None:
         """Add bits to the user's purse (atomic)."""
+        await self.inc_stat("bits_earned", amount)
         await self._document.inc({"purse": amount})
 
     async def remove_bits(self, amount: int) -> None:
         """Remove bits from the user's purse (atomic). Raises if insufficient."""
         if await self.get_bits() < amount:
             raise InsufficientFunds("Not enough bits.")
+        await self.inc_stat("bits_lost", amount)
         await self._document.inc({"purse": -amount})
 
     async def get_bits(self) -> int:
@@ -69,9 +71,11 @@ class User:
         await self._document.inc({"bank": amount})
 
     async def add_tokens(self, amount: int) -> None:
+        await self.inc_stat("tokens_earned", amount)
         await self._document.inc({"tokens": amount})
 
     async def add_luckbucks(self, amount: int) -> None:
+        await self.inc_stat("luckbucks_earned", amount)
         await self._document.inc({"luckbucks": amount})
 
     # --- XP/Level Methods ---
@@ -83,6 +87,13 @@ class User:
     async def get_skill(self, skill: str) -> dict:
         doc = await UserDocument.get(self._document.id)
         return getattr(doc, skill)
+
+    # --- Statistics Updating --- #
+    async def inc_stat(self, statistic: str, amount: int = 1):
+        await self._document.inc({f"statistics.{statistic}": 1})
+
+    async def reset_stat(self, statistic: str):
+        await self._document.set({f"statistics.{statistic}": 0})
 
     # --- Item Methods ---
     async def add_item(self, item_id: str, quantity: int = 1) -> None:
@@ -124,6 +135,9 @@ class User:
 
     async def set_field(self, field: str, value: Any) -> None:
         await self._document.set({field: value})
+
+    async def increment_field(self, field: str, amount: int) -> None:
+        await self._document.inc({field: amount})
 
     # --- Static Utility Methods ---
     @staticmethod

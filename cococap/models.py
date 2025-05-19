@@ -11,27 +11,40 @@ class UserDocument(Document):
     purse: int = 1000  # The user's purse for bits to be used readily
     tokens: int = 0  # The user's tokens which are exclusively used to rank up
     luckbucks: int = 0  # The currency just used for gambling
-    in_game: bool = False
     party_id: Optional[int] = None  # Tracks what party a user is in
 
     # STATISTICS
-    gambling_statistics: dict = {
-        "luckbucks_earned": 0,  # From gambling
+    statistics: dict = {
+        "drops_claimed": 0,
+        "bits_earned": 0,
+        "bits_lost": 0,
+        "tokens_earned": 0,
+        "luckbucks_earned": 0,
+        "times_begged": 0,
+        "withdraws": 0,
+        "deposits": 0,
+        "claimed_work": 0,
+        "claimed_daily": 0,
+        "claimed_weekly": 0,
         "gambles_done": 0,  # Gambling games played
         "longest_hl_streak": 0,  # Need a current and a longest to track between games and to update if its longer
-        "current_hl_streak": 0,
-        "longest_hl_l_streak": 0,
-        "current_hl_l_streak": 0,
+        "hl_win_streak": 0,
+        "hl_wins": 0,
+        "longest_hl_loss_streak": 0,
+        "hl_loss_streak": 0,
         "biggest_hl_win": 0,  # Just check if win is bigger than this or if it's smaller than biggest_hl_loss and overwrite
         "biggest_hl_loss": 0,
+        "blackjack_hits": 0,
+        "blackjack_stands": 0,
         "blackjack_busts": 0,  # Simply +1 for all the countable stats
         "blackjack_folds": 0,
         "blackjack_wins": 0,
         "longest_sq_streak": 0,
+        "unscramble_streak": 0,
         "longest_unscramble_streak": 0,
-        "current_unscramble_streak": 0,
+        "flashcard_streak": 0,
+        "longest_flashcard_streak": 0,
     }
-    drops_claimed: int = 0  # Fun statistic
 
     # SKILLS
     farming: dict = {
