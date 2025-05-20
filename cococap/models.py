@@ -26,7 +26,7 @@ class UserDocument(Document):
         "claimed_work": 0,
         "claimed_daily": 0,
         "claimed_weekly": 0,
-        "gambles_done": 0,  # Gambling games played
+        "highlow_games": 0,
         "longest_hl_streak": 0,  # Need a current and a longest to track between games and to update if its longer
         "hl_win_streak": 0,
         "hl_wins": 0,
@@ -34,14 +34,17 @@ class UserDocument(Document):
         "hl_loss_streak": 0,
         "biggest_hl_win": 0,  # Just check if win is bigger than this or if it's smaller than biggest_hl_loss and overwrite
         "biggest_hl_loss": 0,
+        "blackjack_games": 0,
         "blackjack_hits": 0,
         "blackjack_stands": 0,
-        "blackjack_busts": 0,  # Simply +1 for all the countable stats
         "blackjack_folds": 0,
         "blackjack_wins": 0,
+        "sequence_games": 0,
         "longest_sq_streak": 0,
+        "unscramble_games": 0,
         "unscramble_streak": 0,
         "longest_unscramble_streak": 0,
+        "flashcard_games": 0,
         "flashcard_streak": 0,
         "longest_flashcard_streak": 0,
     }

@@ -27,8 +27,7 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
     async def unscramble(self, interaction: discord.Interaction):
         """Try to unscramble a word for some bits. The longer the word, the more bits you get!"""
         user = await User.get(interaction.user.id)
-
-        stats = user._document.gambling_statistics
+        await user.inc_stat("unscramble_games")
 
         # Picks a random word from the file resources.unscramble_words.txt
         def get_word():
@@ -83,16 +82,17 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
                     activity="unscrambling",
                 )
 
-                stats["current_unscramble_streak"] += 1
+                await user.inc_stat("unscramble_streak")
 
-                if stats["current_unscramble_streak"] > stats["longest_unscramble_streak"]:
-                    stats["longest_unscramble_streak"] = stats["current_unscramble_streak"]
-                    embed.set_footer(
-                        text=f"New streak record of {stats['current_unscramble_streak']}! Keep going!"
-                    )
+                streak = await user.get_stat("unscramble_streak")
+                longest_streak = await user.get_stat("longest_unscramble_streak")
+
+                if streak > longest_streak:
+                    await user.set_stat("longest_unscramble_streak", streak)
+                    embed.set_footer(text=f"New streak record of {streak}! Keep going!")
                 else:
-                    embed.set_footer(text=f"Current streak: {stats['current_unscramble_streak']}")
-                reward = reward * stats["current_unscramble_streak"]
+                    embed.set_footer(text=f"Current streak: {streak}")
+                reward = reward * streak
                 if helper:
                     embed.add_field(name="Reward", value=f"**{reward:,}** bits (shared)")
                     embed.add_field(name="Helper", value=f"Helper: {helper.mention}")
@@ -111,12 +111,10 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
                 interaction=interaction,
                 activity="unscrambling",
             )
-            if stats["current_unscramble_streak"] > 0:
-                embed.set_footer(
-                    text=f"You lost your streak of {stats['current_unscramble_streak']}."
-                )
-            stats["current_unscramble_streak"] = 0
-            await user.save()
+            streak = await user.get_stat("unscramble_streak")
+            if streak > 0:
+                embed.set_footer(text=f"You lost your streak of {streak}.")
+            await user.set_stat("unscramble_streak")
 
         await interaction.edit_original_response(embed=embed)
 

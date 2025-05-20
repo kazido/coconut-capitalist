@@ -38,6 +38,8 @@ class SequenceButton(discord.ui.Button):
                 name="Final Score",
                 value=f"**{view.total_score}** elements :white_check_mark:",
             )
+            if view.total_score > view.user.get_stat("longest_sq_streak"):
+                await view.user.set_stat("longest_sq_streak", value=view.total_score)
             embed.add_field(name="Reward", value=f"**{reward:,}** bits :money_with_wings:")
             await view.user.add_bits(amount=reward)
             await interaction.response.edit_message(embed=embed, view=None)
@@ -169,6 +171,7 @@ class SpectrumCog(commands.Cog, name="Spectrum"):
     async def spectrum(self, interaction: discord.Interaction, difficulty: Choice[int]):
         # Load the user
         user = await User.get(interaction.user.id)
+        await user.inc_stat("sequence_games")
         options = DIFFICULTIES[difficulty.value]["options"]
         pattern = [random.choice(options)]
         embed = CustomEmbed(

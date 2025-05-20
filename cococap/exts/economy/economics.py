@@ -205,14 +205,13 @@ async def display_stats(interaction: Interaction):
         f"Claimed Weekly: {stats.get('claimed_weekly', 0):,}",
     ]
     gambling_stats = [
-        f"Gambles Done: {stats.get('gambles_done', 0):,}",
+        f"Highlow Games: {stats.get('highlow_games', 0):,}",
+        f"Highlow Wins: {stats.get('hl_wins', 0):,}",
         f"Longest HL Streak: {stats.get('longest_hl_streak', 0):,}",
-        f"HL Win Streak: {stats.get('hl_win_streak', 0):,}",
-        f"HL Wins: {stats.get('hl_wins', 0):,}",
         f"Longest HL Loss Streak: {stats.get('longest_hl_loss_streak', 0):,}",
-        f"HL Loss Streak: {stats.get('hl_loss_streak', 0):,}",
         f"Biggest HL Win: {stats.get('biggest_hl_win', 0):,}",
         f"Biggest HL Loss: {stats.get('biggest_hl_loss', 0):,}",
+        f"Blackjack Games: {stats.get('blackjack_games', 0):,}",
         f"Blackjack Hits: {stats.get('blackjack_hits', 0):,}",
         f"Blackjack Stands: {stats.get('blackjack_stands', 0):,}",
         f"Blackjack Busts: {stats.get('blackjack_busts', 0):,}",
@@ -220,9 +219,12 @@ async def display_stats(interaction: Interaction):
         f"Blackjack Wins: {stats.get('blackjack_wins', 0):,}",
     ]
     minigame_stats = [
+        f"Sequences Played: {stats.get('sequence_games', 0):,}",
         f"Longest SQ Streak: {stats.get('longest_sq_streak', 0):,}",
+        f"Unscrambles Played: {stats.get('unscramble_games', 0):,}",
         f"Unscramble Streak: {stats.get('unscramble_streak', 0):,}",
         f"Longest Unscramble Streak: {stats.get('longest_unscramble_streak', 0):,}",
+        f"Flashcards Played: {stats.get('flashcard_games', 0):,}",
         f"Flashcard Streak: {stats.get('flashcard_streak', 0):,}",
         f"Longest Flashcard Streak: {stats.get('longest_flashcard_streak', 0):,}",
     ]
