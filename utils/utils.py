@@ -96,7 +96,6 @@ async def validate_bits(user, amount: int | str = None, field: str = "purse"):
         return round(balance * (int(amount[:-1]) / 100))
 
     amount = _parse_number(amount)
-    print(amount, type(amount))
     if not isinstance(amount, int) or amount <= 0:
         raise InvalidAmount("Please enter a valid number or 'max'.")
     if amount > balance:
