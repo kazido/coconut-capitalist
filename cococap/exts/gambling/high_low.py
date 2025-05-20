@@ -1,8 +1,12 @@
 import discord
+
 from enum import Enum
 from random import randint
+from discord import app_commands, Interaction
+from discord.ext import commands
 from cococap.user import User
 from utils.custom_embeds import SuccessEmbed, FailureEmbed, CustomEmbed
+from utils.utils import validate_bits
 
 
 class GameStates(Enum):
@@ -37,7 +41,7 @@ def _get_action_func(action: Actions):
     return _guess_high if action == Actions.GUESS_HIGH else _guess_low
 
 
-class HighLow(discord.ui.View):
+class HighlowGame(discord.ui.View):
     def __init__(self, interaction: discord.Interaction):
         super().__init__(timeout=120)
         self.interaction = interaction
@@ -170,3 +174,38 @@ class CashOutButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         await self.view.process_cashout(interaction)
+
+
+class Highlow(commands.Cog, name="Highlow"):
+    """Good old heads or tails, just more fun?"""
+
+    def __init__(self):
+        super().__init__()
+
+    async def interaction_check(self, interaction: Interaction):
+        # Load user data before each command
+        user = await User.get(interaction.user.id)
+        interaction.extras.update(user=user)
+
+        # Validate the user's bet so they can't bet more than they have
+        args = {opt["name"]: opt["value"] for opt in interaction.data.get("options", [])}
+        bet = await validate_bits(user=user, amount=args["bet"])
+
+        # Collect their bet immediately
+        await user.remove_bits(bet)
+        interaction.extras.update(bet=bet)
+
+        await user.inc_stat("highlow_games")
+
+        return super().interaction_check(interaction)
+
+    @app_commands.command(name="highlow")
+    @app_commands.describe(bet="amount of bits you want to bet")
+    async def highlow(self, interaction: Interaction, bet: str):
+        """Guess if the number will be high (6-10) or low (1-5)."""
+        view = HighlowGame(interaction=interaction)
+        await interaction.response.send_message(embed=view.get_embed(), view=view)
+
+
+async def setup(bot):
+    await bot.add_cog(Highlow())
