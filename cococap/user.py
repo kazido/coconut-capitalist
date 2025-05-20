@@ -67,6 +67,14 @@ class User:
         doc = await UserDocument.get(self._document.id)
         return doc.purse
 
+    async def deposit_bits(self, amount: int) -> None:
+        await self._document.inc({"purse": -amount})
+        await self._document.inc({"bank": amount})
+
+    async def withdraw_bits(self, amount: int) -> None:
+        await self._document.inc({"purse": amount})
+        await self._document.inc({"bank": -amount})
+
     async def add_bank(self, amount: int) -> None:
         await self._document.inc({"bank": amount})
 

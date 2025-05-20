@@ -212,6 +212,7 @@ async def display_stats(interaction: Interaction):
         f"Biggest HL Win: {stats.get('biggest_hl_win', 0):,}",
         f"Biggest HL Loss: {stats.get('biggest_hl_loss', 0):,}",
         f"Blackjack Games: {stats.get('blackjack_games', 0):,}",
+        f"Blackjacks: {stats.get('blackjacks', 0):,}",
         f"Blackjack Hits: {stats.get('blackjack_hits', 0):,}",
         f"Blackjack Stands: {stats.get('blackjack_stands', 0):,}",
         f"Blackjack Busts: {stats.get('blackjack_busts', 0):,}",
@@ -278,8 +279,7 @@ async def process_deposit(interaction: Interaction, amount: int | str = None):
     amount = await validate_bits(user=user, amount=amount)
 
     # Perform deposit
-    await user.remove_bits(amount=amount)
-    await user.add_bank(amount=amount)
+    await user.deposit_bits(amount=amount)
     await user.inc_stat("deposits")
     embed = CustomEmbed(
         colour=discord.Color.dark_blue(), interaction=interaction, activity="depositing"
@@ -295,8 +295,7 @@ async def process_withdrawal(interaction: Interaction, amount: int | str = None)
     amount = await validate_bits(user=user, amount=amount, field="bank")
 
     # Perform withdrawal
-    await user.add_bank(amount=-amount)
-    await user.add_bits(amount=amount)
+    await user.withdraw_bits(amount=amount)
     await user.inc_stat("withdraws")
 
     embed = CustomEmbed(

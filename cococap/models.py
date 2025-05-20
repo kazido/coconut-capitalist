@@ -35,6 +35,7 @@ class UserDocument(Document):
         "biggest_hl_win": 0,  # Just check if win is bigger than this or if it's smaller than biggest_hl_loss and overwrite
         "biggest_hl_loss": 0,
         "blackjack_games": 0,
+        "blackjacks": 0,
         "blackjack_hits": 0,
         "blackjack_stands": 0,
         "blackjack_folds": 0,

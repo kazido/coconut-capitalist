@@ -167,6 +167,9 @@ class Blackjack(discord.ui.View):
         if self.state == GameStates.BLACKJACK:
             profit = self.player.bet * 2
             await self.user.add_bits(amount=self.player.bet * 2)
+            # Don't add to bits_lost if they won
+            await self.user.inc_stat("bits_lost", self.player.bet)
+            await self.user.inc_stat("blackjacks")
             embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
             embed.add_field(name="Bits", value=f"{await self.user.get_bits():,} bits")
         return embed
@@ -214,6 +217,8 @@ class FoldButton(discord.ui.Button):
             await view.deal_card(view.dealer)
             embed = await view.update(Actions.FOLD)
         # Refund half the bet
+        # Don't add to bits_lost if they won
+        await view.user.inc_stat("bits_lost", round(view.player.bet / 2))
         await view.user.add_bits(amount=round(view.player.bet / 2))
         embed.add_field(name="Profit", value=f"{round(-view.player.bet / 2):,} bits", inline=False)
         embed.add_field(name="Bits", value=f"{await view.user.get_bits():,} bits")
@@ -245,9 +250,13 @@ class StandButton(discord.ui.Button):
         elif view.state == GameStates.PUSH:
             profit = 0
             await view.user.add_bits(amount=view.player.bet)
+            # Don't add to bits_lost if they won
+            await view.user.inc_stat("bits_lost", view.player.bet)
         elif view.state == GameStates.WIN:
             profit = view.player.bet * 2
             await view.user.add_bits(amount=view.player.bet * 2)
+            # Don't add to bits_lost if they won
+            await view.user.inc_stat("bits_lost", view.player.bet)
         embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
         embed.add_field(name="Bits", value=f"{await view.user.get_bits():,} bits")
         view.clear_items()
