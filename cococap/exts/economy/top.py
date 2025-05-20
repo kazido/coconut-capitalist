@@ -119,7 +119,7 @@ async def build_leaderboard_embed(interaction: Interaction, category: TopCategor
 
 class LeaderboardCog(commands.Cog):
     @app_commands.command(name="top", description="See the top 10 players in a category!")
-    @app_commands.describe(category="The leaderboard category to view")
+    @app_commands.describe(category="the leaderboard category to view")
     async def top(self, interaction: Interaction, category: TopCategories = TopCategories.BITS):
         embed = await build_leaderboard_embed(interaction, category)
         await interaction.response.send_message(embed=embed)
