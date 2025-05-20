@@ -184,6 +184,7 @@ class HitButton(discord.ui.Button):
         view: Blackjack = self.view
         await view.deal_card(view.player)
         embed = await view.update(Actions.HIT)
+        await view.user.inc_stat("blackjack_hits")
         # If player busts, end the game
         if view.state == GameStates.LOSE:
             profit = -view.player.bet
@@ -207,6 +208,7 @@ class FoldButton(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction):
         view: Blackjack = self.view
         embed = await view.update(Actions.FOLD)
+        await view.user.inc_stat("blackjack_folds")
         # Dealer draws if needed
         while view.state == GameStates.DEALER_REVEAL:
             await view.deal_card(view.dealer)
@@ -231,6 +233,7 @@ class StandButton(discord.ui.Button):
     async def callback(self, interaction: discord.Interaction):
         view: Blackjack = self.view
         embed = await view.update(Actions.STAND)
+        await view.user.inc_stat("blackjack_stands")
         # Dealer draws if needed
         while view.state == GameStates.DEALER_REVEAL:
             await view.deal_card(view.dealer)

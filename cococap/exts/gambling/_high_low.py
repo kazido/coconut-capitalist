@@ -64,6 +64,13 @@ class HighLow(discord.ui.View):
 
     async def _update_embed(self, win: bool):
         if win:
+            await self.user.set_stat("hl_loss_streak")
+            await self.user.inc_stat("hl_win_streak")
+            win_streak = await self.user.get_stat("hl_win_streak")
+            longest_win_streak = await self.user.get_stat("longest_hl_streak")
+            if win_streak > longest_win_streak:
+                await self.user.set_stat("longest_hl_streak", win_streak)
+            await self.user.inc_stat("hl_wins")
             embed = SuccessEmbed(
                 title=f"CORRECT :white_check_mark: | Bet: {self.bet:,}",
                 interaction=self.interaction,
@@ -75,6 +82,12 @@ class HighLow(discord.ui.View):
             )
             embed.set_footer(text="Quit while you're ahead!")
         else:
+            await self.user.inc_stat("hl_loss_streak")
+            await self.user.set_stat("hl_win_streak")
+            loss_streak = await self.user.get_stat("hl_loss_streak")
+            longest_loss_streak = await self.user.get_stat("longest_hl_loss_streak")
+            if loss_streak > longest_loss_streak:
+                await self.user.set_stat("longest_hl_loss_streak", loss_streak)
             embed = FailureEmbed(
                 title=f"INCORRECT :x: | Bet: {self.bet:,}",
                 interaction=self.interaction,
@@ -85,6 +98,8 @@ class HighLow(discord.ui.View):
                 value=f"{await self.user.get_bits():,} bits *({-self.bet:,})*",
                 inline=False,
             )
+            if -self.bet < await self.user.get_stat("biggest_hl_loss"):
+                await self.user.set_stat("biggest_hl_loss", -self.bet)
             embed.set_footer(text="Better luck next time!")
         embed.add_field(name="Roll", value=f"The number was **{self.roll}**", inline=True)
         self.embed = embed
@@ -108,6 +123,8 @@ class HighLow(discord.ui.View):
     async def process_cashout(self, interaction: discord.Interaction):
         profit = self.bet * self.multiplier
         await self.user.add_bits(profit)
+        if profit > await self.user.get_stat("biggest_hl_win"):
+            await self.user.set_stat("biggest_hl_win", profit)
         embed = discord.Embed(
             title=f"HIGHLOW :arrows_clockwise: | Bet: {self.bet:,}",
             color=discord.Color.blue(),
