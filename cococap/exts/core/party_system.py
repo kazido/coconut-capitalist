@@ -300,7 +300,6 @@ class PartySystemCog(commands.GroupCog, name="party"):
 
                 # Update invited user's party information in the database
                 invited_user.document.party_id = party_id
-                await invited_user.save()
                 # Add user to list of party members
                 party.party_members.append(invited_user.uid)
                 await party.save()

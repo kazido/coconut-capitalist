@@ -93,7 +93,7 @@ async def build_leaderboard_embed(interaction: Interaction, category: TopCategor
         for idx, user in enumerate(query, start=1):
             if get_id(user) == interaction.user.id:
                 value = get_value(user)
-                line = f"**{idx}. {get_name(user)} — {value:,}**  **(you)**"
+                line = f"**{idx}. {get_name(user)} — {value:,} (you)**"
                 lines.append("\nYour rank:\n" + line)
                 break
     embed.description = "\n".join(lines)

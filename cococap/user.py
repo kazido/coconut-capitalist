@@ -72,11 +72,11 @@ class User:
 
     async def add_tokens(self, amount: int) -> None:
         await self.inc_stat("tokens_earned", amount)
-        await self._document.inc({"tokens": amount})
+        await self._document.inc({"tokens": abs(amount)})
 
     async def add_luckbucks(self, amount: int) -> None:
         await self.inc_stat("luckbucks_earned", amount)
-        await self._document.inc({"luckbucks": amount})
+        await self._document.inc({"luckbucks": abs(amount)})
 
     # --- XP/Level Methods ---
     async def add_xp(self, skill: str, amount: int) -> dict:
@@ -96,8 +96,8 @@ class User:
         doc = await UserDocument.get(self._document.id)
         return doc.statistics.get(statistic)
 
-    async def reset_stat(self, statistic: str):
-        await self._document.set({f"statistics.{statistic}": 0})
+    async def set_stat(self, statistic: str, value: int = 0):
+        await self._document.set({f"statistics.{statistic}": value})
 
     # --- Item Methods ---
     async def add_item(self, item_id: str, quantity: int = 1) -> None:

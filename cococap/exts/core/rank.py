@@ -17,7 +17,7 @@ async def process_rank_purchase(interaction, rank):
         activity="ranking up",
     )
     await user.set_field("rank", int(rank.rank_id))
-    await user.add_tokens(tokens=-int(rank.token_price))
+    await user.add_tokens(amount=-int(rank.token_price))
     await interaction.edit_original_response(embed=embed, view=None)
 
 

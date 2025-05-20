@@ -76,7 +76,6 @@ class Settings(commands.Cog):
 
             @discord.ui.button(label="Save")
             async def save_button(self, interaction: Interaction, button: discord.Button):
-                await user.save()
                 self.embed.set_footer(text="Settings saved!")
                 self.clear_items()
                 await interaction.response.edit_message(embed=self.embed, view=self)
