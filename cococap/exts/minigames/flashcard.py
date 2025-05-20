@@ -23,27 +23,26 @@ class FlashcardCog(commands.Cog, name="Flashcard"):
     async def flashcard(self, interaction: discord.Interaction):
         """Try to solve a math problem for some bits!"""
         user = await User.get(interaction.user.id)
-
-        stats = user._document.gambling_statistics
+        await user.inc_stat("flashcard_games")
 
         operator = random.choice(["+", "-", "*"])
-        x = random.randint(1, 10)
-        y = random.randint(1, 20)
+        x = random.randint(10, 20)
+        y = random.randint(10, 20)
 
         problem = f"{x} {operator} {y}"
         match operator:
             case "+":
                 answer = x + y
                 time_limit = 3
-                reward = 10000
+                reward = 5000
             case "-":
                 answer = x - y
                 time_limit = 5
-                reward = 20000
+                reward = 10000
             case "*":
                 answer = x * y
-                time_limit = 10
-                reward = 30000
+                time_limit = 15
+                reward = 20000
 
         embed = CustomEmbed(
             title="Flashcard!",
@@ -74,16 +73,17 @@ class FlashcardCog(commands.Cog, name="Flashcard"):
                     activity="flashcarding",
                 )
 
-                stats["current_flashcard_streak"] += 1
+                await user.inc_stat("flashcard_streak")
 
-                if stats["current_flashcard_streak"] > stats["longest_flashcard_streak"]:
-                    stats["longest_flashcard_streak"] = stats["current_flashcard_streak"]
-                    embed.set_footer(
-                        text=f"New streak record of {stats['current_flashcard_streak']}! Keep going!"
-                    )
+                streak = await user.get_stat("flashcard_streak")
+                longest_streak = await user.get_stat("longest_flashcard_streak")
+
+                if streak > longest_streak:
+                    await user.set_stat("longest_flashcard_streak", streak)
+                    embed.set_footer(text=f"New streak record of {streak}! Keep going!")
                 else:
-                    embed.set_footer(text=f"Current streak: {stats['current_flashcard_streak']}")
-                reward = reward * stats["current_flashcard_streak"]
+                    embed.set_footer(text=f"Current streak: {streak}")
+                reward = reward * streak
                 if helper:
                     embed.add_field(name="Reward", value=f"**{reward:,}** bits (shared)")
                     embed.add_field(name="Helper", value=f"Helper: {helper.mention}")
@@ -101,12 +101,10 @@ class FlashcardCog(commands.Cog, name="Flashcard"):
                 interaction=interaction,
                 activity="flashcarding",
             )
-            if stats["current_flashcard_streak"] > 0:
-                embed.set_footer(
-                    text=f"You lost your streak of {stats['current_flashcard_streak']}."
-                )
-            stats["current_flashcard_streak"] = 0
-            await user.save()
+            streak = await user.get_stat("flashcard_streak")
+            if streak > 0:
+                embed.set_footer(text=f"You lost your streak of {streak}.")
+            await user.set_stat("flashcard_streak")
 
         await interaction.edit_original_response(embed=embed)
 
