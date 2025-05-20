@@ -26,6 +26,33 @@ for name, field in UserDocument.model_fields.items():
 VALID_FIELDS = set(MODEL_DEFAULTS) | OPTIONAL_FIELDS | {"_id"}
 
 
+def clean_dict(doc_dict, model_dict):
+    """
+    Recursively remove extra fields and add missing/default fields in a dict,
+    matching the structure of model_dict.
+    Returns (cleaned_dict, removed_fields, added_fields)
+    """
+    cleaned = {}
+    removed = set()
+    added = set()
+    for key, value in model_dict.items():
+        if key in doc_dict:
+            if isinstance(value, dict) and isinstance(doc_dict[key], dict):
+                cleaned[key], r, a = clean_dict(doc_dict[key], value)
+                removed |= {f"{key}.{sub}" for sub in r}
+                added |= {f"{key}.{sub}" for sub in a}
+            else:
+                cleaned[key] = doc_dict[key]
+        else:
+            cleaned[key] = copy.deepcopy(value)
+            added.add(key)
+    # Remove extra fields
+    for key in doc_dict:
+        if key not in model_dict:
+            removed.add(key)
+    return cleaned, removed, added
+
+
 async def fix_documents_raw():
     client = AsyncIOMotorClient(URI)
     db = client.discordbot
@@ -38,31 +65,41 @@ async def fix_documents_raw():
     fixed_added = 0
     for doc in await docs.to_list(length=None):
         update = {}
-        # Remove extra fields
+        unset = {}
+        # Remove extra fields at root
         extra_fields = set(doc.keys()) - VALID_FIELDS
-        if extra_fields:
-            unset = {field: "" for field in extra_fields}
-            await collection.update_one({"_id": doc["_id"]}, {"$unset": unset})
-            for field in extra_fields:
-                removed_summary[field] = removed_summary.get(field, 0) + 1
-            fixed_removed += 1
-        # Add missing/default fields
-        added_fields = []
+        for field in extra_fields:
+            unset[field] = ""
+            removed_summary[field] = removed_summary.get(field, 0) + 1
+        # Recursively clean nested dict fields
         for field, default in MODEL_DEFAULTS.items():
-            if field not in doc or doc[field] is None:
-                update[field] = copy.deepcopy(default)
-                added_fields.append(field)
+            if isinstance(default, dict):
+                doc_val = doc.get(field, {}) if isinstance(doc.get(field, {}), dict) else {}
+                cleaned, removed, added = clean_dict(doc_val, default)
+                if removed:
+                    for r in removed:
+                        removed_summary[f"{field}.{r}"] = removed_summary.get(f"{field}.{r}", 0) + 1
+                    fixed_removed += 1
+                if added:
+                    for a in added:
+                        added_summary[f"{field}.{a}"] = added_summary.get(f"{field}.{a}", 0) + 1
+                    fixed_added += 1
+                update[field] = cleaned
+            else:
+                if field not in doc or doc[field] is None:
+                    update[field] = copy.deepcopy(default)
+                    added_summary[field] = added_summary.get(field, 0) + 1
+                    fixed_added += 1
+        if unset:
+            await collection.update_one({"_id": doc["_id"]}, {"$unset": unset})
         if update:
             await collection.update_one({"_id": doc["_id"]}, {"$set": update})
-            for field in added_fields:
-                added_summary[field] = added_summary.get(field, 0) + 1
-            fixed_added += 1
-    print(f"Removed extra fields from {fixed_removed} user documents.")
+    print(f"Removed extra fields from user documents.")
     if removed_summary:
         print("Fields removed:")
         for field, count in removed_summary.items():
             print(f"  {field}: {count} document(s)")
-    print(f"Added missing/default fields to {fixed_added} user documents.")
+    print(f"Added missing/default fields to user documents.")
     if added_summary:
         print("Fields added:")
         for field, count in added_summary.items():
