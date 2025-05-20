@@ -109,7 +109,7 @@ class Player:
 
 
 # Main blackjack game view, handles UI and game state
-class Blackjack(discord.ui.View):
+class BlackjackGame(discord.ui.View):
     def __init__(self, interaction: discord.Interaction):
         super().__init__(timeout=120)
         self.user: User = interaction.extras.get("user")
@@ -188,7 +188,7 @@ class HitButton(discord.ui.Button):
         super().__init__(label=label, style=style, emoji=emoji)
 
     async def callback(self, interaction: discord.Interaction):
-        view: Blackjack = self.view
+        view: BlackjackGame = self.view
         await view.deal_card(view.player)
         embed = await view.update(Actions.HIT)
         await view.user.inc_stat("blackjack_hits")
@@ -213,7 +213,7 @@ class FoldButton(discord.ui.Button):
         super().__init__(label=label, style=style, emoji=emoji)
 
     async def callback(self, interaction: discord.Interaction):
-        view: Blackjack = self.view
+        view: BlackjackGame = self.view
         embed = await view.update(Actions.FOLD)
         await view.user.inc_stat("blackjack_folds")
         # Dealer draws if needed
@@ -240,7 +240,7 @@ class StandButton(discord.ui.Button):
         super().__init__(label=label, style=style, emoji=emoji)
 
     async def callback(self, interaction: discord.Interaction):
-        view: Blackjack = self.view
+        view: BlackjackGame = self.view
         embed = await view.update(Actions.STAND)
         await view.user.inc_stat("blackjack_stands")
         # Dealer draws if needed
@@ -295,7 +295,7 @@ class Blackjack(commands.Cog, name="Blackjack"):
     @app_commands.describe(bet="the amount of bits you want to bet")
     async def _blackjack(self, interaction: Interaction, bet: str):
         """Classic blackjack. Get as close to 21 as possible, but not over."""
-        view = Blackjack(interaction=interaction)
+        view = BlackjackGame(interaction=interaction)
         await interaction.response.send_message(embed=await view.update(Actions.DEAL), view=view)
 
         # Deal out starting hands for dealer and player

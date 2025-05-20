@@ -38,7 +38,7 @@ class SequenceButton(discord.ui.Button):
                 name="Final Score",
                 value=f"**{view.total_score}** elements :white_check_mark:",
             )
-            if view.total_score > view.user.get_stat("longest_sq_streak"):
+            if view.total_score > await view.user.get_stat("longest_sq_streak"):
                 await view.user.set_stat("longest_sq_streak", value=view.total_score)
             embed.add_field(name="Reward", value=f"**{reward:,}** bits :money_with_wings:")
             await view.user.add_bits(amount=reward)
