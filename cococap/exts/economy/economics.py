@@ -157,7 +157,7 @@ async def display_profile(interaction: Interaction):
         await user.set_field("name", interaction.user.display_name)
 
     embed = CustomEmbed(
-        title=f"You are: `{rank.display_name}`",
+        title=f"Rank: `{rank.display_name}`",
         color=discord.Color.blue(),
         interaction=interaction,
         activity="profile",

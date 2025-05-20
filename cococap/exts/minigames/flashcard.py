@@ -49,7 +49,7 @@ class FlashcardCog(commands.Cog, name="Flashcard"):
             desc=f"You will have {time_limit} seconds to solve the following problem!",
             color=0xA0A39D,
             interaction=interaction,
-            activity="flashcarding",
+            activity="studying",
         )
         await interaction.response.send_message(embed=embed)
         await asyncio.sleep(2)
@@ -70,7 +70,7 @@ class FlashcardCog(commands.Cog, name="Flashcard"):
                     title="Flashcard!",
                     desc=f"Correct!\n" f"{problem} = **{answer}**",
                     interaction=interaction,
-                    activity="flashcarding",
+                    activity="studying",
                 )
 
                 await user.inc_stat("flashcard_streak")
@@ -99,7 +99,7 @@ class FlashcardCog(commands.Cog, name="Flashcard"):
                 title="Flashcard!",
                 desc=f"Too slow!\n" f"{problem} = **{answer}**",
                 interaction=interaction,
-                activity="flashcarding",
+                activity="studying",
             )
             streak = await user.get_stat("flashcard_streak")
             if streak > 0:
