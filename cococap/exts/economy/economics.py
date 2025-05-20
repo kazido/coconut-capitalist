@@ -174,106 +174,6 @@ async def display_profile(interaction: Interaction):
     await interaction.response.send_message(embed=embed)
 
 
-async def display_stats(interaction: Interaction):
-    user: User = interaction.extras.get("user")
-    stats = user.get_field("statistics")
-    farming = user.get_field("farming")
-    foraging = user.get_field("foraging")
-    fishing = user.get_field("fishing")
-    mining = user.get_field("mining")
-    combat = user.get_field("combat")
-
-    embed = CustomEmbed(
-        title=f"{user.name}'s Stats",
-        color=discord.Color.dark_purple(),
-        interaction=interaction,
-        activity="stats",
-    )
-
-    # Group statistics for display
-    general_stats = [
-        f"Drops Claimed: {stats.get('drops_claimed', 0):,}",
-        f"Bits Earned: {stats.get('bits_earned', 0):,}",
-        f"Bits Lost: {stats.get('bits_lost', 0):,}",
-        f"Tokens Earned: {stats.get('tokens_earned', 0):,}",
-        f"Luckbucks Earned: {stats.get('luckbucks_earned', 0):,}",
-        f"Times Begged: {stats.get('times_begged', 0):,}",
-        f"Withdraws: {stats.get('withdraws', 0):,}",
-        f"Deposits: {stats.get('deposits', 0):,}",
-        f"Claimed Work: {stats.get('claimed_work', 0):,}",
-        f"Claimed Daily: {stats.get('claimed_daily', 0):,}",
-        f"Claimed Weekly: {stats.get('claimed_weekly', 0):,}",
-    ]
-    gambling_stats = [
-        f"Highlow Games: {stats.get('highlow_games', 0):,}",
-        f"Highlow Wins: {stats.get('hl_wins', 0):,}",
-        f"Longest HL Streak: {stats.get('longest_hl_streak', 0):,}",
-        f"Longest HL Loss Streak: {stats.get('longest_hl_loss_streak', 0):,}",
-        f"Biggest HL Win: {stats.get('biggest_hl_win', 0):,}",
-        f"Biggest HL Loss: {stats.get('biggest_hl_loss', 0):,}",
-        f"Blackjack Games: {stats.get('blackjack_games', 0):,}",
-        f"Blackjacks: {stats.get('blackjacks', 0):,}",
-        f"Blackjack Hits: {stats.get('blackjack_hits', 0):,}",
-        f"Blackjack Stands: {stats.get('blackjack_stands', 0):,}",
-        f"Blackjack Busts: {stats.get('blackjack_busts', 0):,}",
-        f"Blackjack Folds: {stats.get('blackjack_folds', 0):,}",
-        f"Blackjack Wins: {stats.get('blackjack_wins', 0):,}",
-    ]
-    minigame_stats = [
-        f"Sequences Played: {stats.get('sequence_games', 0):,}",
-        f"Longest SQ Streak: {stats.get('longest_sq_streak', 0):,}",
-        f"Unscrambles Played: {stats.get('unscramble_games', 0):,}",
-        f"Unscramble Streak: {stats.get('unscramble_streak', 0):,}",
-        f"Longest Unscramble Streak: {stats.get('longest_unscramble_streak', 0):,}",
-        f"Flashcards Played: {stats.get('flashcard_games', 0):,}",
-        f"Flashcard Streak: {stats.get('flashcard_streak', 0):,}",
-        f"Longest Flashcard Streak: {stats.get('longest_flashcard_streak', 0):,}",
-    ]
-
-    embed.add_field(
-        name="General Stats 🔢",
-        value="\n".join(general_stats),
-        inline=False,
-    )
-    embed.add_field(
-        name="Gambling Stats 🎲",
-        value="\n".join(gambling_stats),
-        inline=False,
-    )
-    embed.add_field(
-        name="Minigame Stats 🎮",
-        value="\n".join(minigame_stats),
-        inline=False,
-    )
-    embed.add_field(
-        name="Farming 🌽",
-        value=f"XP: {farming.get('xp', 0):,}\nCrops Grown: {farming.get('crops_grown', 0):,}",
-        inline=True,
-    )
-    embed.add_field(
-        name="Foraging 🌳",
-        value=f"XP: {foraging.get('xp', 0):,}\nTrees Chopped: {foraging.get('trees_chopped', 0):,}",
-        inline=True,
-    )
-    embed.add_field(
-        name="Fishing 🐟",
-        value=f"XP: {fishing.get('xp', 0):,}\nFish Caught: {fishing.get('fish_caught', 0):,}",
-        inline=True,
-    )
-    embed.add_field(
-        name="Mining ⛏️",
-        value=f"XP: {mining.get('xp', 0):,}\nLodes Mined: {mining.get('lodes_mined', 0):,}",
-        inline=True,
-    )
-    embed.add_field(
-        name="Combat ⚔️",
-        value=f"XP: {combat.get('xp', 0):,}\nMonsters Slain: {combat.get('monsters_slain', 0):,}",
-        inline=True,
-    )
-    embed.set_thumbnail(url=interaction.user.display_avatar)
-    await interaction.response.send_message(embed=embed)
-
-
 async def process_deposit(interaction: Interaction, amount: int | str = None):
     user: User = interaction.extras.get("user")
     amount = await validate_bits(user=user, amount=amount)
@@ -369,11 +269,6 @@ class EconomyCog(BaseCog, name="Economy"):
     async def bits(self, interaction: Interaction):
         """Display your profile with all your balances."""
         await display_profile(interaction=interaction)
-
-    @app_commands.command(name="stats", description="Number go up man happy.")
-    async def stats(self, interaction: Interaction):
-        """Display your various metrics."""
-        await display_stats(interaction=interaction)
 
     @app_commands.command(name="beg", description="Beg for some money, poor freak.")
     async def beg(self, interaction: Interaction):
