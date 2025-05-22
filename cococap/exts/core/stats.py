@@ -6,6 +6,9 @@ from utils.custom_embeds import CustomEmbed
 
 
 class StatsPaginator(discord.ui.View):
+    async def interaction_check(self, interaction):
+        return self.interaction.user == interaction.user
+
     def __init__(
         self, interaction: Interaction, pages: list[discord.Embed], *, timeout: float = 60
     ):
