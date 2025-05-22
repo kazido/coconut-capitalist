@@ -12,6 +12,18 @@ from utils.custom_embeds import CustomEmbed
 
 # Enum representing all possible game states for blackjack
 class GameStates(Enum):
+    """
+    Different game states for blackjack.
+
+    Attributes:
+        WIN: Player has beat the dealer.
+        READY: Player is ready to make a move.
+        LOSE: Player has either busted or has a lesser hand.
+        PUSH: Player has same hand total as dealer.
+        BLACKJACK: Player has a natural 21.
+        DEALER_REVEAL: Game is over and dealer has to reveal his cards.
+    """
+
     WIN = ("WIN", discord.Color.green(), ("WIN", "LOSE"), "Nice win!")
     READY = ("Blackjack", discord.Color.blue(), ("Your hand", "Dealer's hand"), "Hit or stand?")
     LOSE = ("LOSE", discord.Color.red(), ("LOSE", "WIN"), "Better luck next time...")
@@ -39,7 +51,6 @@ class Actions(Enum):
 
 def act(p_total: int, d_total: int, p_hand: list, action: Actions = None) -> GameStates:
     # Determine the next game state based on player/dealer totals and action
-    # This is the core blackjack rules logic
     if action == Actions.DEAL:
         # Check for natural blackjack
         if p_total == 21 and len(p_hand) == 2:

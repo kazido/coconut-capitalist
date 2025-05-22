@@ -1,13 +1,13 @@
 import discord
 import random
 
+from logging import getLogger
 from discord.ext import commands
 from discord import app_commands, Interaction
 from cococap.user import User
 from cococap.models import PartyDocument
 from cococap.exts.utils.error import CustomError
 from utils.custom_embeds import SuccessEmbed, CustomEmbed
-from logging import getLogger
 
 
 log = getLogger(__name__)
@@ -146,21 +146,19 @@ class PartySystemCog(commands.GroupCog, name="party"):
         self.bot = bot
 
         # These are context menu commands which can be used when right clicking a user in discord
-        self.invite_command = app_commands.ContextMenu(name="invite to party", callback=self.invite)
-        self.kick_command = app_commands.ContextMenu(name="kick from party", callback=self.kick)
-        self.promote_command = app_commands.ContextMenu(
-            name="promote to leader", callback=self.promote
-        )
+        self.invite_ctx = app_commands.ContextMenu(name="invite to party", callback=self.invite)
+        self.kick_ctx = app_commands.ContextMenu(name="kick from party", callback=self.kick)
+        self.promote_ctx = app_commands.ContextMenu(name="promote to leader", callback=self.promote)
 
     async def cog_load(self) -> None:
-        self.bot.tree.add_command(self.invite_command)
-        self.bot.tree.add_command(self.kick_command)
-        self.bot.tree.add_command(self.promote_command)
+        self.bot.tree.add_command(self.invite_ctx)
+        self.bot.tree.add_command(self.kick_ctx)
+        self.bot.tree.add_command(self.promote_ctx)
 
     async def cog_unload(self) -> None:
-        self.bot.tree.remove_command(self.invite_command)
-        self.bot.tree.remove_command(self.kick_command)
-        self.bot.tree.remove_command(self.promote_command)
+        self.bot.tree.remove_command(self.invite_ctx)
+        self.bot.tree.remove_command(self.kick_ctx)
+        self.bot.tree.remove_command(self.promote_ctx)
 
     async def interaction_check(self, interaction: Interaction):
         user = await User.get(interaction.user.id)
@@ -381,7 +379,7 @@ class PartySystemCog(commands.GroupCog, name="party"):
 
         await party.change_owner(member.id)
 
-        # TODO: Party channels do not wort at the moment
+        # TODO: Party channels do not work at the moment
         # Change the party channel's name if it exists
         party_channel = discord.utils.get(
             interaction.guild.channels, id=getattr(party, "channel_id", None)
