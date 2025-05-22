@@ -82,7 +82,7 @@ class UnscrambleGame:
         )
         if self.success:
             embed.description = f"Correct!\n***{self.scrambled}*** - {self.word}"
-            embed.color = 0xA0F09C
+            embed.change_to_success()
             await self.user.inc_stat("unscramble_streak")
             self.streak = await self.user.get_stat("unscramble_streak")
             self.longest_streak = await self.user.get_stat("longest_unscramble_streak")
