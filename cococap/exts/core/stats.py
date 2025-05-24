@@ -3,50 +3,7 @@ from discord import Interaction, app_commands
 from utils.base_cog import BaseCog
 from cococap.user import User
 from utils.custom_embeds import CustomEmbed
-
-
-class StatsPaginator(discord.ui.View):
-    async def interaction_check(self, interaction):
-        return self.interaction.user == interaction.user
-
-    def __init__(
-        self, interaction: Interaction, pages: list[discord.Embed], *, timeout: float = 60
-    ):
-        super().__init__(timeout=timeout)
-        self.interaction = interaction
-        self.pages = pages
-        self.current = 0
-        self.message: discord.Message = None
-        self.update_buttons()
-
-    def update_buttons(self):
-        self.clear_items()
-        if len(self.pages) > 1:
-            self.add_item(PrevButton(self))
-            self.add_item(NextButton(self))
-
-    async def show_page(self, interaction: Interaction = None):
-        await interaction.response.edit_message(embed=self.pages[self.current], view=self)
-
-
-class PrevButton(discord.ui.Button):
-    def __init__(self, paginator: StatsPaginator):
-        super().__init__(style=discord.ButtonStyle.secondary, label="Previous", emoji="⬅️")
-        self.paginator = paginator
-
-    async def callback(self, interaction: Interaction):
-        self.paginator.current = (self.paginator.current - 1) % len(self.paginator.pages)
-        await self.paginator.show_page(interaction)
-
-
-class NextButton(discord.ui.Button):
-    def __init__(self, paginator: StatsPaginator):
-        super().__init__(style=discord.ButtonStyle.secondary, label="Next", emoji="➡️")
-        self.paginator = paginator
-
-    async def callback(self, interaction: Interaction):
-        self.paginator.current = (self.paginator.current + 1) % len(self.paginator.pages)
-        await self.paginator.show_page(interaction)
+from utils.menus import PaginationMenu, MenuHandler, DirectMenu
 
 
 async def display_stats(interaction: Interaction):
@@ -58,7 +15,6 @@ async def display_stats(interaction: Interaction):
     mining = user.get_field("mining")
     combat = user.get_field("combat")
 
-    pages = []
     # General Stats
     embed1 = CustomEmbed(
         title=f"{user.name}'s General Stats",
@@ -85,7 +41,6 @@ async def display_stats(interaction: Interaction):
         ),
         inline=False,
     )
-    pages.append(embed1)
 
     # Gambling Stats
     embed2 = CustomEmbed(
@@ -117,7 +72,6 @@ async def display_stats(interaction: Interaction):
             ]
         ),
     )
-    pages.append(embed2)
 
     # Minigame Stats
     embed3 = CustomEmbed(
@@ -150,7 +104,6 @@ async def display_stats(interaction: Interaction):
             ]
         ),
     )
-    pages.append(embed3)
 
     # Skill Stats
     embed4 = CustomEmbed(
@@ -184,10 +137,15 @@ async def display_stats(interaction: Interaction):
         value=f"XP: {combat.get('xp', 0):,}\nMonsters Slain: {combat.get('monsters_slain', 0):,}",
         inline=True,
     )
-    pages.append(embed4)
 
-    view = StatsPaginator(interaction, pages)
-    await interaction.response.send_message(embed=view.pages[view.current], view=view)
+    handler = MenuHandler(interaction)
+    for embed in (embed1, embed2, embed3, embed4):
+        handler.add_menu(DirectMenu(embed, use_select=True))
+    # view = StatsPaginator(interaction, pages)
+    # await interaction.response.send_message(embed=view.pages[view.current], view=view)
+    await interaction.response.send_message(
+        embed=handler.get_current().embed, view=handler.get_current()
+    )
 
 
 class Stats(BaseCog):
