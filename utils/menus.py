@@ -18,6 +18,18 @@ class Button(discord.ui.Button):
         await interaction.response.edit_message(embed=menu.embed, view=menu)
 
 
+class CloseButton(discord.ui.Button):
+    def __init__(self):
+        super().__init__(label="Close", emoji="✖️", style=ButtonStyle.red)
+
+    async def callback(self, interaction):
+        self.view.embed.color = discord.Color.dark_grey()
+        self.view.embed.set_footer(text=f"Menu has been closed by {interaction.user.name}.")
+        self.view.clear_items()
+        self.view.stop()
+        await interaction.response.edit_message(embed=self.view.embed, view=self.view)
+
+
 class MenuHandler:
     def __init__(self, interaction: Interaction) -> None:
         self.interaction: Interaction = interaction
@@ -26,11 +38,8 @@ class MenuHandler:
 
     def add_menu(self, menu: "Menu"):
         # Adds a menu to the handler for navigation
-        if len(self.menus) != 0:
-            self.menus[self.current].add_item(self._generate_button(menu))
         self.menus.append(menu)
         menu.handler = self
-        menu.update()
 
     def _generate_button(self, menu: "Menu"):
         return Button(self.interaction, menu)
@@ -85,16 +94,7 @@ class Menu(discord.ui.View):
         self.emoji: discord.PartialEmoji = emoji
         self.embed: discord.Embed = embed
         self.handler: MenuHandler = None
-
-    def update(self):
-        # Only show back if not at root, always show close
-        if len(self.handler.menus) == 1:
-            self.remove_item(self.back)
-        else:
-            if self.back not in self.children:
-                self.add_item(self.back)
-        if self.close not in self.children:
-            self.add_item(self.close)
+        self.add_item(CloseButton())
 
     async def on_timeout(self) -> None:
         self.clear_items()
@@ -102,19 +102,6 @@ class Menu(discord.ui.View):
 
     async def interaction_check(self, interaction):
         return interaction.user == self.handler.interaction.user
-
-    @discord.ui.button(label="Back", emoji="🔙", style=discord.ButtonStyle.gray, row=4)
-    async def back(self, interaction: Interaction, button: discord.ui.Button):
-        menu = self.handler.move_backward()
-        await interaction.response.edit_message(embed=menu.embed, view=menu)
-
-    @discord.ui.button(label="Close", emoji="✖️", style=ButtonStyle.red, row=4)
-    async def close(self, interaction: Interaction, button: discord.ui.Button):
-        self.embed.color = discord.Color.dark_grey()
-        self.embed.set_footer(text=f"Menu has been closed by {interaction.user.name}.")
-        self.clear_items()
-        self.stop()
-        await interaction.response.edit_message(embed=self.embed, view=self)
 
 
 class PaginationMenu(Menu):
@@ -125,28 +112,16 @@ class PaginationMenu(Menu):
 
     def __init__(self, embed: discord.Embed = None):
         super().__init__(embed=embed)
-        self.clear_items()
-        self.add_item(self.prev)
-        self.add_item(self.next)
-        self.add_item(self.close)
 
-    @discord.ui.button(label="Prev", emoji="⬅️", style=ButtonStyle.blurple, row=4)
+    @discord.ui.button(label="Prev", emoji="⬅️", style=ButtonStyle.blurple)
     async def prev(self, interaction: Interaction, button: discord.ui.Button):
         menu = self.handler.move_backward()
         await interaction.response.edit_message(embed=menu.embed, view=menu)
 
-    @discord.ui.button(label="Next", emoji="➡️", style=ButtonStyle.blurple, row=4)
+    @discord.ui.button(label="Next", emoji="➡️", style=ButtonStyle.blurple)
     async def next(self, interaction: Interaction, button: discord.ui.Button):
         menu = self.handler.move_forward()
         await interaction.response.edit_message(embed=menu.embed, view=menu)
-
-    @discord.ui.button(emoji="✖️", style=ButtonStyle.red, row=4)
-    async def close(self, interaction: Interaction, button: discord.ui.Button):
-        self.embed.color = discord.Color.dark_grey()
-        self.embed.set_footer(text=f"Menu has been closed by {interaction.user.name}.")
-        self.clear_items()
-        self.stop()
-        await interaction.response.edit_message(embed=self.embed, view=self)
 
 
 class DirectMenu(Menu):
@@ -163,22 +138,12 @@ class DirectMenu(Menu):
 
     def update_buttons(self):
         # Call this after handler is set and menus are added
-        self.clear_items()
         if self.use_select:
             self.add_item(MenuSelect(self))
         else:
             for menu in self.handler.menus:
                 if menu is not self:
                     self.add_item(DirectNavButton(self, menu))
-        self.add_item(self.close)
-
-    @discord.ui.button(emoji="✖️", style=ButtonStyle.red, row=4)
-    async def close(self, interaction: Interaction, button: discord.ui.Button):
-        self.embed.color = discord.Color.dark_grey()
-        self.embed.set_footer(text=f"Menu has been closed by {interaction.user.name}.")
-        self.clear_items()
-        self.stop()
-        await interaction.response.edit_message(embed=self.embed, view=self)
 
 
 class DirectNavButton(discord.ui.Button):
