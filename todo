@@ -9,7 +9,7 @@
 ## SMALLER FIXES
 
 [ ] maybe move the games back into their own cogs? it's nice to have them all in one cog, but for development purposes, it's not practical to restart the bot every time there is a change. so probably move \_blackjack and \_high_low back to their own cogs for development purposes. can still be clean code.
-[ ] make it so 'k' and 'm' are valid options for thousand and million bets
+[x] make it so 'k' and 'm' are valid options for thousand and million bets
 [ ] change begging -> gives more bits but has a cooldown
 [ ] possibly add party channels? removed them because I don't want it to be tied to the discord server at all, and custom channels would have to bet sent to a specific category for organization... could setup a marked category, but that would be a pain.
 
@@ -19,6 +19,6 @@
 
 # MORE STATISTICS
 
-[ ] Add a tracker in the database for each possible statistic we can think of - This is simply pure fun for the player, especially in a grindy game. It's always fun to compare with others how many drops you've claimed or how many nodes you've mined. - This will require the user model to get quite large... Maybe pick and choose which statistics are really worth keeping or not.
+[x] Add a tracker in the database for each possible statistic we can think of - This is simply pure fun for the player, especially in a grindy game. It's always fun to compare with others how many drops you've claimed or how many nodes you've mined. - This will require the user model to get quite large... Maybe pick and choose which statistics are really worth keeping or not.
 
 ##### COMPLETED
