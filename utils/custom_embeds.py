@@ -45,10 +45,10 @@ class CustomEmbed(discord.Embed):
         self.color = 0xA0F09C
 
     def change_to_failure(self):
-        self.color = discord.Color.red()
+        self.color = 0x555555
 
     def change_to_error(self):
-        self.color = discord.Color.dark_red()
+        self.color = discord.Color.red()
 
 
 class SuccessEmbed(CustomEmbed):
