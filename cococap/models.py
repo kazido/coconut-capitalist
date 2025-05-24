@@ -48,6 +48,8 @@ class UserDocument(Document):
         "flashcard_games": 0,
         "flashcard_streak": 0,
         "longest_flashcard_streak": 0,
+        "trivia_wins": 0,
+        "trivia_games": 0,
     }
 
     # SKILLS

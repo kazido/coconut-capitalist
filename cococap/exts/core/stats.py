@@ -81,13 +81,6 @@ async def display_stats(interaction: Interaction):
         activity="stats",
     )
     embed3.add_field(
-        name="Sequence 🟥",
-        value="\n".join(
-            [
-                f"Longest Streak: `{stats.get('longest_sq_streak', 0):,}`",
-            ]
-        ),
-    ).add_field(
         name="Unscramble 📄",
         value="\n".join(
             [
@@ -101,6 +94,15 @@ async def display_stats(interaction: Interaction):
             [
                 f"Current Streak: `{stats.get('flashcard_streak', 0):,}`",
                 f"Longest Streak: `{stats.get('longest_flashcard_streak', 0):,}`",
+            ]
+        ),
+    ).add_field(
+        name="Other 🎛️",
+        value="\n".join(
+            [
+                f"Longest Streak: `{stats.get('longest_sq_streak', 0):,}`",
+                f"Trivia Wins: `{stats.get('trivia_wins', 0):,}`",
+                f"Trivia Games: `{stats.get('trivia_games', 0):,}`",
             ]
         ),
     )
@@ -140,12 +142,9 @@ async def display_stats(interaction: Interaction):
 
     handler = MenuHandler(interaction)
     for embed in (embed1, embed2, embed3, embed4):
-        handler.add_menu(DirectMenu(embed, use_select=True))
-    # view = StatsPaginator(interaction, pages)
-    # await interaction.response.send_message(embed=view.pages[view.current], view=view)
-    await interaction.response.send_message(
-        embed=handler.get_current().embed, view=handler.get_current()
-    )
+        handler.add_menu(PaginationMenu(embed))
+    menu = handler.get_current()
+    await interaction.response.send_message(embed=menu.embed, view=menu)
 
 
 class Stats(BaseCog):

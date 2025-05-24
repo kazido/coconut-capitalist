@@ -39,6 +39,7 @@ class AnswerButton(discord.ui.Button):
         embed: CustomEmbed
         user: User = self.view.user
         if self.is_correct:
+            await self.view.interaction.extras.get("user").inc_stat("trivia_wins")
             embed = self.view.generate_embed(True)
             embed.change_to_success()
             await user.add_bits(self.view.profit)
@@ -150,6 +151,7 @@ class Trivia(BaseCog, name="Trivia"):
         game = TriviaGame(interaction, self.client)
         game.add_buttons()
         await interaction.response.send_message(embed=game.generate_embed(), view=game)
+        await interaction.extras.get("user").inc_stat("trivia_games")
         await game.tick()
 
 
