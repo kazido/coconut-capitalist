@@ -45,20 +45,21 @@ class UnscrambleGame:
         self.helper = None
         self.guess = None
         self.success = False
+        self.embed = None
 
-    async def play(self):
-        embed = CustomEmbed(
+    async def start(self):
+        self.embed = CustomEmbed(
             title="Unscramble!",
             desc=f"You will have {round(self.time_limit)} seconds to unscramble the following word!",
             color=0xA0A39D,
             interaction=self.interaction,
             activity="unscrambling",
         )
-        await self.interaction.response.send_message(embed=embed)
+        await self.interaction.response.send_message(embed=self.embed)
         await asyncio.sleep(2)
-        embed.color = discord.Color.blue()
-        embed.description += f"\n***{self.scrambled}***"
-        await self.interaction.edit_original_response(embed=embed)
+        self.embed.color = discord.Color.blue()
+        self.embed.description += f"\n***{self.scrambled}***"
+        await self.interaction.edit_original_response(embed=self.embed)
 
         def check(m):
             return m.content.lower() == self.word and m.channel == self.interaction.channel
@@ -73,7 +74,7 @@ class UnscrambleGame:
         except asyncio.TimeoutError:
             self.success = False
 
-    async def process_result(self):
+    async def get_result_embed(self):
         embed = CustomEmbed(
             title="Unscramble!",
             color=discord.Color.blue() if self.success else discord.Color.red(),
@@ -82,7 +83,7 @@ class UnscrambleGame:
         )
         if self.success:
             embed.description = f"Correct!\n***{self.scrambled}*** - {self.word}"
-            embed.change_to_success()
+            embed.color = 0xA0F09C
             await self.user.inc_stat("unscramble_streak")
             self.streak = await self.user.get_stat("unscramble_streak")
             self.longest_streak = await self.user.get_stat("longest_unscramble_streak")
@@ -107,7 +108,7 @@ class UnscrambleGame:
             if self.streak > 0:
                 embed.set_footer(text=f"You lost your streak of {self.streak}.")
             await self.user.set_stat("unscramble_streak")
-        await self.interaction.edit_original_response(embed=embed)
+        return embed
 
 
 class UnscrambleCog(commands.Cog, name="Unscramble"):
@@ -123,8 +124,9 @@ class UnscrambleCog(commands.Cog, name="Unscramble"):
         user = await User.get(interaction.user.id)
         await user.inc_stat("unscramble_games")
         game = UnscrambleGame(user, self.bot, interaction)
-        await game.play()
-        await game.process_result()
+        await game.start()
+        result_embed = await game.get_result_embed()
+        await interaction.edit_original_response(embed=result_embed)
 
 
 async def setup(bot):
