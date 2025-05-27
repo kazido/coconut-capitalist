@@ -33,15 +33,15 @@ class FlashcardCog(commands.Cog, name="Flashcard"):
         match operator:
             case "+":
                 answer = x + y
-                time_limit = 3
+                time_limit = 5
                 reward = 5000
             case "-":
                 answer = x - y
-                time_limit = 5
+                time_limit = 7
                 reward = 10000
             case "*":
                 answer = x * y
-                time_limit = 15
+                time_limit = 20
                 reward = 20000
 
         embed = CustomEmbed(
