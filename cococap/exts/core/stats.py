@@ -27,8 +27,6 @@ async def display_stats(interaction: Interaction):
         value="\n".join(
             [
                 f"Drops Claimed: `{stats.get('drops_claimed', 0):,}`",
-                f"Bits Earned: `{stats.get('bits_earned', 0):,}`",
-                f"Bits Lost: `{stats.get('bits_lost', 0):,}`",
                 f"Tokens Earned: `{stats.get('tokens_earned', 0):,}`",
                 f"Luckbucks Earned: `{stats.get('luckbucks_earned', 0):,}`",
                 f"Times Begged: `{stats.get('times_begged', 0):,}`",

@@ -125,7 +125,6 @@ class HighlowGame(discord.ui.View):
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     async def process_cashout(self, interaction: discord.Interaction):
-        await self.user.inc_stat("bits_lost", self.bet)  # Don't add to bits_lost if they won
         profit = self.bet * self.multiplier
         await self.user.add_bits(profit)
         if profit > await self.user.get_stat("biggest_hl_win"):

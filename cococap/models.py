@@ -16,8 +16,6 @@ class UserDocument(Document):
     # STATISTICS
     statistics: dict = {
         "drops_claimed": 0,
-        "bits_earned": 0,
-        "bits_lost": 0,
         "tokens_earned": 0,
         "luckbucks_earned": 0,
         "times_begged": 0,

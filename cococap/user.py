@@ -52,14 +52,12 @@ class User:
     # --- Atomic Currency Methods ---
     async def add_bits(self, amount: int) -> None:
         """Add bits to the user's purse (atomic)."""
-        await self.inc_stat("bits_earned", amount)
         await self._document.inc({"purse": amount})
 
     async def remove_bits(self, amount: int) -> None:
         """Remove bits from the user's purse (atomic). Raises if insufficient."""
         if await self.get_bits() < amount:
             raise InsufficientFunds("Not enough bits.")
-        await self.inc_stat("bits_lost", amount)
         await self._document.inc({"purse": -amount})
 
     async def get_bits(self) -> int:
