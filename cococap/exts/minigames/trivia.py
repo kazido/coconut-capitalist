@@ -148,6 +148,7 @@ class Trivia(BaseCog, name="Trivia"):
 
     @app_commands.command(name="trivia")
     async def trivia(self, interaction: Interaction):
+        """Try to solve some trivia! The harder the question, the more bits you get!"""
         game = TriviaGame(interaction, self.client)
         game.add_buttons()
         await interaction.response.send_message(embed=game.generate_embed(), view=game)
