@@ -34,14 +34,16 @@ class Map:
         return grid
 
     def _generate_node(self, skill):
-        # Higher skill level = higher chance for higher tier
+        # 75% chance for blank, 25% for skill node
+        if random.random() < 0.95:
+            return "⬜"  # blank walkable space
+        # Skill node logic
         level = self.user_skill_levels.get(skill, 1)
-        # Example: weight tiers by skill level (customize as needed)
         weights = [max(1, 5 - level), max(1, 4 - level), max(1, 3 - level), level]
         tiers = [1, 2, 3, 4]
         tier = random.choices(tiers, weights=weights, k=1)[0]
         emoji = skills_emojis[skill]
-        return f"{emoji}{tier}"
+        return f"{emoji}"
 
     def __str__(self):
         grid_display = "\n".join([" ".join(row) for row in self.map])
@@ -56,18 +58,17 @@ class MapView(discord.ui.View):
         self.x = x
         self.y = y
         self.grid_size = map_obj.grid_size
-        self.update_buttons()
+        self.add_movement_buttons()
+
+    def add_movement_buttons(self):
+        self.clear_items()
+        self.add_item(MoveButton("⬆️", self, dx=0, dy=-1, disabled=self.y == 0))
+        self.add_item(MoveButton("⬇️", self, dx=0, dy=1, disabled=self.y == self.grid_size - 1))
+        self.add_item(MoveButton("⬅️", self, dx=-1, dy=0, disabled=self.x == 0))
+        self.add_item(MoveButton("➡️", self, dx=1, dy=0, disabled=self.x == self.grid_size - 1))
 
     def update_buttons(self):
-        self.clear_items()
-        if self.y > 0:
-            self.add_item(MoveButton("⬆️", self, dx=0, dy=-1))
-        if self.y < self.grid_size - 1:
-            self.add_item(MoveButton("⬇️", self, dx=0, dy=1))
-        if self.x > 0:
-            self.add_item(MoveButton("⬅️", self, dx=-1, dy=0))
-        if self.x < self.grid_size - 1:
-            self.add_item(MoveButton("➡️", self, dx=1, dy=0))
+        self.add_movement_buttons()
 
     def get_map_display(self):
         display = []
@@ -83,8 +84,8 @@ class MapView(discord.ui.View):
 
 
 class MoveButton(discord.ui.Button):
-    def __init__(self, label, view, dx, dy):
-        super().__init__(label=label, style=discord.ButtonStyle.primary)
+    def __init__(self, label, view, dx, dy, disabled=False):
+        super().__init__(label=label, style=discord.ButtonStyle.primary, disabled=disabled)
         self.dx = dx
         self.dy = dy
         self.view_ref = view
