@@ -256,7 +256,6 @@ class Extensions(commands.Cog):
 
         # Handle BadArgument errors locally to prevent the help command from showing.
         if isinstance(error, commands.BadArgument):
-            await ctx.send(str(error))
             error.handled = True
 
 

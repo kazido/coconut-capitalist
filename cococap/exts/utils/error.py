@@ -55,7 +55,7 @@ class ErrorHandler(commands.Cog):
 
         # Attempt to send the message, if it's already been responded to, followup.
         try:
-            return await i.response.send_message(embed=error_embed)
+            return await i.response.send_message(embed=error_embed, delete_after=5)
         except InteractionResponded:
             return await i.followup.send(embed=error_embed)
 
@@ -81,7 +81,7 @@ class ErrorHandler(commands.Cog):
             traceback.print_exception(type(e), e, e.__traceback__, file=log_file)
 
         # Send a message with error
-        return await ctx.send(embed=error_embed)
+        return await ctx.send(embed=error_embed, delete_after=5)
 
 
 async def setup(bot) -> None:
