@@ -15,12 +15,21 @@ class Node:
         self.display_name: str
         self.description: str
         self.skill: str
-        self.odds: int # Odds of rolling this tier node when generated, out of 1,000. (5 = 0.5%, 600 = 60%)
-        self.difficulty: int # The difficulty of the node (used to scale up tree height, fish commands, monster hp, etc.)
+        self.odds: int  # Odds of rolling this tier node when generated, out of 1,000. (5 = 0.5%, 600 = 60%)
+        self.difficulty: int  # The difficulty of the node (used to scale up tree height, fish commands, monster hp, etc.)
         self.players: list
 
     def roll_table(self):
         return random.choices(self.loot_table.keys())
+
+    def start(self):
+        pass
+
+    def update(self):
+        pass
+
+    def get_embed(self):
+        pass
 
 
 class Tier1Node(Node):

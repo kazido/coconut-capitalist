@@ -6,6 +6,8 @@ from discord import app_commands, Interaction
 from utils.base_cog import BaseCog
 from cococap.user import User
 
+BLANK_SPACE = "◼️"
+
 # Example skill emojis and skill names (customize as needed)
 skills_emojis = {
     "farming": "🌽",
@@ -35,8 +37,9 @@ class Map:
 
     def _generate_node(self, skill):
         # 75% chance for blank, 25% for skill node
+        if skill_list
         if random.random() < 0.95:
-            return "⬜"  # blank walkable space
+            return BLANK_SPACE  # blank walkable space
         # Skill node logic
         level = self.user_skill_levels.get(skill, 1)
         weights = [max(1, 5 - level), max(1, 4 - level), max(1, 3 - level), level]
@@ -62,10 +65,35 @@ class MapView(discord.ui.View):
 
     def add_movement_buttons(self):
         self.clear_items()
-        self.add_item(MoveButton("⬆️", self, dx=0, dy=-1, disabled=self.y == 0))
-        self.add_item(MoveButton("⬇️", self, dx=0, dy=1, disabled=self.y == self.grid_size - 1))
-        self.add_item(MoveButton("⬅️", self, dx=-1, dy=0, disabled=self.x == 0))
-        self.add_item(MoveButton("➡️", self, dx=1, dy=0, disabled=self.x == self.grid_size - 1))
+        # 3x3 grid: (row, col) = (dy, dx)
+        # Row 1
+        self.add_item(
+            MoveButton("↖️", self, dx=-1, dy=-1, row=0, disabled=not self.can_move(-1, -1))
+        )
+        self.add_item(MoveButton("⬆️", self, dx=0, dy=-1, row=0, disabled=not self.can_move(0, -1)))
+        self.add_item(MoveButton("↗️", self, dx=1, dy=-1, row=0, disabled=not self.can_move(1, -1)))
+        # Row 2
+        self.add_item(MoveButton("⬅️", self, dx=-1, dy=0, row=1, disabled=not self.can_move(-1, 0)))
+        # Center: show node emoji if on a node, else gray disabled button
+        center_cell = self.map_obj.map[self.y][self.x]
+        if center_cell != BLANK_SPACE:
+            self.add_item(NodeButton(center_cell, self, row=1))
+        else:
+            self.add_item(
+                discord.ui.Button(
+                    label=None, emoji="⬜", style=discord.ButtonStyle.gray, row=1, disabled=True
+                )
+            )
+        self.add_item(MoveButton("➡️", self, dx=1, dy=0, row=1, disabled=not self.can_move(1, 0)))
+        # Row 3
+        self.add_item(MoveButton("↙️", self, dx=-1, dy=1, row=2, disabled=not self.can_move(-1, 1)))
+        self.add_item(MoveButton("⬇️", self, dx=0, dy=1, row=2, disabled=not self.can_move(0, 1)))
+        self.add_item(MoveButton("↘️", self, dx=1, dy=1, row=2, disabled=not self.can_move(1, 1)))
+
+    def can_move(self, dx, dy):
+        new_x = self.x + dx
+        new_y = self.y + dy
+        return 0 <= new_x < self.grid_size and 0 <= new_y < self.grid_size
 
     def update_buttons(self):
         self.add_movement_buttons()
@@ -76,7 +104,7 @@ class MapView(discord.ui.View):
             row_display = []
             for x, cell in enumerate(row):
                 if x == self.x and y == self.y:
-                    row_display.append(f"[**{cell}**]")
+                    row_display.append("👤")
                 else:
                     row_display.append(cell)
             display.append(" ".join(row_display))
@@ -84,8 +112,8 @@ class MapView(discord.ui.View):
 
 
 class MoveButton(discord.ui.Button):
-    def __init__(self, label, view, dx, dy, disabled=False):
-        super().__init__(label=label, style=discord.ButtonStyle.primary, disabled=disabled)
+    def __init__(self, label, view, dx, dy, row=0, disabled=False):
+        super().__init__(label=label, style=discord.ButtonStyle.gray, row=row, disabled=disabled)
         self.dx = dx
         self.dy = dy
         self.view_ref = view
@@ -106,6 +134,20 @@ class MoveButton(discord.ui.Button):
             color=discord.Color.green(),
         )
         await interaction.response.edit_message(embed=embed, view=view)
+
+
+class NodeButton(discord.ui.Button):
+    def __init__(self, emoji, view, row=1):
+        super().__init__(label=None, emoji=emoji, style=discord.ButtonStyle.success, row=row)
+        self.view_ref = view
+
+    async def callback(self, interaction: discord.Interaction):
+        view = self.view_ref
+        if interaction.user.id != view.user.id:
+            await interaction.response.send_message("This is not your map!", ephemeral=True)
+            return
+        # Placeholder for node interaction logic
+        await interaction.response.edit_message(embed=None, content="Inter", view=None)
 
 
 class Explore(BaseCog):
