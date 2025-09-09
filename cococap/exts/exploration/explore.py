@@ -37,7 +37,6 @@ class Map:
 
     def _generate_node(self, skill):
         # 75% chance for blank, 25% for skill node
-        if skill_list
         if random.random() < 0.95:
             return BLANK_SPACE  # blank walkable space
         # Skill node logic

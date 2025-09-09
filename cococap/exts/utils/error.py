@@ -47,7 +47,6 @@ class ErrorHandler(commands.Cog):
         command_name = "/" + i.command.qualified_name
         print(f"{command_name} failed: {e}", file=sys.stderr)
         print("\nWE HAVE AN ISSUE!")
-        traceback.print_exception(type(e), e.__traceback__)
 
         # Write the full traceback to a log file
         with open("logs/app_command_errors.log", "a") as log_file:
