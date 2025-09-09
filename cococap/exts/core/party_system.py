@@ -5,7 +5,7 @@ from logging import getLogger
 from discord.ext import commands
 from discord import app_commands, Interaction
 from cococap.user import User
-from cococap.models import PartyDocument
+from cococap.models.models import PartyDocument
 from cococap.exts.utils.error import CustomError
 from utils.custom_embeds import SuccessEmbed, CustomEmbed
 
@@ -13,6 +13,12 @@ from utils.custom_embeds import SuccessEmbed, CustomEmbed
 log = getLogger(__name__)
 
 
+class PartyEmbed(SuccessEmbed):
+    def __init__(self, *, desc, interaction):
+        super().__init__(desc=desc, interaction=interaction, activity="partying")
+
+
+# Custom errors
 class PartyNotFound(CustomError):
     pass
 
@@ -26,8 +32,7 @@ class UserNotInParty(CustomError):
 
 
 class NotPartyOwner(CustomError):
-    def __init__(self, message="You are not the owner of the party!", title=None, footer=None):
-        super().__init__(message, title, footer)
+    pass
 
 
 class PartyNotEmpty(CustomError):
@@ -129,14 +134,29 @@ class Party:
         return await Party.create(owner_id=owner_id)
 
 
-async def ensure_party(interaction: Interaction):
+# Custom check to make sure the user is in a party
+async def in_party(interaction: Interaction):
     party: Party = interaction.extras.get("party")
     if not party:
-        raise PartyNotFound(
-            "You are not in a party.",
-            footer="Create a party with /party create or ask someone to invite you (right click your name -> apps)!",
-        )
-    return True
+        raise PartyNotFound("You are not currently in a party.")
+    return True  # There is a party associated with the interaction
+
+
+# Custom check to make sure the user is NOT in a party
+async def not_in_party(interaction: Interaction):
+    party: Party = interaction.extras.get("party")
+    if party:
+        raise AlreadyInParty("You are already in a party.")
+    return True  # There is a party associated with the interaction
+
+
+# Custom check to make sure the user owns the party
+async def is_owner(interaction: Interaction):
+    party: Party = interaction.extras.get("party")
+
+    if not party.is_owner(interaction.user.id):
+        raise NotPartyOwner("You are not the party owner.")
+    return True  # The interaction user owns the associated party
 
 
 class PartySystemCog(commands.GroupCog, name="party"):
@@ -168,10 +188,9 @@ class PartySystemCog(commands.GroupCog, name="party"):
         return super().interaction_check(interaction)
 
     # Lists the members of a player's party
-    @app_commands.command(name="list")
-    @app_commands.check(ensure_party)
+    @app_commands.command(name="list", description="See who is in your party")
+    @app_commands.check(in_party)
     async def list_members(self, interaction: Interaction):
-        """See who is in your party."""
         party: Party = interaction.extras.get("party")
 
         embed = CustomEmbed(
@@ -191,43 +210,27 @@ class PartySystemCog(commands.GroupCog, name="party"):
         return await interaction.response.send_message(embed=embed)
 
     # Creates a unique party ID and adds user
-    @app_commands.command(name="create")
+    @app_commands.command(name="create", description="Create a party")
+    @app_commands.check(not_in_party)
     async def create(self, interaction: Interaction):
-        """Creates a private party, complete with a private party channel."""
-        party: Party = interaction.extras.get("party")
-
-        if party:
-            raise AlreadyInParty(
-                "You are already in a party!",
-                title="Cannot create a party",
-                footer="Use /party leave to leave your current party.",
-            )
-
         await Party.create(interaction.user.id)
-        embed = SuccessEmbed(
-            desc=f"Your party has been created!", interaction=interaction, activity="partying"
-        )
+        embed = PartyEmbed(desc=f"Your party has been created!", interaction=interaction)
         return await interaction.response.send_message(embed=embed)
 
     # Removes user and everyone else from party and deletes party ID.
-    @app_commands.command(name="disband", description="Disbands your current party.")
-    @app_commands.check(ensure_party)
+    @app_commands.command(name="disband", description="Disbands your current party")
+    @app_commands.check(in_party)
+    @app_commands.check(is_owner)
     async def disband(self, interaction: Interaction):
         party: Party = interaction.extras.get("party")
 
-        if not party.is_owner(interaction.user.id):
-            raise NotPartyOwner(
-                title="Failed to disband party",
-                footer="You can leave if you'd like...",
-            )
-
         await party.delete()
-        success_embed = SuccessEmbed(desc="Party successfully disbanded")
-        return await interaction.response.send_message(embed=success_embed)
+        embed = PartyEmbed(desc="Party successfully disbanded.", interaction=interaction)
+        return await interaction.response.send_message(embed=embed)
 
     # Leaves party if user isn't the leader.
-    @app_commands.command(name="leave", description="Leave your current party.")
-    @app_commands.check(ensure_party)
+    @app_commands.command(name="leave", description="Leave your current party")
+    @app_commands.check(in_party)
     async def leave(self, interaction: Interaction):
         party: Party = interaction.extras.get("party")
 
@@ -251,7 +254,7 @@ class PartySystemCog(commands.GroupCog, name="party"):
         await interaction.response.send_message(embed=embed)
 
     # Invites specified user to a party, doesn't need to be registered.
-    @app_commands.check(ensure_party)
+    @app_commands.check(in_party)
     async def invite(self, interaction: Interaction, member: discord.Member):
         party: Party = interaction.extras.get("party")
 
@@ -340,7 +343,7 @@ class PartySystemCog(commands.GroupCog, name="party"):
             log.debug("Channel already deleted.")
         return
 
-    @app_commands.check(ensure_party)
+    @app_commands.check(in_party)
     async def kick(self, interaction: Interaction, member_to_kick: discord.Member):
         """Remove a specified member from the party."""
         party: Party = interaction.extras.get("party")
@@ -363,7 +366,7 @@ class PartySystemCog(commands.GroupCog, name="party"):
         )
         return await interaction.response.send_message(embed=embed)
 
-    @app_commands.check(ensure_party)
+    @app_commands.check(in_party)
     async def promote(self, interaction: Interaction, member: discord.Member):
         """Promotes a user as the party leader."""
         party: Party = interaction.extras.get("party")
