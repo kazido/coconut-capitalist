@@ -1,6 +1,6 @@
 import asyncio
 import copy
-from cococap.models import UserDocument
+from cococap.models.models import UserDocument
 from cococap.constants import URI
 from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient

@@ -1,7 +1,7 @@
 import time
 from enum import Enum
 from typing import Any, Optional
-from cococap.models import UserDocument
+from cococap.models.models import UserDocument
 from logging import getLogger
 
 log = getLogger(__name__)
@@ -100,7 +100,7 @@ class User:
 
     async def get_stat(self, statistic: str):
         doc = await UserDocument.get(self._document.id)
-        return doc.statistics.get(statistic)
+        return getattr(doc.stats, statistic)
 
     async def set_stat(self, statistic: str, value: int = 0):
         await self._document.set({f"statistics.{statistic}": value})

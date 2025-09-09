@@ -3,7 +3,7 @@ import discord
 from enum import Enum
 from discord import app_commands, Interaction
 from discord.ext import commands
-from cococap.models import UserDocument
+from cococap.models.models import UserDocument
 
 FIRST_PLACE_ANSI_PREFIX = "\u001b[0;37m"
 SECOND_PLACE_ANSI_PREFIX = "\u001b[0;33m"
@@ -13,15 +13,15 @@ RESET_POSTFIX = "\u001b[0m"
 
 
 class TopCategories(Enum):
-    BITS = ("💸", "Bits", "purse", "0xbbd6ed")
-    LUCKBUCKS = ("🍀", "Luckbucks", "luckbucks", "0x47d858")
-    FARMING = ("🌽", "Farming", "farming.xp", "0x2f919e")
-    FORAGING = ("🌳", "Foraging", "foraging.xp", "0x2f9e47")
-    FISHING = ("🐟", "Fishing", "fishing.xp", "0x2f3a9e")
-    MINING = ("⛏️", "Mining", "mining.xp", "0x9e492f")
-    COMBAT = ("⚔️", "Combat", "combat.xp", "0x9e2f2f")
-    # SHEPHERDING = ("🐑", "Shepherding", ['shepherding'], "0x5f2f9e")  # TO BE ADDED
-    DROPS = ("📦", "Drops", "drops_claimed", "0x8b9a9e")
+    BITS = ("💸", "Bits", ("purse"), "0xbbd6ed")
+    LUCKBUCKS = ("🍀", "Luckbucks", ("luckbucks"), "0x47d858")
+    FARMING = ("🌽", "Farming", ("farming", "xp"), "0x2f919e")
+    FORAGING = ("🌳", "Foraging", ("foraging", "xp"), "0x2f9e47")
+    FISHING = ("🐟", "Fishing", ("fishing", "xp"), "0x2f3a9e")
+    MINING = ("⛏️", "Mining", ("mining", "xp"), "0x9e492f")
+    COMBAT = ("⚔️", "Combat", ("combat", "xp"), "0x9e2f2f")
+    # SHEPHERDING = ("🐑", "Shepherding", ("shepherding", "xp"), "0x5f2f9e")  # TO BE ADDED
+    DROPS = ("📦", "Drops", ("statistics", "drops_claimed"), "0x8b9a9e")
 
     def __new__(cls, emoji, name, column: str, color):
         obj = object.__new__(cls)
@@ -58,6 +58,7 @@ def get_leaderboard_query_and_accessors(category: TopCategories):
             lambda u: u["name"],
         )
     else:
+        for path in category.column:
         return (
             UserDocument.find().sort((category.column, -1)).to_list(),
             lambda u: getattr(u, category.column),

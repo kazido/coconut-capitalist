@@ -4,7 +4,7 @@ from pydis_core import BotBase
 from logging import getLogger
 
 from cococap import exts
-from cococap.models import UserDocument, PartyDocument
+from cococap.models.models import UserDocument, PartyDocument
 from cococap.constants import URI
 
 from motor.motor_asyncio import AsyncIOMotorClient
