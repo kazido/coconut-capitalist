@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from base import Skill
+from .base import Skill
 
 
 class Stats(BaseModel):

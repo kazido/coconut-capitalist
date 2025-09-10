@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-from base import Skill
+from .base import Skill
 
 
 class Stats(BaseModel):
