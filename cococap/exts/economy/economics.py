@@ -6,7 +6,7 @@ import time
 
 from random import randint
 from discord import app_commands, Interaction
-from game_data.converters.data_converter import fetch
+from configs.converters.data_converter import fetch
 
 from utils.utils import timestamp_to_digital
 from cococap.user import User, Cooldowns

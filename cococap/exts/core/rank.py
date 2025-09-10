@@ -4,7 +4,7 @@ from discord import app_commands
 
 from cococap.user import User
 from utils.custom_embeds import CustomEmbed
-from game_data.converters.data_converter import fetch
+from configs.converters.data_converter import fetch
 
 
 async def process_rank_purchase(interaction, rank):

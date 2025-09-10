@@ -16,7 +16,7 @@ from utils.utils import timestamp_to_english
 from cococap.user import User
 from cococap.constants import IMAGES_REPO, Categories
 
-from game_data.converters.data_converter import fetch
+from configs.converters.data_converter import fetch
 
 log = getLogger(__name__)
 
