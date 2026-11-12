@@ -23,10 +23,11 @@ class Mineshaft:
     # Each level's loot table contains item_ids. Must manually verify that item_ids are valid.
     # To verify that item_ids are valid, look under 
     LEVEL1 = ["copper_ore"]
-    LEVEL2 = ["iron_ore"].extend(LEVEL1)
-    LEVEL3 = ["gold_ore", "dusty_dandelion.seed"].extend(LEVEL2)
-    LEVEL4 = ["sanity", "rage", "peace", "balance"].extend(LEVEL3)
-    LEVEL5 = ["spirit_of_the_mines"].extend(LEVEL4)
+    # (list.extend() returns None, so build the cumulative tables with unpacking instead)
+    LEVEL2 = ["iron_ore", *LEVEL1]
+    LEVEL3 = ["gold_ore", "dusty_dandelion.seed", *LEVEL2]
+    LEVEL4 = ["sanity", "rage", "peace", "balance", *LEVEL3]
+    LEVEL5 = ["spirit_of_the_mines", *LEVEL4]
 
     depths = [LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5]
 
@@ -52,4 +53,5 @@ class Mineshaft:
         return None, 0
 
 class MiningNode(Node):
+    pass  # WIP: not implemented yet
     

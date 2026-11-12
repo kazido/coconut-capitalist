@@ -74,12 +74,12 @@ class Party:
     async def add_member(self, user_id: int):
         """Add a member to the party and update their document."""
         if self.is_member(user_id):
-            raise AlreadyInParty(f"The specified user is in already your party.")
+            raise AlreadyInParty("The specified user is already in your party.")
         member: User = await User.get(user_id)
         if member.get_field("party_id"):
             raise AlreadyInParty(
-                f"The specified user is already in a party.",
-                title=f"Failed to invite the specified user",
+                "The specified user is already in a party.",
+                title="Failed to invite the specified user",
                 footer="Tell them to do /party leave.",
             )
         self._members.append(user_id)
@@ -97,6 +97,7 @@ class Party:
 
     async def change_owner(self, user_id: int):
         self._owner_id = user_id
+        self._document.party_owner = user_id  # save() persists the document, not our mirror
         return await self.save()
 
     async def delete(self):
@@ -154,9 +155,74 @@ async def not_in_party(interaction: Interaction):
 async def is_owner(interaction: Interaction):
     party: Party = interaction.extras.get("party")
 
-    if not party.is_owner(interaction.user.id):
+    if party is None or not party.is_owner(interaction.user.id):
         raise NotPartyOwner("You are not the party owner.")
     return True  # The interaction user owns the associated party
+
+
+class PartyInviteView(discord.ui.View):
+    """Join/Decline buttons shown to the invited member."""
+
+    def __init__(self, party: "Party", invited: discord.Member, inviter: discord.abc.User):
+        super().__init__(timeout=180)
+        self.party = party
+        self.invited = invited
+        self.inviter = inviter
+        self.message: discord.Message | None = None
+
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        # Only the invited member may answer.
+        return interaction.user.id == self.invited.id
+
+    async def _finish(self, interaction: Interaction, embed: discord.Embed) -> None:
+        self.stop()
+        await interaction.response.edit_message(content=None, embed=embed, view=None)
+
+    @discord.ui.button(label="Join", style=discord.ButtonStyle.green)
+    async def join(self, interaction: Interaction, button: discord.ui.Button):
+        # Reload: the party may have been disbanded or changed owner since the invite was sent.
+        party = await Party().load(self.party.party_id)
+        if party is None:
+            return await self._finish(
+                interaction,
+                discord.Embed(
+                    title="Invite failed",
+                    description="The party you were invited to has been disbanded.",
+                    color=discord.Color.red(),
+                ),
+            )
+        try:
+            await party.add_member(interaction.user.id)
+        except CustomError as e:
+            return await self._finish(
+                interaction,
+                discord.Embed(title="Invite failed", description=str(e), color=discord.Color.red()),
+            )
+        await self._finish(
+            interaction,
+            discord.Embed(
+                title="New party member!",
+                description=f"{interaction.user.mention} has joined {self.inviter.mention}'s party!",
+                color=discord.Color.from_rgb(84, 178, 209),
+            ),
+        )
+
+    @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
+    async def decline(self, interaction: Interaction, button: discord.ui.Button):
+        await self._finish(
+            interaction,
+            discord.Embed(
+                description=f"{interaction.user.mention} declined the invite.",
+                color=discord.Color.dark_gray(),
+            ),
+        )
+
+    async def on_timeout(self) -> None:
+        if self.message is not None:
+            try:
+                await self.message.edit(content=None, view=None)
+            except discord.HTTPException:
+                pass
 
 
 class PartySystemCog(commands.GroupCog, name="party"):
@@ -183,9 +249,10 @@ class PartySystemCog(commands.GroupCog, name="party"):
     async def interaction_check(self, interaction: Interaction):
         user = await User.get(interaction.user.id)
         interaction.extras.update(user=user)
-        party = await Party().load(user.get_field("party_id"))
+        party_id = user.get_field("party_id")
+        party = await Party().load(party_id) if party_id is not None else None
         interaction.extras.update(party=party)
-        return super().interaction_check(interaction)
+        return await super().interaction_check(interaction)
 
     # Lists the members of a player's party
     @app_commands.command(name="list", description="See who is in your party")
@@ -214,7 +281,7 @@ class PartySystemCog(commands.GroupCog, name="party"):
     @app_commands.check(not_in_party)
     async def create(self, interaction: Interaction):
         await Party.create(interaction.user.id)
-        embed = PartyEmbed(desc=f"Your party has been created!", interaction=interaction)
+        embed = PartyEmbed(desc="Your party has been created!", interaction=interaction)
         return await interaction.response.send_message(embed=embed)
 
     # Removes user and everyone else from party and deletes party ID.
@@ -260,6 +327,7 @@ class PartySystemCog(commands.GroupCog, name="party"):
 
         if not party.is_owner(interaction.user.id):
             raise NotPartyOwner(
+                "Only the party leader can invite members.",
                 title="You do not have permission",
                 footer="Ask your leader to invite the user to the party.",
             )
@@ -270,86 +338,28 @@ class PartySystemCog(commands.GroupCog, name="party"):
                 footer="For real though, good curiosity. Test out all options!",
             )
 
+        if member.bot:
+            raise CustomError("Bots can't join parties.")
+
         embed = discord.Embed(
-            title=f"Party invite!",
+            title="Party invite!",
             description=f"{interaction.user.mention} invited you to join the party!",
             color=discord.Color.from_rgb(84, 178, 209),
         )
-
-        class InviteView(discord.ui.View):
-            def __init__(self, member: discord.Member, timeout: float | None = 180):
-                super().__init__(timeout=timeout)
-                self.member = member
-
-            async def interaction_check(self, interaction):
-                if interaction.user != self.member:
-                    return False
-                return await super().interaction_check(interaction)
-
-            @discord.ui.button(label="Join", style=discord.ButtonStyle.green)
-            async def _join(self, interaction: discord.Interaction, button: discord.ui.Button):
-                # Fetch the invited user from the guild
-                member = discord.utils.get(guild.members, id=interaction.user.id)
-
-                failed_invite_embed = discord.Embed(
-                    description=f"The party you were attempting to join has been disbanded.",
-                    color=discord.Color.red(),
-                )
-                failed_invite_embed.set_author(name="Party invited failed", icon_url=RED_X_URL)
-                await invite_message.edit(embed=failed_invite_embed, view=None)
-                return
-
-                # Update invited user's party information in the database
-                invited_user.document.party_id = party_id
-                # Add user to list of party members
-                party.party_members.append(invited_user.uid)
-                await party.save()
-
-                # Embed to inform the party that a new member has joined
-                success_embed = discord.Embed(
-                    title=f"New party member!",
-                    description=f"{member.mention} has joined the party!",
-                    color=discord.Color.from_rgb(84, 178, 209),
-                )
-                await party_channel.send(
-                    content=f"Welcome to the party, {member.mention}!",
-                    embed=success_embed,
-                )
-                fulfilled_invite_embed = discord.Embed(
-                    title=f"Party joined!",
-                    description=f"You joined {interaction.user.mention}'s party! \
-                                Join the channel here: {party_channel.mention}",
-                    color=discord.Color.from_rgb(84, 178, 209),
-                )
-                await invite_message.edit(embed=fulfilled_invite_embed, view=None)
-                await asyncio.sleep(10)
-                await invite_channel.delete()
-                return
-
-            @discord.ui.button(label="Decline", style=discord.ButtonStyle.red)
-            async def _decline(self, interaction: discord.Interaction, button: discord.ui.Button):
-                self.stop()
-                return await invite_channel.delete()
-
-        await interaction.response.send_message(f"Party invite sent to {member.mention}")
-        invite_message = await invite_channel.send(
-            content=f"Hey, {member.mention}!", embed=invite_embed, view=InviteView(member=member)
+        view = PartyInviteView(party=party, invited=member, inviter=interaction.user)
+        await interaction.response.send_message(
+            content=f"Hey, {member.mention}!", embed=embed, view=view
         )
-        await asyncio.sleep(60)
-        try:
-            await invite_channel.delete()
-            await invite_role.delete()
-        except discord.errors.NotFound:
-            log.debug("Channel already deleted.")
-        return
+        view.message = await interaction.original_response()
 
     @app_commands.check(in_party)
     async def kick(self, interaction: Interaction, member_to_kick: discord.Member):
         """Remove a specified member from the party."""
         party: Party = interaction.extras.get("party")
 
-        if party.is_owner(interaction.user.id):
+        if not party.is_owner(interaction.user.id):
             raise NotPartyOwner(
+                "Only the party leader can kick members.",
                 title=f"You do not have permission to kick {member_to_kick.display_name}",
                 footer="If you really want 'em gone, ask your leader.",
             )
@@ -372,12 +382,12 @@ class PartySystemCog(commands.GroupCog, name="party"):
         party: Party = interaction.extras.get("party")
 
         if not party.is_owner(interaction.user.id):
-            raise NotPartyOwner()
+            raise NotPartyOwner("Only the party leader can promote someone.")
 
         if interaction.user == member:
             raise CustomError("You cannot promote yourself.")
 
-        if party.is_member(member.id):
+        if not party.is_member(member.id):
             raise UserNotInParty(f"{member.mention} is not in your party.")
 
         await party.change_owner(member.id)

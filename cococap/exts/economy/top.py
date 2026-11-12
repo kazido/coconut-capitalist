@@ -3,6 +3,7 @@ import discord
 from enum import Enum
 from discord import app_commands, Interaction
 from discord.ext import commands
+from cococap.constants import BOT_ID
 from cococap.models.models import UserDocument
 
 FIRST_PLACE_ANSI_PREFIX = "\u001b[0;37m"
@@ -45,6 +46,20 @@ LEADERBOARD_CATEGORIES = [
 ]
 
 
+def _column_path(category: TopCategories) -> tuple[str, ...]:
+    """The document field path for a category, e.g. ("farming", "xp"). Accepts "purse" or a tuple."""
+    column = category.column
+    return (column,) if isinstance(column, str) else tuple(column)
+
+
+def _read_path(user, path: tuple[str, ...]):
+    """Follow `path` through a raw dict (aggregate results) or a document (beanie results)."""
+    value = user
+    for part in path:
+        value = value[part] if isinstance(value, dict) else getattr(value, part)
+    return value
+
+
 def get_leaderboard_query_and_accessors(category: TopCategories):
     if category == TopCategories.BITS:
         pipeline = [
@@ -57,22 +72,20 @@ def get_leaderboard_query_and_accessors(category: TopCategories):
             lambda u: u["discord_id"],
             lambda u: u["name"],
         )
-    else:
-        for path in category.column:
-        return (
-            UserDocument.find().sort((category.column, -1)).to_list(),
-            lambda u: getattr(u, category.column),
-            lambda u: u.discord_id,
-            lambda u: u.name,
-        )
+    path = _column_path(category)
+    return (
+        UserDocument.find().sort((".".join(path), -1)).to_list(),
+        lambda u: _read_path(u, path),
+        lambda u: u.discord_id,
+        lambda u: u.name,
+    )
 
 
 async def build_leaderboard_embed(interaction: Interaction, category: TopCategories):
     query, get_value, get_id, get_name = get_leaderboard_query_and_accessors(category)
-    query = await query
-    # Remove bot user(s) if present (use a set of known bot IDs if needed)
-    bot_id = 1016054559581413457
-    query = [u for u in query if get_id(u) != bot_id]
+    all_users = await query  # includes the house account, which the BITS totals below need
+    bot_id = BOT_ID
+    query = [u for u in all_users if get_id(u) != bot_id]
     medals = ["🥇", "🥈", "🥉"]
     embed = discord.Embed(
         title=f"{category.emoji} {category.display_name} Leaderboard",
@@ -101,9 +114,6 @@ async def build_leaderboard_embed(interaction: Interaction, category: TopCategor
 
     # Add circulation and bot profit for BITS leaderboard
     if category == TopCategories.BITS:
-        # Get all users (including bot) for totals
-        all_users, _, _, _ = get_leaderboard_query_and_accessors(category)
-        all_users = await all_users
         total_purse = sum(u["purse"] for u in all_users)
         total_bank = sum(u["bank"] for u in all_users)
         circulation = total_purse + total_bank

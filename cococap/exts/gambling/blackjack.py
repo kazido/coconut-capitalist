@@ -5,6 +5,7 @@ import asyncio
 from enum import Enum
 from discord.ext import commands
 from discord import Interaction, app_commands
+from cococap.constants import BOT_ID
 from cococap.user import User
 from utils.utils import validate_bits
 from utils.custom_embeds import CustomEmbed
@@ -130,6 +131,8 @@ class BlackjackGame(discord.ui.View):
         self.state: GameStates = GameStates.READY
         self.player = Player(bet=interaction.extras.get("bet"))
         self.dealer = Player()
+        self.settled = False  # True once the bet has been paid out / forfeited (exactly once)
+        self.busy = False  # True while a button press is being processed
         # Add UI buttons
         self.add_item(HitButton())
         self.add_item(StandButton())
@@ -139,10 +142,25 @@ class BlackjackGame(discord.ui.View):
         # Only allow the original user to interact with the game
         return interaction.user == self.interaction.user
 
+    async def begin_action(self, interaction: discord.Interaction) -> bool:
+        """Claim the right to process a button press. False if the game is over or mid-action."""
+        if self.settled or self.busy:
+            await interaction.response.defer()
+            return False
+        self.busy = True
+        return True
+
+    async def settle_to_house(self):
+        """The player lost their bet: it goes to the house account. Runs at most once."""
+        if self.settled:
+            return
+        self.settled = True
+        house = await User.get(BOT_ID)
+        await house.add_bits(self.player.bet)
+
     async def on_timeout(self):
-        # On timeout, give the dealer's winnings to the house bot
-        bot = await User.get(1016054559581413457)
-        await bot.add_bits(self.dealer.winnings)
+        # An abandoned hand forfeits the bet to the house (it was already taken from the player).
+        await self.settle_to_house()
         self.clear_items()
 
     async def deal_card(self, player: Player):
@@ -181,8 +199,10 @@ class BlackjackGame(discord.ui.View):
         # Handle blackjack payout
         if self.state == GameStates.BLACKJACK:
             profit = self.player.bet * 2
-            await self.user.add_bits(amount=self.player.bet * 2)
-            await self.user.inc_stat("blackjacks")
+            if not self.settled:  # update() runs on every deal; only pay the natural once
+                self.settled = True
+                await self.user.add_bits(amount=profit)
+                await self.user.inc_stat("blackjacks")
             embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
             embed.add_field(name="Bits", value=f"{await self.user.get_bits():,} bits")
         return embed
@@ -198,19 +218,25 @@ class HitButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         view: BlackjackGame = self.view
-        await view.deal_card(view.player)
-        embed = await view.update(Actions.HIT)
-        await view.user.inc_stat("blackjack_hits")
-        # If player busts, end the game
-        if view.state == GameStates.LOSE:
-            profit = -view.player.bet
-            embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
-            embed.add_field(name="Bits", value=f"{await view.user.get_bits():,} bits")
-            view.dealer.winnings += view.player.bet
-            view.clear_items()
-        await interaction.response.edit_message(
-            embed=embed, view=None if view.state == GameStates.LOSE else view
-        )
+        if not await view.begin_action(interaction):
+            return
+        try:
+            await view.deal_card(view.player)
+            embed = await view.update(Actions.HIT)
+            await view.user.inc_stat("blackjack_hits")
+            # If player busts, end the game
+            if view.state == GameStates.LOSE:
+                profit = -view.player.bet
+                embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
+                embed.add_field(name="Bits", value=f"{await view.user.get_bits():,} bits")
+                view.dealer.winnings += view.player.bet
+                await view.settle_to_house()
+                view.clear_items()
+            await interaction.response.edit_message(
+                embed=embed, view=None if view.state == GameStates.LOSE else view
+            )
+        finally:
+            view.busy = False
 
 
 # Button for folding (giving up half the bet)
@@ -223,17 +249,23 @@ class FoldButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         view: BlackjackGame = self.view
+        if not await view.begin_action(interaction):
+            return
         embed = await view.update(Actions.FOLD)
         await view.user.inc_stat("blackjack_folds")
         # Dealer draws if needed
         while view.state == GameStates.DEALER_REVEAL:
             await view.deal_card(view.dealer)
             embed = await view.update(Actions.FOLD)
-        # Refund half the bet
-        await view.user.add_bits(amount=round(view.player.bet / 2))
-        embed.add_field(name="Profit", value=f"{round(-view.player.bet / 2):,} bits", inline=False)
+        # Refund half the bet; the other half goes to the house.
+        view.settled = True
+        refund = round(view.player.bet / 2)
+        await view.user.add_bits(amount=refund)
+        house = await User.get(BOT_ID)
+        await house.add_bits(view.player.bet - refund)
+        embed.add_field(name="Profit", value=f"{-(view.player.bet - refund):,} bits", inline=False)
         embed.add_field(name="Bits", value=f"{await view.user.get_bits():,} bits")
-        view.dealer.winnings += round(view.player.bet / 2)
+        view.dealer.winnings += view.player.bet - refund
         view.clear_items()
         await interaction.response.edit_message(embed=embed, view=None)
 
@@ -248,6 +280,8 @@ class StandButton(discord.ui.Button):
 
     async def callback(self, interaction: discord.Interaction):
         view: BlackjackGame = self.view
+        if not await view.begin_action(interaction):
+            return
         embed = await view.update(Actions.STAND)
         await view.user.inc_stat("blackjack_stands")
         # Dealer draws if needed
@@ -258,11 +292,14 @@ class StandButton(discord.ui.Button):
         if view.state == GameStates.LOSE:
             profit = -view.player.bet
             view.dealer.winnings += view.player.bet
+            await view.settle_to_house()
         elif view.state == GameStates.PUSH:
             profit = 0
+            view.settled = True
             await view.user.add_bits(amount=view.player.bet)
-        elif view.state == GameStates.WIN:
+        else:  # WIN
             profit = view.player.bet * 2
+            view.settled = True
             await view.user.add_bits(amount=profit)
         embed.add_field(name="Profit", value=f"{profit:,} bits", inline=False)
         embed.add_field(name="Bits", value=f"{await view.user.get_bits():,} bits")
@@ -292,24 +329,33 @@ class Blackjack(commands.Cog, name="Blackjack"):
 
         await user.inc_stat("blackjack_games")
 
-        return super().interaction_check(interaction)
+        return await super().interaction_check(interaction)
 
     @app_commands.command(name="blackjack")
     @app_commands.describe(bet="the amount of bits you want to bet")
     async def _blackjack(self, interaction: Interaction, bet: str):
         """Classic blackjack. Get as close to 21 as possible, but not over."""
         view = BlackjackGame(interaction=interaction)
-        await interaction.response.send_message(embed=await view.update(Actions.DEAL), view=view)
+        try:
+            await interaction.response.send_message(
+                embed=await view.update(Actions.DEAL), view=view
+            )
 
-        # Deal out starting hands for dealer and player
-        await view.deal_card(view.player)
-        await view.deal_card(view.player)
-        await view.deal_card(view.dealer)
+            # Deal out starting hands for dealer and player
+            await view.deal_card(view.player)
+            await view.deal_card(view.player)
+            await view.deal_card(view.dealer)
 
-        for item in view.children:
-            item.disabled = False
+            for item in view.children:
+                item.disabled = False
 
-        await interaction.edit_original_response(view=view)
+            await interaction.edit_original_response(view=view)
+        except Exception:
+            # The bet was taken in interaction_check; don't eat it if the game never started.
+            if not view.settled:
+                view.settled = True
+                await view.user.add_bits(view.player.bet)
+            raise
 
 
 async def setup(bot):

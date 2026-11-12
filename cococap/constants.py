@@ -4,25 +4,56 @@ import configparser
 from dotenv import load_dotenv
 from enum import Enum
 
-# Load our environment variables for bot token etc.
-load_dotenv()
-
-# Paths
+# Load our environment variables (see .env.example) from the project root, not the current dir.
 BOT_DIR = os.path.dirname(__file__)
 PROJECT_ROOT = os.path.abspath(os.path.join(BOT_DIR, os.pardir))
+load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 
-# Grab the bot token from the .env file using the load_dotenv function from the dotenv package
+# Secrets: the Discord bot token and the MongoDB connection string. Never commit these.
 TOKEN = os.getenv("BOT_TOKEN")
-
-# Same deal, grab the URI for the MongoDB database
 URI = os.getenv("URI")
 
-# Config stuff
+
+def require_secrets() -> None:
+    """Raise a readable error if a required secret is missing (call once at startup)."""
+    missing = [name for name, value in (("BOT_TOKEN", TOKEN), ("URI", URI)) if not value]
+    if missing:
+        raise RuntimeError(
+            f"Missing required environment variable(s): {', '.join(missing)}. "
+            "Copy .env.example to .env and fill them in."
+        )
+
+
+# Non-secret settings from config.ini (path is anchored to the project root)
 config = configparser.ConfigParser()
-config.read("config.ini")
-DEBUG_MODE = config["config"].getboolean("debug mode")
-FILE_LOGGING = config["config"].getboolean("file logging")
-DEV_MODE = config["config"].getboolean("dev mode")
+config.read(os.path.join(PROJECT_ROOT, "config.ini"))
+DEBUG_MODE = config.getboolean("config", "debug mode", fallback=False)
+FILE_LOGGING = config.getboolean("config", "file logging", fallback=False)
+DEV_MODE = config.getboolean("config", "dev mode", fallback=True)
+
+# The guild the bot waits for before loading its extensions. Override with the GUILD_ID env var.
+GUILD_ID = int(os.getenv("GUILD_ID", "856915776345866240"))
+
+# Extensions that still depend on the pre-migration SQLite/peewee item database (`Master`,
+# `cococap.item_models`, `get_items_from_db`) or on removed helpers. They are skipped at startup
+# instead of failing noisily; remove an entry once its module has been ported. See docs/AUDIT.md.
+DISABLED_EXTENSIONS = frozenset(
+    {
+        "cococap.exts.core.inventory",
+        "cococap.exts.economy.pets",
+        "cococap.exts.economy.shop",
+        "cococap.exts.minigames.wiki",
+        "cococap.exts.minigames.trivia",
+        "cococap.exts.skills.fishing",
+        "cococap.exts.skills.foraging",
+        "cococap.exts.skills.mining",
+        "cococap.exts.exploration.mining",
+        "cococap.exts.gambling.snail_racing",  # empty stub: setup() calls add_cog() with no cog
+    }
+)
+
+# Discord ID of the bot's owner/admin (receives reports, may use the debug commands).
+OWNER_ID = int(os.getenv("OWNER_ID", "326903703422500866"))
 
 BOT_ID = 956000805578768425 if DEV_MODE else 1016054559581413457
 BOT_PREFIX = "-" if DEV_MODE else "."

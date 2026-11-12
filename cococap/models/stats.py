@@ -2,6 +2,9 @@ from pydantic import BaseModel
 
 
 class Stats(BaseModel):
+    claimed_work: int = 0
+    claimed_daily: int = 0
+    claimed_weekly: int = 0
     drops_claimed: int = 0
     tokens_earned: int = 0
     luckbucks_earned: int = 0

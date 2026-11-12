@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 from .base import Skill
 
@@ -15,20 +15,24 @@ class Plot(BaseModel):
     unlocked: bool = False
 
 
+def _plot() -> Plot:
+    return Plot()
+
+
 class Farm(BaseModel):
-    plot_1 = Plot()
-    plot_2 = Plot()
-    plot_3 = Plot()
-    plot_4 = Plot()
-    plot_5 = Plot()
-    plot_6 = Plot()
-    plot_7 = Plot()
-    plot_8 = Plot()
-    plot_9 = Plot()
+    plot_1: Plot = Field(default_factory=_plot)
+    plot_2: Plot = Field(default_factory=_plot)
+    plot_3: Plot = Field(default_factory=_plot)
+    plot_4: Plot = Field(default_factory=_plot)
+    plot_5: Plot = Field(default_factory=_plot)
+    plot_6: Plot = Field(default_factory=_plot)
+    plot_7: Plot = Field(default_factory=_plot)
+    plot_8: Plot = Field(default_factory=_plot)
+    plot_9: Plot = Field(default_factory=_plot)
 
 
 class Farming(Skill):
-    farm: Farm = Farm()
-    stats: Stats = Stats()
+    farm: Farm = Field(default_factory=Farm)
+    stats: Stats = Field(default_factory=Stats)
     applied_fertilizer: Optional[str] = None
     rain_god_blessings: int = 0

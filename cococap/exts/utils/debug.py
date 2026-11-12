@@ -2,11 +2,12 @@ import os
 import discord
 from discord import app_commands
 from discord.ext import commands
+from cococap import constants
 from cococap.user import User
 from utils.custom_embeds import CustomEmbed, SuccessEmbed
 from enum import Enum
 
-ADMIN_ID = 326903703422500866
+ADMIN_ID = constants.OWNER_ID
 
 
 class ReportTypes(Enum):
@@ -41,7 +42,7 @@ class ReportModal(discord.ui.Modal, title="Report an issue"):
             self.color = discord.Color.orange()
 
     async def on_submit(self, interaction: discord.Interaction):
-        owner = interaction.guild.get_member(326903703422500866)
+        owner = await interaction.client.fetch_user(ADMIN_ID)
         embed = (
             discord.Embed(
                 title=f"{self.report_type.value.capitalize()} Report: {self.subject}",
@@ -148,8 +149,9 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
                 color=discord.Color.green() if sync else discord.Color.red(),
             )
         else:
-            guild = discord.Object(id=1310808494299156482)
-            self.bot.tree.clear_commands(guild=guild)
+            # Guild-scoped sync of the current guild: instant, unlike global syncs.
+            guild = ctx.guild
+            self.bot.tree.copy_global_to(guild=guild)
             sync = await self.bot.tree.sync(guild=guild)
             title = "Syncing locally..."
             embed = SuccessEmbed(title=title, desc=f"Synced commands: {sync}")
@@ -157,8 +159,8 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
-    async def clear(self, ctx: commands.Context, amount):
-        await ctx.channel.purge(limit=int(amount) + 1)
+    async def clear(self, ctx: commands.Context, amount: int):
+        await ctx.channel.purge(limit=min(max(amount, 1), 100) + 1)
 
     @app_commands.command(name="embed", description="Create an embed.")
     async def embed(self, interaction: discord.Interaction):

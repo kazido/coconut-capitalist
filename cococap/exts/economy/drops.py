@@ -3,23 +3,31 @@ import random
 import asyncio
 import logging
 
-from motor.motor_asyncio import AsyncIOMotorClient
 from discord.ext import commands, tasks
 from discord import TextChannel, app_commands
 from random import randint
 from datetime import datetime
 from pytz import timezone
 
+import cococap
 from cococap.user import User
-from cococap import instance, args
-from cococap.constants import GamblingChannels, URI
+from cococap.constants import GamblingChannels
 from bson import ObjectId
 
 log = logging.getLogger(__name__)
 
+# The single "megadrop" state document in the special_entities collection.
+MEGADROP_ID = ObjectId("65b76d73ee9f83c970604935")
 
-client = AsyncIOMotorClient(URI)  # Are we creating a second instance here? Shouldn't be probably...
-collection = client.discordbot.special_entities
+
+class _LazyCollection:
+    """The special_entities collection of the bot's shared Mongo client (resolved on first use)."""
+
+    def __getattr__(self, name):
+        return getattr(cococap.instance.mongo.discordbot.special_entities, name)
+
+
+collection = _LazyCollection()
 
 DROP_MAX = 20000
 DROP_MIN = 10000
@@ -48,8 +56,12 @@ class ClaimDropButtons(discord.ui.View):
     async def on_timeout(self) -> None:
         if self.claimed:
             return
+        self.claimed = True  # nobody can claim an expired drop
 
-        await self.drop.message.edit(embed=self.drop.expired_embed, view=None)
+        try:
+            await self.drop.message.edit(embed=self.drop.expired_embed, view=None)
+        except discord.HTTPException:
+            log.warning("Could not mark drop as expired (message deleted?)")
 
         if self.is_megadrop:
             update_data = {"$inc": {"times_missed": 1}}
@@ -63,23 +75,28 @@ class ClaimDropButtons(discord.ui.View):
                 }
             }
 
-        await collection.update_one({"_id": ObjectId("65b76d73ee9f83c970604935")}, update_data)
+        await collection.update_one({"_id": MEGADROP_ID}, update_data)
 
     @discord.ui.button(label="CLAIM", emoji="📦", style=discord.ButtonStyle.green)
     async def claim_button(self, claim_interaction: discord.Interaction, button: discord.ui.Button):
-        # Load the user
+        # First click wins: flip the flag before any await so a second click can't also pay out.
+        if self.claimed:
+            return await claim_interaction.response.send_message(
+                "Too slow, this drop was already claimed!", ephemeral=True
+            )
+        self.claimed = True
+
         user = await User.get(claim_interaction.user.id)
+        await user.inc_stat("drops_claimed")
+        drops_claimed = await user.get_stat("drops_claimed")
 
-        user._document.drops_claimed += 1
-        await user.save()
-
-        megadrop = await collection.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")})
+        megadrop = await collection.find_one({"_id": MEGADROP_ID})
 
         if self.is_megadrop:
             claimed_embed = discord.Embed(
                 title="🎉 THE MEGADROP HAS BEEN CLAIMED! 🎉",
                 description=f"{claim_interaction.user.name} {self.drop.description}\n"
-                f"You have claimed **{user._document.drops_claimed:,}** drops 📦",
+                f"You have claimed **{drops_claimed:,}** drops 📦",
                 color=self.drop.color,
             )
             claimed_embed.add_field(
@@ -92,12 +109,10 @@ class ClaimDropButtons(discord.ui.View):
                 value=f"This megadrop had gone unclaimed **{megadrop['times_missed']}** " f"times.",
             )
 
-            last_winner: discord.Member = claim_interaction.guild.get_member(
-                megadrop["last_winner"]
-            )
+            last_winner = claim_interaction.guild.get_member(megadrop.get("last_winner") or 0)
             claimed_embed.add_field(
                 name="Last Winner",
-                value=f"The last winner was {last_winner.mention}",
+                value=f"The last winner was {last_winner.mention if last_winner else 'nobody yet'}",
                 inline=False,
             )
             claimed_embed.set_footer(
@@ -119,13 +134,13 @@ class ClaimDropButtons(discord.ui.View):
                 }
             }
 
-            await collection.update_one({"_id": ObjectId("65b76d73ee9f83c970604935")}, update_data)
+            await collection.update_one({"_id": MEGADROP_ID}, update_data)
 
         else:
             claimed_embed = discord.Embed(
                 title="This drop has been claimed!",
                 description=f"{claim_interaction.user.name} {self.drop.description}\n"
-                f"You have claimed **{user._document.drops_claimed:,}** drops 📦",
+                f"You have claimed **{drops_claimed:,}** drops 📦",
                 color=self.drop.color,
             )
             claimed_embed.set_footer(text="Drops happen randomly and last for 30 minutes!")
@@ -135,11 +150,10 @@ class ClaimDropButtons(discord.ui.View):
                     "counter": 1,
                 }
             }
-            await collection.update_one({"_id": ObjectId("65b76d73ee9f83c970604935")}, update_data)
+            await collection.update_one({"_id": MEGADROP_ID}, update_data)
 
         await user.add_bits(amount=int(self.drop.amount))
         await claim_interaction.response.edit_message(embed=claimed_embed, view=None)
-        self.claimed = True
 
 
 class Drop:
@@ -184,13 +198,13 @@ class MegaDrop(Drop):
 
         self.expired_embed = discord.Embed(
             title="MEGADROP EXPIRED.",
-            description=f"The megadrop has gone back into hiding...",
+            description="The megadrop has gone back into hiding...",
             color=0x484A4A,
         )
         self.expired_embed.set_footer(text="Do /megadrop to see its current status.")
 
     async def release_drop(self):
-        megadrop = await collection.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")})
+        megadrop = await collection.find_one({"_id": MEGADROP_ID})
         timeout = 900 + (megadrop["times_missed"] * 900)
         self.message = await self.channel.send(
             embed=self.embed,
@@ -205,16 +219,31 @@ class DropsCog(commands.Cog, name="Drops"):
         self.bot = bot
 
     async def cog_load(self):
-        if args.drops:
+        # Create the megadrop state document on a fresh database (no-op if it already exists).
+        await collection.update_one(
+            {"_id": MEGADROP_ID},
+            {
+                "$setOnInsert": {
+                    "amount": 0,
+                    "total_drops": 0,
+                    "total_drops_missed": 0,
+                    "counter": 0,
+                    "times_missed": 0,
+                    "last_winner": None,
+                    "date_started": datetime.now(timezone("US/Eastern")).strftime("%m-%d-%Y"),
+                }
+            },
+            upsert=True,
+        )
+        if cococap.args is not None and cococap.args.drops:
             log.info("Drops arg passed, dropping drops :D")
             self.drop_task.start()
 
     async def cog_unload(self):
-        self.drop_task.cancel()
+        self.drop_task.cancel()  # no-op if it was never started
 
     @tasks.loop(minutes=randint(30, 60), reconnect=True)
     async def drop_task(self):
-        guild: discord.Guild = discord.Object(id=856915776345866240)
         channels = [
             GamblingChannels.DREAMSCAPE.value,
             GamblingChannels.HEAVEN.value,
@@ -225,19 +254,22 @@ class DropsCog(commands.Cog, name="Drops"):
         ]
 
         # Pick a random channel from one of the channels
-        channel = guild.get_channel(random.choice(channels))
+        channel = self.bot.get_channel(random.choice(channels))
+        if channel is None:
+            log.warning("Drop skipped: none of the drop channels are visible to the bot")
+            return
         drop_amount = randint(DROP_MIN, DROP_MAX)
         drop = Drop(channel, drop_amount)
 
-        megadrop = await collection.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")})
+        megadrop = await collection.find_one({"_id": MEGADROP_ID})
         # If the counter is above 150
         if megadrop["counter"] >= 150:
             # Roll a random number to release the mega drop
             roll = randint(1, 100)
             if roll in range(1, 2):
-                drop = MegaDrop(channel, megadrop.amount)
+                drop = MegaDrop(channel, megadrop["amount"])
                 await collection.update_one(
-                    {"_id": ObjectId("65b76d73ee9f83c970604935")}, {"$set": {"counter": 0}}
+                    {"_id": MEGADROP_ID}, {"$set": {"counter": 0}}
                 )
         await drop.release_drop()
 
@@ -252,7 +284,7 @@ class DropsCog(commands.Cog, name="Drops"):
     @app_commands.command(name="megadrop")
     async def megadrop_status(self, interaction: discord.Interaction):
         """Check the current status of the Mega Drop"""
-        megadrop = await collection.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")})
+        megadrop = await collection.find_one({"_id": MEGADROP_ID})
         status_embed = discord.Embed(title="📦 MEGADROP STATUS 📦", color=0x45FFB1)
         status_embed.add_field(name="Current Pot", value=f"{megadrop['amount']:,} bits")
         status_embed.add_field(
@@ -264,9 +296,10 @@ class DropsCog(commands.Cog, name="Drops"):
             value=f"The megadrop has gone unclaimed **{megadrop['times_missed']}** times.",
             inline=False,
         )
-        guild: discord.Guild = discord.Object(id=856915776345866240)
-        last_winner: discord.Member = guild.get_member(megadrop["last_winner"])
-        status_embed.add_field(name="Last Winner", value=last_winner.mention, inline=True)
+        last_winner = interaction.guild.get_member(megadrop.get("last_winner") or 0)
+        status_embed.add_field(
+            name="Last Winner", value=last_winner.mention if last_winner else "nobody yet", inline=True
+        )
 
         status_embed.set_footer(
             text=f"The megadrop has been growing since: {megadrop['date_started']}"

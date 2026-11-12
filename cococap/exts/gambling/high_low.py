@@ -4,6 +4,7 @@ from enum import Enum
 from random import randint
 from discord import app_commands, Interaction
 from discord.ext import commands
+from cococap.constants import BOT_ID
 from cococap.user import User
 from utils.custom_embeds import SuccessEmbed, FailureEmbed, CustomEmbed
 from utils.utils import validate_bits
@@ -48,6 +49,7 @@ class HighlowGame(discord.ui.View):
         self.user: User = interaction.extras.get("user")
         self.bet = interaction.extras.get("bet")
         self.multiplier = 1
+        self.finished = False  # set once the bet is paid out or lost; guards against double clicks
         self.roll = randint(1, 10)
         self.add_item(HighButton())
         self.add_item(LowButton())
@@ -109,22 +111,41 @@ class HighlowGame(discord.ui.View):
         self.embed = embed
         return self.embed
 
+    async def on_timeout(self):
+        # The bet was taken up front. If the player wanders off, pay out what they've earned so far
+        # (the bet itself when they never guessed) instead of silently destroying it.
+        if self.finished:
+            return
+        self.finished = True
+        await self.user.add_bits(self.bet * self.multiplier)
+        self.clear_items()
+        try:
+            await self.interaction.edit_original_response(view=None)
+        except discord.HTTPException:
+            pass
+
     async def process_guess(self, action: Actions, interaction: discord.Interaction):
+        if self.finished:
+            return await interaction.response.defer()
         guess = _get_action_func(action)
         if guess(self.roll):
             self.multiplier *= 2
             await self._update_embed(win=True)
             self.roll = randint(1, 10)
         else:
+            self.finished = True
             self.multiplier = 0
             await self._update_embed(win=False)
             # Give the lost money to the house
-            bot = await User.get(1016054559581413457)
+            bot = await User.get(BOT_ID)
             await bot.add_bits(self.bet)
             self.clear_items()  # Remove buttons from embed
         await interaction.response.edit_message(embed=self.embed, view=self)
 
     async def process_cashout(self, interaction: discord.Interaction):
+        if self.finished:
+            return await interaction.response.defer()
+        self.finished = True
         profit = self.bet * self.multiplier
         await self.user.add_bits(profit)
         if profit > await self.user.get_stat("biggest_hl_win"):
@@ -196,14 +217,19 @@ class Highlow(commands.Cog, name="Highlow"):
 
         await user.inc_stat("highlow_games")
 
-        return super().interaction_check(interaction)
+        return await super().interaction_check(interaction)
 
     @app_commands.command(name="highlow")
     @app_commands.describe(bet="amount of bits you want to bet")
     async def highlow(self, interaction: Interaction, bet: str):
         """Guess if the number will be high (6-10) or low (1-5)."""
-        view = HighlowGame(interaction=interaction)
-        await interaction.response.send_message(embed=view.get_embed(), view=view)
+        try:
+            view = HighlowGame(interaction=interaction)
+            await interaction.response.send_message(embed=view.get_embed(), view=view)
+        except Exception:
+            # The bet was taken in interaction_check; don't eat it if the game never started.
+            await interaction.extras["user"].add_bits(interaction.extras["bet"])
+            raise
 
 
 async def setup(bot):

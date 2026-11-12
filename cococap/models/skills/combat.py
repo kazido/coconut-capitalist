@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from .base import Skill
 
 
@@ -8,4 +8,4 @@ class Stats(BaseModel):
 
 
 class Combat(Skill):
-    stats: Stats = Stats()
+    stats: Stats = Field(default_factory=Stats)

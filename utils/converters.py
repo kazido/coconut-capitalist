@@ -1,6 +1,6 @@
 from discord.ext.commands import Context, Converter, BadArgument
 from pydis_core.utils import unqualify
-from cococap import exts, instance as bot_instance
+from cococap import exts
 
 
 class Extension(Converter):
@@ -17,14 +17,16 @@ class Extension(Converter):
             return argument
 
         argument = argument.lower()
+        # NB: use ctx.bot -- `from cococap import instance` would capture None at import time.
+        all_extensions = ctx.bot.all_extensions
 
-        if argument in bot_instance.all_extensions:
+        if argument in all_extensions:
             return argument
-        elif (qualified_arg := f"{exts.__name__}.{argument}") in bot_instance.all_extensions:
+        elif (qualified_arg := f"{exts.__name__}.{argument}") in all_extensions:
             return qualified_arg
 
         matches = []
-        for ext in bot_instance.all_extensions:
+        for ext in all_extensions:
             if argument == unqualify(ext):
                 matches.append(ext)
 

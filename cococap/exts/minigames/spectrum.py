@@ -30,7 +30,7 @@ class SequenceButton(discord.ui.Button):
             )
             embed = FailureEmbed(
                 title="GAME OVER!",
-                desc=f"You got the pattern wrong :sob:",
+                desc="You got the pattern wrong :sob:",
                 interaction=view.interaction,
                 activity="sequence",
             )

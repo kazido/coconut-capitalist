@@ -2,63 +2,54 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
+from cococap.errors import CustomError
 from cococap.user import User
 from utils.custom_embeds import CustomEmbed
-from configs.converters.data_converter import fetch
+from configs.converters.data_converter import fetch, fetch_optional
 
 
-async def process_rank_purchase(interaction, rank):
-    user: User = interaction.extras.get("user")
+async def process_rank_purchase(interaction: discord.Interaction, user: User, rank):
+    """Charge the tokens and promote the user, atomically. Raises if they can't afford it."""
+    if not await user.rank_up(int(rank.rank_id), int(rank.token_price)):
+        raise CustomError(
+            "You can't rank up right now.",
+            footer="You need enough tokens, and this must be your next rank.",
+        )
     embed = CustomEmbed(
         title="Purchased!",
-        description=f"You are now rank: **{rank.display_name}** " f"{rank.emoji}!",
+        description=f"You are now rank: **{rank.display_name}** {rank.emoji}!",
         color=discord.Color.green(),
         interaction=interaction,
         activity="ranking up",
     )
-    await user.set_field("rank", int(rank.rank_id))
-    await user.add_tokens(amount=-int(rank.token_price))
-    await interaction.edit_original_response(embed=embed, view=None)
-
-
-class Rankup(discord.ui.View):
-    def __init__(self, interaction: discord.Interaction):
-        super().__init__()
-        self.interaction = interaction
-        self.user = interaction.extras.get("user")
-        self.next_rank = interaction.extras.get("next_rank")
-        self.rankup_button = RankupButton(next_rank=self.next_rank)
-        self.add_item(self.rankup_button)
-
-    def update_button_state(self):
-        # Call this after the view is created and user data is available
-        if self.user.get_field("tokens") < int(self.next_rank.token_price):
-            self.rankup_button.disabled = True
-            self.rankup_button.style = discord.ButtonStyle.red
-        else:
-            self.rankup_button.disabled = False
-            self.rankup_button.style = discord.ButtonStyle.green
-
-    async def interaction_check(self, interaction):
-        return interaction.user == self.interaction.user
+    await interaction.response.edit_message(embed=embed, view=None)
 
 
 class RankupButton(discord.ui.Button):
-    def __init__(self, next_rank):
-        label = f"Rankup: {next_rank.token_price}"
-        emoji = "🪙"
-        style = discord.ButtonStyle.red
-        disabled = True
-        return super().__init__(label=label, style=style, emoji=emoji, disabled=disabled)
+    def __init__(self, next_rank, affordable: bool):
+        super().__init__(
+            label=f"Rankup: {next_rank.token_price}",
+            emoji="🪙",
+            style=discord.ButtonStyle.green if affordable else discord.ButtonStyle.red,
+            disabled=not affordable,
+        )
 
-    def update_button(self):
-        # Determine if the button can be pressed
-        if self.view.user.get_field("tokens") > int(self.view.interaction.next_rank.token_price):
-            self.style = discord.ButtonStyle.green
-            self.disabled = False
+    async def callback(self, interaction: discord.Interaction):
+        view: "Rankup" = self.view
+        await process_rank_purchase(interaction, view.user, view.next_rank)
 
-    async def callback(self, interaction):
-        await process_rank_purchase(self.view.interaction, self.view.next_rank)
+
+class Rankup(discord.ui.View):
+    def __init__(self, interaction: discord.Interaction, next_rank):
+        super().__init__()
+        self.interaction = interaction
+        self.user: User = interaction.extras.get("user")
+        self.next_rank = next_rank
+        affordable = self.user.get_field("tokens") >= int(next_rank.token_price)
+        self.add_item(RankupButton(next_rank, affordable))
+
+    async def interaction_check(self, interaction: discord.Interaction):
+        return interaction.user == self.interaction.user
 
 
 class RanksCog(commands.Cog):
@@ -68,10 +59,10 @@ class RanksCog(commands.Cog):
         user = await User.get(interaction.user.id)
         interaction.extras.update(user=user)
         rank = fetch("ranks." + str(user.get_field("rank")))
-        next_rank = fetch("ranks." + str(int(rank.rank_id) + 1))
         interaction.extras.update(rank=rank)
-        interaction.extras.update(next_rank=next_rank)
-        return super().interaction_check(interaction)
+        # None at max rank
+        interaction.extras.update(next_rank=fetch_optional("ranks." + str(int(rank.rank_id) + 1)))
+        return await super().interaction_check(interaction)
 
     @app_commands.command(name="rank")
     async def rank(self, interaction: discord.Interaction):
@@ -89,8 +80,8 @@ class RanksCog(commands.Cog):
         )
         embed.add_field(name="Wage", value=f"{int(rank.wage):,} bits")
 
-        # Finds the next rank in the list and displays the price of the next rank in the embed
-        if fetch("ranks." + str(int(rank.rank_id) + 1)):
+        view = None
+        if next_rank:
             embed.add_field(
                 name="Next Rank",
                 value=f"{next_rank.display_name} "
@@ -98,6 +89,7 @@ class RanksCog(commands.Cog):
                 f"Wage: {int(next_rank.wage):,} bits",
                 inline=False,
             )
+            view = Rankup(interaction, next_rank)
         else:
             embed.add_field(
                 name="Max rank achieved",
@@ -106,9 +98,7 @@ class RanksCog(commands.Cog):
             )
 
         embed.set_thumbnail(url=interaction.user.display_avatar)
-        view = Rankup(interaction)
-        view.update_button_state()
-        await interaction.response.send_message(embed=embed, view=view)
+        await interaction.response.send_message(embed=embed, view=view or discord.utils.MISSING)
 
 
 async def setup(bot):

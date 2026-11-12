@@ -1,7 +1,7 @@
 from datetime import datetime
 from dateutil import tz
 
-from cococap.exts.utils.error import InvalidAmount
+from cococap.errors import InvalidAmount
 
 """
 An example of how to run a loop at a certain time:
@@ -73,33 +73,47 @@ def timestamp_to_english(timestamp):
     return cooldown
 
 
-def _parse_number(number: int | str):
-    suffixes = {"k": 1_000, "m": 1_000_000}
-    number = str(number).lower()
-    last_char = number[-1]
+_SUFFIXES = {"k": 1_000, "m": 1_000_000}
+_ALL_KEYWORDS = {"max", "all", "doitall"}
 
-    if last_char in suffixes and isfloat(number[:-1]):
-        return int(float(number[:-1]) * suffixes[last_char])
-    if number.isdigit():
-        return int(number)
+
+def _parse_number(number: int | str) -> int | None:
+    """Parse '500', '1,000', '2k', '1.5m' into an int. Returns None if it isn't a number."""
+    text = str(number).strip().lower().replace(",", "")
+    if not text:
+        return None
+    if text[-1] in _SUFFIXES and isfloat(text[:-1]):
+        return int(float(text[:-1]) * _SUFFIXES[text[-1]])
+    if text.isdigit():
+        return int(text)
+    return None
+
+
+def parse_bits(amount: int | str | None, balance: int) -> int:
+    """Turn user input into a number of bits to spend, validated against `balance`.
+
+    Accepts a number, k/m suffixes, a percentage of the balance ('25%'), or 'max'/'all'.
+    Raises InvalidAmount if the result isn't between 1 and `balance`.
+    """
+    if amount is None or str(amount).strip().lower() in _ALL_KEYWORDS:
+        result = balance
+    elif str(amount).strip().endswith("%"):
+        percent = str(amount).strip()[:-1]
+        if not isfloat(percent) or not 0 < float(percent) <= 100:
+            raise InvalidAmount("Percentages must be between 1% and 100%.")
+        result = round(balance * float(percent) / 100)
     else:
-        return False
+        result = _parse_number(amount)
+        if result is None:
+            raise InvalidAmount("Please enter a valid number or 'max'.")
 
-
-async def validate_bits(user, amount: int | str = None, field: str = "purse"):
-    # Parse and validate amount
-    balance = await user.get_field_fresh(field)
-    if amount is None or str(amount).lower() in ["max", "all", "doitall"]:
-        return balance
-
-    if amount[-1] == "%" and amount[:-1].isdigit():
-        return round(balance * (int(amount[:-1]) / 100))
-
-    amount = _parse_number(amount)
-    if not isinstance(amount, int) or amount <= 0:
-        raise InvalidAmount("Please enter a valid number or 'max'.")
-    if amount > balance:
+    if result <= 0:
+        raise InvalidAmount("You need to enter at least 1 bit.")
+    if result > balance:
         raise InvalidAmount(f"Not enough bits! Balance: {balance:,} bits")
-    if not amount:
-        raise InvalidAmount("You cannot enter 0 bits...")
-    return amount
+    return result
+
+
+async def validate_bits(user, amount: int | str | None = None, field: str = "purse") -> int:
+    """Parse `amount` and check it against the user's current (fresh) `field` balance."""
+    return parse_bits(amount, await user.get_field_fresh(field))

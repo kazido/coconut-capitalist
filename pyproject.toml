@@ -1,0 +1,67 @@
+[project]
+name = "coconut-capitalist"
+version = "0.1.0"
+description = "Economy Discord bot (cococap)"
+readme = "README.md"
+requires-python = ">=3.11"
+# Only *direct* dependencies are listed. Transitive pins used to live in requirements.txt,
+# which also contained the unrelated `discord` shim package and a stale `soupsieve` pin.
+dependencies = [
+    "discord.py>=2.4,<2.7",
+    "pydis-core>=11.5,<12",
+    "beanie>=1.29,<2",
+    "motor>=3.6,<4",
+    "pydantic>=2.10,<3",
+    "python-dotenv>=1.0",
+    "python-dateutil>=2.9",
+    "pytz>=2024.2",
+    "pydealer>=1.4",
+    "randfacts>=0.22",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "mongomock-motor>=0.0.36",
+    "ruff>=0.8",
+]
+# Needed only by modules that are currently disabled (see constants.DISABLED_EXTENSIONS).
+legacy = [
+    "the-trivia-api-library",
+]
+
+[tool.setuptools]
+packages = []
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["venv", ".venv"]
+
+[tool.ruff.lint]
+# Correctness-focused set. Style rules can be added once the existing WIP modules are cleaned up.
+select = ["E9", "F", "B", "ASYNC", "PLE"]
+ignore = [
+    "F401",  # unused imports: noisy until the cog split is finished
+    "B008",  # discord.py idiom: default args evaluated at def time are deliberate in a few embeds
+    # Low-severity findings that only remain in unported/WIP modules; re-enable after the port.
+    "F841", "B007", "B018", "F811", "ASYNC230",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"]
+# Pre-migration modules that are skipped at startup (constants.DISABLED_EXTENSIONS) and still
+# reference removed helpers (F821). Remove each line as the module is ported.
+"cococap/exts/skills/combat.py" = ["F821"]
+"cococap/exts/skills/foraging.py" = ["F821"]
+"cococap/exts/economy/pets.py" = ["F821"]
+"cococap/exts/exploration/mining.py" = ["F821"]
+"utils/items/items.py" = ["F821"]
+"configs/converters/weapon_converter.py" = ["F821"]
+# Vendored pydis paginator: its `timeout` parameter mirrors discord.py's API.
+"utils/pagination.py" = ["ASYNC109"]

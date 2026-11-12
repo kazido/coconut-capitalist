@@ -15,6 +15,7 @@ from utils.base_cog import BaseCog
 from utils.utils import validate_bits
 
 from cococap.constants import TOO_RICH_TITLES
+from cococap.errors import CustomError
 
 MAX_BALANCE = 10_000
 
@@ -54,8 +55,11 @@ class WorkButton(discord.ui.Button):
 
     async def callback(self, interaction):
         user: User = self.view.user
-        # Put the command on cooldown!
-        await user.set_cooldown(Cooldowns.WORK)
+        # Atomically start the cooldown; a stale button or a second /check-in can't double-claim.
+        if not await user.claim_cooldown(Cooldowns.WORK):
+            await user.refresh()
+            self.update(user)
+            return await interaction.response.edit_message(view=self.view)
         await user.inc_stat("claimed_work")
         self.update(user)
 
@@ -82,13 +86,17 @@ class DailyButton(discord.ui.Button):
     async def callback(self, interaction):
         user: User = self.view.user
         embed = self.view.embed
-        await user.set_cooldown(Cooldowns.DAILY)
+        if not await user.claim_cooldown(Cooldowns.DAILY):
+            await user.refresh()
+            self.update(user)
+            return await interaction.response.edit_message(view=self.view)
         await user.inc_stat("claimed_daily")
         self.update(user)
 
         # Calculate and add bank interest rate
-        interest = 0.003 + 0.027 * (math.e ** (-(user.get_field("bank") / 20_000_000)))
-        bonus = round(user.get_field("bank") * interest)
+        bank = await user.get_field_fresh("bank")
+        interest = 0.003 + 0.027 * (math.e ** (-(bank / 20_000_000)))
+        bonus = round(bank * interest)
         await user.add_bank(amount=int(bonus))
 
         # Update the embed
@@ -96,11 +104,10 @@ class DailyButton(discord.ui.Button):
         embed.add_field(name="Bank Interest", value=f"🏦 +{bonus:,} bits")
 
         # Put the command on cooldown!
-        self.label = f"+1 tokens"
+        self.label = "+1 tokens"
         self.emoji = "🪙"
         await user.add_tokens(amount=1)
-        await interaction.response.edit_message(embed=embed, view=self.view)
-        return await super().callback(interaction)
+        return await interaction.response.edit_message(embed=embed, view=self.view)
 
 
 class WeeklyButton(discord.ui.Button):
@@ -117,15 +124,17 @@ class WeeklyButton(discord.ui.Button):
 
     async def callback(self, interaction):
         user: User = self.view.user
-        await user.set_cooldown(Cooldowns.WEEKLY)
+        if not await user.claim_cooldown(Cooldowns.WEEKLY):
+            await user.refresh()
+            self.update(user)
+            return await interaction.response.edit_message(view=self.view)
         await user.inc_stat("claimed_weekly")
         self.update(user)
 
-        self.label = f"+7 luckbucks"
+        self.label = "+7 luckbucks"
         self.emoji = "🍀"
         await user.add_luckbucks(amount=7)
-        await interaction.response.edit_message(view=self.view)
-        return await super().callback(interaction)
+        return await interaction.response.edit_message(view=self.view)
 
 
 class CheckInMenu(discord.ui.View):
@@ -250,9 +259,11 @@ async def process_payment(interaction: Interaction, recipient: discord.Member, a
         )
         return await interaction.response.send_message(embed=embed)
 
+    if recipient.bot or recipient.id == interaction.user.id:
+        raise CustomError("You can only pay other (human) players.")
+
     payee = await User.get(recipient.id)
-    await user.add_bits(amount=-amount)
-    await payee.add_bits(amount=amount)
+    await user.pay(payee, amount)  # atomic balance check + debit, then credit
 
     embed = CustomEmbed(colour=discord.Color.purple())
     embed.add_field(

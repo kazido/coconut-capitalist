@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from .base import Skill
 
 
@@ -9,6 +9,6 @@ class Stats(BaseModel):
 
 
 class Foraging(Skill):
-    stats: Stats = Stats()
+    stats: Stats = Field(default_factory=Stats)
     releaf_meter: int = 0  # When this reaches 50, the next tree drops 10m or a special item
     donations_made_today: int = 0  # Up to 3 donations per day

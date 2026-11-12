@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from .base import Skill
 
 
@@ -23,6 +23,6 @@ class QuestBook(BaseModel):
 
 
 class Fishing(Skill):
-    quest_book: QuestBook = QuestBook()
-    skiff: Skiff = Skiff()
-    stats: Stats = Stats()
+    quest_book: QuestBook = Field(default_factory=QuestBook)
+    skiff: Skiff = Field(default_factory=Skiff)
+    stats: Stats = Field(default_factory=Stats)

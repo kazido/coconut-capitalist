@@ -15,7 +15,7 @@ class TicTacToeCog(commands.Cog, name="Tic Tac Toe"):
     async def tic(self, interaction: discord.Interaction, user: discord.User):
         """Starts a tic-tac-toe game with yourself."""
         await interaction.response.send_message(
-            f"Tic Tac Toe:  ", view=TicTacToeCog.TicTacToe(interaction.user, user)
+            "Tic Tac Toe:  ", view=TicTacToeCog.TicTacToe(interaction.user, user)
         )
 
     # Defines a custom button that contains the logic of the game.
