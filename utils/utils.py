@@ -89,7 +89,7 @@ def _parse_number(number: int | str) -> int | None:
     return None
 
 
-def parse_bits(amount: int | str | None, balance: int) -> int:
+def parse_bits(amount: int | str | None, balance: int, unit: str = "bits") -> int:
     """Turn user input into a number of bits to spend, validated against `balance`.
 
     Accepts a number, k/m suffixes, a percentage of the balance ('25%'), or 'max'/'all'.
@@ -108,9 +108,9 @@ def parse_bits(amount: int | str | None, balance: int) -> int:
             raise InvalidAmount("Please enter a valid number or 'max'.")
 
     if result <= 0:
-        raise InvalidAmount("You need to enter at least 1 bit.")
+        raise InvalidAmount(f"You need to bet at least 1 {unit.rstrip('s')}.")
     if result > balance:
-        raise InvalidAmount(f"Not enough bits! Balance: {balance:,} bits")
+        raise InvalidAmount(f"Not enough {unit}! Balance: {balance:,} {unit}")
     return result
 
 

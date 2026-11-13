@@ -6,6 +6,7 @@ which code path touches them.
 
 from sqlalchemy import (
     JSON,
+    Boolean,
     DateTime,
     BigInteger,
     CheckConstraint,
@@ -37,7 +38,7 @@ class UserRow(Base):
     purse: Mapped[int] = mapped_column(BigInteger, default=1000)  # bits on hand
     bank: Mapped[int] = mapped_column(BigInteger, default=0)  # bits that earn interest
     tokens: Mapped[int] = mapped_column(BigInteger, default=0)  # only used to rank up
-    luckbucks: Mapped[int] = mapped_column(BigInteger, default=0)  # gambling currency
+    luckbucks: Mapped[int] = mapped_column(BigInteger, default=100)  # fun currency: minigames, casino, cosmetics
     # Unix timestamps of the last claim (see cococap.user.Cooldowns)
     work_cooldown: Mapped[float] = mapped_column(Float, default=0)
     daily_cooldown: Mapped[float] = mapped_column(Float, default=0)
@@ -139,3 +140,56 @@ class MegadropRow(Base):
     times_missed: Mapped[int] = mapped_column(Integer, default=0)
     last_winner: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
     date_started: Mapped[str] = mapped_column(String, default="")
+
+
+class CommunityTreeRow(Base):
+    """The community tree of one hour (`window` = unix hour). Created by whoever first looks at it."""
+
+    __tablename__ = "community_trees"
+    __table_args__ = (
+        CheckConstraint("hp >= 0 AND hp <= max_hp", name="hp_in_range"),
+        CheckConstraint("status IN ('growing', 'felled', 'expired')", name="status_known"),
+    )
+
+    window: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=False)
+    zone: Mapped[int] = mapped_column(Integer)
+    max_hp: Mapped[int] = mapped_column(Integer)
+    hp: Mapped[int] = mapped_column(Integer)
+    status: Mapped[str] = mapped_column(String, default="growing")
+    opens_at: Mapped[float] = mapped_column(Float)
+    closes_at: Mapped[float] = mapped_column(Float)
+    settled: Mapped[bool] = mapped_column(Boolean, default=False)  # rewards have been worked out
+
+
+class TreeChopRow(Base):
+    """How much hp of a community tree one player has chopped."""
+
+    __tablename__ = "tree_chops"
+    __table_args__ = (CheckConstraint("damage >= 0", name="damage_non_negative"),)
+
+    window: Mapped[int] = mapped_column(
+        Integer, ForeignKey("community_trees.window", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("users.discord_id", ondelete="CASCADE"), primary_key=True
+    )
+    damage: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class TreeRewardRow(Base):
+    """A player's share of a finished community tree, waiting to be claimed from their own panel."""
+
+    __tablename__ = "tree_rewards"
+
+    window: Mapped[int] = mapped_column(
+        Integer, ForeignKey("community_trees.window", ondelete="CASCADE"), primary_key=True
+    )
+    user_id: Mapped[int] = mapped_column(
+        BigInteger, ForeignKey("users.discord_id", ondelete="CASCADE"), primary_key=True
+    )
+    damage: Mapped[int] = mapped_column(Integer)
+    felled: Mapped[bool] = mapped_column(Boolean)  # False: the tree fell over unfinished (a consolation prize)
+    drops: Mapped[dict] = mapped_column(JSON, default=dict)
+    bits: Mapped[int] = mapped_column(BigInteger, default=0)
+    xp: Mapped[int] = mapped_column(Integer, default=0)
+    claimed: Mapped[bool] = mapped_column(Boolean, default=False)

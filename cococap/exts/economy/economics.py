@@ -6,7 +6,7 @@ import time
 
 from random import randint
 from discord import app_commands, Interaction
-from cococap.registry import get_registry
+from cococap.screens import open_screen
 
 from utils.utils import timestamp_to_digital
 from cococap.user import User, Cooldowns
@@ -24,163 +24,6 @@ PYRAMID_SCHEME_TITLES = [
     "Trying to break the system, are we?",
     "This is what we call pulling a *Botski*",
 ]
-
-
-def get_button_arguments(user: User, cooldown: Cooldowns):
-    last_used = user.get_cooldown(cooldown)
-    now = time.time()
-
-    ready = ((now - last_used) / 3600) >= cooldown.value
-
-    cooldown_timestamp = timestamp_to_digital((last_used + float(cooldown.value * 3600)) - now)
-
-    label = cooldown.name.capitalize() if ready else cooldown_timestamp
-    disabled = False if ready else True
-    style = discord.ButtonStyle.blurple if ready else discord.ButtonStyle.gray
-    emoji = "✅" if ready else "❌"
-    return {"label": label, "style": style, "disabled": disabled, "emoji": emoji}
-
-
-class WorkButton(discord.ui.Button):
-    def __init__(self, user: User):
-        super().__init__()
-        self.update(user)
-
-    def update(self, user: User):
-        args = get_button_arguments(user=user, cooldown=Cooldowns.WORK)
-        self.label = args.get("label")
-        self.style = args.get("style")
-        self.disabled = args.get("disabled")
-        self.emoji = args.get("emoji")
-
-    async def callback(self, interaction):
-        user: User = self.view.user
-        # Atomically start the cooldown; a stale button or a second /check-in can't double-claim.
-        if not await user.claim_cooldown(Cooldowns.WORK):
-            await user.refresh()
-            self.update(user)
-            return await interaction.response.edit_message(view=self.view)
-        await user.inc_stat("claimed_work")
-        self.update(user)
-
-        rank = get_registry().rank(user.rank)
-
-        self.label = f"+{int(rank.wage):,} bits"
-        self.emoji = "💸"
-        await user.add_bits(int(rank.wage))
-        return await interaction.response.edit_message(view=self.view)
-
-
-class DailyButton(discord.ui.Button):
-    def __init__(self, user: User):
-        super().__init__()
-        self.update(user)
-
-    def update(self, user: User):
-        args = get_button_arguments(user=user, cooldown=Cooldowns.DAILY)
-        self.label = args.get("label")
-        self.style = args.get("style")
-        self.disabled = args.get("disabled")
-        self.emoji = args.get("emoji")
-
-    async def callback(self, interaction):
-        user: User = self.view.user
-        embed = self.view.embed
-        if not await user.claim_cooldown(Cooldowns.DAILY):
-            await user.refresh()
-            self.update(user)
-            return await interaction.response.edit_message(view=self.view)
-        await user.inc_stat("claimed_daily")
-        self.update(user)
-
-        # Calculate and add bank interest rate
-        await user.refresh()
-        bank = user.bank
-        interest = 0.003 + 0.027 * (math.e ** (-(bank / 20_000_000)))
-        bonus = round(bank * interest)
-        await user.add_bank(amount=int(bonus))
-
-        # Update the embed
-        embed.add_field(name="Random Fact", value=f"{randfacts.get_fact()}")
-        embed.add_field(name="Bank Interest", value=f"🏦 +{bonus:,} bits")
-
-        # Put the command on cooldown!
-        self.label = "+1 tokens"
-        self.emoji = "🪙"
-        await user.add_tokens(amount=1)
-        return await interaction.response.edit_message(embed=embed, view=self.view)
-
-
-class WeeklyButton(discord.ui.Button):
-    def __init__(self, user: User):
-        super().__init__()
-        self.update(user)
-
-    def update(self, user: User):
-        args = get_button_arguments(user=user, cooldown=Cooldowns.WEEKLY)
-        self.label = args.get("label")
-        self.style = args.get("style")
-        self.disabled = args.get("disabled")
-        self.emoji = args.get("emoji")
-
-    async def callback(self, interaction):
-        user: User = self.view.user
-        if not await user.claim_cooldown(Cooldowns.WEEKLY):
-            await user.refresh()
-            self.update(user)
-            return await interaction.response.edit_message(view=self.view)
-        await user.inc_stat("claimed_weekly")
-        self.update(user)
-
-        self.label = "+7 luckbucks"
-        self.emoji = "🍀"
-        await user.add_luckbucks(amount=7)
-        return await interaction.response.edit_message(view=self.view)
-
-
-class CheckInMenu(discord.ui.View):
-    def __init__(self, interaction: Interaction, *, timeout: float | None = 180):
-        super().__init__(timeout=timeout)
-        self.interaction = interaction
-        self.user: User = interaction.extras.get("user")
-        self.embed: CustomEmbed = CustomEmbed(
-            title="Check-ins",
-            desc="Come back often to claim your rewards.",
-            color=discord.Color.dark_blue(),
-            interaction=interaction,
-            activity="checking in",
-        )
-
-        self.add_item(WorkButton(user=self.user))
-        self.add_item(DailyButton(user=self.user))
-        self.add_item(WeeklyButton(user=self.user))
-
-    async def interaction_check(self, interaction):
-        """Checks to see if a command is currently on cooldown. Returns boolean result and cooldown, if any"""
-        return interaction.user == self.interaction.user
-
-
-async def display_profile(interaction: Interaction):
-    user: User = interaction.extras.get("user")
-    rank = get_registry().rank(user.rank)
-    await user.set_name(interaction.user.display_name)
-
-    embed = CustomEmbed(
-        title=f"Rank: `{rank.display_name}`",
-        color=discord.Color.blue(),
-        interaction=interaction,
-        activity="profile",
-    )
-
-    embed.add_field(
-        name="Balances",
-        value=f":money_with_wings: **BITS**: {await user.get_bits():,}\n"
-        f":bank: **BANK**: {user.bank:,}\n"
-        f":four_leaf_clover: **LUCKBUCKS**: {user.luckbucks:,}\n"
-        f":coin: **TOKENS**: {user.tokens:,}",
-    )
-    embed.set_thumbnail(url=interaction.user.display_avatar)
-    await interaction.response.send_message(embed=embed)
 
 
 async def process_deposit(interaction: Interaction, amount: int | str = None):
@@ -276,10 +119,10 @@ async def process_payment(interaction: Interaction, recipient: discord.Member, a
 class EconomyCog(BaseCog, name="Economy"):
     """Your primary stop for handling your bits!"""
 
-    @app_commands.command(name="profile", description="Check your profile, pets, etc.")
+    @app_commands.command(name="profile", description="Check your profile and balances.")
     async def bits(self, interaction: Interaction):
         """Display your profile with all your balances."""
-        await display_profile(interaction=interaction)
+        await open_screen(interaction, "profile")
 
     @app_commands.command(name="beg", description="Beg for some money, poor freak.")
     async def beg(self, interaction: Interaction):
@@ -289,8 +132,7 @@ class EconomyCog(BaseCog, name="Economy"):
     @app_commands.command(name="check-in", description="Get your daily rewards!")
     async def check_in(self, interaction: Interaction):
         """Claim your work, daily, and weekly!"""
-        menu = CheckInMenu(interaction=interaction)
-        return await interaction.response.send_message(embed=menu.embed, view=menu)
+        await open_screen(interaction, "checkin")
 
     @app_commands.command(name="deposit", description="Deposit bits into your bank.")
     @app_commands.describe(amount="amount of bits to deposit")

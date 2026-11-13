@@ -1,10 +1,10 @@
 # Enchants are stored on a player's tool as {enchant_id: level}. An enchant can be crafted, bought or found;
 # this file only says what it DOES. effects: stat_add (+amount*level), stat_mult (x(1+amount*level)), flag.
-# Known stats: power. Known flags: soloist (foraging: chop zone 7+ trees without a partner).
+# Known stats: power. Known flags: soloist (foraging: no half-power penalty on heavy zone 7+ trees when chopping alone).
 
 [soloist]
 name = "Soloist"
-description = "Lets you chop trees that normally need two lumberjacks, all by yourself."
+description = "Heavy trees (zone 7 and up) are no harder for you to chop alone: no half-power penalty."
 applies_to = ["axe"]
 max_level = 1
 

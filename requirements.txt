@@ -1,6 +1,6 @@
 # Direct runtime dependencies only. The source of truth is pyproject.toml:
 #   uv pip install -e ".[dev]"
-discord.py>=2.4,<2.7
+discord.py>=2.7,<2.8
 pydis-core>=11.5,<12
 sqlalchemy[asyncio]>=2.0,<3
 aiosqlite>=0.20
@@ -9,5 +9,4 @@ pydantic>=2.10,<3
 python-dotenv>=1.0
 python-dateutil>=2.9
 pytz>=2024.2
-pydealer>=1.4
 randfacts>=0.22

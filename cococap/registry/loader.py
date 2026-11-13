@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import Enchant, Enemy, Item, MiningRules, Pet, Rank, Skill
+from .models import EconomyRules, Enchant, Enemy, FarmingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -57,6 +57,9 @@ class Registry:
         ranks: list[Rank],
         enchants: list[Enchant] | None = None,
         mining: MiningRules | None = None,
+        economy: EconomyRules | None = None,
+        farming: FarmingRules | None = None,
+        foraging: ForagingRules | None = None,
     ):
         self.items: dict[str, Item] = {i.id: i for i in items}
         self.pets: dict[str, Pet] = {p.id: p for p in pets}
@@ -64,6 +67,9 @@ class Registry:
         self.ranks: dict[int, Rank] = {r.rank_id: r for r in ranks}
         self.enchants: dict[str, Enchant] = {e.id: e for e in enchants or []}
         self.mining = mining
+        self.economy = economy
+        self.farming = farming
+        self.foraging = foraging
         self._validate()
 
     # --- lookups -------------------------------------------------------------------------
@@ -113,11 +119,16 @@ class Registry:
                     problems.append(f"{item.id}: seed.grows_into '{item.seed.grows_into}' is not a crop")
         if self.mining is not None:
             problems += self._validate_mining(self.mining)
+        if self.farming is not None and self.farming.deed_item not in self.items:
+            problems.append(f"farming.toml: unknown deed item '{self.farming.deed_item}'")
         expected = list(range(len(self.ranks)))
         if sorted(self.ranks) != expected:
             problems.append(f"ranks must be numbered 0..{len(self.ranks) - 1} without gaps")
         if problems:
             raise RegistryError("; ".join(problems))
+
+
+BOMB_ITEM = "scarab_bomb"  # the consumable that clears a row (see services.mining.use_bomb)
 
 
 def _validate_mining_items(reg: "Registry", rules: MiningRules) -> list[str]:
@@ -144,7 +155,8 @@ def _validate_mining_items(reg: "Registry", rules: MiningRules) -> list[str]:
                 )
             previous_rate = item.drop.rate
     for item_id in (*rules.wyrmhole.pool, rules.wyrmhole.implosion_item, *rules.reactor.core_gems,
-                    *rules.magnet.values, rules.scarab.reward_item):
+                    *rules.magnet.values, rules.scarab.reward_item, BOMB_ITEM,
+                    *rules.descent.hardness, *rules.descent.vault_ore):
         need(item_id, "item reference")
     return problems
 
@@ -156,7 +168,10 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     ranks = _build(Rank, "ranks", ((k, {"rank_id": int(k), **v}) for k, v in _read(config_dir, "ranks").items()))
     enchants = _build(Enchant, "enchants", ((k, {"id": k, **v}) for k, v in _read(config_dir, "enchants").items()))
     mining = _build(MiningRules, "mining", [("mining", _read(config_dir, "mining"))])[0]
-    return Registry(items, pets, enemies, ranks, enchants, mining)
+    economy = _build(EconomyRules, "economy", [("economy", _read(config_dir, "economy"))])[0]
+    farming = _build(FarmingRules, "farming", [("farming", _read(config_dir, "farming"))])[0]
+    foraging = _build(ForagingRules, "foraging", [("foraging", _read(config_dir, "foraging"))])[0]
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging)
 
 
 @lru_cache(maxsize=1)

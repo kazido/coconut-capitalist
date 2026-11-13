@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
 from cococap.user import InsufficientFunds, User
@@ -9,7 +10,7 @@ from cococap.user import InsufficientFunds, User
 MAX_PER_PURCHASE = 1000
 
 
-class ShopError(Exception):
+class ShopError(GameRuleError):
     """A rule was broken; the message is safe to show the player."""
 
 

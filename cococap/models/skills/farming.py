@@ -13,6 +13,7 @@ class Plot(BaseModel):
     can_harvest: bool = False
     imbued: bool = False
     unlocked: bool = False
+    since: int = 0  # the last rain (hour number) already counted for this plot
 
 
 def _plot() -> Plot:

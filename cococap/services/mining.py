@@ -11,21 +11,28 @@ Two kinds of code live here:
 All randomness comes from an injected ``random.Random``.
 """
 
+import logging
 import random
 import time
 from collections import Counter
 from dataclasses import dataclass, field
 
+from cococap.errors import GameRuleError
 from cococap.models.skills.mining import Mining
 from cococap.registry import Registry, get_registry
-from cococap.registry.models import MiningRules
+from cococap.registry.loader import BOMB_ITEM
+from cococap.registry.models import MiningRules, RiskLabel
+from cococap.services.equipment import equipped_stats
 from cococap.services.loot import roll_table
+from cococap.services.party import xp_multiplier
 from cococap.user import User
+
+log = logging.getLogger(__name__)
 
 Cell = tuple[str, int] | None  # (item_id, quantity), or None for an empty node
 
 
-class MiningError(Exception):
+class MiningError(GameRuleError):
     """A rule was broken; the message is safe to show the player."""
 
 
@@ -62,105 +69,278 @@ def pending_lodes(mining: Mining, rules: MiningRules, now: float) -> int:
     return min(intervals, cap) * mining.reactor.level
 
 
-# ---- the mine ---------------------------------------------------------------------------------
+# ---- the descent ------------------------------------------------------------------------------
 @dataclass
-class RowResult:
-    row: int
+class DigResult:
     found: Counter[str]
-    wyrmhole: bool  # a cursor hit a wyrmhole: the mine ends and a wyrmhole mine begins
-    finished: bool
+    collapsed: bool = False
+    wyrmhole: bool = False
+    bombed: bool = False
+    lost: Counter[str] = field(default_factory=Counter)  # what a collapse took from the haul
+    vented: int = 0  # cooling vents dug (each bled pressure)
+    caches: int = 0  # supply caches dug (each gave braces)
+    vault: Counter[str] = field(default_factory=Counter)  # what the vault gave, if this dig reached the floor
 
 
 @dataclass
-class MineSession:
-    """One trip into the mine: a rows×columns grid of pre-rolled nodes, mined a row at a time."""
+class DugRow:
+    depth: int
+    cells: list[Cell]  # one per column
+    dug: tuple[int, ...]  # which columns were dug
+    kinds: list[str] = field(default_factory=list)  # the row's signs as it looked from above
 
-    nodes: list[list[Cell]]
-    wyrmholes: set[tuple[int, int]]
-    cursors: list[int]  # the columns that will be dug (their number grows with the reactor)
-    magnet_columns: frozenset[int] = frozenset()  # columns the magnet says are best (UI hint)
-    row: int = 0
-    revealed: dict[tuple[int, int], Cell] = field(default_factory=dict)
-    loot: Counter = field(default_factory=Counter)
-    lodes: int = 0
-    entered_wyrmhole: bool = False
 
+# What a cell looks like from above. "ore" is a plain cell: it shows its ore (or that it is empty).
+SIGNS = ("ore", "rich", "vent", "cache", "hole")
+
+
+class MineRun:
+    """One trip down the mine, as a pure state machine.
+
+    The shaft has ``descent.floor`` rows. Each ``dig`` mines the cells under the cursors and descends one
+    row. Cells are hidden: only **rich** lodes (a mystery that rolls the next tier's table) and **wyrmholes** show
+    from above. Underneath, a cell may be ore, nothing, a **vent** (no loot, cools the tunnel) or a **cache** (+braces).
+    Richer ore is harder, so digging it adds more **pressure**; pressure sets the collapse chance, which
+    is always shown. ``brace`` lowers pressure, ``bomb`` clears a whole row, ``leave`` banks and ends.
+    Digging the last row opens the vault.
+
+    Nothing here touches the database: ``settle_run`` banks the result.
+    """
+
+    def __init__(
+        self,
+        rules: MiningRules,
+        registry: Registry,
+        rng: random.Random,
+        *,
+        cursors: list[int],
+        growth_factor: float = 1.0,
+        yield_factor: float = 1.0,
+        braces: int = 1,
+        bombs: int = 0,
+        magnet: bool = False,
+        wyrmhole_odds_value: int | None = None,
+    ):
+        self.rules, self.registry, self.rng = rules, registry, rng
+        self.cursors = list(cursors)
+        self.growth_factor, self.yield_factor = growth_factor, yield_factor
+        self.braces, self.bombs, self.magnet = braces, bombs, magnet
+        self.bombs_used = 0
+        self.xp_awarded = 0
+        self.last_risk = self.last_pressure = 0.0
+        self.wyrmhole_odds = wyrmhole_odds_value or rules.wyrmhole.odds
+        self.depth = 0  # rows dug so far == the index of the row you're about to dig
+        self.danger = 0.0  # pressure, 0-100
+        self.haul: Counter[str] = Counter()
+        self.lodes = 0  # cells dug
+        self.outcome: str | None = None  # "left" | "collapse" | "wyrmhole" | "floor"
+        self.settled = False
+        self.history: list[DugRow] = []
+        self._rows: dict[int, list[Cell]] = {}
+        self._holes: dict[int, set[int]] = {}
+        self._kinds: dict[int, list[str]] = {}
+
+    @property
+    def floor(self) -> int:
+        return self.rules.descent.floor
+
+    # ---- the rows ahead -------------------------------------------------------------------------
+    def tier(self, depth: int) -> int:
+        return min(depth // self.rules.descent.rows_per_tier, len(self.rules.depth_tables) - 1)
+
+    def _quantity_factor(self, depth: int) -> float:
+        return self.yield_factor * (1 + self.rules.descent.depth_bonus_per_row * depth)
+
+    def row(self, depth: int) -> list[Cell]:
+        """The cells of row `depth` (rolled the first time they're needed, then fixed)."""
+        if depth not in self._rows:
+            table = self.rules.depth_tables[self.tier(depth)]
+            cells: list[Cell] = []
+            for _ in range(self.rules.columns):
+                rolled = roll_table(table, self.registry, self.rng)
+                cells.append((rolled[0], max(1, round(rolled[1] * self._quantity_factor(depth)))) if rolled else None)
+            self._rows[depth] = cells
+            self._holes[depth] = {
+                col
+                for col in range(self.rules.columns)
+                if depth >= self.rules.wyrmhole.min_depth and self.rng.randint(1, self.wyrmhole_odds) == 1
+            }
+            self._kinds[depth] = self._roll_kinds(depth)
+        return self._rows[depth]
+
+    def _rich_cell(self, depth: int) -> Cell:
+        """A rich lode: the next tier's table, and more of it. Never empty."""
+        d = self.rules.descent
+        table = self.rules.depth_tables[min(self.tier(depth) + 1, len(self.rules.depth_tables) - 1)]
+        for _ in range(12):
+            rolled = roll_table(table, self.registry, self.rng)
+            if rolled:
+                break
+        else:  # (astronomically rare) fall back to the commonest item of the tier
+            item = self.registry.item(table[-1])
+            rolled = (item.id, item.drop.min if item.drop else 1)
+        return rolled[0], max(1, round(rolled[1] * d.rich_multiplier * self._quantity_factor(depth)))
+
+    def _roll_kinds(self, depth: int) -> list[str]:
+        d = self.rules.descent
+        cells, kinds = self._rows[depth], []
+        for col in range(self.rules.columns):
+            kind = "ore"
+            if col not in self._holes[depth]:
+                if depth >= 1 and self.rng.random() < d.vent_chance:
+                    kind, cells[col] = "vent", None
+                elif depth >= d.cache_min_depth and self.rng.random() < d.cache_chance:
+                    kind, cells[col] = "cache", None
+                elif self.rng.random() < d.rich_chance:
+                    kind, cells[col] = "rich", self._rich_cell(depth)
+            kinds.append(kind)
+        return kinds
+
+    def signs(self, depth: int) -> list[str]:
+        """What each cell of row `depth` is from above: ore, rich, vent, cache or hole."""
+        self.row(depth)
+        return ["hole" if col in self._holes[depth] else self._kinds[depth][col] for col in range(self.rules.columns)]
+
+    def wyrmholes_ahead(self) -> set[int]:
+        self.row(self.depth)
+        return self._holes[self.depth]
+
+    def best_columns(self) -> frozenset[int]:
+        """With a charged magnet: the column(s) of the next row worth the most."""
+        if not self.magnet:
+            return frozenset()
+        cells, holes = self.row(self.depth), self._holes[self.depth]
+        worth = [0 if (col in holes or not cell) else self.registry.item(cell[0]).sell_price * cell[1] for col, cell in enumerate(cells)]
+        top = max(worth)
+        return frozenset(i for i, w in enumerate(worth) if top > 0 and w == top)
+
+    # ---- pressure and risk ----------------------------------------------------------------------
+    def hardness(self, cell: Cell) -> float:
+        d = self.rules.descent
+        return d.empty_hardness if cell is None else d.hardness.get(cell[0], d.default_hardness)
+
+    @property
+    def risk(self) -> float:
+        """The chance that the next dig collapses the mine: a smooth curve of the pressure."""
+        d = self.rules.descent
+        excess = max(0.0, self.danger - d.safe_pressure) / (100 - d.safe_pressure)
+        return d.max_risk * excess**d.risk_exponent
+
+    @property
+    def warning(self) -> RiskLabel:
+        current = self.rules.descent.warnings[0]
+        for label in self.rules.descent.warnings:
+            if self.risk >= label.from_risk:
+                current = label
+        return current
+
+    # ---- actions ----------------------------------------------------------------------------------
     @property
     def finished(self) -> bool:
-        return self.entered_wyrmhole or self.row >= len(self.nodes)
+        return self.outcome is not None
 
-    @property
-    def columns(self) -> int:
-        return len(self.nodes[0])
+    def _require_live(self) -> None:
+        if self.finished:
+            raise MiningError("This mine is finished.")
 
     def move(self, step: int) -> None:
         """Slide every cursor left (-1) or right (+1), wrapping around the edges."""
-        self.cursors = [(c + step) % self.columns for c in self.cursors]
+        self.cursors = [(c + step) % self.rules.columns for c in self.cursors]
 
-    def mine_row(self) -> RowResult:
-        """Dig the current row at every cursor and move down one row."""
-        if self.finished:
-            raise MiningError("This mine is finished.")
+    def _mine(self, columns: list[int]) -> tuple[Counter[str], int, int, float]:
+        """Dig `columns` of the current row. Returns (found, vents, caches, hardness)."""
+        d = self.rules.descent
+        cells, kinds = self.row(self.depth), self._kinds[self.depth]
         found: Counter[str] = Counter()
-        row = self.row
-        if any((row, col) in self.wyrmholes for col in self.cursors):
-            # Hitting a wyrmhole ends this mine at once; nothing else in the row is collected.
-            self.entered_wyrmhole = True
-            return RowResult(row, found, wyrmhole=True, finished=True)
-        for col in sorted(set(self.cursors)):
-            cell = self.nodes[row][col]
-            self.revealed[(row, col)] = cell
-            self.lodes += 1
-            if cell:
-                found[cell[0]] += cell[1]
-        self.loot.update(found)
-        self.row += 1
-        return RowResult(row, found, wyrmhole=False, finished=self.finished)
+        vents = caches = 0
+        hardness = 0.0
+        for col in columns:
+            if kinds[col] == "vent":
+                vents += 1
+            elif kinds[col] == "cache":
+                caches += 1
+                self.braces += d.cache_braces
+            if cells[col]:
+                found[cells[col][0]] += cells[col][1]
+            hardness += self.hardness(cells[col])
+        self.haul.update(found)
+        self.lodes += len(columns)
+        self.history.append(DugRow(self.depth, list(cells), tuple(columns), self.signs(self.depth)))
+        return found, vents, caches, hardness
 
-    def columns_dug_total(self) -> int:
-        return len(set(self.cursors))
+    def _descend(self, pressure: float, vents: int) -> Counter[str]:
+        """Apply the pressure change, move down a row and, at the bottom, open the vault."""
+        d = self.rules.descent
+        gain = pressure * self.growth_factor
+        self.danger = min(100.0, max(0.0, self.danger + gain - vents * d.vent_relief))
+        self.depth += 1
+        if self.depth < d.floor:
+            return Counter()
+        self.outcome = "floor"
+        vault: Counter[str] = Counter(d.vault_ore)
+        if self.rng.random() < d.vault_gem_chance:
+            vault[self.rng.choice(self.rules.reactor.core_gems)] += 1
+        self.haul.update(vault)
+        return vault
+
+    def dig(self) -> DigResult:
+        self._require_live()
+        d = self.rules.descent
+        self.row(self.depth)
+        if any(col in self._holes[self.depth] for col in self.cursors):
+            self.outcome = "wyrmhole"  # you broke into a wyrmhole: the mine ends and the haul is yours
+            return DigResult(Counter(), wyrmhole=True)
+        self.last_risk, self.last_pressure = self.risk, self.danger  # kept for the log when something goes wrong
+        if self.rng.random() < self.risk:
+            lost: Counter[str] = Counter()
+            for item_id, quantity in list(self.haul.items()):
+                keep = int(quantity * (1 - d.collapse_loss))
+                lost[item_id] = quantity - keep
+                if keep:
+                    self.haul[item_id] = keep
+                else:
+                    del self.haul[item_id]
+            self.outcome = "collapse"
+            return DigResult(Counter(), collapsed=True, lost=+lost)
+        found, vents, caches, hardness = self._mine(sorted(set(self.cursors)))
+        vault = self._descend(d.creak + hardness, vents)
+        return DigResult(found, vented=vents, caches=caches, vault=vault)
+
+    def bomb(self) -> DigResult:
+        """Blow the whole row (except wyrmholes): every cell, one flat pressure hit, no collapse check."""
+        self._require_live()
+        d = self.rules.descent
+        if self.bombs <= 0:
+            raise MiningError("You have no bombs left.")
+        self.row(self.depth)
+        self.bombs -= 1
+        self.bombs_used += 1
+        columns = [c for c in range(self.rules.columns) if c not in self._holes[self.depth]]
+        found, vents, caches, _ = self._mine(columns)
+        vault = self._descend(d.creak + d.bomb_pressure, vents)
+        return DigResult(found, bombed=True, vented=vents, caches=caches, vault=vault)
+
+    def brace(self) -> None:
+        """Shore up the tunnel: lower the pressure (uses a brace, skips a dig)."""
+        self._require_live()
+        if self.braces <= 0:
+            raise MiningError("You're out of braces.")
+        self.braces -= 1
+        self.danger = max(0.0, self.danger - self.rules.descent.brace_amount)
+
+    def leave(self) -> None:
+        """Climb out with everything you're carrying."""
+        self._require_live()
+        self.outcome = "left"
 
 
-def best_columns(nodes: list[list[Cell]], registry: Registry) -> frozenset[int]:
-    """The column(s) whose pre-rolled loot is worth the most (what a full magnet reveals)."""
-    columns = len(nodes[0])
-    worth = [0] * columns
-    for row in nodes:
-        for col, cell in enumerate(row):
-            if cell:
-                worth[col] += registry.item(cell[0]).sell_price * cell[1]
-    top = max(worth)
-    return frozenset(c for c, w in enumerate(worth) if w == top and top > 0)
-
-
-def generate_mine(
-    rules: MiningRules,
-    registry: Registry,
-    rng: random.Random,
-    *,
-    reactor_level: int = 1,
-    placed_gems: int = 0,
-    magnet: bool = False,
-) -> MineSession:
-    nodes = [
-        [roll_table(rules.depth_tables[row], registry, rng) for _ in range(rules.columns)]
-        for row in range(rules.rows)
-    ]
-    odds = wyrmhole_odds(placed_gems, rules)
-    wyrmholes = {
-        (row, col)
-        for row in range(rules.wyrmhole.min_row, rules.rows)
-        for col in range(rules.columns)
-        if rng.randint(1, odds) == 1
-    }
-    dug = columns_dug(reactor_level, rules)
-    middle_out = sorted(range(rules.columns), key=lambda c: abs(c - rules.columns // 2))
-    return MineSession(
-        nodes=nodes,
-        wyrmholes=wyrmholes,
-        cursors=middle_out[:dug],
-        magnet_columns=best_columns(nodes, registry) if magnet else frozenset(),
-    )
+@dataclass(frozen=True)
+class RunSummary:
+    outcome: str
+    haul: Counter
+    xp: int
+    lodes: int
+    depth: int
 
 
 # ---- the wyrmhole -----------------------------------------------------------------------------
@@ -233,44 +413,84 @@ async def _mining_state(user: User) -> tuple[Mining, int]:
     return mining, User.xp_to_level(mining.xp)
 
 
-async def start_mine(user: User, rng: random.Random, registry: Registry | None = None) -> MineSession:
-    """Begin a mine. A full magnet is spent here: this mine shows its best columns."""
+async def start_run(user: User, rng: random.Random, registry: Registry | None = None) -> MineRun:
+    """Begin a mine. A full magnet is spent here; the pickaxe, reactor and gems shape the run."""
     reg = registry or get_registry()
     rules = reg.mining
+    d = rules.descent
     mining, _ = await _mining_state(user)
     magnet = mining.magnet_meter >= rules.magnet.capacity
     if magnet:
         await user.update_skill("mining", lambda m: setattr(m, "magnet_meter", 0))
-    return generate_mine(
+    tool = await equipped_stats(user, "mining", reg)
+    power = tool.power if tool else 1
+    reduction = d.reactor_reduction * (mining.reactor.level - 1) + (tool.stats.get("danger_reduction", 0) if tool else 0)
+    bombs = min(await user.item_quantity(BOMB_ITEM), d.bombs_per_run)
+    return MineRun(
         rules,
         reg,
         rng,
-        reactor_level=mining.reactor.level,
-        placed_gems=gems_placed(mining),
+        cursors=_start_cursors(columns_dug(mining.reactor.level, rules), rules.columns),
+        bombs=bombs,
+        growth_factor=1 - min(d.max_reduction, reduction),
+        yield_factor=1 + d.power_yield_bonus * max(0, power - 1),
+        braces=d.braces_base + (mining.reactor.level - 1) // d.braces_per_reactor_levels,
         magnet=magnet,
+        wyrmhole_odds_value=wyrmhole_odds(gems_placed(mining), rules),
     )
 
 
-async def dig_row(user: User, session: MineSession) -> RowResult:
-    """Dig the session's current row and bank what was found immediately."""
-    result = session.mine_row()
-    for item_id, quantity in result.found.items():
-        await user.add_item(item_id, quantity)
-    return result
+async def use_bomb(user: User, run: MineRun) -> DigResult:
+    """Spend one bomb from the inventory (atomically) and blow the row. Refunded if the run refuses."""
+    if run.finished or run.bombs <= 0:
+        run.bomb()  # raises the right MiningError without touching the inventory
+    try:
+        await user.remove_item(BOMB_ITEM, 1)
+    except ValueError:
+        run.bombs = 0
+        raise MiningError("You don't have a bomb.") from None
+    try:
+        return run.bomb()
+    except Exception:
+        await user.add_item(BOMB_ITEM, 1)
+        raise
 
 
-async def finish_mine(user: User, session: MineSession, registry: Registry | None = None) -> int:
-    """Record a completed (or abandoned) mine. Returns the xp granted."""
+def _start_cursors(count: int, columns: int) -> list[int]:
+    """Cursors start in the middle and fan out."""
+    middle_out = sorted(range(columns), key=lambda c: abs(c - columns // 2))
+    return middle_out[:count]
+
+
+async def settle_run(user: User, run: MineRun, registry: Registry | None = None) -> RunSummary:
+    """Bank a finished run: items, xp and stats. Idempotent (runs once per run)."""
     rules = (registry or get_registry()).mining
-    completed = session.row >= len(session.nodes)
-    xp = rules.xp_per_column * session.columns_dug_total() if completed else 0
+    if not run.finished:
+        raise MiningError("The mine isn't finished.")
+    if run.settled:
+        return RunSummary(run.outcome, Counter(run.haul), run.xp_awarded, run.lodes, run.depth)
+    run.settled = True
+    xp = round(rules.xp_per_column * run.lodes * await xp_multiplier(user.id, registry))
+    run.xp_awarded = xp
+    summary = RunSummary(run.outcome, Counter(run.haul), xp, run.lodes, run.depth)
+    log.info("mine over: %s at row %d/%d, pressure %.1f, risk on the last dig %.2f%%, %d lodes",
+             run.outcome, run.depth, run.floor, run.last_pressure, run.last_risk * 100, run.lodes)
+    for item_id, quantity in run.haul.items():
+        await user.add_item(item_id, quantity)
 
     def record(m: Mining) -> None:
         m.xp += xp
-        m.stats.lodes_mined += session.lodes
+        m.stats.lodes_mined += run.lodes
 
     await user.update_skill("mining", record)
-    return xp
+    return summary
+
+
+async def abandon_run(user: User, run: MineRun, registry: Registry | None = None) -> None:
+    """The player walked away mid-run (timeout): climb out safely with what they have."""
+    if not run.finished:
+        run.leave()
+    await settle_run(user, run, registry)
 
 
 async def enter_wyrmhole(user: User, rng: random.Random, registry: Registry | None = None) -> WyrmholeSession:
@@ -374,7 +594,7 @@ async def claim_lodes(
             m.reactor.last_auto_mine = now
             return
         claimed["lodes"] = pending_lodes(m, rules, now)
-        claimed["depth"] = min(m.reactor.level - 1, rules.rows - 1)
+        claimed["depth"] = min(m.reactor.level - 1, len(rules.depth_tables) - 1)
         if claimed["lodes"]:
             m.reactor.last_auto_mine = now
             m.stats.lodes_auto_mined += claimed["lodes"]

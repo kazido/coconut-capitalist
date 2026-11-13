@@ -1,0 +1,72 @@
+import discord
+
+from cococap.services import blackjack
+from cococap.services.blackjack import hand_total, show
+from cococap.ui import Page, Screen
+from cococap.ui.components import button, row, sep, text
+
+from .games import money, result_buttons
+
+OUTCOMES = {
+    "blackjack": ("🃏 BLACKJACK!", 0x9B59B6, "Easy money."),
+    "win": ("🎉 You win!", 0x2ECC71, "Nice win!"),
+    "push": ("🤝 Push", 0x95A5A6, "Your bet is returned."),
+    "lose": ("😞 The house wins", 0xE74C3C, "Better luck next time..."),
+    "bust": ("💥 Bust!", 0xE74C3C, "Over 21."),
+    "fold": ("🏳️ Folded", 0x95A5A6, "Half your bet is returned."),
+    "forfeit": ("⌛ Hand abandoned", 0x95A5A6, "The bet goes to the house."),
+}
+
+
+class BlackjackScreen(Screen):
+    id = "blackjack"
+    label = "Blackjack"
+    emoji = "🃏"
+    description = "Beat the dealer to 21"
+    links = ("casino",)
+
+    def __init__(self, nav):
+        super().__init__(nav)
+        self.game: blackjack.BlackjackGame | None = None
+        self.bet_text = "100"
+
+    @property
+    def locked(self) -> bool:
+        return self.game is not None and not self.game.finished
+
+    async def on_abandon(self) -> None:
+        if self.game is not None and not self.game.finished:
+            await blackjack.abandon(self.user, self.game)
+
+    async def build(self) -> Page:
+        game = self.game
+        if game is None:
+            return Page("Blackjack", [text("No game in progress. Start one from the casino.")])
+        body = [
+            *self.note_block(),
+            text(f"**Dealer** ({hand_total(game.dealer)})\n# {show(game.dealer)}"),
+            text(f"**You** ({hand_total(game.player)})\n# {show(game.player)}"),
+            sep(),
+            text(f"Bet **{money(game.bet)}**"),
+        ]
+        if not game.finished:
+            actions = [
+                button("Hit", emoji="🃏", style=discord.ButtonStyle.primary, on_click=self._act(blackjack.hit)),
+                button("Stand", emoji="✋", style=discord.ButtonStyle.success, on_click=self._act(blackjack.stand)),
+            ]
+            if game.can_fold:
+                actions.append(button("Fold", emoji="🏳️", style=discord.ButtonStyle.danger, on_click=self._act(blackjack.fold)))
+            body.append(row(*actions))
+            return Page("Blackjack", body, accent=0x3498DB)
+        title, accent, blurb = OUTCOMES[game.outcome]
+        net = game.payout - game.bet
+        sign = "+" if net > 0 else ""
+        body += [sep(), text(f"## {title}\n{blurb}  ({sign}{net:,})"), result_buttons(self, "blackjack")]
+        return Page("Blackjack", body, accent=accent)
+
+    def _act(self, operation):
+        async def act(interaction: discord.Interaction) -> None:
+            await operation(self.user, self.game)
+            await self.refresh(interaction)
+
+        return act

@@ -37,39 +37,48 @@ class TopCategories(Enum):
 MEDALS = ["🥇", "🥈", "🥉"]
 
 
-async def build_leaderboard_embed(interaction: Interaction, category: TopCategories):
+async def leaderboard_view(category: TopCategories, caller_id: int) -> tuple[str, str | None, str | None]:
+    """(board text, circulation line, house footer) for a category. The last two are bits-only."""
     # The house account (the bot's own user) is hidden from every board.
     top = await queries.leaderboard(category.key, limit=10, exclude=BOT_ID)
-    embed = discord.Embed(
-        title=f"{category.emoji} {category.display_name} Leaderboard",
-        color=discord.Color.from_str(category.color),
-    )
-    lines = []
-    caller_listed = False
+    lines, caller_listed = [], False
     for entry in top:
         medal = MEDALS[entry.rank - 1] if entry.rank <= 3 else f"{entry.rank}."
-        if entry.discord_id == interaction.user.id:
+        if entry.discord_id == caller_id:
             caller_listed = True
             lines.append(f"{medal} **{entry.name} — {entry.value:,} (you)**")
         else:
             lines.append(f"{medal} {entry.name} — {entry.value:,}")
     if not caller_listed:
-        mine = await queries.position_of(category.key, interaction.user.id, exclude=BOT_ID)
+        mine = await queries.position_of(category.key, caller_id, exclude=BOT_ID)
         if mine:
             lines.append(f"\nYour rank:\n**{mine.rank}. {mine.name} — {mine.value:,} (you)**")
-    embed.description = "\n".join(lines) or "Nobody is on this board yet."
+    board = "\n".join(lines) or "Nobody is on this board yet."
+    if category != TopCategories.BITS:
+        return board, None, None
 
-    if category == TopCategories.BITS:
-        circulation = await queries.bits_in_circulation(exclude=BOT_ID)
-        embed.add_field(
-            name="Current Circulation",
-            value=f"There are currently **{circulation:,}** bits in the economy.",
-            inline=False,
-        )
-        from cococap.user import User
+    from cococap.user import User
 
-        house = await User.get(BOT_ID)
-        embed.set_footer(text=f"The house has made: {house.purse:,} bits")
+    circulation = await queries.bits_in_circulation(exclude=BOT_ID)
+    house = await User.get(BOT_ID)
+    return (
+        board,
+        f"There are currently **{circulation:,}** bits in the economy.",
+        f"The house has made: {house.purse:,} bits",
+    )
+
+
+async def build_leaderboard_embed(interaction: Interaction, category: TopCategories):
+    board, circulation, footer = await leaderboard_view(category, interaction.user.id)
+    embed = discord.Embed(
+        title=f"{category.emoji} {category.display_name} Leaderboard",
+        color=discord.Color.from_str(category.color),
+        description=board,
+    )
+    if circulation:
+        embed.add_field(name="Current Circulation", value=circulation, inline=False)
+    if footer:
+        embed.set_footer(text=footer)
     return embed
 
 
@@ -77,8 +86,9 @@ class LeaderboardCog(commands.Cog):
     @app_commands.command(name="top", description="See the top 10 players in a category!")
     @app_commands.describe(category="the leaderboard category to view")
     async def top(self, interaction: Interaction, category: TopCategories = TopCategories.BITS):
-        embed = await build_leaderboard_embed(interaction, category)
-        await interaction.response.send_message(embed=embed)
+        from cococap.screens import open_screen
+
+        await open_screen(interaction, "top", category=category)
 
 
 async def setup(bot):

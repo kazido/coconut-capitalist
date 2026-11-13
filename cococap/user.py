@@ -8,6 +8,7 @@ from sqlalchemy import delete, insert, select, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 
+from cococap import emojis
 from cococap.db import get_database
 from cococap.db.tables import ItemInstanceRow, ItemRow, SkillRow, StatRow, UserRow
 from cococap.models.instance import ItemInstance
@@ -195,6 +196,35 @@ class User:
         if not await self._update(UserRow.purse >= amount, purse=UserRow.purse - amount):
             raise InsufficientFunds("Not enough bits.")
 
+    # --- wallets: the two spendable currencies, addressed by name ---------------------------
+    CURRENCIES = ("purse", "luckbucks")
+
+    def balance(self, currency: str) -> int:
+        self._check_currency(currency)
+        return getattr(self._s, currency)
+
+    @classmethod
+    def _check_currency(cls, currency: str) -> None:
+        if currency not in cls.CURRENCIES:
+            raise ValueError(f"unknown currency {currency!r}")
+
+    async def spend(self, currency: str, amount: int) -> None:
+        """Take `amount` of `currency`; atomically refuses to go below zero."""
+        self._check_currency(currency)
+        if amount < 0:
+            raise ValueError("amount must be non-negative")
+        column = getattr(UserRow, currency)
+        if not await self._update(column >= amount, **{currency: column - amount}):
+            raise InsufficientFunds(f"Not enough {'bits' if currency == 'purse' else currency}.")
+
+    async def credit(self, currency: str, amount: int) -> None:
+        """Give `amount` of `currency` (a plain add: no stats are touched)."""
+        self._check_currency(currency)
+        if amount < 0:
+            raise ValueError("amount must be non-negative")
+        column = getattr(UserRow, currency)
+        await self._update(**{currency: column + amount})
+
     async def get_bits(self) -> int:
         """The purse as it is in the database right now."""
         await self.refresh()
@@ -320,6 +350,36 @@ class User:
                 for key, value in values.items():
                     setattr(row, key, value)
         return skill
+
+    async def grant_daily_capped(
+        self, key: str, currency: str, amount: int, cap: int, *, day: int | None = None
+    ) -> int:
+        """Credit up to `amount` of `currency`, but never more than `cap` per UTC day for `key`.
+
+        Returns what was actually granted (0 once the day's cap is used up). The counter and the
+        credit change in one transaction, so simultaneous games can't both slip past the cap.
+        """
+        self._check_currency(currency)
+        day = int(time.time() // 86400) if day is None else day
+        day_stat, total_stat = f"daily_{key}_day", f"daily_{key}_total"
+        async with get_database().session() as session:
+            day_row = await session.get(StatRow, (self.id, day_stat))
+            total_row = await session.get(StatRow, (self.id, total_stat))
+            used = total_row.value if (day_row and total_row and day_row.value == day) else 0
+            granted = max(0, min(amount, cap - used))
+            for name, value in ((day_stat, day), (total_stat, used + granted)):
+                await session.execute(
+                    sqlite_insert(StatRow)
+                    .values(user_id=self.id, name=name, value=value)
+                    .on_conflict_do_update(index_elements=["user_id", "name"], set_={"value": value})
+                )
+            if granted:
+                column = getattr(UserRow, currency)
+                await session.execute(
+                    update(UserRow).where(UserRow.discord_id == self.id).values(**{currency: column + granted})
+                )
+        await self.refresh()
+        return granted
 
     # --- statistics ----------------------------------------------------------------------
     async def inc_stat(self, statistic: str, amount: int = 1) -> None:
@@ -521,6 +581,10 @@ class User:
     async def reset_cooldowns(self) -> None:
         await self._update(work_cooldown=0, daily_cooldown=0, weekly_cooldown=0)
 
+    async def refresh_cooldowns(self, *commands: Cooldowns) -> None:
+        """Make these commands ready again (e.g. after an agricultural anomaly)."""
+        await self._update(**{f"{c.name.lower()}_cooldown": 0 for c in commands})
+
     async def claim_cooldown(self, command: Cooldowns) -> bool:
         """Atomically start `command`'s cooldown if it has elapsed.
 
@@ -559,11 +623,10 @@ class User:
     def create_xp_bar(xp: int) -> str:
         overflow_xp, xp_needed = User.xp_for_next_level(xp)
         ratio = overflow_xp / xp_needed if xp_needed else 0
-        xp_bar = "<:xp_bar_left:1203894026265428021>"
+        xp_bar = emojis.get("xp_bar_left")
         xp_bar_size = 10
-        for _ in range(int(ratio * xp_bar_size)):
-            xp_bar += "<:xp_bar_big:1203894024243777546>"
-        for _ in range(xp_bar_size - int(ratio * xp_bar_size)):
-            xp_bar += "<:xp_bar_small:1203894025137037443>"
-        xp_bar += "<:xp_bar_right:1203894027418599505>"
+        filled = int(ratio * xp_bar_size)
+        xp_bar += emojis.get("xp_bar_full", "🟩") * filled
+        xp_bar += emojis.get("xp_bar_empty", "⬛") * (xp_bar_size - filled)
+        xp_bar += emojis.get("xp_bar_right")
         return xp_bar

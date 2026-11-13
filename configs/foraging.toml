@@ -1,0 +1,49 @@
+# Foraging rules (see the wiki). Balance data: change numbers freely.  # TODO(balance): all numbers are guesses
+#
+# Chop a private tree any time, or join the community tree that grows every hour. A tree has hit points; every chop
+# takes off your axe's power. Zones 1..`zones` make trees bigger; a zone needs foraging level
+# 1 + (zone - 1) x levels_per_zone.
+
+zones = 10
+levels_per_zone = 2               # zone 7 needs level 13
+heavy_zone = 7                    # private trees from this zone up are "heavy"...
+heavy_solo_power = 0.5            # ...and a lone chopper hits at this share of their power (the Soloist enchant removes it)
+zone_hp_growth = 0.75             # a tree's hp = its height x (1 + this x (zone - 1))
+xp_per_hp = 3                     # foraging xp = hp chopped x this
+bits_per_hp = 280                 # bits = hp chopped x this (x the zone bonus). Tuned to pay a bit under mining per click
+hp_per_roll = 120                 # a felled tree makes ceil(hp / this) rolls on the foraging drop tables
+zone_reward_growth = 0.15         # each zone above 1 pays +15% per hp (zone 7: x1.9, zone 10: x2.35)
+
+[[heights]]                       # a private tree's height (before the zone scaling), by weight
+min = 20
+max = 40
+weight = 0.499
+[[heights]]
+min = 40
+max = 50
+weight = 0.300
+[[heights]]
+min = 50
+max = 60
+weight = 0.200
+[[heights]]
+min = 90
+max = 100
+weight = 0.001
+
+[chopping]                        # a swing is your axe's power x how fresh the spot is (x a good chop's bonus)
+good_chop_chance = 0.15           # a "good chop" does extra damage
+good_chop_bonus = 0.5             # +50%
+spot_decay = 0.12                 # chopping the same spot again does 12% less than the chop before...
+spot_floor = 0.35                 # ...down to 35% of full damage. Rotate (costs a click) for a fresh spot.
+
+[community]                       # the tree everyone can join: one per hour, standing for `open_minutes`
+open_minutes = 30
+min_zone = 3                      # its zone is picked from the hour (min..max), the same for everybody
+max_zone = 8
+hp_multiplier = 15                # community hp = a typical tree's hp in that zone x this
+min_share = 0.05                  # you need at least this share of the tree's hp to be paid in drops and bits
+group_bonus = 0.05                # +5% drops and bits for everybody per extra qualifying chopper...
+max_group_bonus = 0.5             # ...up to +50%
+expired_factor = 0.25             # a tree nobody finished pays this share of what felling it would have
+refresh_seconds = 5               # how often the open panel refreshes itself

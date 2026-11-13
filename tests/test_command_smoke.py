@@ -16,7 +16,7 @@ from cococap.errors import CustomError
 from utils.extensions import walk_extensions
 
 # Commands that need a real guild/channel/network and are covered elsewhere or can't be faked cheaply.
-SKIP = {"explore", "dungeon", "embed", "admin_pay", "tictactoe", "unscramble", "flashcard", "sequence"}
+SKIP = {"explore", "dungeon", "embed", "admin_pay", "tictactoe"}
 
 
 def fake_interaction(bot):
@@ -72,16 +72,18 @@ async def test_every_argument_free_command_runs(bot):
         except CustomError:
             pass  # a friendly refusal is fine
         ran.append(command.qualified_name)
-    assert {"profile", "rank", "check-in", "stats", "shop", "mine", "inventory", "top", "megadrop"} <= set(ran), ran
+    assert {"play", "profile", "rank", "check-in", "stats", "shop", "mine", "inventory", "top", "megadrop", "settings", "flashcard", "unscramble", "sequence", "trivia"} <= set(ran), ran
 
 
-async def test_money_commands_with_arguments(bot):
-    """The casino commands take a bet argument; drive them through the real check and callback."""
-    for name, bet in (("highlow", "100"), ("blackjack", "100")):
+async def test_casino_commands_take_the_bet_and_open_the_game_in_the_hub(bot):
+    for user_id, name in ((77, "highlow"), (78, "blackjack")):
         command = bot.tree.get_command(name)
         inter = fake_interaction(bot)
         inter.command = command
-        inter.data = {"options": [{"name": "bet", "value": bet}]}
+        inter.user.id = user_id
+        inter.user.display_name = "tester"
+        inter.user.display_avatar = MagicMock(url="http://x/a.png")
         assert await command._check_can_run(inter) is True
-        await command._callback(command.binding, inter, bet)
-        assert inter.response.send_message.await_count >= 1, name
+        await command._callback(command.binding, inter, "100")
+        view = inter.response.send_message.await_args.kwargs["view"]
+        assert view.screen.id == name and view.screen.game.bet == 100, name

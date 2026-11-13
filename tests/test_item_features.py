@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from cococap.exts.core.inventory import InventoryCog, inventory_lines
+from cococap.exts.core.inventory import inventory_lines
 from cococap.registry import get_registry
 from cococap.user import User
 from utils.items.items import (
@@ -60,25 +60,6 @@ def test_inventory_lines_filter_sort_and_unknown_items():
     assert not any("Cod" in l for l in lines)
     assert len(inventory_lines(items, "mining")) == 2
     assert inventory_lines(items, "nothing-matches") == []
-
-
-async def test_inventory_command_end_to_end(db):
-    user = await User.get(5)
-    await user.add_item("copper_ore", 10)
-    await user.add_item("apple_seed", 2)
-    interaction = SimpleNamespace(
-        user=SimpleNamespace(id=5, name="tester", display_name="tester", display_avatar="http://x/a.png"),
-        response=SimpleNamespace(send_message=AsyncMock()),
-    )
-    cog = InventoryCog(bot=None)
-    await cog.inventory.callback(cog, interaction)
-    kwargs = interaction.response.send_message.call_args.kwargs
-    assert "10 Copper Ore" in kwargs["embed"].description
-    assert "2 Apple Seed" in kwargs["embed"].description
-
-    interaction.response.send_message.reset_mock()
-    await cog.inventory.callback(cog, interaction, "zzz")
-    assert "No items found" in interaction.response.send_message.call_args.args[0]
 
 
 async def test_inventory_lists_tools_with_enchants_and_equipped_mark(db):

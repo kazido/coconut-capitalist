@@ -1,0 +1,32 @@
+# The two-economy rules (see docs/DESIGN.md).
+#   bits       = power: skills, work, selling, drops. Buys tools, seeds, land, enchants.
+#   luckbucks  = fun: minigames, the weekly bonus and gambling. Buys cosmetics. Staked in the casino.
+# Minigames can be played all day, so what they pay is capped per UTC day.
+
+party_xp_bonus = 0.25              # +25% xp in EVERY skill while you are in a party of 2 or more  # TODO(balance)
+starting_luckbucks = 100
+weekly_luckbucks = 100
+
+[minigames]
+daily_cap = 300                    # max luckbucks per player per day from ALL minigames combined
+streak_bonus = 0.10                # +10% per consecutive win...
+streak_bonus_max_steps = 9         # ...up to +90% (x1.9)
+
+[minigames.payout]                 # luckbucks per win, before the streak bonus
+flashcard_add = 4
+flashcard_sub = 6
+flashcard_mul = 10
+unscramble_per_letter = 1.5
+sequence_per_element = 1           # x difficulty multiplier below
+trivia_easy = 3
+trivia_medium = 6
+trivia_hard = 10
+
+[minigames.sequence_difficulty]    # multiplier per element for easy / medium / hard
+easy = 1
+medium = 2
+hard = 3
+
+[exchange]
+bits_per_luckbuck = 5000           # one-way: bits -> luckbucks (a bit sink)
+daily_limit = 500                  # luckbucks per player per day

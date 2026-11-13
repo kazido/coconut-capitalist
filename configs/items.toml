@@ -187,6 +187,17 @@ min_harvest = 1
 max_harvest = 3
 pet_xp = 0
 
+[land_deed]
+name = "Land Deed"
+description = "Proof that a patch of earth is yours."
+wiki = "Buys one more farm plot (up to 9). Deposit rain god's blessings at the Farmer's Market for a chance to get one."
+emoji = "🎫"
+rarity = 4
+skill = "farming"
+category = "key_item"
+price = 0
+sell_price = 0
+
 [spirit_of_the_fields]
 name = "Spirit of the Fields"
 description = "Fused with the essence of the soil."
@@ -249,6 +260,7 @@ cycles = 100
 [dusty_dandelion_seed]
 name = "Weathered Seed"
 description = "It's been slowly sinking into the earth."
+emoji = "<:seed_weathered:1280657991992999988>"
 rarity = 3
 skill = "farming"
 category = "seed"
@@ -439,7 +451,7 @@ sell_price = 0
 
 [bastards_broadaxe.tool]
 kind = "axe"
-power = 1  # TODO(balance): old data had no power; placeholder
+power = 12  # TODO(balance): grows with rarity
 requirement = 0
 
 [masterwork_axe]
@@ -453,7 +465,7 @@ sell_price = 0
 
 [masterwork_axe.tool]
 kind = "axe"
-power = 1  # TODO(balance): old data had no power; placeholder
+power = 18  # TODO(balance): grows with rarity
 requirement = 0
 
 [reinforced_axe]
@@ -467,7 +479,7 @@ sell_price = 0
 
 [reinforced_axe.tool]
 kind = "axe"
-power = 1  # TODO(balance): old data had no power; placeholder
+power = 8  # TODO(balance): grows with rarity
 requirement = 0
 
 [sovereign_hatchet]
@@ -481,7 +493,7 @@ sell_price = 0
 
 [sovereign_hatchet.tool]
 kind = "axe"
-power = 1  # TODO(balance): old data had no power; placeholder
+power = 28  # TODO(balance): grows with rarity
 requirement = 0
 
 [starter_axe]
@@ -495,7 +507,7 @@ sell_price = 0
 
 [starter_axe.tool]
 kind = "axe"
-power = 1  # TODO(balance): old data had no power; placeholder
+power = 3  # TODO(balance): grows with rarity
 requirement = 0
 
 [thornwhip_axe]
@@ -509,7 +521,7 @@ sell_price = 0
 
 [thornwhip_axe.tool]
 kind = "axe"
-power = 1  # TODO(balance): old data had no power; placeholder
+power = 5  # TODO(balance): grows with rarity
 requirement = 0
 
 [wilted_axe]
@@ -523,7 +535,7 @@ sell_price = 0
 
 [wilted_axe.tool]
 kind = "axe"
-power = 1  # TODO(balance): old data had no power; placeholder
+power = 40  # TODO(balance): grows with rarity
 requirement = 0
 
 [balance_gemstone]
@@ -703,7 +715,8 @@ requirement = 0
 [scarab_bomb]
 name = "Scarab Bomb"
 description = "Careful handling these, they can be quite dangerous."
-wiki = "A tool that is used in the mines. Will reveal the while grid and give you 10x ores and 2x gemstones you find there."
+wiki = "Take it down the mines (up to 3 per run). Blows an entire row at once: you collect every cell in it, vents and lodes included, for a flat bit of pressure and no collapse check."
+emoji = "💣"
 rarity = 4
 skill = "mining"
 category = "tool"

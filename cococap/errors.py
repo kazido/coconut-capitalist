@@ -26,3 +26,8 @@ class InvalidAmount(CustomError):
 
 class ButtonCheckFailure(CustomError):
     pass
+
+
+class GameRuleError(Exception):
+    """A game rule was broken (not enough bits, wrong tool, on cooldown ...). The message is written
+    for the player and is shown to them as-is; anything else is treated as a bug."""

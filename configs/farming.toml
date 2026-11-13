@@ -1,0 +1,18 @@
+# Farming rules (see the wiki). Balance data: change numbers freely.  # TODO(balance): all numbers are guesses
+#
+# Every hour it "rains". Each planted seed grows one cycle with `grow_chance` (a seed needs `cycles` of them, see
+# items.toml). Growth is worked out from the clock when you look at your farm, so rain keeps falling while the
+# bot is offline and no background job is needed.
+
+free_plots = 1                    # plot 1 is yours from the start; plots 2-9 each cost one land deed
+grow_chance = 0.5                 # per rain, per growing plot
+blessing_chance = 0.1             # per rain in which any of your crops grew: a rain god's blessing (wiki: 1/10)
+anomaly_odds = 25                 # 1 in N per harvest: refreshes your work and daily cooldowns (wiki: 1/25)
+xp_per_rarity = 20                # farming xp for a harvest = the crop's rarity x this
+deed_item = "land_deed"
+
+[market]                          # the Farmer's Market
+min_level = 5
+days = [4, 5]                     # Friday and Saturday (0 = Monday), UTC
+price_bonus = 0.5                 # crops sell for +50% while it is open
+deed_chance = 0.1                 # each blessing you deposit has this chance to become a land deed (wiki: 1/10)

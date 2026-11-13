@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 
+from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
 from cococap.user import User
@@ -10,7 +11,12 @@ from cococap.user import User
 TOOL_FOR_SKILL = {"mining": "pickaxe", "foraging": "axe", "combat": "sword", "fishing": "rod"}
 
 
-class EquipmentError(Exception):
+def skill_for_tool(kind: str) -> str | None:
+    """Inverse of TOOL_FOR_SKILL: which skill uses this kind of tool."""
+    return next((skill for skill, k in TOOL_FOR_SKILL.items() if k == kind), None)
+
+
+class EquipmentError(GameRuleError):
     """A rule was broken; the message is safe to show the player."""
 
 

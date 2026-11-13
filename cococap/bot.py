@@ -4,9 +4,10 @@ from logging import getLogger
 from discord.ext import commands
 from pydis_core import BotBase, StartupError
 
-from cococap import exts
+from cococap import emojis, exts
 from cococap.constants import DATABASE_PATH, DISABLED_EXTENSIONS
 from cococap.db import Database, close_database, init_database
+from cococap.ui.nav import stop_all_tickers
 from utils import logs
 
 log = getLogger("bot")
@@ -27,6 +28,9 @@ class Bot(BotBase):
             raise StartupError(e) from e
         log.info("Using database %s", DATABASE_PATH)
 
+        # The bot's own (application) emojis, looked up by name everywhere else.
+        await emojis.refresh(self)
+
         # Load our own extensions using function from discord.py's own bot
         await self.load_extensions(exts)
 
@@ -41,5 +45,6 @@ class Bot(BotBase):
             log.info("%s has no setup(); treating it as a helper module, not an extension", name)
 
     async def close(self) -> None:
+        await stop_all_tickers()  # panels refreshing themselves must stop before the database goes away
         await super().close()
         await close_database()

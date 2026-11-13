@@ -1,0 +1,63 @@
+"""Turn a player's inventory into display lines. Pure functions of data, no Discord."""
+
+from cococap.models.instance import ItemInstance
+from cococap.registry import get_registry
+
+PER_PAGE = 15
+
+
+def inventory_lines(items: dict[str, int], filter: str | None = None) -> list[str]:
+    """One display line per stack in `items` ({item_id: quantity}), sorted by item name.
+
+    `filter` matches (case-insensitively) an item's name, id, skill or category. Ids missing from
+    the registry (renamed/removed items) are still listed, never crash the command.
+    """
+    reg = get_registry()
+    needle = filter.lower() if filter else None
+    rows = []
+    for item_id, quantity in items.items():
+        if quantity <= 0:
+            continue
+        item = reg.find_item(item_id)
+        if item is None:
+            if needle is None or needle in item_id.lower():
+                rows.append((item_id, f"❔ {quantity:,} {item_id} *(unknown item)*"))
+            continue
+        if needle and not any(
+            needle in field for field in (item.name.lower(), item.id, item.skill or "", item.category)
+        ):
+            continue
+        rows.append((item.name.lower(), f"{item.emoji or '▫️'} {quantity:,} {item.name}"))
+    return [line for _, line in sorted(rows)]
+
+
+def instance_label(instance: ItemInstance) -> str:
+    """e.g. "Starter Axe #4 [Soloist]" -- the id disambiguates identical-looking tools."""
+    reg = get_registry()
+    template = reg.item(instance.template_id)
+    enchants = ", ".join(
+        f"{reg.enchants[e].name if e in reg.enchants else e}"
+        + (f" {lvl}" if lvl > 1 else "")
+        for e, lvl in sorted(instance.enchants.items())
+    )
+    return f"{template.name} #{instance.id}" + (f" [{enchants}]" if enchants else "")
+
+
+def instance_lines(instances: list[ItemInstance], equipped_ids: set[int], filter: str | None = None) -> list[str]:
+    reg = get_registry()
+    needle = filter.lower() if filter else None
+    rows = []
+    for inst in instances:
+        template = reg.find_item(inst.template_id)
+        if template is None:
+            continue
+        label = instance_label(inst)
+        if needle and not any(
+            needle in field for field in (label.lower(), template.id, template.skill or "", "tool")
+        ):
+            continue
+        mark = " ✅" if inst.id in equipped_ids else ""
+        rows.append((label.lower(), f"{template.emoji or '🗡️'} {label}{mark}"))
+    return [line for _, line in sorted(rows)]
+
+

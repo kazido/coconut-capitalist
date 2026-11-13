@@ -41,9 +41,7 @@ GUILD_ID = int(os.getenv("GUILD_ID", "856915776345866240"))
 DISABLED_EXTENSIONS = frozenset(
     {
         "cococap.exts.economy.pets",
-        "cococap.exts.minigames.trivia",
         "cococap.exts.skills.fishing",
-        "cococap.exts.skills.foraging",
         "cococap.exts.exploration.mining",
         "cococap.exts.gambling.snail_racing",  # empty stub: setup() calls add_cog() with no cog
     }
@@ -51,6 +49,9 @@ DISABLED_EXTENSIONS = frozenset(
 
 # Discord ID of the bot's owner/admin (receives reports, may use the debug commands).
 OWNER_ID = int(os.getenv("OWNER_ID", "326903703422500866"))
+
+# What the casino games stake and pay out: "purse" (bits) or "luckbucks". See docs/DESIGN.md.
+CASINO_CURRENCY = "luckbucks"
 
 BOT_ID = 956000805578768425 if DEV_MODE else 1016054559581413457
 BOT_PREFIX = "-" if DEV_MODE else "."

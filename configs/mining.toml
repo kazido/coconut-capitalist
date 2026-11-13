@@ -1,10 +1,10 @@
 # Mining rules (see the wiki). Everything here is balance data: change numbers freely.
-# depth_tables: one list of item ids per row of the mine (top to bottom). For each cell the items are rolled
-# in order and the first one that drops wins, so every list MUST be rarest-first (validated at startup).
+# depth_tables: one list of item ids per depth TIER (a tier spans [descent].rows_per_tier rows; the last tier
+# continues forever). For each cell the items are rolled in order and the first one that drops wins, so every
+# list MUST be rarest-first (validated at startup).
 
-rows = 5
 columns = 5
-xp_per_column = 10                 # xp for each column dug when a mine is completed
+xp_per_column = 10                 # xp for every column dug (kept even if the mine collapses)
 
 depth_tables = [
   ["copper_ore"],
@@ -18,7 +18,7 @@ depth_tables = [
 odds = 25000                       # 1-in-N per cell below `min_row`
 gem_bonus = 5000                   # N shrinks by this for every gem placed in the reactor
 min_odds = 1000                    # ...but never below this
-min_row = 2                        # first row (0-based) wyrmholes can hide in
+min_depth = 2                      # first row (0-based) wyrmholes can hide in
 implosion_item = "implosion_gemstone"
 [wyrmhole.pool]                    # item = quantity found in a wyrmhole cell
 scarab_bomb = 20
@@ -47,3 +47,69 @@ chance = 51                        # 1-in-N after finishing a mine (the old code
 seconds = 30                       # time to unscramble the scroll
 reward_item = "scarab_bomb"        # level-6 reward (quantity from the item's drop min/max)
 # TODO(wiki): the pickaxe upgrade template reward needs an item definition first.
+
+# ---- The descent: a shaft of `floor` rows. Plain cells show their ore; richer ore is harder to dig and adds
+# more pressure; pressure sets the collapse risk (always shown). Reach the floor to open the vault.  # TODO(balance): all numbers
+[descent]
+floor = 30                         # rows in the shaft; the vault waits below the last one
+rows_per_tier = 6                  # tier = row // rows_per_tier: rows 0-5 use tier 0 ... rows 24-29 use tier 4
+
+creak = 2.0                        # pressure every dig adds before the ore's own hardness
+default_hardness = 6
+empty_hardness = 2                 # digging an empty cell
+reactor_reduction = 0.02           # each reactor level above 1 slows pressure gains by 2%...
+max_reduction = 0.5                # ...up to 50%
+brace_amount = 15                  # pressure removed by one brace (a brace skips the dig)
+braces_base = 1
+braces_per_reactor_levels = 5      # +1 brace for every 5 reactor levels
+
+safe_pressure = 20                 # no collapse risk below this
+max_risk = 0.40                    # collapse chance per dig at 100 pressure
+risk_exponent = 2.0                # how sharply risk climbs between safe and 100
+collapse_loss = 0.5                # share of the unbanked haul lost when the mine collapses
+power_yield_bonus = 0.10           # +10% quantity per point of pickaxe power above 1
+depth_bonus_per_row = 0.05         # every row deeper pays +5% more (row 29 pays x2.45)
+
+# Special cells
+vent_chance = 0.15                 # per cell, from row 1: no loot, but it bleeds pressure
+vent_relief = 12
+rich_chance = 0.15                 # per cell: a mystery lode that rolls the next tier's table...
+rich_multiplier = 2.0              # ...and gives this much more of it
+cache_chance = 0.06                # per cell: supplies
+cache_min_depth = 2
+cache_braces = 1                   # +1 brace
+bomb_pressure = 8                  # a bomb clears a whole row for this flat pressure
+bombs_per_run = 3                  # most bombs you can carry down
+lookahead = 3                      # rows ahead you can see (only rich lodes and wyrmholes show; the rest is hidden)
+vault_gem_chance = 0.03            # a reactor gem is rare: only this chance of one in the vault...
+[descent.vault_ore]                # ...but this ore is always there
+gold_ore = 150
+
+[descent.hardness]                 # pressure added when this item is dug (empty cells use empty_hardness)
+copper_ore = 4
+iron_ore = 6
+gold_ore = 10
+dusty_dandelion_seed = 8
+sanity_gemstone = 16
+rage_gemstone = 16
+peace_gemstone = 16
+balance_gemstone = 16
+spirit_of_the_mines = 20
+
+# What the collapse-risk label says. `from_risk` is the collapse chance where each label begins.
+[[descent.warnings]]
+name = "Calm"
+emoji = "🟢"
+from_risk = 0.0
+[[descent.warnings]]
+name = "Tremors"
+emoji = "🟡"
+from_risk = 0.02
+[[descent.warnings]]
+name = "Unstable"
+emoji = "🟠"
+from_risk = 0.08
+[[descent.warnings]]
+name = "Critical"
+emoji = "🔴"
+from_risk = 0.16

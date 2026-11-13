@@ -7,7 +7,7 @@ requires-python = ">=3.11"
 # Only *direct* dependencies are listed. Transitive pins used to live in requirements.txt,
 # which also contained the unrelated `discord` shim package and a stale `soupsieve` pin.
 dependencies = [
-    "discord.py>=2.4,<2.7",
+    "discord.py>=2.7,<2.8",
     "pydis-core>=11.5,<12",
     "sqlalchemy[asyncio]>=2.0,<3",
     "aiosqlite>=0.20",
@@ -16,7 +16,6 @@ dependencies = [
     "python-dotenv>=1.0",
     "python-dateutil>=2.9",
     "pytz>=2024.2",
-    "pydealer>=1.4",
     "randfacts>=0.22",
 ]
 

@@ -79,3 +79,85 @@ async def test_megadrop_row(db):
 async def test_unknown_leaderboard_category_is_an_error(db):
     with pytest.raises(KeyError):
         await queries.leaderboard("nonsense")
+
+
+async def test_leaving_rules(db):
+    from cococap.errors import CustomError
+
+    party = await Party.create(1)
+    await party.add_member(2)
+    with pytest.raises(CustomError, match="leader"):
+        await party.leave(1)  # the leader can't leave a team
+    assert await party.leave(2) is False and party.members == [1]
+    assert await party.leave(1) is True and await Party.load(party.party_id) is None  # the last one out closes it
+    with pytest.raises(UserNotInParty):
+        await party.leave(1)
+
+
+async def test_who_may_invite_whom(db):
+    from cococap.errors import CustomError
+
+    party = await Party.create(1)
+    await party.add_member(2)
+    party.check_invite(1, 3)  # the leader may
+    for inviter, member, bot, message in ((2, 3, False, "leader"), (1, 1, False, "already here"), (1, 3, True, "Bots")):
+        with pytest.raises(CustomError, match=message):
+            party.check_invite(inviter, member, is_bot=bot)
+
+
+# ---- the party xp bonus (applies to every skill) --------------------------------------------------------------------
+async def test_the_xp_bonus_needs_a_party_of_two_or_more(db):
+    from cococap.services.party import xp_multiplier
+
+    await User.get(1)
+    assert await xp_multiplier(1) == 1.0  # no party
+    party = await Party.create(1)
+    assert await xp_multiplier(1) == 1.0  # a party of one
+    await party.add_member(2)
+    from cococap.registry import get_registry
+
+    bonus = 1 + get_registry().economy.party_xp_bonus
+    assert await xp_multiplier(1) == await xp_multiplier(2) == bonus > 1.0
+    await party.leave(2)
+    assert await xp_multiplier(2) == 1.0 and await xp_multiplier(1) == 1.0
+
+
+async def test_mining_xp_is_boosted_in_a_party_and_banked_once(db):
+    from random import Random
+
+    from cococap.services import mining
+
+    async def run_for(user_id):
+        user = await User.get(user_id)
+        run = await mining.start_run(user, Random(1))
+        run.lodes, run.outcome = 4, "left"
+        summary = await mining.settle_run(user, run)
+        return user, run, summary
+
+    _, _, plain = await run_for(1)
+    party = await Party.create(2)
+    await party.add_member(3)
+    user, run, boosted = await run_for(2)
+    assert plain.xp == 40 and boosted.xp == 50  # +25%
+    assert (await user.skill("mining")).xp == 50
+    await party.leave(3)
+    again = await mining.settle_run(user, run)  # settling twice neither re-pays nor changes the report
+    assert again.xp == 50 and (await user.skill("mining")).xp == 50
+
+
+async def test_farming_xp_is_boosted_in_a_party(db):
+    from random import Random
+
+    from cococap.services import farming
+
+    async def harvest_xp(user_id):
+        user = await User.get(user_id)
+        await user.add_item("apple_seed", 1)
+        await farming.plant(user, 1, "apple_seed", now=0)
+        await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
+        return (await farming.harvest(user, 1, Random(1), now=0)).xp
+
+    plain = await harvest_xp(1)
+    party = await Party.create(2)
+    await party.add_member(3)
+    assert await harvest_xp(2) == round(plain * 1.25)

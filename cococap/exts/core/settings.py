@@ -1,9 +1,7 @@
-import discord
-
+from discord import Interaction, app_commands
 from discord.ext import commands
-from discord import app_commands, Interaction
-from cococap.user import User
-from utils.custom_embeds import CustomEmbed
+
+from cococap.screens import open_screen
 
 
 class Settings(commands.Cog):
@@ -12,78 +10,9 @@ class Settings(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="settings")
+    @app_commands.command(name="settings", description="Change your account settings.")
     async def settings(self, interaction: Interaction):
-        """Change your account settings."""
-        user = await User.get(discord_id=interaction.user.id)
-
-        settings_dict = {
-            "auto_deposit": {
-                "name": "Auto Deposit",
-                "description": "Automatically deposit your bits after working",
-            },
-        }
-
-        settings: dict = user.settings.model_dump()
-        keys = list(settings.keys())
-
-        class SettingsView(discord.ui.View):
-            def __init__(self, *, timeout: float | None = 180):
-                super().__init__(timeout=timeout)
-                self.current = keys[0]
-                self.embed = CustomEmbed(
-                    title=f"{interaction.user.name}'s Settings",
-                    color=discord.Color.green() if settings[self.current] else discord.Color.red(),
-                    interaction=interaction,
-                    activity="changing settings",
-                )
-                self.embed.add_field(
-                    name=f"{settings_dict[self.current]['name']} - {'ON' if settings[self.current] else 'OFF'}",
-                    value=settings_dict[self.current]["description"],
-                )
-
-                self.embed.set_footer(text="Don't forget to save your changes!")
-
-            options = []
-            for key, value in settings_dict.items():
-                options.append(discord.SelectOption(label=value["name"], value=key))
-
-            @discord.ui.select(placeholder="Select a setting to change", options=options)
-            async def select_menu(self, interaction: Interaction, select: discord.ui.Select):
-                self.current = select.values[0]
-                self.embed.set_field_at(
-                    0,
-                    name=f"{settings_dict[self.current]['name']} - {'ON' if settings[self.current] else 'OFF'}",
-                    value=settings_dict[self.current]["description"],
-                )
-                self.embed.color = (
-                    discord.Color.green() if settings[self.current] else discord.Color.red()
-                )
-                await interaction.response.edit_message(embed=self.embed)
-
-            @discord.ui.button(label="Toggle")
-            async def toggle_button(self, interaction: Interaction, button: discord.Button):
-                settings[self.current] = not settings[self.current]
-                self.embed.set_field_at(
-                    0,
-                    name=f"{settings_dict[self.current]['name']} - {'ON' if settings[self.current] else 'OFF'}",
-                    value=settings_dict[self.current]["description"],
-                )
-                self.embed.color = (
-                    discord.Color.green() if settings[self.current] else discord.Color.red()
-                )
-                await interaction.response.edit_message(embed=self.embed)
-
-            @discord.ui.button(label="Save")
-            async def save_button(self, interaction: Interaction, button: discord.Button):
-                for key, value in settings.items():
-                    await user.set_setting(key, value)
-                self.embed.set_footer(text="Settings saved!")
-                self.clear_items()
-                await interaction.response.edit_message(embed=self.embed, view=self)
-
-        view = SettingsView()
-        await interaction.response.send_message(embed=view.embed, view=view)
+        await open_screen(interaction, "settings")
 
 
 async def setup(bot):

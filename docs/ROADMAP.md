@@ -21,7 +21,9 @@ tests, and never touching unrelated code. The game itself is described in the wi
 | Items: registry, stackables, unique tool instances, enchants | done |
 | Shop + inventory (`/shop /buy /sell /inventory /equip /wiki`) | done |
 | **Mining** (`/mine`: mine, wyrmholes, scarab, reactor, magnet) | done, the template for other skills |
-| Farming, foraging, fishing, combat, pets, explore | **not ported yet** (listed in `constants.DISABLED_EXTENSIONS`) |
+| **Farming** (`/farm`: plots, hourly rain, harvest, Farmer's Market, land deeds) | done |
+| **Foraging** (`/chop`: private trees, hourly community tree, zones, Soloist) | done (Re-leaf donations / double tree / growth mode still to do) |
+| Fishing, combat, pets, explore | **not ported yet** (listed in `constants.DISABLED_EXTENSIONS`) |
 | Database | SQLite + Alembic (old MongoDB import script: `scripts/import_mongo.py`) |
 | Tests | ~300, run in ~3 s with no services; CI on GitHub Actions |
 
@@ -48,16 +50,15 @@ cococap/registry/ + configs/   Typed, validated game data (items, enchants, rank
 
 ## Next up (in order)
 
+0. **Cosmetics shop** (the luckbuck sink), then farming. Mining v2, the in-window casino and the brain games are done.
+
 Each slice = **data -> service + tests -> thin cog -> enable the extension**, copying
 `services/mining.py` + `exts/skills/mining.py`.
 
-1. **Farming** (`/farm`): up to 9 plots bought with land deeds; seeds -> crops over hourly "rain"
-   cycles; rain god's blessings (1/10 on growth); Farmer's Market Fri/Sat (level 5); agricultural
-   anomalies (1/25 on harvest) refresh work+daily cooldowns. Needs a scheduled hourly task and a
-   small shared "world state" table.
-2. **Foraging** (`/chop`): trees with HP scaling by zone; solo until zone 7, then two players (or the
-   **Soloist** enchant, already in `enchants.toml`); Re-leaf donations (level 10), double trees, growth
-   mode at 420 donations.
+1. ~~Farming~~ done. Follow-ups: fertilizer/imbued plots, feeding crops to pets (needs pets), a channel announcement for
+   the rain, balance of `configs/farming.toml`.
+2. ~~Foraging~~ built (see docs/DESIGN.md). Still to do: **Re-leaf donations** (level 10, 3 a day, meter 50 -> double tree),
+   **growth mode** (420 donations), balance of `configs/foraging.toml`, a channel announcement for the community tree.
 3. **Fishing** (`/fish`): fish appear in channels like drops; daily/weekly/monthly quests; personal and
    community collection books; hallucination -> treasure chest minigame.
 4. **Combat** (`/fight`, dungeons): dungeon keys, 8-direction tile grid, idols, boss; mirror gates

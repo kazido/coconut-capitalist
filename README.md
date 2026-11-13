@@ -32,12 +32,17 @@ pytest          # real SQLite in a temp dir; no external services needed
 ruff check .
 ```
 
+## Playing
+
+`/play` opens a single menu message that links to everything (check-in, mining, inventory, shop,
+casino, ranks, leaderboards, stats, settings). Every older command still works as a shortcut.
+
 ## Architecture
 
 Dependencies only point down:
 
 ```
-cococap/exts/<area>/<cog>.py   Discord only: commands, views, embeds. Calls a service, draws the result.
+cococap/screens/ + exts/<area>/  Discord only: hub screens, commands, views. Calls a service, draws the result.
 cococap/services/              Game rules (mining.py, shop.py, equipment.py, loot.py). No Discord objects.
 cococap/user.py + cococap/db/  The only code that reads/writes player data (atomic SQL, tables, queries).
 cococap/registry/ + configs/   Typed, validated game data (items, enchants, ranks, mining rules, ...).

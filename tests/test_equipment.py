@@ -27,7 +27,8 @@ def test_plain_tool_uses_template_stats():
 
 def test_enchant_flags_and_rolled_bonuses():
     stats = effective_stats(inst("starter_axe", {"soloist": 1}, {"power": 3}))
-    assert stats.has("soloist") and stats.power == 4  # base 1 + rolled 3
+    base = get_registry().item("starter_axe").tool.power
+    assert stats.has("soloist") and stats.power == base + 3  # the axe's own power + rolled 3
 
 
 @pytest.fixture
@@ -145,7 +146,7 @@ async def test_equip_checks_kind_and_level(db):
     dream = await user.give_instance("dreamnail")  # sword, needs combat level 10
 
     await equip(user, "foraging", axe.id)
-    assert (await equipped_stats(user, "foraging")).power == 1
+    assert (await equipped_stats(user, "foraging")).power == get_registry().item("starter_axe").tool.power
     with pytest.raises(EquipmentError, match="can't be used"):
         await equip(user, "foraging", pick.id)  # wrong kind
     with pytest.raises(EquipmentError, match="level 10"):
