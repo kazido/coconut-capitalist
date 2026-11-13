@@ -8,12 +8,12 @@ from utils.menus import PaginationMenu, MenuHandler, DirectMenu
 
 async def display_stats(interaction: Interaction):
     user: User = interaction.extras.get("user")
-    stats = user.get_field("statistics")
-    farming = user.get_field("farming")
-    foraging = user.get_field("foraging")
-    fishing = user.get_field("fishing")
-    mining = user.get_field("mining")
-    combat = user.get_field("combat")
+    stats = await user.stats()  # {name: value}; anything never recorded reads as 0
+    farming = await user.skill("farming")
+    foraging = await user.skill("foraging")
+    fishing = await user.skill("fishing")
+    mining = await user.skill("mining")
+    combat = await user.skill("combat")
 
     # General Stats
     embed1 = CustomEmbed(
@@ -114,27 +114,27 @@ async def display_stats(interaction: Interaction):
     )
     embed4.add_field(
         name="Farming 🌽",
-        value=f"XP: {farming.get('xp', 0):,}\nCrops Grown: {farming.get('crops_grown', 0):,}",
+        value=f"XP: {farming.xp:,}\nCrops Grown: {farming.stats.crops_grown:,}",
         inline=True,
     )
     embed4.add_field(
         name="Foraging 🌳",
-        value=f"XP: {foraging.get('xp', 0):,}\nTrees Chopped: {foraging.get('trees_chopped', 0):,}",
+        value=f"XP: {foraging.xp:,}\nTrees Chopped: {foraging.stats.trees_chopped:,}",
         inline=True,
     )
     embed4.add_field(
         name="Fishing 🐟",
-        value=f"XP: {fishing.get('xp', 0):,}\nFish Caught: {fishing.get('fish_caught', 0):,}",
+        value=f"XP: {fishing.xp:,}\nFish Caught: {fishing.stats.fish_caught:,}",
         inline=True,
     )
     embed4.add_field(
         name="Mining ⛏️",
-        value=f"XP: {mining.get('xp', 0):,}\nLodes Mined: {mining.get('lodes_mined', 0):,}",
+        value=f"XP: {mining.xp:,}\nLodes Mined: {mining.stats.lodes_mined:,}",
         inline=True,
     )
     embed4.add_field(
         name="Combat ⚔️",
-        value=f"XP: {combat.get('xp', 0):,}\nMonsters Slain: {combat.get('monsters_slain', 0):,}",
+        value=f"XP: {combat.xp:,}\nMonsters Slain: {combat.stats.monsters_slain:,}",
         inline=True,
     )
 

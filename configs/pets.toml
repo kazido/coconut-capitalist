@@ -1,0 +1,31 @@
+# Pets are the gacha part of the bot (summoned through familiar orbs). Design still open: stars, bonuses, xp.
+
+[dog]
+name = "Dog"
+
+[cat]
+name = "Cat"
+
+[turtle]
+name = "Turtle"
+
+[frog]
+name = "Frog"
+
+[monkey]
+name = "Monkey"
+
+[koala]
+name = "Koala"
+
+[eagle]
+name = "Eagle"
+
+[dragon]
+name = "Dragon"
+
+[python]
+name = "Python"
+
+[bee]
+name = "Bee"

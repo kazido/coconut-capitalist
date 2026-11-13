@@ -132,3 +132,127 @@ def migrate_legacy_user(doc: dict[str, Any]) -> dict[str, Any]:
         if isinstance(old, dict) and marker in old:
             updates[skill] = convert(old)
     return updates
+
+
+# --------------------------------------------------------------------------------------------
+# MongoDB -> SQLite import (one-off, see scripts/import_mongo.py)
+# --------------------------------------------------------------------------------------------
+import re  # noqa: E402
+from dataclasses import dataclass, field  # noqa: E402
+
+from cococap.models.skills.base import Skill  # noqa: E402
+
+# Item ids that were renamed when the item registry was introduced (docs/AUDIT.md).
+ITEM_ID_ALIASES = {
+    "sanity": "sanity_gemstone",
+    "rage": "rage_gemstone",
+    "peace": "peace_gemstone",
+    "balance": "balance_gemstone",
+    "implosion_gem": "implosion_gemstone",
+}
+_SKILL_COLUMNS = {"xp", "equipped_instance_id"}
+_VALID_ID = re.compile(r"^[a-z][a-z0-9_]*$")
+
+
+def normalize_item_id(item_id: str) -> str:
+    """Old id -> registry id: apply renames and turn 'apple.seed' into 'apple_seed'."""
+    item_id = ITEM_ID_ALIASES.get(item_id, item_id).replace(".", "_")
+    return ITEM_ID_ALIASES.get(item_id, item_id)
+
+
+@dataclass
+class ConvertedUser:
+    discord_id: int
+    columns: dict
+    stats: dict[str, int] = field(default_factory=dict)
+    skills: dict[str, dict] = field(default_factory=dict)  # name -> {xp, data}
+    instances: list[str] = field(default_factory=list)  # template ids of unique items to create
+    equipped: dict[str, str] = field(default_factory=dict)  # skill -> template id of its tool
+    items: dict[str, int] = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)
+
+
+def _number(value, default, cast, warnings: list[str], label: str):
+    try:
+        return cast(value) if value is not None else default
+    except (TypeError, ValueError):
+        warnings.append(f"{label} unreadable ({value!r}); using {default}")
+        return default
+
+
+def convert_mongo_user(doc: dict) -> ConvertedUser:
+    """Turn one document of the old ``users`` collection (legacy flat or new nested shape) into
+    rows for the SQL schema. Never raises on odd data; problems become ``warnings``."""
+    from cococap.registry import get_registry
+    from cococap.user import SKILL_MODELS  # local import: user.py imports the db layer
+
+    out = ConvertedUser(
+        discord_id=int(doc["discord_id"]),
+        columns={"name": str(doc.get("name") or "unnamed user")},
+    )
+    for column in ("purse", "bank", "tokens", "luckbucks"):
+        value = _number(doc.get(column), 1000 if column == "purse" else 0, int, out.warnings, column)
+        if value < 0:
+            out.warnings.append(f"{column} was negative ({value}); set to 0")
+            value = 0
+        out.columns[column] = value
+    out.columns["rank"] = _number(doc.get("rank"), 0, int, out.warnings, "rank")
+
+    cooldowns = doc.get("cooldowns") if isinstance(doc.get("cooldowns"), dict) else {}
+    for name in ("work", "daily", "weekly"):
+        out.columns[f"{name}_cooldown"] = _number(
+            cooldowns.get(name), 0.0, float, out.warnings, f"{name} cooldown"
+        )
+    out.columns["settings"] = {
+        k: v for k, v in (doc.get("settings") or {}).items() if k in {"auto_deposit"}
+    }
+
+    for key, value in (doc.get("statistics") or {}).items():
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            out.stats[key] = int(value)
+
+    doc = {**doc, **migrate_legacy_user(doc)}  # legacy skill dicts -> nested shape
+    for name, model in SKILL_MODELS.items():
+        raw = doc.get(name)
+        if not isinstance(raw, dict):
+            continue
+        if raw.get("equipped_tool"):  # a template id in the old data
+            out.equipped[name] = normalize_item_id(str(raw["equipped_tool"]))
+        try:
+            skill: Skill = model.model_validate(raw)
+        except Exception as e:  # keep the player; drop only the unreadable skill
+            out.warnings.append(f"{name} skill unreadable ({e.__class__.__name__}); skipped")
+            continue
+        out.skills[name] = {
+            "xp": skill.xp,
+            "data": skill.model_dump(exclude=_SKILL_COLUMNS),
+        }
+
+    for item_id, stack in (doc.get("items") or {}).items():
+        raw = stack.get("quantity", 0) if isinstance(stack, dict) else stack
+        quantity = _number(raw, 0, int, out.warnings, f"item {item_id!r} quantity")
+        new_id = normalize_item_id(item_id)
+        if quantity <= 0:
+            continue
+        if not _VALID_ID.match(new_id):
+            out.warnings.append(f"item {item_id!r} has an invalid id; skipped ({quantity} lost)")
+            continue
+        if new_id != item_id:
+            out.warnings.append(f"item {item_id!r} renamed to {new_id!r}")
+        template = get_registry().find_item(new_id)
+        if template is not None and template.is_instance:
+            out.instances.extend([new_id] * quantity)  # tools are unique objects now
+        else:
+            out.items[new_id] = out.items.get(new_id, 0) + quantity
+
+    for skill, template_id in list(out.equipped.items()):
+        template = get_registry().find_item(template_id)
+        if template is None or not template.is_instance:
+            out.warnings.append(f"equipped {skill} tool {template_id!r} is not a known tool; unequipped")
+            del out.equipped[skill]
+        elif template_id not in out.instances:
+            out.instances.append(template_id)  # they were using it, so they own it
+
+    if doc.get("pets"):
+        out.warnings.append("legacy 'pets' data not imported (pets are being redesigned)")
+    return out

@@ -217,7 +217,7 @@ class Highlow(commands.Cog, name="Highlow"):
 
         await user.inc_stat("highlow_games")
 
-        return await super().interaction_check(interaction)
+        return super().interaction_check(interaction)
 
     @app_commands.command(name="highlow")
     @app_commands.describe(bet="amount of bits you want to bet")

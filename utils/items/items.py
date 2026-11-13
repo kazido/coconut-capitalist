@@ -1,89 +1,100 @@
-import discord
-import random
+"""Item presentation and rolling helpers, built on the typed registry (cococap.registry)."""
 
-from .field_formats import field_formats
+import random
 from typing import List
 
-from cococap.constants import Rarities
-
+import discord
 from discord.app_commands import Choice
 
-from logging import getLogger
+from cococap.constants import Rarities
+from cococap.registry import Item, get_registry
+from cococap.services.loot import roll_drop
 
-log = getLogger(__name__)
-log.setLevel(20)
-
-
-def _skewed_roll(min_drop: int, max_drop: int):
-    """Returns an integer between min_drop and max_drop, skewed towards min_drop."""
-    range_size = max_drop - min_drop
-    return min_drop + round((random.random() ** 3) * range_size)
+MAX_CHOICES = 25  # Discord's limit for autocomplete results and select options
 
 
-def roll_item(item: object):
-    """Rolls item and returns the quantity"""
-    if random.randint(1, item.drop_rate) == 1:
-        return _skewed_roll(item.min_drop, item.max_drop)
-    return None
+def roll_item(item: Item) -> int | None:
+    """Roll `item`'s drop table once with the global RNG (services take an explicit one)."""
+    return roll_drop(item, random)
 
 
-def item_attributes(item_data: dict, for_shop: bool):
-    """Constructs a string filled with item information."""
-    attributes = ""
-    for field_name in item_data:
-        if field_name in field_formats.keys():
-            value = item_data[field_name]
-            if field_name == "rarity":
-                rarity = Rarities.from_value(value)
-                value = rarity.rarity_name
-            if not value or (for_shop and not "shop_field" in formatting):
-                continue
-            formatting = field_formats[field_name]
-            attributes += formatting["text"].format(value) + "\n"
-
-    return attributes
+def custom_emoji_url(emoji: str | None) -> str | None:
+    """The image URL of a custom (<:name:id>) emoji; None for unicode or missing emoji."""
+    if not emoji:
+        return None
+    partial = discord.PartialEmoji.from_str(emoji)
+    return partial.url if partial.is_custom_emoji() else None
 
 
-def construct_embed(item_id, for_shop: bool):
-    """Constructs an embed filled with formatted data about the item that is passed.
+def item_attributes(item: Item, for_shop: bool = False) -> str:
+    """A bulleted block of the item's stats. The shop shows only what matters when buying."""
+    reg = get_registry()
+    lines: list[str] = []
+
+    def add(text: str, *, shop: bool = False) -> None:
+        if shop or not for_shop:
+            lines.append(text)
+
+    if item.wiki:
+        add(item.wiki)
+    add(f"**Rarity**: *{Rarities.from_value(item.rarity).rarity_name}*", shop=True)
+    add(f"**Type**: *{item.category.replace('_', ' ').title()}*")
+    if item.skill:
+        add(f"**Category**: *{item.skill.title()}*")
+    if item.drop:
+        add(f"**Drop Rate**: 1/*{item.drop.rate:,}*")
+        add(f"**Drops**: *{item.drop.min:,}*" + (f"-*{item.drop.max:,}*" if item.drop.max > item.drop.min else ""))
+    if item.crop:
+        add(f"**Harvest**: *{item.crop.min_harvest:,}*-*{item.crop.max_harvest:,}*")
+        add(f"**Pet XP**: *{item.crop.pet_xp:,}*", shop=True)
+        add(f"**Grows From**: *{reg.item(item.crop.seed).name}*", shop=True)
+    if item.seed:
+        add(f"**Growth Time**: ~*{item.seed.cycles:,}* cycles", shop=True)
+        add(f"**Grows Into**: *{reg.item(item.seed.grows_into).name}*", shop=True)
+    if item.tool:
+        add(f"**Power**: *{item.tool.power:,}*", shop=True)
+        if item.tool.requirement:
+            add(f"**Requires level**: *{item.tool.requirement}*", shop=True)
+        if item.tool.ability_name:
+            add(f"**Ability - {item.tool.ability_name}**: {item.tool.ability_description}", shop=True)
+    if item.buyable:
+        add(f"**Price**: *{item.price:,}*", shop=True)
+    if item.sellable:
+        add(f"**Sell Price**: *{item.sell_price:,}*")
+    return "\n".join(lines)
+
+
+def construct_embed(item_id: str, for_shop: bool = False) -> discord.Embed:
+    """An embed describing the item.
 
     Args:
-        item_id: The item ID to create an embed for.
-        for_shop (bool): If True, will only add fields needed for the shop.
-
-    Returns:
-        discord.Embed: An embed filled with the items data.
+        item_id: The registry id of the item.
+        for_shop: If True, only the fields relevant to buying are shown.
     """
-    item_data: Master = Master.get_by_id(item_id)
-
-    # Create an embed with the proper information from the item
+    item = get_registry().item(item_id)
+    description = f'"*{item.description}*"' if item.description else ""
     embed = discord.Embed(
-        title=f"{item_data.emoji} {item_data.display_name}",
-        description=f'"*{item_data.description}*"',
+        title=item.display,
+        description=f"{description}\n{'-' * 20}\n{item_attributes(item, for_shop)}".strip(),
+        color=discord.Color.from_str(Rarities.from_value(item.rarity).color),
     )
-    divider = "-" * (len(embed.description) - 2)
-    embed.description += f"\n{divider}\n"
-    rarity = Rarities.from_value(item_data.rarity)
-    embed.color = discord.Color.from_str(rarity.color)
-    embed.set_footer(text=f"Wiki: {item_id}")
-
-    attributes = item_attributes(item_data.__dict__["__data__"], for_shop)
-    embed.set_thumbnail(url=discord.PartialEmoji.from_str(item_data.emoji).url)
-    # Add the string to the embed under a field titled "Stats"
-    embed.description += attributes
+    embed.set_footer(text=f"Wiki: {item.id}")
+    if url := custom_emoji_url(item.emoji):
+        embed.set_thumbnail(url=url)
     return embed
 
 
-# Item Autocomplete
-items = get_items_from_db()
-
-
-async def item_autocomplete(
-    interaction: discord.Interaction,
-    current: str,
-) -> List[Choice[str]]:
+def _matching(items, current: str) -> List[Choice[str]]:
+    needle = current.lower()
     return [
-        Choice(name=items[item_id].display_name, value=item_id)
-        for item_id in items.keys()
-        if current.lower() in items[item_id].display_name.lower()
-    ]
+        Choice(name=i.name, value=i.id) for i in items if needle in i.name.lower() or needle in i.id
+    ][:MAX_CHOICES]
+
+
+async def item_autocomplete(interaction: discord.Interaction, current: str) -> List[Choice[str]]:
+    """Autocomplete over every item (Discord allows at most 25 results)."""
+    return _matching(get_registry().items.values(), current)
+
+
+async def buyable_autocomplete(interaction: discord.Interaction, current: str) -> List[Choice[str]]:
+    return _matching(get_registry().shop_items(), current)

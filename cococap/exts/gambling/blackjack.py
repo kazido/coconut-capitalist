@@ -329,7 +329,7 @@ class Blackjack(commands.Cog, name="Blackjack"):
 
         await user.inc_stat("blackjack_games")
 
-        return await super().interaction_check(interaction)
+        return super().interaction_check(interaction)
 
     @app_commands.command(name="blackjack")
     @app_commands.describe(bet="the amount of bits you want to bet")

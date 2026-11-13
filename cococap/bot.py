@@ -1,14 +1,12 @@
 import discord
 from logging import getLogger
 
-from beanie import init_beanie
 from discord.ext import commands
-from motor.motor_asyncio import AsyncIOMotorClient
 from pydis_core import BotBase, StartupError
 
 from cococap import exts
-from cococap.constants import DISABLED_EXTENSIONS, URI
-from cococap.models.models import PartyDocument, UserDocument
+from cococap.constants import DATABASE_PATH, DISABLED_EXTENSIONS
+from cococap.db import Database, close_database, init_database
 from utils import logs
 
 log = getLogger("bot")
@@ -17,21 +15,17 @@ __all__ = ["Bot", "StartupError"]
 
 
 class Bot(BotBase):
-    mongo: AsyncIOMotorClient
-
     async def setup_hook(self) -> None:
         # Logging first so everything below (including pydis_core) is captured.
         logs.setup()
         await super().setup_hook()
 
-        # Database setup. One client for the whole process; cogs should reuse `bot.mongo`.
-        self.mongo = AsyncIOMotorClient(URI, serverSelectionTimeoutMS=10_000)
+        # Database: a single SQLite file; Alembic creates/updates the tables at startup.
         try:
-            await init_beanie(
-                database=self.mongo.discordbot, document_models=[UserDocument, PartyDocument]
-            )
-        except Exception as e:  # unreachable DB, bad credentials, or an index conflict
+            await init_database(Database.from_path(DATABASE_PATH), migrate=True)
+        except Exception as e:
             raise StartupError(e) from e
+        log.info("Using database %s", DATABASE_PATH)
 
         # Load our own extensions using function from discord.py's own bot
         await self.load_extensions(exts)
@@ -48,5 +42,4 @@ class Bot(BotBase):
 
     async def close(self) -> None:
         await super().close()
-        if getattr(self, "mongo", None) is not None:
-            self.mongo.close()
+        await close_database()

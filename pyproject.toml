@@ -9,8 +9,9 @@ requires-python = ">=3.11"
 dependencies = [
     "discord.py>=2.4,<2.7",
     "pydis-core>=11.5,<12",
-    "beanie>=1.29,<2",
-    "motor>=3.6,<4",
+    "sqlalchemy[asyncio]>=2.0,<3",
+    "aiosqlite>=0.20",
+    "alembic>=1.13,<2",
     "pydantic>=2.10,<3",
     "python-dotenv>=1.0",
     "python-dateutil>=2.9",
@@ -23,9 +24,10 @@ dependencies = [
 dev = [
     "pytest>=8",
     "pytest-asyncio>=0.24",
-    "mongomock-motor>=0.0.36",
     "ruff>=0.8",
 ]
+# One-off: scripts/import_mongo.py reads the old MongoDB (read-only).
+mongo-import = ["pymongo>=4"]
 # Needed only by modules that are currently disabled (see constants.DISABLED_EXTENSIONS).
 legacy = [
     "the-trivia-api-library",
@@ -61,7 +63,5 @@ ignore = [
 "cococap/exts/skills/foraging.py" = ["F821"]
 "cococap/exts/economy/pets.py" = ["F821"]
 "cococap/exts/exploration/mining.py" = ["F821"]
-"utils/items/items.py" = ["F821"]
-"configs/converters/weapon_converter.py" = ["F821"]
 # Vendored pydis paginator: its `timeout` parameter mirrors discord.py's API.
 "utils/pagination.py" = ["ASYNC109"]

@@ -7,7 +7,6 @@ from discord.ui import Button, View
 from discord.ext import commands
 from discord.interactions import Interaction
 
-from configs.converters.data_converter import fetch
 
 from logging import getLogger
 

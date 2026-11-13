@@ -1,653 +1,390 @@
-import discord
-import random
-import time
+"""The /mine command. Discord only: every rule lives in cococap.services.mining."""
 
-from typing import Any, Coroutine
+import random
+from collections import Counter
+from logging import getLogger
+
+import discord
 from discord import Interaction, app_commands
 from discord.ext import commands
-from logging import getLogger
-from enum import Enum
 
-from utils.menus import MenuHandler, Menu
-from utils.custom_embeds import CustomEmbed
-from utils.checks import button_check
-from utils.items.items import get_items_from_db, roll_item
-from utils.utils import timestamp_to_english
+from cococap.constants import IMAGES_REPO, PROJECT_ROOT, Categories
+from cococap.registry import get_registry
+from cococap.services import mining
+from cococap.ui import OwnedView
 from cococap.user import User
-from cococap.constants import IMAGES_REPO, Categories
-
-from configs.converters.data_converter import fetch
+from utils.custom_embeds import CustomEmbed
+from utils.utils import timestamp_to_english
 
 log = getLogger(__name__)
 
-
-class Emojis(Enum):
-    SELECTED_COLUMN = ":small_red_triangle_down:"
-    NOTCH = ":black_small_square:"
-    CELL = "<:cell:1280658009306959893>"
-    CELL_EMPTY = "<:cell_empty:1280658029703860244>"
-    WYRMHOLE = "<a:wyrmhole:1280656910290260038>"
-
-
-class ReactorSlots(Enum):
-    SLOT1 = "core_slot1"
-    SLOT2 = "core_slot2"
-    SLOT3 = "core_slot3"
-    SLOT4 = "core_slot4"
+CELL = "<:cell:1280658009306959893>"
+CELL_EMPTY = "<:cell_empty:1280658029703860244>"
+WYRMHOLE = "<a:wyrmhole:1280656910290260038>"
+NOTCH = ":black_small_square:"
+CURSOR = ":small_red_triangle_down:"
+MAGNET = ":sparkles:"
 
 
-class Mineshaft:
-    LEVEL1 = ["copper_ore"]
-    LEVEL2 = ["iron_ore"].extend(LEVEL1)
-    LEVEL3 = ["gold_ore", "dusty_dandelion.seed"].extend(LEVEL2)
-    LEVEL4 = ["sanity", "rage", "peace", "balance"].extend(LEVEL3)
-    LEVEL5 = ["spirit_of_the_mines"].extend(LEVEL4)
+def _words() -> list[str]:
+    """Words for scarab scrolls (read on use so a missing file only breaks the scarab)."""
+    path = PROJECT_ROOT / "resources" / "unscramble_words.txt"
+    return [w.strip() for w in path.read_text().splitlines() if len(w.strip()) >= 5]
 
-    depths = [LEVEL1, LEVEL2, LEVEL3, LEVEL4, LEVEL5]
-    num_columns = 5
 
-    def __init__(self) -> None:
-        self.cols = []  # columns that hold 5 nodes each
-        self._generate_columns()
+def item_emoji(item_id: str) -> str:
+    return get_registry().item(item_id).emoji or "🟫"
 
-    def _generate_columns(self):
-        for _ in range(self.num_columns):
-            # for each row, generate a column and add it to the list
-            for level in range(self.depths):
-                node = self._create_node(depth=self.depths[level])
-                self.cols.append(node)
 
-    def _create_node(self, depth: list):
-        # creates a node with loot based on the passed level
-        for item_id in depth:
-            item = fetch(item_id)
-            quantity = roll_item(item)
-            if quantity:
-                return item, quantity
-        # if nothing was rolled, return no item and no quantity
-        return None, 0
+def loot_lines(loot: Counter) -> str:
+    reg = get_registry()
+    lines = []
+    for item_id, quantity in loot.items():
+        item = reg.item(item_id)
+        name = f"**{item.name}**" if item.rarity >= 5 else item.name
+        lines.append(f"{item_emoji(item_id)} +{quantity:,} {name}")
+    return "\n".join(lines) or "Nothing yet"
+
+
+# ---- rendering: state in, embed out (no game logic) ----------------------------------------------
+def render_grid(session: mining.MineSession) -> str:
+    header = [NOTCH] * session.columns
+    for col in session.magnet_columns:
+        header[col] = MAGNET
+    for col in session.cursors:
+        header[col] = CURSOR
+    rows = []
+    for r, cells in enumerate(session.nodes):
+        line = []
+        for c in range(session.columns):
+            if (r, c) in session.revealed:
+                cell = session.revealed[(r, c)]
+                line.append(item_emoji(cell[0]) if cell else CELL_EMPTY)
+            elif (r, c) in session.wyrmholes:
+                line.append(WYRMHOLE)
+            else:
+                line.append(CELL)
+        rows.append("".join(line))
+    return "".join(header) + "\n" + "\n".join(rows)
+
+
+def xp_field(xp: int) -> tuple[str, str]:
+    overflow, needed = User.xp_for_next_level(xp)
+    return f"Level {User.xp_to_level(xp)} - {overflow:,}/{needed:,} xp", User.create_xp_bar(xp)
+
+
+def mine_embed(interaction: Interaction, session: mining.MineSession, xp: int, footer: str) -> discord.Embed:
+    embed = CustomEmbed(
+        title=":pick: Welcome back to the mines.",
+        desc="Pick a column to dig out for ores and gems!\nUpgrade your reactor to dig more columns.",
+        color=discord.Color.blue(),
+        interaction=interaction,
+        activity="mining",
+    )
+    embed.add_field(name="Mineshaft :ladder:", value=render_grid(session))
+    embed.add_field(name="Loot :moneybag:", value=loot_lines(session.loot))
+    name, bar = xp_field(xp)
+    embed.add_field(name=name, value=bar, inline=False)
+    embed.set_footer(text=footer)
+    return embed
+
+
+# ---- views: a button calls one service method, then redraws ---------------------------------------
+class MineView(OwnedView):
+    def __init__(self, interaction: Interaction, user: User, session: mining.MineSession, xp: int):
+        super().__init__(interaction.user, timeout=180)
+        self.interaction, self.user, self.session, self.xp = interaction, user, session, xp
+        self.started = discord.utils.utcnow()
+
+    def embed(self, footer: str = "Mine all the way down to receive xp!") -> discord.Embed:
+        return mine_embed(self.interaction, self.session, self.xp, footer)
+
+    @discord.ui.button(emoji="⬅️", style=discord.ButtonStyle.grey)
+    async def left(self, interaction: Interaction, button: discord.ui.Button):
+        self.session.move(-1)
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+
+    @discord.ui.button(emoji="⛏️", style=discord.ButtonStyle.blurple)
+    async def dig(self, interaction: Interaction, button: discord.ui.Button):
+        result = await mining.dig_row(self.user, self.session)
+        if result.wyrmhole:
+            self.stop()
+            hole = await mining.enter_wyrmhole(self.user, random.Random())
+            await mining.finish_mine(self.user, self.session)
+            view = WyrmholeView(interaction, self.user, hole, self.xp)
+            return await interaction.response.edit_message(embed=view.embed(), view=view)
+        if not result.finished:
+            return await interaction.response.edit_message(embed=self.embed(), view=self)
+
+        self.stop()
+        gained = await mining.finish_mine(self.user, self.session)
+        self.xp += gained
+        footer = f"+{gained} xp. What's one more? Might find a wyrmhole!"
+        rng = random.Random()
+        rules = get_registry().mining
+        if mining.scarab_appears(rules, rng):
+            challenge = mining.make_scarab(_words(), rules, rng)
+            view = ScarabView(interaction, self.user, challenge, self)
+            embed = self.embed(footer)
+            embed.add_field(
+                name="🪲 A subterranean scarab appears!",
+                value=f"It holds a scroll: **{challenge.scrambled}**\nUnscramble it within {challenge.seconds}s!",
+                inline=False,
+            )
+            return await interaction.response.edit_message(embed=embed, view=view)
+        view = FinishedView(self)
+        await interaction.response.edit_message(embed=self.embed(footer), view=view)
+
+    @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.grey)
+    async def right(self, interaction: Interaction, button: discord.ui.Button):
+        self.session.move(1)
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+
+    async def on_timeout(self) -> None:
+        if not self.session.finished:  # wandered off mid-mine: keep the lodes, no completion xp
+            await mining.finish_mine(self.user, self.session)
+        await super().on_timeout()
+
+
+class FinishedView(OwnedView):
+    def __init__(self, parent: MineView):
+        super().__init__(parent.owner, timeout=120)
+        self.parent = parent
+
+    @discord.ui.button(label="Leave", style=discord.ButtonStyle.gray)
+    async def leave(self, interaction: Interaction, button: discord.ui.Button):
+        p = self.parent
+        embed = p.embed(footer=f"You spent {timestamp_to_english((discord.utils.utcnow() - p.started).total_seconds()) or 'no time'} mining {p.session.lodes} lodes.")
+        embed.title = ":pick: Mine Left"
+        embed.description = "Here's what you got in your mini-mining-session."
+        embed.color = discord.Color.dark_gray()
+        embed.remove_field(0)
+        self.stop()
+        await interaction.response.edit_message(embed=embed, view=None)
+
+    @discord.ui.button(emoji="🔄", style=discord.ButtonStyle.blurple, label="Mine again")
+    async def again(self, interaction: Interaction, button: discord.ui.Button):
+        self.stop()
+        view = await new_mine_view(interaction, self.parent.user)
+        await interaction.response.edit_message(embed=view.embed(), view=view)
+
+
+class WyrmholeView(OwnedView):
+    def __init__(self, interaction: Interaction, user: User, hole: mining.WyrmholeSession, xp: int):
+        super().__init__(interaction.user, timeout=600)
+        self.interaction, self.user, self.hole, self.xp = interaction, user, hole, xp
+
+    def embed(self, footer: str = "Don't tilt too hard if you don't get it, okay?") -> discord.Embed:
+        embed = CustomEmbed(
+            title=f"You found a Wyrmhole! {WYRMHOLE}",
+            desc="You can only choose one node! Good luck!",
+            color=discord.Color.purple(),
+            interaction=self.interaction,
+            activity="mining",
+        )
+        header = [NOTCH] * len(self.hole.nodes)
+        header[self.hole.cursor] = CURSOR
+        body = "".join(item_emoji(i) if self.hole.revealed else CELL for i, _ in self.hole.nodes)
+        embed.add_field(name="Mineshaft :ladder:", value="".join(header) + "\n" + body)
+        embed.set_footer(text=footer)
+        return embed
+
+    @discord.ui.button(emoji="⬅️", style=discord.ButtonStyle.grey)
+    async def left(self, interaction: Interaction, button: discord.ui.Button):
+        self.hole.move(-1)
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+
+    @discord.ui.button(emoji="⛏️", style=discord.ButtonStyle.blurple)
+    async def dig(self, interaction: Interaction, button: discord.ui.Button):
+        item_id, quantity = await mining.finish_wyrmhole(self.user, self.hole)
+        embed = self.embed("The wyrmhole collapses behind you.")
+        embed.add_field(name="Loot :moneybag:", value=loot_lines(Counter({item_id: quantity})))
+        self.stop()
+        await interaction.response.edit_message(embed=embed, view=None)
+
+    @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.grey)
+    async def right(self, interaction: Interaction, button: discord.ui.Button):
+        self.hole.move(1)
+        await interaction.response.edit_message(embed=self.embed(), view=self)
+
+
+class ScarabAnswer(discord.ui.Modal, title="Unscramble the scroll"):
+    answer = discord.ui.TextInput(label="Your answer", max_length=40)
+
+    def __init__(self, view: "ScarabView"):
+        super().__init__()
+        self.scarab_view = view
+
+    async def on_submit(self, interaction: Interaction) -> None:
+        await self.scarab_view.resolve(interaction, self.answer.value)
+
+
+class ScarabView(OwnedView):
+    def __init__(self, interaction: Interaction, user: User, challenge: mining.ScarabChallenge, parent: MineView):
+        super().__init__(interaction.user, timeout=challenge.seconds)
+        self.user, self.challenge, self.parent = user, challenge, parent
+        self.done = False
+
+    @discord.ui.button(label="Answer", style=discord.ButtonStyle.blurple, emoji="📜")
+    async def answer(self, interaction: Interaction, button: discord.ui.Button):
+        await interaction.response.send_modal(ScarabAnswer(self))
+
+    async def resolve(self, interaction: Interaction, text: str) -> None:
+        if self.done:
+            return await interaction.response.defer()
+        self.done = True
+        self.stop()
+        embed = self.parent.embed()
+        if self.challenge.check(text):
+            reward = await mining.claim_scarab_reward(self.user, random.Random())
+            embed.add_field(name="🪲 The scarab is pleased!", value="It takes you to level 6:\n" + loot_lines(reward), inline=False)
+        else:
+            embed.add_field(name="🪲 The scarab scuttles away.", value=f"The word was **{self.challenge.word}**.", inline=False)
+        await interaction.response.edit_message(embed=embed, view=FinishedView(self.parent))
+
+    async def on_timeout(self) -> None:
+        if not self.done:
+            self.done = True
+            if self.message is not None:
+                try:
+                    await self.message.edit(view=FinishedView(self.parent))
+                except discord.HTTPException:
+                    pass
+
+
+async def new_mine_view(interaction: Interaction, user: User) -> MineView:
+    session = await mining.start_mine(user, random.Random())
+    return MineView(interaction, user, session, (await user.skill("mining")).xp)
+
+
+class ReactorView(OwnedView):
+    def __init__(self, interaction: Interaction, user: User, status: dict):
+        super().__init__(interaction.user, timeout=180)
+        self.interaction, self.user, self.status = interaction, user, status
+
+    @staticmethod
+    async def build(interaction: Interaction, user: User) -> "ReactorView":
+        return ReactorView(interaction, user, await mining.reactor_status(user))
+
+    def embed(self, note: str | None = None) -> discord.Embed:
+        mining_skill, rules = self.status["mining"], get_registry().mining
+        reactor = mining_skill.reactor
+        embed = CustomEmbed(
+            title=f"Reactor Level: 🌟 {reactor.level:,}",
+            desc="Level up your reactor for passive mining and to mine more columns!",
+            color=discord.Color.from_str("0x0408dd"),
+            interaction=self.interaction,
+            activity="reactor",
+        )
+        cores = [reactor.core_1, reactor.core_2, reactor.core_3, reactor.core_4]
+        embed.add_field(
+            name="Cores",
+            value=" ".join(item_emoji(c.gem_id) if c.gem_id else CELL_EMPTY for c in cores)
+            + ("" if self.status["gem_slots_open"] else f"\n*Gem slots unlock at mining level {rules.reactor.gem_slot_level}*"),
+        )
+        embed.add_field(
+            name="Auto-Miner™",
+            value=f"**{self.status['pending_lodes']:,}** lodes ready to claim\n"
+            f"{reactor.level} lode(s) every {rules.reactor.automine_seconds // 60} minutes",
+            inline=False,
+        )
+        embed.add_field(name="Digging", value=f"{self.status['columns_dug']} column(s) per swing")
+        if self.status["level"] >= rules.magnet.level:
+            embed.add_field(name="Magnet", value=f"{mining_skill.magnet_meter:,}/{rules.magnet.capacity:,}")
+        if note:
+            embed.set_footer(text=note)
+        return embed
+
+    async def _refresh(self, interaction: Interaction, note: str) -> None:
+        self.status = await mining.reactor_status(self.user)
+        await interaction.response.edit_message(embed=self.embed(note), view=self)
+
+    @discord.ui.button(label="Claim lodes", style=discord.ButtonStyle.green)
+    async def claim(self, interaction: Interaction, button: discord.ui.Button):
+        lodes, loot = await mining.claim_lodes(self.user, random.Random())
+        await self._refresh(interaction, f"Claimed {lodes:,} lodes: " + (", ".join(f"{q:,} {get_registry().item(i).name}" for i, q in loot.items()) or "nothing"))
+
+    @discord.ui.button(label="Insert gems", style=discord.ButtonStyle.gray)
+    async def insert(self, interaction: Interaction, button: discord.ui.Button):
+        placed, problem = [], None
+        inventory = await self.user.items()
+        for gem in get_registry().mining.reactor.core_gems:
+            if inventory.get(gem):
+                try:
+                    placed.append(get_registry().item(gem).name)
+                    await mining.place_gem(self.user, gem)
+                except mining.MiningError as e:
+                    placed.pop()
+                    problem = str(e)
+        await self._refresh(interaction, ("Inserted: " + ", ".join(placed)) if placed else (problem or "You have no reactor gems to insert."))
+
+    @discord.ui.button(label="Prestige", style=discord.ButtonStyle.blurple)
+    async def prestige(self, interaction: Interaction, button: discord.ui.Button):
+        try:
+            level = await mining.prestige(self.user)
+            note = f"Your reactor is now level {level}!"
+        except mining.MiningError as e:
+            note = str(e)
+        await self._refresh(interaction, note)
+
+    @discord.ui.button(label="Feed magnet", style=discord.ButtonStyle.gray)
+    async def feed(self, interaction: Interaction, button: discord.ui.Button):
+        note = "Fed the magnet."
+        owned = await self.user.items()
+        try:
+            for ore in get_registry().mining.magnet.values:  # cheapest first
+                if owned.get(ore):
+                    await mining.deposit_ore(self.user, ore, owned[ore])
+        except mining.MiningError as e:
+            note = str(e)
+        await self._refresh(interaction, note)
+
+
+class MineMenu(OwnedView):
+    """The /mine home screen."""
+
+    def __init__(self, interaction: Interaction, user: User, xp: int):
+        super().__init__(interaction.user, timeout=120)
+        self.interaction, self.user, self.xp = interaction, user, xp
+
+    def embed(self) -> discord.Embed:
+        embed = CustomEmbed(
+            title=f"Level: 🌟 {User.xp_to_level(self.xp):,}",
+            color=discord.Color.from_str(Categories.MINING.color),
+            interaction=self.interaction,
+            activity="mining",
+        )
+        embed.set_thumbnail(url=f"{IMAGES_REPO}/skills/mining.png")
+        return embed
+
+    @discord.ui.button(label="Mine", style=discord.ButtonStyle.blurple, emoji="⛏️")
+    async def mine(self, interaction: Interaction, button: discord.ui.Button):
+        self.stop()
+        view = await new_mine_view(interaction, self.user)
+        await interaction.response.edit_message(embed=view.embed(), view=view)
+
+    @discord.ui.button(label="Reactor", style=discord.ButtonStyle.gray, emoji="☢️")
+    async def reactor(self, interaction: Interaction, button: discord.ui.Button):
+        self.stop()
+        view = await ReactorView.build(interaction, self.user)
+        await interaction.response.edit_message(embed=view.embed(), view=view)
 
 
 class MiningCog(commands.Cog, name="Mining"):
-    """Mine nodes to recieve ores, gems, and bits!
-    upgrade your reactor for increased mining power."""
+    """Mine nodes to receive ores, gems, and bits! Upgrade your reactor for more mining power."""
 
-    def __init__(self, bot):
-        self.bot = bot
-
-    class DeeperMineshaft(Mineshaft):
-        """the structure of the wyrmhole mineshaft. just lists of nodes with items and quantities and an implosion gemstone."""
-
-        item_pool = {
-            "scarab_bomb": 20,
-            "copper_ore": 1000,
-            "iron_ore": 300,
-            "gold_ore": 100,
-        }
-        num_cols = 5
-
-        def __init__(self) -> None:
-            self.nodes = []
-            for _ in range(self.num_cols):
-                self.nodes.append(self._create_node())
-            # always add 1 implosion gem to the nodes
-            self.nodes[random.randint(0, 4)] = (
-                MiningCog.mining_items["implosion_gemstone"],
-                1,
-            )
-
-        def _create_node(self):
-            # choose a random item from the wyrmhole item pool
-            item_id = random.choice(self.item_pool.keys())
-            item = MiningCog.mining_items[item_id]
-            quantity = self.item_pool[item_id]
-            return item, quantity
-
-    class MiningView(discord.ui.View):
-        """
-        this view is the "backend" of the mining minigame.
-        essentially, when the minigame is started, this view is created and acts
-        as the logical flow of the game.
-        """
-
-        def __init__(self, session: dict):
-            super().__init__(timeout=120)
-            # chain the data from the session
-            # this allows us to track items mined if they continue to mine
-            self.session = session
-            self.user: User = session["user"]
-
-            # create a new mineshaft
-            self.mineshaft = MiningCog.Mineshaft()
-            # create grid which stores the emojis for the discord embed
-            self.grid = []
-
-            # give the user a higher chance to find wyrmholes based on gemstones in core slots
-            has_implosion = (
-                True if "implosion_gemstone" in self.user.get_field("items").keys() else False
-            )
-            gem_bonus = 0
-            for slot in MiningCog.core_slots:
-                # give the user a bigger bonus if they don't have an implosion gemstone already
-                if self.user.get_field("mining")[slot]:
-                    gem_bonus += 500 if has_implosion else 5000
-
-            # roll for a wyrmhole everytime we make a grid
-            wyrmhole_odds = 25000 - gem_bonus
-            for depth in range(self.mineshaft.num_rows):
-                column_of_emojis = []
-                for _ in range(self.mineshaft.num_cols):
-                    # if we are in the 3rd depth or lower
-                    if depth > 1 and (random.randint(0, wyrmhole_odds) == 15):
-                        column_of_emojis.append(MiningCog.wyrmhole_emoji)
-                    else:
-                        column_of_emojis.append(MiningCog.cell_emoji)
-                self.grid.append(column_of_emojis)
-
-            # create the header for the embed
-            # todo: this code needs refactoring -- currently it adds a new selector per prestige level
-            # this needs to be fixed to properly scale with level or add some kind of unlock for it
-            self.selected_row = 0
-            self.column_cursors = []
-            col_order = [2, 1, 3, 0, 4]
-            for depth in range(self.user.get_field("mining")["prestige_level"]):
-                self.column_cursors.append(col_order[depth])
-
-            # create the embed
-            self.embed = CustomEmbed(
-                title=":pick: Welcome back to the mines.",
-                color=discord.Color.blue(),
-                desc="Pick a column to dig out for ores and gems! \
-                      \nupgrade your reactor to dig out more columns.",
-                interaction=self.session["interaction"],
-                activity="mining",
-            )
-            # we add these fields now so they can be dynamically updated as the user mines.
-            self.embed.add_field(name="Mineshaft :ladder:", value="")
-            self.embed.add_field(name="Loot :moneybag:", value="", inline=True)
-
-            # the reason we don't call these xp methods in update_grid is so that we aren't making
-            # a call to the database every time we need to update the grid, just at the start.
-            xp = self.user.get_field("mining")["xp"]
-            overflow_xp, xp_needed = self.user.xp_for_next_level(xp)
-            self.embed.add_field(
-                name=f"level {self.user.xp_to_level(xp)} - {overflow_xp:,}/{xp_needed:,} xp",
-                value=self.user.create_xp_bar(xp),
-                inline=False,
-            )
-            self.embed.set_footer(text="Mine all the way down to recieve xp!")
-            self.update_grid()
-
-        async def on_timeout(self) -> Coroutine[any, any, None]:
-            embed = discord.embed(
-                title=":zzz: Mine closed.",
-                description="Did you... fall asleep?",
-                color=discord.Color.dark_gray(),
-            )
-            # Clear the buttons and stop the view for no more errors :)
-            self.clear_items()
-            self.stop()
-
-            await self.session["interaction"].edit_original_response(embed=embed, view=None)
-
-        def update_grid(self):
-            # Set 5 notches at the top of the field
-            grid_header = [MiningCog.notch_emoji for _ in range(5)]
-
-            # Replace the notches with markers for each reactor level
-            for cursor in self.column_cursors:
-                grid_header[cursor] = MiningCog.selected_column_emoji
-
-            # Set the selection header
-            self.embed.set_field_at(0, name="Mineshaft :ladder:", value="".join(grid_header) + "\n")
-
-            # Set the grid in the field
-            for row in self.grid:
-                value = self.embed.fields[0].value
-                self.embed.set_field_at(
-                    0, name="Mineshaft :ladder:", value=value + "".join(row) + "\n"
-                )
-
-            # Add all the loot we've gotten to the embed on the side
-            loot_string = ""
-            for loot, amount in self.session["total_loot"].items():
-                # If the loot is rare, make it bold
-                loot_string += f"\n{loot.emoji} +{amount}"
-                if loot.rarity >= 5:
-                    loot_string += f" **{loot.display_name}**"
-                else:
-                    loot_string += f" {loot.display_name}"
-            self.embed.set_field_at(1, name="Loot :moneybag:", value=loot_string)
-
-        @discord.ui.button(emoji="⬅️", style=discord.ButtonStyle.grey)
-        async def left_button(self, interaction: Interaction, button: discord.Button):
-            # Go left xD
-            if not await button_check(self.session["interaction"], [interaction.user.id]):
-                return
-            for i in range(len(self.column_cursors)):
-                self.column_cursors[i] -= 1
-                if self.column_cursors[i] < 0:
-                    self.column_cursors[i] = 4
-            self.update_grid()
-            await interaction.response.edit_message(embed=self.embed, view=self)
-
-        @discord.ui.button(emoji="⛏️", style=discord.ButtonStyle.blurple)
-        async def mine_button(self, interaction: Interaction, button: discord.Button):
-            if not await button_check(self.session["interaction"], [interaction.user.id]):
-                return
-            # For each marker we have, mine one node
-            for col in self.column_cursors:
-                if self.grid[self.selected_row][col] == MiningCog.wyrmhole_emoji:
-                    # If we get a wyrmhole, create one and immediately exit the mine
-                    wyrmhole = MiningCog.WyrmholeView(session=self.session)
-                    await interaction.response.edit_message(embed=wyrmhole.embed, view=wyrmhole)
-                    return
-
-                # If there's no wyrmhole, retrieve the item that was rolled for that node
-                item, amount = self.mineshaft.columns[col][self.selected_row]
-                self.session["total_lodes_mined"] += 1
-                # If we encounter an item, set the grid to it's emoji
-                # and add it to the loot list
-                if item:
-                    self.grid[self.selected_row][col] = item.emoji
-                    if item in self.session["total_loot"]:
-                        self.session["total_loot"][item] += amount
-                    else:
-                        self.session["total_loot"][item] = amount
-                else:
-                    self.grid[self.selected_row][col] = MiningCog.cell_empty_emoji
-
-            # After mining out a node, update the grid and move down a row
-            self.update_grid()
-            self.selected_row += 1
-            # If we haven't reached the bottom, update the message and exit this function
-            if self.selected_row < 5:
-                await interaction.response.edit_message(embed=self.embed, view=self)
-                return
-
-            # Give the user xp for columns mined
-            rewarded_xp = 10 * len(self.column_cursors)
-            pet_data = await self.user.inc_xp(
-                skill="mining", xp=rewarded_xp, interaction=interaction
-            )
-            xp = self.user.get_field("mining")["xp"]
-            overflow_xp, xp_needed = self.user.xp_for_next_level(xp)
-            self.embed.set_field_at(
-                2,
-                name=f"Level {self.user.xp_to_level(xp)} - {overflow_xp:,}/{xp_needed:,} xp {pet_data.emoji if pet_data else ''}",
-                value=self.user.create_xp_bar(xp),
-                inline=False,
-            )
-            choices = [
-                "a wyrmhole",
-                "a gemstone",
-                "an oreore",
-                "some friends lol",
-                "the spirit of the mines",
-            ]
-            self.embed.set_footer(text=f"What's one more? Might find {random.choice(choices)}!")
-
-            # Roll for the scarab
-            # TODO: Make the scarab work xD
-            scarab = random.randint(0, 50)
-            if scarab == 15:
-                pass
-
-            await interaction.response.edit_message(
-                embed=self.embed,
-                view=MiningCog.FinishedMiningView(self.user, self),
-            )
-            return
-
-        @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.grey)
-        async def right_button(self, interaction: Interaction, button: discord.Button):
-            # Go right xD
-            if not await button_check(self.session["interaction"], [interaction.user.id]):
-                return
-            for i in range(len(self.column_cursors)):
-                self.column_cursors[i] += 1
-                if self.column_cursors[i] > 4:
-                    self.column_cursors[i] = 0
-            self.update_grid()
-            await interaction.response.edit_message(embed=self.embed, view=self)
-
-    class WyrmholeView(discord.ui.View):
-        """Discord structure to hold the wyrmhole"""
-
-        placeholder = "<a:upgraded_grid:1204245792479649863>"
-
-        def __init__(self, session: dict):
-            super().__init__(timeout=600)
-            # Chain the data from the session
-            self.session = session
-            self.user = session["user"]
-
-            # Create the mineshaft and the grid
-            self.mineshaft = MiningCog.DeeperMineshaft()
-            self.grid = []
-            for _ in range(self.mineshaft.num_cols):
-                self.grid.append(self.placeholder)
-
-            # Create the header
-            self.cols = [2]
-
-            # Create the embed
-            self.embed = CustomEmbed(
-                title=f"You found a Wyrmhole! {MiningCog.wyrmhole_emoji}",
-                color=discord.Color.purple(),
-                desc="You can only choose one node! Good luck!",
-                interaction=self.session["interaction"],
-                activity="mining",
-            )
-            self.embed.add_field(name="Mineshaft :ladder:", value="")
-            self.embed.add_field(name="Loot :moneybag:", value="", inline=True)
-            # The reason we don't call these xp methods in update_grid is so that we aren't making
-            # a call to the database every time we need to update the grid, just at the start.
-            xp = self.user.get_field("mining")["xp"]
-            overflow_xp, xp_needed = self.user.xp_for_next_level(xp)
-            self.embed.add_field(
-                name=f"Level {self.user.xp_to_level(xp)} - {overflow_xp:,}/{xp_needed:,} xp",
-                value=self.user.create_xp_bar(xp),
-                inline=False,
-            )
-            self.embed.set_footer(text="Don't tilt too hard if you don't get it, okay?")
-            self.update_grid()
-
-        def update_grid(self):
-            # Set 5 notches at the top of the field
-            header = [MiningCog.notch_emoji for _ in range(5)]
-
-            # Replace the notches with markers for each reactor level
-            for col in self.cols:
-                header[col] = MiningCog.selected_column_emoji
-
-            # Set the selection header
-            self.embed.set_field_at(0, name="Mineshaft :ladder:", value="".join(header) + "\n")
-
-            # Set the grid in the field
-            for node in self.grid:
-                value = self.embed.fields[0].value
-                self.embed.set_field_at(0, name="Mineshaft :ladder:", value=value + node)
-
-            # Add all the loot we've gotten to the embed on the side
-            loot_string = ""
-            for loot, amount in self.session["total_loot"].items():
-                # If the loot is rare, make it bold
-                if loot.rarity >= 5:
-                    loot_string += f"\n{loot.emoji} +{amount} **{loot.display_name}**"
-                else:
-                    loot_string += f"\n{loot.emoji} +{amount} {loot.display_name}"
-            self.embed.set_field_at(1, name="Loot :moneybag:", value=loot_string)
-
-        @discord.ui.button(emoji="⬅️", style=discord.ButtonStyle.grey)
-        async def left_button(self, interaction: Interaction, button: discord.Button):
-            if not await button_check(self.session["interaction"], [interaction.user.id]):
-                return
-            for i in range(len(self.cols)):
-                self.cols[i] -= 1
-                if self.cols[i] < 0:
-                    self.cols[i] = 4
-            self.update_grid()
-            await interaction.response.edit_message(embed=self.embed, view=self)
-
-        @discord.ui.button(emoji="⛏️", style=discord.ButtonStyle.blurple)
-        async def mine_button(self, interaction: Interaction, button: discord.Button):
-            if not await button_check(self.session["interaction"], [interaction.user.id]):
-                return
-            # For each marker we have, mine one node
-            for col in self.cols:
-                # Retrieve the item that was rolled for that node
-                item, amount = self.mineshaft.nodes[col]
-                if item:
-                    # If we encounter an item, set the grid to it's emoji
-                    # and add it to the loot list
-                    self.grid[col] = item.emoji
-                    if item in self.session["total_loot"]:
-                        self.session["total_loot"][item] += amount
-                    else:
-                        self.session["total_loot"][item] = amount
-                else:
-                    self.grid[col] = MiningCog.cell_empty_emoji
-
-            # After mining out a node, update the grid and move down a row
-            self.update_grid()
-
-            # We have finished mining the mineshaft, remove the buttons and add items to inventory
-            # Add items to the user's inventory
-            self.embed.set_footer(text="Better luck next time.")
-
-            # Give the user xp for columns mined
-            xp = self.user.get_field("mining")["xp"]
-            overflow_xp, xp_needed = self.user.xp_for_next_level(xp)
-            self.embed.set_field_at(
-                2,
-                name=f"Level {self.user.xp_to_level(xp)} - {overflow_xp:,}/{xp_needed:,} xp",
-                value=self.user.create_xp_bar(xp),
-                inline=False,
-            )
-
-            await interaction.response.edit_message(
-                embed=self.embed,
-                view=MiningCog.FinishedMiningView(self.user, self),
-            )
-            return
-
-        @discord.ui.button(emoji="➡️", style=discord.ButtonStyle.grey)
-        async def right_button(self, interaction: Interaction, button: discord.Button):
-            if not await button_check(self.session["interaction"], [interaction.user.id]):
-                return
-            for i in range(len(self.cols)):
-                self.cols[i] += 1
-                if self.cols[i] > 4:
-                    self.cols[i] = 0
-            self.update_grid()
-            await interaction.response.edit_message(embed=self.embed, view=self)
-
-    class FinishedMiningView(discord.ui.View):
-        def __init__(self, user: User, parent_view: "MiningCog.MiningView"):
-            super().__init__()
-            self.user = user
-            self.pv = parent_view
-            self.pv.stop()
-
-        @discord.ui.button(label="Leave", style=discord.ButtonStyle.gray)
-        async def leave(self, interaction: Interaction, button: discord.Button):
-            session = self.pv.session
-            lodes = session["total_lodes_mined"]
-
-            # We have finished the session, so add items to inventory
-            for item, amount in session["total_loot"].items():
-                await self.user.create_item(item_id=item.item_id, quantity=amount)
-
-            # Update the amount of lodes mined
-            self.user.get_field("mining")["lodes_mined"] += lodes
-            await self.user.save()
-
-            self.pv.embed.title = ":pick: Mine Left"
-            if lodes > 100:
-                desc = "Here's what you got in your mini-mining-session."
-            elif lodes > 1000:
-                desc = "What a grind! Get anything good?"
-            elif lodes > 10000:
-                desc = "YO ping me if you ever see this. I doubt anyone ever will other than Zennor. Maybe..."
-            else:
-                desc = "Quick pitstop."
-            self.pv.embed.description = desc
-            self.pv.embed.color = discord.Color.dark_gray()
-            self.pv.embed.remove_field(0)
-
-            # Add in the juicy stats as the footer
-            current_time = time.time()
-            time_spent = timestamp_to_english(current_time - self.pv.session["start_time"])
-            self.pv.embed.set_footer(text=f"You spent {time_spent} mining {lodes} lodes.")
-
-            # Clear the view and stop it so it don't time out, you feel?
-            self.clear_items()
-            self.stop()
-            await interaction.response.edit_message(embed=self.pv.embed, view=self)
-
-        @discord.ui.button(emoji="🔄", style=discord.ButtonStyle.blurple)
-        async def new_mine(self, interaction: Interaction, button: discord.Button):
-            mine = MiningCog.MiningView(session=self.pv.session)
-            await interaction.response.edit_message(embed=mine.embed, view=mine)
-
-    class Reactor(Menu):
-        def __init__(self, handler: MenuHandler, user: User, interaction: Interaction):
-            super().__init__(handler, "Reactor")
-            self.user = user
-            self.user_mining = user.get_field("mining")
-            self.reactor_level = self.user_mining["prestige_level"]
-            self.embed = CustomEmbed(
-                title=f"Reactor Level: 🌟 {self.reactor_level:,}",
-                description="Level up your reactor for passive mining and to mine more nodes!",
-                color=discord.Color.from_str("0x0408dd"),
-                interaction=interaction,
-                activity="reactor",
-            )
-
-            # Generate the text for the core slots based on what gems the user has
-            reactor_field = ""
-            for core in MiningCog.core_slots:
-                # If there is no item in the user's core slots
-                item_in_slot = self.user_mining[core]
-                emoji = MiningCog.cell_empty_emoji
-                if item_in_slot:
-                    emoji = MiningCog.mining_items[item_in_slot].emoji
-                reactor_field += f"{emoji} "
-
-            self.embed.add_field(name="Cores", value=reactor_field)
-
-            if self.reactor_level < 2:
-                # User hasn't unlocked the auto-miner
-                return
-
-            # AUTO-MINER
-            # Fetch the time to see how many lodes should be generated
-            seconds_since_last_mine = int(time.time() - self.user_mining["last_auto_mine"])
-            lodes_generated = seconds_since_last_mine / 360
-            self.lodes_generated = int(lodes_generated)
-            self.embed.add_field(
-                name=f"Auto-Miner™ {discord.PartialEmoji.from_str('<a:auto_miner:1280743049781051463>')}",
-                value=f"You have **{self.lodes_generated:,}** lodes to claim!",
-                inline=False,
-            )
-            self.embed.add_field(
-                name="Lodes Auto-mined",
-                value=f":pick: **{self.user_mining['lodes_auto_mined']:,}** lodes",
-            )
-
-        # TODO: Get working
-        @discord.ui.button(label="Insert Gems", disabled=True, style=discord.ButtonStyle.gray)
-        async def insert_button(self, interaction: Interaction, button: discord.Button):
-            if not await button_check(interaction, [interaction.user.id]):
-                return
-            await interaction.response.edit_message()
-
-        @discord.ui.button(label="Claim", disabled=False, style=discord.ButtonStyle.green)
-        async def claim_button(self, interaction: Interaction, button: discord.Button):
-            if not await button_check(interaction, [interaction.user.id]):
-                return
-            auto_mined_lodes = {}
-            # Choose a depth to mine at based on reactor level
-            depth = self.reactor_level
-            depth = 4 if depth > 4 else depth
-            level = MiningCog.Mineshaft.levels[depth]
-            for i in range(depth, -1, -1):
-                level.extend(MiningCog.Mineshaft.levels[i])
-
-            for _ in range(0, self.lodes_generated):
-                # We want to roll the rarest items first
-                level.reverse()
-                for item_id in level:
-                    item = MiningCog.mining_items[item_id]
-                    quantity = roll_item(item)
-                    if quantity:
-                        auto_mined_lodes[item] = auto_mined_lodes.get(item, 0) + quantity
-                        break  # Stop trying to roll for items
-            results = ""
-            for item, quantity in auto_mined_lodes.items():
-                results += f"{item.emoji} x{quantity}\n"
-                await self.user.create_item(item_id=item.item_id, quantity=quantity)
-
-            self.user_mining["last_auto_mine"] = time.time()
-            self.user_mining["lodes_auto_mined"] += self.lodes_generated
-            await self.user.save()
-
-            self.embed.set_field_at(1, name="Auto-Miner™", value=results)
-            self.embed.set_field_at(
-                2,
-                name="Lodes Auto-Mined™",
-                value=f":pick: **{self.user_mining['lodes_auto_mined'] + self.lodes_generated:,}** lodes",
-                inline=False,
-            )
-
-            self.remove_item(self.claim_button)
-            return await interaction.response.edit_message(embed=self.embed, view=None)
-
-    @app_commands.command(name="mine")
+    @app_commands.command(name="mine", description="Head down into the mines.")
     async def mine(self, interaction: Interaction):
-        """Displays your mining profile and all available actions."""
-        # Load the user
         user = await User.get(interaction.user.id)
-
-        # Load the user's items and mining data
-        user_items = user.get_field("items")
-        user_mining = user.get_field("mining")
-
-        # Create the mine view with a fresh session
-        mine_view = MiningCog.MiningView(
-            session={
-                "total_loot": {},
-                "total_lodes_mined": 0,
-                "start_time": time.time(),
-                "interaction": interaction,
-                "user": user,
-            },
-        )
-
-        # Initialize a menu handler, allowing us to move back and forth between menu pages
-        handler = MenuHandler(interaction=interaction)
-
-        # Main menu view when you type /mine
-        class MineMenu(Menu):
-            def __init__(self, handler: MenuHandler):
-                super().__init__(handler, "Home")
-                MiningCog.Reactor(
-                    handler, user=user, interaction=interaction
-                )  # Create the reactor menu when the Main Menu is made
-
-                # GENERAL CREATION OF THE EMBED!! COPY THIS AS A TEMPLATE FOR OTHER SKILLS!
-                self.embed = CustomEmbed(
-                    title=f"Level: 🌟 {user.xp_to_level(user_mining['xp']):,}",
-                    color=discord.Color.from_str(Categories.MINING.color),
-                    interaction=interaction,
-                    activity="mining",
-                )
-                balances = ""
-                for ore_type in ["copper_ore", "iron_ore", "gold_ore"]:
-                    item: dict = user_items.get(ore_type, {})
-                    emoji = MiningCog.mining_items[ore_type].emoji
-                    balances += f"{emoji} x{item.get('quantity', 0):,}\n"
-
-                self.embed.add_field(
-                    name="Ores",
-                    value=balances,
-                ).add_field(
-                    name="Lodes Mined",
-                    value=f":pick: **{user_mining['lodes_mined']:,}** lodes",
-                    inline=False,
-                ).set_thumbnail(url=f"{IMAGES_REPO}/skills/mining.png")
-
-            @discord.ui.button(label="Mine", style=discord.ButtonStyle.gray)
-            async def mine(self, interaction: Interaction, button: discord.Button) -> Any:
-                await interaction.response.edit_message(
-                    embed=mine_view.embed,
-                    view=mine_view,
-                )
-
-        mine_menu = MineMenu(handler=handler)
-        await interaction.response.send_message(embed=mine_menu.embed, view=mine_menu)
+        skill = await user.skill("mining")
+        menu = MineMenu(interaction, user, skill.xp)
+        embed = menu.embed()
+        ores = Counter({i: q for i, q in (await user.items()).items() if i in get_registry().mining.magnet.values})
+        embed.add_field(name="Ores", value=loot_lines(ores) if ores else "None yet")
+        embed.add_field(name="Lodes Mined", value=f":pick: **{skill.stats.lodes_mined:,}** lodes", inline=False)
+        await interaction.response.send_message(embed=embed, view=menu)
+        await menu.attach(interaction)
 
 
 async def setup(bot):
-    await bot.add_cog(MiningCog(bot))
+    await bot.add_cog(MiningCog())

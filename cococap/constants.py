@@ -1,26 +1,27 @@
 import os
 import configparser
+from pathlib import Path
 
 from dotenv import load_dotenv
 from enum import Enum
 
 # Load our environment variables (see .env.example) from the project root, not the current dir.
 BOT_DIR = os.path.dirname(__file__)
-PROJECT_ROOT = os.path.abspath(os.path.join(BOT_DIR, os.pardir))
+PROJECT_ROOT = Path(os.path.abspath(os.path.join(BOT_DIR, os.pardir)))
 load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
 
-# Secrets: the Discord bot token and the MongoDB connection string. Never commit these.
+# Secret: the Discord bot token. Never commit it.
 TOKEN = os.getenv("BOT_TOKEN")
-URI = os.getenv("URI")
+
+# The SQLite database file (relative paths are resolved against the project root).
+DATABASE_PATH = os.path.join(PROJECT_ROOT, os.getenv("DATABASE_PATH", "data/cococap.db"))
 
 
 def require_secrets() -> None:
     """Raise a readable error if a required secret is missing (call once at startup)."""
-    missing = [name for name, value in (("BOT_TOKEN", TOKEN), ("URI", URI)) if not value]
-    if missing:
+    if not TOKEN:
         raise RuntimeError(
-            f"Missing required environment variable(s): {', '.join(missing)}. "
-            "Copy .env.example to .env and fill them in."
+            "Missing required environment variable BOT_TOKEN. Copy .env.example to .env and fill it in."
         )
 
 
@@ -39,14 +40,10 @@ GUILD_ID = int(os.getenv("GUILD_ID", "856915776345866240"))
 # instead of failing noisily; remove an entry once its module has been ported. See docs/AUDIT.md.
 DISABLED_EXTENSIONS = frozenset(
     {
-        "cococap.exts.core.inventory",
         "cococap.exts.economy.pets",
-        "cococap.exts.economy.shop",
-        "cococap.exts.minigames.wiki",
         "cococap.exts.minigames.trivia",
         "cococap.exts.skills.fishing",
         "cococap.exts.skills.foraging",
-        "cococap.exts.skills.mining",
         "cococap.exts.exploration.mining",
         "cococap.exts.gambling.snail_racing",  # empty stub: setup() calls add_cog() with no cog
     }

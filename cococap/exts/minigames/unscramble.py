@@ -12,7 +12,7 @@ from utils.custom_embeds import CustomEmbed, FailureEmbed, SuccessEmbed
 
 log = logging.getLogger(__name__)
 
-with open(pathlib.Path.cwd() / "resources" / "unscramble_words.txt", "r") as f:
+with open(pathlib.Path(__file__).resolve().parents[3] / "resources" / "unscramble_words.txt", "r") as f:
     WORDS = [w.strip() for w in f if w.strip().islower() and len(w.strip()) >= 4]
 
 

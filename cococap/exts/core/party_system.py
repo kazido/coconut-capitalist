@@ -5,7 +5,10 @@ from logging import getLogger
 from discord.ext import commands
 from discord import app_commands, Interaction
 from cococap.user import User
-from cococap.models.models import PartyDocument
+from sqlalchemy import delete, select, update
+
+from cococap.db import get_database
+from cococap.db.tables import PartyMemberRow, PartyRow
 from cococap.exts.utils.error import CustomError
 from utils.custom_embeds import SuccessEmbed, CustomEmbed
 
@@ -40,72 +43,80 @@ class PartyNotEmpty(CustomError):
 
 
 class Party:
-    def __init__(self):
-        self._id: int
-        self._document: PartyDocument
-        self._members: list
-        self._owner_id: int
+    """A party and its members, backed by the parties / party_members tables.
 
-    async def load(self, party_id: int):
-        party: PartyDocument = await PartyDocument.find_one(PartyDocument.party_id == party_id)
-        if not party:
-            return None
-        self._id = party_id
-        self._members = party.party_members
-        self._owner_id = party.party_owner
-        self._document = party
-        return self
+    Instances are snapshots: call ``Party.load`` again to see changes made elsewhere. All changes
+    go through single transactions, so two people joining at once cannot corrupt the roster.
+    """
 
-    async def save(self):
-        await self._document.save()
+    def __init__(self, party_id: int, owner_id: int, members: list[int]):
+        self.party_id = party_id
+        self._owner_id = owner_id
+        self._members = members
+
+    @classmethod
+    async def load(cls, party_id: int) -> "Party | None":
+        async with get_database().session() as session:
+            row = await session.get(PartyRow, party_id)
+            if row is None:
+                return None
+            ids = await session.scalars(
+                select(PartyMemberRow.user_id).where(PartyMemberRow.party_id == party_id)
+            )
+            return cls(party_id, row.owner_id, list(ids))
+
+    @classmethod
+    async def for_user(cls, user_id: int) -> "Party | None":
+        """The party `user_id` belongs to, if any."""
+        async with get_database().session() as session:
+            party_id = await session.scalar(
+                select(PartyMemberRow.party_id).where(PartyMemberRow.user_id == user_id)
+            )
+        return await cls.load(party_id) if party_id is not None else None
 
     @property
-    def party_id(self):
-        return getattr(self, "_id", None)
+    def members(self) -> list[int]:
+        return list(self._members)
 
     @property
-    def members(self):
-        return getattr(self, "_members", [])
-
-    @property
-    def owner(self):
-        return getattr(self, "_owner_id", None)
+    def owner(self) -> int:
+        return self._owner_id
 
     async def add_member(self, user_id: int):
-        """Add a member to the party and update their document."""
+        """Add a member (they must not already be in any party)."""
         if self.is_member(user_id):
             raise AlreadyInParty("The specified user is already in your party.")
-        member: User = await User.get(user_id)
-        if member.get_field("party_id"):
-            raise AlreadyInParty(
-                "The specified user is already in a party.",
-                title="Failed to invite the specified user",
-                footer="Tell them to do /party leave.",
-            )
+        await User.get(user_id)  # make sure the player exists (foreign key)
+        async with get_database().session() as session:
+            if await session.get(PartyMemberRow, user_id) is not None:
+                raise AlreadyInParty(
+                    "The specified user is already in a party.",
+                    title="Failed to invite the specified user",
+                    footer="Tell them to do /party leave.",
+                )
+            session.add(PartyMemberRow(user_id=user_id, party_id=self.party_id))
         self._members.append(user_id)
-        await member.set_field("party_id", self.party_id)
-        return await self.save()
 
     async def remove_member(self, user_id: int):
-        """Remove a member from the party and update their document."""
+        """Remove a member from the party."""
         if not self.is_member(user_id):
             raise UserNotInParty("The specified user is not in your party...")
-        member: User = await User.get(user_id)
-        await member.set_field("party_id", None)
+        async with get_database().session() as session:
+            await session.execute(delete(PartyMemberRow).where(PartyMemberRow.user_id == user_id))
         self._members.remove(user_id)
-        return await self.save()
 
     async def change_owner(self, user_id: int):
+        async with get_database().session() as session:
+            await session.execute(
+                update(PartyRow).where(PartyRow.party_id == self.party_id).values(owner_id=user_id)
+            )
         self._owner_id = user_id
-        self._document.party_owner = user_id  # save() persists the document, not our mirror
-        return await self.save()
 
     async def delete(self):
-        """Delete the party and update all affected members."""
-        for member in self.members:
-            user = await User.get(member)
-            await user.set_field("party_id", None)
-        await self._document.delete()
+        """Delete the party; membership rows are removed by the foreign-key cascade."""
+        async with get_database().session() as session:
+            await session.execute(delete(PartyRow).where(PartyRow.party_id == self.party_id))
+        self._members.clear()
 
     def is_member(self, user_id: int) -> bool:
         return user_id in self._members
@@ -117,22 +128,24 @@ class Party:
         return len(self._members)
 
     @staticmethod
-    async def create(owner_id: int):
-        party_id = random.randint(1000, 9999)
-        party_exists = await PartyDocument.find_one(PartyDocument.party_id == party_id)
-        owns_party = await PartyDocument.find_one(PartyDocument.party_owner == owner_id)
-        if owns_party:
-            raise AlreadyInParty(
-                "You are already in a party.",
-                footer="Use /party leave to leave your current party.",
-            )
-        if not party_exists:
-            # Create the party
-            await PartyDocument(party_id=party_id, party_owner=owner_id).insert()
-            party: Party = await Party().load(party_id)
-            return await party.add_member(owner_id)
-
-        return await Party.create(owner_id=owner_id)
+    async def create(owner_id: int) -> "Party":
+        await User.get(owner_id)
+        async with get_database().session() as session:
+            if await session.get(PartyMemberRow, owner_id) is not None:
+                raise AlreadyInParty(
+                    "You are already in a party.",
+                    footer="Use /party leave to leave your current party.",
+                )
+            for _ in range(50):  # 4-digit ids; retry on the (rare) collision
+                party_id = random.randint(1000, 9999)
+                if await session.get(PartyRow, party_id) is None:
+                    break
+            else:
+                raise CustomError("Too many parties right now, try again in a bit.")
+            session.add(PartyRow(party_id=party_id, owner_id=owner_id))
+            await session.flush()  # the member row references the party row
+            session.add(PartyMemberRow(user_id=owner_id, party_id=party_id))
+        return Party(party_id, owner_id, [owner_id])
 
 
 # Custom check to make sure the user is in a party
@@ -181,7 +194,7 @@ class PartyInviteView(discord.ui.View):
     @discord.ui.button(label="Join", style=discord.ButtonStyle.green)
     async def join(self, interaction: Interaction, button: discord.ui.Button):
         # Reload: the party may have been disbanded or changed owner since the invite was sent.
-        party = await Party().load(self.party.party_id)
+        party = await Party.load(self.party.party_id)
         if party is None:
             return await self._finish(
                 interaction,
@@ -249,10 +262,8 @@ class PartySystemCog(commands.GroupCog, name="party"):
     async def interaction_check(self, interaction: Interaction):
         user = await User.get(interaction.user.id)
         interaction.extras.update(user=user)
-        party_id = user.get_field("party_id")
-        party = await Party().load(party_id) if party_id is not None else None
-        interaction.extras.update(party=party)
-        return await super().interaction_check(interaction)
+        interaction.extras.update(party=await Party.for_user(user.id))
+        return super().interaction_check(interaction)
 
     # Lists the members of a player's party
     @app_commands.command(name="list", description="See who is in your party")

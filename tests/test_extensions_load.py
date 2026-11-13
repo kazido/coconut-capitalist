@@ -17,7 +17,6 @@ from utils.extensions import walk_extensions
 @pytest.fixture
 async def bot(db):
     bot = commands.Bot(command_prefix="-", intents=discord.Intents.none(), help_command=None)
-    bot.mongo = db.client
     previous = cococap.instance
     cococap.instance = bot
     yield bot
@@ -41,9 +40,9 @@ async def test_all_enabled_extensions_load_and_unload(bot):
         await bot.unload_extension(name)
 
 
-async def test_drops_cog_seeds_megadrop_document_on_fresh_database(bot):
-    from bson import ObjectId
+async def test_drops_cog_seeds_megadrop_row_on_fresh_database(bot):
+    from cococap.db import queries
 
     await bot.load_extension("cococap.exts.economy.drops")
-    doc = await bot.mongo.discordbot.special_entities.find_one({"_id": ObjectId("65b76d73ee9f83c970604935")})
-    assert doc is not None and doc["amount"] == 0 and doc["times_missed"] == 0
+    row = await queries.get_megadrop()
+    assert row is not None and row.amount == 0 and row.times_missed == 0

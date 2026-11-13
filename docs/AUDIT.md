@@ -1,5 +1,9 @@
 # Codebase audit, architecture review & roadmap
 
+> **Update (database):** the bot has since moved from MongoDB/Beanie to SQLite/SQLAlchemy/Alembic, and
+> game data from INI to a typed TOML registry (`cococap/registry/`). Sections below that mention
+> MongoDB describe the state at the time of the audit; see "G. Database migration" at the end.
+
 Scope: whole repository at `d5d63cf` (791 commits, 2022-06 → 2025-09). Everything below was checked
 by reading the code, running static analysis (ruff), importing/loading every module, and — for bugs —
 writing a failing test or reproduction first. Nothing could be tested against live Discord or a real
@@ -229,3 +233,58 @@ timeout settlement, legacy→new data migration, every enabled extension imports
 | Long | Port skills (mining/fishing/foraging/farming/combat) onto a common `Skill` service; implement exploration | the game's core loop | high |
 | Long | Docker/compose for bot + Mongo, deployment docs, structured logging/metrics | operability | medium |
 | Long | Re-evaluate language only if sharding/high load appears | — | — |
+
+
+---
+
+## G. Database migration (MongoDB → SQLite)
+
+**Why:** the data is relational (players, the items they hold, parties, cooldowns). In Mongo every
+multi-step rule (pay, buy, rank up) had to be hand-built from string-path operators, and most of the
+money bugs in section D were exactly that. SQLite gives transactions and CHECK constraints for free,
+needs no server (local testing = running the bot), and is one file to back up.
+
+**Schema** (`cococap/db/tables.py`): `users` (balances, cooldowns, JSON settings/pethouse),
+`user_stats` (one row per counter), `user_skills` (xp/tool columns + validated JSON), `user_items`
+(one row per stack), `parties` + `party_members` (PK on user: one party per player), `megadrop`
+(single row). Balances and quantities have CHECK `>= 0`, so no code path can overdraw.
+
+**Concurrency model:** WAL mode, foreign keys on, and every transaction starts `BEGIN IMMEDIATE`, so
+read-modify-write sequences (skill JSON, party joins) are serialized by the database. This assumes
+**one bot process per database file**.
+
+**Access:** `cococap/user.py` (`User`) is the only writer of player data. Reads are typed properties
+(`user.purse`) or small async accessors (`await user.items()`, `await user.skill("mining")`); the old
+string-path `get_field`/`set_field` API is gone. Cross-user queries live in `cococap/db/queries.py`.
+
+**Schema changes:** edit `tables.py`, run `alembic revision --autogenerate`; migrations apply at
+startup, and `tests/test_db_migrations.py` fails if the two ever diverge.
+
+**Import of production data:** `scripts/import_mongo.py` (read-only on Mongo, dry-run by default).
+It converts both the legacy flat and the new nested shapes, renames items to registry ids
+(`apple.seed` → `apple_seed`, `implosion_gem` → `implosion_gemstone`, ...), clamps negative balances,
+drops duplicate users, and prints every anomaly. Legacy `pets` data is **not** imported (pets are being
+redesigned); it stays in MongoDB.
+
+**Not verified:** the import has been tested only with synthetic documents, never against your real
+database; run the dry run first and read the report.
+
+
+---
+
+## H. Restructure (items, services, mining)
+
+- **Items:** templates in `configs/items.toml` (typed, validated); stackables as `user_items`
+  counters; tools as per-player `item_instances` (permanent, enchantable). Enchants are defined in
+  `configs/enchants.toml` as declarative effects (`stat_add`, `stat_mult`, `flag`); crafting, buying
+  and finding all end in `services.equipment.add_enchant`.
+- **Layers:** cogs (Discord) → services (rules) → `User`/db → registry. The shop, equipment and mining
+  rules are services with tests that need no Discord.
+- **Shared UI kit:** `cococap/ui` (`OwnedView`, `ConfirmView`) replaces the missing `button_check`
+  and per-cog view boilerplate.
+- **Mining** is the first full vertical slice: grid generation, wyrmholes, scarab, reactor (gems,
+  prestige, auto-miner), magnet meter, all data-driven from `configs/mining.toml`.
+- **Placeholders to review** (marked `TODO(balance)` in the data files): magnet capacity and ore
+  values, scarab chance, axe powers, seed cycles, crop rarities. Not yet implemented from the wiki:
+  the pickaxe upgrade template reward, pickaxe power affecting drops.
+- **Removed:** legacy `utils/shop.py` (353 lines) and the old 650-line mining cog, both replaced.

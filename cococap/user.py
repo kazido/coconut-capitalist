@@ -1,16 +1,42 @@
 import time
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Optional
-from beanie import UpdateResponse
-from pymongo.errors import DuplicateKeyError
-
-from cococap.models.models import UserDocument
 from logging import getLogger
+from typing import Callable, TypeVar
+
+from sqlalchemy import delete, insert, select, update
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.exc import IntegrityError
+
+from cococap.db import get_database
+from cococap.db.tables import ItemInstanceRow, ItemRow, SkillRow, StatRow, UserRow
+from cococap.models.instance import ItemInstance
+from cococap.models.pethouse import Pethouse
+from cococap.models.settings import Settings
+from cococap.models.skills.base import Skill
+from cococap.models.skills.combat import Combat
+from cococap.models.skills.farming import Farming
+from cococap.models.skills.fishing import Fishing
+from cococap.models.skills.foraging import Foraging
+from cococap.models.skills.mining import Mining
 
 log = getLogger(__name__)
 
+SKILL_MODELS: dict[str, type[Skill]] = {
+    "mining": Mining,
+    "farming": Farming,
+    "foraging": Foraging,
+    "fishing": Fishing,
+    "combat": Combat,
+}
+_COLUMN_FIELDS = {"xp", "equipped_instance_id"}  # stored as real columns, not in the JSON blob
+
+S = TypeVar("S", bound=Skill)
+
 
 class Cooldowns(Enum):
+    """Cooldown name -> hours between claims."""
+
     WORK = 6
     DAILY = 21
     WEEKLY = 167
@@ -24,189 +50,489 @@ class InsufficientFunds(Exception):
     pass
 
 
+@dataclass(frozen=True)
+class Snapshot:
+    """The user's scalar columns as of the last read/write."""
+
+    discord_id: int
+    name: str
+    rank: int
+    purse: int
+    bank: int
+    tokens: int
+    luckbucks: int
+    work_cooldown: float
+    daily_cooldown: float
+    weekly_cooldown: float
+    settings: Settings
+    pethouse: Pethouse
+
+    @classmethod
+    def from_row(cls, row: UserRow) -> "Snapshot":
+        return cls(
+            discord_id=row.discord_id,
+            name=row.name,
+            rank=row.rank,
+            purse=row.purse,
+            bank=row.bank,
+            tokens=row.tokens,
+            luckbucks=row.luckbucks,
+            work_cooldown=row.work_cooldown,
+            daily_cooldown=row.daily_cooldown,
+            weekly_cooldown=row.weekly_cooldown,
+            settings=Settings.model_validate(row.settings or {}),
+            pethouse=Pethouse.model_validate(row.pethouse or {}),
+        )
+
+
 class User:
     """
-    User data and operations wrapper.
+    A player. Properties (``user.purse``, ``user.rank`` ...) reflect the database as of this
+    object's last read or write; every method that changes data does so with a single SQL
+    statement/transaction and then refreshes the snapshot, so concurrent commands can't lose or
+    duplicate value. Anything that must not go negative (spending, withdrawing, removing items) is
+    a *conditional* UPDATE: the check and the change are one atomic step.
 
-    Every mutation is a single MongoDB update operator against the stored document, never a
-    read-modify-write on a cached copy, so concurrent commands/buttons cannot lose or duplicate
-    value. Operations that must not go negative (spending, withdrawing, removing items) are
-    *conditional* updates: the balance check and the decrement happen in one atomic step.
-
-    Use User.get(discord_id) to get a handle; read-only properties reflect the document as it was
-    when loaded, while the ``get_*_fresh``/``get_bits`` helpers re-read from the database.
+    Use ``await User.get(discord_id)`` to get a handle (creating the player on first use).
     """
 
-    def __init__(self, document: UserDocument):
-        self._document = document
+    def __init__(self, snapshot: Snapshot):
+        self._s = snapshot
 
     @classmethod
     async def get(cls, discord_id: int) -> "User":
         """Get or create a user by Discord ID (safe against concurrent first-time calls)."""
-        doc = await UserDocument.find_one(UserDocument.discord_id == discord_id)
-        if not doc:
-            try:
-                doc = await UserDocument(name="unnamed user", discord_id=discord_id).insert()
-            except DuplicateKeyError:
-                # Another task created the user between our find and insert (unique index).
-                doc = await UserDocument.find_one(UserDocument.discord_id == discord_id)
-        return cls(doc)
+        async with get_database().session() as session:
+            await session.execute(
+                sqlite_insert(UserRow)
+                .values(discord_id=discord_id, name="unnamed user", settings={}, pethouse={})
+                .on_conflict_do_nothing(index_elements=["discord_id"])
+            )
+            row = await session.get(UserRow, discord_id)
+            return cls(Snapshot.from_row(row))
 
+    @classmethod
+    async def find(cls, discord_id: int) -> "User | None":
+        """Like get(), but never creates a user."""
+        async with get_database().session() as session:
+            row = await session.get(UserRow, discord_id)
+            return cls(Snapshot.from_row(row)) if row else None
+
+    # --- snapshot properties -------------------------------------------------------------
     @property
     def id(self) -> int:
-        return self._document.discord_id
+        return self._s.discord_id
 
     @property
     def name(self) -> str:
-        return self._document.name
+        return self._s.name
+
+    @property
+    def rank(self) -> int:
+        return self._s.rank
+
+    @property
+    def purse(self) -> int:
+        return self._s.purse
+
+    @property
+    def bank(self) -> int:
+        return self._s.bank
+
+    @property
+    def tokens(self) -> int:
+        return self._s.tokens
+
+    @property
+    def luckbucks(self) -> int:
+        return self._s.luckbucks
+
+    @property
+    def settings(self) -> Settings:
+        return self._s.settings
+
+    @property
+    def pethouse(self) -> Pethouse:
+        return self._s.pethouse
 
     def __str__(self) -> str:
         return self.name
 
-    async def _update(self, filters: dict, update: dict) -> bool:
-        """Apply `update` to this user's document if it matches `filters`; sync the local copy.
-
-        Returns True if the update was applied.
-        """
-        updated = await UserDocument.find_one(
-            {"_id": self._document.id, **filters}
-        ).update(update, response_type=UpdateResponse.NEW_DOCUMENT)
-        if updated is None:
-            return False
-        self._document = updated
-        return True
-
     async def refresh(self) -> None:
-        """Reload this handle's document from the database."""
-        self._document = await UserDocument.get(self._document.id)
+        """Reload this handle from the database."""
+        async with get_database().session() as session:
+            self._s = Snapshot.from_row(await session.get(UserRow, self.id))
 
-    # --- Atomic Currency Methods ---
+    async def _update(self, *conditions, **values) -> bool:
+        """UPDATE this user's row SET `values` (column expressions allowed) WHERE `conditions`.
+
+        Returns True if a row matched (and refreshes the snapshot), False if a condition failed.
+        """
+        async with get_database().session() as session:
+            result = await session.execute(
+                update(UserRow)
+                .where(UserRow.discord_id == self.id, *conditions)
+                .values(**values)
+                .returning(UserRow)
+            )
+            row = result.scalar_one_or_none()
+            if row is None:
+                return False
+            self._s = Snapshot.from_row(row)
+            return True
+
+    # --- currency ------------------------------------------------------------------------
     async def add_bits(self, amount: int) -> None:
-        """Add bits to the user's purse (atomic)."""
-        await self._update({}, {"$inc": {"purse": amount}})
+        """Add bits to the purse. (Negative amounts are allowed but can't go below zero.)"""
+        if amount < 0:
+            return await self.remove_bits(-amount)
+        await self._update(purse=UserRow.purse + amount)
 
     async def remove_bits(self, amount: int) -> None:
-        """Remove bits from the purse. Atomically refuses to go below zero."""
+        """Remove bits from the purse; atomically refuses to go below zero."""
         if amount < 0:
             raise ValueError("amount must be non-negative")
-        if not await self._update({"purse": {"$gte": amount}}, {"$inc": {"purse": -amount}}):
+        if not await self._update(UserRow.purse >= amount, purse=UserRow.purse - amount):
             raise InsufficientFunds("Not enough bits.")
 
     async def get_bits(self) -> int:
-        """Get the latest purse value from the DB."""
-        doc = await UserDocument.get(self._document.id)
-        return doc.purse
+        """The purse as it is in the database right now."""
+        await self.refresh()
+        return self.purse
 
     async def deposit_bits(self, amount: int) -> None:
         if not await self._update(
-            {"purse": {"$gte": amount}}, {"$inc": {"purse": -amount, "bank": amount}}
+            UserRow.purse >= amount, purse=UserRow.purse - amount, bank=UserRow.bank + amount
         ):
             raise InsufficientFunds("Not enough bits in your purse.")
 
     async def withdraw_bits(self, amount: int) -> None:
         if not await self._update(
-            {"bank": {"$gte": amount}}, {"$inc": {"purse": amount, "bank": -amount}}
+            UserRow.bank >= amount, purse=UserRow.purse + amount, bank=UserRow.bank - amount
         ):
             raise InsufficientFunds("Not enough bits in your bank.")
 
     async def add_bank(self, amount: int) -> None:
-        await self._update({}, {"$inc": {"bank": amount}})
+        await self._update(bank=UserRow.bank + amount)
 
     async def pay(self, recipient: "User", amount: int) -> None:
-        """Move `amount` bits from this user's purse to `recipient`'s (no money is created)."""
-        await self.remove_bits(amount)
-        try:
-            await recipient.add_bits(amount)
-        except Exception:
-            await self.add_bits(amount)  # give it back; don't let a failed payout destroy bits
-            raise
+        """Move `amount` bits from this user's purse to `recipient`'s, in one transaction."""
+        if amount < 0:
+            raise ValueError("amount must be non-negative")
+        async with get_database().session() as session:
+            taken = await session.execute(
+                update(UserRow)
+                .where(UserRow.discord_id == self.id, UserRow.purse >= amount)
+                .values(purse=UserRow.purse - amount)
+            )
+            if taken.rowcount == 0:
+                raise InsufficientFunds("Not enough bits.")
+            await session.execute(
+                update(UserRow)
+                .where(UserRow.discord_id == recipient.id)
+                .values(purse=UserRow.purse + amount)
+            )
+        await self.refresh()
+        await recipient.refresh()
 
     async def add_tokens(self, amount: int) -> None:
         if amount < 0:
             raise ValueError("add_tokens takes a non-negative amount; use rank_up to spend tokens")
         await self.inc_stat("tokens_earned", amount)
-        await self._update({}, {"$inc": {"tokens": amount}})
+        await self._update(tokens=UserRow.tokens + amount)
 
     async def add_luckbucks(self, amount: int) -> None:
         if amount < 0:
             raise ValueError("add_luckbucks takes a non-negative amount")
         await self.inc_stat("luckbucks_earned", amount)
-        await self._update({}, {"$inc": {"luckbucks": amount}})
+        await self._update(luckbucks=UserRow.luckbucks + amount)
 
     async def rank_up(self, new_rank: int, token_price: int) -> bool:
-        """Atomically buy rank `new_rank`: must currently be exactly one rank below, with enough
-        tokens. Returns False (and changes nothing) otherwise, so a stale button can't replay it."""
+        """Atomically buy rank `new_rank`: the user must currently be exactly one rank below and
+        have enough tokens. Returns False (changing nothing) otherwise, so a stale button can't
+        replay a purchase."""
         return await self._update(
-            {"rank": new_rank - 1, "tokens": {"$gte": token_price}},
-            {"$inc": {"tokens": -token_price}, "$set": {"rank": new_rank}},
+            UserRow.rank == new_rank - 1,
+            UserRow.tokens >= token_price,
+            rank=new_rank,
+            tokens=UserRow.tokens - token_price,
         )
 
-    # --- XP/Level Methods ---
-    async def add_xp(self, skill: str, amount: int):
-        """Add XP to a skill (atomic). Returns the updated skill model."""
-        await self._update({}, {"$inc": {f"{skill}.xp": amount}})
-        return getattr(self._document, skill)
+    async def set_name(self, name: str) -> None:
+        if name != self.name:
+            await self._update(name=name)
 
-    async def get_skill(self, skill: str):
-        doc = await UserDocument.get(self._document.id)
-        return getattr(doc, skill)
+    async def set_setting(self, key: str, value) -> None:
+        settings = self.settings.model_copy(update={key: value})
+        Settings.model_validate(settings.model_dump())  # reject unknown keys / wrong types
+        await self._update(settings=settings.model_dump())
 
-    # --- Statistics Updating --- #
-    async def inc_stat(self, statistic: str, amount: int = 1):
-        await self._update({}, {"$inc": {f"statistics.{statistic}": amount}})
+    # --- skills --------------------------------------------------------------------------
+    async def skill(self, name: str) -> Skill:
+        """The user's progress in a skill, as the skill's Pydantic model (defaults if untouched)."""
+        model = SKILL_MODELS[name]
+        async with get_database().session() as session:
+            row = await session.get(SkillRow, (self.id, name))
+        if row is None:
+            return model()
+        return model.model_validate(
+            {**(row.data or {}), "xp": row.xp, "equipped_instance_id": row.equipped_instance_id}
+        )
 
-    async def get_stat(self, statistic: str):
-        doc = await UserDocument.get(self._document.id)
-        return getattr(doc.statistics, statistic)
+    async def add_xp(self, skill: str, amount: int) -> Skill:
+        """Add XP to a skill (atomic). Returns the updated skill."""
+        async with get_database().session() as session:
+            await session.execute(
+                sqlite_insert(SkillRow)
+                .values(user_id=self.id, skill=skill, xp=amount, data={})
+                .on_conflict_do_update(
+                    index_elements=["user_id", "skill"], set_={"xp": SkillRow.xp + amount}
+                )
+            )
+        return await self.skill(skill)
 
-    async def set_stat(self, statistic: str, value: int = 0):
-        await self._update({}, {"$set": {f"statistics.{statistic}": value}})
+    async def update_skill(self, name: str, change: Callable[[S], None]) -> S:
+        """Read-modify-write a skill's data inside one transaction.
 
-    # --- Item Methods ---
+        ``change`` receives the skill model, mutates it in place, and the result is saved.
+        Transactions are serialized by the database (BEGIN IMMEDIATE), so concurrent updates
+        can't overwrite each other.
+        """
+        model = SKILL_MODELS[name]
+        async with get_database().session() as session:
+            row = await session.get(SkillRow, (self.id, name))
+            skill = (
+                model.model_validate(
+                    {**(row.data or {}), "xp": row.xp, "equipped_instance_id": row.equipped_instance_id}
+                )
+                if row
+                else model()
+            )
+            change(skill)
+            values = {
+                "xp": skill.xp,
+                "equipped_instance_id": skill.equipped_instance_id,
+                "data": skill.model_dump(exclude=_COLUMN_FIELDS),
+            }
+            if row is None:
+                session.add(SkillRow(user_id=self.id, skill=name, **values))
+            else:
+                for key, value in values.items():
+                    setattr(row, key, value)
+        return skill
+
+    # --- statistics ----------------------------------------------------------------------
+    async def inc_stat(self, statistic: str, amount: int = 1) -> None:
+        async with get_database().session() as session:
+            await session.execute(
+                sqlite_insert(StatRow)
+                .values(user_id=self.id, name=statistic, value=amount)
+                .on_conflict_do_update(
+                    index_elements=["user_id", "name"], set_={"value": StatRow.value + amount}
+                )
+            )
+
+    async def get_stat(self, statistic: str) -> int:
+        async with get_database().session() as session:
+            row = await session.get(StatRow, (self.id, statistic))
+            return row.value if row else 0
+
+    async def set_stat(self, statistic: str, value: int = 0) -> None:
+        async with get_database().session() as session:
+            await session.execute(
+                sqlite_insert(StatRow)
+                .values(user_id=self.id, name=statistic, value=value)
+                .on_conflict_do_update(index_elements=["user_id", "name"], set_={"value": value})
+            )
+
+    async def stats(self) -> dict[str, int]:
+        """Every statistic this user has recorded."""
+        async with get_database().session() as session:
+            rows = await session.execute(select(StatRow).where(StatRow.user_id == self.id))
+            return {row.name: row.value for row in rows.scalars()}
+
+    # --- items ---------------------------------------------------------------------------
+    @staticmethod
+    def _check_item_id(item_id: str) -> None:
+        if not item_id or not item_id.replace("_", "").isalnum():
+            raise ValueError(f"Invalid item id {item_id!r}: use e.g. 'apple_seed', not 'apple.seed'")
+
+    async def items(self) -> dict[str, int]:
+        """The inventory as {item_id: quantity}."""
+        async with get_database().session() as session:
+            rows = await session.execute(select(ItemRow).where(ItemRow.user_id == self.id))
+            return {row.item_id: row.quantity for row in rows.scalars()}
+
+    async def item_quantity(self, item_id: str) -> int:
+        async with get_database().session() as session:
+            row = await session.get(ItemRow, (self.id, item_id))
+            return row.quantity if row else 0
+
     async def add_item(self, item_id: str, quantity: int = 1) -> None:
-        """Add an item to the user's inventory (atomic)."""
-        await self._update({}, {"$inc": {f"items.{item_id}.quantity": quantity}})
+        """Add items to the inventory (atomic)."""
+        self._check_item_id(item_id)
+        if quantity < 0:
+            raise ValueError("quantity must be non-negative")
+        if quantity == 0:
+            return
+        async with get_database().session() as session:
+            await session.execute(
+                sqlite_insert(ItemRow)
+                .values(user_id=self.id, item_id=item_id, quantity=quantity)
+                .on_conflict_do_update(
+                    index_elements=["user_id", "item_id"],
+                    set_={"quantity": ItemRow.quantity + quantity},
+                )
+            )
 
     async def remove_item(self, item_id: str, quantity: int = 1) -> None:
-        """Remove items from the inventory. Atomically raises if there aren't enough."""
-        path = f"items.{item_id}.quantity"
-        if not await self._update({path: {"$gte": quantity}}, {"$inc": {path: -quantity}}):
-            raise ValueError("Not enough items to remove.")
-        # Drop emptied stacks so the inventory doesn't fill with zero-quantity entries.
-        await self._update({path: {"$lte": 0}}, {"$unset": {f"items.{item_id}": ""}})
+        """Remove items. Atomically raises ValueError if there aren't enough."""
+        self._check_item_id(item_id)
+        async with get_database().session() as session:
+            result = await session.execute(
+                update(ItemRow)
+                .where(
+                    ItemRow.user_id == self.id,
+                    ItemRow.item_id == item_id,
+                    ItemRow.quantity >= quantity,
+                )
+                .values(quantity=ItemRow.quantity - quantity)
+            )
+            if result.rowcount == 0:
+                raise ValueError("Not enough items to remove.")
+            await session.execute(
+                delete(ItemRow).where(
+                    ItemRow.user_id == self.id,
+                    ItemRow.item_id == item_id,
+                    ItemRow.quantity == 0,
+                )
+            )
+            # (a quantity>0 CHECK would reject the 0 row, so empty stacks are deleted above)
 
-    # --- Cooldown Methods ---
+    # --- item instances (unique tools) -----------------------------------------------------
+    @staticmethod
+    def _to_instance(row: ItemInstanceRow) -> ItemInstance:
+        return ItemInstance(
+            id=row.id,
+            owner_id=row.owner_id,
+            template_id=row.template_id,
+            rolled=dict(row.rolled or {}),
+            enchants=dict(row.enchants or {}),
+        )
+
+    async def instances(self) -> list[ItemInstance]:
+        """Every unique item this player owns, oldest first."""
+        async with get_database().session() as session:
+            rows = await session.scalars(
+                select(ItemInstanceRow)
+                .where(ItemInstanceRow.owner_id == self.id)
+                .order_by(ItemInstanceRow.id)
+            )
+            return [self._to_instance(r) for r in rows]
+
+    async def instance(self, instance_id: int) -> ItemInstance | None:
+        """One of this player's instances (None if it doesn't exist or belongs to someone else)."""
+        async with get_database().session() as session:
+            row = await session.get(ItemInstanceRow, instance_id)
+            if row is None or row.owner_id != self.id:
+                return None
+            return self._to_instance(row)
+
+    async def give_instance(
+        self,
+        template_id: str,
+        *,
+        enchants: dict[str, int] | None = None,
+        rolled: dict[str, float] | None = None,
+    ) -> ItemInstance:
+        """Create a new unique item owned by this player."""
+        async with get_database().session() as session:
+            row = ItemInstanceRow(
+                owner_id=self.id,
+                template_id=template_id,
+                rolled=dict(rolled or {}),
+                enchants=dict(enchants or {}),
+            )
+            session.add(row)
+            await session.flush()
+            return self._to_instance(row)
+
+    async def set_enchant_level(self, instance_id: int, enchant_id: str, level: int) -> ItemInstance:
+        """Set an enchant's level on an instance this player owns (level 0 removes it)."""
+        async with get_database().session() as session:
+            row = await session.get(ItemInstanceRow, instance_id)
+            if row is None or row.owner_id != self.id:
+                raise ValueError("You don't own that item.")
+            enchants = dict(row.enchants or {})
+            if level <= 0:
+                enchants.pop(enchant_id, None)
+            else:
+                enchants[enchant_id] = level
+            row.enchants = enchants  # reassign so the JSON change is detected
+            return self._to_instance(row)
+
+    async def transfer_instance(self, instance_id: int, to: "User") -> None:
+        """Give an instance to another player (and unequip it everywhere)."""
+        async with get_database().session() as session:
+            result = await session.execute(
+                update(ItemInstanceRow)
+                .where(ItemInstanceRow.id == instance_id, ItemInstanceRow.owner_id == self.id)
+                .values(owner_id=to.id)
+            )
+            if result.rowcount == 0:
+                raise ValueError("You don't own that item.")
+            await session.execute(
+                update(SkillRow)
+                .where(SkillRow.equipped_instance_id == instance_id)
+                .values(equipped_instance_id=None)
+            )
+
+    async def equip(self, skill: str, instance_id: int | None) -> None:
+        """Equip one of this player's instances for a skill (None unequips)."""
+        async with get_database().session() as session:
+            if instance_id is not None:
+                row = await session.get(ItemInstanceRow, instance_id)
+                if row is None or row.owner_id != self.id:
+                    raise ValueError("You don't own that item.")
+            await session.execute(
+                sqlite_insert(SkillRow)
+                .values(user_id=self.id, skill=skill, xp=0, data={}, equipped_instance_id=instance_id)
+                .on_conflict_do_update(
+                    index_elements=["user_id", "skill"], set_={"equipped_instance_id": instance_id}
+                )
+            )
+
+    async def equipped_instance(self, skill: str) -> ItemInstance | None:
+        """The tool equipped for `skill`, if any."""
+        equipped = (await self.skill(skill)).equipped_instance_id
+        return await self.instance(equipped) if equipped is not None else None
+
+    # --- cooldowns -----------------------------------------------------------------------
+    @staticmethod
+    def _cd_column(command: Cooldowns):
+        return getattr(UserRow, f"{command.name.lower()}_cooldown")
+
+    def get_cooldown(self, command: Cooldowns) -> float:
+        return getattr(self._s, f"{command.name.lower()}_cooldown")
+
     async def set_cooldown(self, command: Cooldowns) -> None:
-        await self._update({}, {"$set": {f"cooldowns.{command.name.lower()}": time.time()}})
+        await self._update(**{f"{command.name.lower()}_cooldown": time.time()})
+
+    async def reset_cooldowns(self) -> None:
+        await self._update(work_cooldown=0, daily_cooldown=0, weekly_cooldown=0)
 
     async def claim_cooldown(self, command: Cooldowns) -> bool:
         """Atomically start `command`'s cooldown if it has elapsed.
 
-        Returns False if it was still on cooldown. Use this (not get_cooldown + set_cooldown)
-        for rewards, so stale buttons or two simultaneous commands cannot both pay out.
+        Returns False if it was still on cooldown. Use this (not get_cooldown + set_cooldown) for
+        rewards, so stale buttons or two simultaneous commands cannot both pay out.
         """
         now = time.time()
-        field = f"cooldowns.{command.name.lower()}"
-        ready_before = now - command.value * 3600
-        off_cooldown = {"$or": [{field: {"$exists": False}}, {field: {"$lte": ready_before}}]}
-        return await self._update(off_cooldown, {"$set": {field: now}})
-
-    def get_cooldown(self, command: Cooldowns) -> Optional[float]:
-        return getattr(self._document.cooldowns, command.name.lower(), None)
-
-    # --- Field Access ---
-    async def get_field_fresh(self, field: str) -> Any:
-        doc = await UserDocument.get(self._document.id)
-        return getattr(doc, field)
-
-    def get_field(self, field: str) -> Any:
-        return getattr(self._document, field)
-
-    async def set_field(self, field: str, value: Any) -> None:
-        await self._update({}, {"$set": {field: value}})
-
-    async def increment_field(self, field: str, amount: int) -> None:
-        await self._update({}, {"$inc": {field: amount}})
+        column = self._cd_column(command)
+        return await self._update(
+            column <= now - command.value * 3600,
+            **{f"{command.name.lower()}_cooldown": now},
+        )
 
     # --- Static Utility Methods ---
     @staticmethod

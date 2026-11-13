@@ -24,7 +24,7 @@ class Settings(commands.Cog):
             },
         }
 
-        settings: dict = user._document.settings
+        settings: dict = user.settings.model_dump()
         keys = list(settings.keys())
 
         class SettingsView(discord.ui.View):
@@ -76,6 +76,8 @@ class Settings(commands.Cog):
 
             @discord.ui.button(label="Save")
             async def save_button(self, interaction: Interaction, button: discord.Button):
+                for key, value in settings.items():
+                    await user.set_setting(key, value)
                 self.embed.set_footer(text="Settings saved!")
                 self.clear_items()
                 await interaction.response.edit_message(embed=self.embed, view=self)

@@ -1,0 +1,16 @@
+# Combat enemies. shield absorbs damage before hp.
+[zombie]
+name = "Zombie"
+attack = 1
+hp = 3
+
+[armored_zombie]
+name = "Armored Zombie"
+attack = 1
+hp = 3
+shield = 3
+
+[skeleton]
+name = "Skeleton"
+attack = 3
+hp = 1

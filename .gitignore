@@ -138,3 +138,5 @@ database/examples
 /logs
 .logs
 logs
+data/
+*.db

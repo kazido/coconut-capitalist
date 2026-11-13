@@ -1,0 +1,49 @@
+# Mining rules (see the wiki). Everything here is balance data: change numbers freely.
+# depth_tables: one list of item ids per row of the mine (top to bottom). For each cell the items are rolled
+# in order and the first one that drops wins, so every list MUST be rarest-first (validated at startup).
+
+rows = 5
+columns = 5
+xp_per_column = 10                 # xp for each column dug when a mine is completed
+
+depth_tables = [
+  ["copper_ore"],
+  ["iron_ore", "copper_ore"],
+  ["dusty_dandelion_seed", "gold_ore", "iron_ore", "copper_ore"],
+  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "dusty_dandelion_seed", "gold_ore", "iron_ore", "copper_ore"],
+  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "spirit_of_the_mines", "dusty_dandelion_seed", "gold_ore", "iron_ore", "copper_ore"],
+]
+
+[wyrmhole]
+odds = 25000                       # 1-in-N per cell below `min_row`
+gem_bonus = 5000                   # N shrinks by this for every gem placed in the reactor
+min_odds = 1000                    # ...but never below this
+min_row = 2                        # first row (0-based) wyrmholes can hide in
+implosion_item = "implosion_gemstone"
+[wyrmhole.pool]                    # item = quantity found in a wyrmhole cell
+scarab_bomb = 20
+copper_ore = 1000
+iron_ore = 300
+gold_ore = 100
+
+[reactor]
+gem_slot_level = 10                # mining level needed to place gems
+max_prestige = 25
+prestige_per_extra_column = 5      # +1 column dug every this many reactor levels
+core_gems = ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone"]
+automine_seconds = 360             # one lode per level every 6 minutes
+automine_cap_hours = 24            # lodes stop piling up after this long
+
+[magnet]
+level = 5                          # mining level needed
+capacity = 1000                    # TODO(balance): not in the wiki
+[magnet.values]                    # TODO(balance): meter points per deposited ore
+copper_ore = 1
+iron_ore = 10
+gold_ore = 100
+
+[scarab]
+chance = 51                        # 1-in-N after finishing a mine (the old code used 1/51)
+seconds = 30                       # time to unscramble the scroll
+reward_item = "scarab_bomb"        # level-6 reward (quantity from the item's drop min/max)
+# TODO(wiki): the pickaxe upgrade template reward needs an item definition first.

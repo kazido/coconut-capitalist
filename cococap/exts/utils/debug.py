@@ -133,9 +133,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
     @commands.command(name="Reset")
     async def reset(self, ctx):
         user = await User.get(ctx.author.id)
-        await user.set_field("cooldowns.work", 0)
-        await user.set_field("cooldowns.daily", 0)
-        await user.set_field("cooldowns.weekly", 0)
+        await user.reset_cooldowns()
         embed = CustomEmbed(desc="RESET! RESET! RESET!")
         await ctx.send(embed=embed)
 

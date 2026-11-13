@@ -5,12 +5,12 @@ from discord import app_commands
 from cococap.errors import CustomError
 from cococap.user import User
 from utils.custom_embeds import CustomEmbed
-from configs.converters.data_converter import fetch, fetch_optional
+from cococap.registry import get_registry
 
 
 async def process_rank_purchase(interaction: discord.Interaction, user: User, rank):
     """Charge the tokens and promote the user, atomically. Raises if they can't afford it."""
-    if not await user.rank_up(int(rank.rank_id), int(rank.token_price)):
+    if not await user.rank_up(rank.rank_id, rank.token_price):
         raise CustomError(
             "You can't rank up right now.",
             footer="You need enough tokens, and this must be your next rank.",
@@ -45,7 +45,7 @@ class Rankup(discord.ui.View):
         self.interaction = interaction
         self.user: User = interaction.extras.get("user")
         self.next_rank = next_rank
-        affordable = self.user.get_field("tokens") >= int(next_rank.token_price)
+        affordable = self.user.tokens >= next_rank.token_price
         self.add_item(RankupButton(next_rank, affordable))
 
     async def interaction_check(self, interaction: discord.Interaction):
@@ -58,11 +58,11 @@ class RanksCog(commands.Cog):
     async def interaction_check(self, interaction: discord.Interaction):
         user = await User.get(interaction.user.id)
         interaction.extras.update(user=user)
-        rank = fetch("ranks." + str(user.get_field("rank")))
+        registry = get_registry()
+        rank = registry.rank(user.rank)
         interaction.extras.update(rank=rank)
-        # None at max rank
-        interaction.extras.update(next_rank=fetch_optional("ranks." + str(int(rank.rank_id) + 1)))
-        return await super().interaction_check(interaction)
+        interaction.extras.update(next_rank=registry.next_rank(rank.rank_id))  # None at max rank
+        return super().interaction_check(interaction)
 
     @app_commands.command(name="rank")
     async def rank(self, interaction: discord.Interaction):
@@ -78,7 +78,7 @@ class RanksCog(commands.Cog):
             interaction=interaction,
             activity="checking rank",
         )
-        embed.add_field(name="Wage", value=f"{int(rank.wage):,} bits")
+        embed.add_field(name="Wage", value=f"{rank.wage:,} bits")
 
         view = None
         if next_rank:
@@ -86,7 +86,7 @@ class RanksCog(commands.Cog):
                 name="Next Rank",
                 value=f"{next_rank.display_name} "
                 f"{next_rank.emoji}\n"
-                f"Wage: {int(next_rank.wage):,} bits",
+                f"Wage: {next_rank.wage:,} bits",
                 inline=False,
             )
             view = Rankup(interaction, next_rank)

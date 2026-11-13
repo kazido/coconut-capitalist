@@ -56,6 +56,9 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         log.critical("Bot shutting down due to manual interrupt.")
+    except discord.LoginFailure:
+        print("Startup failed: Discord rejected BOT_TOKEN. Reset it in the developer portal.", file=sys.stderr)
+        sys.exit(1)
     except (StartupError, RuntimeError) as e:
         print(f"Startup failed: {e}", file=sys.stderr)
         sys.exit(1)

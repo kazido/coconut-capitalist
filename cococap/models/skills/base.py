@@ -4,4 +4,5 @@ from typing import Optional
 
 class Skill(BaseModel):
     xp: int = 0
-    equipped_tool: Optional[str] = None
+    # id of the equipped tool (an item instance the player owns); None = nothing equipped
+    equipped_instance_id: Optional[int] = None

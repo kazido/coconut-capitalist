@@ -3,33 +3,29 @@ import discord
 from enum import Enum
 from discord import app_commands, Interaction
 from discord.ext import commands
-from cococap.constants import BOT_ID
-from cococap.models.models import UserDocument
 
-FIRST_PLACE_ANSI_PREFIX = "\u001b[0;37m"
-SECOND_PLACE_ANSI_PREFIX = "\u001b[0;33m"
-THIRD_PLACE_ANSI_PREFIX = "\u001b[0;31m"
-OTHER_PLACE_ANSI_PREFIX = "\u001b[0;30m"
-RESET_POSTFIX = "\u001b[0m"
+from cococap.constants import BOT_ID
+from cococap.db import queries
 
 
 class TopCategories(Enum):
-    BITS = ("💸", "Bits", ("purse"), "0xbbd6ed")
-    LUCKBUCKS = ("🍀", "Luckbucks", ("luckbucks"), "0x47d858")
-    FARMING = ("🌽", "Farming", ("farming", "xp"), "0x2f919e")
-    FORAGING = ("🌳", "Foraging", ("foraging", "xp"), "0x2f9e47")
-    FISHING = ("🐟", "Fishing", ("fishing", "xp"), "0x2f3a9e")
-    MINING = ("⛏️", "Mining", ("mining", "xp"), "0x9e492f")
-    COMBAT = ("⚔️", "Combat", ("combat", "xp"), "0x9e2f2f")
-    # SHEPHERDING = ("🐑", "Shepherding", ("shepherding", "xp"), "0x5f2f9e")  # TO BE ADDED
-    DROPS = ("📦", "Drops", ("statistics", "drops_claimed"), "0x8b9a9e")
+    # value, emoji, display name, leaderboard key (see cococap.db.queries.leaderboard), color
+    BITS = ("💸", "Bits", "bits", "0xbbd6ed")
+    LUCKBUCKS = ("🍀", "Luckbucks", "luckbucks", "0x47d858")
+    FARMING = ("🌽", "Farming", "skill:farming", "0x2f919e")
+    FORAGING = ("🌳", "Foraging", "skill:foraging", "0x2f9e47")
+    FISHING = ("🐟", "Fishing", "skill:fishing", "0x2f3a9e")
+    MINING = ("⛏️", "Mining", "skill:mining", "0x9e492f")
+    COMBAT = ("⚔️", "Combat", "skill:combat", "0x9e2f2f")
+    # SHEPHERDING = ("🐑", "Shepherding", "skill:shepherding", "0x5f2f9e")  # TO BE ADDED
+    DROPS = ("📦", "Drops", "stat:drops_claimed", "0x8b9a9e")
 
-    def __new__(cls, emoji, name, column: str, color):
+    def __new__(cls, emoji, name, key: str, color):
         obj = object.__new__(cls)
         obj._value_ = name.lower()
         obj.emoji = emoji
         obj.display_name = name
-        obj.column = column
+        obj.key = key
         obj.color = color
         return obj
 
@@ -38,93 +34,42 @@ class TopCategories(Enum):
         return cls(name.lower())
 
 
-LEADERBOARD_CATEGORIES = [
-    TopCategories.BITS,
-    TopCategories.LUCKBUCKS,
-    TopCategories.DROPS,
-    # Add more categories as needed
-]
-
-
-def _column_path(category: TopCategories) -> tuple[str, ...]:
-    """The document field path for a category, e.g. ("farming", "xp"). Accepts "purse" or a tuple."""
-    column = category.column
-    return (column,) if isinstance(column, str) else tuple(column)
-
-
-def _read_path(user, path: tuple[str, ...]):
-    """Follow `path` through a raw dict (aggregate results) or a document (beanie results)."""
-    value = user
-    for part in path:
-        value = value[part] if isinstance(value, dict) else getattr(value, part)
-    return value
-
-
-def get_leaderboard_query_and_accessors(category: TopCategories):
-    if category == TopCategories.BITS:
-        pipeline = [
-            {"$addFields": {"sum_value": {"$add": ["$purse", "$bank"]}}},
-            {"$sort": {"sum_value": -1}},
-        ]
-        return (
-            UserDocument.aggregate(pipeline).to_list(),
-            lambda u: u["purse"] + u["bank"],
-            lambda u: u["discord_id"],
-            lambda u: u["name"],
-        )
-    path = _column_path(category)
-    return (
-        UserDocument.find().sort((".".join(path), -1)).to_list(),
-        lambda u: _read_path(u, path),
-        lambda u: u.discord_id,
-        lambda u: u.name,
-    )
+MEDALS = ["🥇", "🥈", "🥉"]
 
 
 async def build_leaderboard_embed(interaction: Interaction, category: TopCategories):
-    query, get_value, get_id, get_name = get_leaderboard_query_and_accessors(category)
-    all_users = await query  # includes the house account, which the BITS totals below need
-    bot_id = BOT_ID
-    query = [u for u in all_users if get_id(u) != bot_id]
-    medals = ["🥇", "🥈", "🥉"]
+    # The house account (the bot's own user) is hidden from every board.
+    top = await queries.leaderboard(category.key, limit=10, exclude=BOT_ID)
     embed = discord.Embed(
         title=f"{category.emoji} {category.display_name} Leaderboard",
         color=discord.Color.from_str(category.color),
-        description="",
     )
-    user_found = False
     lines = []
-    for idx, user in enumerate(query[:10], start=1):
-        value = get_value(user)
-        medal = medals[idx - 1] if idx <= 3 else f"{idx}."
-        if get_id(user) == interaction.user.id:
-            line = f"{medal} **{get_name(user)} — {value:,} (you)**"
-            user_found = True
+    caller_listed = False
+    for entry in top:
+        medal = MEDALS[entry.rank - 1] if entry.rank <= 3 else f"{entry.rank}."
+        if entry.discord_id == interaction.user.id:
+            caller_listed = True
+            lines.append(f"{medal} **{entry.name} — {entry.value:,} (you)**")
         else:
-            line = f"{medal} {get_name(user)} — {value:,}"
-        lines.append(line)
-    if not user_found:
-        for idx, user in enumerate(query, start=1):
-            if get_id(user) == interaction.user.id:
-                value = get_value(user)
-                line = f"**{idx}. {get_name(user)} — {value:,} (you)**"
-                lines.append("\nYour rank:\n" + line)
-                break
-    embed.description = "\n".join(lines)
+            lines.append(f"{medal} {entry.name} — {entry.value:,}")
+    if not caller_listed:
+        mine = await queries.position_of(category.key, interaction.user.id, exclude=BOT_ID)
+        if mine:
+            lines.append(f"\nYour rank:\n**{mine.rank}. {mine.name} — {mine.value:,} (you)**")
+    embed.description = "\n".join(lines) or "Nobody is on this board yet."
 
-    # Add circulation and bot profit for BITS leaderboard
     if category == TopCategories.BITS:
-        total_purse = sum(u["purse"] for u in all_users)
-        total_bank = sum(u["bank"] for u in all_users)
-        circulation = total_purse + total_bank
-        bot_user = next((u for u in all_users if u["discord_id"] == bot_id), None)
-        bot_purse = bot_user["purse"] if bot_user else 0
+        circulation = await queries.bits_in_circulation(exclude=BOT_ID)
         embed.add_field(
             name="Current Circulation",
-            value=f"There are currently **{circulation - bot_purse:,}** bits in the economy.",
+            value=f"There are currently **{circulation:,}** bits in the economy.",
             inline=False,
         )
-        embed.set_footer(text=f"The house has made: {bot_purse:,} bits")
+        from cococap.user import User
+
+        house = await User.get(BOT_ID)
+        embed.set_footer(text=f"The house has made: {house.purse:,} bits")
     return embed
 
 

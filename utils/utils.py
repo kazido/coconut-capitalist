@@ -116,4 +116,5 @@ def parse_bits(amount: int | str | None, balance: int) -> int:
 
 async def validate_bits(user, amount: int | str | None = None, field: str = "purse") -> int:
     """Parse `amount` and check it against the user's current (fresh) `field` balance."""
-    return parse_bits(amount, await user.get_field_fresh(field))
+    await user.refresh()
+    return parse_bits(amount, getattr(user, field))

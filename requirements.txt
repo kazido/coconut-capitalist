@@ -1,10 +1,10 @@
 # Direct runtime dependencies only. The source of truth is pyproject.toml:
 #   uv pip install -e ".[dev]"
-# (The old file pinned 54 transitive packages, including the unrelated `discord` shim package.)
 discord.py>=2.4,<2.7
 pydis-core>=11.5,<12
-beanie>=1.29,<2
-motor>=3.6,<4
+sqlalchemy[asyncio]>=2.0,<3
+aiosqlite>=0.20
+alembic>=1.13,<2
 pydantic>=2.10,<3
 python-dotenv>=1.0
 python-dateutil>=2.9

@@ -7,12 +7,13 @@ from cococap.constants import BOT_ID
 from cococap.exts.gambling.blackjack import Actions, BlackjackGame, GameStates
 from cococap.exts.gambling.high_low import HighlowGame
 from cococap.user import User
+from tests.conftest import set_columns
 
 
 async def start_game(cls, db_bet=100, purse=1000):
     """Mimic the cog's interaction_check: load the user and take the bet up front."""
     user = await User.get(1)
-    await user.set_field("purse", purse)
+    await set_columns(user, purse=purse)
     await user.remove_bits(db_bet)
     interaction = SimpleNamespace(
         user=SimpleNamespace(display_name="tester", display_avatar="http://x/a.png"),

@@ -6,7 +6,7 @@ import time
 
 from random import randint
 from discord import app_commands, Interaction
-from configs.converters.data_converter import fetch
+from cococap.registry import get_registry
 
 from utils.utils import timestamp_to_digital
 from cococap.user import User, Cooldowns
@@ -63,7 +63,7 @@ class WorkButton(discord.ui.Button):
         await user.inc_stat("claimed_work")
         self.update(user)
 
-        rank = fetch("ranks." + str(user.get_field("rank")))
+        rank = get_registry().rank(user.rank)
 
         self.label = f"+{int(rank.wage):,} bits"
         self.emoji = "💸"
@@ -94,7 +94,8 @@ class DailyButton(discord.ui.Button):
         self.update(user)
 
         # Calculate and add bank interest rate
-        bank = await user.get_field_fresh("bank")
+        await user.refresh()
+        bank = user.bank
         interest = 0.003 + 0.027 * (math.e ** (-(bank / 20_000_000)))
         bonus = round(bank * interest)
         await user.add_bank(amount=int(bonus))
@@ -161,9 +162,8 @@ class CheckInMenu(discord.ui.View):
 
 async def display_profile(interaction: Interaction):
     user: User = interaction.extras.get("user")
-    rank = fetch("ranks." + str(user.get_field("rank")))
-    if user.get_field("name") != interaction.user.display_name:
-        await user.set_field("name", interaction.user.display_name)
+    rank = get_registry().rank(user.rank)
+    await user.set_name(interaction.user.display_name)
 
     embed = CustomEmbed(
         title=f"Rank: `{rank.display_name}`",
@@ -175,9 +175,9 @@ async def display_profile(interaction: Interaction):
     embed.add_field(
         name="Balances",
         value=f":money_with_wings: **BITS**: {await user.get_bits():,}\n"
-        f":bank: **BANK**: {user.get_field('bank'):,}\n"
-        f":four_leaf_clover: **LUCKBUCKS**: {user.get_field('luckbucks'):,}\n"
-        f":coin: **TOKENS**: {user.get_field('tokens'):,}",
+        f":bank: **BANK**: {user.bank:,}\n"
+        f":four_leaf_clover: **LUCKBUCKS**: {user.luckbucks:,}\n"
+        f":coin: **TOKENS**: {user.tokens:,}",
     )
     embed.set_thumbnail(url=interaction.user.display_avatar)
     await interaction.response.send_message(embed=embed)
@@ -218,7 +218,7 @@ async def process_withdrawal(interaction: Interaction, amount: int | str = None)
 
 async def process_beg(interaction: Interaction):
     user: User = interaction.extras.get("user")
-    total_balance = user.get_field("purse") + user.get_field("bank")
+    total_balance = user.purse + user.bank
 
     # If user has 10,000 bits or more in their purse or bank
     if total_balance >= MAX_BALANCE:
