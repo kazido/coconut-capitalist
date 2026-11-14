@@ -34,6 +34,7 @@ from .skills import SkillsScreen
 from .stats import StatsScreen
 from .top import TopScreen
 from .upgrade import UpgradeScreen
+from .wiki import WikiScreen
 from .wyrmhole import WyrmholeScreen
 
 SCREENS: dict[str, type[Screen]] = {
@@ -71,6 +72,7 @@ SCREENS: dict[str, type[Screen]] = {
         BlackjackScreen,
         InventoryScreen,
         UpgradeScreen,
+        WikiScreen,
         EnchantScreen,
         ShopScreen,
         RankScreen,

@@ -193,6 +193,13 @@ other skill. Farming has no tool, but its
 first seed is 10,000 bits, so a new player needs a couple of Work claims or another skill first (`TODO(balance)`).
 Whichever skill they pick first pays for the next tool.
 
+## The wiki
+
+`/wiki`, or **More -> Wiki**: one page per topic (getting started, each skill, fish, waters, crab pots and bait, tools and
+upgrades, enchants and scrolls, pets, parties) plus an item lookup by skill. **Every page is written from the game's data**
+(`services/wiki.py`), so a changed price, bonus or fish shows up in the wiki by itself; tests check that it names every fish,
+pet, upgrade step, bait and enchant and uses the real numbers.
+
 ## Pets
 
 Pets are the gacha part of the bot, and **every pet gives a bonus somewhere in the game** while it is your active pet

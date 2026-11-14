@@ -5,6 +5,7 @@ from discord.app_commands import Choice
 from discord.ext import commands
 
 from cococap.registry import get_registry
+from cococap.screens import open_screen
 from utils.items.items import MAX_CHOICES, construct_embed, item_autocomplete
 
 SKILLS = ["mining", "foraging", "fishing", "farming", "combat"]
@@ -50,39 +51,25 @@ class WikiView(discord.ui.View):
 
 
 class WikiCog(commands.Cog, name="Wiki"):
+    """The wiki lives in the /play hub; this just opens it."""
+
     def __init__(self, bot):
         self.bot = bot
 
-    @app_commands.command(name="wiki", description="What is this item?")
-    @app_commands.describe(
-        item="look up a specific item", category="or browse the items of a skill"
-    )
+    @app_commands.command(name="wiki", description="How does everything work? Skills, fish, pets, tools and items.")
+    @app_commands.describe(item="look up a specific item", category="or browse the items of a skill")
     @app_commands.choices(category=[Choice(name=s.title(), value=s) for s in SKILLS])
     @app_commands.autocomplete(item=item_autocomplete)
-    async def wiki(
-        self,
-        interaction: discord.Interaction,
-        item: str | None = None,
-        category: Choice[str] | None = None,
-    ):
+    async def wiki(self, interaction: discord.Interaction, item: str | None = None, category: Choice[str] | None = None):
         reg = get_registry()
         if item:
-            if reg.find_item(item) is None:
-                return await interaction.response.send_message(
-                    "I don't know that item. Try the autocomplete suggestions.", ephemeral=True
-                )
-            return await interaction.response.send_message(embed=construct_embed(item))
-
-        items = sorted(
-            (i for i in reg.items.values() if not category or i.skill == category.value),
-            key=lambda i: (i.skill or "", i.rarity, i.name),
-        )
-        if not items:
-            return await interaction.response.send_message("Nothing here yet.", ephemeral=True)
-        view = WikiView(items, interaction.user)
-        suffix = f" (showing {MAX_CHOICES} of {len(items)}; use `item` to search)" if len(items) > MAX_CHOICES else ""
-        await interaction.response.send_message(f"Pick an item{suffix}", view=view)
-        view.message = await interaction.original_response()
+            found = reg.find_item(item)
+            if found is None:
+                return await interaction.response.send_message("I don't know that item. Try the autocomplete suggestions.", ephemeral=True)
+            return await open_screen(interaction, "wiki", topic="items", skill=found.skill or "general", item=found.id)
+        if category:
+            return await open_screen(interaction, "wiki", topic="items", skill=category.value)
+        await open_screen(interaction, "wiki")
 
 
 async def setup(bot):
