@@ -14,8 +14,13 @@ min_wait_factor = 0.15           # ...but never below this share of the base wai
 window = 6                       # seconds you have to pull up the line once it bites, or the fish gets away
 grace = 3                        # ...plus this many quiet seconds, so a laggy connection or a slow bot doesn't cost you the fish
 
+[rod]                            # what a better rod does besides biting sooner: rarer fish, and more of them
+luck_per_power = 0.025           # each point of power above 3: +2.5% on the odds of the rare fish (rarity 4+): power 45 is +105%
+extra_fish_per_power = 0.017     # each point of power above 3 adds this many extra fish to a catch: power 45 brings 0.7 more, power 120 two more
+
 [reel]
 base_length = 2                  # arrows to press = this + the fish's rarity (a rarity-1 fish takes 3)
+max_slips = 4                    # (a power-120 rod would otherwise forgive 15, and never fail a reel)
 power_per_slip = 8               # every this much rod power forgives one wrong arrow (a power-8 rod forgives one)
 break_from_rarity = 2            # uncommon fish and up make you stop and press Reel now and then...
 arrows_per_break = 4             # ...about once per this many arrows

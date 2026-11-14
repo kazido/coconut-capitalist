@@ -122,7 +122,21 @@ def typical_wait(power: int, rules: FishingRules, bite_speed: float = 0.0) -> fl
 
 def slips_allowed(power: int, rules: FishingRules, bonus: float = 0) -> int:
     """Wrong arrows a rod forgives per fish (a Steady Line enchant adds more: ``bonus``)."""
-    return max(0, power) // rules.reel.power_per_slip + int(bonus)
+    return min(rules.reel.max_slips, max(0, power) // rules.reel.power_per_slip) + int(bonus)
+
+
+def rod_luck(power: int, rules: FishingRules) -> float:
+    """How much likelier the rare fish are with this rod (0.5 = +50%)."""
+    return rules.rod.luck_per_power * max(0, power - 3)
+
+
+def extra_fish(power: int, rules: FishingRules, rng: random.Random) -> int:
+    """How many more fish than one this catch brings: a stronger rod hauls in more, with a fractional part rolled as a chance."""
+    expected = rules.rod.extra_fish_per_power * max(0, power - 3)
+    whole = int(expected)
+    if expected == whole:
+        return whole  # (no roll: a starter rod leaves the dice alone)
+    return whole + (1 if rng.random() < expected - whole else 0)
 
 
 def reel_pattern(rarity: int, rules: FishingRules, rng: random.Random) -> list[str]:
@@ -223,6 +237,7 @@ class Cast:
     boss: str = ""  # the boss's name, if what bit was a boss rather than a fish
     modifiers: list[str] = field(default_factory=list)  # the boss's twists: mirror, reverse, shuffle, fog, wild
     decoys: list[str] = field(default_factory=list)  # what a Reel step looks like until you get to it: an ordinary arrow
+    extra_fish: int = 0  # more of the same fish this rod hauls in with it (decided at the cast, so it cannot be rerolled)
     chest: bool = False  # a treasure chest instead of a fish (the fish is only a stand-in until it is hooked)
     attempts_left: int = 0  # tries at the chest's lock
     grace: float = 0.0  # quiet extra seconds to pull up the line (laggy connections)
@@ -335,7 +350,7 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
     rules = reg.fishing
     now = time.time() if now is None else now
     pet = pet or {}
-    fish = roll_fish(rng, reg, water, pet.get("rare_luck", 0.0))
+    fish = roll_fish(rng, reg, water, pet.get("rare_luck", 0.0) + rod_luck(stats.power, rules))
     bite_at = now + wait_seconds(stats.power, rules, rng, stats.stats.get("bite_speed", 0.0) + pet.get("bite_speed", 0.0)) * (
         water.wait_multiplier if water else 1.0)
     pattern, truth = build_reel(fish, rules, rng)
@@ -351,6 +366,7 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
         grace=rules.bite.grace,
         echo_window=rules.reel.echo_window,
         size=roll_size(fish, rng),
+        extra_fish=extra_fish(stats.power, rules, rng),
     )
     if armed and rng.randint(1, max(1, round(rules.treasure.chest_odds / (1 + pet.get("treasure_luck", 0.0))))) == 1:
         cast.chest, cast.attempts_left = True, rules.treasure.attempts
@@ -459,6 +475,7 @@ class Catch:
     extras: Counter = field(default_factory=Counter)  # things that came up with the fish (coral shards...)
     hallucination: str | None = None  # the numbers you saw, if this catch made you hallucinate
     reveals: tuple[tuple[str, str], ...] = ()  # what each ❓ in the reel turned out to be
+    extra_fish: int = 0  # more of the same fish that came up with it
     size: float = 0.0
     personal_best: bool = False  # your biggest of this fish so far (including your first one)
     server_record: bool = False  # the biggest ever caught on the server
@@ -490,7 +507,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     cast.settled = True
     multiplier = await xp_multiplier(user.id, reg, "fishing")
     xp = round(cast.fish.rarity * rules.xp_per_rarity * multiplier)
-    await user.add_item(cast.fish.id, 1)
+    await user.add_item(cast.fish.id, 1 + cast.extra_fish)
     extras = catch_extras(rng or random.Random(), reg)
     for item_id, quantity in extras.items():
         await user.add_item(item_id, quantity)
@@ -547,7 +564,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
             record_bits = round(cast.fish.sell_price * rules.records.server_bits_multiplier)
             await user.add_bits(record_bits)
     return Catch(cast.fish, xp, tuple(finished), quest_bits, extras, seen[0] if seen else None,
-                 tuple(cast.reveals), cast.size, bool(best), server_record, record_bits, holder)
+                 tuple(cast.reveals), cast.extra_fish, cast.size, bool(best), server_record, record_bits, holder)
 
 
 RECORDS_KEY = "fishing_records"

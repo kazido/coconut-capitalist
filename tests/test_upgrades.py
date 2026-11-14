@@ -109,7 +109,7 @@ async def test_two_clicks_at_once_upgrade_once_and_charge_once(db):
 
 
 async def test_the_best_tool_of_a_kind_has_nowhere_to_go(db):
-    user, inst = await with_tool("wilted_axe")
+    user, inst = await with_tool("elderwood_axe")
     assert await upgrades.offer_for(user, inst) is None
     with pytest.raises(upgrades.UpgradeError, match="any further"):
         await upgrades.upgrade(user, inst.id)
@@ -139,7 +139,7 @@ async def test_the_whole_axe_chain_can_be_climbed(db):
         await stock_up(user, (await user.instance(inst.id)).template_id)
         await upgrades.upgrade(user, inst.id)
         steps += 1
-    assert (await user.instance(inst.id)).template_id == "wilted_axe" and steps == 6
+    assert (await user.instance(inst.id)).template_id == "elderwood_axe" and steps == 7
     assert offer is None
 
 

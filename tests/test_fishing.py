@@ -555,8 +555,10 @@ def test_the_first_pickaxe_upgrade_needs_only_ore_and_the_next_adds_a_little_fro
     assert {REG.item(i).skill for i in first} == {"mining"}
     second = REG.item("reinforced_pickaxe").tool.upgrade.items
     skills = {REG.item(i).skill for i in second}
-    assert "mining" in skills and len(skills) > 1
-    for item_id in (*first, *second):  # every material really drops somewhere
+    assert skills == {"mining"}  # (the first two steps of a long chain use only the tool's own skill)
+    third = REG.item("masterwork_pickaxe").tool.upgrade.items
+    assert "mining" in {REG.item(i).skill for i in third} and len({REG.item(i).skill for i in third}) > 1
+    for item_id in (*first, *second, *third):  # every material really drops somewhere
         assert REG.item(item_id).drop is not None, item_id
 
 

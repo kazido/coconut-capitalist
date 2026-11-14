@@ -15,7 +15,8 @@ TOPICS: list[tuple[str, str, str]] = [  # (id, title, emoji)
     ("fish", "Fish", "🐟"),
     ("waters", "Waters", "🌊"),
     ("pots", "Crab pots and bait", "🦀"),
-    ("tools", "Tools and upgrades", "🔨"),
+    ("tools", "Tools and upgrades: axes", "🔨"),
+    ("tools2", "Tools: rods, pickaxes, swords", "🎣"),
     ("enchants", "Enchants and scrolls", "📜"),
     ("pets", "Pets", "🐾"),
     ("party", "Parties", "👥"),
@@ -169,13 +170,14 @@ def _pots(reg: Registry) -> list[str]:
     ]
 
 
-def _tools(reg: Registry) -> list[str]:
+def _tools(reg: Registry, only: tuple[str, ...] = ("axe",), intro: bool = True) -> list[str]:
     out = ["**One tool of each kind.** The shop sells only the starter tool, and you can't buy a second. Everything better comes from "
            "**Inventory → Upgrade tools**: your tool keeps its enchants and becomes the next one up for bits and materials. The first steps "
-           "use only the tool's own skill; later ones add a little from others."]
+           "use only the tool's own skill; later ones add a little from others. Each level earns clearly more than the last: about x1.5 at "
+           "level 2, x2.6 at level 3, x4 at level 4 and x18 at level 8, and a better rod also brings rarer fish and more of them."] if intro else []
     kinds: dict[str, list[Item]] = {}
     for item in reg.items.values():
-        if item.tool:
+        if item.tool and item.tool.kind in only:
             kinds.setdefault(item.tool.kind, []).append(item)
     for kind, tools in sorted(kinds.items()):
         current = next(t for t in tools if not any(o.tool.upgrade and o.tool.upgrade.to == t.id for o in tools))
@@ -236,7 +238,7 @@ def _items(reg: Registry) -> list[str]:
 
 
 _PAGES = {"start": _start, "mining": _mining, "farming": _farming, "foraging": _foraging, "fishing": _fishing, "fish": _fish,
-          "waters": _waters, "pots": _pots, "tools": _tools, "enchants": _enchants, "pets": _pets, "party": _party, "items": _items}
+          "waters": _waters, "pots": _pots, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod", "pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "party": _party, "items": _items}
 
 SKILL_FILTERS = ["mining", "farming", "foraging", "fishing", "combat", "general"]
 

@@ -220,6 +220,8 @@ class FishScreen(Screen):
         elif catch.personal_best:
             lines.append("🏅 New personal best!")
         lines += self._tell_lines(catch.reveals)
+        if catch.extra_fish:
+            lines.append(f"🎣 Your rod hauled in **{catch.extra_fish}** more: **{catch.extra_fish + 1}** {catch.fish.display} in all!")
         if catch.extras:
             lines.append("🪸 Also washed up: " + ", ".join(f"{q:,} {reg.item(i).display}" for i, q in catch.extras.items()))
         for q in catch.finished:

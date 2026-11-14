@@ -520,6 +520,7 @@ class BiteRules(_Data):
 class ReelRules(_Data):
     base_length: int = Field(ge=1)
     power_per_slip: int = Field(ge=1)
+    max_slips: int = Field(ge=0)  # a rod forgives at most this many wrong arrows by its power alone (enchants add more)
     break_from_rarity: int = Field(ge=1)  # fish of this rarity and up make you stop and Reel now and then
     arrows_per_break: int = Field(ge=1)  # about one Reel break per this many arrows
     mystery_from_rarity: int = Field(ge=1)  # fish of this rarity and up hide some arrows behind a ❓
@@ -685,10 +686,16 @@ class PotRules(_Data):
     levels: list[PotLevel] = Field(min_length=1)
 
 
+class RodRules(_Data):
+    luck_per_power: float = Field(ge=0)  # every point of rod power above 3 makes the rare fish (rarity 4+) this much likelier
+    extra_fish_per_power: float = Field(ge=0)  # ...and adds this to the number of EXTRA fish a catch brings (1.2 = one, and a 20% chance of two)
+
+
 class FishingRules(_Data):
     xp_per_rarity: int = Field(ge=0)
     bite: BiteRules
     reel: ReelRules
+    rod: RodRules
     quests: QuestRules
     book: BookRules
     treasure: TreasureRules

@@ -974,8 +974,6 @@ salmon = 15
 trout = 20
 pufferfish = 3
 coral_shard = 20
-hardwood = 10
-iron_ore = 40
 
 [masterwork_rod]
 name = "Masterwork Rod"
@@ -988,8 +986,19 @@ sell_price = 0
 
 [masterwork_rod.tool]
 kind = "rod"
-power = 18  # TODO(balance): grows with rarity
+power = 18
 requirement = 0
+
+[masterwork_rod.tool.upgrade]
+to = "tidecaller_rod"
+bits = 10000000
+
+[masterwork_rod.tool.upgrade.items]
+salmon = 40
+pufferfish = 10
+moray_eel = 4
+coral_shard = 60
+hardwood = 30
 
 [spirit_of_the_sea]
 name = "Spirit of the Sea"
@@ -1254,8 +1263,22 @@ sell_price = 0
 
 [wilted_axe.tool]
 kind = "axe"
-power = 40  # TODO(balance): grows with rarity
+power = 40
 requirement = 0
+
+[wilted_axe.tool.upgrade]
+to = "elderwood_axe"
+bits = 500000000
+
+[wilted_axe.tool.upgrade.items]
+maple_leaf = 250
+aged_feather = 8
+fine_bark = 350
+hardwood = 900
+feather = 800
+gold_ore = 450
+plant_fiber = 250
+tuna = 25
 
 [scroll_keen]
 name = "Scroll of Keenness"
@@ -1535,7 +1558,7 @@ sell_price = 0
 
 [reinforced_pickaxe.tool]
 kind = "pickaxe"
-power = 3  # TODO(balance): +10% ore per point above 1
+power = 3  # +25% ore per point above 1 (mining.toml): x1.5
 requirement = 0
 
 [reinforced_pickaxe.tool.upgrade]
@@ -1546,8 +1569,6 @@ bits = 500000  # TODO(balance)
 iron_ore = 300
 gold_ore = 60
 copper_ore = 400
-hardwood = 20
-coral_shard = 8
 
 [masterwork_pickaxe]
 name = "Masterwork Pickaxe"
@@ -1560,8 +1581,19 @@ sell_price = 0
 
 [masterwork_pickaxe.tool]
 kind = "pickaxe"
-power = 6  # TODO(balance)
+power = 7  # x2.5 ore (the same jump for every tool at this step: about x2.6 income)
 requirement = 0
+
+[masterwork_pickaxe.tool.upgrade]
+to = "ironbound_pickaxe"
+bits = 3000000
+
+[masterwork_pickaxe.tool.upgrade.items]
+gold_ore = 200
+iron_ore = 800
+copper_ore = 1500
+hardwood = 40
+coral_shard = 20
 
 [scarab_bomb]
 name = "Scarab Bomb"
@@ -1785,3 +1817,269 @@ tier = 3
 rate = 1300
 min = 1
 max = 1
+
+
+# ---- longer tool chains: eight levels each (axe, pickaxe, rod). Power sets how much a tool earns, and the steps are tuned so level N earns about the
+# same in every skill: x1, x1.5, x2.6, x4, x6, x9, x13, x18 of a starter tool (python -m scripts.balance prints it). Each step costs about 5x the last.
+
+
+[ironbound_pickaxe]
+name = "Ironbound Pickaxe"
+description = "Banded in black iron. It does not so much dig as insist."
+rarity = 4
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[ironbound_pickaxe.tool]
+kind = "pickaxe"
+power = 13
+requirement = 0
+
+[ironbound_pickaxe.tool.upgrade]
+to = "crystal_pickaxe"
+bits = 15000000
+
+[ironbound_pickaxe.tool.upgrade.items]
+gold_ore = 500
+iron_ore = 2000
+copper_ore = 4000
+hardwood = 100
+coral_shard = 50
+
+
+[crystal_pickaxe]
+name = "Crystal Pickaxe"
+description = "The head is a single cut gem. It hums when ore is near."
+rarity = 5
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[crystal_pickaxe.tool]
+kind = "pickaxe"
+power = 21
+requirement = 0
+
+[crystal_pickaxe.tool.upgrade]
+to = "deepdelver_pickaxe"
+bits = 70000000
+
+[crystal_pickaxe.tool.upgrade.items]
+gold_ore = 1200
+iron_ore = 4500
+copper_ore = 8000
+hardwood = 250
+tuna = 8
+
+
+[deepdelver_pickaxe]
+name = "Deepdelver's Pick"
+description = "Carried down further than any map goes."
+rarity = 6
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[deepdelver_pickaxe.tool]
+kind = "pickaxe"
+power = 33
+requirement = 0
+
+[deepdelver_pickaxe.tool.upgrade]
+to = "mythril_pickaxe"
+bits = 300000000
+
+[deepdelver_pickaxe.tool.upgrade.items]
+gold_ore = 3000
+iron_ore = 10000
+copper_ore = 16000
+maple_leaf = 40
+sturgeon = 2
+
+
+[mythril_pickaxe]
+name = "Mythril Pickaxe"
+description = "Light as a feather, hard as a promise."
+rarity = 6
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[mythril_pickaxe.tool]
+kind = "pickaxe"
+power = 49
+requirement = 0
+
+[mythril_pickaxe.tool.upgrade]
+to = "worldsplitter_pickaxe"
+bits = 1200000000
+
+[mythril_pickaxe.tool.upgrade.items]
+gold_ore = 8000
+iron_ore = 25000
+copper_ore = 40000
+aged_feather = 4
+marlin = 5
+
+
+[worldsplitter_pickaxe]
+name = "Worldsplitter"
+description = "They say the mine groans when it is carried in."
+rarity = 7
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[worldsplitter_pickaxe.tool]
+kind = "pickaxe"
+power = 69
+requirement = 0
+
+
+[tidecaller_rod]
+name = "Tidecaller Rod"
+description = "Fish come when it calls. Some even bring friends."
+rarity = 5
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[tidecaller_rod.tool]
+kind = "rod"
+power = 30
+requirement = 0
+
+[tidecaller_rod.tool.upgrade]
+to = "moonlit_rod"
+bits = 40000000
+
+[tidecaller_rod.tool.upgrade.items]
+tuna = 30
+swordfish = 8
+muskie = 8
+coral_shard = 120
+hardwood = 40
+iron_ore = 60
+
+
+[moonlit_rod]
+name = "Moonlit Rod"
+description = "Strung with silver line that glows after dark."
+rarity = 6
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[moonlit_rod.tool]
+kind = "rod"
+power = 45
+requirement = 0
+
+[moonlit_rod.tool.upgrade]
+to = "leviathan_rod"
+bits = 150000000
+
+[moonlit_rod.tool.upgrade.items]
+sturgeon = 3
+marlin = 3
+giant_squid = 3
+swordfish = 20
+coral_shard = 250
+hardwood = 100
+gold_ore = 100
+
+
+[leviathan_rod]
+name = "Leviathan Rod"
+description = "Built to hold something far too big for a pond."
+rarity = 6
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[leviathan_rod.tool]
+kind = "rod"
+power = 65
+requirement = 0
+
+[leviathan_rod.tool.upgrade]
+to = "abyssal_rod"
+bits = 500000000
+
+[leviathan_rod.tool.upgrade.items]
+oarfish = 2
+abyssal_angler = 2
+sturgeon = 8
+marlin = 8
+coral_shard = 500
+maple_leaf = 30
+gold_ore = 200
+
+
+[abyssal_rod]
+name = "Abyssal Rod"
+description = "Cold to the touch. The line never seems to reach the bottom."
+rarity = 7
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[abyssal_rod.tool]
+kind = "rod"
+power = 90
+requirement = 0
+
+[abyssal_rod.tool.upgrade]
+to = "poseidon_rod"
+bits = 1500000000
+
+[abyssal_rod.tool.upgrade.items]
+leviathan_pup = 1
+golden_koi = 1
+oarfish = 4
+abyssal_angler = 4
+giant_squid = 10
+coral_shard = 800
+aged_feather = 3
+gold_ore = 400
+
+
+[poseidon_rod]
+name = "Poseidon's Rod"
+description = "The sea gives up its best without being asked twice."
+rarity = 7
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[poseidon_rod.tool]
+kind = "rod"
+power = 120
+requirement = 0
+
+
+[elderwood_axe]
+name = "Elderwood Greataxe"
+description = "Cut from the oldest tree in the forest, which did not mind."
+rarity = 7
+skill = "foraging"
+category = "tool"
+price = 0
+sell_price = 0
+
+[elderwood_axe.tool]
+kind = "axe"
+power = 54
+requirement = 0
+

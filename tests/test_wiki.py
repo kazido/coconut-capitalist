@@ -48,7 +48,7 @@ def test_the_pet_page_lists_every_pet_its_bonus_and_its_chance():
 
 
 def test_the_tools_page_has_every_upgrade_step_with_what_it_costs():
-    page = all_blocks("tools")
+    page = all_blocks("tools") + all_blocks("tools2")  # axes, then rods / pickaxes / swords
     for item in REG.items.values():
         if item.tool and item.tool.upgrade:
             up = item.tool.upgrade
