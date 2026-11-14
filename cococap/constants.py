@@ -41,7 +41,6 @@ GUILD_ID = int(os.getenv("GUILD_ID", "856915776345866240"))
 DISABLED_EXTENSIONS = frozenset(
     {
         "cococap.exts.economy.pets",
-        "cococap.exts.skills.fishing",
         "cococap.exts.exploration.mining",
         "cococap.exts.gambling.snail_racing",  # empty stub: setup() calls add_cog() with no cog
     }

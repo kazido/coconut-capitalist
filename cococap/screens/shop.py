@@ -59,12 +59,19 @@ class ShopScreen(Screen):
             *self._category_rows(categories),
             sep(),
         ]
+        have_kinds = set()
+        if self.mode == "buy":
+            reg = get_registry()
+            have_kinds = {t.tool.kind for i in await self.user.instances() if (t := reg.find_item(i.template_id)) and t.tool}
         if not entries:
             body.append(text("Nothing here yet." if self.mode == "buy" else "You have nothing to sell."))
         for item, owned in entries[self.page * PER_PAGE : (self.page + 1) * PER_PAGE]:
             if self.mode == "buy":
+                has_one = bool(item.tool and item.tool.kind in have_kinds)
                 blurb = f"**{bits(item.price)}** bits  ·  {item.description}"[:300]
-                accessory = button("Buy", style=discord.ButtonStyle.success, disabled=self.user.purse < item.price, on_click=self._ask_quantity(item.id, "buy", 1))
+                if has_one:
+                    blurb = f"✅ You already have a {item.tool.kind}: upgrade it from your inventory.  ·  {item.description}"[:300]
+                accessory = button("Buy", style=discord.ButtonStyle.success, disabled=has_one or self.user.purse < item.price, on_click=self._ask_quantity(item.id, "buy", 1))
             else:
                 blurb = f"You have **{bits(owned)}**  ·  sells for **{bits(item.sell_price)}** each"
                 accessory = button("Sell", style=discord.ButtonStyle.success, on_click=self._ask_quantity(item.id, "sell", owned))

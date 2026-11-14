@@ -6,6 +6,7 @@ import discord
 
 from cococap.registry import get_registry
 from cococap.services import mining
+from cococap.services.equipment import equipped_stats
 from cococap.ui import Page, Screen
 from cococap.ui.components import bar, bits, button, row, sep, text, xp_bar
 from cococap.user import User
@@ -33,14 +34,18 @@ class MiningScreen(Screen):
         lines = [f"{emojis.get('autominer', '⚙️')} **Reactor Lv {reactor.level}**  ·  cores {cores}  ·  **{status['pending_lodes']:,}** lodes waiting"]
         if level < rules.reactor.gem_slot_level:
             lines.append(f"-# Gem slots unlock at mining level {rules.reactor.gem_slot_level}.")
+        tool = await equipped_stats(self.user, "mining")
         body = [
             *self.note_block(),
             text(f"**Level {level}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp"),
             text("Ores: " + ("  ".join(ores) if ores else "none yet") + f"\nLodes mined: **{skill.stats.lodes_mined:,}**"),
+            text(f"⛏️ Pickaxe power **{tool.power}**" if tool else
+                 "⛏️ You need a pickaxe. Buy a **Rookie Pickaxe** in the shop and it equips itself."),
             sep(),
             text("\n".join(lines)),
             row(
-                button("Enter the mines", emoji="⛏️", style=discord.ButtonStyle.primary, on_click=self._enter),
+                button("Enter the mines", emoji="⛏️", style=discord.ButtonStyle.primary, disabled=tool is None,
+                       on_click=self._enter),
                 button("Reactor", emoji=emojis.get("autominer", "⚙️"), on_click=self._reactor),
             ),
         ]

@@ -168,15 +168,67 @@ A tree nobody finished pays a 25% consolation.
 
 ### Chopping: the spot, rotating and good chops
 
-Each chop does your axe's power x how fresh the spot is. Chopping the same spot again does 12% less than the chop
-before, down to 35% of full damage; **Rotate** (a click that does no damage) moves you to a fresh spot. A chop also has
-a 15% chance to be a **good chop** (+50%). With the starter axe (power 3), never rotating averages about 1.2 damage per
-click, rotating every 3-5 chops about 2.1, so rotating is worth doing but never forced. The Rotate button lights up once
-the spot is worn. The same applies to the community tree.
+Where you stand matters. Each chop does your axe's power x the **kind of spot** (Knotty x0.7, Plain x1.0, Clean grain
+x1.3) x how **worn** it is. Wear is random: every chop has a 20% chance to wear the spot down a step (-15% each, down to
+40%), so you don't have to rotate on a schedule. **Rotate** (a click that does no damage) moves you to a *random* new
+spot, so it is a real decision: leaving a worn spot is right, leaving a good one wastes a click, and a new spot could be
+worse. The panel shows the spot's kind, its wear and what your next chop will do, and Rotate never lights up to tell
+you. A chop also has a 15% chance to be a **good chop** (+50%). A simulation shows rotating once the spot is below 80% of
+your axe's power earns about 3x what never rotating does, and clearly beats rotating too often or too rarely. The same
+applies to the community tree.
 
 ### Foraging pay vs mining
 
 Measured with fixed-seed simulations (a test guards it): mining at base gear pays about 1,100 bits per click; foraging at
-the starter axe in zone 1 pays about 880 (roughly 80%), because it has no collapse risk. Pay is proportional to hp chopped
+the starter axe in zone 1 pays a bit less (a test keeps it under mining and over 40% of it), because it has no collapse risk. Pay is proportional to hp chopped
 (`bits_per_hp`, drop rolls per hp), so stronger axes earn more per click, and each zone above 1 pays +15% per hp.
 Drop rolls are fractional (a half-roll is a 50% chance of a roll), so small trees are not over-paid.
+
+## Getting started: every skill needs a tool, and tools cost bits
+
+A new player has **1,000 bits** and their first **Work** pays **2,500** (rank 0), so they can afford exactly one starter
+tool straight away: the **Rookie Pickaxe**, **Starter Axe** or **Starter Rod**, each **2,000 bits**. Your first tool for
+a skill is **equipped automatically** when you buy it. Mining used to run without a pickaxe; it now needs one like every
+other skill. Farming has no tool, but its
+first seed is 10,000 bits, so a new player needs a couple of Work claims or another skill first (`TODO(balance)`).
+Whichever skill they pick first pays for the next tool.
+
+## Tools: buy one, then upgrade it
+
+The shop sells only the **starter tool** of each kind, and you can own **one tool per kind**: buying a second is refused.
+Everything better comes from **Inventory -> Upgrade tools**, which turns your tool into the next one up for **bits plus
+materials** (axes: feathers, fine bark, maple leaves, aged feathers; pickaxes: ores; rods: fish). The tool keeps its id,
+so it stays equipped, and it keeps its enchants and rolled bonuses. Money, materials and the change happen together or
+not at all, and a double click upgrades once. The chains and costs are in `configs/items.toml` under each tool's
+`[x.tool.upgrade]` (`TODO(balance)`): axes go Starter -> Thornwhip -> Reinforced -> Bastard's Broadaxe -> Masterwork ->
+Sovereign Hatchet -> Wilted; pickaxes Rookie -> Reinforced -> Masterwork; rods Starter -> Reinforced -> Masterwork.
+
+## Fishing
+
+`/fish` (or Skills -> Fishing). One panel, no channel spam:
+
+1. **Cast.** The fish is rolled at once from the fishing items' `drop` odds (rarest first; the cod is the 1-in-1
+   catch-all), so reopening the panel can't re-roll it. A bite comes after 8-20 seconds; a stronger rod shortens that
+   (never below 35%). The panel redraws itself every couple of seconds only while a line is in the water.
+2. **A bite.** The panel says "A bite!" and you have **6 seconds** to press **Pull up the line**, or the fish gets away.
+   Nothing starts until you do. Then it shows the fish's rarity and a row of arrows; press **Left** / **Right** to match
+   them in order (rarity + 2 arrows). A wrong arrow loses the fish,
+   unless your rod forgives it (one slip per 8 power). Timing buttons don't work well over Discord, so reeling is
+   about order, not speed.
+3. **Land it.** The fish goes in your bag, xp is rarity x 30 (plus the party bonus), and **Sell fish** sells the whole
+   bag. Nothing is spent to cast, and cancelling a cast costs nothing.
+
+Numbers: `configs/fishing.toml` and the fish/rod entries in `configs/items.toml` (`TODO(balance)`). A test pins the
+average catch at ~4-6.5k bits and a catch at ~15-20 s, which is about what foraging earns per second at starter gear.
+
+### Fishing quests (level 3)
+
+Every player gets **5 daily quests** (picked from 8 templates by their id and the UTC day) and **1 weekly** (Monday to
+Sunday), so nobody has to roll or claim anything. A quest is "catch N fish of rarity R or better"; a fish counts toward
+every quest it is good enough for, and finishing a quest pays its bits and xp the moment the fish lands (shown in the
+catch message; the Quests button lists them). Progress is saved with the fishing skill and resets by itself when the day
+or week number changes. The catch that takes you to level 3 doesn't count toward quests. Templates and rewards are in
+`configs/fishing.toml` (`TODO(balance)`).
+
+Not built yet (wiki): the 3 community **monthly** quests, the personal and community collection books (level 10), the
+hallucination -> treasure chest, and fish that appear in channels like drops.

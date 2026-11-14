@@ -71,33 +71,53 @@ class Swing:
 
 @dataclass
 class Spot:
-    """The place on the trunk you are chopping. Every chop in the same place does less damage than the one before
-    (down to a floor); ``rotate`` moves you to a fresh spot, at the cost of a click that does no damage."""
+    """The place on the trunk you are chopping. Spots differ (``quality``: knotty, plain, clean grain), and each chop
+    has a chance to wear the spot down a step. Rotating (a click that does no damage) moves you to a random new spot,
+    so it is worth it when your spot has worn below what an average new one would give."""
 
-    chops: int = 0
+    name: str = "Plain"
+    quality: float = 1.0
+    wear: int = 0  # how many steps this spot has worn down
+
+    @classmethod
+    def pick(cls, rules: ForagingRules, rng: random.Random) -> "Spot":
+        kind = rng.choices(rules.chopping.spots, weights=[k.weight for k in rules.chopping.spots])[0]
+        return cls(kind.name, kind.multiplier)
 
     def freshness(self, rules: ForagingRules) -> float:
         c = rules.chopping
-        return max(c.spot_floor, (1 - c.spot_decay) ** self.chops)
+        return max(c.spot_floor, 1 - c.wear_step * self.wear)
+
+    def multiplier(self, rules: ForagingRules) -> float:
+        """What this spot does to your axe's power right now."""
+        return self.quality * self.freshness(rules)
 
     def condition(self, rules: ForagingRules) -> str:
         fresh = self.freshness(rules)
-        return "fresh" if fresh >= 0.8 else "worn" if fresh >= 0.55 else "dull"
+        return "fresh" if fresh >= 0.85 else "worn" if fresh >= 0.6 else "dull"
 
     def preview(self, power: int, rules: ForagingRules) -> int:
         """What the next ordinary (not good) chop would do."""
-        return max(1, round(power * self.freshness(rules)))
+        return max(1, round(power * self.multiplier(rules)))
 
     def swing(self, power: int, rules: ForagingRules, rng: random.Random) -> Swing:
         c = rules.chopping
         fresh = self.freshness(rules)
         good = rng.random() < c.good_chop_chance
-        damage = max(1, round(power * fresh * (1 + c.good_chop_bonus if good else 1)))
-        self.chops += 1
+        damage = max(1, round(power * self.multiplier(rules) * (1 + c.good_chop_bonus if good else 1)))
+        if rng.random() < c.wear_chance:
+            self.wear += 1
         return Swing(damage, good, fresh)
 
-    def rotate(self) -> None:
-        self.chops = 0
+    def rotate(self, rules: ForagingRules, rng: random.Random) -> None:
+        """Move to a new spot: a random kind, and unworn."""
+        new = Spot.pick(rules, rng)
+        self.name, self.quality, self.wear = new.name, new.quality, 0
+
+
+def average_spot_multiplier(rules: ForagingRules) -> float:
+    spots = rules.chopping.spots
+    return sum(k.multiplier * k.weight for k in spots) / sum(k.weight for k in spots)
 
 
 def average_hp(zone: int, rules: ForagingRules) -> float:
@@ -189,7 +209,7 @@ async def _pay(user: User, drops: Counter, bits: int, xp: int, trees: int) -> No
 async def axe_stats(user: User, registry: Registry | None = None) -> EffectiveStats:
     stats = await equipped_stats(user, "foraging", registry)
     if stats is None:
-        raise ForagingError("You need an axe. Buy a Starter Axe in the shop and equip it from your inventory.")
+        raise ForagingError("You need an axe. Buy a Starter Axe in the shop (it's equipped for you).")
     return stats
 
 

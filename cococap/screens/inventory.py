@@ -17,6 +17,7 @@ class InventoryScreen(Screen):
     label = "Inventory"
     emoji = "🎒"
     description = "Your items and tools; equip a tool here"
+    links = ("upgrade",)
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -53,16 +54,20 @@ class InventoryScreen(Screen):
             )
         if instances:
             reg = get_registry()
+            # A menu allows one default and 25 options, and you have a tool equipped per skill: so no defaults
+            # (equipped tools say so in their description), and the equipped ones come first if there are many.
+            shown = sorted(instances, key=lambda i: i.id not in equipped)[:25]
             options = [
                 discord.SelectOption(
                     label=instance_label(i)[:100],
                     value=str(i.id),
                     emoji=reg.item(i.template_id).emoji or None,
-                    default=i.id in equipped,
+                    description="Equipped" if i.id in equipped else None,
                 )
-                for i in instances
+                for i in shown
             ]
-            body += [sep(), row(select("Equip a tool...", options, self._equip))]
+            body += [sep(), row(select("Equip a tool...", options, self._equip)),
+                     row(button("Upgrade tools", emoji="🔨", on_click=self._upgrades))]
         return Page("Inventory", body, accent=0x99B0A2)
 
     def _turn(self, step: int):
@@ -71,6 +76,9 @@ class InventoryScreen(Screen):
             await self.refresh(interaction)
 
         return turn
+
+    async def _upgrades(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "upgrade")
 
     async def _equip(self, interaction: discord.Interaction, values: list[str]) -> None:
         instance = await self.user.instance(int(values[0]))

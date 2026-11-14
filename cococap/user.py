@@ -531,6 +531,18 @@ class User:
             row.enchants = enchants  # reassign so the JSON change is detected
             return self._to_instance(row)
 
+    async def change_template(self, instance_id: int, old: str, new: str) -> bool:
+        """Turn one of this player's tools into another kind (an upgrade), keeping its enchants and rolls.
+        Only happens if it is still `old`, so a double click can't upgrade twice. Returns whether it changed."""
+        async with get_database().session() as session:
+            result = await session.execute(
+                update(ItemInstanceRow)
+                .where(ItemInstanceRow.id == instance_id, ItemInstanceRow.owner_id == self.id,
+                       ItemInstanceRow.template_id == old)
+                .values(template_id=new)
+            )
+            return result.rowcount == 1
+
     async def transfer_instance(self, instance_id: int, to: "User") -> None:
         """Give an instance to another player (and unequip it everywhere)."""
         async with get_database().session() as session:

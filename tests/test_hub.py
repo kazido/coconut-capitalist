@@ -297,6 +297,22 @@ async def test_inventory_paging(db):
     assert find_button(nav, f"1/{pages}")
 
 
+async def test_inventory_with_a_tool_equipped_for_every_skill_fits_discords_menu_rules(db):
+    """Discord rejected the whole page when more than one option of a one-choice menu was pre-selected."""
+    from cococap.services.equipment import equip
+
+    user = await User.get(1)
+    for template, skill in (("rookiepickaxe", "mining"), ("starter_axe", "foraging"), ("starter_rod", "fishing")):
+        await equip(user, skill, (await user.give_instance(template)).id)
+    for _ in range(30):  # and more tools than a menu can list
+        await user.give_instance("starter_rod")
+    nav, _ = await hub("inventory")
+    menu = selects(nav)[0]
+    assert sum(o.default for o in menu.options) <= menu.max_values == 1
+    assert len(menu.options) <= 25
+    assert sum(o.description == "Equipped" for o in menu.options) == 3  # the equipped ones are listed first
+
+
 async def test_empty_inventory_message(db):
     nav, _ = await hub("inventory")
     assert "don't have any items" in all_text(nav)
@@ -360,11 +376,11 @@ async def test_home_links_really_open_the_declared_screens(db):
         assert opened <= set(SCREENS[parent].links) and opened, (parent, opened)
 
 
-async def test_skills_page_lists_all_five_and_only_three_are_open(db):
+async def test_skills_page_lists_all_five_and_only_four_are_open(db):
     nav, _ = await hub("skills")
     text = all_text(nav)
     assert all(name in text for name in ("Mining", "Farming", "Foraging", "Fishing", "Combat"))
-    assert len([b for b in buttons(nav) if b.label == "Soon" and b.disabled]) == 2  # fishing and combat
+    assert len([b for b in buttons(nav) if b.label == "Soon" and b.disabled]) == 1  # combat
 
 
 async def test_shop_has_a_section_per_skill_and_filters(db):
@@ -1078,6 +1094,8 @@ async def with_axe(user_id=1, flags=(), template="starter_axe"):
 def freeze_time(monkeypatch, now=OPEN_HOUR, good_chops=False):
     """Fix the clock, and make chopping predictable: no good chops unless asked for."""
     monkeypatch.setattr("cococap.screens.forage.new_rng", lambda: Rig(0.0 if good_chops else 0.99))
+    plain = foraging_service.Spot  # every spot is a plain one, so damage is predictable
+    monkeypatch.setattr(plain, "pick", classmethod(lambda cls, rules, rng: cls("Plain", 1.0)))
     clock = SimpleNamespace(time=lambda: now)
     for target in ("cococap.screens.forage.time", "cococap.services.foraging.time"):
         monkeypatch.setattr(target, clock)
@@ -1241,22 +1259,23 @@ async def test_home_only_says_whether_check_in_is_ready_and_the_timers_live_on_t
     assert [b for b in buttons(nav) if b.label and b.label.endswith(("h", "m")) and b.disabled]  # timers: on the page
 
 
-async def test_rotating_restores_the_chop_and_costs_a_click(db, monkeypatch):
+async def test_rotating_gives_a_new_spot_and_costs_a_click(db, monkeypatch):
     freeze_time(monkeypatch)
     user = await with_axe(template="reinforced_axe")
     power = get_registry().item("reinforced_axe").tool.power
     nav, inter = await hub("tree", tree=foraging_service.Tree(1, 10_000, 10_000))
-    assert "**fresh**" in all_text(nav) and f"next chop **{power}**" in all_text(nav)
-    assert find_button(nav, "Rotate").style == discord.ButtonStyle.secondary  # nothing to rotate away from yet
-    for _ in range(5):
-        await click(nav, inter, "Chop")
-    assert "**dull**" in all_text(nav) or "**worn**" in all_text(nav)
-    assert f"next chop **{power}**" not in all_text(nav)  # the same spot now does less
-    assert find_button(nav, "Rotate").style == discord.ButtonStyle.primary  # and Rotate is lit as a hint
+    assert "**Plain** spot" in all_text(nav) and f"next chop **{power}**" in all_text(nav)
+    assert find_button(nav, "Rotate").style == discord.ButtonStyle.secondary  # never lit: when to rotate is your call
+    await click(nav, inter, "Chop")
+    assert nav.screen.spot.wear == 0  # a spot only wears now and then (here the dice say no)
+    nav.screen.spot.wear = 4  # ...and when it has, you can see it
+    await nav.screen.nav.refresh(inter)
+    assert "dull" in all_text(nav) and f"next chop **{power}**" not in all_text(nav)
+    assert find_button(nav, "Rotate").style == discord.ButtonStyle.secondary
     hp = nav.screen.tree.hp
     await click(nav, inter, "Rotate")
     assert nav.screen.tree.hp == hp  # rotating does no damage
-    assert "**fresh**" in all_text(nav) and f"next chop **{power}**" in all_text(nav) and "fresh spot" in all_text(nav)
+    assert nav.screen.spot.wear == 0 and f"next chop **{power}**" in all_text(nav) and "You move around the trunk" in all_text(nav)
 
 
 async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
@@ -1278,14 +1297,15 @@ async def test_the_community_tree_has_the_same_spot_and_rotate(db, monkeypatch):
     user = await with_axe(template="reinforced_axe")
     power = get_registry().item("reinforced_axe").tool.power
     nav, inter = await hub("grove")
-    assert "Spot" in all_text(nav) and find_button(nav, "Rotate")
-    for _ in range(4):
-        await click(nav, inter, "Chop")
+    assert "spot" in all_text(nav) and find_button(nav, "Rotate")
+    await click(nav, inter, "Chop")
+    nav.screen.spot.wear = 3
+    await click(nav, inter, "Chop")
     worn = (await foraging_service.community_tree(user, OPEN_HOUR)).yours
-    assert worn < 4 * power  # later chops did less
+    assert worn < 2 * power  # the second chop, on a worn spot, did less
     await click(nav, inter, "Rotate")
     await click(nav, inter, "Chop")
-    assert (await foraging_service.community_tree(user, OPEN_HOUR)).yours - worn == power  # a fresh spot hits full again
+    assert (await foraging_service.community_tree(user, OPEN_HOUR)).yours - worn == power  # a new spot hits full again
 
 
 RULES_CHOP = get_registry().foraging.chopping

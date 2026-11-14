@@ -1,0 +1,82 @@
+# Fishing rules (see the wiki). Balance data: change numbers freely.  # TODO(balance): all numbers are guesses
+#
+# Cast a line, wait for a bite, pull up the line, then reel the fish in by pressing the arrows shown, in order. A rod's power makes the
+# bite come sooner and lets you slip up now and then. Which fish bites is decided when you cast (rarest rolled first,
+# from the fishing items' `drop` odds), so reopening the panel can't re-roll it.
+
+xp_per_rarity = 30               # fishing xp for a catch = the fish's rarity x this
+
+[bite]
+wait_min = 8                     # seconds until a bite at rod power 1...
+wait_max = 20                    # ...somewhere between these
+speedup_per_power = 0.08         # each point of rod power above 1 cuts the wait by this share (compounding as 1/(1+x))
+min_wait_factor = 0.35           # ...but never below this share of the base wait
+window = 6                       # seconds you have to pull up the line once it bites, or the fish gets away
+
+[reel]
+base_length = 2                  # arrows to press = this + the fish's rarity (a rarity-1 fish takes 3)
+power_per_slip = 8               # every this much rod power forgives one wrong arrow (a power-8 rod forgives one)
+
+# Quests (fishing level `min_level`). Each player gets `daily_count` of the daily templates every UTC day and one weekly
+# (Monday to Sunday), picked from the clock and their id, so nobody has to "roll" them. A quest is "catch `count` fish
+# of rarity `min_rarity` or better"; finishing it pays at once.
+[quests]
+min_level = 3
+daily_count = 5
+
+[[quests.daily]]
+min_rarity = 1
+count = 5
+bits = 6000
+xp = 40
+[[quests.daily]]
+min_rarity = 1
+count = 8
+bits = 10000
+xp = 60
+[[quests.daily]]
+min_rarity = 1
+count = 12
+bits = 16000
+xp = 90
+[[quests.daily]]
+min_rarity = 2
+count = 3
+bits = 9000
+xp = 60
+[[quests.daily]]
+min_rarity = 2
+count = 5
+bits = 16000
+xp = 90
+[[quests.daily]]
+min_rarity = 3
+count = 1
+bits = 8000
+xp = 60
+[[quests.daily]]
+min_rarity = 3
+count = 2
+bits = 18000
+xp = 100
+[[quests.daily]]
+min_rarity = 4
+count = 1
+bits = 30000
+xp = 150
+
+[[quests.weekly]]
+min_rarity = 4
+count = 1
+bits = 120000
+xp = 600
+[[quests.weekly]]
+min_rarity = 3
+count = 4
+bits = 100000
+xp = 500
+[[quests.weekly]]
+min_rarity = 5
+count = 1
+bits = 400000
+xp = 1500

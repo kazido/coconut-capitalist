@@ -10,8 +10,8 @@ heavy_zone = 7                    # private trees from this zone up are "heavy".
 heavy_solo_power = 0.5            # ...and a lone chopper hits at this share of their power (the Soloist enchant removes it)
 zone_hp_growth = 0.75             # a tree's hp = its height x (1 + this x (zone - 1))
 xp_per_hp = 3                     # foraging xp = hp chopped x this
-bits_per_hp = 280                 # bits = hp chopped x this (x the zone bonus). Tuned to pay a bit under mining per click
-hp_per_roll = 120                 # a felled tree makes ceil(hp / this) rolls on the foraging drop tables
+bits_per_hp = 200                 # bits = hp chopped x this (x the zone bonus). Tuned to pay a bit under mining per click
+hp_per_roll = 170                 # a felled tree makes ceil(hp / this) rolls on the foraging drop tables
 zone_reward_growth = 0.15         # each zone above 1 pays +15% per hp (zone 7: x1.9, zone 10: x2.35)
 
 [[heights]]                       # a private tree's height (before the zone scaling), by weight
@@ -31,11 +31,25 @@ min = 90
 max = 100
 weight = 0.001
 
-[chopping]                        # a swing is your axe's power x how fresh the spot is (x a good chop's bonus)
+[chopping]                        # a swing is your axe's power x the spot's kind x how worn it is (x a good chop's bonus)
 good_chop_chance = 0.15           # a "good chop" does extra damage
 good_chop_bonus = 0.5             # +50%
-spot_decay = 0.12                 # chopping the same spot again does 12% less than the chop before...
-spot_floor = 0.35                 # ...down to 35% of full damage. Rotate (costs a click) for a fresh spot.
+wear_chance = 0.2                 # every chop has this chance to wear the spot down one step (so it is random, not every click)
+wear_step = 0.15                  # each step makes chops 15% weaker...
+spot_floor = 0.4                  # ...down to 40%. Rotating (a click that does no damage) moves you to a random new spot.
+
+[[chopping.spots]]                # rotating lands you on one of these (by weight): is the new spot better than the one you have?
+name = "Knotty"
+multiplier = 0.7
+weight = 0.25
+[[chopping.spots]]
+name = "Plain"
+multiplier = 1.0
+weight = 0.5
+[[chopping.spots]]
+name = "Clean grain"
+multiplier = 1.3
+weight = 0.25
 
 [community]                       # the tree everyone can join: one per hour, standing for `open_minutes`
 open_minutes = 30

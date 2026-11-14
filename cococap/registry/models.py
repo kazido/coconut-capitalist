@@ -65,6 +65,14 @@ class Seed(_Data):
     cycles: int = Field(ge=1)
 
 
+class ToolUpgrade(_Data):
+    """What it costs to turn this tool into the next one up (the tool keeps its enchants and rolled bonuses)."""
+
+    to: str
+    bits: int = Field(ge=0)
+    items: dict[str, int] = Field(default_factory=dict)
+
+
 class Tool(_Data):
     """Present on equippable tools. `requirement` is the minimum skill level."""
 
@@ -74,6 +82,7 @@ class Tool(_Data):
     ability: str | None = None
     ability_name: str | None = None
     ability_description: str | None = None
+    upgrade: ToolUpgrade | None = None
 
 
 class Item(_Data):
@@ -332,13 +341,23 @@ class CommunityRules(_Data):
     refresh_seconds: float = Field(gt=0)
 
 
+class SpotKind(_Data):
+    """A kind of place on the trunk: some are easier to cut than others."""
+
+    name: str
+    multiplier: float = Field(gt=0)
+    weight: float = Field(gt=0)
+
+
 class ChoppingRules(_Data):
-    """How a swing's damage varies: good chops, and the spot wearing out until you rotate."""
+    """How a swing's damage varies: good chops, the kind of spot you stand at, and spots wearing down at random."""
 
     good_chop_chance: float = Field(ge=0, le=1)
     good_chop_bonus: float = Field(ge=0)  # +50% -> 0.5
-    spot_decay: float = Field(ge=0, lt=1)  # each chop on the same spot does this much less than the one before
-    spot_floor: float = Field(gt=0, le=1)  # ...but never less than this share of full damage
+    wear_chance: float = Field(ge=0, le=1)  # each chop: the chance the spot wears down one step
+    wear_step: float = Field(ge=0, lt=1)  # each step makes chops this much weaker
+    spot_floor: float = Field(gt=0, le=1)  # ...but never below this share
+    spots: list[SpotKind] = Field(min_length=1)
 
 
 class ForagingRules(_Data):
@@ -360,6 +379,54 @@ class ForagingRules(_Data):
         if not 1 <= self.community.min_zone <= self.community.max_zone <= self.zones:
             raise ValueError("community zones must satisfy 1 <= min_zone <= max_zone <= zones")
         return self
+
+
+class BiteRules(_Data):
+    wait_min: float = Field(gt=0)
+    wait_max: float = Field(gt=0)
+    speedup_per_power: float = Field(ge=0)
+    min_wait_factor: float = Field(gt=0, le=1)
+    window: float = Field(gt=0)
+
+    @model_validator(mode="after")
+    def _ordered(self):
+        if self.wait_max < self.wait_min:
+            raise ValueError("bite wait_max must be >= wait_min")
+        return self
+
+
+class ReelRules(_Data):
+    base_length: int = Field(ge=1)
+    power_per_slip: int = Field(ge=1)
+
+
+class QuestTemplate(_Data):
+    """"Catch `count` fish of rarity `min_rarity` or better", and what it pays."""
+
+    min_rarity: int = Field(ge=1, le=7)
+    count: int = Field(ge=1)
+    bits: int = Field(ge=0)
+    xp: int = Field(ge=0)
+
+
+class QuestRules(_Data):
+    min_level: int = Field(ge=1)
+    daily_count: int = Field(ge=1)  # how many of the daily templates each player gets per day
+    daily: list[QuestTemplate] = Field(min_length=1)
+    weekly: list[QuestTemplate] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _enough(self):
+        if len(self.daily) < self.daily_count:
+            raise ValueError("there must be at least daily_count daily quest templates")
+        return self
+
+
+class FishingRules(_Data):
+    xp_per_rarity: int = Field(ge=0)
+    bite: BiteRules
+    reel: ReelRules
+    quests: QuestRules
 
 
 class MinigamePayout(_Data):

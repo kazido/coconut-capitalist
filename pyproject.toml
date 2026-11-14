@@ -38,6 +38,7 @@ packages = []
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = ["bare_hands: run without the free test pickaxe (see tests/conftest.py)"]
 
 [tool.ruff]
 line-length = 100

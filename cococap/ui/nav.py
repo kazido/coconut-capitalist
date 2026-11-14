@@ -150,6 +150,7 @@ class Navigator(ui.LayoutView):
         async with self._lock:
             await self._render()
             await interaction.response.edit_message(view=self)
+        self._restart_ticker()  # a screen can switch its self-refresh on or off as its state changes
 
     async def update(self, interaction: discord.Interaction) -> None:
         """Redraw again after the first response was used (for animations: keep it to ~1 per second)."""
@@ -183,6 +184,8 @@ class Navigator(ui.LayoutView):
                         return
                     await self._render()
                     await self.message.edit(view=self)
+                    if not screen.refresh_every:
+                        return  # the screen no longer needs redrawing (e.g. the line is out of the water)
         except (discord.HTTPException, asyncio.CancelledError):
             pass  # the message is gone, or its 15-minute edit window closed: the next click revives the panel
         except Exception:

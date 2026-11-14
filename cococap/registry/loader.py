@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import EconomyRules, Enchant, Enemy, FarmingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
+from .models import EconomyRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -60,6 +60,7 @@ class Registry:
         economy: EconomyRules | None = None,
         farming: FarmingRules | None = None,
         foraging: ForagingRules | None = None,
+        fishing: FishingRules | None = None,
     ):
         self.items: dict[str, Item] = {i.id: i for i in items}
         self.pets: dict[str, Pet] = {p.id: p for p in pets}
@@ -70,6 +71,7 @@ class Registry:
         self.economy = economy
         self.farming = farming
         self.foraging = foraging
+        self.fishing = fishing
         self._validate()
 
     # --- lookups -------------------------------------------------------------------------
@@ -113,12 +115,24 @@ class Registry:
                     problems.append(f"{item.id}: crop.seed '{item.crop.seed}' is not a seed item")
                 elif seed.seed.grows_into != item.id:
                     problems.append(f"{item.id}: seed '{seed.id}' grows into '{seed.seed.grows_into}'")
+            if item.tool and item.tool.upgrade:
+                up = item.tool.upgrade
+                target = self.items.get(up.to)
+                if target is None or target.tool is None or target.tool.kind != item.tool.kind:
+                    problems.append(f"{item.id}: upgrade target '{up.to}' is not a {item.tool.kind}")
+                elif target.tool.power <= item.tool.power:
+                    problems.append(f"{item.id}: upgrade target '{up.to}' must be stronger")
+                problems += [f"{item.id}: upgrade needs unknown item '{m}'" for m in up.items if m not in self.items]
             if item.seed:
                 crop = self.items.get(item.seed.grows_into)
                 if crop is None or crop.crop is None:
                     problems.append(f"{item.id}: seed.grows_into '{item.seed.grows_into}' is not a crop")
         if self.mining is not None:
             problems += self._validate_mining(self.mining)
+        if self.fishing is not None:
+            fish = [i for i in self.items.values() if i.skill == "fishing" and i.category == "material" and i.drop]
+            if not any(i.drop.rate == 1 for i in fish):
+                problems.append("fishing: at least one fish needs drop rate 1 so every cast catches something")
         if self.farming is not None and self.farming.deed_item not in self.items:
             problems.append(f"farming.toml: unknown deed item '{self.farming.deed_item}'")
         expected = list(range(len(self.ranks)))
@@ -171,7 +185,8 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     economy = _build(EconomyRules, "economy", [("economy", _read(config_dir, "economy"))])[0]
     farming = _build(FarmingRules, "farming", [("farming", _read(config_dir, "farming"))])[0]
     foraging = _build(ForagingRules, "foraging", [("foraging", _read(config_dir, "foraging"))])[0]
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging)
+    fishing = _build(FishingRules, "fishing", [("fishing", _read(config_dir, "fishing"))])[0]
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing)
 
 
 @lru_cache(maxsize=1)

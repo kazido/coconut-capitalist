@@ -32,9 +32,11 @@ def reward_text(reward: foraging.Reward) -> str:
 
 
 def spot_line(spot: foraging.Spot, power: int, rules) -> str:
-    """The chopping spot's condition and what the next ordinary chop would do."""
-    fresh = spot.freshness(rules.foraging)
-    return f"🪵 Spot: **{spot.condition(rules.foraging)}** {bar(fresh, 6)}  ·  next chop **{spot.preview(power, rules.foraging)}**"
+    """Where you are chopping, how worn it is, and what the next ordinary chop would do."""
+    r = rules.foraging
+    quality = f"{spot.quality - 1:+.0%}" if spot.quality != 1 else "±0%"
+    return (f"🪵 **{spot.name}** spot ({quality})  ·  {spot.condition(r)} {bar(spot.freshness(r), 6)}"
+            f"  ·  next chop **{spot.preview(power, r)}**")
 
 
 def swing_note(swing: foraging.Swing, applied: int | None = None) -> str:
@@ -42,11 +44,13 @@ def swing_note(swing: foraging.Swing, applied: int | None = None) -> str:
     return f"✨ **Good chop!** {dealt}" if swing.good else f"🪓 {dealt}"
 
 
-def rotate_button(spot: foraging.Spot, rules, on_click) -> discord.ui.Button:
-    """Lit up when the spot is worn enough that moving is worth the click."""
-    worn = spot.freshness(rules.foraging) < 0.7
-    return button("Rotate", emoji="🔄", style=discord.ButtonStyle.primary if worn else discord.ButtonStyle.secondary,
-                  on_click=on_click)
+def rotate_button(on_click) -> discord.ui.Button:
+    """Rotating picks a random new spot, so when to do it is the player's call (nothing lights up to tell them)."""
+    return button("Rotate", emoji="🔄", on_click=on_click)
+
+
+def rotated_note(spot: foraging.Spot) -> str:
+    return f"🔄 You move around the trunk to a **{spot.name}** spot."
 
 
 async def collect_community_rewards(screen: Screen) -> None:
@@ -86,7 +90,7 @@ class ForageScreen(Screen):
         body = [*self.note_block(), text(header)]
 
         if stats is None:
-            body.append(text("🪓 You need an axe. Buy a **Starter Axe** in the shop, then equip it from your inventory."))
+            body.append(text("🪓 You need an axe. Buy a **Starter Axe** in the shop and it equips itself."))
         else:
             body.append(text(f"🪓 Axe power **{stats.power}**" + ("  ·  ✨ Soloist" if stats.has("soloist") else "")))
         body.append(sep())
@@ -152,8 +156,8 @@ class TreeScreen(Screen):
         super().__init__(nav)
         self.tree: foraging.Tree | None = None
         self.reward: foraging.Reward | None = None
-        self.spot = foraging.Spot()
         self.rng = new_rng()
+        self.spot = foraging.Spot.pick(get_registry().foraging, self.rng)
 
     async def build(self) -> Page:
         rules = get_registry().foraging
@@ -173,7 +177,7 @@ class TreeScreen(Screen):
                              f"\n-# Heavy tree: alone you swing at half your axe's {stats.power}. A Soloist axe fixes that."
                              if power < stats.power else "")))
         body.append(row(button("Chop", emoji="🪓", style=discord.ButtonStyle.primary, on_click=self._chop),
-                        rotate_button(self.spot, get_registry(), self._rotate),
+                        rotate_button(self._rotate),
                         button("Leave", on_click=self._stop)))
         return Page("Tree", body, accent=0x4C8C4A)
 
@@ -190,13 +194,13 @@ class TreeScreen(Screen):
         await self.refresh(interaction, swing_note(swing, applied))
 
     async def _rotate(self, interaction: discord.Interaction) -> None:
-        self.spot.rotate()
-        await self.refresh(interaction, "🔄 You move around the trunk to a fresh spot.")
+        self.spot.rotate(get_registry().foraging, self.rng)
+        await self.refresh(interaction, rotated_note(self.spot))
 
     async def _again(self, interaction: discord.Interaction) -> None:
         self.tree = foraging.roll_tree(self.tree.zone, self.rng, get_registry().foraging)
         self.reward = None
-        self.spot.rotate()
+        self.spot.rotate(get_registry().foraging, self.rng)
         await self.refresh(interaction)
 
     async def _stop(self, interaction: discord.Interaction) -> None:
@@ -215,8 +219,8 @@ class GroveScreen(Screen):
     def __init__(self, nav):
         super().__init__(nav)
         self.refresh_every = get_registry().foraging.community.refresh_seconds
-        self.spot = foraging.Spot()
         self.rng = new_rng()
+        self.spot = foraging.Spot.pick(get_registry().foraging, self.rng)
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -242,7 +246,7 @@ class GroveScreen(Screen):
             text(f"You: **{view.yours:,}** hp  ·  **{view.share:.1%}** of the tree\n"
                  f"{spot_line(self.spot, power, reg)}\n-# {status}"),
             row(button("Chop", emoji="🪓", style=discord.ButtonStyle.primary, on_click=self._chop),
-                rotate_button(self.spot, reg, self._rotate),
+                rotate_button(self._rotate),
                 button("Leave", on_click=self._back)),
         ]
         return Page("Community Tree", body, accent=0x2E7D32)
@@ -258,8 +262,8 @@ class GroveScreen(Screen):
         await self.refresh(interaction, note)
 
     async def _rotate(self, interaction: discord.Interaction) -> None:
-        self.spot.rotate()
-        await self.refresh(interaction, "🔄 You move around the trunk to a fresh spot.")
+        self.spot.rotate(get_registry().foraging, self.rng)
+        await self.refresh(interaction, rotated_note(self.spot))
 
     async def _back(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "forage")

@@ -320,21 +320,207 @@ max = 1
 grows_into = "wilted_rose"
 cycles = 350
 
-[cod]
-name = "Cod"
-description = "A common fish."
-wiki = "A common fish, usually sold for money."
+[golden_koi]
+name = "Golden Koi"
+description = "A koi that shines like a coin. Stories say it grants wishes."
+wiki = "A rarity 7 fish. Sell it, or keep it for your collection book."
+emoji = "🏵️"
+rarity = 7
+skill = "fishing"
+category = "material"
+price = 0
+sell_price = 3000000  # TODO(balance)
+
+[golden_koi.drop]
+rate = 5000  # 1 in 5000 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[abyssal_angler]
+name = "Abyssal Angler"
+description = "Its lure glows in the deepest, darkest water."
+wiki = "A rarity 6 fish. Sell it, or keep it for your collection book."
+emoji = "🦑"
+rarity = 6
+skill = "fishing"
+category = "material"
+price = 0
+sell_price = 600000  # TODO(balance)
+
+[abyssal_angler.drop]
+rate = 1200  # 1 in 1200 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[marlin]
+name = "Blue Marlin"
+description = "A fast, proud fighter that tests every line."
+wiki = "A rarity 5 fish. Sell it, or keep it for your collection book."
+emoji = "🐬"
+rarity = 5
+skill = "fishing"
+category = "material"
+price = 0
+sell_price = 120000  # TODO(balance)
+
+[marlin.drop]
+rate = 600  # 1 in 600 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[giant_squid]
+name = "Giant Squid"
+description = "Rarely seen, and never seen twice."
+wiki = "A rarity 5 fish. Sell it, or keep it for your collection book."
+emoji = "🐙"
+rarity = 5
+skill = "fishing"
+category = "material"
+price = 0
+sell_price = 120000  # TODO(balance)
+
+[giant_squid.drop]
+rate = 600  # 1 in 600 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[pufferfish]
+name = "Pufferfish"
+description = "Puffs up when angry. Handle with care."
+wiki = "A rarity 4 fish. Sell it, or keep it for your collection book."
+emoji = "🐡"
+rarity = 4
+skill = "fishing"
+category = "material"
+price = 0
+sell_price = 25000  # TODO(balance)
+
+[pufferfish.drop]
+rate = 80  # 1 in 80 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[salmon]
+name = "Salmon"
+description = "Swims upstream, straight into your net."
+wiki = "A rarity 3 fish. Sell it, or keep it for your collection book."
+emoji = "🍣"
+rarity = 3
+skill = "fishing"
+category = "material"
+price = 0
+sell_price = 9000  # TODO(balance)
+
+[salmon.drop]
+rate = 25  # 1 in 25 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[bass]
+name = "Bass"
+description = "A solid catch with a good bit of fight."
+wiki = "A rarity 2 fish. Sell it, or keep it for your collection book."
+emoji = "🐠"
+rarity = 2
+skill = "fishing"
+category = "material"
+price = 0
+sell_price = 4500  # TODO(balance)
+
+[bass.drop]
+rate = 4  # 1 in 4 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[herring]
+name = "Herring"
+description = "Silver and plentiful."
+wiki = "A rarity 1 fish. Sell it, or keep it for your collection book."
 emoji = "🐟"
 rarity = 1
 skill = "fishing"
 category = "material"
 price = 0
-sell_price = 100
+sell_price = 2500  # TODO(balance)
+
+[herring.drop]
+rate = 2  # 1 in 2 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[cod]
+name = "Cod"
+description = "A common fish."
+wiki = "A rarity 1 fish. Sell it, or keep it for your collection book."
+emoji = "🐟"
+rarity = 1
+skill = "fishing"
+category = "material"
+price = 0
+sell_price = 2500  # TODO(balance)
 
 [cod.drop]
-rate = 2
+rate = 1  # 1 in 1 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
-max = 5
+max = 1
+
+[starter_rod]
+name = "Starter Rod"
+description = "A bent stick and some string. Everybody starts somewhere."
+rarity = 1
+skill = "fishing"
+category = "tool"
+price = 2000
+sell_price = 0
+
+[starter_rod.tool]
+kind = "rod"
+power = 3  # TODO(balance): grows with rarity
+requirement = 0
+
+[starter_rod.tool.upgrade]
+to = "reinforced_rod"
+bits = 100000  # TODO(balance)
+
+[starter_rod.tool.upgrade.items]  # TODO(balance)
+herring = 20
+bass = 8
+
+[reinforced_rod]
+name = "Reinforced Rod"
+description = "Fibreglass and a proper reel. Fish bite sooner and slip away less."
+rarity = 3
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[reinforced_rod.tool]
+kind = "rod"
+power = 8  # TODO(balance): grows with rarity
+requirement = 0
+
+[reinforced_rod.tool.upgrade]
+to = "masterwork_rod"
+bits = 2000000  # TODO(balance)
+
+[reinforced_rod.tool.upgrade.items]  # TODO(balance)
+salmon = 15
+pufferfish = 3
+
+[masterwork_rod]
+name = "Masterwork Rod"
+description = "Hand-balanced by someone who really loved fishing."
+rarity = 5
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[masterwork_rod.tool]
+kind = "rod"
+power = 18  # TODO(balance): grows with rarity
+requirement = 0
 
 [spirit_of_the_sea]
 name = "Spirit of the Sea"
@@ -454,13 +640,21 @@ kind = "axe"
 power = 12  # TODO(balance): grows with rarity
 requirement = 0
 
+[bastards_broadaxe.tool.upgrade]
+to = "masterwork_axe"
+bits = 4000000  # TODO(balance)
+
+[bastards_broadaxe.tool.upgrade.items]  # TODO(balance)
+fine_bark = 30
+maple_leaf = 15
+
 [masterwork_axe]
 name = "Masterwork Axe"
 description = "Unleash your woodcutting potential with the Masterwork Axe, the pinnacle of craftsmanship."
 rarity = 5
 skill = "foraging"
 category = "tool"
-price = 10000000
+price = 0
 sell_price = 0
 
 [masterwork_axe.tool]
@@ -468,19 +662,35 @@ kind = "axe"
 power = 18  # TODO(balance): grows with rarity
 requirement = 0
 
+[masterwork_axe.tool.upgrade]
+to = "sovereign_hatchet"
+bits = 20000000  # TODO(balance)
+
+[masterwork_axe.tool.upgrade.items]  # TODO(balance)
+maple_leaf = 40
+aged_feather = 1
+
 [reinforced_axe]
 name = "Reinforced Axe"
 description = "Slightly higher chopping power than your average axe."
 rarity = 3
 skill = "foraging"
 category = "tool"
-price = 1000000
+price = 0
 sell_price = 0
 
 [reinforced_axe.tool]
 kind = "axe"
 power = 8  # TODO(balance): grows with rarity
 requirement = 0
+
+[reinforced_axe.tool.upgrade]
+to = "bastards_broadaxe"
+bits = 800000  # TODO(balance)
+
+[reinforced_axe.tool.upgrade.items]  # TODO(balance)
+fine_bark = 20
+maple_leaf = 3
 
 [sovereign_hatchet]
 name = "Sovereign Hatchet"
@@ -496,19 +706,34 @@ kind = "axe"
 power = 28  # TODO(balance): grows with rarity
 requirement = 0
 
+[sovereign_hatchet.tool.upgrade]
+to = "wilted_axe"
+bits = 100000000  # TODO(balance)
+
+[sovereign_hatchet.tool.upgrade.items]  # TODO(balance)
+maple_leaf = 100
+aged_feather = 4
+
 [starter_axe]
 name = "Starter Axe"
 description = "A basic axe, meant for novice lumberjacks."
 rarity = 1
 skill = "foraging"
 category = "tool"
-price = 100000
+price = 2000
 sell_price = 0
 
 [starter_axe.tool]
 kind = "axe"
 power = 3  # TODO(balance): grows with rarity
 requirement = 0
+
+[starter_axe.tool.upgrade]
+to = "thornwhip_axe"
+bits = 20000  # TODO(balance)
+
+[starter_axe.tool.upgrade.items]  # TODO(balance)
+feather = 40
 
 [thornwhip_axe]
 name = "Thornwhip Axe"
@@ -523,6 +748,14 @@ sell_price = 0
 kind = "axe"
 power = 5  # TODO(balance): grows with rarity
 requirement = 0
+
+[thornwhip_axe.tool.upgrade]
+to = "reinforced_axe"
+bits = 150000  # TODO(balance)
+
+[thornwhip_axe.tool.upgrade.items]  # TODO(balance)
+feather = 100
+fine_bark = 5
 
 [wilted_axe]
 name = "Wilted Axe"
@@ -704,12 +937,56 @@ description = "They hand this one out to the new recruits. Guess that's you."
 rarity = 1
 skill = "mining"
 category = "tool"
-price = 0
+price = 2000
 sell_price = 0
 
 [rookiepickaxe.tool]
 kind = "pickaxe"
 power = 1
+requirement = 0
+
+[rookiepickaxe.tool.upgrade]
+to = "reinforced_pickaxe"
+bits = 30000  # TODO(balance)
+
+[rookiepickaxe.tool.upgrade.items]  # TODO(balance)
+copper_ore = 200
+iron_ore = 40
+
+[reinforced_pickaxe]
+name = "Reinforced Pickaxe"
+description = "A sturdier head and a better grip. Piles come out bigger."
+rarity = 3
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[reinforced_pickaxe.tool]
+kind = "pickaxe"
+power = 3  # TODO(balance): +10% ore per point above 1
+requirement = 0
+
+[reinforced_pickaxe.tool.upgrade]
+to = "masterwork_pickaxe"
+bits = 500000  # TODO(balance)
+
+[reinforced_pickaxe.tool.upgrade.items]  # TODO(balance)
+iron_ore = 300
+gold_ore = 60
+
+[masterwork_pickaxe]
+name = "Masterwork Pickaxe"
+description = "Forged by someone who has seen the bottom of the mines."
+rarity = 5
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[masterwork_pickaxe.tool]
+kind = "pickaxe"
+power = 6  # TODO(balance)
 requirement = 0
 
 [scarab_bomb]

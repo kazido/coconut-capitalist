@@ -418,13 +418,15 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
     reg = registry or get_registry()
     rules = reg.mining
     d = rules.descent
+    tool = await equipped_stats(user, "mining", reg)
+    if tool is None:
+        raise MiningError("You need a pickaxe. Buy a Rookie Pickaxe in the shop (it's equipped for you).")
     mining, _ = await _mining_state(user)
     magnet = mining.magnet_meter >= rules.magnet.capacity
     if magnet:
         await user.update_skill("mining", lambda m: setattr(m, "magnet_meter", 0))
-    tool = await equipped_stats(user, "mining", reg)
-    power = tool.power if tool else 1
-    reduction = d.reactor_reduction * (mining.reactor.level - 1) + (tool.stats.get("danger_reduction", 0) if tool else 0)
+    power = tool.power
+    reduction = d.reactor_reduction * (mining.reactor.level - 1) + tool.stats.get("danger_reduction", 0)
     bombs = min(await user.item_quantity(BOMB_ITEM), d.bombs_per_run)
     return MineRun(
         rules,

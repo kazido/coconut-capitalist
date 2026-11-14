@@ -11,6 +11,7 @@ from .checkin import CheckInScreen
 from .highlow import HighLowScreen
 from .farm import FarmScreen
 from .flashcard import FlashcardScreen
+from .fish import FishQuestsScreen, FishScreen
 from .forage import ForageScreen, GroveScreen, TreeScreen
 from .sequence import SequenceScreen
 from .trivia import TriviaScreen
@@ -30,6 +31,7 @@ from .shop import ShopScreen
 from .skills import SkillsScreen
 from .stats import StatsScreen
 from .top import TopScreen
+from .upgrade import UpgradeScreen
 from .wyrmhole import WyrmholeScreen
 
 SCREENS: dict[str, type[Screen]] = {
@@ -43,6 +45,8 @@ SCREENS: dict[str, type[Screen]] = {
         SkillsScreen,
         FarmScreen,
         ForageScreen,
+        FishScreen,
+        FishQuestsScreen,
         TreeScreen,
         GroveScreen,
         MarketScreen,
@@ -59,6 +63,7 @@ SCREENS: dict[str, type[Screen]] = {
         HighLowScreen,
         BlackjackScreen,
         InventoryScreen,
+        UpgradeScreen,
         ShopScreen,
         RankScreen,
         TopScreen,

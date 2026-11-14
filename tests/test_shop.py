@@ -21,12 +21,35 @@ async def test_buying_a_stackable_spends_bits_and_adds_items(db):
     assert await user.get_bits() == 700_000
 
 
-async def test_buying_a_tool_creates_unique_instances(db):
+async def test_buying_a_tool_creates_a_unique_instance(db):
     user = await rich()
-    purchase = await buy(user, "starter_axe", 2)
-    assert len(purchase.instances) == 2 and len({i.id for i in purchase.instances}) == 2
-    assert [i.template_id for i in await user.instances()] == ["starter_axe"] * 2
+    purchase = await buy(user, "starter_axe")
+    assert len(purchase.instances) == 1
+    assert [i.template_id for i in await user.instances()] == ["starter_axe"]
     assert await user.items() == {}  # tools are not stackables
+
+
+async def test_you_can_own_only_one_tool_of_each_kind_and_it_costs_nothing_to_try(db):
+    user = await rich()
+    await buy(user, "starter_axe")
+    before = await user.get_bits()
+    with pytest.raises(ShopError, match="already have a axe"):
+        await buy(user, "starter_axe")
+    with pytest.raises(ShopError, match="only need one"):
+        await buy(user, "starter_rod", 2)
+    assert await user.get_bits() == before and len(await user.instances()) == 1
+    await buy(user, "starter_rod")  # a different kind is fine
+    assert len(await user.instances()) == 2
+
+
+async def test_only_starter_tools_are_sold_the_rest_are_upgrades(db):
+    from cococap.registry import get_registry
+
+    tools = [i.id for i in get_registry().shop_items() if i.tool]
+    assert sorted(tools) == ["rookiepickaxe", "starter_axe", "starter_rod"]
+    user = await rich()
+    with pytest.raises(ShopError, match="isn't sold"):
+        await buy(user, "reinforced_axe")
 
 
 async def test_cannot_afford_changes_nothing(db):

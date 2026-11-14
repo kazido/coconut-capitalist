@@ -22,7 +22,17 @@ class QuestBook(BaseModel):
     legendary_donated: bool = False
 
 
+class QuestProgress(BaseModel):
+    """Where a player is in the current period's quests (the quests themselves come from the clock and the player)."""
+
+    period: int = -1  # the day number (daily) or week number (weekly) this progress belongs to
+    progress: list[int] = Field(default_factory=list)
+    done: list[bool] = Field(default_factory=list)
+
+
 class Fishing(Skill):
+    daily: QuestProgress = Field(default_factory=QuestProgress)
+    weekly: QuestProgress = Field(default_factory=QuestProgress)
     quest_book: QuestBook = Field(default_factory=QuestBook)
     skiff: Skiff = Field(default_factory=Skiff)
     stats: Stats = Field(default_factory=Stats)

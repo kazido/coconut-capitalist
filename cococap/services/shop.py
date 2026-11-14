@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
+from cococap.services.equipment import EquipmentError, equip, skill_for_tool
 from cococap.user import InsufficientFunds, User
 
 MAX_PER_PURCHASE = 1000
@@ -29,6 +30,8 @@ async def buy(user: User, item_id: str, quantity: int = 1, registry: Registry | 
         raise ShopError("That isn't sold in the shop.")
     if not 1 <= quantity <= MAX_PER_PURCHASE:
         raise ShopError(f"You can buy between 1 and {MAX_PER_PURCHASE:,} at a time.")
+    if item.is_instance:
+        await _check_can_own_another(user, item, quantity, reg)
     total = item.price * quantity
     try:
         await user.remove_bits(total)
@@ -45,7 +48,33 @@ async def buy(user: User, item_id: str, quantity: int = 1, registry: Registry | 
         await user.add_bits(total)  # the goods never arrived: give the money back
         raise
     await user.inc_stat("items_bought", quantity)
+    await _equip_first_tool(user, item, made, reg)
     return Purchase(item.id, quantity, total, made)
+
+
+async def _check_can_own_another(user: User, item, quantity: int, reg: Registry) -> None:
+    """You own one tool per kind and make it better with upgrades; the shop only sells the first one."""
+    if quantity != 1:
+        raise ShopError("You only need one. Buy it once, then upgrade it.")
+    if item.tool is None:
+        return
+    for owned in await user.instances():
+        template = reg.find_item(owned.template_id)
+        if template and template.tool and template.tool.kind == item.tool.kind:
+            raise ShopError(f"You already have a {item.tool.kind}. Upgrade it from your inventory instead.")
+
+
+async def _equip_first_tool(user: User, item, made: list[ItemInstance], reg: Registry) -> None:
+    """Your first tool for a skill is equipped for you, so a new player can start straight away."""
+    if not made or item.tool is None:
+        return
+    skill = skill_for_tool(item.tool.kind)
+    if skill is None or await user.equipped_instance(skill) is not None:
+        return
+    try:
+        await equip(user, skill, made[0].id, reg)
+    except EquipmentError:
+        pass  # e.g. the level requirement isn't met yet: they can equip it later from the inventory
 
 
 async def sell(user: User, item_id: str, quantity: int = 1, registry: Registry | None = None) -> int:

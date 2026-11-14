@@ -298,35 +298,62 @@ async def test_party_xp_applies_to_claimed_community_rewards(db):
 CH = RULES.chopping
 
 
-def test_a_spot_wears_out_chop_by_chop_down_to_a_floor():
-    spot = f.Spot()
-    swings = [spot.swing(100, RULES, Random(9)) for _ in range(40)]  # (a power of 100 shows the decay clearly)
-    plain = [s.damage for s in swings if not s.good]
-    assert plain[0] == 100 and plain == sorted(plain, reverse=True)  # each chop does less (good chops aside)
-    assert swings[-1].freshness == CH.spot_floor and min(plain) >= round(100 * CH.spot_floor)  # but never below the floor
-    assert spot.chops == 40
+def test_spots_differ_and_rotating_picks_a_random_new_one():
+    kinds = {f.Spot.pick(RULES, Random(i)).name for i in range(200)}
+    assert kinds == {k.name for k in CH.spots}
+    spot = f.Spot("Knotty", 0.7, wear=4)
+    spot.rotate(RULES, Random(3))
+    assert spot.wear == 0 and spot.name in kinds
+    assert f.average_spot_multiplier(RULES) == pytest.approx(1.0, abs=0.05)  # on average a new spot is neither a gift nor a curse
 
 
-def test_rotating_gives_a_fresh_spot():
-    spot = f.Spot()
-    for _ in range(8):
-        spot.swing(10, RULES, Random(1))
-    assert spot.freshness(RULES) < 0.5 and spot.condition(RULES) == "dull"
-    spot.rotate()
-    assert spot.freshness(RULES) == 1.0 and spot.condition(RULES) == "fresh" and spot.preview(10, RULES) == 10
+def test_a_spot_only_wears_down_now_and_then_not_on_every_chop():
+    rng, spot, worn_after = Random(9), f.Spot(), []
+    for _ in range(2000):
+        before = spot.wear
+        spot.swing(10, RULES, rng)
+        worn_after.append(spot.wear - before)
+    assert set(worn_after) == {0, 1}
+    assert sum(worn_after) / 2000 == pytest.approx(CH.wear_chance, abs=0.03)
+    assert worn_after[:3] != [1, 1, 1]
 
 
-def test_the_spot_condition_names():
-    spot = f.Spot()
-    names = []
-    for _ in range(8):
-        names.append(spot.condition(RULES))
-        spot.swing(10, RULES, Random(1))
-    assert names[0] == "fresh" and "worn" in names and names[-1] == "dull" and names.index("worn") < names.index("dull")
+def test_wear_makes_chops_weaker_down_to_a_floor():
+    spot = f.Spot(wear=0)
+    assert spot.multiplier(RULES) == 1.0 and spot.condition(RULES) == "fresh"
+    spot.wear = 2
+    assert spot.multiplier(RULES) == pytest.approx(1 - 2 * CH.wear_step) and spot.condition(RULES) == "worn"
+    spot.wear = 100
+    assert spot.multiplier(RULES) == CH.spot_floor and spot.condition(RULES) == "dull"
+    assert spot.preview(100, RULES) == round(100 * CH.spot_floor)
+
+
+def test_the_kind_of_spot_changes_the_damage_you_deal():
+    rng = Random(1)
+    damage = {k.name: f.Spot(k.name, k.multiplier).preview(100, RULES) for k in CH.spots}
+    assert damage["Knotty"] < damage["Plain"] == 100 < damage["Clean grain"]
+    swing = f.Spot("Clean grain", 1.3).swing(100, RULES, rng)
+    assert swing.damage == (round(100 * 1.3 * (1 + CH.good_chop_bonus)) if swing.good else 130)
+
+
+def test_rotating_a_good_spot_is_a_mistake_and_staying_on_a_ruined_one_is_too():
+    def per_click(threshold, power=20, clicks=60_000):
+        rng, spot, dealt = Random(7), f.Spot.pick(RULES, Random(7)), 0
+        for _ in range(clicks):
+            if threshold is not None and spot.multiplier(RULES) < threshold:
+                spot.rotate(RULES, rng)  # a click that does no damage
+            else:
+                dealt += spot.swing(power, RULES, rng).damage
+        return dealt / clicks
+
+    never, sensible = per_click(None), per_click(0.8)
+    assert sensible > never * 2  # leaving a worn spot is clearly right
+    assert sensible > per_click(1.3)  # but rotating away from decent spots wastes clicks
+    assert sensible > per_click(0.4)  # ...and so does staying on a poor one
 
 
 def test_a_swing_always_does_at_least_one_damage():
-    spot = f.Spot(chops=30)
+    spot = f.Spot("Knotty", 0.7, wear=30)
     assert spot.swing(1, RULES, Random(1)).damage >= 1 and spot.preview(1, RULES) == 1
 
 
@@ -334,37 +361,20 @@ def test_good_chops_happen_about_as_often_as_configured_and_hit_harder():
     good, total = 0, 4000
     rng = Random(3)
     for _ in range(total):
-        swing = f.Spot().swing(20, RULES, rng)
+        swing = f.Spot().swing(20, RULES, rng)  # a plain, unworn spot
         good += swing.good
         assert swing.damage == (round(20 * (1 + CH.good_chop_bonus)) if swing.good else 20)
     assert good / total == pytest.approx(CH.good_chop_chance, abs=0.025)
 
 
-def test_rotating_every_few_chops_is_clearly_better_than_never_rotating():
-    def damage_per_click(rotate_every, power=3, clicks=600):
-        rng, spot, dealt, since = Random(7), f.Spot(), 0, 0
-        for _ in range(clicks):
-            if rotate_every and since >= rotate_every:
-                spot.rotate()  # a click that does no damage
-                since = 0
-                continue
-            dealt += spot.swing(power, RULES, rng).damage
-            since += 1
-        return dealt / clicks
-
-    never = damage_per_click(0)
-    assert damage_per_click(4) > never * 1.5
-    assert damage_per_click(4) > damage_per_click(12)  # rotating too rarely is worse than rotating often enough
-    assert damage_per_click(4) > damage_per_click(1)  # ...and rotating after every chop wastes the clicks
-
-
 def test_the_starter_axe_chops_a_first_zone_tree_quickly():
     """The complaint: the first tree took too long. With rotating, a typical zone 1 tree is a few dozen clicks at most."""
     power = REG.item("starter_axe").tool.power
-    rng, spot, tree, clicks = Random(1), f.Spot(), f.roll_tree(1, Random(4), RULES), 0
+    rng, tree, clicks = Random(1), f.roll_tree(1, Random(4), RULES), 0
+    spot = f.Spot.pick(RULES, rng)
     while not tree.felled:
-        if spot.freshness(RULES) < 0.7:
-            spot.rotate()
+        if spot.multiplier(RULES) < 0.8:
+            spot.rotate(RULES, rng)
         else:
             tree.chop(spot.swing(power, RULES, rng).damage)
         clicks += 1
@@ -416,15 +426,13 @@ def test_foraging_pays_less_per_click_than_mining_at_starter_gear():
     per_roll = sum(price(i.id) * mean_quantity[i.id] / i.drop.rate for i in f.drop_pool(REG))
     power, zone = REG.item("starter_axe").tool.power, 1
     hp = f.average_hp(zone, RULES)
-    rng, spot, dealt, clicks, since = Random(2), f.Spot(), 0, 0, 0
-    for _ in range(6000):  # a sensible chopper: rotates after four chops
-        if since >= 4:
-            spot.rotate()
-            since = 0
+    rng, dealt, clicks = Random(2), 0, 6000
+    spot = f.Spot.pick(RULES, rng)
+    for _ in range(clicks):  # a sensible chopper: moves on once the spot is clearly worse than an average new one
+        if spot.multiplier(RULES) < 0.8:
+            spot.rotate(RULES, rng)
         else:
             dealt += spot.swing(power, RULES, rng).damage
-            since += 1
-        clicks += 1
     pay_per_hp = RULES.bits_per_hp * f.zone_reward_factor(zone, RULES) + per_roll * f.expected_rolls(1, RULES, zone)
     foraging_per_click = pay_per_hp * dealt / clicks
     assert hp > 0 and foraging_per_click < mining_per_click, (foraging_per_click, mining_per_click)
