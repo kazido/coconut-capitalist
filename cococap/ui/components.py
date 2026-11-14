@@ -103,7 +103,7 @@ def bits(amount: int) -> str:
 
 
 def needs_text(bits_needed: int, bits_have: int, items: dict[str, int], owned: dict[str, int], registry) -> str:
-    """What something costs against what you have, one tick or cross each: "✅ 25,000 bits (you have 1,000,000)",
+    """What something costs against what you have, one tick or cross each, one per line: "✅ 25,000 bits (you have 1,000,000)",
     "❌ Hardwood 4/10". Used wherever you craft or upgrade, so you can see what is missing before you try."""
     lines = []
     if bits_needed:
@@ -112,4 +112,4 @@ def needs_text(bits_needed: int, bits_have: int, items: dict[str, int], owned: d
         have = owned.get(item_id, 0)
         item = registry.item(item_id)
         lines.append(f"{'✅' if have >= quantity else '❌'} {item.display}  **{have:,}/{quantity:,}**")
-    return "  ·  ".join(lines)
+    return "\n".join(lines)

@@ -696,7 +696,7 @@ A pass over the busiest pages to cut text without cutting information. The rules
   the note after you click), not on every row. Example: a growing plot reads `3 🍋 Lemon 2/4 💧 · ~28h`; the full "about 28h (22h to 35h)"
   appears once, when you plant, and the seed menu says `~8h`.
 - **Collapse the unknown.** Many "???" rows become one line (`❓ 21 fish nobody has caught yet: Common 3 · Rare 3 ...`) on Records and Field notes.
-- **Costs on one line** (`needs_text`): `✅ 20,000 bits · ❌ Feather 0/40 · ❌ Hardwood 0/6`, used by upgrades, pots and crafting.
+- **Costs: one requirement per line** (`needs_text`): `✅ 20,000 bits`, then `❌ Feather 0/40`, then `❌ Hardwood 0/6`, each on its own line (squeezing them onto one line looked bad), used by upgrades, pots and crafting.
 - **Mastery** shows each node on one line; **Collection Book** shows two fish per line; a few intro paragraphs became a single line.
 - **Farm pages:** nine plots to a page (three rows of three) with Prev / Page n/N / Next once there is more than one page. The farm model has room
   for 27 plots (`MAX_PLOTS`); `services.farming.PLOTS` is how many exist now (9). **Plant page** plants only the plots on the page you are looking

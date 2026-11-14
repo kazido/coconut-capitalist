@@ -101,3 +101,20 @@ async def test_the_tools_page_shows_each_tools_numbers(db):
     text = all_text(nav)
     for fragment in ("Ore per lode ×1.00", "Hit points per chop 3", "Plots watered an hour 3", "Wait for a bite", "Attack from the sword +9"):
         assert fragment in text
+
+
+async def test_each_requirement_of_an_upgrade_is_on_its_own_line(db):
+    from tests.test_upgrades import cost_of
+
+    user = await User.get(1)
+    await user.give_instance("starter_axe")
+    nav, _ = await hub("upgrade")
+    lines = all_text(nav).split("\n")
+    cost = cost_of("starter_axe")
+    wanted = [f"{REG.item(i).display}  **0/{q}**" for i, q in cost.items.items()]
+    assert len(wanted) >= 2
+    for requirement in wanted:
+        assert sum(requirement in line for line in lines) == 1
+    bits_line = next(line for line in lines if "bits (you have" in line)
+    assert all(requirement not in bits_line for requirement in wanted) and "·" not in bits_line  # (the bits are not squeezed onto the same line)
+    assert len({lines.index(next(line for line in lines if r in line)) for r in wanted}) == len(wanted)
