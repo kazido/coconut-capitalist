@@ -17,75 +17,47 @@ window = 6                       # seconds you have to pull up the line once it 
 base_length = 2                  # arrows to press = this + the fish's rarity (a rarity-1 fish takes 3)
 power_per_slip = 8               # every this much rod power forgives one wrong arrow (a power-8 rod forgives one)
 
-# Quests (fishing level `min_level`). Each player gets `daily_count` of the daily templates every UTC day and one weekly
-# (Monday to Sunday), picked from the clock and their id, so nobody has to "roll" them. A quest is "catch `count` fish
-# of rarity `min_rarity` or better"; finishing it pays at once.
+# Quests (fishing level `min_level`). Each slot is one quest: "catch N of a fish of this rarity". Which fish, and how many
+# within the slot's range, is picked from the clock and the player, so everyone's list differs and nobody rolls
+# anything. Daily quests renew at UTC midnight, the weekly one on Mondays. Finishing a quest pays at once:
+# bits = the fish's sell price x N x the multiplier, xp = rarity x N x xp_per_rarity.
 [quests]
 min_level = 3
-daily_count = 5
+xp_per_rarity = 20
+daily_bits_multiplier = 1.5
+weekly_bits_multiplier = 3.0
 
 [[quests.daily]]
-min_rarity = 1
-count = 5
-bits = 6000
-xp = 40
+rarity = 1
+min_count = 4
+max_count = 8
 [[quests.daily]]
-min_rarity = 1
-count = 8
-bits = 10000
-xp = 60
+rarity = 1
+min_count = 4
+max_count = 8
 [[quests.daily]]
-min_rarity = 1
-count = 12
-bits = 16000
-xp = 90
+rarity = 2
+min_count = 1
+max_count = 3
 [[quests.daily]]
-min_rarity = 2
-count = 3
-bits = 9000
-xp = 60
+rarity = 2
+min_count = 1
+max_count = 3
 [[quests.daily]]
-min_rarity = 2
-count = 5
-bits = 16000
-xp = 90
-[[quests.daily]]
-min_rarity = 3
-count = 1
-bits = 8000
-xp = 60
-[[quests.daily]]
-min_rarity = 3
-count = 2
-bits = 18000
-xp = 100
-[[quests.daily]]
-min_rarity = 4
-count = 1
-bits = 30000
-xp = 150
+rarity = 3
+min_count = 1
+max_count = 1
 
 [[quests.weekly]]
-min_rarity = 4
-count = 1
-bits = 120000
-xp = 600
-[[quests.weekly]]
-min_rarity = 3
-count = 4
-bits = 100000
-xp = 500
-[[quests.weekly]]
-min_rarity = 5
-count = 1
-bits = 400000
-xp = 1500
+rarity = 4
+min_count = 1
+max_count = 2
 
 # The personal collection book. It holds one entry per fish up to `max_rarity` (common to super rare). Turn fish in for
 # a bonus; once every entry is full you can complete the book: it pays out, goes up a level and starts over needing
 # more of each fish.
 [book]
-min_level = 5                    # TODO(balance): the wiki says fishing level 10
+min_level = 10                   # TODO(balance): the wiki says fishing level 10
 max_rarity = 4
 max_level = 10
 need_base = 1                    # each entry needs this many fish at book level 1...
@@ -94,3 +66,43 @@ bits_per_sell = 0.5              # turning a fish in pays +50% of what it would 
 xp_per_rarity = 15
 completion_bits = 50000          # finishing a book pays this x the book's level...
 completion_xp = 400              # ...and this much xp x its level
+
+# Treasure. Now and then a catch brings a hallucination: four numbers flash on screen for a few seconds. While it lasts
+# (`armed_minutes`), a cast can bring up a treasure chest instead of a fish, and the numbers unlock it. Forget them and
+# the chest sinks. A chest pays bits, xp and rolls the loot table below.  TODO(balance): all of it
+[treasure]
+hallucination_odds = 35           # 1 in 35 catches (the wiki says 25: this is a little rarer)
+chest_odds = 35                   # 1 in 35 casts while the hallucination lasts (as rare as the hallucination itself)
+armed_minutes = 10
+flash_seconds = 8
+code_length = 4
+attempts = 3
+bits_min = 20000
+bits_max = 60000
+xp = 150
+
+[[treasure.loot]]
+item = "coral_shard"
+min = 2
+max = 6
+chance = 1.0
+[[treasure.loot]]
+item = "sturgeon"
+min = 1
+max = 1
+chance = 0.15
+[[treasure.loot]]
+item = "oarfish"
+min = 1
+max = 1
+chance = 0.05
+[[treasure.loot]]
+item = "leviathan_pup"
+min = 1
+max = 1
+chance = 0.01
+[[treasure.loot]]
+item = "spirit_of_the_sea"
+min = 1
+max = 1
+chance = 0.001                    # 1 in 1,000 (the wiki); boosts fishing xp when held by a pet

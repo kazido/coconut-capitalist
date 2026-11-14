@@ -10,12 +10,13 @@ All randomness comes from an injected ``random.Random``.
 import random
 import time
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from cococap.constants import Rarities
 from cococap.errors import GameRuleError
+from cococap.models.skills.fishing import TreasureState
 from cococap.registry import Item, Registry, get_registry
-from cococap.registry.models import FishingRules, QuestTemplate
+from cococap.registry.models import FishingRules
 from cococap.services import shop
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop, roll_table
@@ -71,11 +72,15 @@ class Cast:
     progress: int = 0
     escaped: bool = False
     settled: bool = False
+    chest: bool = False  # a treasure chest instead of a fish (the fish is only a stand-in until it is hooked)
+    attempts_left: int = 0  # tries at the chest's lock
 
     def status(self, now: float) -> str:
-        """waiting | bite | reeling | landed | escaped.  ("bite" = it's on, pull up the line!)"""
+        """waiting | bite | reeling | chest | landed | escaped.  ("bite" = it's on, pull up the line!)"""
         if self.escaped:
             return "escaped"
+        if self.chest and self.hooked:
+            return "chest" if not self.settled else "landed"
         if self.progress >= len(self.pattern):
             return "landed"
         if self.hooked:
@@ -106,6 +111,8 @@ class Cast:
         status = self.status(now)
         if status in ("waiting", "bite"):
             raise FishingError("Nothing is biting yet." if status == "waiting" else "Pull up the line first!")
+        if status == "chest":
+            raise FishingError("That's a chest, not a fish. Enter the numbers!")
         if status == "escaped":
             raise FishingError("That fish is already gone.")
         if status == "landed":
@@ -120,20 +127,26 @@ class Cast:
         return "escaped"
 
 
-def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = None, registry: Registry | None = None) -> Cast:
-    """Put the line in the water: pick the fish, the bite time and the arrows."""
+def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = None, registry: Registry | None = None,
+              *, armed: bool = False) -> Cast:
+    """Put the line in the water: pick the fish, the bite time and the arrows. While a hallucination lasts
+    (``armed``), the catch may turn out to be a treasure chest instead."""
     reg = registry or get_registry()
     rules = reg.fishing
     now = time.time() if now is None else now
     fish = roll_fish(rng, reg)
     bite_at = now + wait_seconds(stats.power, rules, rng)
-    return Cast(
+    pattern = reel_pattern(fish.rarity, rules, rng)
+    cast = Cast(
         fish=fish,
         bite_at=bite_at,
         expires_at=bite_at + rules.bite.window,
-        pattern=reel_pattern(fish.rarity, rules, rng),
+        pattern=pattern,
         slips_left=slips_allowed(stats.power, rules),
     )
+    if armed and rng.randint(1, rules.treasure.chest_odds) == 1:
+        cast.chest, cast.attempts_left = True, rules.treasure.attempts
+    return cast
 
 
 # ---- operations on a player (these persist) ---------------------------------------------------------------
@@ -159,24 +172,38 @@ def week_of(now: float) -> int:
 
 @dataclass(frozen=True)
 class Quest:
+    """"Catch `count` of this fish." What it asks for and pays is fixed by the clock and the player."""
+
     kind: str  # daily | weekly
     index: int
-    template: QuestTemplate
+    fish: Item
+    count: int
+    bits: int
+    xp: int
     progress: int = 0
     done: bool = False
 
     @property
     def text(self) -> str:
-        t = self.template
-        what = "fish" if t.min_rarity == 1 else f"{Rarities.from_value(t.min_rarity).rarity_name} or better fish"
-        return f"Catch {t.count} {what}"
+        return f"Catch {self.count} {self.fish.display}"
 
 
-def _chosen(kind: str, user_id: int, period: int, rules: FishingRules) -> list[QuestTemplate]:
+def _chosen(kind: str, user_id: int, period: int, reg: Registry) -> list[tuple[Item, int, int, int]]:
+    """(fish, count, bits, xp) for each quest slot: a fish of the slot's rarity (a different one per slot where
+    possible) and a count in the slot's range. Same for the whole period, different for each player."""
+    rules = reg.fishing.quests
     rng = random.Random(f"fishing-quests:{kind}:{user_id}:{period}")
-    if kind == "daily":
-        return rng.sample(rules.quests.daily, rules.quests.daily_count)
-    return [rng.choice(rules.quests.weekly)]
+    slots = rules.daily if kind == "daily" else rules.weekly
+    multiplier = rules.daily_bits_multiplier if kind == "daily" else rules.weekly_bits_multiplier
+    pool, taken, chosen = fish_pool(reg), set(), []
+    for slot in slots:
+        options = [i for i in pool if i.rarity == slot.rarity]
+        fresh = [i for i in options if i.id not in taken] or options
+        fish = rng.choice(sorted(fresh, key=lambda i: i.id))
+        taken.add(fish.id)
+        count = rng.randint(slot.min_count, slot.max_count)
+        chosen.append((fish, count, round(fish.sell_price * count * multiplier), fish.rarity * count * rules.xp_per_rarity))
+    return chosen
 
 
 def _period(kind: str, now: float) -> int:
@@ -187,13 +214,13 @@ def quests_unlocked(level: int, rules: FishingRules) -> bool:
     return level >= rules.quests.min_level
 
 
-def _quests_of(kind: str, user_id: int, saved, now: float, rules: FishingRules) -> list[Quest]:
+def _quests_of(kind: str, user_id: int, saved, now: float, reg: Registry) -> list[Quest]:
     period = _period(kind, now)
-    templates = _chosen(kind, user_id, period, rules)
-    same = saved.period == period and len(saved.progress) == len(templates)
+    chosen = _chosen(kind, user_id, period, reg)
+    same = saved.period == period and len(saved.progress) == len(chosen)
     return [
-        Quest(kind, i, t, saved.progress[i] if same else 0, saved.done[i] if same else False)
-        for i, t in enumerate(templates)
+        Quest(kind, i, fish, count, bits, xp, saved.progress[i] if same else 0, saved.done[i] if same else False)
+        for i, (fish, count, bits, xp) in enumerate(chosen)
     ]
 
 
@@ -204,7 +231,7 @@ async def quests(user: User, now: float | None = None, registry: Registry | None
     skill = await user.skill("fishing")
     if not quests_unlocked(User.xp_to_level(skill.xp), reg.fishing):
         return []
-    return _quests_of("daily", user.id, skill.daily, now, reg.fishing) + _quests_of("weekly", user.id, skill.weekly, now, reg.fishing)
+    return _quests_of("daily", user.id, skill.daily, now, reg) + _quests_of("weekly", user.id, skill.weekly, now, reg)
 
 
 @dataclass(frozen=True)
@@ -214,6 +241,7 @@ class Catch:
     finished: tuple[Quest, ...] = ()  # quests this catch completed (already paid)
     quest_bits: int = 0
     extras: Counter = field(default_factory=Counter)  # things that came up with the fish (coral shards...)
+    hallucination: str | None = None  # the numbers you saw, if this catch made you hallucinate
 
 
 def catch_extras(rng: random.Random, registry: Registry) -> Counter:
@@ -243,32 +271,39 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     for item_id, quantity in extras.items():
         await user.add_item(item_id, quantity)
     finished: list[Quest] = []
+    seen: list[str] = []
+    dice = rng or random.Random()
 
     def grant(skill) -> None:
         skill.xp += xp
         skill.stats.fish_caught += 1
+        t = rules.treasure
+        if skill.treasure.armed_until <= now and dice.randint(1, t.hallucination_odds) == 1:
+            code = "".join(dice.choice("0123456789") for _ in range(t.code_length))
+            skill.treasure = TreasureState(code=code, armed_until=now + t.armed_minutes * 60)
+            seen.append(code)
         if not quests_unlocked(User.xp_to_level(skill.xp - xp), rules):  # unlocked before this catch, not by it
             return
         for kind in ("daily", "weekly"):
             saved = getattr(skill, kind)
-            current = _quests_of(kind, user.id, saved, now, rules)
+            current = _quests_of(kind, user.id, saved, now, reg)
             progress = [q.progress for q in current]
             done = [q.done for q in current]
             for q in current:
-                if not q.done and cast.fish.rarity >= q.template.min_rarity:
+                if not q.done and cast.fish.id == q.fish.id:
                     progress[q.index] += 1
-                    if progress[q.index] >= q.template.count:
+                    if progress[q.index] >= q.count:
                         done[q.index] = True
-                        finished.append(Quest(kind, q.index, q.template, progress[q.index], True))
+                        finished.append(replace(q, progress=progress[q.index], done=True))
             setattr(skill, kind, saved.__class__(period=_period(kind, now), progress=progress, done=done))
-        skill.xp += round(sum(q.template.xp for q in finished) * multiplier)
+        skill.xp += round(sum(q.xp for q in finished) * multiplier)
         skill.stats.quests_completed += len(finished)
 
     await user.update_skill("fishing", grant)
-    quest_bits = sum(q.template.bits for q in finished)
+    quest_bits = sum(q.bits for q in finished)
     if quest_bits:
         await user.add_bits(quest_bits)
-    return Catch(cast.fish, xp, tuple(finished), quest_bits, extras)
+    return Catch(cast.fish, xp, tuple(finished), quest_bits, extras, seen[0] if seen else None)
 
 
 @dataclass(frozen=True)
@@ -429,3 +464,67 @@ async def complete_book(user: User, registry: Registry | None = None) -> BookRew
         raise FishingError(outcome["error"])
     await user.add_bits(outcome["bits"])
     return BookReward(outcome["level"], outcome["bits"], outcome["xp"])
+
+
+# ---- treasure ---------------------------------------------------------------------------------------------
+async def chests_possible(user: User, now: float | None = None) -> bool:
+    """Is a hallucination still working on you (so a cast might bring up a chest)?"""
+    now = time.time() if now is None else now
+    return (await user.skill("fishing")).treasure.armed_until > now
+
+
+@dataclass(frozen=True)
+class ChestAttempt:
+    opened: bool
+    attempts_left: int
+    sunk: bool = False  # out of tries (or the numbers were gone): the chest is lost
+    bits: int = 0
+    xp: int = 0
+    items: Counter = field(default_factory=Counter)
+
+
+def _digits(guess: str) -> str:
+    return "".join(ch for ch in guess if ch.isdigit())
+
+
+async def open_chest(user: User, cast: Cast, guess: str, rng: random.Random | None = None, now: float | None = None,
+                     registry: Registry | None = None) -> ChestAttempt:
+    """Try the four numbers on a chest's lock. The right ones open it (once) and pay out; too many wrong tries sink it."""
+    reg = registry or get_registry()
+    t = reg.fishing.treasure
+    now = time.time() if now is None else now
+    rng = rng or random.Random()
+    if cast.status(now) != "chest":
+        raise FishingError("There is no chest to open.")
+    attempt = _digits(guess)
+    outcome: dict = {}
+
+    def try_lock(skill) -> None:
+        code = skill.treasure.code
+        if code and attempt == code:
+            skill.treasure = TreasureState()  # the numbers are used up
+            skill.stats.treasures_found += 1
+            skill.xp += t.xp
+            outcome["ok"] = True
+        elif not code:
+            outcome["gone"] = True
+
+    await user.update_skill("fishing", try_lock)
+    if outcome.get("ok"):
+        cast.settled = True
+        bits = rng.randint(t.bits_min, t.bits_max)
+        items: Counter = Counter()
+        for row in t.loot:
+            if rng.random() < row.chance:
+                items[row.item] += rng.randint(row.min, row.max)
+        for item_id, quantity in items.items():
+            await user.add_item(item_id, quantity)
+        if bits:
+            await user.add_bits(bits)
+        return ChestAttempt(True, cast.attempts_left, bits=bits, xp=t.xp, items=items)
+    cast.attempts_left = 0 if outcome.get("gone") else cast.attempts_left - 1
+    if cast.attempts_left <= 0:
+        cast.escaped = True
+        await user.update_skill("fishing", lambda s: setattr(s, "treasure", TreasureState()))  # the spell is broken
+        return ChestAttempt(False, 0, sunk=True)
+    return ChestAttempt(False, cast.attempts_left)

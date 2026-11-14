@@ -364,52 +364,67 @@ async def test_quests_are_locked_below_the_level(db):
     assert await f.quests(user, DAY0, REG) == []
 
 
-async def test_you_get_five_different_dailies_and_a_weekly_that_stay_the_same_all_period(db):
+async def test_you_get_a_quest_per_slot_each_asking_for_a_specific_fish_and_they_stay_put_all_period(db):
     user = await player()
     await level_up(user)
     first = await f.quests(user, DAY0, REG)
-    assert [q.kind for q in first] == ["daily"] * Q.daily_count + ["weekly"]
-    assert len({q.template for q in first if q.kind == "daily"}) == Q.daily_count
-    assert [q.template for q in await f.quests(user, DAY0 + 3600, REG)] == [q.template for q in first]
-    days = {tuple(q.template for q in await f.quests(user, DAY0 + d * f.DAY, REG) if q.kind == "daily") for d in range(8)}
+    assert [q.kind for q in first] == ["daily"] * len(Q.daily) + ["weekly"] * len(Q.weekly)
+    for quest, slot in zip(first, [*Q.daily, *Q.weekly], strict=False):
+        assert quest.fish.rarity == slot.rarity and slot.min_count <= quest.count <= slot.max_count
+        assert quest.fish.id in {i.id for i in f.fish_pool(REG)}
+    mult = {"daily": Q.daily_bits_multiplier, "weekly": Q.weekly_bits_multiplier}
+    assert all(q.bits == round(q.fish.sell_price * q.count * mult[q.kind]) for q in first)
+    assert all(q.xp == q.fish.rarity * q.count * Q.xp_per_rarity for q in first)
+    assert "Catch" in first[0].text and first[0].fish.name in first[0].text
+    assert [(q.fish.id, q.count) for q in await f.quests(user, DAY0 + 3600, REG)] == [(q.fish.id, q.count) for q in first]
+    days = {tuple(q.fish.id for q in await f.quests(user, DAY0 + d * f.DAY, REG) if q.kind == "daily") for d in range(8)}
     assert len(days) > 1  # a different set on different days
+    others = {tuple(q.fish.id for q in await f.quests(await level_up_player(uid), DAY0, REG)) for uid in range(10, 16)}
+    assert len(others) > 1  # and different players get different fish
 
 
-async def test_finishing_a_quest_pays_once_and_a_cod_does_not_count_toward_rare_quests(db):
+async def level_up_player(user_id):
+    user = await player(user_id)
+    await level_up(user)
+    return user
+
+
+async def test_the_two_common_slots_ask_for_different_fish_where_they_can(db):
     user = await player()
     await level_up(user)
-    quests = await f.quests(user, DAY0, REG)
-    easy = [q for q in quests if q.kind == "daily" and q.template.min_rarity == 1]
-    assert easy, "the test player's dailies should include an easy quest (fixed seed)"
+    for day in range(30):
+        commons = [q.fish.id for q in await f.quests(user, DAY0 + day * f.DAY, REG) if q.kind == "daily" and q.fish.rarity == 1]
+        assert len(commons) == len(set(commons))
+
+
+async def test_only_the_asked_for_fish_counts_and_finishing_pays_once(db):
+    user = await player()
+    await level_up(user)
+    daily = next(q for q in await f.quests(user, DAY0, REG) if q.kind == "daily" and q.fish.rarity == 1)
+    other = next(i.id for i in f.fish_pool(REG) if i.rarity == 1 and i.id != daily.fish.id)
+    got = await catch(user, other, DAY0 + 5)
+    assert not got.finished
+    assert next(q for q in await f.quests(user, DAY0 + 6, REG) if q.index == daily.index and q.kind == "daily").progress == 0
     before, paid = user.purse, 0
-    for _ in range(max(q.template.count for q in easy) + 3):
-        paid += (await catch(user, "cod", DAY0 + 10)).quest_bits
+    for _ in range(daily.count + 2):
+        paid += (await catch(user, daily.fish.id, DAY0 + 10)).quest_bits
     await user.refresh()
-    assert paid == sum(q.template.bits for q in easy) and user.purse == before + paid
-    after = await f.quests(user, DAY0 + 20, REG)
-    assert all(q.done for q in after if q.template.min_rarity == 1 and q.kind == "daily")
-    assert all(q.progress == 0 for q in after if q.template.min_rarity > 1)
-    assert (await user.skill("fishing")).stats.quests_completed == len(easy)
-
-
-async def test_a_rare_fish_counts_toward_every_quest_it_is_good_enough_for(db):
-    user = await player()
-    await level_up(user)
-    await catch(user, "pufferfish", DAY0)  # rarity 4
-    after = await f.quests(user, DAY0, REG)
-    assert all(q.progress == 1 or q.done for q in after if q.template.min_rarity <= 4)
-    assert all(q.progress == 0 for q in after if q.template.min_rarity > 4)
+    assert paid == daily.bits and user.purse == before + paid  # paid once, however many more you catch
+    after = next(q for q in await f.quests(user, DAY0 + 20, REG) if q.index == daily.index and q.kind == "daily")
+    assert after.done and (await user.skill("fishing")).stats.quests_completed >= 1
 
 
 async def test_a_new_day_starts_fresh_but_the_week_carries_on_and_a_new_week_resets(db):
     user = await player()
     await level_up(user)
-    for _ in range(2):
-        await catch(user, "pufferfish", DAY0)
+    weekly = next(q for q in await f.quests(user, DAY0, REG) if q.kind == "weekly")
+    daily = next(q for q in await f.quests(user, DAY0, REG) if q.kind == "daily")
+    await catch(user, weekly.fish.id, DAY0)
+    await catch(user, daily.fish.id, DAY0)
     today, tomorrow = await f.quests(user, DAY0, REG), await f.quests(user, DAY0 + f.DAY, REG)
     assert any(q.progress or q.done for q in today if q.kind == "daily")
     assert not any(q.progress or q.done for q in tomorrow if q.kind == "daily")
-    assert [(q.progress, q.done) for q in tomorrow if q.kind == "weekly"] == [(q.progress, q.done) for q in today if q.kind == "weekly"]
+    assert [(q.fish.id, q.progress) for q in tomorrow if q.kind == "weekly"] == [(q.fish.id, q.progress) for q in today if q.kind == "weekly"]
     assert not any(q.progress or q.done for q in await f.quests(user, DAY0 + 7 * f.DAY, REG))
 
 
@@ -418,7 +433,8 @@ async def test_the_catch_that_unlocks_quests_does_not_count_toward_them(db):
     await level_up(user, Q.min_level - 1)
     just_under = User.level_to_xp(Q.min_level) - (await user.skill("fishing")).xp - 1
     await user.add_xp("fishing", just_under)  # one xp short of the level
-    await catch(user, "cod", DAY0)  # this catch takes them over the line
+    quest_fish = [i for i in f.fish_pool(REG) if i.rarity == 1][0]
+    await catch(user, quest_fish.id, DAY0)  # this catch takes them over the line
     assert User.xp_to_level((await user.skill("fishing")).xp) == Q.min_level
     assert all(q.progress == 0 for q in await f.quests(user, DAY0, REG))
 
@@ -426,13 +442,13 @@ async def test_the_catch_that_unlocks_quests_does_not_count_toward_them(db):
 async def test_quest_xp_is_added_on_top_of_the_catch(db):
     user = await player()
     await level_up(user)
-    quest = next(q for q in await f.quests(user, DAY0, REG) if q.template.min_rarity == 4 and q.template.count == 1) \
-        if any(q.template.min_rarity == 4 and q.template.count == 1 for q in await f.quests(user, DAY0, REG)) else None
+    weekly = next(q for q in await f.quests(user, DAY0, REG) if q.kind == "weekly")
     before = (await user.skill("fishing")).xp
-    got = await catch(user, "pufferfish", DAY0)
+    got = None
+    for _ in range(weekly.count):
+        got = await catch(user, weekly.fish.id, DAY0)
     gained = (await user.skill("fishing")).xp - before
-    assert gained == got.xp + sum(q.template.xp for q in got.finished)
-    assert quest is None or quest.template.xp in {q.template.xp for q in got.finished}
+    assert got.finished and gained >= weekly.count * weekly.fish.rarity * RULES.xp_per_rarity + weekly.xp
 
 
 async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
@@ -677,3 +693,167 @@ async def test_a_stale_second_click_gets_its_fish_back_when_the_page_filled_in_t
     page = next(e for e in stale.entries if e.fish.id == "cod")
     monkeypatch.undo()
     assert next(e for e in (await f.book(user, REG)).entries if e.fish.id == "cod").given == page.need
+
+
+# ---- treasure ------------------------------------------------------------------------------------------------------
+T = RULES.treasure
+
+
+class Lucky(Random):
+    """Every 1-in-N roll hits, every chance succeeds."""
+
+    def randint(self, a, b):
+        return a  # the 1 in 1-in-N rolls, and the smallest sum of bits
+
+    def random(self):
+        return 0.0
+
+    def choice(self, seq):
+        return seq[min(7, len(seq) - 1)]  # every digit is a 7: the numbers are 7777
+
+
+class Unlucky(Random):
+    def randint(self, a, b):
+        return b
+
+    def random(self):
+        return 0.999
+
+
+def test_hallucinations_are_a_little_rarer_than_the_wiki_and_chests_match_them():
+    assert T.hallucination_odds > 25  # the wiki says 1 in 25
+    assert T.chest_odds == T.hallucination_odds
+    assert T.code_length == 4 and T.attempts >= 1
+    assert T.loot[-1].item == "spirit_of_the_sea" and T.loot[-1].chance == 0.001  # 1 in 1,000, as in the wiki
+
+
+def test_a_chest_can_only_turn_up_while_a_hallucination_lasts():
+    assert not f.cast_line(rod(), Lucky(1), T0, REG).chest
+    assert f.cast_line(rod(), Lucky(1), T0, REG, armed=True).chest
+    assert not f.cast_line(rod(), Unlucky(1), T0, REG, armed=True).chest
+    chest = f.cast_line(rod(), Lucky(1), T0, REG, armed=True)
+    assert chest.attempts_left == T.attempts
+
+
+def test_a_chest_is_hooked_like_a_fish_but_then_wants_numbers_not_arrows():
+    chest = f.cast_line(rod(), Lucky(1), T0, REG, armed=True)
+    assert chest.status(chest.bite_at + 1) == "bite"  # looks exactly like any bite
+    chest.hook(chest.bite_at + 1)
+    assert chest.status(chest.bite_at + 1) == "chest"
+    with pytest.raises(f.FishingError, match="chest"):
+        chest.press(f.LEFT, chest.bite_at + 1)
+
+
+async def test_a_catch_can_trigger_a_hallucination_and_only_one_at_a_time(db):
+    user = await player()
+    cast = cast_of()
+    for arrow in cast.pattern:
+        cast.press(arrow, T0 + 11)
+    got = await f.land(user, cast, REG, now=T0, rng=Lucky(1))
+    assert got.hallucination and len(got.hallucination) == T.code_length and got.hallucination.isdigit()
+    state = (await user.skill("fishing")).treasure
+    assert state.code == got.hallucination and state.armed_until == T0 + T.armed_minutes * 60
+    assert await f.chests_possible(user, T0 + 60) and not await f.chests_possible(user, T0 + T.armed_minutes * 60 + 1)
+    again = cast_of()
+    for arrow in again.pattern:
+        again.press(arrow, T0 + 11)
+    second = await f.land(user, again, REG, now=T0 + 30, rng=Lucky(2))
+    assert second.hallucination is None and (await user.skill("fishing")).treasure.code == got.hallucination
+    quiet = cast_of()
+    for arrow in quiet.pattern:
+        quiet.press(arrow, T0 + 11)
+    other = await player(2)
+    assert (await f.land(other, quiet, REG, now=T0, rng=Unlucky(1))).hallucination is None
+
+
+async def armed_chest(user, code="4815"):
+    await user.update_skill("fishing", lambda s: setattr(s, "treasure", __import__("cococap.models.skills.fishing", fromlist=["x"]).TreasureState(code=code, armed_until=T0 + 600)))
+    chest = f.cast_line(rod(), Lucky(1), T0, REG, armed=True)
+    chest.hook(chest.bite_at + 1)
+    return chest
+
+
+async def test_the_right_numbers_open_the_chest_once_and_pay(db):
+    user = await player()
+    chest = await armed_chest(user)
+    before = user.purse
+    opened = await f.open_chest(user, chest, "4 8 1 5", Lucky(3), chest.bite_at + 2, REG)
+    await user.refresh()
+    assert opened.opened and T.bits_min <= opened.bits <= T.bits_max and user.purse == before + opened.bits
+    assert opened.items["coral_shard"] >= 2 and opened.items["spirit_of_the_sea"] == 1  # a lucky chest has everything
+    assert await user.item_quantity("spirit_of_the_sea") == 1
+    skill = await user.skill("fishing")
+    assert skill.stats.treasures_found == 1 and skill.treasure.code == "" and skill.xp >= T.xp
+    with pytest.raises(f.FishingError, match="no chest"):
+        await f.open_chest(user, chest, "4815", Lucky(3), chest.bite_at + 3, REG)
+    assert await user.item_quantity("spirit_of_the_sea") == 1  # not paid twice
+
+
+async def test_wrong_numbers_cost_a_try_and_too_many_sink_the_chest(db):
+    user = await player()
+    chest = await armed_chest(user)
+    for tries_left in range(T.attempts - 1, 0, -1):
+        tried = await f.open_chest(user, chest, "0000", Lucky(3), chest.bite_at + 2, REG)
+        assert not tried.opened and not tried.sunk and tried.attempts_left == tries_left
+    last = await f.open_chest(user, chest, "1111", Lucky(3), chest.bite_at + 2, REG)
+    assert last.sunk and not last.opened and chest.escaped
+    assert (await user.skill("fishing")).treasure.code == ""  # the hallucination is spent
+    assert await user.get_bits() == user.purse and await user.item_quantity("coral_shard") == 0
+    with pytest.raises(f.FishingError, match="no chest"):
+        await f.open_chest(user, chest, "4815", Lucky(3), chest.bite_at + 3, REG)
+
+
+async def test_the_numbers_cannot_be_guessed_after_they_are_used_up(db):
+    user = await player()
+    chest = await armed_chest(user)
+    await user.update_skill("fishing", lambda s: setattr(s.treasure, "code", ""))  # e.g. opened by another click
+    gone = await f.open_chest(user, chest, "4815", Lucky(3), chest.bite_at + 2, REG)
+    assert gone.sunk and not gone.opened
+
+
+async def test_the_screen_flashes_the_numbers_then_hides_them_and_the_chest_opens_with_them(db, clock, monkeypatch):
+    monkeypatch.setattr(fish_screen, "new_rng", lambda: Lucky(1))
+    clock[0] = T0
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    clock[0] = nav.screen.cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    cast = nav.screen.cast
+    for arrow in list(cast.pattern):
+        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    code = (await user.skill("fishing")).treasure.code
+    assert code and "   ".join(code) in all_text(nav) and "Remember them" in all_text(nav)
+    assert nav.screen.refresh_every  # keeps redrawing so the numbers can fade by themselves
+    assert "Leviathan Pup" in all_text(nav) and "Mythical" in all_text(nav)  # the catch says how rare it was
+    clock[0] += T.flash_seconds + 1
+    await nav.screen.nav.refresh(inter)
+    assert "   ".join(code) not in all_text(nav) and "slip away" in all_text(nav) and nav.screen.flash is None
+    assert "hallucination lingers" in all_text(nav) and nav.screen.refresh_every is None
+    await click(nav, inter, "Cast")  # armed: with these dice the next cast is a chest
+    assert nav.screen.cast.chest
+    clock[0] = nav.screen.cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    assert "A bite!" in all_text(nav) and "chest" not in all_text(nav).lower()
+    await click(nav, inter, "Pull up the line")
+    assert "treasure chest" in all_text(nav)
+    await click(nav, inter, "Enter the numbers")
+    modal = inter.response.send_modal.await_args.args[0]
+    await modal._handler(inter, "0000")
+    assert "Wrong numbers" in all_text(nav) and f"**{T.attempts - 1}** tries left" in all_text(nav)
+    await click(nav, inter, "Enter the numbers")
+    await inter.response.send_modal.await_args.args[0]._handler(inter, code)
+    assert "lock clicks open" in all_text(nav) and nav.screen.cast is None
+    assert (await user.skill("fishing")).stats.treasures_found == 1
+
+
+async def test_a_catch_names_its_rarity(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("salmon"))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    clock[0] = nav.screen.cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    for arrow in list(nav.screen.cast.pattern):
+        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    assert "You caught a" in all_text(nav) and "Salmon" in all_text(nav) and "**Rare**" in all_text(nav)

@@ -400,26 +400,27 @@ class ReelRules(_Data):
     power_per_slip: int = Field(ge=1)
 
 
-class QuestTemplate(_Data):
-    """"Catch `count` fish of rarity `min_rarity` or better", and what it pays."""
+class QuestSlot(_Data):
+    """One quest per slot: "catch N of a fish of this rarity" (which fish is picked per player and period)."""
 
-    min_rarity: int = Field(ge=1, le=7)
-    count: int = Field(ge=1)
-    bits: int = Field(ge=0)
-    xp: int = Field(ge=0)
+    rarity: int = Field(ge=1, le=7)
+    min_count: int = Field(ge=1)
+    max_count: int = Field(ge=1)
+
+    @model_validator(mode="after")
+    def _ordered(self):
+        if self.max_count < self.min_count:
+            raise ValueError("quest max_count must be >= min_count")
+        return self
 
 
 class QuestRules(_Data):
     min_level: int = Field(ge=1)
-    daily_count: int = Field(ge=1)  # how many of the daily templates each player gets per day
-    daily: list[QuestTemplate] = Field(min_length=1)
-    weekly: list[QuestTemplate] = Field(min_length=1)
-
-    @model_validator(mode="after")
-    def _enough(self):
-        if len(self.daily) < self.daily_count:
-            raise ValueError("there must be at least daily_count daily quest templates")
-        return self
+    xp_per_rarity: int = Field(ge=0)  # a quest's xp = the fish's rarity x its count x this
+    daily_bits_multiplier: float = Field(ge=0)  # a quest's bits = the fish's sell price x its count x this
+    weekly_bits_multiplier: float = Field(ge=0)
+    daily: list[QuestSlot] = Field(min_length=1)  # one daily quest per slot
+    weekly: list[QuestSlot] = Field(min_length=1)
 
 
 class BookRules(_Data):
@@ -436,12 +437,35 @@ class BookRules(_Data):
     completion_xp: int = Field(ge=0)  # ...and this x its level
 
 
+class TreasureLoot(_Data):
+    item: str
+    min: int = Field(ge=1)
+    max: int = Field(ge=1)
+    chance: float = Field(gt=0, le=1)
+
+
+class TreasureRules(_Data):
+    """Hallucinations and treasure chests."""
+
+    hallucination_odds: int = Field(ge=1)  # 1 in N catches triggers a hallucination (4 numbers to remember)
+    chest_odds: int = Field(ge=1)  # then 1 in N casts, while it lasts, brings up a chest instead of a fish
+    armed_minutes: float = Field(gt=0)  # how long a hallucination keeps chests coming
+    flash_seconds: float = Field(gt=0)  # how long the numbers stay on screen
+    code_length: int = Field(ge=1, le=9)
+    attempts: int = Field(ge=1)  # tries at the lock before the chest sinks
+    bits_min: int = Field(ge=0)
+    bits_max: int = Field(ge=0)
+    xp: int = Field(ge=0)
+    loot: list[TreasureLoot]
+
+
 class FishingRules(_Data):
     xp_per_rarity: int = Field(ge=0)
     bite: BiteRules
     reel: ReelRules
     quests: QuestRules
     book: BookRules
+    treasure: TreasureRules
 
 
 class MinigamePayout(_Data):

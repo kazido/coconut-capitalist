@@ -8,7 +8,7 @@ from cococap.registry import get_registry
 from cococap.services import fishing
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_multiplier
-from cococap.ui import Page, Screen
+from cococap.ui import Page, PromptModal, Screen
 from cococap.ui.components import bits, button, row, select, sep, text, xp_bar
 from cococap.user import User
 
@@ -37,8 +37,8 @@ def pattern_line(cast: fishing.Cast) -> str:
 
 def quest_line(q: fishing.Quest) -> str:
     mark = "✅" if q.done else "⬜"
-    progress = "done" if q.done else f"{q.progress}/{q.template.count}"
-    return f"{mark} {q.text}  ·  {progress}  ·  +{bits(q.template.bits)} bits, +{q.template.xp} xp"
+    progress = "done" if q.done else f"{q.progress}/{q.count}"
+    return f"{mark} {q.text}  ·  {progress}  ·  +{bits(q.bits)} bits, +{q.xp} xp"
 
 
 class FishScreen(Screen):
@@ -51,11 +51,12 @@ class FishScreen(Screen):
     def __init__(self, nav):
         super().__init__(nav)
         self.cast: fishing.Cast | None = None
+        self.flash: tuple[str, float] | None = None  # (the hallucination's numbers, when they fade)
         self.rng = new_rng()
 
     @property
-    def refresh_every(self) -> float | None:  # redraw by itself only while a line is in the water
-        return REFRESH if self.cast is not None else None
+    def refresh_every(self) -> float | None:  # redraw by itself while a line is in the water or numbers are flashing
+        return REFRESH if self.cast is not None or self.flash is not None else None
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -64,8 +65,16 @@ class FishScreen(Screen):
             self.cast, cast = None, None  # nobody picked up the line in time
             extra = "🌊 The fish got away. You were too slow!"
             self.note = f"{self.note}\n{extra}" if self.note else extra
+        if self.flash is not None and now() >= self.flash[1]:
+            self.flash = None  # the numbers have faded
+            extra = "🌫️ The numbers slip away… hold on to what you remember."
+            self.note = f"{self.note}\n{extra}" if self.note else extra
         stats = await equipped_stats(self.user, "fishing")
         body = [*self.note_block()]
+        if self.flash is not None:
+            digits = "   ".join(self.flash[0])
+            body.append(text("### 🌀 The waves of the ocean… the heat of the sun… sirens in the distance, singing…\n"
+                             f"# {digits}\n-# Remember them! They fade in a few seconds."))
 
         if cast is None:
             skill = await self.user.skill("fishing")
@@ -79,6 +88,8 @@ class FishScreen(Screen):
             else:
                 slips = fishing.slips_allowed(stats.power, reg.fishing)
                 body.append(text(f"{ROD} Rod power **{stats.power}**" + (f"  ·  forgives **{slips}** wrong arrow(s)" if slips else "")))
+            if await fishing.chests_possible(self.user, now()):
+                body.append(text("-# 🌀 The hallucination lingers… something shiny may be down there."))
             haul = await fishing.stock(self.user)
             level = User.xp_to_level(skill.xp)
             quests = await fishing.quests(self.user, now())
@@ -109,6 +120,14 @@ class FishScreen(Screen):
                      row(button("Pull up the line", emoji=ROD, style=discord.ButtonStyle.danger, on_click=self._hook))]
             return Page("Fishing", body, accent=0xE74C3C)
 
+        if status == "chest":
+            t = reg.fishing.treasure
+            body += [text(f"### 🧰 A treasure chest!\nIt is locked with **{t.code_length}** numbers. Do you remember them?\n"
+                          f"Tries left: **{cast.attempts_left}**"),
+                     row(button("Enter the numbers", emoji="🔑", style=discord.ButtonStyle.success, on_click=self._enter_code),
+                         button("Leave it", on_click=self._cancel))]
+            return Page("Fishing", body, accent=0xF1C40F)
+
         # reeling it in
         colour = Rarities.from_value(cast.fish.rarity)
         slack = f"\n🧵 Slack left: **{cast.slips_left}**" if cast.slips_left else ""
@@ -124,7 +143,8 @@ class FishScreen(Screen):
     # ---- handlers --------------------------------------------------------------------------------
     async def _cast(self, interaction: discord.Interaction) -> None:
         stats = await fishing.rod_stats(self.user)
-        self.cast = fishing.cast_line(stats, self.rng, now())
+        armed = await fishing.chests_possible(self.user, now())
+        self.cast = fishing.cast_line(stats, self.rng, now(), armed=armed)
         await self.refresh(interaction)
 
     async def _cancel(self, interaction: discord.Interaction) -> None:
@@ -156,12 +176,16 @@ class FishScreen(Screen):
                 return await self.refresh(interaction, str(error))
             if result == "landed":
                 self.cast = None
-                catch = await fishing.land(self.user, cast, now=now())
-                note = f"🎣 **You caught a {catch.fish.display}!**  ·  +{catch.xp:,} xp  ·  worth {bits(catch.fish.sell_price)} bits"
+                catch = await fishing.land(self.user, cast, now=now(), rng=self.rng)
+                rarity = Rarities.from_value(catch.fish.rarity).rarity_name
+                note = (f"🎣 **You caught a {catch.fish.display}!**  ·  **{rarity}**  ·  +{catch.xp:,} xp"
+                        f"  ·  worth {bits(catch.fish.sell_price)} bits")
+                if catch.hallucination:
+                    self.flash = (catch.hallucination, now() + get_registry().fishing.treasure.flash_seconds)
                 if catch.extras:
                     note += "\n🪸 Also washed up: " + ", ".join(f"{q:,} {get_registry().item(i).display}" for i, q in catch.extras.items())
                 for q in catch.finished:
-                    note += f"\n📜 **Quest complete:** {q.text}  ·  +{bits(q.template.bits)} bits, +{q.template.xp} xp"
+                    note += f"\n📜 **Quest complete:** {q.text}  ·  +{bits(q.bits)} bits, +{q.xp} xp"
                 return await self.refresh(interaction, note)
             if result == "escaped":
                 self.cast = None
@@ -169,6 +193,34 @@ class FishScreen(Screen):
             await self.refresh(interaction, "🧵 Wrong way! The line goes slack, but you hold on." if result == "slip" else None)
 
         return press
+
+    async def _enter_code(self, interaction: discord.Interaction) -> None:
+        cast = self.cast
+        if cast is None or not cast.chest:
+            return await self.refresh(interaction)
+        length = get_registry().fishing.treasure.code_length
+
+        async def submitted(modal_interaction: discord.Interaction, raw: str) -> None:
+            if self.cast is not cast:  # the chest is gone
+                return await self.refresh(modal_interaction)
+            try:
+                result = await fishing.open_chest(self.user, cast, raw, self.rng, now())
+            except fishing.FishingError as error:
+                self.cast = None
+                return await self.refresh(modal_interaction, str(error))
+            reg = get_registry()
+            if result.opened:
+                self.cast = None
+                loot = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in result.items.items())
+                return await self.refresh(modal_interaction, f"🧰 **The lock clicks open!**  ·  +{bits(result.bits)} bits, "
+                                          f"+{result.xp} xp\n🎁 Inside: {loot}")
+            if result.sunk:
+                self.cast = None
+                return await self.refresh(modal_interaction, "🌊 Wrong numbers, and no tries left. The chest sinks back into the deep…")
+            await self.refresh(modal_interaction, f"🔒 Wrong numbers. The lock holds. **{result.attempts_left}** tries left.")
+
+        await interaction.response.send_modal(PromptModal("Unlock the chest", f"The {length} numbers", submitted,
+                                                          placeholder="e.g. 4815", max_length=length + 4))
 
     async def _quests(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishquests")

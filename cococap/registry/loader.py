@@ -133,6 +133,8 @@ class Registry:
             fish = [i for i in self.items.values() if i.skill == "fishing" and i.category == "fish" and i.drop]
             if not any(i.drop.rate == 1 for i in fish):
                 problems.append("fishing: at least one fish needs drop rate 1 so every cast catches something")
+            problems += [f"fishing.toml treasure: unknown loot item '{row.item}'" for row in self.fishing.treasure.loot
+                         if row.item not in self.items]
         if self.farming is not None and self.farming.deed_item not in self.items:
             problems.append(f"farming.toml: unknown deed item '{self.farming.deed_item}'")
         expected = list(range(len(self.ranks)))

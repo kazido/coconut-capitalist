@@ -223,12 +223,13 @@ average catch at ~4-6.5k bits and a catch at ~15-20 s, which is about what forag
 
 ### Fishing quests (level 3)
 
-Every player gets **5 daily quests** (picked from 8 templates by their id and the UTC day) and **1 weekly** (Monday to
-Sunday), so nobody has to roll or claim anything. A quest is "catch N fish of rarity R or better"; a fish counts toward
-every quest it is good enough for, and finishing a quest pays its bits and xp the moment the fish lands (shown in the
-catch message; the Quests button lists them). Progress is saved with the fishing skill and resets by itself when the day
-or week number changes. The catch that takes you to level 3 doesn't count toward quests. Templates and rewards are in
-`configs/fishing.toml` (`TODO(balance)`).
+Every player gets **5 daily quests** and **1 weekly** (Monday to Sunday), each asking for a **specific fish**: "Catch 6
+Sardine". Each quest slot in `configs/fishing.toml` names a rarity and a count range; the fish and count are picked from
+the clock and the player, so lists differ between players and nobody rolls or claims anything. (Two slots of the same
+rarity get different fish where possible.) Dailies are 2 common, 2 uncommon and 1 rare fish; the weekly is a super-rare
+one. Only that exact fish counts. Finishing a quest pays at once: bits = the fish's sell price x count x 1.5 (x 3 for the
+weekly), xp = rarity x count x 20, shown in the catch message. Progress is saved with the fishing skill and resets when
+the day or week changes. The catch that takes you to level 3 doesn't count toward quests.
 
 ### The collection book (fishing level 5; the wiki says 10)
 
@@ -245,5 +246,18 @@ to put back to 10).
 **Coral Shard** (1 in 6), one of the **pickaxe materials**: every skill drops one so a pickaxe upgrade takes a bit of
 everything: ores (mining), **Hardwood** (foraging), **Plant Fiber** (farming harvests) and **Coral Shards** (fishing).
 
-Not built yet (wiki): the 3 community **monthly** quests, the community collection book, the hallucination -> treasure
-chest, and fish that appear in channels like drops.
+### Hallucinations and treasure
+
+About 1 in 35 catches (a little rarer than the wiki's 1 in 25) makes you hallucinate: the numbers (4 digits) flash on
+your panel for 8 seconds, then fade, so you have to remember them. While the hallucination lasts (10 minutes) every
+cast has a 1 in 35 chance (as rare as the hallucination itself) to bring up a **treasure chest** instead of a fish. It
+bites like any fish, but once you pull up the line it wants the numbers instead of arrows: you get 3 tries in a pop-up
+before it sinks. Opening it pays 20-60k bits, xp and a loot table (coral shards, a chance at a sturgeon, oarfish or
+leviathan pup, and 1 in 1,000 for the **Spirit of the Sea**). One hallucination at a time; the numbers are used up
+when the chest opens or sinks. Everything is in `configs/fishing.toml` `[treasure]` (`TODO(balance)`): with these
+numbers about 1 catch in 60 turns into a chest, which is generous.
+
+Catch messages name the fish's rarity.
+
+Not built yet (wiki): the 3 community **monthly** quests, the community collection book, and fish that appear in
+channels like drops.

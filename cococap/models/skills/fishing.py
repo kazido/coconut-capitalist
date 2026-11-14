@@ -37,7 +37,15 @@ class BookProgress(BaseModel):
     given: dict[str, int] = Field(default_factory=dict)
 
 
+class TreasureState(BaseModel):
+    """A hallucination you are carrying: the numbers you saw, and until when chests can turn up."""
+
+    code: str = ""
+    armed_until: float = 0.0
+
+
 class Fishing(Skill):
+    treasure: TreasureState = Field(default_factory=TreasureState)
     book: BookProgress = Field(default_factory=BookProgress)
     daily: QuestProgress = Field(default_factory=QuestProgress)
     weekly: QuestProgress = Field(default_factory=QuestProgress)
