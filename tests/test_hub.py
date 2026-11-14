@@ -237,6 +237,7 @@ async def submit(inter, text):
 async def test_shop_buy_opens_a_modal_and_buying_works(db):
     await set_columns(await User.get(1), purse=10_000_000)
     nav, inter = await hub("shop")
+    await click(nav, inter, emoji="🌽")  # seeds stack, so they ask how many (tools do not: see the next test)
     buy = next(b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success)
     await buy.callback(inter)
     modal = await submit(inter, "2")
@@ -245,6 +246,24 @@ async def test_shop_buy_opens_a_modal_and_buying_works(db):
     items, instances = await user.items(), await user.instances()
     assert len(instances) + sum(items.values()) == 2 and user.purse < 10_000_000
     assert "Bought 2" in all_text(nav)
+
+
+async def test_buying_a_tool_is_one_click_with_no_how_many_popup(db):
+    from cococap.registry import get_registry
+
+    reg = get_registry()
+    await set_columns(await User.get(1), purse=10_000_000)
+    nav, inter = await hub("shop")
+    await click(nav, inter, emoji="⛏️")
+    shown = all_text(nav)
+    assert reg.item("rookiepickaxe").name in shown
+    buy = next(b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success and not b.disabled)
+    inter.response.send_modal.reset_mock()
+    await buy.callback(inter)
+    inter.response.send_modal.assert_not_called()  # nothing to ask: you can only own one
+    user = await User.get(1)
+    assert len(await user.instances()) == 1 and "Bought" in all_text(nav) and "equipped" in all_text(nav)
+    assert "You already have a pickaxe" in all_text(nav)  # and a second one is no longer offered
 
 
 async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
@@ -257,6 +276,7 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
     assert item_buy_buttons(nav) and len(cheap) < len(item_buy_buttons(nav))
     await set_columns(await User.get(1), purse=200_000)
     nav, inter = await hub("shop")
+    await click(nav, inter, emoji="🌽")
     buy = next(b for b in item_buy_buttons(nav) if not b.disabled)
     await buy.callback(inter)
     modal = await submit(inter, "lots")

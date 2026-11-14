@@ -71,7 +71,7 @@ class ShopScreen(Screen):
                 blurb = f"**{bits(item.price)}** bits  ·  {item.description}"[:300]
                 if has_one:
                     blurb = f"✅ You already have a {item.tool.kind}: upgrade it from your inventory.  ·  {item.description}"[:300]
-                accessory = button("Buy", style=discord.ButtonStyle.success, disabled=has_one or self.user.purse < item.price, on_click=self._ask_quantity(item.id, "buy", 1))
+                accessory = button("Buy", style=discord.ButtonStyle.success, disabled=has_one or self.user.purse < item.price, on_click=self._buy_one(item.id) if item.is_instance else self._ask_quantity(item.id, "buy", 1))
             else:
                 blurb = f"You have **{bits(owned)}**  ·  sells for **{bits(item.sell_price)}** each"
                 accessory = button("Sell", style=discord.ButtonStyle.success, on_click=self._ask_quantity(item.id, "sell", owned))
@@ -124,6 +124,15 @@ class ShopScreen(Screen):
             await self.refresh(interaction)
 
         return turn
+
+    def _buy_one(self, item_id: str):
+        """Tools and weapons cannot stack (you may own just one of a kind), so there is nothing to ask: one click buys it."""
+        async def buy(interaction: discord.Interaction) -> None:
+            item = get_registry().item(item_id)
+            purchase = await shop.buy(self.user, item_id, 1)
+            await self.refresh(interaction, f"Bought {item.name} for {bits(purchase.total)} bits." + (" It is equipped." if purchase.instances else ""))
+
+        return buy
 
     def _ask_quantity(self, item_id: str, action: str, default: int):
         async def ask(interaction: discord.Interaction) -> None:
