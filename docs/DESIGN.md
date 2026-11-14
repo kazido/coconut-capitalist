@@ -283,7 +283,7 @@ pet, upgrade step, bait and enchant and uses the real numbers.
 Pets are the gacha part of the bot, and **every pet gives a bonus somewhere in the game** while it is your active pet
 (one at a time; `/pets` or the Pets shortcut on Home). They come from **Familiar Orbs** (treasure chests, boss loot,
 the shop at 1.5M), which hatch a random pet by rarity (`economy.toml` `[pets.orb_weights]`); a duplicate adds a **star**
-(up to 5; a fifth-star duplicate gives xp instead). Feed them **food** for pet xp to level them up to 20, and give them
+(up to 5; a fifth-star duplicate gives xp instead). Feed them **food** (and play with them active) to level them up to 100, and give them
 a **Spirit** item for +15% xp in its skill. A bonus is its listed value x stars (+25%
 each) x level (a fresh pet does half, a max one all of it).
 
@@ -299,10 +299,10 @@ global pets Dog, Koala and Phoenix, whose bonus works everywhere). You cannot ch
 (not just the active one), feed it, or make it active. Food of **its skill is worth x3**; a 🌐 global pet gets **x2 from any food**;
 food of a different skill is the plain amount. So a specialist levels fastest on its own skill's food, and a global pet is the
 flexible, slower choice. **Why a number "jumps":** a bonus is `value x level factor x stars`, where the level factor goes from 0.5
-(fresh) to 1.0 (level 20), so changing `value` from 0.05 to 1 multiplies what you see by 20 only at the same level; the screen now
+(fresh) to 1.0 (top level; see "Pets: levels to 100" below for today's numbers), so changing `value` from 0.05 to 1 multiplies what you see by 20 only at the same level; the screen now
 also shows the max-level number in brackets.
 Looking at a pet no longer switches it: **Make active** does. The drop rates aim at roughly 3-5k base pet xp an hour in each
-skill (`python -m scripts.balance` prints it); level 20 is 180k xp.
+skill (`python -m scripts.balance` prints it); level 100 is 2.94M xp (and play xp adds to it).
 
 | Pet | Does |
 |---|---|
@@ -628,3 +628,13 @@ explained on the **Progress** page (`services/progress.py`, `configs/progress.to
 **Wiki vs Bestiary.** The wiki stays a reference you can always read (how things work). The **Bestiary** (`/fight` lobby and Progress page)
 tracks what you have *done*: each enemy is "Unknown" until you slay one, then its stats show; at 25 kills its moves show. Kill milestones
 (1, 25, 100, 500; a boss 1, 5, 25) pay Coconut Level once. Kills are counted per enemy in the combat skill (`kills`), only for won fights.
+
+### Pets: levels to 100, a wide range, and they level as you play (decided)
+- **Levels 1 to 100** (`max_level`, `xp_scale = 300`: level 20 is 108k pet xp, 50 is 720k, 100 is 2.94M). A bonus `value` is what a pet gives at
+  **level 100 with one star**; a new pet gives `level_floor` (10%) of it, and every extra star adds +25% (a five-star level-100 pet gives double). So a pet
+  grows about 20x from fresh to the top, not the 3-5% it used to span. Every listed bonus value was doubled (Koala all-skill xp 10%, up to 20% at five stars).
+- **They level as you play**, like Skyblock pets, not only from food: your **active** pet gains `play_xp_share` (50%) of the xp you earn in **its own
+  skill**; a global pet gains `play_xp_global` (25%) from every skill; a pet that looks after a different skill gains nothing from it. Done in one place
+  (`User.add_xp` and `User.update_skill` both call `pets.grant_play_xp`), so every skill works without being touched, and the xp counted is what you were actually paid.
+- Feeding still works and is faster (food x3 for its own skill, x2 for a global pet). Existing pets keep their xp; they simply land at a higher level.
+- **Bestiary counters never stop** (the kill count is a plain number); only the point milestones end (1, 25, 100, 500, 2,500, 10,000; bosses 1, 5, 25, 100, 500).

@@ -41,11 +41,13 @@ bits_per_luckbuck = 5000           # one-way: bits -> luckbucks (a bit sink)
 daily_limit = 500                  # luckbucks per player per day
 
 [pets]
-max_level = 20
-xp_scale = 500                     # level 2 at 500 xp, 5 at 8,000, 10 at 40,500, 20 at 180,500
+max_level = 100
+xp_scale = 300                     # level 2 at 300 xp, 10 at 24,300, 20 at 108,300, 50 at 720,300, 100 at 2,940,300
 max_stars = 5
 star_bonus = 0.25                  # +25% bonus per extra star
-level_floor = 0.5                  # a fresh pet does half its bonus; a max level one does all of it
+level_floor = 0.1                  # a fresh pet does a tenth of its bonus; a level 100 one does all of it (so a pet grows about 10x as strong)
+play_xp_share = 0.5                # your active pet gains this share of the skill xp you earn in ITS skill (like Skyblock pets: they level as you play)...
+play_xp_global = 0.25              # ...a global pet gains this share of the xp from ANY skill. Other pets only level from food.
 spirit_bonus = 0.15                # a Spirit adds +15% xp in its skill while the pet is active
 # Skill food (items with category "pet_food", dropped by their skill) is worth `food_xp` by tier. A pet you assigned to that skill
 # gets it x3; a pet with no skill ("global") gets any food x2; anything else only the plain amount. Crops are farming food.

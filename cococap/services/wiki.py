@@ -212,7 +212,7 @@ def _pets(reg: Registry) -> list[str]:
         lines.append(f"{pet.emoji} **{pet.name}** {pet_service.skill_emoji(pet)} ({Rarities.from_value(pet.rarity).rarity_name}, {odds[pet.id]:.1%} per orb): {bonus}")
     return [
         f"**Pets** hatch from **Familiar Orbs** (shop, treasure chests, boss loot). Your active pet's bonuses work everywhere. A duplicate adds a star "
-        f"(up to {rules.max_stars}, +{rules.star_bonus:.0%} each), crops level them (to {rules.max_level}) and a Spirit adds skill xp. **Hunt** a pet in the "
+        f"(up to {rules.max_stars}, +{rules.star_bonus:.0%} each), your active pet also levels as you play (it gains {rules.play_xp_share:.0%} of the xp you earn in its own skill; a global pet {rules.play_xp_global:.0%} of any), food and crops level it faster (to {rules.max_level}), and a Spirit adds skill xp. **Hunt** a pet in the "
         f"Familiar Orbs page and orbs favour it (×{rules.target_boost:g}, more with each miss).",
         f"**Feeding.** Pets level up on **food**: crops (farming's food) and what each skill drops in three tiers (worth {', '.join(f'{x:,}' for x in rules.food_xp)} pet xp): "
         "foraging drops **Acorn Mix, Honeycomb and Golden Sap**, mining **Stone Biscuit, Crystal Chew and Geode Feast**, fishing **Fish Flakes, Dried Squid and Sea Feast**. "

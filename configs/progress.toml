@@ -25,10 +25,10 @@ per_plot = 20          # every plot above the free one
 [tools]
 per_level = 15         # every tool level above the first, for the best tool you own of each kind (axe, pickaxe, rod, sword)
 
-[bestiary]             # per enemy: reaching each number of kills pays `points` (a boss pays boss_points)
-steps = [1, 25, 100, 500]
+[bestiary]             # per enemy: reaching each number of kills pays `points` (a boss pays boss_points). The kill count itself never stops climbing.
+steps = [1, 25, 100, 500, 2500, 10000]
 points = 5
-boss_steps = [1, 5, 25]
+boss_steps = [1, 5, 25, 100, 500]
 boss_points = 50
 
 # Counters. Each step reached pays `points` once. `stat` is read from your skills (see services/progress.py STATS).

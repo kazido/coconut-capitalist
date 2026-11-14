@@ -895,6 +895,8 @@ class PetRules(_Data):
     max_stars: int = Field(ge=1)
     star_bonus: float = Field(ge=0)  # each star after the first makes every bonus this much bigger
     level_floor: float = Field(gt=0, le=1)  # a level-1 pet gives this share of its bonus; max level gives all of it
+    play_xp_share: float = Field(ge=0)  # your ACTIVE pet gains this share of the xp you earn in its own skill, just by playing
+    play_xp_global: float = Field(ge=0)  # a pet with no skill (global) gains this share of the xp from every skill
     spirit_bonus: float = Field(ge=0)  # a Spirit given to a pet: +this xp in its skill while that pet is active
     food_xp: list[int] = Field(min_length=3, max_length=3)  # pet xp of a tier 1, 2 and 3 food
     matched_food_multiplier: float = Field(ge=1)  # food of the pet's own skill is worth this many times as much...

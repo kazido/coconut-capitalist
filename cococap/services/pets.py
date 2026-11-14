@@ -133,6 +133,33 @@ async def xp_bonus(user: User, skill: str | None, registry: Registry | None = No
     return found.get("xp_all", 0.0) + (found.get(f"xp_{skill}", 0.0) if skill else 0.0)
 
 
+def play_share(pet: Pet, skill: str, registry: Registry | None = None) -> float:
+    """How much of the skill xp you earn becomes xp for this pet while it is active: its own skill pays `play_xp_share`, a global pet
+    gets `play_xp_global` from every skill, and a pet that looks after a different skill gets nothing from playing."""
+    rules = (registry or get_registry()).economy.pets
+    if pet.skill == skill:
+        return rules.play_xp_share
+    return rules.play_xp_global if pet.skill == "global" else 0.0
+
+
+async def grant_play_xp(user: User, skill: str, amount: int, registry: Registry | None = None) -> int:
+    """Your active pet levels as you play: a share of the skill xp you just earned. Returns the pet xp it gained."""
+    if amount <= 0 or not user.pethouse.active:
+        return 0
+    reg = registry or get_registry()
+
+    def give(house) -> int:
+        pet = reg.pets.get(house.active) if house.active else None
+        owned = house.pets.get(house.active) if pet else None
+        if owned is None:
+            return 0
+        gained = round(amount * play_share(pet, skill, reg))
+        owned.xp += gained
+        return gained
+
+    return await user.update_pethouse(give)
+
+
 # ---- getting pets -------------------------------------------------------------------------------------------
 @dataclass(frozen=True)
 class OrbResult:

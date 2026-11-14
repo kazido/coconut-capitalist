@@ -248,3 +248,21 @@ async def test_the_fight_lobby_links_to_the_bestiary(db):
     await click(nav, inter, "Bestiary")
     assert nav.screen.id == "bestiary"
     assert buttons(nav)  # (Home/Back are there to leave)
+
+
+async def test_the_kill_counter_keeps_climbing_after_the_last_milestone_and_pays_nothing_more(db):
+    user = await User.get(1)
+    top = max(RULES.bestiary.steps)
+    await user.update_skill("combat", lambda s: s.kills.update({"zombie": top + 49_000}))
+    nav, _ = await hub("bestiary")
+    text = all_text(nav)
+    assert f"Slain **{top + 49_000:,}**" in text and "every milestone reached" in text  # still counted, nothing left to earn
+    snap = await progress.snapshot(user)
+    zombie = next(e for c in progress.build(snap, REG).categories if c.key == "bestiary" for e in c.entries if e.label == "Zombie")
+    assert zombie.points == zombie.max_points and zombie.next_step is None
+    await user.update_skill("combat", lambda s: s.kills.update({"zombie": s.kills["zombie"] * 100}))
+    assert (await user.skill("combat")).kills["zombie"] == (top + 49_000) * 100  # the stat itself has no ceiling
+
+
+def test_every_enemy_always_has_a_next_goal_until_thousands_of_kills():
+    assert max(RULES.bestiary.steps) >= 10_000 and max(RULES.bestiary.boss_steps) >= 500

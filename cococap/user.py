@@ -292,7 +292,7 @@ class User:
         )
 
     async def add_xp(self, skill: str, amount: int) -> Skill:
-        """Add XP to a skill (atomic). Returns the updated skill."""
+        """Add XP to a skill (atomic). Returns the updated skill. Your active pet gains a share (see `_pet_levels_as_you_play`)."""
         async with get_database().session() as session:
             await session.execute(
                 sqlite_insert(SkillRow)
@@ -301,7 +301,15 @@ class User:
                     index_elements=["user_id", "skill"], set_={"xp": SkillRow.xp + amount}
                 )
             )
+        await self._pet_levels_as_you_play(skill, amount)
         return await self.skill(skill)
+
+    async def _pet_levels_as_you_play(self, skill: str, gained: int) -> None:
+        """Every skill xp you earn lands here (add_xp and update_skill), so the active pet's play xp is handled in one place."""
+        if gained > 0 and self.pethouse.active:
+            from cococap.services import pets  # (pets builds on User, so it is imported here)
+
+            await pets.grant_play_xp(self, skill, gained)
 
     async def update_skill(self, name: str, change: Callable[[S], None]) -> S:
         """Read-modify-write a skill's data inside one transaction.
@@ -320,7 +328,9 @@ class User:
                 if row
                 else model()
             )
+            before = skill.xp
             change(skill)
+            gained = skill.xp - before
             values = {
                 "xp": skill.xp,
                 "equipped_instance_id": skill.equipped_instance_id,
@@ -331,6 +341,7 @@ class User:
             else:
                 for key, value in values.items():
                     setattr(row, key, value)
+        await self._pet_levels_as_you_play(name, gained)
         return skill
 
     async def grant_daily_capped(

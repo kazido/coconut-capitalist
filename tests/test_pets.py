@@ -56,7 +56,7 @@ def test_pets_cover_every_part_of_the_game():
 # ---- strength, levels and stars --------------------------------------------------------------------------------------------
 def test_levels_come_from_xp_and_stop_at_the_cap():
     assert pets.pet_level(0, REG) == 1 and pets.pet_level(RULES.xp_scale, REG) == 2
-    assert pets.pet_level(8_000, REG) == 5 and pets.pet_level(10**12, REG) == RULES.max_level
+    assert pets.pet_level(pets.level_xp(5, REG), REG) == 5 and pets.pet_level(10**12, REG) == RULES.max_level == 100
     assert pets.level_xp(2, REG) == RULES.xp_scale and pets.pet_level(pets.level_xp(7, REG), REG) == 7
 
 
@@ -583,3 +583,72 @@ async def test_the_orbs_and_pet_pages_link_to_each_other(db):
     assert nav.screen.id == "orbs"
     await click(nav, inter, "Your pets")
     assert nav.screen.id == "pets"
+
+
+# ---- pets level as you play, and a much wider range of strength -----------------------------------------------------------------------
+def test_a_pet_grows_about_ten_times_stronger_from_a_new_one_to_a_five_star_level_100():
+    fresh = pets.strength(OwnedPet(), REG)
+    top = pets.strength(OwnedPet(stars=RULES.max_stars, xp=pets.level_xp(RULES.max_level, REG)), REG)
+    assert RULES.max_level == 100 and top / fresh > 15  # 3-5% at level 20 used to be the whole range
+    assert fresh == pytest.approx(RULES.level_floor + (1 - RULES.level_floor) / RULES.max_level)
+
+
+def test_a_koala_is_worth_real_xp_at_the_top():
+    koala = REG.pets["koala"]
+    best = pets.effects(koala, OwnedPet(stars=RULES.max_stars, xp=pets.level_xp(RULES.max_level, REG)), REG)["xp_all"]
+    assert best >= 0.15  # a five-star level-100 Koala: 20%
+    newborn = pets.effects(koala, OwnedPet(), REG)["xp_all"]
+    assert newborn < 0.02
+
+
+def test_play_xp_shares_depend_on_the_pets_skill():
+    assert pets.play_share(REG.pets["otter"], "fishing", REG) == RULES.play_xp_share  # its own skill
+    assert pets.play_share(REG.pets["otter"], "mining", REG) == 0.0  # a pet for another skill gains nothing from it
+    assert pets.play_share(REG.pets["koala"], "mining", REG) == RULES.play_xp_global  # a global pet from anything
+    assert RULES.play_xp_global < RULES.play_xp_share
+
+
+async def test_the_active_pet_levels_as_you_earn_xp_in_its_skill(db):
+    user = await with_pet("otter", xp=0)  # a fishing pet
+    await user.add_xp("fishing", 1000)
+    await user.refresh()
+    assert user.pethouse.pets["otter"].xp == round(1000 * RULES.play_xp_share)
+    await user.update_skill("fishing", lambda s: setattr(s, "xp", s.xp + 400))  # the other way xp is earned
+    await user.refresh()
+    assert user.pethouse.pets["otter"].xp == round(1000 * RULES.play_xp_share) + round(400 * RULES.play_xp_share)
+
+
+async def test_a_pet_for_another_skill_does_not_level_from_play_but_a_global_one_does(db):
+    user = await with_pet("otter", xp=0)
+    await user.add_xp("mining", 1000)
+    await user.refresh()
+    assert user.pethouse.pets["otter"].xp == 0
+    koala = await with_pet("koala", xp=0, user_id=2)
+    await koala.add_xp("mining", 1000)
+    await koala.refresh()
+    assert koala.pethouse.pets["koala"].xp == round(1000 * RULES.play_xp_global)
+
+
+async def test_only_the_active_pet_levels_from_play_and_nothing_happens_without_one(db):
+    user = await with_pet("otter", xp=0)
+    await with_pet("cat", xp=0, active=False)  # also a fishing pet, but resting
+    await user.add_xp("fishing", 1000)
+    await user.refresh()
+    assert user.pethouse.pets["cat"].xp == 0 and user.pethouse.pets["otter"].xp > 0
+    plain = await User.get(3)
+    await plain.add_xp("fishing", 1000)  # no pet at all: no error
+    assert (await plain.skill("fishing")).xp == 1000
+
+
+async def test_play_xp_includes_the_real_skill_xp_you_were_paid_for_a_catch(db):
+    from cococap.services import fishing as f
+
+    user = await with_pet("otter", xp=0)
+    inst = await user.give_instance("starter_rod")
+    from cococap.services.equipment import equip
+
+    await equip(user, "fishing", inst.id)
+    cast = f.Cast(REG.item("cod"), 0, 10, [f.LEFT], 0, hooked=True, progress=1)
+    caught = await f.land(user, cast, REG)
+    await user.refresh()
+    assert user.pethouse.pets["otter"].xp == round(caught.xp * RULES.play_xp_share) > 0
