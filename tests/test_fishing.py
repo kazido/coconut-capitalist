@@ -1517,8 +1517,9 @@ async def test_the_screen_has_a_reel_button_shows_breaks_and_mysteries_and_the_r
     await reel_in(nav, inter, cast)
     assert nav.screen.id == "result" and "The ❓ was" in all_text(nav) and "field notes" in all_text(nav)
     assert (await user.skill("fishing")).notes["moray_eel"]
-    nav2, _ = await hub("fishrecords")
-    assert "Field notes" in all_text(nav2) and "Moray Eel: after" in all_text(nav2)
+    nav2, inter2 = await hub("fish")
+    await click(nav2, inter2, "Field notes")  # a button on the fishing page itself
+    assert nav2.screen.id == "fishnotes" and "Moray Eel: after" in all_text(nav2)
 
 
 async def test_losing_at_a_mystery_still_shows_it_on_the_result_page(db, clock, monkeypatch):
@@ -1713,3 +1714,38 @@ async def test_a_shuffle_boss_moves_the_buttons_around_and_a_normal_fish_never_d
     assert len(orders) > 1 and all(set(o) == {"Left", "Right", "Reel"} for o in orders)
     plain = fish_screen.reel_buttons(reel_cast([f.LEFT]), Random(1), lambda a: None, __import__("discord").ButtonStyle.primary)
     assert [b.label for b in plain] == ["Left", "Right", "Reel"]
+
+
+# ---- the field notes page -----------------------------------------------------------------------------------------------------------------
+def test_the_notes_add_up_to_a_rule_once_you_have_seen_enough():
+    assert f.notes_verdict(["◄>►", "►>►"]) is None  # too few to say
+    assert "always ►" in f.notes_verdict(["◄>►", "►>►", "◄>►"])
+    assert "always ◄" in f.notes_verdict(["◄>◄", "►>◄", "◄>◄"])
+    assert "same arrow" in f.notes_verdict(["◄>◄", "►>►", "◄>◄"])
+    assert "opposite" in f.notes_verdict(["◄>►", "►>◄", "◄>►"])
+    assert "luck" in f.notes_verdict(["◄>►", "◄>◄", "►>►", "►>◄"])  # no rule explains it
+    assert "not sure" in f.notes_verdict(["◄>►", "◄>►", "◄>►"])  # "always ►" and "the opposite" both fit
+
+
+async def test_the_field_notes_page_is_a_button_on_the_fishing_page_even_with_nothing_in_it_yet(db):
+    nav, inter = await hub("fish")
+    await click(nav, inter, "Field notes")
+    assert nav.screen.id == "fishnotes"
+    page = all_text(nav)
+    assert "Field notes" in page and "???" in page and "pure luck" in page  # it explains itself and shows what is still unknown
+    await click(nav, inter, "Back to fishing")
+    assert nav.screen.id == "fish"
+    nav2, inter2 = await hub("fishrecords")
+    await click(nav2, inter2, "Field notes")
+    assert nav2.screen.id == "fishnotes"
+
+
+async def test_the_page_shows_what_a_caught_fish_has_taught_you_and_what_it_adds_up_to(db):
+    user = await User.get(1)
+    fish = next(i for i in f.fish_pool(REG) if i.rarity >= RL.mystery_from_rarity and i.reel and i.reel.tell == "opposite")
+    await user.update_skill("fishing", lambda s: (s.records.update({fish.id: 30.0}), s.notes.update({fish.id: ["◄>►", "►>◄"]})))
+    nav, _ = await hub("fishnotes")
+    assert fish.name in all_text(nav) and "after ◄ → ►" in all_text(nav) and "1 more" in all_text(nav)
+    await user.update_skill("fishing", lambda s: s.notes[fish.id].append("◄>►"))
+    nav, _ = await hub("fishnotes")
+    assert "opposite of the arrow before it" in all_text(nav)

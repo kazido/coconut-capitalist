@@ -162,6 +162,23 @@ def read_notes(notes: list[str]) -> str:
     return ", ".join(f"after {pair[0]} → {pair[2]}" + (f" ×{n}" if n > 1 else "") for pair, n in seen.items())
 
 
+_RULES = {"left": ("always ◄", lambda before: LEFT), "right": ("always ►", lambda before: RIGHT),
+          "same": ("the same arrow as the one before it", lambda before: before),
+          "opposite": ("the opposite of the arrow before it", lambda before: _other(before))}
+MIN_NOTES_FOR_VERDICT = 3
+
+
+def notes_verdict(entries: list[str]) -> str | None:
+    """What your field notes add up to: the one rule that explains every ❓ you have seen, if there is one. None until you have
+    seen a few; "luck" when no rule fits (some fish are pure coin flips)."""
+    if len(entries) < MIN_NOTES_FOR_VERDICT:
+        return None
+    fits = [text for text, rule in _RULES.values() if all(rule(e[0]) == e[2] for e in entries)]
+    if len(fits) == 1:
+        return f"looks like **{fits[0]}**"
+    return "no rule fits: this one may be pure luck" if not fits else "not sure yet, catch more"
+
+
 @dataclass
 class Cast:
     fish: Item

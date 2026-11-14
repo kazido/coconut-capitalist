@@ -73,7 +73,7 @@ class FishScreen(Screen):
     label = "Fishing"
     emoji = ROD
     description = "Cast a line and reel in fish"
-    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords", "fishpots")
+    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords", "fishnotes", "fishpots")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -152,6 +152,7 @@ class FishScreen(Screen):
                 button("Community", emoji="🌍", disabled=not fishing.quests_unlocked(level, reg.fishing), on_click=self._community),
             ))
             body.append(row(button("Records", emoji="📏", on_click=self._records),
+                            button("Field notes", emoji="🔍", on_click=self._notes),
                             button("Crab pots", emoji="🦀", disabled=level < reg.fishing.pots.min_level, on_click=self._pots)))
             return Page("Fishing", body, accent=ACCENT)
 
@@ -352,6 +353,9 @@ class FishScreen(Screen):
     async def _records(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishrecords")
 
+    async def _notes(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fishnotes")
+
     async def _pots(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishpots")
 
@@ -542,12 +546,46 @@ class FishRecordsScreen(Screen):
             record = f"  ·  🏆 {held['size']:g} cm ({held['name']})" if held else ""
             crown = " 👑" if held and best is not None and held["uid"] == self.user.id and held["size"] == best else ""
             lines.append(f"{fish.display}  ·  {yours}{crown}{record}")
-        notes = [f"{reg.item(fid).display}: {fishing.read_notes(entries)}"
-                 for fid, entries in (await self.user.skill("fishing")).notes.items() if entries]
-        field_notes = ("\n### 🔍 Field notes\n-# Some fish hide arrows behind a ❓. What it turns out to be is a pattern you can learn.\n"
-                       + "\n".join(notes)) if notes else ""
         return Page("Fish Records", [*self.note_block(), text("### 📏 Biggest catches\n" + "\n".join(lines)
-                    + "\n-# 🏆 is the biggest ever caught on the server, 👑 means that's you. Beat a record to be paid." + field_notes),
+                    + "\n-# 🏆 is the biggest ever caught on the server, 👑 means that's you. Beat a record to be paid."),
+                    row(button("Back to fishing", emoji=ROD, on_click=self._back),
+                        button("Field notes", emoji="🔍", on_click=self._notes))], accent=0x2980B9)
+
+    async def _back(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fish")
+
+    async def _notes(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fishnotes")
+
+
+class FishNotesScreen(Screen):
+    """What each ❓ turned out to be, fish by fish, and what it adds up to."""
+
+    id = "fishnotes"
+    label = "Field notes"
+    emoji = "🔍"
+    description = "What the hidden arrows (❓) turned out to be"
+    links = ("fish",)
+
+    async def build(self) -> Page:
+        reg = get_registry()
+        skill = await self.user.skill("fishing")
+        lines = []
+        for fish in sorted((i for i in fishing.fish_pool(reg) if i.rarity >= reg.fishing.reel.mystery_from_rarity),
+                           key=lambda i: (i.rarity, i.name)):
+            entries = skill.notes.get(fish.id, [])
+            if entries:
+                verdict = fishing.notes_verdict(entries)
+                lines.append(f"{fish.display}: {fishing.read_notes(entries)}" + (f"\n-# → {verdict}" if verdict else
+                             f"\n-# → {fishing.MIN_NOTES_FOR_VERDICT - len(entries)} more ❓ and I can say what it follows"))
+            elif fish.id in skill.records:
+                lines.append(f"{fish.display}: no ❓ revealed yet. Press the ❓ (or lose at one) to find out what it was.")
+            else:
+                lines.append(f"▫️ ???  ·  {Rarities.from_value(fish.rarity).rarity_name}  ·  not caught yet")
+        intro = ("Super rare fish and up hide some arrows behind a ❓. Each fish has its own secret rule for it: always ◄, always ►, "
+                 "the same as the arrow before it, or the opposite (a few are pure luck). Every time a ❓ is revealed it is written "
+                 "here, so you can work out the rule.")
+        return Page("Field notes", [*self.note_block(), text("### 🔍 Field notes\n-# " + intro + "\n" + "\n".join(lines)),
                     row(button("Back to fishing", emoji=ROD, on_click=self._back))], accent=0x2980B9)
 
     async def _back(self, interaction: discord.Interaction) -> None:
