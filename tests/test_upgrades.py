@@ -179,3 +179,71 @@ async def test_the_shop_marks_tools_you_already_have(db):
     await nav.screen.nav.refresh(inter)
     assert "You already have a axe" in all_text(nav)
     assert [b.disabled for b in buttons(nav) if b.label == "Buy"].count(True) == 1  # just the axe's Buy button
+
+
+# ---- every tool upgrades, with a bit of everything -------------------------------------------------------------------
+def tools_by_kind():
+    kinds = {}
+    for item in REG.items.values():
+        if item.tool:
+            kinds.setdefault(item.tool.kind, []).append(item)
+    return kinds
+
+
+def test_every_kind_of_tool_has_an_upgrade_chain_and_only_the_best_tool_ends_it():
+    kinds = tools_by_kind()
+    assert set(kinds) == {"pickaxe", "axe", "rod", "sword"}
+    for kind, tools in kinds.items():
+        tops = [t for t in tools if t.tool.upgrade is None]
+        assert len(tops) == 1, (kind, [t.id for t in tops])
+        assert tops[0].tool.power == max(t.tool.power for t in tools)
+        # ...and every other tool of that kind leads there
+        for tool in tools:
+            current = tool
+            while current.tool.upgrade:
+                current = REG.item(current.tool.upgrade.to)
+            assert current.id == tops[0].id, (tool.id, current.id)
+
+
+def test_every_upgrade_step_takes_bits_and_things_from_more_than_one_skill():
+    for item in REG.items.values():
+        if not (item.tool and item.tool.upgrade):
+            continue
+        up = item.tool.upgrade
+        skills = {REG.item(m).skill for m in up.items}
+        assert up.bits > 0 and len(up.items) >= 3 and len(skills) >= 3, (item.id, skills)
+        assert any(REG.item(m).skill != REG.item(item.tool.upgrade.to).skill for m in up.items)
+
+
+def test_every_upgrade_material_can_actually_be_found_somewhere():
+    for item in REG.items.values():
+        if not (item.tool and item.tool.upgrade):
+            continue
+        for material in item.tool.upgrade.items:
+            it = REG.item(material)
+            assert it.drop is not None or it.crop is not None, (item.id, material)
+
+
+def test_later_steps_cost_more_than_earlier_ones():
+    for tools in tools_by_kind().values():
+        costs = []
+        current = next(t for t in tools if not any(o.tool.upgrade and o.tool.upgrade.to == t.id for o in tools))
+        while current.tool.upgrade:
+            costs.append(current.tool.upgrade.bits)
+            current = REG.item(current.tool.upgrade.to)
+        assert costs == sorted(costs) and len(set(costs)) == len(costs)
+
+
+async def test_every_chain_can_be_climbed_to_the_top_with_the_right_stuff(db):
+    for kind, skill in (("pickaxe", "mining"), ("axe", "foraging"), ("rod", "fishing"), ("sword", "combat")):
+        starter = next(t for t in tools_by_kind()[kind]
+                       if not any(o.tool.upgrade and o.tool.upgrade.to == t.id for o in tools_by_kind()[kind]))
+        user = await User.get(abs(hash(kind)) % 10_000 + 100)
+        await set_columns(user, purse=10**12)
+        await user.add_xp(skill, 10**9)  # high enough for every level requirement
+        inst = await user.give_instance(starter.id)
+        while (offer := await upgrades.offer_for(user, await user.instance(inst.id))):
+            await stock_up(user, (await user.instance(inst.id)).template_id)
+            await upgrades.upgrade(user, inst.id)
+        top = (await user.instance(inst.id)).template_id
+        assert REG.item(top).tool.upgrade is None and offer is None, kind

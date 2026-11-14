@@ -197,11 +197,14 @@ Whichever skill they pick first pays for the next tool.
 
 The shop sells only the **starter tool** of each kind, and you can own **one tool per kind**: buying a second is refused.
 Everything better comes from **Inventory -> Upgrade tools**, which turns your tool into the next one up for **bits plus
-materials** (axes: feathers, fine bark, maple leaves, aged feathers; pickaxes: ores; rods: fish). The tool keeps its id,
-so it stays equipped, and it keeps its enchants and rolled bonuses. Money, materials and the change happen together or
-not at all, and a double click upgrades once. The chains and costs are in `configs/items.toml` under each tool's
-`[x.tool.upgrade]` (`TODO(balance)`): axes go Starter -> Thornwhip -> Reinforced -> Bastard's Broadaxe -> Masterwork ->
-Sovereign Hatchet -> Wilted; pickaxes Rookie -> Reinforced -> Masterwork; rods Starter -> Reinforced -> Masterwork.
+materials**. Every tool kind has a chain (axes 7 tiers, pickaxes 3, rods 3, swords 4), and **every step asks for things
+from several skills**: bulk from the tool's own skill and the rest from others (ores, feathers and bark, plant fiber and
+crops, coral and fish), so no skill can do it alone and each step differs. The tool keeps its id, so it stays equipped,
+and it keeps its enchants and rolled bonuses. Money, materials and the change happen together or not at all, and a
+double click upgrades once. The chains and costs are in `configs/items.toml` under each tool's `[x.tool.upgrade]`
+(`TODO(balance)`): axes Starter -> Thornwhip -> Reinforced -> Bastard's Broadaxe -> Masterwork -> Sovereign Hatchet ->
+Wilted; pickaxes Rookie -> Reinforced -> Masterwork; rods Starter -> Reinforced -> Masterwork; swords Large Branch ->
+Rusted Broadsword -> Dreamnail -> Shining Silver (combat isn't playable yet; their level requirements still apply).
 
 ## Fishing
 
