@@ -592,7 +592,7 @@ class ExchangeRules(_Data):
 
 
 class EconomyRules(_Data):
-    party_xp_bonus: float = Field(ge=0)  # skill xp bonus while you are in a party of 2 or more (applies to every skill)
+    party_xp_bonus_by_size: list[float] = Field(min_length=1)  # skill xp bonus for a party of 2, 3, ... (the last applies to bigger ones)
     starting_luckbucks: int = Field(ge=0)
     weekly_luckbucks: int = Field(ge=0)
     minigames: MinigameRules

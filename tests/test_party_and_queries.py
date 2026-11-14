@@ -106,18 +106,23 @@ async def test_who_may_invite_whom(db):
 
 
 # ---- the party xp bonus (applies to every skill) --------------------------------------------------------------------
-async def test_the_xp_bonus_needs_a_party_of_two_or_more(db):
-    from cococap.services.party import xp_multiplier
+async def test_the_xp_bonus_needs_a_party_of_two_or_more_and_grows_with_its_size_up_to_a_cap(db):
+    from cococap.services.party import bonus_for_size, xp_bonus, xp_multiplier
 
     await User.get(1)
     assert await xp_multiplier(1) == 1.0  # no party
     party = await Party.create(1)
     assert await xp_multiplier(1) == 1.0  # a party of one
-    await party.add_member(2)
-    from cococap.registry import get_registry
-
-    bonus = 1 + get_registry().economy.party_xp_bonus
-    assert await xp_multiplier(1) == await xp_multiplier(2) == bonus > 1.0
+    expected = {2: 1.10, 3: 1.25, 4: 1.50, 5: 1.50, 6: 1.50}
+    for size in range(2, 7):
+        await party.add_member(size)
+        assert await xp_multiplier(1) == pytest.approx(expected[size]), size
+        assert await xp_multiplier(size) == pytest.approx(expected[size])  # every member gets it
+    assert await xp_bonus(1) == pytest.approx(0.50)
+    assert [bonus_for_size(n) for n in (1, 2, 3, 4, 9)] == [0.0, 0.10, 0.25, 0.50, 0.50]
+    for leaver in (6, 5, 4, 3):
+        await party.leave(leaver)
+    assert await xp_multiplier(1) == pytest.approx(1.10)  # back down to a pair
     await party.leave(2)
     assert await xp_multiplier(2) == 1.0 and await xp_multiplier(1) == 1.0
 
@@ -138,11 +143,11 @@ async def test_mining_xp_is_boosted_in_a_party_and_banked_once(db):
     party = await Party.create(2)
     await party.add_member(3)
     user, run, boosted = await run_for(2)
-    assert plain.xp == 40 and boosted.xp == 50  # +25%
-    assert (await user.skill("mining")).xp == 50
+    assert plain.xp == 40 and boosted.xp == 44  # a pair gets +10%
+    assert (await user.skill("mining")).xp == 44
     await party.leave(3)
     again = await mining.settle_run(user, run)  # settling twice neither re-pays nor changes the report
-    assert again.xp == 50 and (await user.skill("mining")).xp == 50
+    assert again.xp == 44 and (await user.skill("mining")).xp == 44
 
 
 async def test_farming_xp_is_boosted_in_a_party(db):
@@ -160,4 +165,4 @@ async def test_farming_xp_is_boosted_in_a_party(db):
     plain = await harvest_xp(1)
     party = await Party.create(2)
     await party.add_member(3)
-    assert await harvest_xp(2) == round(plain * 1.25)
+    assert await harvest_xp(2) == round(plain * 1.10)

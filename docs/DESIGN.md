@@ -153,8 +153,8 @@ stuck waiting for another player online:
   enchant, which removes that penalty.
 - **The community tree**: one grows every hour and stands for 30 minutes. It is the same for everyone (zone and hp come
   from the clock) and is chopped at full power. Everyone who joins from their own panel adds to one shared hp pool.
-- **Party bonus:** +25% skill xp in *every* skill (mining, farming, foraging...) while in a party of 2 or more
-  (`economy.toml` `party_xp_bonus`).
+- **Party bonus:** skill xp in *every* skill (mining, farming, foraging, fishing) goes up with the size of your party:
+  **+10%** for 2 members, **+25%** for 3, **+50%** for 4 or more (`economy.toml` `party_xp_bonus_by_size`).
 
 **Why the community tree has no race conditions.** Each chop is one atomic database update (take hp off the tree, add it
 to your total), so any number of simultaneous chops all count and the tree can only fall once. The "batching" you see is

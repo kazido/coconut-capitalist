@@ -3,7 +3,9 @@
 #   luckbucks  = fun: minigames, the weekly bonus and gambling. Buys cosmetics. Staked in the casino.
 # Minigames can be played all day, so what they pay is capped per UTC day.
 
-party_xp_bonus = 0.25              # +25% xp in EVERY skill while you are in a party of 2 or more  # TODO(balance)
+# +xp in EVERY skill while you are in a party, growing with its size: the first number is for 2 members, the next for 3,
+# and the last for that many members or more (so a party of 4 or more gets +50%).  # TODO(balance)
+party_xp_bonus_by_size = [0.10, 0.25, 0.50]
 starting_luckbucks = 100
 weekly_luckbucks = 100
 

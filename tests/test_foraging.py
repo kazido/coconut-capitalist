@@ -114,7 +114,7 @@ async def test_xp_is_boosted_in_a_party(db):
     await party.add_member(2)
     boosted = f.Tree(1, 100, 100)
     boosted.chop(100)
-    assert (await f.fell_private(user, boosted, Random(1))).xp == round(base * (1 + REG.economy.party_xp_bonus))
+    assert (await f.fell_private(user, boosted, Random(1))).xp == round(base * (1 + REG.economy.party_xp_bonus_by_size[0]))
 
 
 # ---- the community tree: the clock ---------------------------------------------------------------------------------
@@ -291,7 +291,7 @@ async def test_party_xp_applies_to_claimed_community_rewards(db):
     party = await Party.create(1)
     await party.add_member(2)
     reward = (await f.claim_rewards(user, OPEN, Random(1)))[0]
-    assert reward.xp == round(tree.max_hp * RULES.xp_per_hp * (1 + REG.economy.party_xp_bonus))
+    assert reward.xp == round(tree.max_hp * RULES.xp_per_hp * (1 + REG.economy.party_xp_bonus_by_size[0]))
 
 
 # ---- chopping: the spot, rotating and good chops -----------------------------------------------------------------------

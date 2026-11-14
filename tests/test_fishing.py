@@ -200,7 +200,7 @@ async def test_fishing_xp_is_boosted_in_a_party(db):
     base = await catch()
     party = await Party.create(1)
     await party.add_member(2)
-    assert await catch() == round(base * (1 + REG.economy.party_xp_bonus))
+    assert await catch() == round(base * (1 + REG.economy.party_xp_bonus_by_size[0]))
 
 
 async def test_selling_the_catch_empties_the_bag_and_pays(db):

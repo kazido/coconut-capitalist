@@ -7,7 +7,7 @@ import discord
 from cococap.registry import get_registry
 from cococap.services import foraging
 from cococap.services.equipment import equipped_stats
-from cococap.services.party import xp_multiplier
+from cococap.services.party import xp_bonus
 from cococap.ui import Page, Screen
 from cococap.ui.components import bar, bits, button, row, sep, select, text, xp_bar
 from cococap.user import User
@@ -85,8 +85,8 @@ class ForageScreen(Screen):
         overflow, needed = User.xp_for_next_level(skill.xp)
 
         header = f"**Level {level}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp"
-        if await xp_multiplier(self.user.id) > 1:
-            header += f"\n👥 Party bonus: **+{reg.economy.party_xp_bonus:.0%}** xp"
+        if bonus := await xp_bonus(self.user.id):
+            header += f"\n👥 Party bonus: **+{bonus:.0%}** xp"
         body = [*self.note_block(), text(header)]
 
         if stats is None:

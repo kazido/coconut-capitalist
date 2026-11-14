@@ -8,7 +8,7 @@ from cococap.constants import Rarities
 from cococap.registry import get_registry
 from cococap.services import fishing, fishing_community
 from cococap.services.equipment import equipped_stats
-from cococap.services.party import xp_multiplier
+from cococap.services.party import xp_bonus
 from cococap.ui import Page, PromptModal, Screen
 from cococap.ui.components import bar, bits, button, row, select, sep, text, xp_bar
 from cococap.user import User
@@ -94,8 +94,8 @@ class FishScreen(Screen):
             skill = await self.user.skill("fishing")
             overflow, needed = User.xp_for_next_level(skill.xp)
             header = f"**Level {User.xp_to_level(skill.xp)}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp"
-            if await xp_multiplier(self.user.id) > 1:
-                header += f"\n👥 Party bonus: **+{reg.economy.party_xp_bonus:.0%}** xp"
+            if bonus := await xp_bonus(self.user.id):
+                header += f"\n👥 Party bonus: **+{bonus:.0%}** xp"
             body.append(text(header))
             if stats is None:
                 body.append(text("🎣 You need a rod. Buy a **Starter Rod** in the shop and it equips itself."))

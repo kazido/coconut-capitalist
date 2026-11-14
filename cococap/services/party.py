@@ -172,9 +172,18 @@ class Party:
             raise CustomError("Bots can't join parties.")
 
 
-async def xp_multiplier(user_id: int, registry: Registry | None = None) -> float:
-    """The skill-xp multiplier for `user_id`: a bonus in every skill while in a party of two or more."""
+def bonus_for_size(members: int, registry: Registry | None = None) -> float:
+    """The xp bonus (0.25 = +25%) for a party of this many members: nothing alone, then more as it grows, up to a cap."""
+    steps = (registry or get_registry()).economy.party_xp_bonus_by_size
+    return 0.0 if members < 2 else steps[min(members - 2, len(steps) - 1)]
+
+
+async def xp_bonus(user_id: int, registry: Registry | None = None) -> float:
+    """The skill-xp bonus for `user_id` right now (0 if not in a party of two or more)."""
     party = await Party.for_user(user_id)
-    if party is None or party.member_count() < 2:
-        return 1.0
-    return 1 + (registry or get_registry()).economy.party_xp_bonus
+    return bonus_for_size(party.member_count(), registry) if party is not None else 0.0
+
+
+async def xp_multiplier(user_id: int, registry: Registry | None = None) -> float:
+    """The skill-xp multiplier for `user_id`: a bonus in every skill that grows with the size of their party."""
+    return 1 + await xp_bonus(user_id, registry)
