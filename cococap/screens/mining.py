@@ -17,7 +17,7 @@ class MiningScreen(Screen):
     label = "Mining"
     emoji = "⛏️"
     description = "Dig for ores and gems"
-    links = ("mine", "reactor")
+    links = ("mine", "reactor", "mastery")
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -47,6 +47,7 @@ class MiningScreen(Screen):
                 button("Enter the mines", emoji="⛏️", style=discord.ButtonStyle.primary, disabled=tool is None,
                        on_click=self._enter),
                 button("Reactor", emoji=emojis.get("autominer", "⚙️"), on_click=self._reactor),
+                button("Mastery", emoji="🌟", on_click=self._mastery),
             ),
         ]
         return Page("Mining", body, accent=0x9E492F)
@@ -57,3 +58,6 @@ class MiningScreen(Screen):
 
     async def _reactor(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "reactor")
+
+    async def _mastery(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "mastery", skill="mining")

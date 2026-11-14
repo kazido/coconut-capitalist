@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import CombatRules, DropTable, EconomyRules, ProgressRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
+from .models import MasteryRules, CombatRules, DropTable, EconomyRules, ProgressRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -64,6 +64,7 @@ class Registry:
         combat: CombatRules | None = None,
         drop_tables: list[DropTable] | None = None,
         progress: ProgressRules | None = None,
+        mastery: MasteryRules | None = None,
     ):
         self.items: dict[str, Item] = {i.id: i for i in items}
         self.pets: dict[str, Pet] = {p.id: p for p in pets}
@@ -77,6 +78,7 @@ class Registry:
         self.fishing = fishing
         self.combat = combat
         self.progress = progress
+        self.mastery = mastery
         self.drop_tables: dict[str, DropTable] = {t.id: t for t in drop_tables or []}
         self._validate()
 
@@ -129,6 +131,14 @@ class Registry:
                 elif target.tool.power <= item.tool.power:
                     problems.append(f"{item.id}: upgrade target '{up.to}' must be stronger")
                 problems += [f"{item.id}: upgrade needs unknown item '{m}'" for m in up.items if m not in self.items]
+            if item.tool and item.tool.fork:
+                fork = item.tool.fork
+                target = self.items.get(fork.to)
+                if target is None or target.tool is None or target.tool.kind != item.tool.kind or target.tool.power <= item.tool.power:
+                    problems.append(f"{item.id}: fork target '{fork.to}' must be a stronger {item.tool.kind}")
+                if item.tool.upgrade is None:
+                    problems.append(f"{item.id}: a fork needs a normal upgrade as the other path")
+                problems += [f"{item.id}: fork needs unknown item '{m}'" for m in fork.items if m not in self.items]
             if item.scroll and item.scroll.enchant not in self.enchants:
                 problems.append(f"{item.id}: scroll of unknown enchant '{item.scroll.enchant}'")
             if item.seed:
@@ -267,7 +277,8 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     combat = _build(CombatRules, "combat", [("combat", raw)])[0]
     drops = _build(DropTable, "drops", ((k, {"id": k, **v}) for k, v in _read(config_dir, "drops").items()))
     progress = _build(ProgressRules, "progress", [("progress", _read(config_dir, "progress"))])[0]
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, progress)
+    mastery = _build(MasteryRules, "mastery", [("mastery", _read(config_dir, "mastery"))])[0]
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, progress, mastery)
 
 
 @lru_cache(maxsize=1)

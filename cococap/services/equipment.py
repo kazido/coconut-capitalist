@@ -1,6 +1,6 @@
 """Rules for unique tools: their final stats, equipping, and enchanting. No Discord, no SQL here."""
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
@@ -45,7 +45,7 @@ def effective_stats(instance: ItemInstance, registry: Registry | None = None) ->
     if template.tool is None:
         raise EquipmentError(f"{template.name} is not a tool")
 
-    stats: dict[str, float] = {"power": float(template.tool.power)}
+    stats: dict[str, float] = {"power": float(template.tool.power), **template.tool.stats}
     for stat, bonus in instance.rolled.items():
         stats[stat] = stats.get(stat, 0.0) + bonus
 
@@ -93,7 +93,15 @@ async def equip(user: User, skill: str, instance_id: int, registry: Registry | N
 async def equipped_stats(user: User, skill: str, registry: Registry | None = None) -> EffectiveStats | None:
     """Stats of the tool equipped for `skill`, or None if nothing is equipped."""
     instance = await user.equipped_instance(skill)
-    return effective_stats(instance, registry) if instance else None
+    if not instance:
+        return None
+    base = effective_stats(instance, registry)
+    from cococap.services import mastery  # (mastery only needs the user, so there is no cycle at run time)
+
+    extra = mastery.stats((await user.skill(skill)).mastery, registry)
+    if not extra:
+        return base
+    return replace(base, stats={**base.stats, **{k: base.stats.get(k, 0.0) + v for k, v in extra.items()}})
 
 
 async def add_enchant(

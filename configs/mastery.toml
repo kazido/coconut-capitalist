@@ -1,0 +1,289 @@
+# Mastery: a small tree per skill. You earn one point every `points_every_levels` skill levels and spend them on nodes. Each branch is a
+# line of nodes (each needs the one before it and a skill level), and the branches are DIFFERENT ways to play, with trade-offs, so you
+# cannot have everything (a full branch costs 9 points; level 100 earns 20). Nothing here touches xp. Respec costs bits.
+# `effects` use the same stat names as tools and enchants (see services/equipment.py).  TODO(balance): all numbers
+
+points_every_levels = 5
+respec_bits = 100000
+
+[[trees]]
+skill = "mining"
+
+[[trees.branches]]
+id = "safe"
+name = "Safe Digger"
+emoji = "⛑️"
+description = "Slower pressure and more braces: you go deeper and leave with what you dug."
+
+[[trees.branches.nodes]]
+id = "steady_hands"
+name = "Steady Hands"
+description = "Tunnels creak 5% less."
+level = 5
+cost = 1
+effects = [{ stat = "danger_reduction", amount = 0.05 }]
+
+[[trees.branches.nodes]]
+id = "spare_braces"
+name = "Spare Braces"
+description = "Start every dig with one more brace."
+level = 10
+cost = 1
+effects = [{ stat = "braces", amount = 1 }]
+
+[[trees.branches.nodes]]
+id = "shored_tunnels"
+name = "Shored Tunnels"
+description = "Tunnels creak 8% less."
+level = 20
+cost = 2
+effects = [{ stat = "danger_reduction", amount = 0.08 }]
+
+[[trees.branches.nodes]]
+id = "deep_nerves"
+name = "Deep Nerves"
+description = "One more brace and 5% less creaking."
+level = 35
+cost = 2
+effects = [{ stat = "braces", amount = 1 }, { stat = "danger_reduction", amount = 0.05 }]
+
+[[trees.branches.nodes]]
+id = "unshakeable"
+name = "Unshakeable"
+description = "Tunnels creak 10% less."
+level = 50
+cost = 3
+effects = [{ stat = "danger_reduction", amount = 0.1 }]
+
+[[trees.branches]]
+id = "greedy"
+name = "Greedy Digger"
+emoji = "💰"
+description = "More ore from every lode, at the price of a creakier tunnel."
+
+[[trees.branches.nodes]]
+id = "pay_dirt"
+name = "Pay Dirt"
+description = "+10% ore, but 3% more creaking."
+level = 5
+cost = 1
+effects = [{ stat = "ore_yield", amount = 0.1 }, { stat = "danger_reduction", amount = -0.03 }]
+
+[[trees.branches.nodes]]
+id = "rich_veins"
+name = "Rich Veins"
+description = "+4% chance of a rich lode in every cell."
+level = 10
+cost = 1
+effects = [{ stat = "rich_chance", amount = 0.04 }]
+
+[[trees.branches.nodes]]
+id = "motherlode"
+name = "Motherlode"
+description = "+20% ore, but 5% more creaking."
+level = 20
+cost = 2
+effects = [{ stat = "ore_yield", amount = 0.2 }, { stat = "danger_reduction", amount = -0.05 }]
+
+[[trees.branches.nodes]]
+id = "vein_sense"
+name = "Vein Sense"
+description = "+6% chance of a rich lode in every cell."
+level = 35
+cost = 2
+effects = [{ stat = "rich_chance", amount = 0.06 }]
+
+[[trees.branches.nodes]]
+id = "dragons_hoard"
+name = "Dragon's Hoard"
+description = "+35% ore, but 8% more creaking."
+level = 50
+cost = 3
+effects = [{ stat = "ore_yield", amount = 0.35 }, { stat = "danger_reduction", amount = -0.08 }]
+
+[[trees.branches]]
+id = "gem"
+name = "Gem Hunter"
+emoji = "💎"
+description = "The vault's gems and the odd cache: a long game of rare finds."
+
+[[trees.branches.nodes]]
+id = "gem_eye"
+name = "Gem Eye"
+description = "+50% chance of a reactor gem in the vault."
+level = 5
+cost = 1
+effects = [{ stat = "vault_gem", amount = 0.5 }]
+
+[[trees.branches.nodes]]
+id = "tidy_digger"
+name = "Tidy Digger"
+description = "A little ore for a little less luck: +5% ore, 2% less creaking."
+level = 10
+cost = 1
+effects = [{ stat = "ore_yield", amount = 0.05 }, { stat = "danger_reduction", amount = 0.02 }]
+
+[[trees.branches.nodes]]
+id = "gem_sense"
+name = "Gem Sense"
+description = "+100% chance of a reactor gem in the vault."
+level = 20
+cost = 2
+effects = [{ stat = "vault_gem", amount = 1.0 }]
+
+[[trees.branches.nodes]]
+id = "crystal_veins"
+name = "Crystal Veins"
+description = "+3% rich lodes and +50% vault gems."
+level = 35
+cost = 2
+effects = [{ stat = "rich_chance", amount = 0.03 }, { stat = "vault_gem", amount = 0.5 }]
+
+[[trees.branches.nodes]]
+id = "gem_lord"
+name = "Gem Lord"
+description = "+200% chance of a reactor gem in the vault."
+level = 50
+cost = 3
+effects = [{ stat = "vault_gem", amount = 2.0 }]
+
+[[trees]]
+skill = "fishing"
+
+[[trees.branches]]
+id = "angler"
+name = "Angler"
+emoji = "🎣"
+description = "Fish bite sooner and your line holds: the steady, reliable catch."
+
+[[trees.branches.nodes]]
+id = "quick_bite"
+name = "Quick Bite"
+description = "Bites come 10% sooner."
+level = 5
+cost = 1
+effects = [{ stat = "bite_speed", amount = 0.1 }]
+
+[[trees.branches.nodes]]
+id = "forgiving_line"
+name = "Forgiving Line"
+description = "One more wrong arrow forgiven."
+level = 10
+cost = 1
+effects = [{ stat = "slips", amount = 1 }]
+
+[[trees.branches.nodes]]
+id = "lively_water"
+name = "Lively Water"
+description = "Bites come 15% sooner."
+level = 20
+cost = 2
+effects = [{ stat = "bite_speed", amount = 0.15 }]
+
+[[trees.branches.nodes]]
+id = "patient_hands"
+name = "Patient Hands"
+description = "One more wrong arrow forgiven and 5% sooner bites."
+level = 35
+cost = 2
+effects = [{ stat = "slips", amount = 1 }, { stat = "bite_speed", amount = 0.05 }]
+
+[[trees.branches.nodes]]
+id = "master_angler"
+name = "Master Angler"
+description = "Bites come 20% sooner."
+level = 50
+cost = 3
+effects = [{ stat = "bite_speed", amount = 0.2 }]
+
+[[trees.branches]]
+id = "treasure"
+name = "Treasure Hunter"
+emoji = "🪙"
+description = "Chests and the odd rare find: fewer fish, bigger surprises."
+
+[[trees.branches.nodes]]
+id = "shiny_eye"
+name = "Shiny Eye"
+description = "+25% chance that a hallucinated treasure is a chest."
+level = 5
+cost = 1
+effects = [{ stat = "treasure_luck", amount = 0.25 }]
+
+[[trees.branches.nodes]]
+id = "lucky_cast"
+name = "Lucky Cast"
+description = "+10% chance of the rare fish."
+level = 10
+cost = 1
+effects = [{ stat = "rare_luck", amount = 0.1 }]
+
+[[trees.branches.nodes]]
+id = "chest_sense"
+name = "Chest Sense"
+description = "+50% chest chance."
+level = 20
+cost = 2
+effects = [{ stat = "treasure_luck", amount = 0.5 }]
+
+[[trees.branches.nodes]]
+id = "rare_lure"
+name = "Rare Lure"
+description = "+20% chance of the rare fish."
+level = 35
+cost = 2
+effects = [{ stat = "rare_luck", amount = 0.2 }]
+
+[[trees.branches.nodes]]
+id = "pirates_luck"
+name = "Pirate's Luck"
+description = "+100% chest chance and +20% rare fish."
+level = 50
+cost = 3
+effects = [{ stat = "treasure_luck", amount = 1.0 }, { stat = "rare_luck", amount = 0.2 }]
+
+[[trees.branches]]
+id = "trophy"
+name = "Trophy Hunter"
+emoji = "🏆"
+description = "Sea bosses and rare fish, at the price of slower bites."
+
+[[trees.branches.nodes]]
+id = "big_game"
+name = "Big Game"
+description = "+25% chance that a bite is a boss, but 5% slower bites."
+level = 5
+cost = 1
+effects = [{ stat = "boss_luck", amount = 0.25 }, { stat = "bite_speed", amount = -0.05 }]
+
+[[trees.branches.nodes]]
+id = "keen_eye"
+name = "Keen Eye"
+description = "+15% chance of the rare fish."
+level = 10
+cost = 1
+effects = [{ stat = "rare_luck", amount = 0.15 }]
+
+[[trees.branches.nodes]]
+id = "boss_bait"
+name = "Boss Bait"
+description = "+50% boss chance, but 8% slower bites."
+level = 20
+cost = 2
+effects = [{ stat = "boss_luck", amount = 0.5 }, { stat = "bite_speed", amount = -0.08 }]
+
+[[trees.branches.nodes]]
+id = "trophy_hands"
+name = "Trophy Hands"
+description = "One more wrong arrow forgiven (bosses are long)."
+level = 35
+cost = 2
+effects = [{ stat = "slips", amount = 1 }]
+
+[[trees.branches.nodes]]
+id = "leviathan_caller"
+name = "Leviathan Caller"
+description = "+100% boss chance and +20% rare fish, but 10% slower bites."
+level = 50
+cost = 3
+effects = [{ stat = "boss_luck", amount = 1.0 }, { stat = "rare_luck", amount = 0.2 }, { stat = "bite_speed", amount = -0.1 }]

@@ -105,7 +105,7 @@ def wait_seconds(power: int, rules: FishingRules, rng: random.Random, bite_speed
     """How long until something bites: shorter with a stronger rod (and a Lure enchant: ``bite_speed``)."""
     base = rng.uniform(rules.bite.wait_min, rules.bite.wait_max)
     factor = max(rules.bite.min_wait_factor, 1 / (1 + rules.bite.speedup_per_power * max(0, power - 1)))
-    return base * factor * (1 - min(0.6, max(0.0, bite_speed)))
+    return base * factor * (1 - min(0.6, max(-0.5, bite_speed)))  # (a Mastery trade-off can make bites slower, up to half again)
 
 
 class _Middle(random.Random):
@@ -351,7 +351,7 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
     rules = reg.fishing
     now = time.time() if now is None else now
     pet = pet or {}
-    fish = roll_fish(rng, reg, water, pet.get("rare_luck", 0.0) + rod_luck(stats.power, rules))
+    fish = roll_fish(rng, reg, water, pet.get("rare_luck", 0.0) + stats.stats.get("rare_luck", 0.0) + rod_luck(stats.power, rules))
     bite_at = now + wait_seconds(stats.power, rules, rng, stats.stats.get("bite_speed", 0.0) + pet.get("bite_speed", 0.0)) * (
         water.wait_multiplier if water else 1.0)
     pattern, truth = build_reel(fish, rules, rng)
@@ -370,9 +370,9 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
         extra_fish=extra_fish(stats.power, rules, rng),
         xp=water.xp if water else 0,
     )
-    if armed and rng.randint(1, max(1, round(rules.treasure.chest_odds / (1 + pet.get("treasure_luck", 0.0))))) == 1:
+    if armed and rng.randint(1, max(1, round(rules.treasure.chest_odds / (1 + pet.get("treasure_luck", 0.0) + stats.stats.get("treasure_luck", 0.0))))) == 1:
         cast.chest, cast.attempts_left = True, rules.treasure.attempts
-    elif rng.randint(1, rules.boss.odds) == 1:
+    elif rng.randint(1, max(1, round(rules.boss.odds / (1 + stats.stats.get("boss_luck", 0.0))))) == 1:
         entry = rng.choice(rules.boss.bosses)
         cast.boss, cast.modifiers = entry.name, list(entry.modifiers)
         cast.pattern, cast.truth = build_reel(fish, rules, rng, arrows=rules.boss.length, mysteries=False,

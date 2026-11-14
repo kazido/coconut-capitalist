@@ -73,7 +73,7 @@ class FishScreen(Screen):
     label = "Fishing"
     emoji = ROD
     description = "Cast a line and reel in fish"
-    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords", "fishnotes", "fishpots")
+    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords", "fishnotes", "fishpots", "mastery")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -155,7 +155,8 @@ class FishScreen(Screen):
             ))
             body.append(row(button("Records", emoji="📏", on_click=self._records),
                             button("Field notes", emoji="🔍", on_click=self._notes),
-                            button("Crab pots", emoji="🦀", disabled=level < reg.fishing.pots.min_level, on_click=self._pots)))
+                            button("Crab pots", emoji="🦀", disabled=level < reg.fishing.pots.min_level, on_click=self._pots),
+                            button("Mastery", emoji="🌟", on_click=self._mastery)))
             return Page("Fishing", body, accent=ACCENT)
 
         status = cast.status(now())
@@ -362,6 +363,9 @@ class FishScreen(Screen):
 
     async def _pots(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishpots")
+
+    async def _mastery(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "mastery", skill="fishing")
 
     async def _sell(self, interaction: discord.Interaction) -> None:
         total = await fishing.sell_all(self.user)

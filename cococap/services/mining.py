@@ -121,11 +121,14 @@ class MineRun:
         bombs: int = 0,
         magnet: bool = False,
         wyrmhole_odds_value: int | None = None,
+        rich_bonus: float = 0.0,
+        vault_gem_bonus: float = 0.0,
     ):
         self.rules, self.registry, self.rng = rules, registry, rng
         self.cursors = list(cursors)
         self.growth_factor, self.yield_factor = growth_factor, yield_factor
         self.braces, self.bombs, self.magnet = braces, bombs, magnet
+        self.rich_bonus, self.vault_gem_bonus = rich_bonus, vault_gem_bonus  # Mastery: more rich lodes, more vault gems
         self.bombs_used = 0
         self.xp_awarded = 0
         self.last_risk = self.last_pressure = 0.0
@@ -192,7 +195,7 @@ class MineRun:
                     kind, cells[col] = "vent", None
                 elif depth >= d.cache_min_depth and self.rng.random() < d.cache_chance:
                     kind, cells[col] = "cache", None
-                elif self.rng.random() < d.rich_chance:
+                elif self.rng.random() < d.rich_chance + self.rich_bonus:
                     kind, cells[col] = "rich", self._rich_cell(depth)
             kinds.append(kind)
         return kinds
@@ -279,7 +282,7 @@ class MineRun:
             return Counter()
         self.outcome = "floor"
         vault: Counter[str] = Counter(d.vault_ore)
-        if self.rng.random() < d.vault_gem_chance:
+        if self.rng.random() < d.vault_gem_chance * (1 + self.vault_gem_bonus):
             vault[self.rng.choice(self.rules.reactor.core_gems)] += 1
         self.haul.update(vault)
         return vault
@@ -437,10 +440,12 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         cursors=_start_cursors(columns_dug(mining.reactor.level, rules), rules.columns),
         bombs=bombs,
         growth_factor=1 - min(d.max_reduction, reduction),
-        yield_factor=(1 + d.power_yield_bonus * max(0, power - 1)) * (1 + pet.get("ore_yield", 0.0)),
-        braces=d.braces_base + (mining.reactor.level - 1) // d.braces_per_reactor_levels,
+        yield_factor=(1 + d.power_yield_bonus * max(0, power - 1)) * (1 + pet.get("ore_yield", 0.0) + tool.stats.get("ore_yield", 0.0)),
+        braces=d.braces_base + (mining.reactor.level - 1) // d.braces_per_reactor_levels + int(tool.stats.get("braces", 0)),
         magnet=magnet,
         wyrmhole_odds_value=wyrmhole_odds(gems_placed(mining), rules),
+        rich_bonus=tool.stats.get("rich_chance", 0.0),
+        vault_gem_bonus=tool.stats.get("vault_gem", 0.0),
     )
 
 

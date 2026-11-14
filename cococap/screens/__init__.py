@@ -22,6 +22,7 @@ from .home import HomeScreen, MoreScreen
 from .inventory import InventoryScreen
 from .mine import MineScreen
 from .market import MarketScreen
+from .mastery import MasteryScreen
 from .minigames import MinigamesScreen
 from .mining import MiningScreen
 from .party import PartyScreen
@@ -50,6 +51,7 @@ SCREENS: dict[str, type[Screen]] = {
         ProfileScreen,
         ProgressScreen,
         BestiaryScreen,
+        MasteryScreen,
         CheckInScreen,
         SkillsScreen,
         FarmScreen,

@@ -83,6 +83,10 @@ class Tool(_Data):
     ability_name: str | None = None
     ability_description: str | None = None
     upgrade: ToolUpgrade | None = None
+    # A fork: instead of (or beside) the usual next tool, a second, different path. Its target keeps climbing on its own chain.
+    fork: ToolUpgrade | None = None
+    path: str | None = None  # the name of the path this tool is on, once it has forked ("Warden", "Prospector")
+    stats: dict[str, float] = Field(default_factory=dict)  # what the tool does besides its power (danger_reduction, ore_yield, bite_speed...)
 
 
 class Size(_Data):
@@ -1029,3 +1033,57 @@ class ToolPoints(_Data):
 
 
 ProgressRules.model_rebuild()
+
+
+# ---- Mastery: a small tree per skill; points come from skill levels, every node is a choice -----------------------------------------
+class MasteryEffect(_Data):
+    stat: str  # the same names tools and enchants use (danger_reduction, ore_yield, bite_speed, slips...)
+    amount: float  # may be negative: a trade-off
+
+
+class MasteryNode(_Data):
+    id: str
+    name: str
+    description: str
+    level: int = Field(ge=1)  # the skill level it needs
+    cost: int = Field(ge=1)  # mastery points
+    effects: list[MasteryEffect] = Field(min_length=1)
+
+
+class MasteryBranch(_Data):
+    id: str
+    name: str
+    emoji: str
+    description: str
+    nodes: list[MasteryNode] = Field(min_length=1)  # in order: each needs the one before it
+
+
+class MasteryTree(_Data):
+    skill: Skill
+    branches: list[MasteryBranch] = Field(min_length=2)
+
+
+class MasteryRules(_Data):
+    points_every_levels: int = Field(ge=1)  # one point per this many skill levels
+    respec_bits: int = Field(ge=0)  # clearing a tree costs this
+    trees: list[MasteryTree] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _fit(self):
+        ids = [n.id for t in self.trees for b in t.branches for n in b.nodes]
+        if len(ids) != len(set(ids)):
+            raise ValueError("mastery node ids must be unique")
+        if len({t.skill for t in self.trees}) != len(self.trees):
+            raise ValueError("one mastery tree per skill")
+        for t in self.trees:
+            for b in t.branches:
+                levels = [n.level for n in b.nodes]
+                if levels != sorted(levels):
+                    raise ValueError(f"mastery branch {b.id}: node levels must not go down")
+        return self
+
+    def tree(self, skill: str) -> "MasteryTree | None":
+        return next((t for t in self.trees if t.skill == skill), None)
+
+    def node(self, node_id: str) -> "MasteryNode":
+        return next(n for t in self.trees for b in t.branches for n in b.nodes if n.id == node_id)
