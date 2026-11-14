@@ -213,13 +213,13 @@ def _pets(reg: Registry) -> list[str]:
     return [
         f"**Pets** hatch from **Familiar Orbs** (shop, treasure chests, boss loot). Your active pet's bonuses work everywhere. A duplicate adds a star "
         f"(up to {rules.max_stars}, +{rules.star_bonus:.0%} each), crops level them (to {rules.max_level}) and a Spirit adds skill xp. **Hunt** a pet in the "
-        f"Pet House and orbs favour it (×{rules.target_boost:g}, more with each miss).",
+        f"Familiar Orbs page and orbs favour it (×{rules.target_boost:g}, more with each miss).",
         f"**Feeding.** Pets level up on **food**: crops (farming's food) and what each skill drops in three tiers (worth {', '.join(f'{x:,}' for x in rules.food_xp)} pet xp): "
         "foraging drops **Acorn Mix, Honeycomb and Golden Sap**, mining **Stone Biscuit, Crystal Chew and Geode Feast**, fishing **Fish Flakes, Dried Squid and Sea Feast**. "
         "Every pet has **one skill**, shown as an emoji after its name: 🎣 fishing, ⛏️ mining, 🌳 foraging, 🌽 farming, ⚔️ combat, or 🌐 **global** "
         "for pets whose bonus works everywhere (Dog, Koala, Phoenix). "
         f"Food of **a pet's own skill is worth x{rules.matched_food_multiplier:g}** to it, a 🌐 global pet gets **x{rules.global_food_multiplier:g}** from any food, "
-        "and food of another skill is worth the plain amount. Look at a pet in the Pet House to feed it or make it active. "
+        "and food of another skill is worth the plain amount. Look at a pet on the Pets page to feed it or make it active. "
         "A pet's numbers are shown at its current level (a fresh pet gives about half) with the max level in brackets.",
         "**All pets** (bonuses at max level, one star)\n" + "\n".join(lines),
     ]

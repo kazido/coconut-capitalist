@@ -25,7 +25,7 @@ from .market import MarketScreen
 from .minigames import MinigamesScreen
 from .mining import MiningScreen
 from .party import PartyScreen
-from .pets import PetScreen
+from .pets import OrbScreen, PetScreen
 from .profile import ProfileScreen
 from .reactor import ReactorScreen
 from .rank import RankScreen
@@ -45,6 +45,7 @@ SCREENS: dict[str, type[Screen]] = {
         MoreScreen,
         PartyScreen,
         PetScreen,
+        OrbScreen,
         ProfileScreen,
         CheckInScreen,
         SkillsScreen,

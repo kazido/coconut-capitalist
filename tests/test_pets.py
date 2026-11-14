@@ -3,6 +3,7 @@ from collections import Counter
 from random import Random
 
 import pytest
+from discord import ui
 
 from cococap.models.pethouse import OwnedPet
 from cococap.registry import get_registry
@@ -299,21 +300,24 @@ async def test_the_frog_makes_crops_grow_more_often_and_the_bee_makes_harvests_b
 
 # ---- the Pet House -----------------------------------------------------------------------------------------------------------------------
 async def test_the_pet_house_for_someone_with_no_pets_explains_orbs(db):
-    nav, _ = await hub("pets")
+    nav, inter = await hub("pets")
     assert "no pets yet" in all_text(nav) and "Familiar Orb" in all_text(nav)
-    assert find_button(nav, "Open a Familiar Orb (0)").disabled
+    await click(nav, inter, "Familiar Orbs")
+    assert nav.screen.id == "orbs" and find_button(nav, "Open a Familiar Orb (0)").disabled
 
 
-async def test_opening_an_orb_from_the_pet_house_shows_a_result_page(db, monkeypatch):
+async def test_opening_an_orb_from_the_orbs_page_shows_a_result_page(db, monkeypatch):
     monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0: REG.pets["cat"])
     user = await User.get(1)
     await user.add_item(pets.ORB, 2)
-    nav, inter = await hub("pets")
+    nav, inter = await hub("orbs")
     await click(nav, inter, "Open a Familiar Orb (2)")
     assert nav.screen.id == "result" and "Cat" in all_text(nav) and "A new friend" in all_text(nav) and "waiting for a bite" in all_text(nav)
     await click(nav, inter, "Another orb")
     assert "Another Cat" in all_text(nav) and "2" in all_text(nav)
-    await click(nav, inter, "To the Pet House")
+    await click(nav, inter, "Back to the orbs")
+    assert nav.screen.id == "orbs"
+    await click(nav, inter, "Your pets")
     assert nav.screen.id == "pets" and "Cat" in all_text(nav) and "⭐⭐" in all_text(nav)
 
 
@@ -330,8 +334,12 @@ async def test_the_pet_house_switches_pets_feeds_crops_and_hands_over_spirits(db
     await user.refresh()
     assert user.pethouse.active == "cat"
     before = user.pethouse.pets["cat"].xp
-    await choose(nav, inter, select_named(nav, "Feed your pet"), "lemon")
+    feed = select_named(nav, "Feed Cat")  # the menu names the pet it is for
+    hint = next(o.description for o in feed.options if o.value == "lemon")
+    assert f"{REG.item('lemon').crop.pet_xp:,} xp each" in hint and "Cat" in hint
+    await choose(nav, inter, feed, "lemon")
     modal = inter.response.send_modal.await_args.args[0]
+    assert "xp each" in modal.children[0].description
     await modal._handler(inter, "3")
     await user.refresh()
     assert user.pethouse.pets["cat"].xp == before + 3 * REG.item("lemon").crop.pet_xp and await user.item_quantity("lemon") == 1  # (a fishing cat: x1)
@@ -429,7 +437,7 @@ async def test_choosing_a_new_target_starts_the_count_again_and_nonsense_is_refu
 async def test_the_pet_house_lets_you_aim_and_shows_your_chances(db):
     user = await User.get(1)
     await user.add_item(pets.ORB, 1)
-    nav, inter = await hub("pets")
+    nav, inter = await hub("orbs")
     await choose(nav, inter, select_named(nav, "Hunt a pet"), "dragon")
     await user.refresh()
     assert user.pethouse.target == "dragon"
@@ -539,12 +547,39 @@ async def test_the_pet_house_lets_you_look_after_a_pet_that_is_not_active_and_pi
     await user.add_item("fish_flakes", 5)
     nav, inter = await hub("pets")
     await choose(nav, inter, select_named(nav, "Look at a pet"), "cat")
-    assert "Looks after" in all_text(nav) and "fishing" in all_text(nav)
-    await choose(nav, inter, select_named(nav, "Feed your pet"), "fish_flakes")
+    assert "Fishing 🎣" in all_text(nav) and "Looks after" not in all_text(nav)
+    hint = next(o.description for o in select_named(nav, "Feed Cat").options if o.value == "fish_flakes")
+    assert f"x{REG.economy.pets.matched_food_multiplier:g}" in hint  # its own skill's food: the boosted rate is shown
+    await choose(nav, inter, select_named(nav, "Feed Cat"), "fish_flakes")
     modal = inter.response.send_modal.await_args.args[0]
     await modal._handler(inter, "2")
     await user.refresh()
     assert user.pethouse.pets["cat"].xp == 2 * REG.economy.pets.food_xp[0] * REG.economy.pets.matched_food_multiplier
     assert user.pethouse.pets["dog"].xp == 0  # the cat got it, not the active dog
-    assert "🎣" in all_text(nav) and "Cat 🎣" in all_text(nav)  # the skill's emoji follows the name
+    assert "Fishing 🎣" in all_text(nav)
     assert not [x for x in nav.walk_children() if getattr(x, "placeholder", "").startswith("Skill for this pet")]  # (it cannot be changed)
+
+
+# ---- the simplified pet page ---------------------------------------------------------------------------------------------------------
+async def test_the_pet_page_puts_the_description_under_the_name_and_stars_only_on_the_page(db):
+    user = await with_pet("koala", stars=3)
+    await with_pet("cat", stars=2, active=False)
+    nav, _ = await hub("pets")
+    head = next(c.content for c in nav.walk_children() if isinstance(c, ui.TextDisplay) and "Koala" in c.content and "###" in c.content)
+    lines = head.splitlines()
+    assert "Koala" in lines[0] and "⭐⭐⭐" in lines[0]
+    assert lines[1] == f"-# {REG.pets['koala'].description}"  # right under the name, above the xp bar
+    assert "Global 🌐" in head and "Looks after" not in head and "any food" not in head
+    menu = select_named(nav, "Look at a pet")
+    assert all("⭐" not in (o.label + (o.description or "")) for o in menu.options)  # no stars in the dropdown
+    assert [o.label for o in menu.options] == ["Cat", "Koala"]
+    assert user
+
+
+async def test_the_orbs_and_pet_pages_link_to_each_other(db):
+    await with_pet("cat")
+    nav, inter = await hub("pets")
+    await click(nav, inter, "Familiar Orbs")
+    assert nav.screen.id == "orbs"
+    await click(nav, inter, "Your pets")
+    assert nav.screen.id == "pets"

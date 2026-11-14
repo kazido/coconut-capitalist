@@ -295,7 +295,7 @@ like any foraging drop), mining **Stone Biscuit / Crystal Chew / Geode Feast** (
 **Fish Flakes / Dried Squid / Sea Feast** (one roll per catch, like coral). Crops are **farming's** food. Combat has none yet.
 
 **Every pet has one fixed skill** (`skill` in `configs/pets.toml`; shown as an emoji after its name: 🎣 ⛏️ 🌳 🌽 ⚔️, or 🌐 for the
-global pets Dog, Koala and Phoenix, whose bonus works everywhere). You cannot change it. In the Pet House you look at any pet
+global pets Dog, Koala and Phoenix, whose bonus works everywhere). You cannot change it. On the Pets page you look at any pet
 (not just the active one), feed it, or make it active. Food of **its skill is worth x3**; a 🌐 global pet gets **x2 from any food**;
 food of a different skill is the plain amount. So a specialist levels fastest on its own skill's food, and a global pet is the
 flexible, slower choice. **Why a number "jumps":** a bonus is `value x level factor x stars`, where the level factor goes from 0.5
@@ -324,7 +324,7 @@ skill (`python -m scripts.balance` prints it); level 20 is 180k xp.
 | Wolf / Lion | +10% / +18% combat xp (combat is coming) |
 | Phoenix | +10% xp in every skill |
 
-**Hunting a pet.** Pick a pet to hunt in the Pet House and orbs are `8x` likelier to give it, plus `1x` more for every orb
+**Hunting a pet.** Pick a pet to hunt on the Familiar Orbs page and orbs are `8x` likelier to give it, plus `1x` more for every orb
 that missed it (up to `40x`), so a long streak of bad luck makes the next orb better. A hit resets the count; a pet you
 already have at every star can't be hunted. The chance per orb is shown for every pet and for your hunt.
 
@@ -556,3 +556,9 @@ seedable rng), data: `configs/combat.toml` + `configs/enemies.toml`, screen: `sc
 Planned around it: **dungeon keys that drop from these enemies** are the only way into a dungeon; the **final boss** (phases,
 stun-immune, its own skills) closes the dungeon; **enemy drops** become a weighted table of bits *or any item*, with a small
 chance at rare things (the same table also feeds channel drops); then party fights (several player units already work in the engine).
+
+### Pet pages (simplified)
+Two screens: **Pets** (`pets`: look at a pet, make it active, feed it, give Spirits) and **Familiar Orbs** (`orbs`: open orbs, hunt a
+pet), linked by buttons. On the pet page the order is name + stars + level, then the description, the xp bar, the bonuses and one
+line for its skill ("Global 🌐", "Mining ⛏️"). Stars are shown only there (and on the hatch result), never in dropdowns. What a food
+is worth to the pet you are looking at is the hint in the "Feed <pet>..." menu and the amount popup.
