@@ -23,7 +23,7 @@ async def test_lobby_shows_stats_skills_and_locks_fights_above_your_level(db):
 
 async def test_a_locked_fight_cannot_be_started(db):
     nav, inter = await hub("fight")
-    with pytest.raises(combat.CombatError, match="yet"):  # a stale button, clicked anyway (the hub shows the message)
+    with pytest.raises(combat.CombatError, match="combat level"):  # a stale button, clicked anyway (the hub shows the message)
         await nav.screen._starter("graveyard_horde")(inter)
     assert nav.screen.battle is None
 
@@ -113,3 +113,42 @@ async def test_the_boss_fight_is_locked_until_level_20(db):
     nav, _ = await hub("fight")
     fights = [(b.disabled) for b in buttons(nav) if b.label == "Fight"]
     assert fights == [False, True, True, True] and "Combat level 20" in all_text(nav)
+
+
+async def test_the_boss_button_needs_level_20_and_a_key_and_spends_it(db):
+    user = (await hub("fight"))[0].user
+    await user.add_xp("combat", 73_674)  # level 20
+    nav, inter = await hub("fight")
+    boss = [b for b in buttons(nav) if b.label == "Fight"][-1]
+    assert boss.disabled and "needs a key" in all_text(nav)
+    await user.add_item("graveyard_key", 1)
+    nav, inter = await hub("fight")
+    assert "Graveyard Key" in all_text(nav) and "×1" in all_text(nav)
+    boss = [b for b in buttons(nav) if b.label == "Fight"][-1]
+    assert not boss.disabled
+    inter.response.edit_message.reset_mock()
+    await boss.callback(inter)
+    assert nav.screen.battle is not None and await user.item_quantity("graveyard_key") == 0
+
+
+async def test_the_victory_page_lists_what_dropped(db, monkeypatch):
+    from cococap.services import loot
+
+    monkeypatch.setattr(loot, "roll_kill", lambda *a, **k: loot.Loot(item_id="iron_ore", quantity=3))
+    nav, inter = await hub("fight")
+    await start(nav, inter)
+    nav.screen.battle.unit("p1").attack = 10_000
+    await click(nav, inter, "Slash")
+    assert "🎁" in all_text(nav) and "×3" in all_text(nav) and "Iron Ore" in all_text(nav)
+    assert await nav.user.item_quantity("iron_ore") == 3
+
+
+async def test_a_victory_with_no_drop_says_so(db, monkeypatch):
+    from cococap.services import loot
+
+    monkeypatch.setattr(loot, "roll_kill", lambda *a, **k: None)
+    nav, inter = await hub("fight")
+    await start(nav, inter)
+    nav.screen.battle.unit("p1").attack = 10_000
+    await click(nav, inter, "Slash")
+    assert "Nothing dropped" in all_text(nav)

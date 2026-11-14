@@ -259,6 +259,34 @@ class CombatSkill(_Data):
         return self
 
 
+class DropEntry(_Data):
+    """One line of a drop table. Either an item (`min`..`max` of it, skewed toward `min`) or a bits amount."""
+
+    weight: int = Field(ge=1)
+    item: str | None = None
+    min: int = Field(default=1, ge=1)
+    max: int = Field(default=1, ge=1)
+    bits_min: int = Field(default=0, ge=0)
+    bits_max: int = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def _item_or_bits(self):
+        if (self.item is None) == (self.bits_max == 0):
+            raise ValueError("a drop is either an item or a bits amount (bits_min/bits_max), not both or neither")
+        if self.max < self.min or self.bits_max < self.bits_min:
+            raise ValueError("max must be >= min")
+        return self
+
+
+class DropTable(_Data):
+    """What a kill (or a channel drop) can give. One entry is chosen by weight: a bigger weight is likelier."""
+
+    id: str
+    entries: list[DropEntry] = Field(min_length=1)
+
+    _id = field_validator("id")(check_id)
+
+
 class Phase(_Data):
     """A boss changes when its hp falls below `below` (a fraction of max hp): it says `message`, gives itself the `buffs`
     and, if `skills` is set, swaps to that skill list (with every cooldown reset)."""
@@ -283,6 +311,8 @@ class Enemy(_Data):
     immune: list[EffectKind] = Field(default_factory=list)  # effects it can never receive (bosses shrug off stuns)
     xp: int = Field(default=0, ge=0)
     emoji: str = "👾"
+    drops: str | None = None  # id of its table in drops.toml
+    drop_chance: int = Field(default=100, ge=0, le=100)  # percent chance a kill drops anything at all
     telegraph: bool = False  # bosses: the player always sees what it will do next
     phases: list[Phase] = Field(default_factory=list)  # in the order they happen (highest `below` first)
 
@@ -316,6 +346,7 @@ class Encounter(_Data):
     name: str
     enemies: list[str] = Field(min_length=1, max_length=4)
     min_level: int = Field(default=0, ge=0)
+    key: str | None = None  # a key_item spent to start it (dropped by enemies)
 
     _id = field_validator("id")(check_id)
 

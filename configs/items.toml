@@ -221,6 +221,17 @@ min_harvest = 1
 max_harvest = 3
 pet_xp = 5000
 
+[graveyard_key]
+name = "Graveyard Key"
+description = "Cold, heavy and very old. Something in the graveyard has been waiting for whoever holds it."
+wiki = "Dropped by the monsters of the graveyard. Spent when you enter the Gravewarden's crypt."
+emoji = "🔑"
+rarity = 3
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 0
+
 [familiar_orb]
 name = "Familiar Orb"
 description = "A swirling orb. Something is curled up inside, waiting."

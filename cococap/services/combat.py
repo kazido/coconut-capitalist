@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from cococap.errors import GameRuleError
 from cococap.registry import Registry, get_registry
 from cococap.registry.models import BUFFS, CombatRules, CombatSkill, Enemy, Phase, SkillEffect
-from cococap.services import equipment
+from cococap.services import equipment, loot
 from cococap.user import User
 
 TIMED = frozenset({"attack_up", "attack_down", "defense_up", "defense_down", "speed_up", "speed_down", "stun", "bleed", "empower", "reveal"})
@@ -64,6 +64,8 @@ class Unit:
     cooldowns: dict[str, int] = field(default_factory=dict)  # skill id -> own turns until it can be used again
     effects: list[ActiveEffect] = field(default_factory=list)
     next_skill: str | None = None  # enemies only: what they will do on their next turn
+    drops: str | None = None  # enemies: the drop table a kill rolls
+    drop_chance: int = 0
     telegraph: bool = False  # bosses: the player can always see next_skill
     phases: list[Phase] = field(default_factory=list)  # bosses: changes of behaviour as hp drops
     phase: int = 0  # how many phases have already started
@@ -104,7 +106,7 @@ def enemy_unit(enemy: Enemy, uid: str) -> Unit:
     return Unit(
         id=uid, name=enemy.name, side="enemy", max_hp=enemy.hp, attack=enemy.attack, defense=enemy.defense,
         speed=enemy.speed, skills=list(enemy.skills), shield=enemy.shield, emoji=enemy.emoji,
-        immune=frozenset(enemy.immune), xp=enemy.xp, telegraph=enemy.telegraph, phases=list(enemy.phases),
+        immune=frozenset(enemy.immune), xp=enemy.xp, drops=enemy.drops, drop_chance=enemy.drop_chance, telegraph=enemy.telegraph, phases=list(enemy.phases),
     )
 
 
@@ -416,11 +418,57 @@ def new_battle(player: Unit, encounter_id: str, registry: Registry | None = None
     return battle
 
 
-async def settle(user: User, battle: Battle) -> int:
-    """Pay out a finished fight: combat xp and the monsters-slain count. Returns the xp (0 for a loss)."""
-    xp = battle.xp_earned
-    if xp:
-        await user.add_xp("combat", xp)
-    if battle.kills:
-        await user.update_skill("combat", lambda s: setattr(s.stats, "monsters_slain", s.stats.monsters_slain + battle.kills))
-    return xp
+@dataclass
+class Settlement:
+    """What a finished fight paid."""
+
+    xp: int = 0
+    kills: int = 0
+    items: dict[str, int] = field(default_factory=dict)
+    bits: int = 0
+
+
+async def start_fight(user: User, encounter_id: str, registry: Registry | None = None, rng: random.Random | None = None) -> Battle:
+    """Check the level and the key (a key is spent when you walk in, win or lose), then start the fight."""
+    reg = registry or get_registry()
+    encounter = next((e for e in reg.combat.encounters if e.id == encounter_id), None)
+    if encounter is None:
+        raise CombatError("That fight doesn't exist.")
+    level = User.xp_to_level((await user.skill("combat")).xp)
+    if level < encounter.min_level:
+        raise CombatError(f"You need combat level {encounter.min_level} for that.")
+    player = await build_player(user, reg)
+    if encounter.key:
+        key = reg.item(encounter.key)
+        try:
+            await user.remove_item(encounter.key, 1)
+        except ValueError:
+            raise CombatError(f"You need a {key.name} to go in. The monsters of the graveyard drop them.") from None
+    return new_battle(player, encounter_id, reg, rng)
+
+
+async def settle(user: User, battle: Battle, registry: Registry | None = None, rng: random.Random | None = None) -> Settlement:
+    """Pay out a finished fight: combat xp, drops from every monster that fell, and the monsters-slain count.
+    Nothing is paid for a loss."""
+    reg = registry or get_registry()
+    rng = rng or random.Random()
+    result = Settlement(xp=battle.xp_earned, kills=battle.kills)
+    if battle.outcome != "win":
+        return result
+    for unit in battle.units:
+        if unit.side == "enemy" and not unit.alive:
+            drop = loot.roll_kill(unit.drops, unit.drop_chance, reg, rng)
+            if drop is None:
+                continue
+            result.bits += drop.bits
+            if drop.item_id:
+                result.items[drop.item_id] = result.items.get(drop.item_id, 0) + drop.quantity
+    if result.xp:
+        await user.add_xp("combat", result.xp)
+    for item_id, quantity in result.items.items():
+        await user.add_item(item_id, quantity)
+    if result.bits:
+        await user.credit("purse", result.bits)
+    if result.kills:
+        await user.update_skill("combat", lambda s: setattr(s.stats, "monsters_slain", s.stats.monsters_slain + result.kills))
+    return result

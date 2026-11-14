@@ -54,7 +54,8 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 4. Growth mode for Re-leaf (420 donations): the wiki gives no mechanics, needs the user's design.
 5. Late-game "advanced" content for every skill, locked behind high levels (user wants ideas kept in mind, built later).
 6. **Combat in progress** (branch `claude/combat-item-drops-566935`, built on top of the audit branch): the battle engine and `/fight`
-   are done (see DESIGN.md "Combat"). The final boss (Gravewarden: phases, telegraph, stun-immune, Brace counterplay) is built too. Next: dungeon keys dropping from enemies, enemy drops as
-   "bits or any item" (weighted table, small chance at rare items), balance, party fights. Then: mining rework (last), party versions
+   are done (see DESIGN.md "Combat"). The final boss (Gravewarden: phases, telegraph, stun-immune, Brace counterplay) is built too. Enemy drops (weighted tables, bits or any item, `configs/drops.toml`) and the Graveyard Key that opens the boss are built too. Next: channel drops
+   rolling the same tables (`exts/economy/drops.py` is still the old Mongo code), combat tiers for levels 20-90, balance, party fights. Also open: the xp audit's
+   proposals in DESIGN.md (farming xp is ~15x too low, tool-scaled xp is uneven). Then: mining rework (last), party versions
    of each skill.
 7. Foraging tree events, channel drops / megadrop, Familiar Orb sources, and a "you were removed from your party" notice.

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import CombatRules, EconomyRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
+from .models import CombatRules, DropTable, EconomyRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -62,6 +62,7 @@ class Registry:
         foraging: ForagingRules | None = None,
         fishing: FishingRules | None = None,
         combat: CombatRules | None = None,
+        drop_tables: list[DropTable] | None = None,
     ):
         self.items: dict[str, Item] = {i.id: i for i in items}
         self.pets: dict[str, Pet] = {p.id: p for p in pets}
@@ -74,6 +75,7 @@ class Registry:
         self.foraging = foraging
         self.fishing = fishing
         self.combat = combat
+        self.drop_tables: dict[str, DropTable] = {t.id: t for t in drop_tables or []}
         self._validate()
 
     # --- lookups -------------------------------------------------------------------------
@@ -172,6 +174,11 @@ class Registry:
             problems.append(f"foraging.toml releaf: unknown spirit item '{self.foraging.releaf.spirit_item}'")
         if self.farming is not None and self.farming.deed_item not in self.items:
             problems.append(f"farming.toml: unknown deed item '{self.farming.deed_item}'")
+        for table in self.drop_tables.values():
+            problems += [f"drops.toml [{table.id}]: unknown item '{e.item}'" for e in table.entries if e.item and e.item not in self.items]
+        for enemy in self.enemies.values():
+            if enemy.drops and enemy.drops not in self.drop_tables:
+                problems.append(f"enemies.toml [{enemy.id}]: unknown drop table '{enemy.drops}'")
         if self.combat is not None:
             problems += _validate_combat(self, self.combat)
         expected = list(range(len(self.ranks)))
@@ -201,6 +208,8 @@ def _validate_combat(reg: "Registry", rules: CombatRules) -> list[str]:
         problems.append("combat.toml kits: a 'default' kit is needed")
     for enc in rules.encounters:
         problems += [f"combat.toml encounter '{enc.id}': unknown enemy '{e}'" for e in enc.enemies if e not in reg.enemies]
+        if enc.key and (enc.key not in reg.items or reg.items[enc.key].category != "key_item"):
+            problems.append(f"combat.toml encounter '{enc.id}': key '{enc.key}' is not a key_item")
     return problems
 
 
@@ -252,7 +261,8 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     raw["skills"] = {k: {"id": k, **v} for k, v in raw.get("skills", {}).items()}
     raw["encounters"] = [{"id": k, **v} for k, v in raw.get("encounters", {}).items()]
     combat = _build(CombatRules, "combat", [("combat", raw)])[0]
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat)
+    drops = _build(DropTable, "drops", ((k, {"id": k, **v}) for k, v in _read(config_dir, "drops").items()))
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops)
 
 
 @lru_cache(maxsize=1)

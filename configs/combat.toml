@@ -141,3 +141,4 @@ min_level = 8
 name = "The Gravewarden (boss)"
 enemies = ["gravewarden"]
 min_level = 20
+key = "graveyard_key"

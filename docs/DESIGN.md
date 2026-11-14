@@ -561,15 +561,20 @@ skill lists (cooldowns reset). A big hit can skip a phase. Its **Death Knell** (
 player, so you always see the first knell before it lands. Locked to combat level 20 for now; numbers are placeholders (a Dreamnail
 at level ~25-30 is the intended first win). Its xp is 1,500. Keys and loot attach to this encounter later.
 
-Planned around it: **dungeon keys that drop from these enemies** are the only way into a dungeon; the **final boss** (phases,
-stun-immune, its own skills) closes the dungeon; **enemy drops** become a weighted table of bits *or any item*, with a small
-chance at rare things (the same table also feeds channel drops); then party fights (several player units already work in the engine).
+### Drops and keys
+Drop tables live in `configs/drops.toml` and are shared by everything that drops things: a table is a list of weighted entries, each
+**bits (a range) or an item (a range, skewed low)**. An enemy names a table (`drops`) and a `drop_chance` (percent of kills that drop
+anything); the real odds of an entry are drop_chance x weight / total. The graveyard table is mostly bits and common materials with
+tiny weights for scrolls, Familiar Orbs, Land Deeds and the Spirit of the Sword; the Gravewarden's table always drops and is better.
+Rolled in `services/loot.py` (`roll_kill`, `roll_drop_table`), paid by `combat.settle` (only for a win; a loss pays nothing, even if
+you killed something first).
 
-### Pet pages (simplified)
-Two screens: **Pets** (`pets`: look at a pet, make it active, feed it, give Spirits) and **Familiar Orbs** (`orbs`: open orbs, hunt a
-pet), linked by buttons. On the pet page the order is name + stars + level, then the description, the xp bar, the bonuses and one
-line for its skill ("Global 🌐", "Mining ⛏️"). Stars are shown only there (and on the hatch result), never in dropdowns. What a food
-is worth to the pet you are looking at is the hint in the "Feed <pet>..." menu and the amount popup.
+**Keys.** The Gravewarden's encounter has `key = "graveyard_key"`: you need level 20 and a key, and the key is **spent when you walk
+in**, win or lose (checked in `combat.start_fight`; a missing level never costs a key). Keys are just an entry in the graveyard table
+(about 1 kill in 30) and in the boss's own table, so winning can fund the next attempt.
+
+Planned: the **channel drops** (`exts/economy/drops.py`, still the old Mongo code) will roll the same tables, so a channel drop can be
+bits or any item; then party fights (several player units already work in the engine).
 
 ## XP and the level curve (audit, `python -m scripts.balance`)
 

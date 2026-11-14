@@ -49,10 +49,17 @@ class FightScreen(Screen):
                            for s in me.skills)),
             sep(),
         ]
+        owned = await self.user.items()
         for enc in reg.combat.encounters:
             foes = ", ".join(reg.enemies[e].emoji + " " + reg.enemies[e].name for e in enc.enemies)
-            open_ = level >= enc.min_level
-            line = f"**{enc.name}**\n{foes}" + ("" if open_ else f"\n🔒 Combat level {enc.min_level}")
+            has_key = not enc.key or owned.get(enc.key, 0) > 0
+            open_ = level >= enc.min_level and has_key
+            line = f"**{enc.name}**\n{foes}"
+            if level < enc.min_level:
+                line += f"\n🔒 Combat level {enc.min_level}"
+            if enc.key:
+                key = reg.item(enc.key)
+                line += f"\n{key.display} ×{owned.get(enc.key, 0)}" + ("" if has_key else " · needs a key (monsters drop them)")
             body.append(section(line, accessory=button("Fight", style=discord.ButtonStyle.danger, disabled=not open_,
                                                        on_click=self._starter(enc.id))))
         return Page("Fight", body, accent=0xC0392B)
@@ -65,12 +72,8 @@ class FightScreen(Screen):
         return start
 
     async def _begin(self, encounter_id: str) -> None:
-        level = User.xp_to_level((await self.user.skill("combat")).xp)
-        enc = next((e for e in get_registry().combat.encounters if e.id == encounter_id), None)
-        if enc is None or enc.min_level > level:
-            raise combat.CombatError("You can't take that fight yet.")
         self.encounter, self.picking = encounter_id, None
-        self.battle = combat.new_battle(await combat.build_player(self.user), encounter_id)
+        self.battle = await combat.start_fight(self.user, encounter_id)
 
     # --- the fight ---------------------------------------------------------------------------------
     def _battle_page(self, battle: Battle) -> Page:
@@ -154,13 +157,15 @@ class FightScreen(Screen):
 
     async def _finish(self, interaction: discord.Interaction) -> None:
         battle, self.battle, self.picking = self.battle, None, None
-        xp = await combat.settle(self.user, battle)
+        paid = await combat.settle(self.user, battle)
         recap = "\n".join(battle.log[-6:])
         if battle.outcome == "win":
-            lines = [recap, f"**+{xp:,}** combat xp  ·  {battle.kills} slain"]
+            reg = get_registry()
+            loot = [f"{reg.item(i).display} ×{q:,}" for i, q in paid.items.items()] + ([f"**{paid.bits:,}** bits"] if paid.bits else [])
+            lines = [recap, f"**+{paid.xp:,}** combat xp  ·  {paid.kills} slain", "🎁 " + (", ".join(loot) if loot else "Nothing dropped this time.")]
             self.result = Result("Victory!", lines, emoji="🏆", accent=0x2ECC71, again=self._again, again_label="Fight again")
         else:
-            lines = [recap, "You wake up back at the camp, a little bruised. Nothing was lost."]
+            lines = [recap, "You wake up back at the camp, a little bruised. Nothing was lost but the time."]
             self.result = Result("Defeated", lines, emoji="💀", accent=0xE74C3C, again=self._again, again_label="Try again")
         await self.refresh(interaction)
 

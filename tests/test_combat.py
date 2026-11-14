@@ -265,7 +265,7 @@ async def test_settle_pays_xp_and_counts_kills(db):
     user = await User.get(1)
     b = fight(hero(attack=500), foe(max_hp=10, xp=40))
     b.play("slash", "e1")
-    assert await combat.settle(user, b) == 40
+    assert (await combat.settle(user, b)).xp == 40
     assert (await user.skill("combat")).xp == 40 and (await user.skill("combat")).stats.monsters_slain == 1
 
 
