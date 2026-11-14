@@ -336,22 +336,6 @@ def test_the_kind_of_spot_changes_the_damage_you_deal():
     assert swing.damage == (round(100 * 1.3 * (1 + CH.good_chop_bonus)) if swing.good else 130)
 
 
-def test_rotating_a_good_spot_is_a_mistake_and_staying_on_a_ruined_one_is_too():
-    def per_click(threshold, power=20, clicks=60_000):
-        rng, spot, dealt = Random(7), f.Spot.pick(RULES, Random(7)), 0
-        for _ in range(clicks):
-            if threshold is not None and spot.multiplier(RULES) < threshold:
-                spot.rotate(RULES, rng)  # a click that does no damage
-            else:
-                dealt += spot.swing(power, RULES, rng).damage
-        return dealt / clicks
-
-    never, sensible = per_click(None), per_click(0.8)
-    assert sensible > never * 2  # leaving a worn spot is clearly right
-    assert sensible > per_click(1.3)  # but rotating away from decent spots wastes clicks
-    assert sensible > per_click(0.4)  # ...and so does staying on a poor one
-
-
 def test_a_swing_always_does_at_least_one_damage():
     spot = f.Spot("Knotty", 0.7, wear=30)
     assert spot.swing(1, RULES, Random(1)).damage >= 1 and spot.preview(1, RULES) == 1
@@ -372,11 +356,9 @@ def test_the_starter_axe_chops_a_first_zone_tree_quickly():
     power = REG.item("starter_axe").tool.power
     rng, tree, clicks = Random(1), f.roll_tree(1, Random(4), RULES), 0
     spot = f.Spot.pick(RULES, rng)
-    while not tree.felled:
-        if spot.multiplier(RULES) < 0.8:
-            spot.rotate(RULES, rng)
-        else:
-            tree.chop(spot.swing(power, RULES, rng).damage)
+    cycle = f.cycle_length(1, RULES)
+    while not tree.felled:  # (a master who knows the patterns)
+        tree.chop(spot.swing(power, RULES, rng, 0.0, spot.expected(RULES, cycle), cycle).damage)
         clicks += 1
     assert clicks <= 30
 
@@ -429,11 +411,8 @@ def test_foraging_pays_less_per_click_than_mining_at_starter_gear():
     rng, dealt, clicks = Random(2), 0, 6000
     spot = f.Spot.pick(RULES, rng)
     cycle = f.cycle_length(zone, RULES)
-    for _ in range(clicks):  # a master (they know every pattern) who moves on once a spot is clearly worse than an average new one
-        if spot.multiplier(RULES) < 0.8:
-            spot.rotate(RULES, rng)
-        else:
-            dealt += spot.swing(power, RULES, rng, 0.0, spot.expected(RULES, cycle), cycle).damage
+    for _ in range(clicks):  # a master: they know every pattern (spots end and renew by themselves)
+        dealt += spot.swing(power, RULES, rng, 0.0, spot.expected(RULES, cycle), cycle).damage
     pay_per_hp = RULES.bits_per_hp * f.zone_reward_factor(zone, RULES) + per_roll * f.expected_rolls(1, RULES, zone)
     foraging_per_click = pay_per_hp * dealt / clicks
     assert hp > 0 and foraging_per_click < mining_per_click, (foraging_per_click, mining_per_click)
@@ -504,18 +483,40 @@ def test_a_chop_with_no_stance_is_a_plain_chop_that_ignores_the_pattern():
     assert swing.correct is None and spot.step == 0 and spot.combo == 0
 
 
-def test_you_can_always_find_the_pattern_by_trial_in_at_most_two_wrong_guesses_per_step():
+def test_you_can_always_find_a_grains_pattern_by_trial_a_step_or_more_per_visit():
+    """At most two wrong guesses per step and a spot allows three mistakes, so every visit teaches at least one new step."""
+    assert CH.strikes >= 3
+    cycle = max(CH.cycle_by_zone)
     for grain in CH.grains:
-        spot, cycle, wrongs = f.Spot(grain.name, grain.multiplier, 0, grain.id), 8, 0
-        learned = ""
-        while len(learned) < cycle:
-            for letter in "osu":  # try them in turn until one lands
+        known = visits = 0
+        while known < cycle:
+            visits += 1
+            spot = f.Spot(grain.name, grain.multiplier, 0, grain.id)
+            for letter in grain.pattern[:known]:  # a new spot: follow what you remember...
+                assert spot.swing(10, RULES, Random(1), 0.0, letter, cycle).correct
+            found = False
+            for letter in "osu":  # ...then find the next step by trial and error
                 swing = spot.swing(10, RULES, Random(1), 0.0, letter, cycle)
+                assert not swing.ended or swing.correct  # (two wrong guesses never end the spot)
                 if swing.correct:
-                    learned += letter
+                    known, found = swing.index + 1, True
                     break
-                wrongs += 1
-        assert learned == grain.pattern[:cycle] and wrongs <= 2 * cycle, grain.id
+            assert found and visits <= cycle, grain.id
+        assert known == cycle
+
+
+def test_a_spot_gives_out_after_too_many_mistakes_and_a_finished_one_is_left_behind():
+    class Never(Random):
+        def random(self):
+            return 0.999
+
+    spot, cycle = f.Spot.pick(RULES, Random(2)), 4
+    swings = [spot.swing(10, RULES, Never(1), 0.0, wrong(spot, cycle), cycle) for _ in range(CH.strikes)]
+    assert [s.ended for s in swings] == [None] * (CH.strikes - 1) + ["failed"]
+    assert spot.strikes == 0 and spot.step == 0 and spot.wear == 0  # a brand new spot
+    for _ in range(cycle):
+        done = spot.swing(10, RULES, Never(1), 0.0, right(spot, cycle), cycle)
+    assert done.ended == "finished" and done.finisher and spot.step == 0 and spot.strikes == 0
 
 
 def test_rotating_moves_you_to_a_new_grain_and_the_start_of_its_pattern():
@@ -535,21 +536,19 @@ def test_the_preview_counts_the_combo_and_the_finisher():
     assert spot.preview(100, RULES, 3) == round(100 * (1 + 2 * CH.combo_step) * CH.finisher)
 
 
-def test_knowing_the_patterns_is_worth_about_a_third_more_than_chopping_blind_but_guessing_is_worth_less():
+def test_knowing_the_patterns_is_worth_about_a_third_more_than_a_plain_chop_but_guessing_is_worth_far_less():
     def per_click(mode, clicks=30_000, zone=3, power=60):
         rng = Random(3)
         spot, cycle, dealt = f.Spot.pick(RULES, rng), f.cycle_length(zone, RULES), 0
-        for _ in range(clicks):
-            if spot.multiplier(RULES) < 0.8:
-                spot.rotate(RULES, rng)
-                continue
-            stance = right(spot, cycle) if mode == "master" else rng.choice("osu") if mode == "guess" else None
-            dealt += spot.swing(power, RULES, rng, 0.0, stance, cycle if stance else None).damage
+        for _ in range(clicks):  # (spots end and renew by themselves)
+            stance = right(spot, cycle) if mode == "master" else rng.choice("osu")
+            dealt += spot.swing(power, RULES, rng, 0.0, stance, cycle).damage
         return dealt / clicks
 
-    plain, master, guess = per_click("plain"), per_click("master"), per_click("guess")
-    assert 1.15 * plain < master < 1.5 * plain, (plain, master)
-    assert guess < 0.8 * master  # learning has to be worth it
+    plain = 60 * f.average_spot_multiplier(RULES)  # an ordinary chop on an average fresh spot
+    master, guess = per_click("master"), per_click("guess")
+    assert 1.2 * plain < master < 1.55 * plain, (plain, master)
+    assert guess < 0.6 * master  # learning has to be worth it
 
 
 async def test_learning_a_step_is_remembered_for_good_and_never_forgotten(db):
@@ -561,36 +560,55 @@ async def test_learning_a_step_is_remembered_for_good_and_never_forgotten(db):
     assert await f.learned_steps(user, "burl") == 0  # each grain is learned separately
 
 
-async def test_the_tree_page_shows_what_you_have_learned_and_hides_the_rest_and_a_right_move_teaches_you(db, monkeypatch):
-    from tests.test_hub import chop, click, find_button, hub, with_axe
+async def test_a_new_spot_hides_everything_again_but_your_grain_notes_remember_what_you_learned(db, monkeypatch):
+    from tests.test_hub import chop, click, find_button, freeze_time, hub, with_axe
 
-    freeze_time_stub = __import__("tests.test_hub", fromlist=["freeze_time"]).freeze_time
-    freeze_time_stub(monkeypatch)
+    freeze_time(monkeypatch)
     user = await with_axe()
     nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
     text_now = lambda: " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))  # noqa: E731
-    assert "**❔** ❔ ❔" in text_now() and "**?** next" in text_now()  # nothing learned yet
+    assert "**❔** ❔ ❔" in text_now() and "mistakes ⬜⬜⬜" in text_now()
     wrong_label = f.STANCES[wrong(nav.screen.spot, 3)][0]
     await click(nav, inter, wrong_label)
-    assert "Glancing blow" in text_now() and await f.learned_steps(user, "plain") == 0  # a wrong move teaches nothing
+    assert "Glancing blow" in text_now() and "mistakes ❌⬜⬜" in text_now() and await f.learned_steps(user, "plain") == 0
     await chop(nav, inter)
     assert "You learned step **1** of the **Plain** grain" in text_now() and await f.learned_steps(user, "plain") == 1
-    assert f.STANCES["s"][1] in text_now()  # the first step of the plain pattern is shown now ("s")
+    assert f.STANCES["s"][1] in text_now()  # on THIS spot the step you just did shows...
     await chop(nav, inter)
-    await chop(nav, inter)
-    assert "Perfect" in text_now() and await f.learned_steps(user, "plain") == 3
-    assert "mastered" in text_now() and find_button(nav, "Overhead")
+    await chop(nav, inter)  # the pattern is done: a new spot, and every step is a question mark again
+    assert "Perfect" in text_now() and "new spot" in text_now()
+    assert await f.learned_steps(user, "plain") == 3
+    assert "**❔** ❔ ❔" in text_now() and f.STANCES["s"][1] not in text_now().split("🧭")[1].split("\n")[0]
+    assert not [b for b in nav.walk_children() if getattr(b, "label", "") == "Rotate"]  # no Rotate: spots move on by themselves
 
 
-async def test_what_you_learned_shows_on_every_tree_and_a_longer_tree_needs_more_than_you_know(db, monkeypatch):
-    from tests.test_hub import freeze_time, hub, with_axe
+async def test_the_grain_notes_page_lists_every_grain_and_what_you_know_and_returns_to_your_tree(db, monkeypatch):
+    from tests.test_hub import click, freeze_time, hub, with_axe
 
     freeze_time(monkeypatch)
     user = await with_axe()
     await f.learn(user, "plain", 3)
-    nav, _ = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
+    nav, inter = await hub("tree", tree=f.Tree(1, 5_000, 4_000))
+    tree = nav.screen.tree
+    await click(nav, inter, "Grain notes")
+    assert nav.screen.id == "result"
     page = " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))
-    assert "mastered" in page and "❔" not in page
-    deep, _ = await hub("tree", tree=f.Tree(9, 10_000, 10_000))
-    page = " ".join(c.content for c in deep.walk_children() if hasattr(c, "content"))
-    assert "mastered" not in page and page.count("❔") == f.cycle_length(9, RULES) - 3  # you know three steps, not seven
+    for grain in CH.grains:
+        assert grain.name in page
+    assert "3/8" in page and "0/8" in page and f.STANCES["s"][1] in page and "❔" in page
+    await click(nav, inter, "Back to chopping")
+    assert nav.screen.id == "tree" and nav.screen.tree is tree  # the very same tree: nothing was lost
+    forage, _ = await hub("forage")
+    await click(forage, _, "Grain notes")
+    assert forage.screen.id == "result"
+
+
+async def test_a_tree_asks_for_more_steps_the_deeper_it_is_and_the_page_shows_how_many(db, monkeypatch):
+    from tests.test_hub import freeze_time, hub, with_axe
+
+    freeze_time(monkeypatch)
+    await with_axe()
+    for zone in (1, 9):
+        nav, _ = await hub("tree", tree=f.Tree(zone, 10_000, 10_000))
+        page = " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))
+        assert page.count("❔") == f.cycle_length(zone, RULES) and f"step 1/{f.cycle_length(zone, RULES)}" in page

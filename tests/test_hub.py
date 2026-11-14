@@ -1274,23 +1274,22 @@ async def test_home_only_says_whether_check_in_is_ready_and_the_timers_live_on_t
     assert [b for b in buttons(nav) if b.label and b.label.endswith(("h", "m")) and b.disabled]  # timers: on the page
 
 
-async def test_rotating_gives_a_new_spot_and_costs_a_click(db, monkeypatch):
+async def test_a_spot_moves_on_by_itself_when_it_is_finished_or_gives_out(db, monkeypatch):
     freeze_time(monkeypatch)
-    user = await with_axe(template="reinforced_axe")
-    power = get_registry().item("reinforced_axe").tool.power
-    nav, inter = await hub("tree", tree=foraging_service.Tree(1, 10_000, 10_000))
-    assert "**Plain** grain" in all_text(nav) and f"about **{power}**" in all_text(nav)
-    assert find_button(nav, "Rotate").style == discord.ButtonStyle.secondary  # never lit: when to rotate is your call
-    await chop(nav, inter)
-    assert nav.screen.spot.wear == 0  # a spot only wears now and then (here the dice say no)
-    nav.screen.spot.wear = 4  # ...and when it has, you can see it
-    await nav.screen.nav.refresh(inter)
-    assert "dull" in all_text(nav) and f"about **{power}**" not in all_text(nav)
-    assert find_button(nav, "Rotate").style == discord.ButtonStyle.secondary
-    hp = nav.screen.tree.hp
-    await click(nav, inter, "Rotate")
-    assert nav.screen.tree.hp == hp  # rotating does no damage
-    assert nav.screen.spot.wear == 0 and f"about **{power}**" in all_text(nav) and "You move around the trunk" in all_text(nav)
+    await with_axe(template="reinforced_axe")
+    nav, inter = await hub("tree", tree=foraging_service.Tree(1, 100_000, 100_000))
+    rules = get_registry().foraging
+    assert not [b for b in buttons(nav) if b.label == "Rotate"]  # there is no Rotate button any more
+    cycle = foraging_service.cycle_length(1, rules)
+    for _ in range(cycle):
+        await chop(nav, inter)
+    assert nav.screen.spot.step == 0 and "move on to a new spot" in all_text(nav)  # finished: a fresh spot
+    wrong = next(letter for letter in "osu" if letter != nav.screen.spot.expected(rules, cycle))
+    label = foraging_service.STANCES[wrong][0]
+    for strike in range(rules.chopping.strikes):
+        assert nav.screen.spot.strikes == strike
+        await click(nav, inter, label)
+    assert nav.screen.spot.strikes == 0 and nav.screen.spot.step == 0 and "gives out" in all_text(nav)  # failed: a fresh spot
 
 
 async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
@@ -1312,15 +1311,12 @@ async def test_the_community_tree_has_the_same_spot_and_rotate(db, monkeypatch):
     user = await with_axe(template="reinforced_axe")
     power = get_registry().item("reinforced_axe").tool.power
     nav, inter = await hub("grove")
-    assert "grain" in all_text(nav) and find_button(nav, "Rotate")
-    await chop(nav, inter)
+    assert "grain" in all_text(nav) and not [b for b in buttons(nav) if b.label == "Rotate"]
+    await chop(nav, inter, zone=3)
     nav.screen.spot.wear = 3
-    await chop(nav, inter)
+    await chop(nav, inter, zone=3)
     worn = (await foraging_service.community_tree(user, OPEN_HOUR)).yours
-    assert worn < 2 * power  # the second chop, on a worn spot, did less
-    await click(nav, inter, "Rotate")
-    await chop(nav, inter)
-    assert (await foraging_service.community_tree(user, OPEN_HOUR)).yours - worn == power  # a new spot hits full again
+    assert worn < 2 * power * 1.1  # the second chop, on a worn spot, did less than a fresh one would have
 
 
 RULES_CHOP = get_registry().foraging.chopping

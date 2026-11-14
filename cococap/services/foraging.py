@@ -26,7 +26,7 @@ from cococap.db.tables import CommunityTreeRow, TreeChopRow, TreeRewardRow
 from cococap.errors import GameRuleError
 from cococap.models.skills.foraging import Foraging
 from cococap.registry import Registry, get_registry
-from cococap.registry.models import ForagingRules
+from cococap.registry.models import ForagingRules, Grain
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
@@ -80,6 +80,7 @@ class Swing:
     finisher: bool = False  # this swing finished the pattern
     index: int = 0  # which step of the pattern it was aimed at
     combo: int = 0  # correct moves in a row, counting this one (0 after a wrong one)
+    ended: str | None = None  # "finished" (the pattern is done) or "failed" (too many mistakes): you are on a new spot now
 
 
 @dataclass
@@ -95,6 +96,7 @@ class Spot:
     grain: str = "plain"
     step: int = 0  # where you are in the grain's pattern
     combo: int = 0  # correct stances in a row
+    strikes: int = 0  # wrong stances on this spot so far
 
     @classmethod
     def pick(cls, rules: ForagingRules, rng: random.Random) -> "Spot":
@@ -137,7 +139,7 @@ class Spot:
         c = rules.chopping
         fresh = self.freshness(rules)
         good = rng.random() < c.good_chop_chance + good_bonus
-        factor, correct, finisher, index, reached = 1.0, None, False, self.step, 0
+        factor, correct, finisher, index, reached, ended = 1.0, None, False, self.step, 0, None
         if stance is not None and cycle:
             correct = stance == self.expected(rules, cycle)
             if correct:
@@ -147,23 +149,36 @@ class Spot:
                 self.step += 1
                 if self.step >= cycle:
                     factor *= c.finisher
-                    finisher, self.step, self.combo = True, 0, 0
+                    finisher, ended = True, "finished"
             else:
                 factor, self.combo = c.glancing, 0
+                self.strikes += 1
+                if self.strikes >= c.strikes:
+                    ended = "failed"
         damage = max(1, round(power * self.multiplier(rules) * factor * (1 + c.good_chop_bonus if good else 1)))
         if rng.random() < c.wear_chance:
             self.wear += 1
-        return Swing(damage, good, fresh, correct, finisher, index, reached)
+        if ended:  # a spot that is finished, or has given out, is left behind: on to a new one (and its pattern from the start)
+            self.rotate(rules, rng)
+        return Swing(damage, good, fresh, correct, finisher, index, reached, ended)
 
     def rotate(self, rules: ForagingRules, rng: random.Random) -> None:
-        """Move to a new spot: a random grain, unworn, and back to the start of its pattern."""
+        """Move to a new spot: a random grain, unworn, and back to the start of its pattern. (This happens by itself when you
+        finish a spot or it gives out.)"""
         new = Spot.pick(rules, rng)
-        self.name, self.quality, self.wear, self.grain, self.step, self.combo = new.name, new.quality, 0, new.grain, 0, 0
+        self.name, self.quality, self.wear, self.grain, self.step, self.combo, self.strikes = new.name, new.quality, 0, new.grain, 0, 0, 0
 
 
 def average_spot_multiplier(rules: ForagingRules) -> float:
     grains = rules.chopping.grains
     return sum(g.multiplier * g.weight for g in grains) / sum(g.weight for g in grains)
+
+
+async def grain_notes(user: User, registry: Registry | None = None) -> list[tuple[Grain, int]]:
+    """Your notes: each grain and how many steps of its pattern you have learned."""
+    reg = registry or get_registry()
+    known = (await user.skill("foraging")).grains
+    return [(g, known.get(g.id, 0)) for g in reg.foraging.chopping.grains]
 
 
 async def learned_steps(user: User, grain: str) -> int:

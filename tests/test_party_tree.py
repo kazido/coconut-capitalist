@@ -250,7 +250,7 @@ async def test_a_party_can_start_and_chop_a_tree_from_the_foraging_page(db, cloc
     assert "Party tree" in all_text(nav)
     await click(nav, inter, "Start a party tree")
     assert nav.screen.id == "partygrove" and "Zone 1" in all_text(nav) and "Nobody has chopped yet" in all_text(nav)
-    for label in ("Overhead", "Sidecut", "Undercut", "Rotate", "Leave"):
+    for label in ("Overhead", "Sidecut", "Undercut", "Grain notes", "Leave"):
         assert find_button(nav, label)
     await chop(nav, inter)
     assert "you" in all_text(nav) and "hp (" in all_text(nav)

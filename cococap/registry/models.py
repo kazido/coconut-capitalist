@@ -413,6 +413,7 @@ class ChoppingRules(_Data):
     wear_chance: float = Field(ge=0, le=1)  # each chop: the chance the spot wears down one step
     wear_step: float = Field(ge=0, lt=1)  # each step makes chops this much weaker
     spot_floor: float = Field(gt=0, le=1)  # ...but never below this share
+    strikes: int = Field(ge=1)  # wrong stances a spot allows before it gives out and you move to a new one
     combo_step: float = Field(ge=0)  # each correct stance in a row adds this much damage
     finisher: float = Field(ge=1)  # finishing the pattern lands this many times harder
     glancing: float = Field(gt=0, le=1)  # a wrong stance does only this much

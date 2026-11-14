@@ -43,6 +43,7 @@ spot_floor = 0.4                  # ...down to 40%. Rotating (a click that does 
 # row) and the last step of the pattern lands a finisher. The wrong stance is only a glancing blow and you stay on the same step.
 # You learn a pattern as you go: every step you get right is remembered for good, so later you just follow it. Deeper trees
 # make you do more steps of the pattern (the first steps are always the same), see cycle_by_zone.
+strikes = 3                       # a spot gives out after this many wrong stances (or when you finish its pattern): you move to a new one by yourself
 combo_step = 0.10                 # each correct move in a row adds 10% damage
 finisher = 1.5                    # finishing the pattern lands x1.5
 glancing = 0.3                    # a wrong stance does only this much

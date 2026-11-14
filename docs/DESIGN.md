@@ -197,14 +197,17 @@ own difficulty multiplier) and every grain has its own **secret pattern** of thr
   last step of the pattern lands a **x1.5 finisher**, then the pattern starts again.
 - **The wrong stance** is a glancing blow (30% damage) and you stay on the same step, with your combo gone. With three stances you can
   always find a step by trial in at most two wrong guesses (a test checks every grain).
-- **You learn as you go.** Each step you get right is saved for good, per grain. The page shows what you know (and "?" for the rest),
-  so once you know a grain you just follow it ("📖 mastered").
+- **You learn as you go.** Each step you get right is saved for good, per grain, in your **Grain notes** (a button on the foraging pages,
+  a page of its own, like the fishing field notes). But the chopping panel does **not** tell you: every new spot shows ❔ for every step
+  again, so you have to remember the pattern (or open your notes). Only the steps you have done on the current spot show.
+- **Spots end by themselves.** A spot is left behind when you finish its pattern, or when you make **three mistakes** on it ("gives out").
+  You move to a new spot with a new grain automatically, so there is no Rotate button.
 - **Later trees ask for more.** A tree makes you do the first 3 steps of the pattern in zones 1-2, then 4, 5, 6, 7 and 8 steps in zone 10,
   always the same opening steps, so what you learned still applies and you only learn the new tail.
 
 A master chopper lands about 30% more damage per click than someone chopping blind, so pay per hp was lowered to keep a master a bit
-under mining per click; someone guessing earns well under that, so learning is worth it. The same stances work on private,
-community and party trees. Spots still wear down at random and **Rotate** still moves you to a new grain (back to step one).
+under mining per click; someone guessing earns well under half that, so learning is worth it. The same stances work on private,
+community and party trees. Spots still wear down a little at random while you work on them.
 
 ### Foraging pay vs mining
 
