@@ -109,6 +109,41 @@ def foraging_dmg_per_click(zone: int = 1) -> float:
     return dealt / clicks
 
 
+def tool_chain(kind: str) -> list:
+    tools = [i for i in REG.items.values() if i.tool and i.tool.kind == kind]
+    current = next(t for t in tools if not any(o.tool.upgrade and o.tool.upgrade.to == t.id for o in tools))
+    chain = [current]
+    while current.tool.upgrade:
+        current = REG.item(current.tool.upgrade.to)
+        chain.append(current)
+    return chain
+
+
+def rod_per_minute(power: int) -> float:
+    """Bits a minute of fishing in the reef at this rod power: bites, rarer fish and extra fish all counted."""
+    rules = REG.fishing
+    water = next(w for w in rules.waters if w.id == "reef")
+    rng, n, worth, seconds = Random(3), 6000, 0.0, 0.0
+    for _ in range(n):
+        fish = fi.roll_fish(rng, REG, water, fi.rod_luck(power, rules))
+        worth += fish.sell_price * (1 + rules.rod.extra_fish_per_power * max(0, power - 3))
+        seconds += fi.wait_seconds(power, rules, rng) * water.wait_multiplier + 1.5 * (rules.reel.base_length + 1 + fish.rarity)
+    return worth / seconds * 60
+
+
+def tool_table() -> None:
+    """Income of every tool level relative to the starter (target: x1, 1.5, 2.6, 4, 6, 9, 13, 18)."""
+    yield_bonus = REG.mining.descent.power_yield_bonus if hasattr(REG.mining.descent, "power_yield_bonus") else 0.25
+    rows = {"axe": lambda p: p / REG.item("starter_axe").tool.power,
+            "pickaxe": lambda p: (1 + yield_bonus * max(0, p - 1)),
+            "rod": lambda p: rod_per_minute(p) / rod_per_minute(REG.item("starter_rod").tool.power)}
+    print("\nTool levels (income relative to the starter tool):")
+    for kind, gain in rows.items():
+        chain = tool_chain(kind)
+        print(f"  {kind:8}" + "  ".join(f"L{n}:x{gain(t.tool.power):.1f}" for n, t in enumerate(chain, start=1)))
+        print(f"  {'':8}" + "  ".join(f"{(t.tool.upgrade.bits if t.tool.upgrade else 0) / 1e6:>6,.1f}M" for t in chain) + "   (bits to upgrade)")
+
+
 def main() -> None:
     mine = mining_per_click()
     print(f"Click every {CLICK_SECONDS:.0f}s -> {60 / CLICK_SECONDS:.0f} clicks per active minute\n")
@@ -118,6 +153,7 @@ def main() -> None:
         print(f"{'foraging z' + str(zone):10} {per:>10,.0f} bits/click   {per * 60 / CLICK_SECONDS:>12,.0f} bits/active minute")
     worth, seconds = fishing_per_cast()
     print(f"{'fishing':10} {worth:>10,.0f} bits/catch   {worth * 60 / seconds:>12,.0f} bits/active minute ({seconds:.0f}s a catch)")
+    tool_table()
     print("\nPet food (base pet xp an hour of play; x3 for a pet of that skill):")
     for skill, value in pet_xp_per_hour().items():
         print(f"  {skill:10} {value:>8,.0f} xp/hour")

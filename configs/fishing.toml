@@ -16,7 +16,7 @@ grace = 3                        # ...plus this many quiet seconds, so a laggy c
 
 [rod]                            # what a better rod does besides biting sooner: rarer fish, and more of them
 luck_per_power = 0.025           # each point of power above 3: +2.5% on the odds of the rare fish (rarity 4+): power 45 is +105%
-extra_fish_per_power = 0.017     # each point of power above 3 adds this many extra fish to a catch: power 45 brings 0.7 more, power 120 two more
+extra_fish_per_power = 0.022     # each point of power above 3 adds this many extra fish to a catch: power 45 brings 0.9 more, power 120 two and a half
 
 [reel]
 base_length = 2                  # arrows to press = this + the fish's rarity (a rarity-1 fish takes 3)

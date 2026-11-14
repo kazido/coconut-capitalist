@@ -312,6 +312,16 @@ already have at every star can't be hunted. The chance per orb is shown for ever
 
 The pet bonuses stack with the party xp bonus. All numbers are in `configs/pets.toml` (`TODO(balance)`).
 
+## Tool levels (eight each)
+
+Axes, pickaxes and rods have **eight levels**, tuned so a level earns the same in every skill: about x1.5 at level 2, **x2.6 at
+level 3**, x4, x6, x9, x13 and **x18 at level 8** compared with the starter (`python -m scripts.balance` prints the table). Axe power
+is damage per swing (3 to 54). A pickaxe's power adds +25% ore per point (1 to 69). A rod's power (3 to 120) does three things: bites
+come sooner (never below 15% of the wait), rare fish (rarity 4+) are likelier (+2.5% per point above 3) and a catch can bring extra
+fish (+0.022 fish per point above 3), while the wrong arrows it forgives are capped at 4. Each upgrade costs about 5x the one before
+(axe 20k up to 500M; pickaxe 30k up to 1.2B; rod 100k up to 1.5B), the first two steps use only the tool's own skill, and later ones
+add a little from the others. Swords are unchanged until combat exists. Numbers: `configs/items.toml`, `configs/fishing.toml` `[rod]`.
+
 ## Tools: buy one, then upgrade it
 
 The shop sells only the **starter tool** of each kind, and you can own **one tool per kind**: buying a second is refused.
