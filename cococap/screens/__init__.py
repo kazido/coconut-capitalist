@@ -27,6 +27,7 @@ from .mining import MiningScreen
 from .party import PartyScreen
 from .pets import OrbScreen, PetScreen
 from .profile import ProfileScreen
+from .progress import BestiaryScreen, ProgressScreen
 from .reactor import ReactorScreen
 from .rank import RankScreen
 from .settings import SettingsScreen
@@ -47,6 +48,8 @@ SCREENS: dict[str, type[Screen]] = {
         PetScreen,
         OrbScreen,
         ProfileScreen,
+        ProgressScreen,
+        BestiaryScreen,
         CheckInScreen,
         SkillsScreen,
         FarmScreen,

@@ -103,9 +103,9 @@ async def test_every_screen_renders_valid_layout_within_discord_limits(db, scree
 async def test_home_buttons_open_screens_and_back_returns(db):
     nav, inter = await hub("home")
     assert find_button(nav, "Home").disabled and find_button(nav, "Back").disabled
-    sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
-    assert len(sections) == 3  # party, skills, minigames
-    await sections[1].accessory.callback(inter)
+    sections = [c for c in nav.walk_children() if isinstance(c, ui.Section) and isinstance(c.accessory, ui.Button)]
+    assert len(sections) == 4  # the level (Progress), party, skills, minigames
+    await sections[2].accessory.callback(inter)
     assert nav.screen.id != "home" and not find_button(nav, "Back").disabled
     await click(nav, inter, "Back")
     assert nav.screen.id == "home"
@@ -392,7 +392,8 @@ def test_every_screen_is_reachable_by_following_links_from_home():
 async def test_home_links_really_open_the_declared_screens(db):
     for parent in ("home", "more", "skills", "minigames"):
         nav, inter = await hub(parent)
-        openers = [c.accessory for c in nav.walk_children() if isinstance(c, ui.Section) and not c.accessory.disabled and c.accessory.label == "Open"]
+        openers = [c.accessory for c in nav.walk_children() if isinstance(c, ui.Section) and isinstance(c.accessory, ui.Button)
+                   and not c.accessory.disabled and c.accessory.label == "Open"]
         quick = [b for b in buttons(nav) if b.emoji and b.label in ("Check-in", "Inventory", "Shop", "More")]
         opened = set()
         for opener in openers + quick:

@@ -232,6 +232,19 @@ def xp_report() -> None:
     print(f"  farming: {REG.farming.xp_per_cycle} xp per growth cycle = {REG.farming.xp_per_cycle * per_cycle:,.0f} xp/hour per watered plot, x9 plots = {9 * REG.farming.xp_per_cycle * per_cycle:,.0f}")
 
 
+def progress_report() -> None:
+    """Coconut Level: what finishing everything is worth, per category."""
+    from cococap.services import progress as pr
+
+    probe = pr.build(pr.Snapshot(skills={n: __import__("cococap.user", fromlist=["SKILL_MODELS"]).SKILL_MODELS[n]() for n in pr.SKILLS},
+                                 rank=0, pethouse=__import__("cococap.models.pethouse", fromlist=["Pethouse"]).Pethouse(), owned_templates=set()), REG)
+    per = REG.progress.points_per_level
+    print(f"\nCoconut Level ({per} points a level; every source is a one-time milestone):")
+    for c in probe.categories:
+        print(f"  {c.name:16}{c.max_points:>7,} points  = {c.max_points / per:>5.1f} levels")
+    print(f"  {'everything':16}{probe.max_points:>7,} points  = level {probe.max_points // per}")
+
+
 def main() -> None:
     mine = mining_per_click()
     print(f"Click every {CLICK_SECONDS:.0f}s -> {60 / CLICK_SECONDS:.0f} clicks per active minute\n")
@@ -243,6 +256,7 @@ def main() -> None:
     print(f"{'fishing':10} {worth:>10,.0f} bits/catch   {worth * 60 / seconds:>12,.0f} bits/active minute ({seconds:.0f}s a catch)")
     tool_table()
     xp_report()
+    progress_report()
     print("\nPet food (base pet xp an hour of play; x3 for a pet of that skill):")
     for skill, value in pet_xp_per_hour().items():
         print(f"  {skill:10} {value:>8,.0f} xp/hour")

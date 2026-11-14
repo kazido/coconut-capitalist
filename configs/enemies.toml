@@ -47,6 +47,7 @@ defense = 30
 speed = 95  # just slower than a fresh player: you always get to see the first Death Knell coming
 skills = ["death_knell", "soul_drain", "bone_strike"]
 immune = ["stun"]
+boss = true
 telegraph = true
 drops = "gravewarden"
 drop_chance = 100

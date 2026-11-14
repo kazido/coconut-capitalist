@@ -1,9 +1,12 @@
 import discord
+from discord import ui
 
 from cococap.registry import get_registry
 from cococap.services.party import Party
 from cococap.services import economy
 from cococap.ui import Page, Screen
+from cococap.screens.progress import level_line
+from cococap.services import progress as progress_service
 from cococap.ui.components import bits, button, row, section, sep, text
 from cococap.user import Cooldowns
 
@@ -42,7 +45,7 @@ class HomeScreen(Screen):
     label = "Home"
     emoji = "🥥"
     description = "Where everything starts"
-    links = (*FEATURED, *SHORTCUTS, "party", "more")
+    links = (*FEATURED, *SHORTCUTS, "party", "more", "progress")
 
     async def party_summary(self) -> str:
         party = await Party.for_user(self.user.id)
@@ -58,10 +61,14 @@ class HomeScreen(Screen):
     async def build(self) -> Page:
         rank = get_registry().rank(self.user.rank)
         ready = anything_ready(self.user)
+        level = await progress_service.progress_of(self.user)
+        avatar = self.nav.owner.display_avatar
         body = [
             *self.note_block(),
-            text(f"**{self.nav.owner.display_name}**  ·  {rank.emoji} {rank.display_name}\n"
-                 f"{balance_line(self.user)}\n{check_in_line(self.user)}"),
+            section(f"**{self.nav.owner.display_name}**  ·  {rank.emoji} {rank.display_name}",
+                    f"{balance_line(self.user)}\n{check_in_line(self.user)}",
+                    accessory=ui.Thumbnail(getattr(avatar, "url", str(avatar)))),
+            section(level_line(level), accessory=button("Progress", emoji="🥥", on_click=_opener(self, "progress"))),
             sep(),
             section(await self.party_summary(), accessory=button("Open", on_click=_opener(self, "party"))),
         ]
@@ -80,7 +87,7 @@ class HomeScreen(Screen):
                                     on_click=_opener(self, screen_id)))
         shortcuts.append(button("More", emoji="➡️", on_click=_opener(self, "more")))
         body.append(row(*shortcuts))
-        return Page("Coconut Capitalist", body, accent=0xE6B34A)
+        return Page("Coconut Capitalist", body, accent=int(level.tier.color, 16))
 
 
 class MoreScreen(Screen):

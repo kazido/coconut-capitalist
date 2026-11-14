@@ -313,6 +313,7 @@ class Enemy(_Data):
     emoji: str = "👾"
     drops: str | None = None  # id of its table in drops.toml
     drop_chance: int = Field(default=100, ge=0, le=100)  # percent chance a kill drops anything at all
+    boss: bool = False  # shown as a boss in the Bestiary and counted in bosses_slain
     telegraph: bool = False  # bosses: the player always sees what it will do next
     phases: list[Phase] = Field(default_factory=list)  # in the order they happen (highest `below` first)
 
@@ -914,3 +915,87 @@ class EconomyRules(_Data):
     weekly_luckbucks: int = Field(ge=0)
     minigames: MinigameRules
     exchange: ExchangeRules
+
+
+# ---- Coconut Level (configs/progress.toml) -----------------------------------------------------------------------------
+class SkillPoints(_Data):
+    per_level: int = Field(ge=0)
+    after_level: int = Field(ge=1)
+    per_level_after: int = Field(ge=0)
+    max_level: int = Field(ge=1)
+
+
+class PetPoints(_Data):
+    per_pet: int = Field(ge=0)
+    per_extra_star: int = Field(ge=0)
+    maxed_level: int = Field(ge=0)
+
+
+class BestiaryPoints(_Data):
+    steps: list[int] = Field(min_length=1)
+    points: int = Field(ge=0)
+    boss_steps: list[int] = Field(min_length=1)
+    boss_points: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def _ascending(self):
+        for steps in (self.steps, self.boss_steps):
+            if steps != sorted(set(steps)) or steps[0] < 1:
+                raise ValueError("bestiary steps must climb from at least 1")
+        return self
+
+
+class Ladder(_Data):
+    """A counter with milestones: reaching each step pays `points` once."""
+
+    name: str
+    stat: str
+    steps: list[int] = Field(min_length=1)
+    points: int = Field(ge=0)
+
+    @model_validator(mode="after")
+    def _ascending(self):
+        if self.steps != sorted(set(self.steps)) or self.steps[0] < 1:
+            raise ValueError("ladder steps must climb from at least 1")
+        return self
+
+
+class Tier(_Data):
+    from_level: int = Field(ge=0)
+    name: str
+    badge: str
+    color: str = Field(pattern=r"^[0-9a-fA-F]{6}$")
+
+
+class ProgressRules(_Data):
+    points_per_level: int = Field(ge=1)
+    skills: SkillPoints
+    ranks: "RankPoints"
+    pets: PetPoints
+    farming: "FarmPoints"
+    tools: "ToolPoints"
+    bestiary: BestiaryPoints
+    ladders: list[Ladder]
+    tiers: list[Tier] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _tiers_climb(self):
+        starts = [t.from_level for t in self.tiers]
+        if starts[0] != 0 or starts != sorted(set(starts)):
+            raise ValueError("tiers must start at level 0 and climb")
+        return self
+
+
+class RankPoints(_Data):
+    per_rank: int = Field(ge=0)
+
+
+class FarmPoints(_Data):
+    per_plot: int = Field(ge=0)
+
+
+class ToolPoints(_Data):
+    per_level: int = Field(ge=0)
+
+
+ProgressRules.model_rebuild()

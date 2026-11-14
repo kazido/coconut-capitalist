@@ -9,3 +9,4 @@ class Stats(BaseModel):
 
 class Combat(Skill):
     stats: Stats = Field(default_factory=Stats)
+    kills: dict[str, int] = Field(default_factory=dict)  # enemy id -> how many you have slain (the Bestiary)

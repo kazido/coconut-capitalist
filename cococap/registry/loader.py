@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import CombatRules, DropTable, EconomyRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
+from .models import CombatRules, DropTable, EconomyRules, ProgressRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -63,6 +63,7 @@ class Registry:
         fishing: FishingRules | None = None,
         combat: CombatRules | None = None,
         drop_tables: list[DropTable] | None = None,
+        progress: ProgressRules | None = None,
     ):
         self.items: dict[str, Item] = {i.id: i for i in items}
         self.pets: dict[str, Pet] = {p.id: p for p in pets}
@@ -75,6 +76,7 @@ class Registry:
         self.foraging = foraging
         self.fishing = fishing
         self.combat = combat
+        self.progress = progress
         self.drop_tables: dict[str, DropTable] = {t.id: t for t in drop_tables or []}
         self._validate()
 
@@ -262,7 +264,8 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     raw["encounters"] = [{"id": k, **v} for k, v in raw.get("encounters", {}).items()]
     combat = _build(CombatRules, "combat", [("combat", raw)])[0]
     drops = _build(DropTable, "drops", ((k, {"id": k, **v}) for k, v in _read(config_dir, "drops").items()))
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops)
+    progress = _build(ProgressRules, "progress", [("progress", _read(config_dir, "progress"))])[0]
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, progress)
 
 
 @lru_cache(maxsize=1)

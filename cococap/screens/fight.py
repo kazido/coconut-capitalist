@@ -22,7 +22,7 @@ class FightScreen(Screen):
     label = "Fight"
     emoji = "⚔️"
     description = "Turn-based fights: speed, cooldowns and timing"
-    links = ()
+    links = ("bestiary",)
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -62,7 +62,12 @@ class FightScreen(Screen):
                 line += f"\n{key.display} ×{owned.get(enc.key, 0)}" + ("" if has_key else " · needs a key (monsters drop them)")
             body.append(section(line, accessory=button("Fight", style=discord.ButtonStyle.danger, disabled=not open_,
                                                        on_click=self._starter(enc.id))))
+        body.append(sep())
+        body.append(row(button("Bestiary", emoji="📖", on_click=self._to_bestiary)))
         return Page("Fight", body, accent=0xC0392B)
+
+    async def _to_bestiary(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "bestiary")
 
     def _starter(self, encounter_id: str):
         async def start(interaction: discord.Interaction) -> None:

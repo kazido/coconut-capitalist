@@ -611,3 +611,20 @@ Enchants, pets and so on buff the fun parts. What that means per skill (all `TOD
 - **Farming**: xp = the seed's growth cycles x `xp_per_cycle` (500): an apple 500, a coconut 50,000. 9 plots are worth about 4k xp/hour.
 - **Combat**: enemy xp by the fight's tier; the sword changes how fast you win, not what you are paid.
 At starter gear that is about 7k xp/hour in mining, foraging and (about 8.5k) fishing, 6.8k combat, and a passive 4k farming.
+
+## Coconut Level (global progress) and the Bestiary
+
+One number for general progress, shown on **Home** (with the avatar as a thumbnail, and the panel's side bar in the level's tier color) and
+explained on the **Progress** page (`services/progress.py`, `configs/progress.toml`). Like Skyblock's level, but it **cannot be ground forever**:
+
+- Every source is a **milestone reached once**: each skill level (5 points, 10 above level 50), each rank (25), each pet found (10), extra
+  star (5) and max-level pet (25), each farm plot unlocked (20), each tool level of your best tool of a kind (15), counters with fixed
+  steps ("Fish caught": 1, 100, 500, 2,500, 10,000 for 10 each), and the Bestiary.
+- It is **calculated from your current progress**, not stored: no history, no migration, old players get it at once. Doing more after
+  the last step of anything pays nothing, so the total is finite (tested: someone who did everything has exactly the maximum, about level 105).
+- **A level is 60 points.** Tiers (name, badge emoji, color): Newcomer 0, Sprout 10, Tide 20, Mystic 35, Ember 50, Crimson 65, Gilded 80, Coconut 100.
+- The Progress page shows the total, the counters **closest to paying out**, and a menu to look inside each category.
+
+**Wiki vs Bestiary.** The wiki stays a reference you can always read (how things work). The **Bestiary** (`/fight` lobby and Progress page)
+tracks what you have *done*: each enemy is "Unknown" until you slay one, then its stats show; at 25 kills its moves show. Kill milestones
+(1, 25, 100, 500; a boss 1, 5, 25) pay Coconut Level once. Kills are counted per enemy in the combat skill (`kills`), only for won fights.

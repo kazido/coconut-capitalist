@@ -64,6 +64,8 @@ class Unit:
     cooldowns: dict[str, int] = field(default_factory=dict)  # skill id -> own turns until it can be used again
     effects: list[ActiveEffect] = field(default_factory=list)
     next_skill: str | None = None  # enemies only: what they will do on their next turn
+    enemy_id: str | None = None  # which kind of enemy this is (the Bestiary counts kills by it)
+    boss: bool = False
     drops: str | None = None  # enemies: the drop table a kill rolls
     drop_chance: int = 0
     telegraph: bool = False  # bosses: the player can always see next_skill
@@ -106,7 +108,7 @@ def enemy_unit(enemy: Enemy, uid: str) -> Unit:
     return Unit(
         id=uid, name=enemy.name, side="enemy", max_hp=enemy.hp, attack=enemy.attack, defense=enemy.defense,
         speed=enemy.speed, skills=list(enemy.skills), shield=enemy.shield, emoji=enemy.emoji,
-        immune=frozenset(enemy.immune), xp=enemy.xp, drops=enemy.drops, drop_chance=enemy.drop_chance, telegraph=enemy.telegraph, phases=list(enemy.phases),
+        immune=frozenset(enemy.immune), xp=enemy.xp, enemy_id=enemy.id, boss=enemy.boss, drops=enemy.drops, drop_chance=enemy.drop_chance, telegraph=enemy.telegraph, phases=list(enemy.phases),
     )
 
 
@@ -426,6 +428,8 @@ class Settlement:
     kills: int = 0
     items: dict[str, int] = field(default_factory=dict)
     bits: int = 0
+    bosses: int = 0
+    slain: dict[str, int] = field(default_factory=dict)  # enemy id -> kills, for the Bestiary
 
 
 async def start_fight(user: User, encounter_id: str, registry: Registry | None = None, rng: random.Random | None = None) -> Battle:
@@ -457,6 +461,9 @@ async def settle(user: User, battle: Battle, registry: Registry | None = None, r
         return result
     for unit in battle.units:
         if unit.side == "enemy" and not unit.alive:
+            if unit.enemy_id:
+                result.slain[unit.enemy_id] = result.slain.get(unit.enemy_id, 0) + 1
+            result.bosses += unit.boss
             drop = loot.roll_kill(unit.drops, unit.drop_chance, reg, rng)
             if drop is None:
                 continue
@@ -470,5 +477,11 @@ async def settle(user: User, battle: Battle, registry: Registry | None = None, r
     if result.bits:
         await user.credit("purse", result.bits)
     if result.kills:
-        await user.update_skill("combat", lambda s: setattr(s.stats, "monsters_slain", s.stats.monsters_slain + result.kills))
+        def record(skill) -> None:
+            skill.stats.monsters_slain += result.kills
+            skill.stats.bosses_slain += result.bosses
+            for enemy_id, count in result.slain.items():
+                skill.kills[enemy_id] = skill.kills.get(enemy_id, 0) + count
+
+        await user.update_skill("combat", record)
     return result
