@@ -10,6 +10,7 @@ from cococap.models.skills.farming import Farming
 from cococap.registry import get_registry
 from cococap.services import farming as f
 from cococap.user import Cooldowns, User
+from tests.test_hub import all_text, choose, click, hub, select_named
 
 REG = get_registry()
 RULES = REG.farming
@@ -399,3 +400,51 @@ async def test_the_farm_page_waters_and_marks_watered_plots(db):
     assert "You watered 1 plot" in all_text(nav)
     assert find_button(nav, "Water").disabled and "💧" in all_text(nav)  # watered: wait for the next hour
     assert user
+
+
+# ---- how long will it take? ---------------------------------------------------------------------------------------------------------------
+def test_the_estimate_says_how_long_a_crop_will_take_and_how_lucky_or_unlucky_it_could_be():
+    rules = REG.farming
+    one = f.estimate(1, rules)
+    assert one.typical == pytest.approx(1 / rules.grow_chance) and one.early == 1 and one.late >= 3
+    assert f.estimate(0, rules) == f.Estimate(0.0, 0, 0)
+    for cycles in (2, 20, 100, 777):
+        e = f.estimate(cycles, rules)
+        assert e.early < e.typical < e.late
+        assert e.typical == pytest.approx(cycles / rules.grow_chance)
+    assert f.estimate(20, rules).typical > f.estimate(5, rules).typical
+    watered = f.estimate(20, rules, watered=True)
+    assert watered.typical == pytest.approx(20 / f.hourly_chance(rules, True))
+    assert watered.typical < f.estimate(20, rules).typical / 1.5
+    assert "about" in one.text() and "days" in f.estimate(100, rules).text()
+
+
+def test_the_estimate_matches_what_the_rain_really_does():
+    """Grow 5000 seeds for real, hour by hour, with the same odds, and see that the middle 80% falls inside the estimate."""
+    rules, rng = REG.farming, Random(4)
+    for cycles in (3, 20, 100):
+        times = sorted(_hours_to_grow(cycles, rules.grow_chance, rng) for _ in range(3000))
+        e = f.estimate(cycles, rules)
+        assert abs(sum(times) / len(times) - e.typical) < 0.04 * e.typical
+        assert abs(times[300] - e.early) <= 1 + 0.03 * e.early and abs(times[2700] - e.late) <= 1 + 0.03 * e.late
+
+
+def _hours_to_grow(cycles, chance, rng):
+    hours = grown = 0
+    while grown < cycles:
+        hours += 1
+        grown += rng.random() < chance
+    return hours
+
+
+async def test_the_farm_page_and_the_seed_menu_show_the_wait_before_you_plant(db):
+    user = await User.get(1)
+    await user.add_item("lemon_seed", 2)
+    nav, inter = await hub("farm")
+    menu = select_named(nav, "Seed to plant")
+    lemon = next(o for o in menu.options if o.value == "lemon_seed")
+    assert f"{REG.item('lemon_seed').seed.cycles} cycles" in lemon.description and "about" in lemon.description and "to" in lemon.description
+    await choose(nav, inter, menu, "lemon_seed")
+    await click(nav, inter, "1 Plant")
+    assert "Ready in about" in all_text(nav)
+    assert "ready in about" in all_text(nav)  # and the plot's own line keeps counting down

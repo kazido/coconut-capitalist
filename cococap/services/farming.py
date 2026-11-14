@@ -98,6 +98,56 @@ def apply_rain(farming: Farming, user_id: int, now: float, registry: Registry, g
 
 
 @dataclass(frozen=True)
+class Estimate:
+    """How long `cycles` more cycles of growing take, in hours. Rain is luck, so this is a range: you are done by
+    `early` in one try out of ten, and by `late` in nine out of ten."""
+
+    typical: float
+    early: int
+    late: int
+
+    def text(self) -> str:
+        """e.g. "about 3h (1h to 7h)", "about 2.5 days (2 to 3.2 days)"."""
+        return f"about {_span(self.typical)} ({_span(self.early)} to {_span(self.late)})"
+
+
+def _span(hours: float) -> str:
+    if hours < 48:
+        return f"{round(hours)}h" if hours >= 1 else "1h"
+    days = hours / 24
+    return f"{days:.1f} days" if days < 10 else f"{round(days)} days"
+
+
+def hourly_chance(rules, watered: bool = False) -> float:
+    """The chance a growing plot gains a cycle in one hour: the rain, and (if you water it that hour) the water on top."""
+    rain = rules.grow_chance
+    return 1 - (1 - rain) * (1 - rules.water_chance) if watered else rain
+
+
+def estimate(cycles_left: int, rules, watered: bool = False) -> Estimate:
+    """How long until a crop has grown `cycles_left` more cycles. `watered` means you water it EVERY hour; otherwise only the rain
+    counts. The exact odds for short crops, the normal approximation for long ones (where it is very close)."""
+    n, p = max(0, cycles_left), hourly_chance(rules, watered)
+    if n == 0:
+        return Estimate(0.0, 0, 0)
+    typical = n / p
+    if n <= 60:  # exact: the number of hours until the n-th success
+        done, hours, early, late = [1.0] + [0.0] * n, 0, None, None  # done[k] = P(exactly k cycles so far)
+        while late is None and hours < 100_000:
+            hours += 1
+            for k in range(n, 0, -1):
+                done[k] = done[k] * (1 - p if k < n else 1) + done[k - 1] * p
+            done[0] *= 1 - p
+            if early is None and done[n] >= 0.1:
+                early = hours
+            if done[n] >= 0.9:
+                late = hours
+        return Estimate(typical, early or 1, late or hours)
+    spread = 1.2816 * (n * (1 - p)) ** 0.5 / p  # 10% / 90% of a normal curve
+    return Estimate(typical, max(1, round(typical - spread)), round(typical + spread))
+
+
+@dataclass(frozen=True)
 class PlotView:
     """One plot as the screen needs it."""
 
@@ -109,6 +159,10 @@ class PlotView:
     needed: int
     ready: bool
     watered: bool = False  # you have watered it this hour
+
+    def left(self, rules, watered: bool = False) -> Estimate:
+        """How long until it is ready, from now (the rain after this one, then the next...)."""
+        return estimate(max(0, self.needed - self.cycle), rules, watered)
 
     @property
     def empty(self) -> bool:

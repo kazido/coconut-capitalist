@@ -56,7 +56,7 @@ class FarmScreen(Screen):
                 "Seed to plant",
                 [discord.SelectOption(
                     label=reg.item(i).name, value=i, default=i == self.seed, emoji=reg.item(i).emoji or "🌱",
-                    description=f"{q:,} owned · {reg.item(i).seed.cycles} cycles",
+                    description=f"{q:,} owned · {reg.item(i).seed.cycles} cycles · {farming.estimate(reg.item(i).seed.cycles, reg.farming).text()}",
                 ) for i, q in seeds.items()],
                 self._pick_seed,
             )))
@@ -76,7 +76,8 @@ class FarmScreen(Screen):
             if v.ready:
                 lines.append(f"**{v.number}** · {reg.item(v.crop_id).display} is **ready**")
             elif v.growing:
-                lines.append(f"**{v.number}** · {reg.item(v.seed_id).display}  {v.cycle}/{v.needed} cycles" + ("  💧" if v.watered else ""))
+                lines.append(f"**{v.number}** · {reg.item(v.seed_id).display}  {v.cycle}/{v.needed} cycles" + ("  💧" if v.watered else "")
+                             + f"  ·  ready in {farming.estimate(v.needed - v.cycle, reg.farming).text()}")
         return "\n".join(lines) or "Nothing is growing yet. Pick a seed, then plant it in a plot."
 
     def _plot_button(self, v: farming.PlotView, reg, deeds: int) -> discord.ui.Button:
@@ -102,7 +103,9 @@ class FarmScreen(Screen):
                 if self.seed is None:
                     return await self.refresh(interaction, "You have no seeds. Buy some in the shop.")
                 await farming.plant(self.user, number, self.seed)
-                return await self.refresh(interaction, f"Planted {get_registry().item(self.seed).name} in plot {number}.")
+                reg = get_registry()
+                when = farming.estimate(reg.item(self.seed).seed.cycles, reg.farming).text()
+                return await self.refresh(interaction, f"Planted {reg.item(self.seed).name} in plot {number}. Ready in {when}.")
             await self.refresh(interaction)
 
         return clicked
