@@ -298,15 +298,52 @@ async def test_shop_sell_mode_sells_the_full_stack_by_default(db):
     assert (await User.get(1)).purse == 1000 + 4000 and await user.items() == {}
 
 
-async def test_inventory_lists_items_and_equips_a_tool_from_the_select(db):
+async def test_inventory_lists_items_and_marks_the_equipped_tool_of_every_kind(db):
+    from cococap.services.equipment import equip
+
     user = await User.get(1)
     await user.add_item("copper_ore", 7)
-    axe = await user.give_instance("starter_axe")
+    for template, skill in (("starter_axe", "foraging"), ("tin_can", "farming"), ("rookiepickaxe", "mining")):
+        await equip(user, skill, (await user.give_instance(template)).id)
+    await user.give_instance("starter_rod")  # owned but not equipped
     nav, inter = await hub("inventory")
-    assert "7 Copper Ore" in all_text(nav) and "Starter Axe" in all_text(nav) and "#" not in all_text(nav).replace("## ", "")
-    await choose(nav, inter, select_named(nav, "Equip"), str(axe.id))
-    assert (await user.skill("foraging")).equipped_instance_id == axe.id
-    assert "✅" in all_text(nav)
+    lines = all_text(nav).split("\n")
+    assert "7 Copper Ore" in all_text(nav) and "#" not in all_text(nav).replace("## ", "")
+    marked = {name: any(name in line and "✅" in line for line in lines) for name in ("Starter Axe", "Tin Watering Can", "Rookie Pickaxe", "Starter Rod")}
+    assert marked == {"Starter Axe": True, "Tin Watering Can": True, "Rookie Pickaxe": True, "Starter Rod": False}  # (the can used to be missed)
+    await click(nav, inter, "Tools")
+    assert nav.screen.id == "tools"
+
+
+async def test_the_tools_page_shows_every_tool_equips_one_and_leads_to_upgrades(db):
+    from cococap.services.equipment import equip
+
+    user = await User.get(1)
+    axe = await user.give_instance("starter_axe")
+    can = await user.give_instance("tin_can")
+    await equip(user, "foraging", axe.id)
+    nav, inter = await hub("tools")
+    text = all_text(nav)
+    assert "Starter Axe" in text and "Tin Watering Can" in text and "Farming" in text and "Foraging" in text
+    assert text.count("✅") == 1  # only the axe is equipped
+    assert [b.label for b in buttons(nav) if b.label in ("Equip", "Equipped")].count("Equipped") == 1
+    await click(nav, inter, "Equip")
+    assert (await user.skill("farming")).equipped_instance_id == can.id and "Equipped **Tin Watering Can**" in all_text(nav)
+    assert all_text(nav).count("✅") == 2 and [b.label for b in buttons(nav) if b.label in ("Equip", "Equipped")] == ["Equipped", "Equipped"]
+    await click(nav, inter, "Upgrade")
+    assert nav.screen.id == "upgrade"
+    await click(nav, inter, "Back to tools")
+    assert nav.screen.id == "tools"
+
+
+async def test_the_tools_page_has_room_for_an_account_with_many_tools_and_the_empty_case(db):
+    nav, _ = await hub("tools")
+    assert "no tools yet" in all_text(nav)
+    user = await User.get(1)
+    for _ in range(30):
+        await user.give_instance("starter_rod")
+    nav, _ = await hub("tools")
+    assert len([b for b in buttons(nav) if b.label in ("Equip", "Equipped")]) == 8 and "22 more tools" in all_text(nav)
 
 
 async def test_inventory_paging(db):
@@ -322,22 +359,6 @@ async def test_inventory_paging(db):
     assert find_button(nav, f"2/{pages}")
     await click(nav, inter, emoji="◀️")
     assert find_button(nav, f"1/{pages}")
-
-
-async def test_inventory_with_a_tool_equipped_for_every_skill_fits_discords_menu_rules(db):
-    """Discord rejected the whole page when more than one option of a one-choice menu was pre-selected."""
-    from cococap.services.equipment import equip
-
-    user = await User.get(1)
-    for template, skill in (("rookiepickaxe", "mining"), ("starter_axe", "foraging"), ("starter_rod", "fishing")):
-        await equip(user, skill, (await user.give_instance(template)).id)
-    for _ in range(30):  # and more tools than a menu can list
-        await user.give_instance("starter_rod")
-    nav, _ = await hub("inventory")
-    menu = selects(nav)[0]
-    assert sum(o.default for o in menu.options) <= menu.max_values == 1
-    assert len(menu.options) <= 25
-    assert sum(o.description == "Equipped" for o in menu.options) == 3  # the equipped ones are listed first
 
 
 async def test_empty_inventory_message(db):
@@ -808,7 +829,9 @@ async def test_reaching_the_floor_shows_the_vault_and_banks_it(db):
     run.depth = run.floor - 1
     await find_button(nav, "Dig").callback(inter)
     assert run.outcome == "floor" and "reached the vault" in all_text(nav)
-    assert await (await User.get(1)).item_quantity("gold_ore") >= 150
+    user = await User.get(1)
+    for ore, quantity in get_registry().mining.descent.vault_ore.items():
+        assert await user.item_quantity(ore) >= quantity
 
 
 # ---- the two-page home and the party ------------------------------------------------------------------------

@@ -35,6 +35,7 @@ from .settings import SettingsScreen
 from .shop import ShopScreen
 from .skills import SkillsScreen
 from .stats import StatsScreen
+from .tools import ToolsScreen
 from .top import TopScreen
 from .upgrade import UpgradeScreen
 from .wiki import WikiScreen
@@ -51,6 +52,7 @@ SCREENS: dict[str, type[Screen]] = {
         ProfileScreen,
         ProgressScreen,
         BestiaryScreen,
+        ToolsScreen,
         MasteryScreen,
         CheckInScreen,
         SkillsScreen,

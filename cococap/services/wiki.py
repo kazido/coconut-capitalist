@@ -180,7 +180,7 @@ def _pots(reg: Registry) -> list[str]:
 
 def _tools(reg: Registry, only: tuple[str, ...] = ("axe", "can"), intro: bool = True) -> list[str]:
     out = ["**One tool of each kind.** The shop sells only the starter tool, and you can't buy a second. Everything better comes from "
-           "**Inventory → Upgrade tools**: your tool keeps its enchants and becomes the next one up for bits and materials. The first steps "
+           "**Inventory → Tools → Upgrade**: your tool keeps its enchants and becomes the next one up for bits and materials. The first steps "
            "use only the tool's own skill; later ones add a little from others. Each level earns clearly more than the last: about x1.5 at "
            "level 2, x2.6 at level 3, x4 at level 4 and x18 at level 8, and a better rod also brings rarer fish and more of them."] if intro else []
     kinds: dict[str, list[Item]] = {}

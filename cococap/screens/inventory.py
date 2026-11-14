@@ -1,23 +1,20 @@
 import discord
 
-from cococap.errors import CustomError
-from cococap.registry import get_registry
-from cococap.services.equipment import equip, skill_for_tool
-from cococap.services.inventory import instance_label, instance_lines, inventory_lines
+from cococap.services.equipment import TOOL_FOR_SKILL
+from cococap.services.inventory import instance_lines, inventory_lines
 from cococap.ui import Page, Screen
-from cococap.ui.components import button, row, select, sep, text
+from cococap.ui.components import button, row, sep, text
 from cococap.user import User
 
 PER_PAGE = 12
-TOOL_SKILLS = ("mining", "foraging", "combat", "fishing")
 
 
 class InventoryScreen(Screen):
     id = "inventory"
     label = "Inventory"
     emoji = "🎒"
-    description = "Your items and tools; equip a tool here"
-    links = ("upgrade", "enchant")
+    description = "Your items and tools"
+    links = ("tools", "enchant")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -25,7 +22,7 @@ class InventoryScreen(Screen):
 
     async def _equipped_ids(self) -> set[int]:
         ids = set()
-        for skill in TOOL_SKILLS:
+        for skill in TOOL_FOR_SKILL:  # (every skill with a tool: pickaxe, axe, sword, rod and watering can)
             equipped = (await self.user.skill(skill)).equipped_instance_id
             if equipped is not None:
                 ids.add(equipped)
@@ -52,23 +49,9 @@ class InventoryScreen(Screen):
                     button(emoji="▶️", on_click=self._turn(1), disabled=self.page >= pages - 1),
                 )
             )
-        if instances:
-            reg = get_registry()
-            # A menu allows one default and 25 options, and you have a tool equipped per skill: so no defaults
-            # (equipped tools say so in their description), and the equipped ones come first if there are many.
-            shown = sorted(instances, key=lambda i: i.id not in equipped)[:25]
-            options = [
-                discord.SelectOption(
-                    label=instance_label(i)[:100],
-                    value=str(i.id),
-                    emoji=reg.item(i.template_id).emoji or None,
-                    description="Equipped" if i.id in equipped else None,
-                )
-                for i in shown
-            ]
-            body += [sep(), row(select("Equip a tool...", options, self._equip)),
-                     row(button("Upgrade tools", emoji="🔨", on_click=self._upgrades),
-                         button("Enchant", emoji="📜", on_click=self._enchant))]
+        body += [sep(), row(button("Tools", emoji="🧰", style=discord.ButtonStyle.primary if instances else discord.ButtonStyle.secondary,
+                                   on_click=self._tools),
+                            button("Enchant", emoji="📜", on_click=self._enchant))]
         return Page("Inventory", body, accent=0x99B0A2)
 
     def _turn(self, step: int):
@@ -81,14 +64,5 @@ class InventoryScreen(Screen):
     async def _enchant(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "enchant")
 
-    async def _upgrades(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "upgrade")
-
-    async def _equip(self, interaction: discord.Interaction, values: list[str]) -> None:
-        instance = await self.user.instance(int(values[0]))
-        if instance is None:
-            raise CustomError("You don't own that tool.")
-        kind = get_registry().item(instance.template_id).tool.kind
-        skill = skill_for_tool(kind)
-        await equip(self.user, skill, instance.id)
-        await self.refresh(interaction, f"Equipped **{instance_label(instance)}** for {skill}.")
+    async def _tools(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "tools")

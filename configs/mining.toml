@@ -82,8 +82,10 @@ bomb_pressure = 8                  # a bomb clears a whole row for this flat pre
 bombs_per_run = 3                  # most bombs you can carry down
 lookahead = 3                      # rows ahead you can see (only rich lodes and wyrmholes show; the rest is hidden)
 vault_gem_chance = 0.03            # a reactor gem is rare: only this chance of one in the vault...
-[descent.vault_ore]                # ...but this ore is always there
-gold_ore = 150
+[descent.vault_ore]                # ...but these ores are always there: all three, in the proportion you would mine them (the rarer, the fewer). Worth about 140,000 bits (the old 150 gold)
+copper_ore = 1100
+iron_ore = 300
+gold_ore = 100
 
 [descent.hardness]                 # pressure added when this item is dug (empty cells use empty_hardness)
 copper_ore = 4

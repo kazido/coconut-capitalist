@@ -148,8 +148,8 @@ async def test_the_whole_axe_chain_can_be_climbed(db):
 async def test_the_upgrade_screen_lists_tools_and_upgrades_one(db):
     up = cost_of("starter_axe")
     user, inst = await with_tool(purse=up.bits, materials=dict(up.items))
-    nav, inter = await hub("inventory")
-    await click(nav, inter, "Upgrade tools")
+    nav, inter = await hub("tools")
+    await click(nav, inter, "Upgrade")
     assert nav.screen.id == "upgrade" and "Thornwhip Axe" in all_text(nav)
     await click(nav, inter, "Upgrade")
     assert "became a **Thornwhip Axe**" in all_text(nav)

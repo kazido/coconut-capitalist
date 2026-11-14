@@ -514,7 +514,7 @@ def test_digging_the_last_row_opens_the_vault():
     run.danger = 0
     result = run.dig()
     assert run.outcome == "floor" and run.depth == D.floor
-    assert result.vault["gold_ore"] == D.vault_ore["gold_ore"]
+    assert all(result.vault[ore] == quantity for ore, quantity in D.vault_ore.items())
     assert sum(result.vault[g] for g in RULES.reactor.core_gems) == 1
     assert all(run.haul[i] >= q for i, q in result.vault.items())
     with pytest.raises(m.MiningError):
@@ -535,7 +535,25 @@ def test_a_vault_gem_is_rare_not_guaranteed():
     never = make_run(rules=rules_with(vault_gem_chance=0.0, rich_chance=0.0, vent_chance=0.0, cache_chance=0.0))
     never.depth, never.rng = D.floor - 1, Rig(0.99)
     vault = never.dig().vault
-    assert vault["gold_ore"] and not any(vault[g] for g in RULES.reactor.core_gems)
+    assert all(vault[ore] for ore in D.vault_ore) and not any(vault[g] for g in RULES.reactor.core_gems)
+
+
+def test_the_vault_holds_all_three_ores_in_proportion_to_how_often_they_drop():
+    from random import Random
+
+    from cococap.services import loot
+
+    assert set(D.vault_ore) == {"copper_ore", "iron_ore", "gold_ore"}
+    rng = Random(1)
+
+    def per_roll(ore):  # how much of it one roll of the ore's own drop table brings, on average
+        item = REG.item(ore)
+        return sum(loot.skewed_roll(rng, item.drop.min, item.drop.max) for _ in range(20000)) / 20000 / item.drop.rate
+
+    ratios = {ore: D.vault_ore[ore] / per_roll(ore) for ore in D.vault_ore}
+    assert max(ratios.values()) / min(ratios.values()) < 1.15  # the rarer the ore, the fewer of it: as many "rolls" of each
+    worth = sum(REG.item(ore).sell_price * q for ore, q in D.vault_ore.items())
+    assert 120_000 <= worth <= 170_000  # about what 150 gold was worth
 
 
 def test_a_bomb_on_the_last_row_also_opens_the_vault():
@@ -682,7 +700,7 @@ async def test_reaching_the_floor_banks_the_vault(db):
         run.danger = 0
         run.dig()
     summary = await m.settle_run(user, run)
-    assert summary.outcome == "floor" and await user.item_quantity("gold_ore") >= D.vault_ore["gold_ore"]
+    assert summary.outcome == "floor" and all([await user.item_quantity(ore) >= q for ore, q in D.vault_ore.items()])
 
 
 async def test_settling_an_unfinished_run_is_refused_and_abandoning_climbs_out_safely(db):

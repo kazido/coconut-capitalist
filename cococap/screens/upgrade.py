@@ -34,7 +34,7 @@ class UpgradeScreen(Screen):
     label = "Upgrade Tools"
     emoji = "🔨"
     description = "Turn a tool into the next one up"
-    links = ("inventory",)
+    links = ("tools",)
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -61,7 +61,7 @@ class UpgradeScreen(Screen):
                 on_click=self._upgrade(offer.instance.id, offer.path))))
         if len(offers) > MAX_SHOWN:
             body.append(text(f"-# …and {len(offers) - MAX_SHOWN} more tools."))
-        body += [sep(), row(button("Back to inventory", emoji="🎒", on_click=self._back))]
+        body += [sep(), row(button("Back to tools", emoji="🧰", on_click=self._back))]
         return Page("Upgrade Tools", body, accent=0xB8860B)
 
     def _upgrade(self, instance_id: int, path: str = "up"):
@@ -72,4 +72,4 @@ class UpgradeScreen(Screen):
         return go
 
     async def _back(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "inventory")
+        await self.go(interaction, "tools")
