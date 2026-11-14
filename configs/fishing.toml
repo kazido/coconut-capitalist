@@ -80,3 +80,17 @@ min_rarity = 5
 count = 1
 bits = 400000
 xp = 1500
+
+# The personal collection book. It holds one entry per fish up to `max_rarity` (common to super rare). Turn fish in for
+# a bonus; once every entry is full you can complete the book: it pays out, goes up a level and starts over needing
+# more of each fish.
+[book]
+min_level = 5                    # TODO(balance): the wiki says fishing level 10
+max_rarity = 4
+max_level = 10
+need_base = 1                    # each entry needs this many fish at book level 1...
+need_per_level = 1               # ...and this many more per level after (level 3 needs 3 of each)
+bits_per_sell = 0.5              # turning a fish in pays +50% of what it would sell for (so it beats selling it)
+xp_per_rarity = 15
+completion_bits = 50000          # finishing a book pays this x the book's level...
+completion_xp = 400              # ...and this much xp x its level

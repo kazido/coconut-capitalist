@@ -9,7 +9,7 @@ from cococap.services import fishing
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_multiplier
 from cococap.ui import Page, Screen
-from cococap.ui.components import bits, button, row, sep, text, xp_bar
+from cococap.ui.components import bits, button, row, select, sep, text, xp_bar
 from cococap.user import User
 
 ROD = "🎣"
@@ -46,7 +46,7 @@ class FishScreen(Screen):
     label = "Fishing"
     emoji = ROD
     description = "Cast a line and reel in fish"
-    links = ("fishquests",)
+    links = ("fishquests", "fishbook")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -94,6 +94,7 @@ class FishScreen(Screen):
                 button("Cast", emoji=ROD, style=discord.ButtonStyle.primary, disabled=stats is None, on_click=self._cast),
                 button("Sell fish", emoji="💰", disabled=not haul.count, on_click=self._sell),
                 button("Quests", emoji="📜", disabled=not fishing.quests_unlocked(level, reg.fishing), on_click=self._quests),
+                button("Book", emoji="📖", disabled=not fishing.book_unlocked(level, reg.fishing), on_click=self._book),
             ))
             return Page("Fishing", body, accent=ACCENT)
 
@@ -157,6 +158,8 @@ class FishScreen(Screen):
                 self.cast = None
                 catch = await fishing.land(self.user, cast, now=now())
                 note = f"🎣 **You caught a {catch.fish.display}!**  ·  +{catch.xp:,} xp  ·  worth {bits(catch.fish.sell_price)} bits"
+                if catch.extras:
+                    note += "\n🪸 Also washed up: " + ", ".join(f"{q:,} {get_registry().item(i).display}" for i, q in catch.extras.items())
                 for q in catch.finished:
                     note += f"\n📜 **Quest complete:** {q.text}  ·  +{bits(q.template.bits)} bits, +{q.template.xp} xp"
                 return await self.refresh(interaction, note)
@@ -169,6 +172,9 @@ class FishScreen(Screen):
 
     async def _quests(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishquests")
+
+    async def _book(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fishbook")
 
     async def _sell(self, interaction: discord.Interaction) -> None:
         total = await fishing.sell_all(self.user)
@@ -196,6 +202,58 @@ class FishQuestsScreen(Screen):
             text("### Weekly\n" + "\n".join(quest_line(q) for q in weekly) + f"\n-# New one <t:{(week * 7 - 3 + 7) * fishing.DAY}:R>"),
             row(button("Back to fishing", emoji=ROD, on_click=self._back)),
         ], accent=ACCENT)
+
+    async def _back(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fish")
+
+
+class FishBookScreen(Screen):
+    id = "fishbook"
+    label = "Collection Book"
+    emoji = "📖"
+    description = "Turn in fish for rewards and level the book up"
+    links = ("fish",)
+
+    async def build(self) -> Page:
+        reg = get_registry()
+        rules = reg.fishing.book
+        level = User.xp_to_level((await self.user.skill("fishing")).xp)
+        if not fishing.book_unlocked(level, reg.fishing):
+            return Page("Collection Book", [*self.note_block(), text(f"The book opens at fishing level {rules.min_level}.")], accent=ACCENT)
+        view = await fishing.book(self.user)
+        owned = await self.user.items()
+        lines = []
+        for e in view.entries:
+            mark = "✅" if e.done else "⬜"
+            have = f"  ·  you have {owned[e.fish.id]:,}" if not e.done and owned.get(e.fish.id) else ""
+            lines.append(f"{mark} {e.fish.display}  ·  **{e.given}/{e.need}**{have}")
+        wanted = [e for e in view.entries if not e.done and owned.get(e.fish.id)]
+        body = [
+            *self.note_block(),
+            text(f"### 📖 Book level {view.level}\nTurn fish in for **+{rules.bits_per_sell:.0%}** of their value and xp. "
+                 f"Fill every page to finish the book: it pays **{bits(rules.completion_bits * view.level)}** bits and the next level "
+                 f"needs more of each fish."),
+            text("\n".join(lines)),
+        ]
+        if wanted:
+            body.append(row(select("Turn in a fish...", [
+                discord.SelectOption(label=e.fish.name, value=e.fish.id, emoji=e.fish.emoji or None,
+                                     description=f"You have {owned[e.fish.id]:,}, the book needs {e.need - e.given:,} more")
+                for e in wanted[:25]], self._turn_in)))
+        body.append(row(
+            button("Finish the book", emoji="🏆", style=discord.ButtonStyle.success, disabled=not view.complete or view.level >= rules.max_level,
+                   on_click=self._finish),
+            button("Back to fishing", emoji=ROD, on_click=self._back),
+        ))
+        return Page("Collection Book", body, accent=0x8E44AD)
+
+    async def _turn_in(self, interaction: discord.Interaction, values: list[str]) -> None:
+        done = await fishing.turn_in(self.user, values[0])
+        await self.refresh(interaction, f"📖 You added {done.quantity:,} {done.fish.display} to the book  ·  +{bits(done.bits)} bits, +{done.xp} xp")
+
+    async def _finish(self, interaction: discord.Interaction) -> None:
+        done = await fishing.complete_book(self.user)
+        await self.refresh(interaction, f"🏆 **Book complete!** It is now level {done.new_level}  ·  +{bits(done.bits)} bits, +{done.xp} xp")
 
     async def _back(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fish")

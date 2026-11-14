@@ -1,4 +1,5 @@
 import random
+from collections import Counter
 import time
 
 import discord
@@ -105,6 +106,9 @@ class FarmScreen(Screen):
         reg = get_registry()
         parts = [f"{h.amount:,} {reg.item(h.crop_id).display}" for h in harvests]
         note = "Harvested " + ", ".join(parts) + f"  ·  +{sum(h.xp for h in harvests)} xp"
+        extras = sum((h.extras for h in harvests), Counter())
+        if extras:
+            note += "\n🧵 Also found: " + ", ".join(f"{q:,} {reg.item(i).display}" for i, q in extras.items())
         if any(h.anomaly for h in harvests):
             note += "\n✨ **An agricultural anomaly!** Marvelous! Your work and daily are ready again."
         await self.refresh(interaction, note)

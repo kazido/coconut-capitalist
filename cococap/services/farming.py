@@ -16,11 +16,12 @@ import datetime
 import random
 import time
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from cococap.errors import GameRuleError
 from cococap.models.skills.farming import Farming, Plot
 from cococap.registry import Registry, get_registry
+from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
 from cococap.user import Cooldowns, User
 
@@ -223,6 +224,16 @@ class Harvest:
     amount: int
     xp: int
     anomaly: bool
+    extras: Counter = field(default_factory=Counter)  # leftovers from the harvest (plant fiber...)
+
+
+def harvest_extras(rng: random.Random, registry: Registry) -> Counter:
+    """Materials that come along with a harvest (items of the farming skill that have a drop table)."""
+    found: Counter = Counter()
+    for item in registry.items_for_skill("farming"):
+        if item.category == "material" and (quantity := roll_drop(item, rng)):
+            found[item.id] += quantity
+    return found
 
 
 async def harvest(
@@ -255,10 +266,13 @@ async def harvest(
 
         await user.update_skill("farming", restore)  # the crop never arrived: the plot is still ripe
         raise
+    extras = harvest_extras(rng, reg)
+    for item_id, quantity in extras.items():
+        await user.add_item(item_id, quantity)
     anomaly = rng.randint(1, rules.anomaly_odds) == 1
     if anomaly:
         await user.refresh_cooldowns(Cooldowns.WORK, Cooldowns.DAILY)
-    return Harvest(number, taken["crop"], taken["amount"], taken["xp"], anomaly)
+    return Harvest(number, taken["crop"], taken["amount"], taken["xp"], anomaly, extras)
 
 
 async def harvest_all(

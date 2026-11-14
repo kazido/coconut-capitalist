@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from cococap import emojis
 
 Skill = Literal["farming", "foraging", "fishing", "mining", "combat", "shepherding"]
-Category = Literal["material", "tool", "key_item", "pet_item", "crop", "seed"]
+Category = Literal["material", "tool", "key_item", "pet_item", "crop", "seed", "fish"]
 ToolKind = Literal["pickaxe", "axe", "sword", "rod"]
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -422,11 +422,26 @@ class QuestRules(_Data):
         return self
 
 
+class BookRules(_Data):
+    """The personal collection book: turn in fish, get rewards, finish it to level it up."""
+
+    min_level: int = Field(ge=1)  # fishing level that opens it
+    max_rarity: int = Field(ge=1, le=7)  # it holds every fish up to this rarity
+    max_level: int = Field(ge=1)
+    need_base: int = Field(ge=1)  # fish per entry at book level 1...
+    need_per_level: int = Field(ge=0)  # ...and this many more for each level after
+    bits_per_sell: float = Field(ge=0)  # each fish turned in pays this share of its sell price
+    xp_per_rarity: int = Field(ge=0)
+    completion_bits: int = Field(ge=0)  # finishing the book pays this x its level...
+    completion_xp: int = Field(ge=0)  # ...and this x its level
+
+
 class FishingRules(_Data):
     xp_per_rarity: int = Field(ge=0)
     bite: BiteRules
     reel: ReelRules
     quests: QuestRules
+    book: BookRules
 
 
 class MinigamePayout(_Data):

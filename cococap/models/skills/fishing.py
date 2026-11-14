@@ -30,7 +30,15 @@ class QuestProgress(BaseModel):
     done: list[bool] = Field(default_factory=list)
 
 
+class BookProgress(BaseModel):
+    """The personal collection book: how many of each fish you have turned in at the current level."""
+
+    level: int = 1
+    given: dict[str, int] = Field(default_factory=dict)
+
+
 class Fishing(Skill):
+    book: BookProgress = Field(default_factory=BookProgress)
     daily: QuestProgress = Field(default_factory=QuestProgress)
     weekly: QuestProgress = Field(default_factory=QuestProgress)
     quest_book: QuestBook = Field(default_factory=QuestBook)

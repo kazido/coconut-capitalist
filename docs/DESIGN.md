@@ -230,5 +230,20 @@ catch message; the Quests button lists them). Progress is saved with the fishing
 or week number changes. The catch that takes you to level 3 doesn't count toward quests. Templates and rewards are in
 `configs/fishing.toml` (`TODO(balance)`).
 
-Not built yet (wiki): the 3 community **monthly** quests, the personal and community collection books (level 10), the
-hallucination -> treasure chest, and fish that appear in channels like drops.
+### The collection book (fishing level 5; the wiki says 10)
+
+A personal book with a page for every fish up to rarity 4 (common to super rare, 12 of them). **Turn in** a fish and it
+fills that page (the book only takes as many as it needs) and pays **+50% of the fish's value** and xp, so turning in
+beats selling. Fill every page and **Finish the book**: it pays 50,000 bits x its level, goes up a level and starts over
+needing one more of each fish per level (up to level 10). Atomic like everything else: a double click can't over-fill a
+page or finish the book twice. Numbers in `configs/fishing.toml` `[book]` (`TODO(balance)`; `min_level` is one number
+to put back to 10).
+
+### Fish and what comes up with them
+
+19 fish across all 7 rarities (3 mythical-to-premium pairs, the cod as the catch-all). A catch can also bring up a
+**Coral Shard** (1 in 6), one of the **pickaxe materials**: every skill drops one so a pickaxe upgrade takes a bit of
+everything: ores (mining), **Hardwood** (foraging), **Plant Fiber** (farming harvests) and **Coral Shards** (fishing).
+
+Not built yet (wiki): the 3 community **monthly** quests, the community collection book, the hallucination -> treasure
+chest, and fish that appear in channels like drops.

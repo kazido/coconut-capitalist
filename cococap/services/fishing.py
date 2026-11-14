@@ -18,7 +18,7 @@ from cococap.registry import Item, Registry, get_registry
 from cococap.registry.models import FishingRules, QuestTemplate
 from cococap.services import shop
 from cococap.services.equipment import EffectiveStats, equipped_stats
-from cococap.services.loot import roll_table
+from cococap.services.loot import roll_drop, roll_table
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -32,7 +32,7 @@ class FishingError(GameRuleError):
 # ---- the fish ---------------------------------------------------------------------------------------------
 def fish_pool(registry: Registry) -> list[Item]:
     """Every fish that can bite, rarest first (so the first that "drops" wins and the common catch-all is last)."""
-    fish = [i for i in registry.items.values() if i.skill == "fishing" and i.category == "material" and i.drop]
+    fish = [i for i in registry.items.values() if i.skill == "fishing" and i.category == "fish" and i.drop]
     return sorted(fish, key=lambda i: (-i.drop.rate, -i.rarity, i.id))
 
 
@@ -213,9 +213,20 @@ class Catch:
     xp: int
     finished: tuple[Quest, ...] = ()  # quests this catch completed (already paid)
     quest_bits: int = 0
+    extras: Counter = field(default_factory=Counter)  # things that came up with the fish (coral shards...)
 
 
-async def land(user: User, cast: Cast, registry: Registry | None = None, now: float | None = None) -> Catch:
+def catch_extras(rng: random.Random, registry: Registry) -> Counter:
+    """Materials that come up with a catch (fishing items that aren't fish but have a drop table)."""
+    found: Counter = Counter()
+    for item in registry.items_for_skill("fishing"):
+        if item.category == "material" and (quantity := roll_drop(item, rng)):
+            found[item.id] += quantity
+    return found
+
+
+async def land(user: User, cast: Cast, registry: Registry | None = None, now: float | None = None,
+               rng: random.Random | None = None) -> Catch:
     """Keep a fish that has been fully reeled in: item, xp, stats and quest progress. Pays once per cast."""
     reg = registry or get_registry()
     rules = reg.fishing
@@ -228,6 +239,9 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     multiplier = await xp_multiplier(user.id, reg)
     xp = round(cast.fish.rarity * rules.xp_per_rarity * multiplier)
     await user.add_item(cast.fish.id, 1)
+    extras = catch_extras(rng or random.Random(), reg)
+    for item_id, quantity in extras.items():
+        await user.add_item(item_id, quantity)
     finished: list[Quest] = []
 
     def grant(skill) -> None:
@@ -254,7 +268,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     quest_bits = sum(q.template.bits for q in finished)
     if quest_bits:
         await user.add_bits(quest_bits)
-    return Catch(cast.fish, xp, tuple(finished), quest_bits)
+    return Catch(cast.fish, xp, tuple(finished), quest_bits, extras)
 
 
 @dataclass(frozen=True)
@@ -282,3 +296,136 @@ async def sell_all(user: User, registry: Registry | None = None) -> int:
     for item_id, quantity in (await stock(user, reg)).items.items():
         total += await shop.sell(user, item_id, quantity, reg)
     return total
+
+
+# ---- the personal collection book -------------------------------------------------------------------------
+@dataclass(frozen=True)
+class BookEntry:
+    fish: Item
+    given: int
+    need: int
+
+    @property
+    def done(self) -> bool:
+        return self.given >= self.need
+
+
+@dataclass(frozen=True)
+class BookView:
+    level: int
+    entries: tuple[BookEntry, ...]
+
+    @property
+    def complete(self) -> bool:
+        return all(e.done for e in self.entries)
+
+
+def book_fish(registry: Registry) -> list[Item]:
+    """The fish the personal book holds, commonest first."""
+    rules = registry.fishing.book
+    return sorted((i for i in fish_pool(registry) if i.rarity <= rules.max_rarity), key=lambda i: (i.rarity, i.name))
+
+
+def book_need(level: int, rules: FishingRules) -> int:
+    return rules.book.need_base + (level - 1) * rules.book.need_per_level
+
+
+def book_unlocked(level: int, rules: FishingRules) -> bool:
+    return level >= rules.book.min_level
+
+
+async def book(user: User, registry: Registry | None = None) -> BookView:
+    reg = registry or get_registry()
+    saved = (await user.skill("fishing")).book
+    need = book_need(saved.level, reg.fishing)
+    return BookView(saved.level, tuple(BookEntry(i, saved.given.get(i.id, 0), need) for i in book_fish(reg)))
+
+
+@dataclass(frozen=True)
+class TurnedIn:
+    fish: Item
+    quantity: int
+    bits: int
+    xp: int
+
+
+async def _require_book(user: User, reg: Registry) -> None:
+    level = User.xp_to_level((await user.skill("fishing")).xp)
+    if not book_unlocked(level, reg.fishing):
+        raise FishingError(f"The collection book opens at fishing level {reg.fishing.book.min_level}.")
+
+
+async def turn_in(user: User, fish_id: str, registry: Registry | None = None) -> TurnedIn:
+    """Hand in as many of this fish as the book still needs (and you have). Pays a bonus per fish."""
+    reg = registry or get_registry()
+    rules = reg.fishing
+    await _require_book(user, reg)
+    fish = next((i for i in book_fish(reg) if i.id == fish_id), None)
+    if fish is None:
+        raise FishingError("The book has no page for that.")
+    view = await book(user, reg)
+    entry = next(e for e in view.entries if e.fish.id == fish_id)
+    take = min(await user.item_quantity(fish_id), entry.need - entry.given)
+    if entry.done:
+        raise FishingError(f"Your book already has all the {fish.name} it needs.")
+    if take <= 0:
+        raise FishingError(f"You don't have any {fish.name}.")
+    try:
+        await user.remove_item(fish_id, take)
+    except ValueError:
+        raise FishingError(f"You don't have any {fish.name}.") from None
+    multiplier = await xp_multiplier(user.id, reg)
+    credited = 0
+
+    def give(skill) -> None:
+        nonlocal credited
+        have = skill.book.given.get(fish_id, 0)
+        credited = max(0, min(take, book_need(skill.book.level, rules) - have))  # a second click may have filled it
+        skill.book.given[fish_id] = have + credited
+        skill.xp += round(credited * fish.rarity * rules.book.xp_per_rarity * multiplier)
+
+    await user.update_skill("fishing", give)
+    if credited < take:
+        await user.add_item(fish_id, take - credited)  # the book didn't need them after all
+    if credited == 0:
+        raise FishingError(f"Your book already has all the {fish.name} it needs.")
+    bits = round(fish.sell_price * rules.book.bits_per_sell * credited)
+    if bits:
+        await user.add_bits(bits)
+    return TurnedIn(fish, credited, bits, round(credited * fish.rarity * rules.book.xp_per_rarity * multiplier))
+
+
+@dataclass(frozen=True)
+class BookReward:
+    new_level: int
+    bits: int
+    xp: int
+
+
+async def complete_book(user: User, registry: Registry | None = None) -> BookReward:
+    """Finish a full book: it pays, goes up a level and starts over (each entry needs more fish)."""
+    reg = registry or get_registry()
+    rules = reg.fishing
+    await _require_book(user, reg)
+    multiplier = await xp_multiplier(user.id, reg)
+    outcome: dict = {}
+
+    def finish(skill) -> None:
+        level = skill.book.level
+        need = book_need(level, rules)
+        if not all(skill.book.given.get(i.id, 0) >= need for i in book_fish(reg)):
+            outcome["error"] = "Your book isn't full yet."
+        elif level >= rules.book.max_level:
+            outcome["error"] = "Your book is already at its highest level."
+        else:
+            outcome["xp"] = round(rules.book.completion_xp * level * multiplier)
+            outcome["bits"] = rules.book.completion_bits * level
+            skill.book.level, skill.book.given = level + 1, {}
+            skill.xp += outcome["xp"]
+            outcome["level"] = level + 1
+
+    await user.update_skill("fishing", finish)
+    if "error" in outcome:
+        raise FishingError(outcome["error"])
+    await user.add_bits(outcome["bits"])
+    return BookReward(outcome["level"], outcome["bits"], outcome["xp"])

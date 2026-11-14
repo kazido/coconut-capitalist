@@ -466,3 +466,214 @@ async def test_a_bite_you_ignore_for_six_seconds_gets_away(db, clock, monkeypatc
     clock[0] = nav.screen.cast.bite_at + RULES.bite.window + 1
     await nav.screen.nav.refresh(inter)
     assert nav.screen.cast is None and "too slow" in all_text(nav)
+
+
+# ---- more fish ---------------------------------------------------------------------------------------------------
+def test_every_rarity_has_fish_and_the_rare_ones_exist():
+    by_rarity = Counter(i.rarity for i in f.fish_pool(REG))
+    assert set(by_rarity) == set(range(1, 8))
+    assert by_rarity[7] >= 2 and by_rarity[6] >= 2 and by_rarity[5] >= 3
+    assert all(i.category == "fish" for i in f.fish_pool(REG))
+
+
+def test_rare_fish_really_can_be_caught_and_are_worth_the_wait():
+    rng, seen = Random(5), Counter()
+    for _ in range(200_000):
+        seen[f.roll_fish(rng, REG).rarity] += 1
+    assert all(seen[r] > 0 for r in range(1, 8))
+    worth = {i.rarity: i.sell_price for i in f.fish_pool(REG)}
+    assert worth[7] > worth[6] > worth[5] > worth[4] > worth[3] > worth[2]
+
+
+# ---- things that come up with a catch -----------------------------------------------------------------------------
+def test_coral_comes_up_now_and_then_but_only_with_a_catch():
+    rng = Random(1)
+    got = Counter()
+    for _ in range(6000):
+        got += f.catch_extras(rng, REG)
+    assert set(got) == {"coral_shard"} and 600 < got["coral_shard"] < 1400  # about 1 in 6
+
+
+async def test_landing_a_fish_can_bring_coral_with_it(db):
+    class Lucky(Random):
+        def randint(self, a, b):
+            return 1  # every drop table hits
+
+    user = await player()
+    cast = cast_of()
+    for arrow in cast.pattern:
+        cast.press(arrow, T0 + 11)
+    got = await f.land(user, cast, REG, now=T0, rng=Lucky(1))
+    assert got.extras["coral_shard"] == 1 and await user.item_quantity("coral_shard") == 1
+
+
+# ---- the pickaxe: upgradable with a bit from every skill -----------------------------------------------------------
+def test_the_first_pickaxe_upgrade_wants_something_from_every_skill():
+    needs = REG.item("rookiepickaxe").tool.upgrade.items
+    skills = {REG.item(i).skill for i in needs}
+    assert skills == {"mining", "foraging", "farming", "fishing"}
+    for item_id in needs:  # every material really drops somewhere
+        assert REG.item(item_id).drop is not None, item_id
+
+
+async def test_you_can_upgrade_a_pickaxe_with_materials_from_all_four_skills(db):
+    from cococap.services import upgrades
+
+    user = await User.get(1)
+    await set_columns(user, purse=10**6)
+    pick = await user.give_instance("rookiepickaxe")
+    await equip(user, "mining", pick.id)
+    cost = REG.item("rookiepickaxe").tool.upgrade
+    for item_id, quantity in cost.items.items():
+        await user.add_item(item_id, quantity)
+    done = await upgrades.upgrade(user, pick.id, REG)
+    assert done.target.id == "reinforced_pickaxe"
+    assert (await user.instance(pick.id)).template_id == "reinforced_pickaxe"
+
+
+async def test_a_harvest_can_bring_plant_fiber(db):
+    from cococap.services import farming
+
+    class Lucky(Random):
+        def randint(self, a, b):
+            return 1
+
+    assert farming.harvest_extras(Lucky(1), REG)["plant_fiber"] == 1
+    assert sum(farming.harvest_extras(Random(2), REG)["plant_fiber"] for _ in range(1000)) > 500
+
+
+# ---- the collection book ----------------------------------------------------------------------------------------------
+B = RULES.book
+
+
+async def book_player(user_id=1, fish=None):
+    user = await player(user_id)
+    await user.add_xp("fishing", User.level_to_xp(B.min_level) + 1)
+    for fish_id, quantity in (fish or {}).items():
+        await user.add_item(fish_id, quantity)
+    return user
+
+
+def test_the_book_holds_common_to_super_rare_fish_only():
+    book = f.book_fish(REG)
+    assert {i.rarity for i in book} == set(range(1, B.max_rarity + 1)) and len(book) >= 8
+    assert [i.rarity for i in book] == sorted(i.rarity for i in book)
+    assert all(i.rarity <= B.max_rarity for i in book)
+
+
+def test_each_book_level_needs_more_of_every_fish():
+    needs = [f.book_need(level, RULES) for level in range(1, 6)]
+    assert needs == sorted(needs) and needs[0] == B.need_base and len(set(needs)) == 5
+
+
+async def test_the_book_is_locked_until_the_level(db):
+    user = await player()
+    with pytest.raises(f.FishingError, match="opens at fishing level"):
+        await f.turn_in(user, "cod", REG)
+
+
+async def test_turning_in_fish_pays_a_bonus_and_fills_the_page(db):
+    user = await book_player(fish={"cod": 3})
+    before_xp, before_bits = (await user.skill("fishing")).xp, user.purse
+    done = await f.turn_in(user, "cod", REG)
+    assert done.quantity == B.need_base  # only as many as the page needs
+    assert done.bits == round(REG.item("cod").sell_price * B.bits_per_sell * done.quantity)
+    assert await user.item_quantity("cod") == 3 - done.quantity  # the rest stay in the bag
+    await user.refresh()
+    assert user.purse == before_bits + done.bits and (await user.skill("fishing")).xp == before_xp + done.xp
+    page = next(e for e in (await f.book(user, REG)).entries if e.fish.id == "cod")
+    assert page.done
+    with pytest.raises(f.FishingError, match="already has"):
+        await f.turn_in(user, "cod", REG)
+
+
+async def test_you_cannot_turn_in_fish_you_do_not_have_or_that_the_book_does_not_hold(db):
+    user = await book_player()
+    with pytest.raises(f.FishingError, match="don't have any"):
+        await f.turn_in(user, "cod", REG)
+    await user.add_item("marlin", 1)  # legendary: not in the personal book
+    with pytest.raises(f.FishingError, match="no page"):
+        await f.turn_in(user, "marlin", REG)
+    assert await user.item_quantity("marlin") == 1
+
+
+async def test_two_clicks_at_once_cannot_turn_in_more_than_the_page_needs(db):
+    import asyncio
+
+    user = await book_player(fish={"cod": 5})
+    results = await asyncio.gather(f.turn_in(user, "cod", REG), f.turn_in(user, "cod", REG), return_exceptions=True)
+    assert sum(not isinstance(r, Exception) for r in results) == 1
+    page = next(e for e in (await f.book(user, REG)).entries if e.fish.id == "cod")
+    assert page.given == page.need
+    assert await user.item_quantity("cod") == 5 - page.need  # nothing was eaten for nothing
+
+
+async def test_a_full_book_can_be_finished_and_starts_over_a_level_up(db):
+    user = await book_player(fish={i.id: 5 for i in f.book_fish(REG)})
+    with pytest.raises(f.FishingError, match="isn't full"):
+        await f.complete_book(user, REG)
+    for item in f.book_fish(REG):
+        await f.turn_in(user, item.id, REG)
+    assert (await f.book(user, REG)).complete
+    before = user.purse
+    done = await f.complete_book(user, REG)
+    await user.refresh()
+    assert done.new_level == 2 and done.bits == B.completion_bits and user.purse >= before + done.bits
+    again = await f.book(user, REG)
+    assert again.level == 2 and not again.complete and all(e.given == 0 and e.need == f.book_need(2, RULES) for e in again.entries)
+    with pytest.raises(f.FishingError, match="isn't full"):
+        await f.complete_book(user, REG)  # no double payout
+
+
+async def test_the_book_stops_at_its_top_level(db):
+    user = await book_player()
+    await user.update_skill("fishing", lambda s: setattr(s.book, "level", B.max_level))
+    need = f.book_need(B.max_level, RULES)
+    await user.update_skill("fishing", lambda s: s.book.given.update({i.id: need for i in f.book_fish(REG)}))
+    with pytest.raises(f.FishingError, match="highest level"):
+        await f.complete_book(user, REG)
+
+
+async def test_the_book_screen_turns_fish_in_and_finishes_the_book(db):
+    user = await book_player(fish={i.id: 2 for i in f.book_fish(REG)})
+    nav, inter = await hub("fishbook")
+    text_now = all_text(nav)
+    assert "Book level 1" in text_now and "0/1" in text_now
+    from tests.test_hub import choose, select_named
+
+    for item in f.book_fish(REG):
+        menu = select_named(nav, "Turn in")
+        await choose(nav, inter, menu, item.id)
+    assert "✅" in all_text(nav) and not find_button(nav, "Finish the book").disabled
+    await click(nav, inter, "Finish the book")
+    assert "Book complete" in all_text(nav) and "Book level 2" in all_text(nav)
+    assert find_button(nav, "Finish the book").disabled
+
+
+async def test_the_fishing_page_shows_the_book_button_once_unlocked(db):
+    user = await player()
+    nav, _ = await hub("fish")
+    assert find_button(nav, "Book").disabled
+    await user.add_xp("fishing", User.level_to_xp(B.min_level) + 1)
+    nav, inter = await hub("fish")
+    assert not find_button(nav, "Book").disabled
+    await click(nav, inter, "Book")
+    assert nav.screen.id == "fishbook"
+
+
+async def test_a_stale_second_click_gets_its_fish_back_when_the_page_filled_in_the_meantime(db, monkeypatch):
+    user = await book_player(fish={"cod": 5})
+    stale = await f.book(user, REG)  # what the second click saw before the first one landed
+    await f.turn_in(user, "cod", REG)
+
+    async def old_view(*_args, **_kwargs):
+        return stale
+
+    monkeypatch.setattr(f, "book", old_view)
+    before = await user.item_quantity("cod")
+    with pytest.raises(f.FishingError, match="already has"):
+        await f.turn_in(user, "cod", REG)
+    assert await user.item_quantity("cod") == before  # nothing was eaten
+    page = next(e for e in stale.entries if e.fish.id == "cod")
+    monkeypatch.undo()
+    assert next(e for e in (await f.book(user, REG)).entries if e.fish.id == "cod").given == page.need

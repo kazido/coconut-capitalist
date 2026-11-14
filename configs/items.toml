@@ -320,48 +320,96 @@ max = 1
 grows_into = "wilted_rose"
 cycles = 350
 
+[leviathan_pup]
+name = "Leviathan Pup"
+description = "Only a baby, and it still pulls like a truck."
+wiki = "A rarity 7 fish. Sell it, or turn it in to your collection book."
+emoji = "🐋"
+rarity = 7
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 3000000  # TODO(balance)
+
+[leviathan_pup.drop]
+rate = 8000  # 1 in 8000 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
 [golden_koi]
 name = "Golden Koi"
 description = "A koi that shines like a coin. Stories say it grants wishes."
-wiki = "A rarity 7 fish. Sell it, or keep it for your collection book."
+wiki = "A rarity 7 fish. Sell it, or turn it in to your collection book."
 emoji = "🏵️"
 rarity = 7
 skill = "fishing"
-category = "material"
+category = "fish"
 price = 0
-sell_price = 3000000  # TODO(balance)
+sell_price = 2500000  # TODO(balance)
 
 [golden_koi.drop]
 rate = 5000  # 1 in 5000 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
+[oarfish]
+name = "Oarfish"
+description = "A ribbon of silver from the deep. Sailors call it an omen."
+wiki = "A rarity 6 fish. Sell it, or turn it in to your collection book."
+emoji = "🎏"
+rarity = 6
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 600000  # TODO(balance)
+
+[oarfish.drop]
+rate = 1500  # 1 in 1500 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
 [abyssal_angler]
 name = "Abyssal Angler"
 description = "Its lure glows in the deepest, darkest water."
-wiki = "A rarity 6 fish. Sell it, or keep it for your collection book."
+wiki = "A rarity 6 fish. Sell it, or turn it in to your collection book."
 emoji = "🦑"
 rarity = 6
 skill = "fishing"
-category = "material"
+category = "fish"
 price = 0
-sell_price = 600000  # TODO(balance)
+sell_price = 500000  # TODO(balance)
 
 [abyssal_angler.drop]
 rate = 1200  # 1 in 1200 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
+[sturgeon]
+name = "Sturgeon"
+description = "An ancient armoured giant. Its eggs are worth a fortune."
+wiki = "A rarity 5 fish. Sell it, or turn it in to your collection book."
+emoji = "🐊"
+rarity = 5
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 130000  # TODO(balance)
+
+[sturgeon.drop]
+rate = 700  # 1 in 700 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
 [marlin]
 name = "Blue Marlin"
 description = "A fast, proud fighter that tests every line."
-wiki = "A rarity 5 fish. Sell it, or keep it for your collection book."
+wiki = "A rarity 5 fish. Sell it, or turn it in to your collection book."
 emoji = "🐬"
 rarity = 5
 skill = "fishing"
-category = "material"
+category = "fish"
 price = 0
-sell_price = 120000  # TODO(balance)
+sell_price = 100000  # TODO(balance)
 
 [marlin.drop]
 rate = 600  # 1 in 600 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
@@ -371,75 +419,187 @@ max = 1
 [giant_squid]
 name = "Giant Squid"
 description = "Rarely seen, and never seen twice."
-wiki = "A rarity 5 fish. Sell it, or keep it for your collection book."
+wiki = "A rarity 5 fish. Sell it, or turn it in to your collection book."
 emoji = "🐙"
 rarity = 5
 skill = "fishing"
-category = "material"
+category = "fish"
 price = 0
-sell_price = 120000  # TODO(balance)
+sell_price = 100000  # TODO(balance)
 
 [giant_squid.drop]
 rate = 600  # 1 in 600 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
+[moray_eel]
+name = "Moray Eel"
+description = "Hides in rocks and bites hard."
+wiki = "A rarity 4 fish. Sell it, or turn it in to your collection book."
+emoji = "🪱"
+rarity = 4
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 24000  # TODO(balance)
+
+[moray_eel.drop]
+rate = 120  # 1 in 120 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[swordfish]
+name = "Swordfish"
+description = "All point, all power."
+wiki = "A rarity 4 fish. Sell it, or turn it in to your collection book."
+emoji = "🗡️"
+rarity = 4
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 28000  # TODO(balance)
+
+[swordfish.drop]
+rate = 100  # 1 in 100 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
 [pufferfish]
 name = "Pufferfish"
 description = "Puffs up when angry. Handle with care."
-wiki = "A rarity 4 fish. Sell it, or keep it for your collection book."
+wiki = "A rarity 4 fish. Sell it, or turn it in to your collection book."
 emoji = "🐡"
 rarity = 4
 skill = "fishing"
-category = "material"
+category = "fish"
 price = 0
-sell_price = 25000  # TODO(balance)
+sell_price = 20000  # TODO(balance)
 
 [pufferfish.drop]
 rate = 80  # 1 in 80 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[salmon]
-name = "Salmon"
-description = "Swims upstream, straight into your net."
-wiki = "A rarity 3 fish. Sell it, or keep it for your collection book."
+[catfish]
+name = "Catfish"
+description = "Whiskers like a wise old fisher."
+wiki = "A rarity 3 fish. Sell it, or turn it in to your collection book."
+emoji = "🐈"
+rarity = 3
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 7000  # TODO(balance)
+
+[catfish.drop]
+rate = 45  # 1 in 45 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[tuna]
+name = "Tuna"
+description = "Fast, strong and delicious."
+wiki = "A rarity 3 fish. Sell it, or turn it in to your collection book."
 emoji = "🍣"
 rarity = 3
 skill = "fishing"
-category = "material"
+category = "fish"
 price = 0
-sell_price = 9000  # TODO(balance)
+sell_price = 10000  # TODO(balance)
+
+[tuna.drop]
+rate = 40  # 1 in 40 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[salmon]
+name = "Salmon"
+description = "Swims upstream, straight into your net."
+wiki = "A rarity 3 fish. Sell it, or turn it in to your collection book."
+emoji = "🐟"
+rarity = 3
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 8000  # TODO(balance)
 
 [salmon.drop]
-rate = 25  # 1 in 25 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+rate = 35  # 1 in 35 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[perch]
+name = "Perch"
+description = "Stripey and quick to bite."
+wiki = "A rarity 2 fish. Sell it, or turn it in to your collection book."
+emoji = "🦓"
+rarity = 2
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 3200  # TODO(balance)
+
+[perch.drop]
+rate = 12  # 1 in 12 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[trout]
+name = "Trout"
+description = "Likes cold, clear water."
+wiki = "A rarity 2 fish. Sell it, or turn it in to your collection book."
+emoji = "🌈"
+rarity = 2
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 3600  # TODO(balance)
+
+[trout.drop]
+rate = 10  # 1 in 10 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
 [bass]
 name = "Bass"
 description = "A solid catch with a good bit of fight."
-wiki = "A rarity 2 fish. Sell it, or keep it for your collection book."
+wiki = "A rarity 2 fish. Sell it, or turn it in to your collection book."
 emoji = "🐠"
 rarity = 2
 skill = "fishing"
-category = "material"
+category = "fish"
 price = 0
-sell_price = 4500  # TODO(balance)
+sell_price = 4000  # TODO(balance)
 
 [bass.drop]
-rate = 4  # 1 in 4 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+rate = 8  # 1 in 8 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
+min = 1
+max = 1
+
+[sardine]
+name = "Sardine"
+description = "Small, silver and everywhere."
+wiki = "A rarity 1 fish. Sell it, or turn it in to your collection book."
+emoji = "🥫"
+rarity = 1
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 2000  # TODO(balance)
+
+[sardine.drop]
+rate = 3  # 1 in 3 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
 [herring]
 name = "Herring"
 description = "Silver and plentiful."
-wiki = "A rarity 1 fish. Sell it, or keep it for your collection book."
+wiki = "A rarity 1 fish. Sell it, or turn it in to your collection book."
 emoji = "🐟"
 rarity = 1
 skill = "fishing"
-category = "material"
+category = "fish"
 price = 0
 sell_price = 2500  # TODO(balance)
 
@@ -451,11 +611,11 @@ max = 1
 [cod]
 name = "Cod"
 description = "A common fish."
-wiki = "A rarity 1 fish. Sell it, or keep it for your collection book."
+wiki = "A rarity 1 fish. Sell it, or turn it in to your collection book."
 emoji = "🐟"
 rarity = 1
 skill = "fishing"
-category = "material"
+category = "fish"
 price = 0
 sell_price = 2500  # TODO(balance)
 
@@ -463,6 +623,54 @@ sell_price = 2500  # TODO(balance)
 rate = 1  # 1 in 1 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
+
+[coral_shard]
+name = "Coral Shard"
+description = "Sea-hardened and sharp. Smiths use it to temper a pickaxe head."
+wiki = "Sometimes washed up with a catch. Used to upgrade pickaxes."
+emoji = "🪸"
+rarity = 2
+skill = "fishing"
+category = "material"
+price = 0
+sell_price = 500
+
+[coral_shard.drop]
+rate = 6  # 1 in 6 casts brings one up
+min = 1
+max = 1
+
+[plant_fiber]
+name = "Plant Fiber"
+description = "Tough, stringy stalks. Perfect for binding a pickaxe's grip."
+wiki = "Left over from a harvest. Used to upgrade pickaxes."
+emoji = "🧵"
+rarity = 1
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 200
+
+[plant_fiber.drop]
+rate = 2  # about every other harvest
+min = 1
+max = 3
+
+[hardwood]
+name = "Hardwood"
+description = "A dense, straight branch: the best kind of handle."
+wiki = "Chopped off trees. Used to upgrade pickaxes."
+emoji = "🪵"
+rarity = 2
+skill = "foraging"
+category = "material"
+price = 0
+sell_price = 500
+
+[hardwood.drop]
+rate = 6
+min = 1
+max = 2
 
 [starter_rod]
 name = "Starter Rod"
@@ -949,9 +1157,12 @@ requirement = 0
 to = "reinforced_pickaxe"
 bits = 30000  # TODO(balance)
 
-[rookiepickaxe.tool.upgrade.items]  # TODO(balance)
-copper_ore = 200
-iron_ore = 40
+[rookiepickaxe.tool.upgrade.items]  # TODO(balance): ores from mining, a handle from foraging, a binding from farming, coral from fishing
+copper_ore = 150
+iron_ore = 30
+hardwood = 4
+plant_fiber = 6
+coral_shard = 2
 
 [reinforced_pickaxe]
 name = "Reinforced Pickaxe"
@@ -974,6 +1185,9 @@ bits = 500000  # TODO(balance)
 [reinforced_pickaxe.tool.upgrade.items]  # TODO(balance)
 iron_ore = 300
 gold_ore = 60
+hardwood = 40
+plant_fiber = 60
+coral_shard = 15
 
 [masterwork_pickaxe]
 name = "Masterwork Pickaxe"

@@ -130,7 +130,7 @@ class Registry:
         if self.mining is not None:
             problems += self._validate_mining(self.mining)
         if self.fishing is not None:
-            fish = [i for i in self.items.values() if i.skill == "fishing" and i.category == "material" and i.drop]
+            fish = [i for i in self.items.values() if i.skill == "fishing" and i.category == "fish" and i.drop]
             if not any(i.drop.rate == 1 for i in fish):
                 problems.append("fishing: at least one fish needs drop rate 1 so every cast catches something")
         if self.farming is not None and self.farming.deed_item not in self.items:
