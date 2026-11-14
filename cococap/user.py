@@ -33,6 +33,7 @@ SKILL_MODELS: dict[str, type[Skill]] = {
 _COLUMN_FIELDS = {"xp", "equipped_instance_id"}  # stored as real columns, not in the JSON blob
 
 S = TypeVar("S", bound=Skill)
+T = TypeVar("T")
 
 
 class Cooldowns(Enum):
@@ -530,6 +531,16 @@ class User:
                 enchants[enchant_id] = level
             row.enchants = enchants  # reassign so the JSON change is detected
             return self._to_instance(row)
+
+    async def update_pethouse(self, change: Callable[[Pethouse], T]) -> T:
+        """Read-modify-write the pet house inside one transaction (so two clicks can't both win)."""
+        async with get_database().session() as session:
+            row = await session.get(UserRow, self.id)
+            house = Pethouse.model_validate(row.pethouse or {})
+            result = change(house)
+            row.pethouse = house.model_dump()
+        await self.refresh()
+        return result
 
     async def change_template(self, instance_id: int, old: str, new: str) -> bool:
         """Turn one of this player's tools into another kind (an upgrade), keeping its enchants and rolls.

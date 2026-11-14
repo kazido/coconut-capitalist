@@ -121,6 +121,11 @@ min = 1
 max = 1
 chance = 0.04
 [[treasure.loot]]
+item = "familiar_orb"
+min = 1
+max = 1
+chance = 0.03
+[[treasure.loot]]
 item = "spirit_of_the_sea"
 min = 1
 max = 1
@@ -288,3 +293,8 @@ marlin = 120
 giant_squid = 120
 abyssal_angler = 350
 leviathan_pup = 2500
+[[boss.loot]]
+item = "familiar_orb"
+min = 1
+max = 1
+chance = 0.08

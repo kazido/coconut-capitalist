@@ -165,11 +165,21 @@ class Item(_Data):
         return f"{self.emoji} {self.name}" if self.emoji else self.name
 
 
+class PetBonus(_Data):
+    """One thing a pet does while it is your active pet. `stat` is what the game looks up (see services/pets.py)."""
+
+    stat: str
+    value: float = Field(gt=0)  # at one star and the top level
+    text: str  # how it reads, with {v} for the number
+
+
 class Pet(_Data):
     id: str
     name: str
     emoji: str | None = None
-    stars: int | None = Field(default=None, ge=1, le=3)
+    rarity: int = Field(default=1, ge=1, le=5)
+    description: str = ""
+    bonuses: list[PetBonus] = Field(default_factory=list)
 
     _id = field_validator("id")(check_id)
 
@@ -604,7 +614,19 @@ class ExchangeRules(_Data):
     daily_limit: int = Field(ge=0)
 
 
+class PetRules(_Data):
+    max_level: int = Field(ge=1)
+    xp_scale: int = Field(ge=1)  # a pet's level = 1 + sqrt(xp / this), up to max_level
+    max_stars: int = Field(ge=1)
+    star_bonus: float = Field(ge=0)  # each star after the first makes every bonus this much bigger
+    level_floor: float = Field(gt=0, le=1)  # a level-1 pet gives this share of its bonus; max level gives all of it
+    spirit_bonus: float = Field(ge=0)  # a Spirit given to a pet: +this xp in its skill while that pet is active
+    maxed_xp: int = Field(ge=0)  # a duplicate of a pet that already has every star gives it this much xp
+    orb_weights: dict[int, float]  # chance weight of each rarity when you open a Familiar Orb
+
+
 class EconomyRules(_Data):
+    pets: PetRules
     party_xp_bonus_by_size: list[float] = Field(min_length=1)  # skill xp bonus for a party of 2, 3, ... (the last applies to bigger ones)
     starting_luckbucks: int = Field(ge=0)
     weekly_luckbucks: int = Field(ge=0)

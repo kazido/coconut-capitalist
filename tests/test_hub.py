@@ -226,7 +226,7 @@ async def submit(inter, text):
 
 
 async def test_shop_buy_opens_a_modal_and_buying_works(db):
-    await set_columns(await User.get(1), purse=2_000_000)
+    await set_columns(await User.get(1), purse=10_000_000)
     nav, inter = await hub("shop")
     buy = next(b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success)
     await buy.callback(inter)
@@ -234,7 +234,7 @@ async def test_shop_buy_opens_a_modal_and_buying_works(db):
     await modal.on_submit(inter)
     user = await User.get(1)
     items, instances = await user.items(), await user.instances()
-    assert len(instances) + sum(items.values()) == 2 and user.purse < 2_000_000
+    assert len(instances) + sum(items.values()) == 2 and user.purse < 10_000_000
     assert "Bought 2" in all_text(nav)
 
 

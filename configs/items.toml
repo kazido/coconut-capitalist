@@ -144,7 +144,7 @@ sell_price = 1000
 seed = "apple_seed"
 min_harvest = 10
 max_harvest = 20
-pet_xp = 0
+pet_xp = 5
 
 [coconut]
 name = "Coconut"
@@ -174,7 +174,7 @@ sell_price = 50000
 seed = "dusty_dandelion_seed"
 min_harvest = 1
 max_harvest = 1
-pet_xp = 0
+pet_xp = 250
 
 [hot_pepper]
 name = "Hot Pepper"
@@ -204,7 +204,7 @@ sell_price = 35000
 seed = "lemon_seed"
 min_harvest = 3
 max_harvest = 5
-pet_xp = 0
+pet_xp = 175
 
 [wilted_rose]
 name = "Wilted Rose"
@@ -219,7 +219,17 @@ sell_price = 1000000
 seed = "wilted_rose_seed"
 min_harvest = 1
 max_harvest = 3
-pet_xp = 0
+pet_xp = 5000
+
+[familiar_orb]
+name = "Familiar Orb"
+description = "A swirling orb. Something is curled up inside, waiting."
+wiki = "Open it from the Pet House for a random pet. A pet you already have gets another star."
+emoji = "🔮"
+rarity = 4
+category = "key_item"
+price = 1500000  # TODO(balance): also found in drops, chests and boss loot
+sell_price = 0
 
 [land_deed]
 name = "Land Deed"

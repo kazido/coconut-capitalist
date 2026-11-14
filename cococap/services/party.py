@@ -184,6 +184,11 @@ async def xp_bonus(user_id: int, registry: Registry | None = None) -> float:
     return bonus_for_size(party.member_count(), registry) if party is not None else 0.0
 
 
-async def xp_multiplier(user_id: int, registry: Registry | None = None) -> float:
-    """The skill-xp multiplier for `user_id`: a bonus in every skill that grows with the size of their party."""
-    return 1 + await xp_bonus(user_id, registry)
+async def xp_multiplier(user_id: int, registry: Registry | None = None, skill: str | None = None) -> float:
+    """The skill-xp multiplier for `user_id`: the party's bonus (it grows with the party's size) and the active pet's
+    bonus for `skill` (its all-skill one, plus a Spirit for that skill)."""
+    from cococap.services import pets  # (pets doesn't know about parties, so there is no cycle)
+
+    reg = registry or get_registry()
+    pet = await pets.xp_bonus(await User.get(user_id), skill, reg)
+    return (1 + await xp_bonus(user_id, reg)) * (1 + pet)

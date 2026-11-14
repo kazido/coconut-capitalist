@@ -32,3 +32,18 @@ hard = 3
 [exchange]
 bits_per_luckbuck = 5000           # one-way: bits -> luckbucks (a bit sink)
 daily_limit = 500                  # luckbucks per player per day
+
+[pets]
+max_level = 20
+xp_scale = 500                     # level 2 at 500 xp, 5 at 8,000, 10 at 40,500, 20 at 180,500
+max_stars = 5
+star_bonus = 0.25                  # +25% bonus per extra star
+level_floor = 0.5                  # a fresh pet does half its bonus; a max level one does all of it
+spirit_bonus = 0.15                # a Spirit adds +15% xp in its skill while the pet is active
+maxed_xp = 2000
+[pets.orb_weights]                 # what an orb can turn out to be
+1 = 40
+2 = 30
+3 = 20
+4 = 8
+5 = 2

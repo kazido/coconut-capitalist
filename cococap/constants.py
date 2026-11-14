@@ -40,7 +40,6 @@ GUILD_ID = int(os.getenv("GUILD_ID", "856915776345866240"))
 # instead of failing noisily; remove an entry once its module has been ported. See docs/AUDIT.md.
 DISABLED_EXTENSIONS = frozenset(
     {
-        "cococap.exts.economy.pets",
         "cococap.exts.exploration.mining",
         "cococap.exts.gambling.snail_racing",  # empty stub: setup() calls add_cog() with no cog
     }

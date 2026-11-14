@@ -24,6 +24,7 @@ from cococap.registry.loader import BOMB_ITEM
 from cococap.registry.models import MiningRules, RiskLabel
 from cococap.services.equipment import equipped_stats
 from cococap.services.loot import roll_table
+from cococap.services import pets
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -425,8 +426,9 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
     magnet = mining.magnet_meter >= rules.magnet.capacity
     if magnet:
         await user.update_skill("mining", lambda m: setattr(m, "magnet_meter", 0))
+    pet = await pets.bonuses(user, reg)
     power = tool.power
-    reduction = d.reactor_reduction * (mining.reactor.level - 1) + tool.stats.get("danger_reduction", 0)
+    reduction = d.reactor_reduction * (mining.reactor.level - 1) + tool.stats.get("danger_reduction", 0) + pet.get("danger_reduction", 0)
     bombs = min(await user.item_quantity(BOMB_ITEM), d.bombs_per_run)
     return MineRun(
         rules,
@@ -435,7 +437,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         cursors=_start_cursors(columns_dug(mining.reactor.level, rules), rules.columns),
         bombs=bombs,
         growth_factor=1 - min(d.max_reduction, reduction),
-        yield_factor=1 + d.power_yield_bonus * max(0, power - 1),
+        yield_factor=(1 + d.power_yield_bonus * max(0, power - 1)) * (1 + pet.get("ore_yield", 0.0)),
         braces=d.braces_base + (mining.reactor.level - 1) // d.braces_per_reactor_levels,
         magnet=magnet,
         wyrmhole_odds_value=wyrmhole_odds(gems_placed(mining), rules),
@@ -472,7 +474,7 @@ async def settle_run(user: User, run: MineRun, registry: Registry | None = None)
     if run.settled:
         return RunSummary(run.outcome, Counter(run.haul), run.xp_awarded, run.lodes, run.depth)
     run.settled = True
-    xp = round(rules.xp_per_column * run.lodes * await xp_multiplier(user.id, registry))
+    xp = round(rules.xp_per_column * run.lodes * await xp_multiplier(user.id, registry, "mining"))
     run.xp_awarded = xp
     summary = RunSummary(run.outcome, Counter(run.haul), xp, run.lodes, run.depth)
     log.info("mine over: %s at row %d/%d, pressure %.1f, risk on the last dig %.2f%%, %d lodes",

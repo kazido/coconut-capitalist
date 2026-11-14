@@ -225,7 +225,7 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     tree.collected = True
     drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone), rng), rng, reg)
     bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules))
-    xp = round(tree.max_hp * rules.xp_per_hp * await xp_multiplier(user.id, reg))
+    xp = round(tree.max_hp * rules.xp_per_hp * await xp_multiplier(user.id, reg, "foraging"))
     await _pay(user, drops, bits, xp, trees=1)
     return Reward(drops, bits, xp)
 
@@ -431,7 +431,7 @@ async def claim_rewards(
         snapshot = [(w, Counter(r.drops), r.bits, r.xp, r.felled) for w, r in claimed]
     if not snapshot:
         return []
-    mult = await xp_multiplier(user.id, reg)
+    mult = await xp_multiplier(user.id, reg, "foraging")
     rewards = []
     for window, drops, bits, xp, felled in snapshot:
         boosted = round(xp * mult)

@@ -48,7 +48,10 @@ class WorkReward:
 async def claim_work(user: User, registry: Registry | None = None) -> WorkReward:
     """Collect this rank's wage. Goes straight to the bank if the player enabled auto-deposit."""
     await _claim(user, Cooldowns.WORK)
-    wage = (registry or get_registry()).rank(user.rank).wage
+    from cococap.services import pets
+
+    reg = registry or get_registry()
+    wage = round(reg.rank(user.rank).wage * (1 + (await pets.bonuses(user, reg)).get("work_bonus", 0.0)))
     await user.add_bits(wage)
     await user.inc_stat("claimed_work")
     deposited = False

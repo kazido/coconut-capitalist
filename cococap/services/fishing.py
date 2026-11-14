@@ -20,6 +20,7 @@ from cococap.registry.models import FishingRules, WaterRules
 from cococap.services import shop
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop, roll_table
+from cococap.services import pets
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -64,12 +65,16 @@ def quest_pool(registry: Registry) -> list[Item]:
     return [i for i in fish_pool(registry) if i.id in ids]
 
 
-def roll_fish(rng: random.Random, registry: Registry | None = None, water: WaterRules | None = None) -> Item:
-    """What bites: from one water's fish (rarest first, the commonest as the catch-all), or from every fish."""
+def roll_fish(rng: random.Random, registry: Registry | None = None, water: WaterRules | None = None,
+              rare_luck: float = 0.0) -> Item:
+    """What bites: from one water's fish (rarest first, the commonest as the catch-all), or from every fish.
+    ``rare_luck`` (a pet's bonus) makes the rare fish (rarity 4 and up) that much more likely."""
     reg = registry or get_registry()
     if water is not None:
         odds = sorted(water.fish.items(), key=lambda kv: -kv[1])
         for fish_id, rate in odds:
+            if reg.item(fish_id).rarity >= 4:
+                rate = max(1, round(rate / (1 + rare_luck)))
             if rng.randint(1, rate) == 1:
                 return reg.item(fish_id)
         return reg.item(odds[-1][0])
@@ -262,14 +267,15 @@ def roll_size(fish: Item, rng: random.Random) -> float:
 
 
 def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = None, registry: Registry | None = None,
-              *, armed: bool = False, water: WaterRules | None = None) -> Cast:
+              *, armed: bool = False, water: WaterRules | None = None, pet: dict[str, float] | None = None) -> Cast:
     """Put the line in the water: pick the fish, the bite time and the arrows. While a hallucination lasts
     (``armed``), the catch may turn out to be a treasure chest instead."""
     reg = registry or get_registry()
     rules = reg.fishing
     now = time.time() if now is None else now
-    fish = roll_fish(rng, reg, water)
-    bite_at = now + wait_seconds(stats.power, rules, rng, stats.stats.get("bite_speed", 0.0)) * (
+    pet = pet or {}
+    fish = roll_fish(rng, reg, water, pet.get("rare_luck", 0.0))
+    bite_at = now + wait_seconds(stats.power, rules, rng, stats.stats.get("bite_speed", 0.0) + pet.get("bite_speed", 0.0)) * (
         water.wait_multiplier if water else 1.0)
     pattern, truth = build_reel(fish, rules, rng)
     cast = Cast(
@@ -283,7 +289,7 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
         echo_window=rules.reel.echo_window,
         size=roll_size(fish, rng),
     )
-    if armed and rng.randint(1, rules.treasure.chest_odds) == 1:
+    if armed and rng.randint(1, max(1, round(rules.treasure.chest_odds / (1 + pet.get("treasure_luck", 0.0))))) == 1:
         cast.chest, cast.attempts_left = True, rules.treasure.attempts
     elif rng.randint(1, rules.boss.odds) == 1:
         cast.boss = rng.choice(rules.boss.names)
@@ -414,13 +420,14 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     if cast.settled:
         raise FishingError("You already took that fish.")
     cast.settled = True
-    multiplier = await xp_multiplier(user.id, reg)
+    multiplier = await xp_multiplier(user.id, reg, "fishing")
     xp = round(cast.fish.rarity * rules.xp_per_rarity * multiplier)
     await user.add_item(cast.fish.id, 1)
     extras = catch_extras(rng or random.Random(), reg)
     for item_id, quantity in extras.items():
         await user.add_item(item_id, quantity)
     finished: list[Quest] = []
+    pet = await pets.bonuses(user, reg)
     seen: list[str] = []
     best: list[bool] = []
     counts_for_community: list[bool] = []
@@ -435,7 +442,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
             skill.xp += cast.fish.rarity * rules.records.personal_xp_per_rarity
             best.append(True)
         t = rules.treasure
-        if skill.treasure.armed_until <= now and dice.randint(1, t.hallucination_odds) == 1:
+        if skill.treasure.armed_until <= now and dice.randint(1, max(1, round(t.hallucination_odds / (1 + pet.get("treasure_luck", 0.0))))) == 1:
             code = "".join(dice.choice("0123456789") for _ in range(t.code_length))
             skill.treasure = TreasureState(code=code, armed_until=now + t.armed_minutes * 60)
             seen.append(code)
@@ -606,7 +613,7 @@ async def turn_in(user: User, fish_id: str, registry: Registry | None = None) ->
         await user.remove_item(fish_id, take)
     except ValueError:
         raise FishingError(f"You don't have any {fish.name}.") from None
-    multiplier = await xp_multiplier(user.id, reg)
+    multiplier = await xp_multiplier(user.id, reg, "fishing")
     credited = 0
 
     def give(skill) -> None:
@@ -639,7 +646,7 @@ async def complete_book(user: User, registry: Registry | None = None) -> BookRew
     reg = registry or get_registry()
     rules = reg.fishing
     await _require_book(user, reg)
-    multiplier = await xp_multiplier(user.id, reg)
+    multiplier = await xp_multiplier(user.id, reg, "fishing")
     outcome: dict = {}
 
     def finish(skill) -> None:
@@ -695,7 +702,7 @@ async def open_chest(user: User, cast: Cast, guess: str, rng: random.Random | No
     attempt = _digits(guess)
     outcome: dict = {}
 
-    multiplier = await xp_multiplier(user.id, reg)
+    multiplier = await xp_multiplier(user.id, reg, "fishing")
 
     def try_lock(skill) -> None:
         code = skill.treasure.code
@@ -756,7 +763,7 @@ async def defeat_boss(user: User, cast: Cast, rng: random.Random | None = None, 
     for row in b.loot:
         if rng.random() < row.chance:
             items[row.item] += rng.randint(row.min, row.max)
-    xp = round(b.xp * await xp_multiplier(user.id, reg))
+    xp = round(b.xp * await xp_multiplier(user.id, reg, "fishing"))
 
     def win(skill) -> None:
         skill.xp += xp

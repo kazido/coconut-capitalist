@@ -6,7 +6,7 @@ import discord
 
 from cococap.constants import Rarities
 from cococap.registry import get_registry
-from cococap.services import fishing, fishing_community
+from cococap.services import fishing, fishing_community, pets
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
 from cococap.ui import Page, PromptModal, Result, Screen
@@ -232,7 +232,7 @@ class FishScreen(Screen):
         water = fishing.require_water(level, self.water or fishing.unlocked_waters(level, get_registry().fishing)[-1].id,
                                       get_registry().fishing)
         self.missed = None
-        self.cast = fishing.cast_line(stats, self.rng, now(), armed=armed, water=water)
+        self.cast = fishing.cast_line(stats, self.rng, now(), armed=armed, water=water, pet=await pets.bonuses(self.user))
         await self.refresh(interaction)
 
     async def _pick_water(self, interaction: discord.Interaction, values: list[str]) -> None:

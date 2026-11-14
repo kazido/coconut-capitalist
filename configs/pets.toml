@@ -1,31 +1,116 @@
-# Pets are the gacha part of the bot (summoned through familiar orbs). Design still open: stars, bonuses, xp.
+# Pets: collected from Familiar Orbs (a duplicate adds a star), fed crops to level up. One is active at a time, and its bonuses
+# apply everywhere in the game. A bonus is `value` x stars x level (see [pets] in economy.toml). TODO(balance): all of it
 
 [dog]
 name = "Dog"
+emoji = "🐕"
+rarity = 1
+description = "A loyal worker. Pays you a bit extra every shift."
+[[dog.bonuses]]
+stat = "work_bonus"
+value = 0.1
+text = "+{v:.0%} bits from Work"
 
 [cat]
 name = "Cat"
+emoji = "🐈"
+rarity = 2
+description = "Has a way with fish. They find your hook sooner."
+[[cat.bonuses]]
+stat = "bite_speed"
+value = 0.15
+text = "-{v:.0%} time waiting for a bite"
 
 [turtle]
 name = "Turtle"
+emoji = "🐢"
+rarity = 2
+description = "Slow, steady and sure. The mine creaks less around it."
+[[turtle.bonuses]]
+stat = "danger_reduction"
+value = 0.03
+text = "-{v:.0%} mine pressure"
+[[turtle.bonuses]]
+stat = "ore_yield"
+value = 0.05
+text = "+{v:.0%} ore from the mine"
 
 [frog]
 name = "Frog"
+emoji = "🐸"
+rarity = 2
+description = "Loves the rain. Your crops grow more often."
+[[frog.bonuses]]
+stat = "grow_chance"
+value = 0.06
+text = "+{v:.0%} chance a crop grows each rain"
 
 [monkey]
 name = "Monkey"
+emoji = "🐒"
+rarity = 3
+description = "Knows exactly where to hit a tree."
+[[monkey.bonuses]]
+stat = "good_chop"
+value = 0.08
+text = "+{v:.0%} chance of a good chop"
 
 [koala]
 name = "Koala"
-
-[eagle]
-name = "Eagle"
-
-[dragon]
-name = "Dragon"
-
-[python]
-name = "Python"
+emoji = "🐨"
+rarity = 3
+description = "Calm and clever. Everything you learn sticks a little better."
+[[koala.bonuses]]
+stat = "xp_all"
+value = 0.05
+text = "+{v:.0%} xp in every skill"
 
 [bee]
 name = "Bee"
+emoji = "🐝"
+rarity = 3
+description = "A tireless pollinator. Harvests come in bigger."
+[[bee.bonuses]]
+stat = "crop_yield"
+value = 0.1
+text = "+{v:.0%} crops per harvest"
+
+[eagle]
+name = "Eagle"
+emoji = "🦅"
+rarity = 4
+description = "Sharp eyes spot the big ones below the surface."
+[[eagle.bonuses]]
+stat = "rare_luck"
+value = 0.25
+text = "+{v:.0%} chance of rare fish"
+
+[python]
+name = "Python"
+emoji = "🐍"
+rarity = 4
+description = "Patient. Your crab pots fill faster while it watches."
+[[python.bonuses]]
+stat = "pot_speed"
+value = 0.25
+text = "+{v:.0%} faster crab pots"
+
+[crab]
+name = "Crab"
+emoji = "🦀"
+rarity = 4
+description = "Knows the seabed. Your crab pots lure rarer fish."
+[[crab.bonuses]]
+stat = "pot_luck"
+value = 0.5
+text = "+{v:.0%} rare fish in crab pots"
+
+[dragon]
+name = "Dragon"
+emoji = "🐉"
+rarity = 5
+description = "Hoards treasure, and can smell it. Hallucinations and chests come more often."
+[[dragon.bonuses]]
+stat = "treasure_luck"
+value = 0.35
+text = "+{v:.0%} hallucination and chest chance"

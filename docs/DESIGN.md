@@ -193,6 +193,31 @@ other skill. Farming has no tool, but its
 first seed is 10,000 bits, so a new player needs a couple of Work claims or another skill first (`TODO(balance)`).
 Whichever skill they pick first pays for the next tool.
 
+## Pets
+
+Pets are the gacha part of the bot, and **every pet gives a bonus somewhere in the game** while it is your active pet
+(one at a time; `/pets` or the Pets shortcut on Home). They come from **Familiar Orbs** (treasure chests, boss loot,
+the shop at 1.5M), which hatch a random pet by rarity (`economy.toml` `[pets.orb_weights]`); a duplicate adds a **star**
+(up to 5; a fifth-star duplicate gives xp instead). Feed them **crops** for pet xp (dearer crops feed more) to level
+them up to 20, and give them a **Spirit** item for +15% xp in its skill. A bonus is its listed value x stars (+25%
+each) x level (a fresh pet does half, a max one all of it).
+
+| Pet | Does |
+|---|---|
+| Dog | +bits from Work |
+| Cat | shorter wait for a fish to bite |
+| Turtle | less mine pressure, more ore |
+| Frog | crops grow more often in the rain |
+| Monkey | more good chops on trees |
+| Koala | +xp in every skill |
+| Bee | bigger harvests |
+| Eagle | more rare fish |
+| Python | faster crab pots |
+| Crab | rarer fish in crab pots |
+| Dragon | hallucinations and chests more often |
+
+The pet bonuses stack with the party xp bonus. All numbers are in `configs/pets.toml` (`TODO(balance)`).
+
 ## Tools: buy one, then upgrade it
 
 The shop sells only the **starter tool** of each kind, and you can own **one tool per kind**: buying a second is refused.

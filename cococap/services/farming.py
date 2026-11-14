@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from cococap.errors import GameRuleError
 from cococap.models.skills.farming import Farming, Plot
 from cococap.registry import Registry, get_registry
+from cococap.services import pets
 from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
 from cococap.user import Cooldowns, User
@@ -68,7 +69,7 @@ class RainReport:
     matured: tuple[int, ...]  # plot numbers that finished growing
 
 
-def apply_rain(farming: Farming, user_id: int, now: float, registry: Registry) -> RainReport:
+def apply_rain(farming: Farming, user_id: int, now: float, registry: Registry, grow_bonus: float = 0.0) -> RainReport:
     """Catch the farm up on the rains since it was last looked at. Mutates `farming`; safe to repeat."""
     rules, hour = registry.farming, hour_of(now)
     grew_in: set[int] = set()
@@ -79,7 +80,7 @@ def apply_rain(farming: Farming, user_id: int, now: float, registry: Registry) -
             continue
         needed = registry.item(plot.crop_id).seed.cycles
         for h in range(max(plot.since, hour - MAX_CATCH_UP_HOURS) + 1, hour + 1):
-            if _grows(user_id, number, h, rules.grow_chance):
+            if _grows(user_id, number, h, min(1.0, rules.grow_chance + grow_bonus)):
                 plot.cycle += 1
                 grew_in.add(h)
                 if plot.cycle >= needed:
@@ -160,7 +161,8 @@ async def sync(user: User, now: float | None = None, registry: Registry | None =
     """Catch the farm up on the rain and return it (plus what the rain did)."""
     reg, now = registry or get_registry(), now if now is not None else time.time()
     seen: list[RainReport] = []
-    farming = await user.update_skill("farming", lambda m: seen.append(apply_rain(m, user.id, now, reg)))
+    grow = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
+    farming = await user.update_skill("farming", lambda m: seen.append(apply_rain(m, user.id, now, reg, grow)))
     return farming, seen[0]
 
 
@@ -201,8 +203,10 @@ async def plant(
     except ValueError:
         raise FarmingError(f"You don't have any {seed.name}.") from None
 
+    grow = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
+
     def sow(m: Farming) -> None:
-        apply_rain(m, user.id, now, reg)
+        apply_rain(m, user.id, now, reg, grow)
         plot = plot_of(m, number)
         if not is_unlocked(m, number, reg.farming):
             raise FarmingError("You don't own that plot yet.")
@@ -242,15 +246,17 @@ async def harvest(
     reg, now = registry or get_registry(), now if now is not None else time.time()
     rules = reg.farming
     taken: dict = {}
-    party_bonus = await xp_multiplier(user.id, reg)
+    party_bonus = await xp_multiplier(user.id, reg, "farming")
+    pet = await pets.bonuses(user, reg)
 
     def pick(m: Farming) -> None:
-        apply_rain(m, user.id, now, reg)
+        apply_rain(m, user.id, now, reg, pet.get("grow_chance", 0.0))
         plot = plot_of(m, number)
         if not (plot.crop_id and plot.can_harvest):
             raise FarmingError("Nothing is ready to harvest on that plot.")
         crop = reg.item(reg.item(plot.crop_id).seed.grows_into)
-        taken.update(seed=plot.crop_id, crop=crop.id, amount=rng.randint(crop.crop.min_harvest, crop.crop.max_harvest),
+        taken.update(seed=plot.crop_id, crop=crop.id,
+                     amount=max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + pet.get("crop_yield", 0.0)))),
                      xp=round(crop.rarity * rules.xp_per_rarity * party_bonus))
         plot.crop_id, plot.cycle, plot.can_harvest = None, 0, False  # the plot is empty from this moment: once only
         m.xp += taken["xp"]
@@ -333,8 +339,10 @@ async def deposit_blessings(
     await _require_market(user, now, reg)
     taken = {"n": 0}
 
+    grow = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
+
     def spend(m: Farming) -> None:
-        apply_rain(m, user.id, now, reg)
+        apply_rain(m, user.id, now, reg, grow)
         taken["n"], m.rain_god_blessings = m.rain_god_blessings, 0
         if not taken["n"]:
             raise FarmingError("You have no rain god's blessings to deposit.")

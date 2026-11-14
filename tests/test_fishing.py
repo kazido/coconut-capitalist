@@ -292,7 +292,7 @@ async def test_without_a_rod_the_fishing_page_says_how_to_get_one(db):
 
 
 async def test_casting_waits_then_a_bite_then_reeling_lands_the_fish(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
     user, nav, inter = await open_fishing()
     assert nav.screen.refresh_every is None  # nothing in the water: no self-refresh
     await click(nav, inter, "Cast")
@@ -318,7 +318,7 @@ async def test_casting_waits_then_a_bite_then_reeling_lands_the_fish(db, clock, 
 
 
 async def test_a_wrong_arrow_on_the_screen_loses_the_fish_and_a_stale_click_is_harmless(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + 1
@@ -333,7 +333,7 @@ async def test_a_wrong_arrow_on_the_screen_loses_the_fish_and_a_stale_click_is_h
 
 
 async def test_a_fish_that_bites_while_you_are_away_gets_away(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.expires_at + 5
@@ -474,7 +474,7 @@ async def test_quest_xp_is_added_on_top_of_the_catch(db):
 
 
 async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("pufferfish"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("pufferfish"))
     clock[0] = DAY0 + 100
     user, nav, inter = await open_fishing()
     assert find_button(nav, "Quests").disabled and "unlock at fishing level" in all_text(nav)
@@ -495,7 +495,7 @@ async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
 
 
 async def test_a_bite_you_ignore_gets_away_once_the_window_and_the_quiet_grace_are_over(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + RULES.bite.window - 1
@@ -890,7 +890,7 @@ async def test_the_screen_flashes_the_numbers_then_hides_them_and_the_chest_open
 
 
 async def test_a_catch_names_its_rarity(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("salmon"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("salmon"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + 1
@@ -979,7 +979,7 @@ def clicked(inter, at):
 
 
 async def test_the_screen_uses_when_you_clicked_not_when_the_bot_noticed(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -997,7 +997,7 @@ async def test_the_screen_uses_when_you_clicked_not_when_the_bot_noticed(db, clo
 
 
 async def test_a_click_made_in_time_but_delivered_late_saves_the_fish_on_the_same_screen(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -1016,7 +1016,7 @@ async def test_a_click_made_in_time_but_delivered_late_saves_the_fish_on_the_sam
 
 
 async def test_a_click_that_really_was_too_late_stays_too_late(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -1031,7 +1031,7 @@ async def test_a_click_that_really_was_too_late_stays_too_late(db, clock, monkey
 
 
 async def test_a_double_pressed_arrow_on_the_screen_does_not_cost_the_fish(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + 1
@@ -1112,7 +1112,7 @@ async def test_the_biggest_fish_on_the_server_is_a_record_that_pays_and_names_th
 
 
 async def test_a_catch_says_its_size_and_a_record_and_the_records_page_lists_them(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("salmon"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("salmon"))
     user, nav, inter = await open_fishing()
     await user.set_name("Ahna")
     await click(nav, inter, "Cast")
@@ -1284,7 +1284,7 @@ def test_quests_and_community_goals_only_ask_for_fish_from_the_first_waters():
 async def test_the_page_defaults_to_your_best_water_lets_you_pick_and_hints_at_the_next(db, clock, monkeypatch):
     seen = []
 
-    def spy(rng, reg=None, water=None):
+    def spy(rng, reg=None, water=None, rare_luck=0.0):
         seen.append(water.id)
         return REG.item("cod")
 
@@ -1504,7 +1504,7 @@ def test_field_notes_read_clearly():
 
 
 async def test_the_screen_has_a_reel_button_shows_breaks_and_mysteries_and_the_result_says_what_the_mystery_was(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("moray_eel"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("moray_eel"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -1522,7 +1522,7 @@ async def test_the_screen_has_a_reel_button_shows_breaks_and_mysteries_and_the_r
 
 
 async def test_losing_at_a_mystery_still_shows_it_on_the_result_page(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("moray_eel"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("moray_eel"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast

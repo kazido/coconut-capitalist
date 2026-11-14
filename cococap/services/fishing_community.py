@@ -124,7 +124,7 @@ async def donate(user: User, fish_id: str, registry: Registry | None = None) -> 
         await user.add_item(fish_id, take - credited)  # the book didn't need them after all
     if credited == 0:
         raise CommunityError(f"The community book already has all the {fish.name} it needs.")
-    xp = round(credited * fish.rarity * rules.community.book.donor_xp_per_rarity * await xp_multiplier(user.id, reg))
+    xp = round(credited * fish.rarity * rules.community.book.donor_xp_per_rarity * await xp_multiplier(user.id, reg, "fishing"))
     bits = round(fish.sell_price * rules.community.book.donor_bits_per_sell * credited)
     await user.update_skill("fishing", lambda s: setattr(s, "xp", s.xp + xp))
     if bits:
@@ -159,7 +159,7 @@ async def claim_book_rewards(user: User, registry: Registry | None = None) -> Bo
         return None
     b = rules.community.book
     bits = sum(b.completion_bits * level for level in paid["levels"])
-    xp = round(sum(b.completion_xp * level for level in paid["levels"]) * await xp_multiplier(user.id, reg))
+    xp = round(sum(b.completion_xp * level for level in paid["levels"]) * await xp_multiplier(user.id, reg, "fishing"))
     await user.update_skill("fishing", lambda s: setattr(s, "xp", s.xp + xp))
     await user.add_bits(bits)
     return BookReward(paid["levels"], bits, xp)
@@ -302,7 +302,7 @@ async def claim_monthly(user: User, now: float | None = None, registry: Registry
     if not won:
         return None
     bits = sum(g.slot.bits for g in won)
-    xp = round(sum(g.slot.xp for g in won) * await xp_multiplier(user.id, reg))
+    xp = round(sum(g.slot.xp for g in won) * await xp_multiplier(user.id, reg, "fishing"))
     await user.update_skill("fishing", lambda s: setattr(s, "xp", s.xp + xp))
     await user.add_bits(bits)
     return MonthlyReward(tuple(won), bits, xp)
