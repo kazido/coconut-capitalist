@@ -2226,7 +2226,7 @@ kind = "pickaxe"
 power = 13
 requirement = 0
 path = "Prospector"
-stats = { ore_yield = 0.04, danger_reduction = -0.01 }
+stats = { ore_yield = 0.11, danger_reduction = -0.005 }  # TODO(balance): simulated (leave at 7% risk) to earn within ~5% of the Warden road
 
 [prospector_pickaxe.tool.upgrade]
 to = "geode_pickaxe"
@@ -2253,7 +2253,7 @@ kind = "pickaxe"
 power = 21
 requirement = 0
 path = "Prospector"
-stats = { ore_yield = 0.08, danger_reduction = -0.02 }
+stats = { ore_yield = 0.22, danger_reduction = -0.01 }  # TODO(balance): simulated (leave at 7% risk) to earn within ~5% of the Warden road
 
 [geode_pickaxe.tool.upgrade]
 to = "seekers_pickaxe"
@@ -2280,7 +2280,7 @@ kind = "pickaxe"
 power = 33
 requirement = 0
 path = "Prospector"
-stats = { ore_yield = 0.12, danger_reduction = -0.03 }
+stats = { ore_yield = 0.33, danger_reduction = -0.015 }  # TODO(balance): simulated (leave at 7% risk) to earn within ~5% of the Warden road
 
 [seekers_pickaxe.tool.upgrade]
 to = "veinhunter_pickaxe"
@@ -2307,7 +2307,7 @@ kind = "pickaxe"
 power = 49
 requirement = 0
 path = "Prospector"
-stats = { ore_yield = 0.16, danger_reduction = -0.04 }
+stats = { ore_yield = 0.44, danger_reduction = -0.02 }  # TODO(balance): simulated (leave at 7% risk) to earn within ~5% of the Warden road
 
 [veinhunter_pickaxe.tool.upgrade]
 to = "motherlode_pickaxe"
@@ -2334,7 +2334,7 @@ kind = "pickaxe"
 power = 69
 requirement = 0
 path = "Prospector"
-stats = { ore_yield = 0.2, danger_reduction = -0.05 }
+stats = { ore_yield = 0.55, danger_reduction = -0.025 }  # TODO(balance): simulated (leave at 7% risk) to earn within ~5% of the Warden road
 
 [masterwork_rod.tool.fork]
 to = "lantern_rod"

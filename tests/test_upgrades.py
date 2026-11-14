@@ -321,7 +321,7 @@ async def test_the_other_road_gives_its_own_stats_to_the_tool_in_use(db):
         await user2.add_item(item_id, quantity)
     await upgrades.upgrade(user2, inst2.id, path="fork")
     greedy = await equipped_stats(user2, "mining")
-    assert greedy.stats["ore_yield"] == pytest.approx(0.04) and greedy.stats["danger_reduction"] == pytest.approx(-0.01)
+    assert greedy.stats["ore_yield"] == pytest.approx(0.11) and greedy.stats["danger_reduction"] == pytest.approx(-0.005)
     assert greedy.power == safe.power  # the same power: a different way to dig, not a stronger one
 
 

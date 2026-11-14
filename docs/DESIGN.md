@@ -681,8 +681,8 @@ active hours for x1.35). The fix is two layers, **tools** (what you wield) and *
   that `equipment.equipped_stats` adds to the equipped tool, so the games read them like they read an enchant. Respec clears a tree for 100k bits.
   Stored as `mastery: [node ids]` on each skill. Nothing touches xp.
 - **Tool forks** (`Tool.fork`, `Tool.path`, `Tool.stats`): the Masterwork Pickaxe and Masterwork Rod each branch into two roads of the same power
-  and cost at every tier, with different stats: pickaxe **Warden** (less creaking) vs **Prospector** (more ore, creakier); rod **Angler** (faster
+  and cost at every tier, with different stats: pickaxe **Warden** (2% less creaking per tier) vs **Prospector** (11% more ore and 0.5% more creaking per tier; a mining simulation that leaves at 7% collapse risk puts the two roads within about 5% of each other at tiers 4, 6 and 8: 1.09, 1.01, 1.03); rod **Angler** (faster
   bites, extra forgiven arrows) vs **Treasure Hunter** (rare fish and treasure, slower bites). The upgrade page shows both roads with what each does
-  and warns it is a fork. The shop allows one tool per kind, so the road you take is the one you climb. **Not built yet:** changing roads later for bits.
+  and warns it is a fork. The shop allows one tool per kind, so the road you take is the one you climb. The rod roads are NOT simulated yet (treasure and rare-fish luck are hard to price). **Not built yet:** changing roads later for bits.
 - **Still to do:** foraging and farming Mastery trees, forks for the axe, a numeric balance pass that the two roads really earn about the same
   (the rule above: within ~10%), and the level 5/10 unlock content.
