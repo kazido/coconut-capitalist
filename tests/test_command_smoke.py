@@ -16,7 +16,7 @@ from cococap.errors import CustomError
 from utils.extensions import walk_extensions
 
 # Commands that need a real guild/channel/network and are covered elsewhere or can't be faked cheaply.
-SKIP = {"explore", "dungeon", "embed", "admin_pay", "tictactoe"}
+SKIP = {"explore", "embed", "admin_pay", "tictactoe"}
 
 
 def fake_interaction(bot):

@@ -187,11 +187,14 @@ def _validate_combat(reg: "Registry", rules: CombatRules) -> list[str]:
         if key != skill.id:
             problems.append(f"combat.toml skill '{key}' has id '{skill.id}'")
     for enemy in reg.enemies.values():
-        problems += [f"enemies.toml [{enemy.id}]: unknown skill '{s}'" for s in enemy.skills if s not in rules.skills]
+        every = [*enemy.skills, *(s for ph in enemy.phases for s in ph.skills or [])]
+        problems += [f"enemies.toml [{enemy.id}]: unknown skill '{s}'" for s in every if s not in rules.skills]
     for kit, skills in rules.kits.items():
         if kit != "default" and (kit not in reg.items or reg.items[kit].tool is None or reg.items[kit].tool.kind != "sword"):
             problems.append(f"combat.toml kits: '{kit}' is not a sword")
         problems += [f"combat.toml kits.{kit}: unknown skill '{s}'" for s in skills if s not in rules.skills]
+        if len(skills) > 5:
+            problems.append(f"combat.toml kits.{kit}: at most 5 skills (they are one row of buttons)")
         if not skills or rules.skills.get(skills[0]) and rules.skills[skills[0]].cooldown:
             problems.append(f"combat.toml kits.{kit}: the first skill must have no cooldown")
     if "default" not in rules.kits:

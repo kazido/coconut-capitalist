@@ -259,6 +259,16 @@ class CombatSkill(_Data):
         return self
 
 
+class Phase(_Data):
+    """A boss changes when its hp falls below `below` (a fraction of max hp): it says `message`, gives itself the `buffs`
+    and, if `skills` is set, swaps to that skill list (with every cooldown reset)."""
+
+    below: float = Field(gt=0, lt=1)
+    message: str
+    skills: list[str] | None = Field(default=None, min_length=1)
+    buffs: list[SkillEffect] = Field(default_factory=list)
+
+
 class Enemy(_Data):
     """A monster. `skills` are in priority order: it uses the first one that is off cooldown."""
 
@@ -273,8 +283,17 @@ class Enemy(_Data):
     immune: list[EffectKind] = Field(default_factory=list)  # effects it can never receive (bosses shrug off stuns)
     xp: int = Field(default=0, ge=0)
     emoji: str = "👾"
+    telegraph: bool = False  # bosses: the player always sees what it will do next
+    phases: list[Phase] = Field(default_factory=list)  # in the order they happen (highest `below` first)
 
     _id = field_validator("id")(check_id)
+
+    @model_validator(mode="after")
+    def _phases_in_order(self):
+        marks = [p.below for p in self.phases]
+        if marks != sorted(marks, reverse=True) or len(set(marks)) != len(marks):
+            raise ValueError("phases must be listed from the highest `below` to the lowest, each different")
+        return self
 
 
 class PlayerRules(_Data):

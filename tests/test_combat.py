@@ -25,7 +25,7 @@ ALWAYS = FixedRng(0.0)  # always crits and always lands effects
 
 
 def hero(**kw) -> Unit:
-    args = dict(id="p1", name="Hero", side="player", max_hp=100, attack=20, defense=0, speed=100, skills=["slash", "cleave", "guard_break", "quick_step", "sanguine_priming", "glistening_haven"])
+    args = dict(id="p1", name="Hero", side="player", max_hp=100, attack=20, defense=0, speed=100, skills=["slash", "cleave", "guard_break", "quick_step", "sanguine_priming", "glistening_haven", "brace"])
     return Unit(**{**args, **kw})
 
 
@@ -267,3 +267,84 @@ async def test_settle_pays_xp_and_counts_kills(db):
     b.play("slash", "e1")
     assert await combat.settle(user, b) == 40
     assert (await user.skill("combat")).xp == 40 and (await user.skill("combat")).stats.monsters_slain == 1
+
+
+# ---- the final boss ------------------------------------------------------------------------------------------------------------
+def test_the_boss_is_stun_immune_telegraphs_and_has_ordered_phases():
+    gw = get_registry().enemies["gravewarden"]
+    assert "stun" in gw.immune and gw.telegraph
+    assert [p.below for p in gw.phases] == sorted((p.below for p in gw.phases), reverse=True) and len(gw.phases) == 2
+    assert get_registry().combat.encounters[-1].enemies == ["gravewarden"]
+
+
+def test_every_kit_fits_one_row_of_buttons_and_every_sword_kit_can_brace():
+    for name, kit in RULES.kits.items():
+        assert len(kit) <= 5, name
+        if name != "default":
+            assert "brace" in kit, name
+
+
+def test_you_get_the_first_turn_against_the_boss_and_see_the_death_knell_coming():
+    b = fight(hero(max_hp=10**6, speed=RULES.player.speed), boss_unit())
+    assert b.active.id == "p1" and b.unit("e1").next_skill == "death_knell" and b.unit("e1").telegraph
+
+
+def boss_unit() -> Unit:
+    return enemy_unit(get_registry().enemies["gravewarden"], "e1")
+
+
+def test_a_boss_phase_starts_once_when_hp_falls_below_its_mark_with_message_buff_and_new_skills():
+    b = fight(hero(), boss_unit())
+    gw = b.unit("e1")
+    gw.hp = int(gw.max_hp * 0.61)
+    b._check_phase(gw)
+    assert gw.phase == 0  # still above the mark
+    gw.hp = int(gw.max_hp * 0.59)
+    b._check_phase(gw)
+    assert gw.phase == 1 and gw.has("attack_up") and "grave_chill" in gw.skills
+    assert any("eyes ignite" in line for line in b.log)
+    b._check_phase(gw)
+    assert gw.phase == 1 and len([e for e in gw.effects if e.kind == "attack_up"]) == 1  # once, not every hit
+
+
+def test_a_big_hit_can_skip_straight_through_two_phases():
+    b = fight(hero(), boss_unit())
+    gw = b.unit("e1")
+    gw.hp = int(gw.max_hp * 0.2)
+    b._check_phase(gw)
+    assert gw.phase == 2 and gw.has("speed_up")
+    assert next(e for e in gw.effects if e.kind == "attack_up").value == 0.6  # the enraged value wins, buffs refresh not stack
+
+
+def test_a_phase_resets_cooldowns_and_replans_the_next_move():
+    b = fight(hero(), boss_unit())
+    gw = b.unit("e1")
+    gw.cooldowns["death_knell"] = 4
+    gw.next_skill = "bone_strike"
+    gw.hp = int(gw.max_hp * 0.5)
+    b._check_phase(gw)
+    assert gw.cooldowns == {} and gw.next_skill == "death_knell"
+
+
+def test_a_phase_comes_from_damage_in_a_real_fight():
+    b = fight(hero(attack=300, speed=300, max_hp=10**6), boss_unit())
+    while b.unit("e1").phase == 0 and not b.outcome:
+        b.play("slash", "e1")
+    assert b.unit("e1").phase >= 1 and any("ignite" in line or "enraged" in line for line in b.log)
+
+
+def test_a_dead_boss_does_not_enter_a_phase():
+    b = fight(hero(attack=10**5, speed=300, max_hp=10**6), boss_unit())
+    b.play("slash", "e1")
+    assert b.outcome == "win" and b.unit("e1").phase == 0
+
+
+def test_brace_makes_a_big_hit_hurt_about_half_as_much():
+    plain = fight(hero(max_hp=10**6, defense=25, speed=1), boss_unit(), rng=NO_CRIT)
+    plain._use(plain.unit("e1"), RULES.skills["death_knell"], [plain.unit("p1")])
+    braced = fight(hero(max_hp=10**6, defense=25, speed=300), boss_unit(), rng=NO_CRIT)
+    braced.play("brace")
+    taken_plain = 10**6 - plain.unit("p1").hp
+    braced.unit("p1").hp = 10**6
+    braced._use(braced.unit("e1"), RULES.skills["death_knell"], [braced.unit("p1")])
+    assert (10**6 - braced.unit("p1").hp) < taken_plain * 0.6

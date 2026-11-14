@@ -553,6 +553,14 @@ seedable rng), data: `configs/combat.toml` + `configs/enemies.toml`, screen: `sc
   losing costs nothing, a win pays the enemies' combat xp and counts kills.
 - **A fight can last at most `max_rounds` turns** (a stalemate is a loss).
 
+### The final boss (the Gravewarden)
+A normal enemy plus three things (`configs/enemies.toml`): **telegraph** (you always see its next skill), **immune = ["stun"]**, and
+**phases** (`[[gravewarden.phases]]`): when its hp drops below a mark (60%, then 30%) it says a line, gives itself buffs and may swap
+skill lists (cooldowns reset). A big hit can skip a phase. Its **Death Knell** (x3 damage, every 5 turns) is the thing to plan for:
+**Brace** (every sword kit has it: x4 defense for 2 turns), slows, and killing it faster. The boss is a touch slower than a fresh
+player, so you always see the first knell before it lands. Locked to combat level 20 for now; numbers are placeholders (a Dreamnail
+at level ~25-30 is the intended first win). Its xp is 1,500. Keys and loot attach to this encounter later.
+
 Planned around it: **dungeon keys that drop from these enemies** are the only way into a dungeon; the **final boss** (phases,
 stun-immune, its own skills) closes the dungeon; **enemy drops** become a weighted table of bits *or any item*, with a small
 chance at rare things (the same table also feeds channel drops); then party fights (several player units already work in the engine).

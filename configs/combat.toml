@@ -17,6 +17,11 @@ defense_per_level = 1
 speed = 100
 
 # --- skills -------------------------------------------------------------------------------------------------------
+[skills.bone_strike]
+name = "Bone Strike"
+description = "A crushing swing."
+power = 1.0
+
 [skills.strike]
 name = "Strike"
 description = "A plain hit."
@@ -47,6 +52,13 @@ description = "Move faster for 2 turns and take a step toward your next turn."
 target = "self"
 cooldown = 4
 effects = [{ kind = "speed_up", on = "self", turns = 2, value = 0.3 }, { kind = "meter", on = "self", value = 0.3 }]
+
+[skills.brace]
+name = "Brace"
+description = "Quadruple your defense for 2 turns: hits hurt about half as much. Use it when you can see a big one coming."
+target = "self"
+cooldown = 3
+effects = [{ kind = "defense_up", on = "self", turns = 2, value = 3.0 }]
 
 [skills.sanguine_priming]
 name = "Sanguine Priming"
@@ -82,13 +94,33 @@ power = 0.8
 cooldown = 3
 effects = [{ kind = "bleed", turns = 3, value = 0.25 }]
 
+[skills.soul_drain]
+name = "Soul Drain"
+description = "Hits and heals the caster."
+power = 1.1
+cooldown = 3
+effects = [{ kind = "heal", on = "self", value = 0.04 }]
+
+[skills.death_knell]
+name = "Death Knell"
+description = "A huge blow. Brace, or be ready to take it."
+power = 3.0
+cooldown = 5
+
+[skills.grave_chill]
+name = "Grave Chill"
+description = "Chills the target, slowing them for 2 turns."
+power = 0.6
+cooldown = 4
+effects = [{ kind = "speed_down", chance = 85, turns = 2, value = 0.3 }]
+
 # --- what each sword lets you do (the first skill is the basic, with no cooldown) ------------------------------------------
 [kits]
 default = ["slash"]  # bare hands
-largebranch = ["slash", "cleave"]
-rustedbroadsword = ["slash", "cleave", "sanguine_priming"]
-dreamnail = ["slash", "guard_break", "enter_the_mind", "quick_step"]
-shiningsilver = ["slash", "cleave", "glistening_haven", "guard_break"]
+largebranch = ["slash", "cleave", "brace"]
+rustedbroadsword = ["slash", "cleave", "sanguine_priming", "brace"]
+dreamnail = ["slash", "guard_break", "enter_the_mind", "quick_step", "brace"]
+shiningsilver = ["slash", "cleave", "glistening_haven", "guard_break", "brace"]
 
 # --- fights you can pick -------------------------------------------------------------------------------------------------
 [encounters.graveyard_lone]
@@ -104,3 +136,8 @@ min_level = 3
 name = "The graveyard shift"
 enemies = ["armored_zombie", "skeleton", "zombie"]
 min_level = 8
+
+[encounters.gravewarden]
+name = "The Gravewarden (boss)"
+enemies = ["gravewarden"]
+min_level = 20

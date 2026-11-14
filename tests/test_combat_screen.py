@@ -18,7 +18,7 @@ async def test_lobby_shows_stats_skills_and_locks_fights_above_your_level(db):
     text = all_text(nav)
     assert "Slash" in text and "A lone zombie" in text and "Combat level 3" in text
     fights = [b for b in buttons(nav) if b.label == "Fight"]
-    assert [b.disabled for b in fights] == [False, True, True]
+    assert [b.disabled for b in fights] == [False, True, True, True]
 
 
 async def test_a_locked_fight_cannot_be_started(db):
@@ -93,3 +93,23 @@ async def test_fleeing_ends_the_fight_without_xp(db):
     await click(nav, inter, "Flee")
     assert nav.screen.battle is None and not nav.screen.locked
     assert (await nav.user.skill("combat")).xp == 0 and "ran away" in all_text(nav)
+
+
+async def test_the_boss_shows_its_next_move_and_the_controls_fit_discord_rows(db):
+    nav, inter = await hub("fight")
+    sword = await nav.user.give_instance("shiningsilver")  # five skills: the widest kit
+    await nav.user.equip("combat", sword.id)
+    nav.screen.battle = combat.new_battle(await combat.build_player(nav.user), "gravewarden")
+    nav.screen.encounter = "gravewarden"
+    await nav.refresh(inter)
+    text = all_text(nav)
+    assert "Gravewarden" in text and "Next: **Death Knell**" in text
+    rows = [r for r in nav.walk_children() if r.__class__.__name__ == "ActionRow"]
+    assert all(len(r.children) <= 5 for r in rows)
+    assert {"Slash", "Brace", "Flee"} <= {b.label for b in buttons(nav)}
+
+
+async def test_the_boss_fight_is_locked_until_level_20(db):
+    nav, _ = await hub("fight")
+    fights = [(b.disabled) for b in buttons(nav) if b.label == "Fight"]
+    assert fights == [False, True, True, True] and "Combat level 20" in all_text(nav)

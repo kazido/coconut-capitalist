@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 
 from cococap.errors import GameRuleError
 from cococap.registry import Registry, get_registry
-from cococap.registry.models import BUFFS, CombatRules, CombatSkill, Enemy, SkillEffect
+from cococap.registry.models import BUFFS, CombatRules, CombatSkill, Enemy, Phase, SkillEffect
 from cococap.services import equipment
 from cococap.user import User
 
@@ -64,6 +64,9 @@ class Unit:
     cooldowns: dict[str, int] = field(default_factory=dict)  # skill id -> own turns until it can be used again
     effects: list[ActiveEffect] = field(default_factory=list)
     next_skill: str | None = None  # enemies only: what they will do on their next turn
+    telegraph: bool = False  # bosses: the player can always see next_skill
+    phases: list[Phase] = field(default_factory=list)  # bosses: changes of behaviour as hp drops
+    phase: int = 0  # how many phases have already started
 
     def __post_init__(self):
         if not self.hp:
@@ -101,7 +104,7 @@ def enemy_unit(enemy: Enemy, uid: str) -> Unit:
     return Unit(
         id=uid, name=enemy.name, side="enemy", max_hp=enemy.hp, attack=enemy.attack, defense=enemy.defense,
         speed=enemy.speed, skills=list(enemy.skills), shield=enemy.shield, emoji=enemy.emoji,
-        immune=frozenset(enemy.immune), xp=enemy.xp,
+        immune=frozenset(enemy.immune), xp=enemy.xp, telegraph=enemy.telegraph, phases=list(enemy.phases),
     )
 
 
@@ -235,6 +238,7 @@ class Battle:
         for e in [e for e in actor.effects if e.kind == "bleed"]:
             actor.hp = max(0, actor.hp - round(e.value))
             self.log.append(f"🩸 {actor.name} bleeds for **{round(e.value)}**.")
+            self._check_phase(actor)
         if not actor.alive:
             self.log.append(f"💀 {actor.name} bled out.")
             actor.meter = 0
@@ -327,6 +331,21 @@ class Battle:
         if not target.alive:
             self.log.append(f"　💀 {target.name} falls.")
             target.meter = 0
+        else:
+            self._check_phase(target)
+
+    def _check_phase(self, unit: Unit) -> None:
+        """A boss whose hp fell below the next phase's mark enters it (a big hit can skip several marks)."""
+        while unit.alive and unit.phase < len(unit.phases) and unit.hp / unit.max_hp < unit.phases[unit.phase].below:
+            phase = unit.phases[unit.phase]
+            unit.phase += 1
+            self.log.append(f"🔥 **{unit.name}**: {phase.message}")
+            if phase.skills:
+                unit.skills = list(phase.skills)
+                unit.cooldowns.clear()
+            for buff in phase.buffs:
+                self._apply(buff, unit, unit)
+            unit.next_skill = self._choose_skill(unit)
 
     def _apply(self, effect: SkillEffect, caster: Unit, target: Unit) -> None:
         if effect.kind in target.immune:

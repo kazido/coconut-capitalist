@@ -28,3 +28,28 @@ hp = 45
 speed = 115
 skills = ["rattle", "strike"]
 xp = 55
+
+# --- the final boss of the graveyard. Stun-immune; it always shows what it will do next (telegraph), so Death Knell can be
+# planned for (Brace, slows, killing it faster). Below 60% hp and again below 30% it changes. TODO(balance).
+[gravewarden]
+name = "The Gravewarden"
+emoji = "👑"
+attack = 26
+hp = 700
+defense = 30
+speed = 95  # just slower than a fresh player: you always get to see the first Death Knell coming
+skills = ["death_knell", "soul_drain", "bone_strike"]
+immune = ["stun"]
+telegraph = true
+xp = 1500
+
+    [[gravewarden.phases]]
+    below = 0.6
+    message = "The Gravewarden's eyes ignite. The cold deepens!"
+    skills = ["death_knell", "grave_chill", "soul_drain", "bone_strike"]
+    buffs = [{ kind = "attack_up", turns = 99, value = 0.3 }]
+
+    [[gravewarden.phases]]
+    below = 0.3
+    message = "The Gravewarden roars, and the crypt shakes: it is enraged!"
+    buffs = [{ kind = "attack_up", turns = 99, value = 0.6 }, { kind = "speed_up", turns = 99, value = 0.25 }]

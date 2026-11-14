@@ -84,7 +84,7 @@ class FightScreen(Screen):
                 line += f"\n{hp_line(foe)}"
                 if effect_line(foe):
                     line += f"\n{effect_line(foe)}"
-                if reveal and foe.next_skill:
+                if (reveal or foe.telegraph) and foe.next_skill:
                     line += f"\n👁️ Next: **{battle.skill(foe.next_skill).name}**"
             body.append(text(line))
         body.append(sep())
@@ -95,19 +95,19 @@ class FightScreen(Screen):
         body.append(sep())
         body.append(text("\n".join(battle.log[-9:])))
         body.append(sep())
-        body.append(self._controls(battle, me))
+        body.extend(self._controls(battle, me))
         if self.picking:
             body.insert(0, text(f"🎯 **{battle.skill(self.picking).name}**: pick a target."))
         return Page("Fight", body, accent=0xC0392B)
 
-    def _controls(self, battle: Battle, me: Unit):
+    def _controls(self, battle: Battle, me: Unit) -> list:
         if self.picking:
             targets = battle.targets_for(me, battle.skill(self.picking))
-            return row(
+            return [row(
                 *(button(f"{u.name} {u.hp}/{u.max_hp}", emoji=u.emoji, style=discord.ButtonStyle.danger, on_click=self._target(u.id))
                   for u in targets),
                 button("Cancel", on_click=self._cancel),
-            )
+            )]
         buttons = []
         for i, skill_id in enumerate(me.skills):
             skill = battle.skill(skill_id)
@@ -115,8 +115,7 @@ class FightScreen(Screen):
             label = skill.name + (f" ({cd})" if cd else "")
             style = discord.ButtonStyle.primary if i == 0 else discord.ButtonStyle.secondary
             buttons.append(button(label, style=style, disabled=cd > 0, on_click=self._skill(skill_id)))
-        buttons.append(button("Flee", emoji="🏃", on_click=self._flee))
-        return row(*buttons)
+        return [row(*buttons), row(button("Flee", emoji="🏃", on_click=self._flee))]
 
     def _skill(self, skill_id: str):
         async def use(interaction: discord.Interaction) -> None:
