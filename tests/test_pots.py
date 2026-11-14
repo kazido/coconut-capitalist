@@ -344,7 +344,7 @@ async def test_crafting_shows_what_you_have_against_what_you_need(db):
     user = await angler(1, materials={"hardwood": 4, "plant_fiber": P.craft_items["plant_fiber"]})
     nav, _ = await hub("fishpots")
     page = all_text(nav)
-    assert "Craft a pot" in page and f"Hardwood" in page
+    assert "Craft a pot" in page and "Hardwood" in page
     assert f"**4/{P.craft_items['hardwood']}**" in page and "❌" in page  # not enough hardwood yet
     assert f"**{P.craft_items['plant_fiber']}/{P.craft_items['plant_fiber']}**" in page and "✅" in page
     await user.add_item("hardwood", 100)
