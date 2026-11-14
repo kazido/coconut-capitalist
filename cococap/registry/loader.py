@@ -133,6 +133,11 @@ class Registry:
             fish = [i for i in self.items.values() if i.skill == "fishing" and i.category == "fish" and i.drop]
             if not any(i.drop.rate == 1 for i in fish):
                 problems.append("fishing: at least one fish needs drop rate 1 so every cast catches something")
+            cb = self.fishing.community.book
+            problems += [f"fishing.toml community book: '{f}' is not a fish" for f in cb.fish
+                         if f not in self.items or self.items[f].category != "fish"]
+            problems += [f"fishing.toml community book: no need for rarity {self.items[f].rarity}" for f in cb.fish
+                         if f in self.items and (self.items[f].rarity not in cb.need_base or self.items[f].rarity not in cb.need_step)]
             problems += [f"fishing.toml treasure: unknown loot item '{row.item}'" for row in self.fishing.treasure.loot
                          if row.item not in self.items]
         if self.farming is not None and self.farming.deed_item not in self.items:

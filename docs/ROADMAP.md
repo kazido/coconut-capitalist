@@ -23,7 +23,7 @@ tests, and never touching unrelated code. The game itself is described in the wi
 | **Mining** (`/mine`: mine, wyrmholes, scarab, reactor, magnet) | done, the template for other skills |
 | **Farming** (`/farm`: plots, hourly rain, harvest, Farmer's Market, land deeds) | done |
 | **Foraging** (`/chop`: private trees, hourly community tree, zones, Soloist) | done (Re-leaf donations / double tree / growth mode still to do) |
-| **Fishing** (`/fish`: cast, wait, reel the arrows, sell) | done: casting, reeling, selling, daily/weekly quests, personal collection book, hallucinations and treasure (monthly quests, community book, channel fish still to do) |
+| **Fishing** (`/fish`: cast, wait, reel the arrows, sell) | done: casting, reeling, selling, daily/weekly quests, personal and community collection books, hallucinations and treasure, monthly goals (only fish appearing in channels still to do) |
 | Combat, pets, explore | **not ported yet** (listed in `constants.DISABLED_EXTENSIONS`) |
 | Database | SQLite + Alembic (old MongoDB import script: `scripts/import_mongo.py`) |
 | Tests | ~300, run in ~3 s with no services; CI on GitHub Actions |
@@ -60,8 +60,7 @@ Each slice = **data -> service + tests -> thin cog -> enable the extension**, co
    the rain, balance of `configs/farming.toml`.
 2. ~~Foraging~~ built (see docs/DESIGN.md). Still to do: **Re-leaf donations** (level 10, 3 a day, meter 50 -> double tree),
    **growth mode** (420 donations), balance of `configs/foraging.toml`, a channel announcement for the community tree.
-3. **Fishing** (`/fish`) first slice done (see docs/DESIGN.md). Daily/weekly quests and the personal book done. Still to do: fish appear in channels like drops; monthly community quests; the
-   community collection book; hallucination -> treasure chest minigame.
+3. **Fishing** (`/fish`) first slice done (see docs/DESIGN.md). Quests, both books, treasure and monthly goals done. Still to do: fish appear in channels like drops; hallucination -> treasure chest minigame.
 4. **Combat** (`/fight`, dungeons): dungeon keys, 8-direction tile grid, idols, boss; mirror gates
    (once a day, one winner). Swords/enemies data already exists.
 5. **Pets**: needs a design pass first (gacha via familiar orbs, stars, bonuses, xp from crops).

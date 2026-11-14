@@ -45,6 +45,8 @@ class TreasureState(BaseModel):
 
 
 class Fishing(Skill):
+    community_claimed: int = 0  # how many completions of the community book you have been paid for
+    monthly_claimed: dict[str, list[bool]] = Field(default_factory=dict)  # month -> which community quests you were paid for
     treasure: TreasureState = Field(default_factory=TreasureState)
     book: BookProgress = Field(default_factory=BookProgress)
     daily: QuestProgress = Field(default_factory=QuestProgress)

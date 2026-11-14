@@ -193,3 +193,13 @@ class TreeRewardRow(Base):
     bits: Mapped[int] = mapped_column(BigInteger, default=0)
     xp: Mapped[int] = mapped_column(Integer, default=0)
     claimed: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class CommunityStateRow(Base):
+    """Shared, server-wide state kept as one small JSON document per key (the fishing community book, each
+    month's community quests). Every change is a read-modify-write inside one serialized transaction."""
+
+    __tablename__ = "community_state"
+
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    data: Mapped[dict] = mapped_column(JSON, default=dict)

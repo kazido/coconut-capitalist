@@ -263,5 +263,18 @@ numbers about 1 catch in 60 turns into a chest, which is generous.
 
 Catch messages name the fish's rarity.
 
-Not built yet (wiki): the 3 community **monthly** quests, the community collection book, and fish that appear in
-channels like drops.
+### Fishing together: the community book and monthly goals
+
+**Fishing -> Community** (level 3) has two shared things, kept as small JSON documents in `community_state` (one
+serialized transaction per change, like everything else):
+
+- **The community book** holds 5 rare fish (2 legendary, 2 premium, 1 mythical). Anyone of fishing level 5+ donates
+  from their bag with a menu; the donor is paid +100% of the fish's value and xp straight away. When the last page fills
+  the book is finished *exactly once* (in the transaction that took the last fish), the server's level goes up and every
+  player of level 5+ is owed `300,000 x level` bits and xp. Nobody has to be online: each player collects their share
+  the next time they open the page (even for levels they missed). Each level needs more fish (3/3/2/2/1 at level 1).
+- **Monthly goals**: three counters for the whole server ("catch 1,500 fish", "catch 150 rare or better", "catch 15 of
+  this month's fish"). Every landed fish adds to the goals it fits. A finished goal pays everyone who did at least 5% of
+  it, once, collected from the page (this month's and last month's).
+
+Not built yet (wiki): fish that appear in channels like drops.

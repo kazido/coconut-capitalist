@@ -467,6 +467,35 @@ class TreasureRules(_Data):
     loot: list[TreasureLoot]
 
 
+class CommunityBookRules(_Data):
+    """The server-wide collection book: everyone donates the same few rare fish."""
+
+    fish: list[str] = Field(min_length=1)
+    max_level: int = Field(ge=1)
+    need_base: dict[int, int]  # rarity -> how many of each fish at level 1
+    need_step: dict[int, float]  # rarity -> more per level after (need = base + floor((level - 1) x step))
+    donor_bits_per_sell: float = Field(ge=0)  # a donated fish pays its donor this share of its sell price
+    donor_xp_per_rarity: int = Field(ge=0)
+    completion_bits: int = Field(ge=0)  # everyone is paid this x the level when the book is finished...
+    completion_xp: int = Field(ge=0)  # ...and this xp x the level
+
+
+class MonthlySlot(_Data):
+    """One community quest each month. kind: any fish | any fish of `rarity` or better | one specific fish of `rarity`."""
+
+    kind: Literal["any", "rarity", "fish"]
+    rarity: int = Field(default=1, ge=1, le=7)
+    count: int = Field(ge=1)
+    bits: int = Field(ge=0)
+    xp: int = Field(ge=0)
+
+
+class CommunityRules(_Data):
+    book: CommunityBookRules
+    monthly: list[MonthlySlot] = Field(min_length=1)
+    min_share: float = Field(ge=0, le=1)  # you must have done this share of a goal to be paid for it
+
+
 class FishingRules(_Data):
     xp_per_rarity: int = Field(ge=0)
     bite: BiteRules
@@ -474,6 +503,7 @@ class FishingRules(_Data):
     quests: QuestRules
     book: BookRules
     treasure: TreasureRules
+    community: CommunityRules
 
 
 class MinigamePayout(_Data):

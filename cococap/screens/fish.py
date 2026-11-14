@@ -5,11 +5,11 @@ import discord
 
 from cococap.constants import Rarities
 from cococap.registry import get_registry
-from cococap.services import fishing
+from cococap.services import fishing, fishing_community
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_multiplier
 from cococap.ui import Page, PromptModal, Screen
-from cococap.ui.components import bits, button, row, select, sep, text, xp_bar
+from cococap.ui.components import bar, bits, button, row, select, sep, text, xp_bar
 from cococap.user import User
 
 ROD = "🎣"
@@ -46,7 +46,7 @@ class FishScreen(Screen):
     label = "Fishing"
     emoji = ROD
     description = "Cast a line and reel in fish"
-    links = ("fishquests", "fishbook")
+    links = ("fishquests", "fishbook", "fishcommunity")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -106,6 +106,7 @@ class FishScreen(Screen):
                 button("Sell fish", emoji="💰", disabled=not haul.count, on_click=self._sell),
                 button("Quests", emoji="📜", disabled=not fishing.quests_unlocked(level, reg.fishing), on_click=self._quests),
                 button("Book", emoji="📖", disabled=not fishing.book_unlocked(level, reg.fishing), on_click=self._book),
+                button("Community", emoji="🌍", disabled=not fishing.quests_unlocked(level, reg.fishing), on_click=self._community),
             ))
             return Page("Fishing", body, accent=ACCENT)
 
@@ -228,6 +229,9 @@ class FishScreen(Screen):
     async def _book(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishbook")
 
+    async def _community(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fishcommunity")
+
     async def _sell(self, interaction: discord.Interaction) -> None:
         total = await fishing.sell_all(self.user)
         await self.refresh(interaction, f"💰 You sold your fish for **{bits(total)}** bits.")
@@ -306,6 +310,79 @@ class FishBookScreen(Screen):
     async def _finish(self, interaction: discord.Interaction) -> None:
         done = await fishing.complete_book(self.user)
         await self.refresh(interaction, f"🏆 **Book complete!** It is now level {done.new_level}  ·  +{bits(done.bits)} bits, +{done.xp} xp")
+
+    async def _back(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fish")
+
+
+class FishCommunityScreen(Screen):
+    """The server's collection book and this month's goals. Redraws itself so you see everyone's progress."""
+
+    id = "fishcommunity"
+    label = "Fishing Community"
+    emoji = "🌍"
+    description = "The community book and this month's goals"
+    links = ("fish",)
+    refresh_every = 10.0
+
+    async def build(self) -> Page:
+        reg = get_registry()
+        rules = reg.fishing
+        level = User.xp_to_level((await self.user.skill("fishing")).xp)
+        if not fishing.quests_unlocked(level, rules):
+            return Page("Fishing Community", [*self.note_block(), text(
+                f"The community opens at fishing level {rules.quests.min_level}.")], accent=ACCENT)
+
+        # whatever you are owed from finished goals and finished books is paid when you look
+        notes = []
+        if paid := await fishing_community.claim_book_rewards(self.user):
+            notes.append(f"🌍 **The community finished its book** (level {', '.join(map(str, paid.levels))})  ·  "
+                         f"+{bits(paid.bits)} bits, +{paid.xp:,} xp for you")
+        if paid := await fishing_community.claim_monthly(self.user, now()):
+            notes.append("🗓️ **Community goal reached:** " + ", ".join(g.text for g in paid.goals)
+                         + f"  ·  +{bits(paid.bits)} bits, +{paid.xp:,} xp")
+        if notes:
+            self.note = "\n".join(filter(None, [self.note, *notes]))
+        body = [*self.note_block()]
+
+        view = await fishing_community.book(self.user)
+        owned = await self.user.items()
+        body.append(text(f"### 📖 Community Book · level {view.level}\n"
+                         + "\n".join(f"{'✅' if p.done else '⬜'} {p.fish.display}  ·  **{p.given}/{p.need}**"
+                                      + (f"  ·  you have {owned[p.fish.id]:,}" if not p.done and owned.get(p.fish.id) else "")
+                                      for p in view.pages)
+                         + f"\n-# You have donated **{view.donated_by_you}** this level. Finishing it pays everyone "
+                           f"{bits(rules.community.book.completion_bits * view.level)} bits."))
+        wanted = [p for p in view.pages if not p.done and owned.get(p.fish.id)]
+        if not fishing.book_unlocked(level, rules):
+            body.append(text(f"-# Donating opens at fishing level {rules.book.min_level}."))
+        elif wanted:
+            body.append(row(select("Donate a fish...", [
+                discord.SelectOption(label=p.fish.name, value=p.fish.id, emoji=p.fish.emoji or None,
+                                     description=f"You have {owned[p.fish.id]:,}, the book needs {p.need - p.given:,} more")
+                for p in wanted], self._donate)))
+
+        goals = await fishing_community.monthly(self.user, now())
+        lines = []
+        for g in goals:
+            share = g.goal.slot.count
+            mark = "✅" if g.done else "⬜"
+            pay = "" if g.done else f"  ·  +{bits(g.goal.slot.bits)} bits"
+            lines.append(f"{mark} {g.goal.text}\n{bar(min(1.0, g.progress / share), 8)}  **{min(g.progress, share):,}/{share:,}**"
+                         f"  ·  you: {g.yours:,}{pay}")
+        ends = fishing_community.month_ends_at(fishing_community.month_of(now()))
+        body += [sep(), text("### 🗓️ This month's goals\n" + "\n".join(lines)
+                             + f"\n-# Everyone fishing adds up. Do at least {rules.community.min_share:.0%} of a goal to be paid when "
+                               f"it is reached. New goals <t:{int(ends)}:R>."),
+                 row(button("Back to fishing", emoji=ROD, on_click=self._back))]
+        return Page("Fishing Community", body, accent=0x16A085)
+
+    async def _donate(self, interaction: discord.Interaction, values: list[str]) -> None:
+        done = await fishing_community.donate(self.user, values[0])
+        note = f"📖 You gave {done.quantity:,} {done.fish.display} to the community book  ·  +{bits(done.bits)} bits, +{done.xp:,} xp"
+        if done.finished_level:
+            note += f"\n🎉 **That finished the book!** It is now level {done.finished_level + 1} and everyone will be paid."
+        await self.refresh(interaction, note)
 
     async def _back(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fish")

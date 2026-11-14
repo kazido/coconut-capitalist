@@ -272,6 +272,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
         await user.add_item(item_id, quantity)
     finished: list[Quest] = []
     seen: list[str] = []
+    counts_for_community: list[bool] = []
     dice = rng or random.Random()
 
     def grant(skill) -> None:
@@ -284,6 +285,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
             seen.append(code)
         if not quests_unlocked(User.xp_to_level(skill.xp - xp), rules):  # unlocked before this catch, not by it
             return
+        counts_for_community.append(True)
         for kind in ("daily", "weekly"):
             saved = getattr(skill, kind)
             current = _quests_of(kind, user.id, saved, now, reg)
@@ -300,6 +302,10 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
         skill.stats.quests_completed += len(finished)
 
     await user.update_skill("fishing", grant)
+    if counts_for_community:
+        from cococap.services import fishing_community  # (it builds on this module)
+
+        await fishing_community.record_catch(user, cast.fish, now, reg)
     quest_bits = sum(q.bits for q in finished)
     if quest_bits:
         await user.add_bits(quest_bits)

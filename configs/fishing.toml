@@ -108,3 +108,41 @@ item = "spirit_of_the_sea"
 min = 1
 max = 1
 chance = 0.001                    # 1 in 1,000 (the wiki); boosts fishing xp when held by a pet
+
+# The community: one collection book for the whole server, and three goals every month that everyone works on together.
+[community]
+min_share = 0.05                  # to be paid for a monthly goal you must have done this share of it
+
+[community.book]                  # donate these fish; when every page is full the whole server is paid and the book levels up
+fish = ["marlin", "giant_squid", "oarfish", "abyssal_angler", "golden_koi"]   # 2 legendary, 2 premium, 1 mythical
+max_level = 10
+donor_bits_per_sell = 1.0         # a donated fish pays +100% of its sell price (these fish are rare: you give them up)
+donor_xp_per_rarity = 40
+completion_bits = 300000          # everyone eligible is paid this x the book's level when it is finished...
+completion_xp = 1000              # ...plus this much xp x the level
+[community.book.need_base]        # per fish at level 1, by rarity
+5 = 3
+6 = 2
+7 = 1
+[community.book.need_step]        # more per level after: need = base + floor((level - 1) x step)
+5 = 2
+6 = 1
+7 = 0.5
+
+[[community.monthly]]             # catch this many fish between you all this month
+kind = "any"
+count = 1500
+bits = 150000
+xp = 500
+[[community.monthly]]
+kind = "rarity"                   # fish of this rarity or better
+rarity = 3
+count = 150
+bits = 250000
+xp = 800
+[[community.monthly]]
+kind = "fish"                     # one specific fish (picked each month from this rarity)
+rarity = 4
+count = 15
+bits = 400000
+xp = 1200
