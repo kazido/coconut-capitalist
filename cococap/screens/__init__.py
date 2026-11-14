@@ -5,6 +5,7 @@ from discord import Interaction
 from cococap.ui import Navigator, Screen
 from cococap.user import User
 
+from .bestiary import BestiaryScreen
 from .blackjack import BlackjackScreen
 from .casino import CasinoScreen
 from .checkin import CheckInScreen
@@ -28,7 +29,6 @@ from .mining import MiningScreen
 from .party import PartyScreen
 from .pets import OrbScreen, PetScreen
 from .profile import ProfileScreen
-from .progress import BestiaryScreen, ProgressScreen
 from .reactor import ReactorScreen
 from .rank import RankScreen
 from .settings import SettingsScreen
@@ -50,7 +50,6 @@ SCREENS: dict[str, type[Screen]] = {
         PetScreen,
         OrbScreen,
         ProfileScreen,
-        ProgressScreen,
         BestiaryScreen,
         ToolsScreen,
         MasteryScreen,

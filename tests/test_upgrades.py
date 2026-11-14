@@ -365,12 +365,3 @@ def test_describe_stats_reads_negative_numbers_as_the_opposite():
 
     assert describe_stats({"ore_yield": 0.04, "danger_reduction": -0.01}) == "+4% more ore, +1% more creaking"
     assert describe_stats({"bite_speed": -0.02, "slips": 1}) == "+2% slower bites, +1 extra forgiven arrow(s)"
-
-
-def test_both_roads_count_for_the_coconut_level_gear_points():
-    from cococap.services import progress
-
-    levels = progress.tool_levels(REG)
-    assert levels["prospector_pickaxe"] == levels["ironbound_pickaxe"] == ("pickaxe", 4)
-    assert levels["motherlode_pickaxe"] == levels["worldsplitter_pickaxe"] == ("pickaxe", 8)
-    assert levels["trophy_rod"] == levels["poseidon_rod"] == ("rod", 8)

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import MasteryRules, CombatRules, DropTable, EconomyRules, ProgressRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
+from .models import MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -63,7 +63,7 @@ class Registry:
         fishing: FishingRules | None = None,
         combat: CombatRules | None = None,
         drop_tables: list[DropTable] | None = None,
-        progress: ProgressRules | None = None,
+        bestiary: BestiaryRules | None = None,
         mastery: MasteryRules | None = None,
     ):
         self.items: dict[str, Item] = {i.id: i for i in items}
@@ -77,7 +77,7 @@ class Registry:
         self.foraging = foraging
         self.fishing = fishing
         self.combat = combat
-        self.progress = progress
+        self.bestiary = bestiary
         self.mastery = mastery
         self.drop_tables: dict[str, DropTable] = {t.id: t for t in drop_tables or []}
         self._validate()
@@ -276,9 +276,9 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     raw["encounters"] = [{"id": k, **v} for k, v in raw.get("encounters", {}).items()]
     combat = _build(CombatRules, "combat", [("combat", raw)])[0]
     drops = _build(DropTable, "drops", ((k, {"id": k, **v}) for k, v in _read(config_dir, "drops").items()))
-    progress = _build(ProgressRules, "progress", [("progress", _read(config_dir, "progress"))])[0]
+    bestiary = _build(BestiaryRules, "bestiary", [("bestiary", _read(config_dir, "bestiary"))])[0]
     mastery = _build(MasteryRules, "mastery", [("mastery", _read(config_dir, "mastery"))])[0]
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, progress, mastery)
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery)
 
 
 @lru_cache(maxsize=1)

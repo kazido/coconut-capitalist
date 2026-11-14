@@ -950,28 +950,11 @@ class EconomyRules(_Data):
     exchange: ExchangeRules
 
 
-# ---- Coconut Level (configs/progress.toml) -----------------------------------------------------------------------------
-class SkillPoints(_Data):
-    per_level: int = Field(ge=0)
-    after_level: int = Field(ge=1)
-    per_level_after: int = Field(ge=0)
-    max_level: int = Field(ge=1)
-
-
-class PetPoints(_Data):
-    per_pet: int = Field(ge=0)
-    per_extra_star: int = Field(ge=0)
-    maxed_level: int = Field(ge=0)
-
-
-class BestiaryPoints(_Data):
-    steps: list[int] = Field(min_length=1)
-    points: int = Field(ge=0)
+# ---- Bestiary (configs/bestiary.toml) ------------------------------------------------------------------------------------------------
+class BestiaryRules(_Data):
+    steps: list[int] = Field(min_length=1)  # the goals the page shows next for a monster
     boss_steps: list[int] = Field(min_length=1)
-    boss_points: int = Field(ge=0)
-    fish_steps: list[int] = Field(min_length=1)  # fish are not fought, so they have their own (shorter) ladder
-    fish_points: int = Field(ge=0)
-    sea_boss_points: int = Field(ge=0)  # a fishing boss is common compared to a dungeon boss, so it pays less than boss_points
+    fish_steps: list[int] = Field(min_length=1)
 
     @model_validator(mode="after")
     def _ascending(self):
@@ -979,62 +962,6 @@ class BestiaryPoints(_Data):
             if steps != sorted(set(steps)) or steps[0] < 1:
                 raise ValueError("bestiary steps must climb from at least 1")
         return self
-
-
-class Ladder(_Data):
-    """A counter with milestones: reaching each step pays `points` once."""
-
-    name: str
-    stat: str
-    steps: list[int] = Field(min_length=1)
-    points: int = Field(ge=0)
-
-    @model_validator(mode="after")
-    def _ascending(self):
-        if self.steps != sorted(set(self.steps)) or self.steps[0] < 1:
-            raise ValueError("ladder steps must climb from at least 1")
-        return self
-
-
-class Tier(_Data):
-    from_level: int = Field(ge=0)
-    name: str
-    badge: str
-    color: str = Field(pattern=r"^[0-9a-fA-F]{6}$")
-
-
-class ProgressRules(_Data):
-    points_per_level: int = Field(ge=1)
-    skills: SkillPoints
-    ranks: "RankPoints"
-    pets: PetPoints
-    farming: "FarmPoints"
-    tools: "ToolPoints"
-    bestiary: BestiaryPoints
-    ladders: list[Ladder]
-    tiers: list[Tier] = Field(min_length=1)
-
-    @model_validator(mode="after")
-    def _tiers_climb(self):
-        starts = [t.from_level for t in self.tiers]
-        if starts[0] != 0 or starts != sorted(set(starts)):
-            raise ValueError("tiers must start at level 0 and climb")
-        return self
-
-
-class RankPoints(_Data):
-    per_rank: int = Field(ge=0)
-
-
-class FarmPoints(_Data):
-    per_plot: int = Field(ge=0)
-
-
-class ToolPoints(_Data):
-    per_level: int = Field(ge=0)
-
-
-ProgressRules.model_rebuild()
 
 
 # ---- Mastery: a small tree per skill; points come from skill levels, every node is a choice -----------------------------------------

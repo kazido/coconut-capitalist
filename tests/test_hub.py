@@ -103,8 +103,8 @@ async def test_home_buttons_open_screens_and_back_returns(db):
     nav, inter = await hub("home")
     assert find_button(nav, "Home").disabled and find_button(nav, "Back").disabled
     sections = [c for c in nav.walk_children() if isinstance(c, ui.Section) and isinstance(c.accessory, ui.Button)]
-    assert len(sections) == 4  # the level (Progress), party, skills, minigames
-    await sections[2].accessory.callback(inter)
+    assert len(sections) == 3  # party, skills, minigames
+    await sections[1].accessory.callback(inter)
     assert nav.screen.id != "home" and not find_button(nav, "Back").disabled
     await click(nav, inter, "Back")
     assert nav.screen.id == "home"
@@ -853,7 +853,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("wiki", "profile", "rank", "top", "stats", "settings")):
+    for index, expected in enumerate(("wiki", "bestiary", "profile", "rank", "top", "stats", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)
@@ -1572,3 +1572,22 @@ async def test_leaving_a_result_page_idle_still_abandons_the_screen_it_came_from
     await nav.refresh(inter)
     await nav.screen.on_abandon()
     assert abandoned == [True]
+
+
+# ---- what the home page and the skills page no longer show -----------------------------------------------------------------
+async def test_home_has_no_level_no_progress_button_and_no_picture(db):
+    nav, _ = await hub("home")
+    text = all_text(nav)
+    assert "Coconut Level" not in text and "Progress" not in {b.label for b in buttons(nav)}
+    assert not [c for c in nav.walk_children() if isinstance(c, ui.Thumbnail)]
+    assert "tester" in text and "Check-in" in text  # your name, rank, balances and check-in are still there
+
+
+async def test_the_skills_page_shows_each_skill_with_its_level_and_no_blurb(db):
+    nav, _ = await hub("skills")
+    text = all_text(nav)
+    for skill in ("Mining", "Farming", "Foraging", "Fishing", "Combat"):
+        assert skill in text
+    for blurb in ("Push your luck", "wait for the rain", "Fell trees", "reel in the big one", "Turn-based"):
+        assert blurb not in text
+    assert len([b for b in buttons(nav) if b.label == "Open"]) == 5

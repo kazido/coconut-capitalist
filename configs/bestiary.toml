@@ -1,0 +1,6 @@
+# The Bestiary: how many of each creature you have slain, caught or beaten. The counts never stop. These are the goals the page shows next
+# ("next goal 25"), nothing more.
+
+steps = [1, 25, 100, 500, 2500, 10000]   # monsters
+boss_steps = [1, 5, 25, 100, 500]        # dungeon bosses and fishing bosses
+fish_steps = [1, 25, 100, 500, 2500]     # every fish species you can catch

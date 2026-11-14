@@ -620,28 +620,19 @@ Enchants, pets and so on buff the fun parts. What that means per skill (all `TOD
 - **Combat**: enemy xp by the fight's tier; the sword changes how fast you win, not what you are paid.
 At starter gear that is about 7k xp/hour in mining, foraging and (about 8.5k) fishing, 6.8k combat, and a passive 4k farming.
 
-## Coconut Level (global progress) and the Bestiary
+## The Bestiary (the Coconut Level was removed)
 
-One number for general progress, shown on **Home** (with the avatar as a thumbnail, and the panel's side bar in the level's tier color) and
-explained on the **Progress** page (`services/progress.py`, `configs/progress.toml`). Like Skyblock's level, but it **cannot be ground forever**:
+**The Coconut Level is gone** (decided): there is no global level, no Progress page, no tier colors and no avatar picture on Home. Home is your name,
+rank, balances and check-in, then Party, Skills and Minigames. (It had been a calculated sum of one-time milestones; the code, its config
+`progress.toml` and its tests were deleted, not hidden.) Mastery points come from skill levels only.
 
-- Every source is a **milestone reached once**: each skill level (5 points, 10 above level 50), each rank (25), each pet found (10), extra
-  star (5) and max-level pet (25), each farm plot unlocked (20), each tool level of your best tool of a kind (15), counters with fixed
-  steps ("Fish caught": 1, 100, 500, 2,500, 10,000 for 10 each), and the Bestiary.
-- It is **calculated from your current progress**, not stored: no history, no migration, old players get it at once. Doing more after
-  the last step of anything pays nothing, so the total is finite (tested: someone who did everything has exactly the maximum, about level 105).
-- **A level is 60 points.** Tiers (name, badge emoji, color): Newcomer 0, Sprout 10, Tide 20, Mystic 35, Ember 50, Crimson 65, Gilded 80, Coconut 100.
-- The Progress page shows the total, the counters **closest to paying out**, and a menu to look inside each category.
-
-**Wiki vs Bestiary.** The wiki stays a reference you can always read (how things work). The **Bestiary** (`/fight` lobby and Progress page)
-tracks what you have *done*: each enemy is "Unknown" until you slay one, then its stats show; at 25 kills its moves show. Kill milestones
-(1, 25, 100, 500; a boss 1, 5, 25) pay Coconut Level once. Kills are counted per enemy in the combat skill (`kills`), only for won fights.
-
-**The Bestiary holds every creature, not only monsters** (decided). `services/progress.py` `creatures()` is the one list: each skill adds its own.
-Today: combat enemies (`combat.kills`), every fish species (`fishing.stats.caught`, extras included; a personal-best record counts as "met" for
-old players) and the fishing bosses (`fishing.stats.bosses`, by name). The page has a menu to switch groups. Fish pay on `fish_steps` (1, 25, 100, 500,
-2,500; 3 points), sea bosses on `boss_steps` but at `sea_boss_points` (15, they are common), dungeon bosses at `boss_points` (50). **Later:** creatures
-to take down in mining, farming and foraging join the same way (a counter in that skill's stats plus a few lines in `creatures()`).
+**Wiki vs Bestiary.** The wiki stays a reference you can always read (how things work). The **Bestiary** (the `/fight` lobby and **More**)
+tracks what you have *done*, and it holds every creature, not only monsters: combat enemies (`combat.kills`, only for won fights), every fish
+species (`fishing.stats.caught`, extras included; a personal-best record counts as "met" for old players) and the fishing bosses
+(`fishing.stats.bosses`, by name). Each is "Unknown" until you meet one; a monster shows its stats, and its moves once you have fought a few.
+The counts never stop climbing; `configs/bestiary.toml` only holds the goals the page shows next (`next goal 25`). It pays nothing.
+`services/bestiary.py` `creatures()` is the one list, so **later** creatures in mining, farming and foraging join by adding a counter to that
+skill's stats and a few lines there.
 
 ### Pets: levels to 100, a wide range, and they level as you play (decided)
 - **Levels 1 to 100** (`max_level`, `xp_scale = 300`: level 20 is 108k pet xp, 50 is 720k, 100 is 2.94M). A bonus `value` is what a pet gives at
@@ -651,7 +642,6 @@ to take down in mining, farming and foraging join the same way (a counter in tha
   skill**; a global pet gains `play_xp_global` (25%) from every skill; a pet that looks after a different skill gains nothing from it. Done in one place
   (`User.add_xp` and `User.update_skill` both call `pets.grant_play_xp`), so every skill works without being touched, and the xp counted is what you were actually paid.
 - Feeding still works and is faster (food x3 for its own skill, x2 for a global pet). Existing pets keep their xp; they simply land at a higher level.
-- **Bestiary counters never stop** (the kill count is a plain number); only the point milestones end (1, 25, 100, 500, 2,500, 10,000; bosses 1, 5, 25, 100, 500).
 
 ## Tool forks and the Mastery tree (pilot built for mining and fishing)
 
@@ -662,7 +652,7 @@ active hours for x1.35). The fix is two layers, **tools** (what you wield) and *
   one branch lowers the danger meter, the other digs richer lodes for more pressure; rod: faster bites and more slips vs slower with more
   treasure and bosses). Switching costs bits. Data: `upgrade` becomes a list of branches; `ability` already exists on tools.
 - **Mastery tree per skill:** about 3 branches x 5 nodes, so you cannot fill it and must choose. Points come from skill levels (e.g. 1 per
-  5 levels) plus a few one-time Coconut Level milestones, never from upgrade count. Respec costs bits. Every node is a trade-off that
+  5 levels) never from upgrade count. Respec costs bits. Every node is a trade-off that
   bends the skill's own mechanic (mining: Safe / Greedy / Gem hunter; fishing: Angler / Treasure hunter / Trophy; foraging: Solo / Party /
   Forester; farming: Gardener / Trader / Botanist; combat: its kit pool is already this). Nodes may give bits or drop bonuses (this is
   where tool bits/drop multipliers live; **tool parts are deferred**).
@@ -712,3 +702,12 @@ A pass over the busiest pages to cut text without cutting information. The rules
   for 27 plots (`MAX_PLOTS`); `services.farming.PLOTS` is how many exist now (9). **Plant page** plants only the plots on the page you are looking
   at; Harvest all and Water cover every page.
 - **Shop:** tools come first in every section; once you own a kind of tool its Buy button becomes **Upgrade tool** and opens the upgrade page.
+
+## Tools page, vault and Home (decided)
+- **Tools page** (`screens/tools.py`, from Inventory, the Upgrade page and the shop's Upgrade tool button): every tool you own with its skill, power and
+  road, a check mark on the equipped one for every skill (the watering can was missing from the inventory's check), an Equip button, and Upgrade /
+  Enchant / Inventory buttons. With one tool per kind equipping is mostly automatic, so the page is mainly the doorway to upgrades; it is the place
+  to grow if tools ever differ (an open question: the game may not need alternates).
+- **The mining vault** pays all three ores in the proportion you would mine them (copper 1,100, iron 300, gold 100: the rarer, the fewer),
+  worth about 140,000 bits, instead of 150 gold. Gems are unchanged.
+- **Skills page:** each skill is its name, level and xp bar and an Open button; no blurbs.
