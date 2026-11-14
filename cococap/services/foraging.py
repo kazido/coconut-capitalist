@@ -67,6 +67,8 @@ class Swing:
     damage: int
     good: bool  # a "good chop": extra damage
     freshness: float  # how fresh the spot was for this swing (1.0 = untouched)
+    missed: bool = False  # a heavy swing that hit nothing
+    style: str = "normal"
 
 
 @dataclass
@@ -96,19 +98,25 @@ class Spot:
         fresh = self.freshness(rules)
         return "fresh" if fresh >= 0.85 else "worn" if fresh >= 0.6 else "dull"
 
-    def preview(self, power: int, rules: ForagingRules) -> int:
-        """What the next ordinary (not good) chop would do."""
-        return max(1, round(power * self.multiplier(rules)))
+    def preview(self, power: int, rules: ForagingRules, style: str = "normal") -> int:
+        """What the next ordinary (not good) chop of this style would do (a heavy one, if it lands)."""
+        factor = 1.0 if style == "normal" else getattr(rules.chopping, style).damage
+        return max(1, round(power * self.multiplier(rules) * factor))
 
-    def swing(self, power: int, rules: ForagingRules, rng: random.Random, good_bonus: float = 0.0) -> Swing:
-        """One chop. ``good_bonus`` is extra good-chop chance (a Sharp Eye enchant)."""
+    def swing(self, power: int, rules: ForagingRules, rng: random.Random, good_bonus: float = 0.0,
+              style: str = "normal") -> Swing:
+        """One chop. ``good_bonus`` is extra good-chop chance (a Sharp Eye enchant). A *heavy* swing hits harder, wears
+        the spot faster and may miss; a *careful* cut hits softer, never wears the spot and lands good chops more often."""
         c = rules.chopping
         fresh = self.freshness(rules)
-        good = rng.random() < c.good_chop_chance + good_bonus
-        damage = max(1, round(power * self.multiplier(rules) * (1 + c.good_chop_bonus if good else 1)))
-        if rng.random() < c.wear_chance:
+        way = None if style == "normal" else getattr(c, style)
+        if way is not None and way.miss and rng.random() < way.miss:
+            return Swing(0, False, fresh, missed=True, style=style)  # (a miss does not wear the spot: nothing touched it)
+        good = rng.random() < c.good_chop_chance + good_bonus + (way.good_bonus if way else 0.0)
+        damage = max(1, round(power * self.multiplier(rules) * (way.damage if way else 1.0) * (1 + c.good_chop_bonus if good else 1)))
+        if rng.random() < min(1.0, c.wear_chance * (way.wear if way else 1.0)):
             self.wear += 1
-        return Swing(damage, good, fresh)
+        return Swing(damage, good, fresh, style=style)
 
     def rotate(self, rules: ForagingRules, rng: random.Random) -> None:
         """Move to a new spot: a random kind, and unworn."""

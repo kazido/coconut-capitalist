@@ -38,6 +38,17 @@ wear_chance = 0.2                 # every chop has this chance to wear the spot 
 wear_step = 0.15                  # each step makes chops 15% weaker...
 spot_floor = 0.4                  # ...down to 40%. Rotating (a click that does no damage) moves you to a random new spot.
 
+[chopping.heavy]                  # Heavy swing: hits much harder, but wears the spot out fast and can miss
+damage = 1.6
+wear = 3.0
+miss = 0.25
+good_bonus = 0.0
+[chopping.careful]                # Careful cut: gentler, never wears the spot, and finds the grain more often
+damage = 0.7
+wear = 0.0
+miss = 0.0
+good_bonus = 0.12
+
 [[chopping.spots]]                # rotating lands you on one of these (by weight): is the new spot better than the one you have?
 name = "Knotty"
 multiplier = 0.7

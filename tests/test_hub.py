@@ -1270,18 +1270,18 @@ async def test_rotating_gives_a_new_spot_and_costs_a_click(db, monkeypatch):
     user = await with_axe(template="reinforced_axe")
     power = get_registry().item("reinforced_axe").tool.power
     nav, inter = await hub("tree", tree=foraging_service.Tree(1, 10_000, 10_000))
-    assert "**Plain** spot" in all_text(nav) and f"next chop **{power}**" in all_text(nav)
+    assert "**Plain** spot" in all_text(nav) and f"next: 🪓 **{power}**" in all_text(nav)
     assert find_button(nav, "Rotate").style == discord.ButtonStyle.secondary  # never lit: when to rotate is your call
     await click(nav, inter, "Chop")
     assert nav.screen.spot.wear == 0  # a spot only wears now and then (here the dice say no)
     nav.screen.spot.wear = 4  # ...and when it has, you can see it
     await nav.screen.nav.refresh(inter)
-    assert "dull" in all_text(nav) and f"next chop **{power}**" not in all_text(nav)
+    assert "dull" in all_text(nav) and f"next: 🪓 **{power}**" not in all_text(nav)
     assert find_button(nav, "Rotate").style == discord.ButtonStyle.secondary
     hp = nav.screen.tree.hp
     await click(nav, inter, "Rotate")
     assert nav.screen.tree.hp == hp  # rotating does no damage
-    assert nav.screen.spot.wear == 0 and f"next chop **{power}**" in all_text(nav) and "You move around the trunk" in all_text(nav)
+    assert nav.screen.spot.wear == 0 and f"next: 🪓 **{power}**" in all_text(nav) and "You move around the trunk" in all_text(nav)
 
 
 async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):

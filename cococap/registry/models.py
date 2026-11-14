@@ -396,6 +396,15 @@ class SpotKind(_Data):
     weight: float = Field(gt=0)
 
 
+class ChopStyle(_Data):
+    """A way of swinging: harder hits that wear the spot faster and sometimes miss, or gentle ones that last."""
+
+    damage: float = Field(gt=0)  # x the damage of an ordinary chop
+    wear: float = Field(ge=0)  # x the usual chance of wearing the spot down
+    miss: float = Field(ge=0, lt=1)  # chance the swing hits nothing
+    good_bonus: float = Field(ge=0)  # extra good-chop chance
+
+
 class ChoppingRules(_Data):
     """How a swing's damage varies: good chops, the kind of spot you stand at, and spots wearing down at random."""
 
@@ -405,6 +414,8 @@ class ChoppingRules(_Data):
     wear_step: float = Field(ge=0, lt=1)  # each step makes chops this much weaker
     spot_floor: float = Field(gt=0, le=1)  # ...but never below this share
     spots: list[SpotKind] = Field(min_length=1)
+    heavy: ChopStyle
+    careful: ChopStyle
 
 
 class ForagingRules(_Data):

@@ -437,3 +437,84 @@ def test_foraging_pays_less_per_click_than_mining_at_starter_gear():
     foraging_per_click = pay_per_hp * dealt / clicks
     assert hp > 0 and foraging_per_click < mining_per_click, (foraging_per_click, mining_per_click)
     assert foraging_per_click > 0.4 * mining_per_click  # ...but it is still worth doing
+
+
+# ---- chop styles: heavy swings and careful cuts ---------------------------------------------------------------------------------
+H, CAREFUL = CH.heavy, CH.careful
+
+
+def test_a_heavy_swing_hits_harder_and_sometimes_misses_and_wears_the_spot_faster():
+    results = [f.Spot().swing(100, RULES, Random(i), style="heavy") for i in range(2000)]
+    missed = [r for r in results if r.missed]
+    assert 0.18 < len(missed) / 2000 < 0.32 and all(r.damage == 0 and not r.good for r in missed)
+    landed = [r.damage for r in results if not r.missed and not r.good]
+    assert set(landed) == {round(100 * H.damage)}  # a plain, unworn spot: exactly the heavy multiple
+
+
+def test_a_careful_cut_is_gentler_and_never_wears_the_spot_but_lands_good_chops_more():
+    spot = f.Spot()
+    rng = Random(4)
+    swings = [spot.swing(100, RULES, rng, style="careful") for _ in range(600)]
+    assert spot.wear == 0  # never any wear, however long you do it
+    assert {s.damage for s in swings if not s.good} == {round(100 * CAREFUL.damage)}
+    plain_good = sum(f.Spot().swing(100, RULES, Random(i)).good for i in range(3000))
+    careful_good = sum(f.Spot().swing(100, RULES, Random(i), style="careful").good for i in range(3000))
+    assert careful_good > plain_good * 1.4
+
+
+def test_heavy_swings_wear_a_spot_out_faster_than_ordinary_chops():
+    def wear_after(style, swings=300):
+        spot, rng = f.Spot(), Random(9)
+        for _ in range(swings):
+            spot.swing(50, RULES, rng, style=style)
+        return spot.wear
+
+    assert wear_after("heavy") > 2 * wear_after("normal") > 0
+    assert wear_after("careful") == 0
+
+
+def test_the_preview_shows_what_each_style_would_do():
+    spot = f.Spot()
+    assert spot.preview(100, RULES) == 100
+    assert spot.preview(100, RULES, "heavy") == round(100 * H.damage) and spot.preview(100, RULES, "careful") == round(100 * CAREFUL.damage)
+    assert f.Spot("Knotty", 0.7).preview(100, RULES, "heavy") < spot.preview(100, RULES, "heavy")
+
+
+def test_no_chop_style_is_a_free_lunch_or_a_dead_end():
+    """Each is worth using but none beats the others by much: a mix of habits, not a single right answer."""
+    def damage_per_click(style, rotate_below=0.7, clicks=40_000, power=20):
+        rng = Random(5)
+        spot, dealt = f.Spot.pick(RULES, rng), 0
+        for _ in range(clicks):
+            if spot.multiplier(RULES) < rotate_below:
+                spot.rotate(RULES, rng)
+            else:
+                dealt += spot.swing(power, RULES, rng, style=style).damage
+        return dealt / clicks
+
+    rates = {s: max(damage_per_click(s, t) for t in (0.5, 0.7, 0.9)) for s in ("normal", "heavy", "careful")}
+    assert max(rates.values()) < 1.25 * rates["normal"], rates
+    assert min(rates.values()) > 0.75 * rates["normal"], rates
+
+
+async def test_the_tree_screens_offer_all_three_swings_and_a_miss_is_just_a_note(db, monkeypatch):
+    from tests.test_hub import find_button as button_named
+
+    monkeypatch.setattr("cococap.screens.forage.new_rng", lambda: Random(1))
+    user = await User.get(1)
+    inst = await user.give_instance("starter_axe")
+    await equip(user, "foraging", inst.id)
+    from tests.test_hub import click, hub
+
+    nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
+    for label in ("Chop", "Heavy", "Careful", "Rotate", "Leave"):
+        assert button_named(nav, label)
+    text = " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))
+    assert "heavy" in text and "careful" in text and "to miss" in text
+    nav.screen.rng = type("Miss", (Random,), {"random": lambda self: 0.0})(1)  # every roll is "below the chance": a miss
+    hp = nav.screen.tree.hp
+    await click(nav, inter, "Heavy")
+    assert nav.screen.tree.hp == hp and "swing wide" in " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))
+    await click(nav, inter, "Careful")
+    assert nav.screen.tree.hp < hp  # a careful cut never misses
+    await click(nav, inter, "Chop")

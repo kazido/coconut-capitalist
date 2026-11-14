@@ -177,6 +177,13 @@ you. A chop also has a 15% chance to be a **good chop** (+50%). A simulation sho
 your axe's power earns about 3x what never rotating does, and clearly beats rotating too often or too rarely. The same
 applies to the community tree.
 
+### Chop styles
+
+Three ways to swing, shown with what each would do on your current spot: **Chop** (steady), **Heavy swing** (x1.6 damage,
+but 25% of swings miss and it wears the spot out three times as fast) and **Careful cut** (x0.7 damage, never wears the
+spot, and good chops are 12% likelier). None is the right answer: a fresh Clean-grain spot suits a heavy swing, a spot you
+want to keep suits careful cuts, and a test keeps every style within about 25% of an ordinary chop.
+
 ### Foraging pay vs mining
 
 Measured with fixed-seed simulations (a test guards it): mining at base gear pays about 1,100 bits per click; foraging at
