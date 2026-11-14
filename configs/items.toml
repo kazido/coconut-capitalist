@@ -1578,3 +1578,89 @@ sell_price = 90000
 rate = 5
 min = 3
 max = 7
+
+
+# ---- more crops (balance: each crop pays roughly 20-30k bits an hour per watered plot, the seed already paid for) ------------------------
+[blueberry]
+name = "Blueberry"
+description = "Small, round, and gone before you reach the kitchen."
+rarity = 2
+skill = "farming"
+category = "crop"
+price = 0
+sell_price = 40000
+
+[blueberry.crop]
+seed = "blueberry_seed"
+min_harvest = 6
+max_harvest = 9
+pet_xp = 200
+
+[blueberry_seed]
+name = "Blueberry Seed"
+description = "Twelve patient rains from a handful of berries."
+rarity = 2
+skill = "farming"
+category = "seed"
+price = 30000
+sell_price = 0
+
+[blueberry_seed.seed]
+grows_into = "blueberry"
+cycles = 12
+
+[watermelon]
+name = "Watermelon"
+description = "Thumps like a drum. Probably ripe."
+rarity = 3
+skill = "farming"
+category = "crop"
+price = 0
+sell_price = 400000
+
+[watermelon.crop]
+seed = "watermelon_seed"
+min_harvest = 2
+max_harvest = 4
+pet_xp = 2000
+
+[watermelon_seed]
+name = "Watermelon Seed"
+description = "A long, hot summer in a seed (forty rains)."
+rarity = 3
+skill = "farming"
+category = "seed"
+price = 150000
+sell_price = 0
+
+[watermelon_seed.seed]
+grows_into = "watermelon"
+cycles = 40
+
+[starfruit]
+name = "Starfruit"
+description = "It really is shaped like a star."
+rarity = 4
+skill = "farming"
+category = "crop"
+price = 0
+sell_price = 1500000
+
+[starfruit.crop]
+seed = "starfruit_seed"
+min_harvest = 1
+max_harvest = 2
+pet_xp = 7500
+
+[starfruit_seed]
+name = "Starfruit Seed"
+description = "Slow, and worth it."
+rarity = 4
+skill = "farming"
+category = "seed"
+price = 900000
+sell_price = 0
+
+[starfruit_seed.seed]
+grows_into = "starfruit"
+cycles = 80

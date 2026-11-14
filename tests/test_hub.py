@@ -401,7 +401,7 @@ async def test_shop_has_a_section_per_skill_and_filters(db):
     for emoji, skill in (("🌽", "farming"), ("🌳", "foraging"), ("⛏️", "mining")):
         await click(nav, inter, emoji=emoji)
         shown = all_text(nav)
-        expected = [i for i in reg.shop_items() if i.skill == skill]
+        expected = sorted((i for i in reg.shop_items() if i.skill == skill), key=lambda i: (i.price, i.name))  # (the shop's own order)
         assert expected and all(i.name in shown for i in expected[:4]), skill
         others = [i for i in reg.shop_items() if i.skill != skill]
         assert not any(f"### {i.name}" in shown for i in others), skill

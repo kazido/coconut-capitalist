@@ -143,6 +143,15 @@ roll is seeded by (player, plot, hour). So reopening the farm can't re-roll, rai
 offline, and there is no hourly job. (Trade-off: no "the rain fell" channel announcement; it can be added later as a
 cosmetic-only task.) Numbers are in `configs/farming.toml` (`TODO(balance)`).
 
+### How long will it take? and more crops
+
+Cycles stay (later things can speed them up or add more). To make them readable, the farm shows **how long a crop will
+take**: in the seed menu before you plant ("20 cycles · about 40h (30h to 52h)"), when you plant, and on every growing plot.
+It is the expected time from the hourly rain (`grow_chance`), with a range because rain is luck: you are done by the first
+number one time in ten and by the second nine times in ten (`farming.estimate`; exact for short crops, a normal curve for long
+ones). New crops, priced so a watered plot earns about 20-30k bits an hour once the seed is paid for: **blueberry** (12
+cycles), **watermelon** (40) and **starfruit** (80). `python -m scripts.balance` prints the numbers for every crop.
+
 ### Getting into farming
 
 Farming used to be slow to start: the first seed cost 10,000 bits (a new player has 1,000) and everything waited on the hourly
