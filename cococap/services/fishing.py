@@ -109,7 +109,7 @@ def _mystery_arrow(tell: str, previous: str, rng: random.Random) -> str:
 
 
 def build_reel(fish: Item, rules: FishingRules, rng: random.Random, *, arrows: int | None = None,
-               mysteries: bool = True) -> tuple[list[str], list[str]]:
+               mysteries: bool = True, wild: int = 0) -> tuple[list[str], list[str]]:
     """The steps of a reel and what each one really wants. Mostly arrows; tougher fish also make you stop and press
     Reel now and then, and the toughest hide some arrows behind a ❓ that follows the fish's own hidden pattern (its
     tell). Returns (what is shown, what is actually required)."""
@@ -117,7 +117,11 @@ def build_reel(fish: Item, rules: FishingRules, rng: random.Random, *, arrows: i
     n = arrows if arrows is not None else r.base_length + fish.rarity
     actual = [rng.choice((LEFT, RIGHT)) for _ in range(n)]
     hidden: set[int] = set()
-    if mysteries and fish.reel is not None and fish.rarity >= r.mystery_from_rarity and n > 1:
+    if wild and n > 1:  # a wild boss: coin-flip ❓ that can't be learned
+        for pos in sorted(rng.sample(range(1, n), min(wild, n - 1))):
+            actual[pos] = rng.choice((LEFT, RIGHT))
+            hidden.add(pos)
+    elif mysteries and fish.reel is not None and fish.rarity >= r.mystery_from_rarity and n > 1:
         count = fish.rarity - r.mystery_from_rarity + 1
         if fish.reel.tell == "random":
             count = min(count, r.max_random_mysteries)
@@ -170,6 +174,8 @@ class Cast:
     escaped: bool = False
     settled: bool = False
     boss: str = ""  # the boss's name, if what bit was a boss rather than a fish
+    modifiers: list[str] = field(default_factory=list)  # the boss's twists: mirror, reverse, shuffle, fog, wild
+    decoys: list[str] = field(default_factory=list)  # what a Reel step looks like until you get to it: an ordinary arrow
     chest: bool = False  # a treasure chest instead of a fish (the fish is only a stand-in until it is hooked)
     attempts_left: int = 0  # tries at the chest's lock
     grace: float = 0.0  # quiet extra seconds to pull up the line (laggy connections)
@@ -201,6 +207,14 @@ class Cast:
             self.escaped = self.timed_out = True  # nobody pulled up the line in time
             return "escaped"
         return "bite"
+
+    def display(self, index: int) -> str:
+        """What step `index` looks like right now. A Reel step looks like an ordinary arrow until you reach it, and then
+        it turns into 🌀: be ready."""
+        step = self.pattern[index]
+        if step == REEL and index > self.progress and self.decoys and self.decoys[index]:
+            return self.decoys[index]
+        return step
 
     def wanted(self, index: int) -> str:
         """What step `index` really needs (a ❓ is secretly an arrow)."""
@@ -278,12 +292,14 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
     bite_at = now + wait_seconds(stats.power, rules, rng, stats.stats.get("bite_speed", 0.0) + pet.get("bite_speed", 0.0)) * (
         water.wait_multiplier if water else 1.0)
     pattern, truth = build_reel(fish, rules, rng)
+    decoys = [rng.choice((LEFT, RIGHT)) if step == REEL else "" for step in pattern]
     cast = Cast(
         fish=fish,
         bite_at=bite_at,
         expires_at=bite_at + rules.bite.window,
         pattern=pattern,
         truth=truth,
+        decoys=decoys,
         slips_left=slips_allowed(stats.power, rules, stats.stats.get("slips", 0)),
         grace=rules.bite.grace,
         echo_window=rules.reel.echo_window,
@@ -292,8 +308,13 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
     if armed and rng.randint(1, max(1, round(rules.treasure.chest_odds / (1 + pet.get("treasure_luck", 0.0))))) == 1:
         cast.chest, cast.attempts_left = True, rules.treasure.attempts
     elif rng.randint(1, rules.boss.odds) == 1:
-        cast.boss = rng.choice(rules.boss.names)
-        cast.pattern, cast.truth = build_reel(fish, rules, rng, arrows=rules.boss.length, mysteries=False)
+        entry = rng.choice(rules.boss.bosses)
+        cast.boss, cast.modifiers = entry.name, list(entry.modifiers)
+        cast.pattern, cast.truth = build_reel(fish, rules, rng, arrows=rules.boss.length, mysteries=False,
+                                              wild=rules.boss.wild_mysteries if "wild" in entry.modifiers else 0)
+        cast.decoys = [rng.choice((LEFT, RIGHT)) if step == REEL else "" for step in cast.pattern]
+        if "mirror" in entry.modifiers:  # press the OPPOSITE of what is shown
+            cast.truth = [_other(t) if t in (LEFT, RIGHT) else t for t in cast.truth]
     return cast
 
 

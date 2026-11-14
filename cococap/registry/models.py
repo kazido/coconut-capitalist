@@ -449,6 +449,8 @@ class ReelRules(_Data):
     break_from_rarity: int = Field(ge=1)  # fish of this rarity and up make you stop and Reel now and then
     arrows_per_break: int = Field(ge=1)  # about one Reel break per this many arrows
     mystery_from_rarity: int = Field(ge=1)  # fish of this rarity and up hide some arrows behind a ❓
+    window: int = Field(ge=1)  # how many upcoming steps you can see at once
+    fog_window: int = Field(ge=1)  # ...and how many in a fog (a boss twist)
     max_random_mysteries: int = Field(ge=1)  # a coin-flip ❓ can't be learned, so a fish has at most this many of them
     echo_window: float = Field(ge=0)  # pressing the arrow you JUST pressed again within this many seconds is ignored
 
@@ -550,12 +552,21 @@ class CommunityRules(_Data):
     min_share: float = Field(ge=0, le=1)  # you must have done this share of a goal to be paid for it
 
 
+class BossEntry(_Data):
+    """One boss and the twist that makes its reel different."""
+
+    name: str
+    modifiers: list[Literal["mirror", "reverse", "shuffle", "fog", "wild"]] = Field(min_length=1)
+
+
 class BossRules(_Data):
     """A boss on your line: a long reel with no fish of its own at the end, just a big pile of rewards."""
 
     odds: int = Field(ge=1)  # 1 in N casts
     length: int = Field(ge=1)  # arrows to press
-    names: list[str] = Field(min_length=1)
+    bosses: list[BossEntry] = Field(min_length=1)
+    modifier_text: dict[str, str]  # what each twist means, as shown to the player
+    wild_mysteries: int = Field(ge=1)  # a "wild" boss hides this many arrows behind coin-flip ❓
     bits_min: int = Field(ge=0)
     bits_max: int = Field(ge=0)
     xp: int = Field(ge=0)

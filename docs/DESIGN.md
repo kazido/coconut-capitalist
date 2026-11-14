@@ -285,6 +285,23 @@ the pattern out over a few catches (a test proves every learnable tell can be wo
 pure coin flips (`random`): those can't be learned and hide at most two ❓, so they are luck as well as skill. Slips from
 your rod still forgive wrong guesses. Bosses have breaks but no ❓.
 
+### Surprises in the reel
+
+- **You see five steps at a time**, then "… +N more" (a tick count for what you have done), so you can't memorise the
+  whole pattern.
+- **Reel steps are a surprise.** A 🌀 step looks like an ordinary arrow until you get to it, and then the arrow *turns
+  into* the Reel symbol: be ready to press **Reel** instead.
+- **You can see which fish is on the line** once you pull up the line (name and rarity), so what you have learned about
+  that fish (its ❓ tell, in your field notes) can be put to use.
+
+### Bosses with a twist
+
+Each boss has its own twist (or two), shown above the reel: **Mirror** (press the opposite of each arrow), **Reverse**
+(work from the end; the next step is on the right), **Shuffle** (the Left/Right/Reel buttons change places every step),
+**Fog** (you only see two steps) and **Wild** (three coin-flip ❓ you can only guess). Old Whiskers is a mirror, the Drowned
+Duke reverses, Big Mama shuffles, Captain Barnacle is foggy, the Silver Ghost is wild, Grandfather Carp is mirror and
+shuffle, and Kraken Jr. is reverse and fog. They are in `configs/fishing.toml` `[[boss.bosses]]`.
+
 ### When the connection lags: never lose a fish to something outside your control
 
 Discord sometimes drops or delays a click (the "this interaction failed" message). Fishing forgives that in five ways,

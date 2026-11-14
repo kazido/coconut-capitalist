@@ -162,7 +162,7 @@ async def test_a_boss_can_drop_a_scroll_you_can_then_use(db):
     user, rod = await with_tool("starter_rod", "fishing")
     boss = f.cast_line(equipment.EffectiveStats(power=3, requirement=0, stats={"power": 3.0}), Lucky(1), 0, REG)
     boss.hook(boss.bite_at + 1)
-    for arrow in list(boss.pattern):
+    for arrow in list(boss.truth):  # (what the boss really wants, which a mirror boss flips)
         boss.press(arrow, boss.bite_at + 2)
     won = await f.defeat_boss(user, boss, Lucky(2), REG)
     assert won.items["scroll_lure"] == 1 and await user.item_quantity("scroll_lure") == 1

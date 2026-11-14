@@ -21,6 +21,8 @@ break_from_rarity = 2            # uncommon fish and up make you stop and press 
 arrows_per_break = 4             # ...about once per this many arrows
 mystery_from_rarity = 4          # super rare fish and up hide arrows behind a ❓ (rarity 4: one, 5: two, 6: three, 7: four)
 max_random_mysteries = 2         # ...but a fish whose ❓ is a pure coin flip (can't be learned) hides at most this many
+window = 5                       # you see the next five steps...
+fog_window = 2                   # ...or two, in a fog
 echo_window = 2                  # a second press of the arrow you JUST pressed (e.g. when the panel was slow to update) is ignored, not a slip
 
 # Quests (fishing level `min_level`). Each slot is one quest: "catch N of a fish of this rarity". Which fish, and how many
@@ -186,10 +188,41 @@ server_bits_multiplier = 2.0      # a new server record pays this x the fish's s
 [boss]
 odds = 80                         # 1 in 80 casts
 length = 15
-names = ["Old Whiskers", "The Drowned Duke", "Big Mama", "Captain Barnacle", "The Silver Ghost", "Grandfather Carp", "Kraken Jr."]
+wild_mysteries = 3               # a "wild" boss hides three arrows behind coin-flip ❓
+
 bits_min = 80000
 bits_max = 200000
 xp = 400
+
+# Each boss has its own twist (or two), so no two fights feel the same. They show before you start reeling.
+[[boss.bosses]]
+name = "Old Whiskers"
+modifiers = ["mirror"]
+[[boss.bosses]]
+name = "The Drowned Duke"
+modifiers = ["reverse"]
+[[boss.bosses]]
+name = "Big Mama"
+modifiers = ["shuffle"]
+[[boss.bosses]]
+name = "Captain Barnacle"
+modifiers = ["fog"]
+[[boss.bosses]]
+name = "The Silver Ghost"
+modifiers = ["wild"]
+[[boss.bosses]]
+name = "Grandfather Carp"
+modifiers = ["mirror", "shuffle"]
+[[boss.bosses]]
+name = "Kraken Jr."
+modifiers = ["reverse", "fog"]
+
+[boss.modifier_text]
+mirror = "🪞 **Mirror:** everything is backwards. Press the OPPOSITE of each arrow."
+reverse = "⏪ **Reverse:** work from the END. Start with the arrow on the right."
+shuffle = "🔀 **Shuffle:** the buttons change places every step. Read them!"
+fog = "🌫️ **Fog:** you can only see the next couple of steps."
+wild = "🎲 **Wild:** some arrows are hidden behind coin-flip ❓ you can only guess."
 
 [[boss.loot]]
 item = "coral_shard"

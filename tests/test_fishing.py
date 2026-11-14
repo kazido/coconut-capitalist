@@ -1151,7 +1151,7 @@ def test_a_boss_is_rarer_than_a_fish_and_takes_a_long_reel():
 
 def test_now_and_then_a_cast_is_a_boss_with_a_fifteen_arrow_reel_and_a_name():
     boss = f.cast_line(rod(), Lucky(1), T0, REG)
-    assert boss.boss in BOSS.names and sum(t != f.REEL for t in boss.pattern) == BOSS.length and not boss.chest
+    assert boss.boss in {b.name for b in BOSS.bosses} and sum(t != f.REEL for t in boss.pattern) == BOSS.length and not boss.chest
     assert not f.cast_line(rod(), Unlucky(1), T0, REG).boss
     hits = sum(bool(f.cast_line(rod(), Random(i), T0, REG).boss) for i in range(6000))
     assert 0.5 * 6000 / BOSS.odds < hits < 1.6 * 6000 / BOSS.odds
@@ -1563,3 +1563,153 @@ async def test_a_chests_xp_grows_with_your_level_but_never_drops_below_the_floor
     assert high == round(needed * T.xp_level_fraction)  # a quarter of the level you are on
     assert high > 5 * T.xp  # and it is worth something at level 30
     assert mid_before < high_before
+
+
+# ---- surprises in the reel: Reel steps that turn up, a window of steps, and the fish you can see ---------------------------
+def reel_cast(pattern, decoys=None, truth=None, modifiers=(), progress=0, boss=""):
+    cast = cast_of(pattern=pattern, hooked=True)
+    cast.truth = truth or list(pattern)
+    cast.decoys = decoys or []
+    cast.modifiers, cast.progress, cast.boss = list(modifiers), progress, boss
+    return cast
+
+
+def test_a_reel_step_looks_like_an_ordinary_arrow_until_you_reach_it():
+    cast = reel_cast([f.LEFT, f.REEL, f.RIGHT, f.REEL], decoys=["", f.RIGHT, "", f.LEFT])
+    assert [cast.display(i) for i in range(4)] == [f.LEFT, f.RIGHT, f.RIGHT, f.LEFT]  # no sign of a Reel anywhere yet
+    cast.press(f.LEFT, T0 + 11)
+    assert cast.display(1) == f.REEL  # it turns into the Reel symbol the moment you get to it
+    assert cast.display(3) == f.LEFT  # the later one is still hidden
+    cast.press(f.REEL, T0 + 12)
+    cast.press(f.RIGHT, T0 + 13)
+    assert cast.display(3) == f.REEL
+    assert cast.display(1) == f.REEL  # and what you have done stays as it was
+
+
+def test_every_reel_in_a_real_cast_has_a_decoy_arrow_and_pressing_the_decoy_is_wrong():
+    cast = f.cast_line(rod(), Random(11), 0, REG, water=f.water_by_id(REG, "deep_sea"))
+    reels = [i for i, step in enumerate(cast.pattern) if step == f.REEL]
+    assert reels and all(cast.decoys[i] in (f.LEFT, f.RIGHT) for i in reels)
+    assert all(cast.display(i) != f.REEL for i in reels if i > cast.progress)
+    cast.hook(cast.bite_at + 1)
+    for index, step in enumerate(cast.truth):
+        if step == f.REEL:  # arrive at a reel: it has turned, and an arrow is now the wrong thing to press
+            assert cast.display(index) == f.REEL
+            assert cast.press(f.LEFT, cast.bite_at + 20) in ("escaped", "slip")  # (well after the last press, so it isn't an echo)
+            return
+        cast.press(step, cast.bite_at + 2)
+
+
+def test_you_only_see_the_next_few_steps_and_how_many_more_there_are():
+    cast = reel_cast([f.LEFT, f.RIGHT] * 6)
+    line = fish_screen.pattern_line(cast, RULES)
+    assert line.count(f.LEFT) + line.count(f.RIGHT) == RL.window and "… +7" in line and line.startswith(f"**{f.LEFT}**")
+    cast.progress = 9
+    line = fish_screen.pattern_line(cast, RULES)
+    assert "✅×9" in line and "… +" not in line and line.count(f.LEFT) + line.count(f.RIGHT) == 3  # the end is in sight
+
+
+def test_a_fog_shows_only_two_steps_and_a_reverse_boss_is_read_from_the_right():
+    foggy = reel_cast([f.LEFT, f.RIGHT] * 6, modifiers=["fog"])
+    line = fish_screen.pattern_line(foggy, RULES)
+    assert line.count(f.LEFT) + line.count(f.RIGHT) == RL.fog_window
+    backwards = reel_cast([f.LEFT, f.RIGHT, f.RIGHT, f.LEFT, f.RIGHT, f.LEFT, f.LEFT], modifiers=["reverse"])
+    line = fish_screen.pattern_line(backwards, RULES)
+    assert line.rstrip().endswith(f"**{f.LEFT}**") and line.startswith("… +2")  # the NEXT step sits at the right end
+    assert [c for c in line if c in (f.LEFT, f.RIGHT)] == [f.RIGHT, f.LEFT, f.RIGHT, f.RIGHT, f.LEFT]  # (5 steps, last one to press on the right)
+
+
+async def test_the_page_names_the_fish_on_the_line_so_you_can_use_what_you_have_learned(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("moray_eel"))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    clock[0] = nav.screen.cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    assert "Moray Eel" not in all_text(nav)  # still a mystery at the bite
+    await click(nav, inter, "Pull up the line")
+    page = all_text(nav)
+    assert "Moray Eel" in page and "Super Rare" in page and "field notes" in page
+
+
+# ---- bosses with a twist ----------------------------------------------------------------------------------------------------------
+def boss_with(modifier):
+    entry = next(b for b in BOSS.bosses if modifier in b.modifiers)
+    fixed = Lucky(1)
+    fixed.choice = lambda seq: entry if seq is BOSS.bosses or (list(seq) == list(BOSS.bosses)) else seq[0]
+    return f.cast_line(rod(), fixed, T0, REG), entry
+
+
+def test_every_boss_has_a_twist_and_every_twist_is_explained_and_used():
+    assert all(b.modifiers for b in BOSS.bosses) and len({b.name for b in BOSS.bosses}) == len(BOSS.bosses)
+    used = {m for b in BOSS.bosses for m in b.modifiers}
+    assert used == {"mirror", "reverse", "shuffle", "fog", "wild"} == set(BOSS.modifier_text)
+    assert len({tuple(b.modifiers) for b in BOSS.bosses}) == len(BOSS.bosses)  # no two bosses fight the same
+
+
+def test_a_mirror_boss_wants_the_opposite_of_every_arrow_but_not_of_reels():
+    cast, entry = boss_with("mirror")
+    assert "mirror" in cast.modifiers and cast.boss == entry.name
+    for shown, wanted in zip(cast.pattern, cast.truth, strict=True):
+        if shown == f.REEL:
+            assert wanted == f.REEL
+        else:
+            assert wanted == (f.RIGHT if shown == f.LEFT else f.LEFT)
+    cast.hook(cast.bite_at + 1)
+    first = cast.pattern[0]
+    assert cast.press(first, cast.bite_at + 2) == "escaped"  # pressing what it SHOWS is the mistake
+    fresh, _ = boss_with("mirror")
+    fresh.hook(fresh.bite_at + 1)
+    assert fresh.press(f.RIGHT if fresh.pattern[0] == f.LEFT else f.LEFT, fresh.bite_at + 2) == "ok"
+
+
+def test_a_wild_boss_hides_coin_flip_arrows_and_the_others_do_not():
+    wild, _ = boss_with("wild")
+    assert wild.pattern.count(f.MYSTERY) == BOSS.wild_mysteries
+    plain, _ = boss_with("fog")
+    assert f.MYSTERY not in plain.pattern and "wild" not in plain.modifiers
+
+
+async def test_a_boss_page_lists_its_twists_and_a_mirror_boss_can_be_beaten_by_pressing_the_opposite(db, clock, monkeypatch):
+    mirror = next(b for b in BOSS.bosses if b.modifiers == ["mirror"])
+
+    class Rigged(Lucky):
+        def choice(self, seq):
+            return mirror if list(seq) == list(BOSS.bosses) else super().choice(seq)
+
+    monkeypatch.setattr(fish_screen, "new_rng", lambda: Rigged(5))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    assert mirror.name in all_text(nav) and "Mirror" in all_text(nav) and "OPPOSITE" in all_text(nav)
+    await reel_in(nav, inter, cast)
+    assert nav.screen.id == "result" and f"You beat {mirror.name}" in all_text(nav)
+
+
+async def test_a_shuffle_boss_moves_the_buttons_around_and_a_normal_fish_never_does(db, clock, monkeypatch):
+    shuffle = next(b for b in BOSS.bosses if b.modifiers == ["shuffle"])
+
+    class Rigged(Lucky):
+        real = Random(3)
+
+        def choice(self, seq):
+            return shuffle if list(seq) == list(BOSS.bosses) else super().choice(seq)
+
+        def shuffle(self, items):  # (the boss comes from the lucky dice; the shuffling itself needs real randomness)
+            self.real.shuffle(items)
+
+    monkeypatch.setattr(fish_screen, "new_rng", lambda: Rigged(5))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    clock[0] = nav.screen.cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    orders = set()
+    for _ in range(40):
+        await nav.screen.nav.refresh(inter)
+        orders.add(tuple(b.label for b in buttons(nav) if b.label in ("Left", "Right", "Reel")))
+    assert len(orders) > 1 and all(set(o) == {"Left", "Right", "Reel"} for o in orders)
+    plain = fish_screen.reel_buttons(reel_cast([f.LEFT]), Random(1), lambda a: None, __import__("discord").ButtonStyle.primary)
+    assert [b.label for b in plain] == ["Left", "Right", "Reel"]

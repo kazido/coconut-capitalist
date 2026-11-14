@@ -37,12 +37,29 @@ def clicked_at(interaction: discord.Interaction) -> float:
     return now()
 
 
-def pattern_line(cast: fishing.Cast) -> str:
-    """Arrows already pressed turn into ticks; the next one is bold."""
-    left = cast.pattern[cast.progress:]
-    done = "✅" * cast.progress
-    todo = f"**{left[0]}**" + (" " + " ".join(left[1:]) if len(left) > 1 else "") if left else ""
-    return f"{done} {todo}".strip()
+def pattern_line(cast: fishing.Cast, rules=None) -> str:
+    """The next few steps (a Reel step looks like an ordinary arrow until you reach it, then it turns into 🌀). What is done
+    is a tick count; the next step is bold. A "reverse" boss is read from the right."""
+    reel = (rules or get_registry().fishing).reel
+    window = reel.fog_window if "fog" in cast.modifiers else reel.window
+    end = min(len(cast.pattern), cast.progress + window)
+    steps = [cast.display(i) for i in range(cast.progress, end)]
+    more, done = len(cast.pattern) - end, (f"✅×{cast.progress}" if cast.progress else "")
+    if not steps:
+        return done
+    if "reverse" in cast.modifiers:
+        return " ".join(filter(None, [f"… +{more}" if more else "", *reversed(steps[1:]), f"**{steps[0]}**", done]))
+    return " ".join(filter(None, [done, f"**{steps[0]}**", *steps[1:], f"… +{more}" if more else ""]))
+
+
+def reel_buttons(cast: fishing.Cast, rng, handler, style) -> list[discord.ui.Button]:
+    """Left, Right and Reel (and Let it go). A "shuffle" boss moves them around every step."""
+    buttons = [button("Left", emoji="◀️", style=style, on_click=handler(fishing.LEFT)),
+               button("Right", emoji="▶️", style=style, on_click=handler(fishing.RIGHT)),
+               button("Reel", emoji=fishing.REEL, style=discord.ButtonStyle.success, on_click=handler(fishing.REEL))]
+    if "shuffle" in cast.modifiers:
+        rng.shuffle(buttons)
+    return buttons
 
 
 def quest_line(q: fishing.Quest) -> str:
@@ -157,30 +174,26 @@ class FishScreen(Screen):
                          button("Leave it", on_click=self._cancel))]
             return Page("Fishing", body, accent=0xF1C40F)
 
+        rules = reg.fishing
+        slack = f"\n🧵 Slack left: **{cast.slips_left}**" if cast.slips_left else ""
+        arrows = sum(t != fishing.REEL for t in cast.pattern)
         if cast.boss:
-            slack = f"\n🧵 Slack left: **{cast.slips_left}**" if cast.slips_left else ""
+            twists = "\n".join(rules.boss.modifier_text[m] for m in cast.modifiers)
             body += [
-                text(f"### 💀 **{cast.boss}** is on the line!\nA boss! No fish this time, but a mountain of loot if you land it.\n"
-                     f"{pattern_line(cast)}{slack}\n-# {sum(t != fishing.REEL for t in cast.pattern)} arrows and some reeling. Don't slip!"),
-                row(button("Left", emoji="◀️", style=discord.ButtonStyle.danger, on_click=self._press(fishing.LEFT)),
-                    button("Right", emoji="▶️", style=discord.ButtonStyle.danger, on_click=self._press(fishing.RIGHT)),
-                    button("Reel", emoji=fishing.REEL, style=discord.ButtonStyle.success, on_click=self._press(fishing.REEL)),
-                    button("Let it go", on_click=self._cancel)),
+                text(f"### 💀 **{cast.boss}** is on the line!\nA boss! No fish this time, but a mountain of loot if you land it.\n{twists}\n"
+                     f"{pattern_line(cast, rules)}{slack}\n-# {arrows} arrows, and some of them turn into **Reel** when you get there. Don't slip!"),
+                row(*reel_buttons(cast, self.rng, self._press, discord.ButtonStyle.danger), button("Let it go", on_click=self._cancel)),
             ]
             return Page("Fishing", body, accent=0x7B241C)
 
-        # reeling it in
+        # reeling it in: you can see what kind of fish it is now, so you can use what you have learned about it
         colour = Rarities.from_value(cast.fish.rarity)
-        slack = f"\n🧵 Slack left: **{cast.slips_left}**" if cast.slips_left else ""
         body += [
-            text(f"### 🎣 A **{colour.rarity_name}** fish is on the line!\n{pattern_line(cast)}{slack}\n"
-                 f"-# Press them in this order: ◄ ► are the arrows, 🌀 means press **Reel**"
-                 + (", and ❓ is hidden: it follows this fish's own pattern. Watch what it turns out to be!"
+            text(f"### 🎣 A {cast.fish.display} is on the line!  ·  **{colour.rarity_name}**\n{pattern_line(cast, rules)}{slack}\n"
+                 f"-# ◄ ► are the arrows. A step can turn into 🌀 as you reach it: press **Reel**"
+                 + (", and ❓ is hidden: it follows this fish's own pattern. Check your field notes!"
                     if fishing.MYSTERY in cast.pattern else ".")),
-            row(button("Left", emoji="◀️", style=discord.ButtonStyle.primary, on_click=self._press(fishing.LEFT)),
-                button("Right", emoji="▶️", style=discord.ButtonStyle.primary, on_click=self._press(fishing.RIGHT)),
-                button("Reel", emoji=fishing.REEL, style=discord.ButtonStyle.success, on_click=self._press(fishing.REEL)),
-                button("Let it go", on_click=self._cancel)),
+            row(*reel_buttons(cast, self.rng, self._press, discord.ButtonStyle.primary), button("Let it go", on_click=self._cancel)),
         ]
         return Page("Fishing", body, accent=int(colour.color, 16))
 
