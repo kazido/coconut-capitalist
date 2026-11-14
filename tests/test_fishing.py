@@ -734,6 +734,13 @@ class Lucky(Random):
         return seq[min(7, len(seq) - 1)]  # every digit is a 7: the numbers are 7777
 
 
+class LuckyButNoBoss(Lucky):
+    """Lucky with hallucinations and chests, but no boss turns up."""
+
+    def randint(self, a, b):
+        return b if b == RULES.boss.odds else a
+
+
 class Unlucky(Random):
     def randint(self, a, b):
         return b
@@ -834,7 +841,7 @@ async def test_the_numbers_cannot_be_guessed_after_they_are_used_up(db):
 
 
 async def test_the_screen_flashes_the_numbers_then_hides_them_and_the_chest_opens_with_them(db, clock, monkeypatch):
-    monkeypatch.setattr(fish_screen, "new_rng", lambda: Lucky(1))
+    monkeypatch.setattr(fish_screen, "new_rng", lambda: LuckyButNoBoss(1))
     clock[0] = T0
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
@@ -1120,3 +1127,89 @@ async def test_the_records_page_is_reachable_from_the_book_and_the_community(db)
         assert nav.screen.id == "fishrecords"
         await click(nav, inter, "Back to fishing")
         assert nav.screen.id == "fish"
+
+
+# ---- bosses ---------------------------------------------------------------------------------------------------------
+BOSS = RULES.boss
+
+
+def test_a_boss_is_rarer_than_a_fish_and_takes_a_long_reel():
+    assert BOSS.odds >= 40 and BOSS.length == 15
+    assert BOSS.bits_min < BOSS.bits_max and BOSS.loot[0].chance == 1.0
+    assert BOSS.length > max(len(f.reel_pattern(i.rarity, RULES, Random(1))) for i in f.fish_pool(REG))  # longer than any fish
+
+
+def test_now_and_then_a_cast_is_a_boss_with_a_fifteen_arrow_reel_and_a_name():
+    boss = f.cast_line(rod(), Lucky(1), T0, REG)
+    assert boss.boss in BOSS.names and len(boss.pattern) == BOSS.length and not boss.chest
+    assert not f.cast_line(rod(), Unlucky(1), T0, REG).boss
+    hits = sum(bool(f.cast_line(rod(), Random(i), T0, REG).boss) for i in range(6000))
+    assert 0.5 * 6000 / BOSS.odds < hits < 1.6 * 6000 / BOSS.odds
+
+
+def test_a_chest_beats_a_boss_when_both_come_up_and_a_boss_bites_like_any_fish():
+    armed = f.cast_line(rod(), Lucky(1), T0, REG, armed=True)
+    assert armed.chest and not armed.boss
+    boss = f.cast_line(rod(), Lucky(1), T0, REG)
+    assert boss.status(boss.bite_at + 1) == "bite"  # nothing gives it away
+    boss.hook(boss.bite_at + 1)
+    assert boss.status(boss.bite_at + 1) == "reeling"
+
+
+async def test_a_boss_pays_a_pile_and_no_fish_and_only_once(db):
+    user = await player()
+    boss = f.cast_line(rod(), Lucky(1), T0, REG)
+    boss.hook(boss.bite_at + 1)
+    with pytest.raises(f.FishingError, match="isn't beaten"):
+        await f.defeat_boss(user, boss, Lucky(2), REG)
+    for arrow in list(boss.pattern):
+        boss.press(arrow, boss.bite_at + 2)
+    with pytest.raises(f.FishingError, match="boss, not a fish"):
+        await f.land(user, boss, REG, now=T0)  # a boss is not a fish
+    before = user.purse
+    won = await f.defeat_boss(user, boss, Lucky(2), REG)
+    await user.refresh()
+    assert won.name == boss.boss and won.bits == BOSS.bits_min and user.purse == before + won.bits
+    assert won.items["coral_shard"] == BOSS.loot[0].min and won.items["sturgeon"] == 1  # a lucky boss pays everything
+    assert await user.item_quantity("sturgeon") == 1
+    assert await user.item_quantity(boss.fish.id) == won.items[boss.fish.id]  # no fish of its own: only what the loot gave
+    skill = await user.skill("fishing")
+    assert skill.stats.bosses_beaten == 1 and skill.stats.fish_caught == 0 and skill.xp >= BOSS.xp
+    with pytest.raises(f.FishingError, match="already"):
+        await f.defeat_boss(user, boss, Lucky(2), REG)
+
+
+async def test_a_real_fish_is_not_a_boss(db):
+    user = await player()
+    with pytest.raises(f.FishingError, match="isn't a boss"):
+        await f.defeat_boss(user, cast_of(), Lucky(1), REG)
+
+
+async def test_beating_a_boss_on_the_screen_pays_and_losing_it_costs_only_the_boss(db, clock, monkeypatch):
+    monkeypatch.setattr(fish_screen, "new_rng", lambda: Lucky(5))  # Lucky: this cast is a boss
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    assert cast.boss
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    assert "A bite!" in all_text(nav) and cast.boss not in all_text(nav)  # no spoilers
+    await click(nav, inter, "Pull up the line")
+    assert cast.boss in all_text(nav) and "15 arrows" in all_text(nav)
+    for arrow in list(cast.pattern):
+        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    assert f"You beat {cast.boss}" in all_text(nav) and "Loot" in all_text(nav)
+    assert (await user.skill("fishing")).stats.bosses_beaten == 1 and nav.screen.cast is None
+
+
+async def test_slipping_on_a_boss_loses_it(db, clock, monkeypatch):
+    monkeypatch.setattr(fish_screen, "new_rng", lambda: Lucky(5))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    wrong = "Right" if cast.next_arrow == f.LEFT else "Left"
+    await click(nav, inter, wrong)
+    assert "slipped off the hook" in all_text(nav) and (await user.skill("fishing")).stats.bosses_beaten == 0

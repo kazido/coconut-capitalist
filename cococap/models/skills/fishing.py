@@ -7,6 +7,7 @@ class Stats(BaseModel):
     treasures_found: int = 0
     fish_caught: int = 0
     community_book_entries: int = 0
+    bosses_beaten: int = 0
 
 
 class Skiff(BaseModel):

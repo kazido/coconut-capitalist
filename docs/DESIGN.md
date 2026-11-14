@@ -240,6 +240,15 @@ without changing the rules a player sees:
    editing the message directly, and the self-refresh now never queues up behind a click and gives up after 2 seconds on
    a slow edit. This helps every screen, not just fishing.
 
+### Bosses
+
+About 1 cast in 80 turns out to be a **boss** instead of a fish. It bites like anything else (nothing gives it away), but
+once you pull up the line it is a **15-arrow reel** with your rod's usual forgiveness, and a name ("Old Whiskers"). Land
+it and there is no fish to keep: you are paid 80-200k bits, xp and a loot table (coral, a chance at a sturgeon, oarfish
+or leviathan pup). Slip and it is gone. Bosses are for one player (no community boss: the community already has the
+book and monthly goals). Numbers in `configs/fishing.toml` `[boss]` (`TODO(balance)`). The same long-reel idea is why the
+rarest fish already take 7-9 arrows. A chest outranks a boss when both come up.
+
 ### Record fish
 
 Every catch has its own size in cm, fixed when you cast (most are smallish, the odd one is a giant: `size.min`/`max` on

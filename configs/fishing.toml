@@ -154,3 +154,35 @@ xp = 1200
 [records]
 personal_xp_per_rarity = 10       # a new personal best (or the first one of a fish) pays rarity x this xp
 server_bits_multiplier = 2.0      # a new server record pays this x the fish's sell price in bits
+
+# Bosses. Now and then (`odds`) what bites is not a fish but a boss: it bites like anything else, but once you pull up
+# the line it takes a long reel (`length` arrows, with your rod's usual forgiveness). Win, and there is no fish to keep:
+# you are paid a big pile of bits, xp and loot instead.  TODO(balance): all of it
+[boss]
+odds = 80                         # 1 in 80 casts
+length = 15
+names = ["Old Whiskers", "The Drowned Duke", "Big Mama", "Captain Barnacle", "The Silver Ghost", "Grandfather Carp", "Kraken Jr."]
+bits_min = 80000
+bits_max = 200000
+xp = 400
+
+[[boss.loot]]
+item = "coral_shard"
+min = 5
+max = 12
+chance = 1.0
+[[boss.loot]]
+item = "sturgeon"
+min = 1
+max = 1
+chance = 0.25
+[[boss.loot]]
+item = "oarfish"
+min = 1
+max = 1
+chance = 0.1
+[[boss.loot]]
+item = "leviathan_pup"
+min = 1
+max = 1
+chance = 0.03

@@ -72,6 +72,7 @@ class Cast:
     progress: int = 0
     escaped: bool = False
     settled: bool = False
+    boss: str = ""  # the boss's name, if what bit was a boss rather than a fish
     chest: bool = False  # a treasure chest instead of a fish (the fish is only a stand-in until it is hooked)
     attempts_left: int = 0  # tries at the chest's lock
     grace: float = 0.0  # quiet extra seconds to pull up the line (laggy connections)
@@ -177,6 +178,9 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
     )
     if armed and rng.randint(1, rules.treasure.chest_odds) == 1:
         cast.chest, cast.attempts_left = True, rules.treasure.attempts
+    elif rng.randint(1, rules.boss.odds) == 1:
+        cast.boss = rng.choice(rules.boss.names)
+        cast.pattern = [rng.choice((LEFT, RIGHT)) for _ in range(rules.boss.length)]
     return cast
 
 
@@ -295,6 +299,8 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     reg = registry or get_registry()
     rules = reg.fishing
     now = time.time() if now is None else now
+    if cast.boss:
+        raise FishingError("That's a boss, not a fish.")
     if cast.progress < len(cast.pattern) or cast.escaped:
         raise FishingError("That fish isn't landed.")
     if cast.settled:
@@ -609,3 +615,43 @@ async def open_chest(user: User, cast: Cast, guess: str, rng: random.Random | No
         await user.update_skill("fishing", lambda s: setattr(s, "treasure", TreasureState()))  # the spell is broken
         return ChestAttempt(False, 0, sunk=True)
     return ChestAttempt(False, cast.attempts_left)
+
+
+# ---- bosses ---------------------------------------------------------------------------------------------------
+@dataclass(frozen=True)
+class BossReward:
+    name: str
+    bits: int
+    xp: int
+    items: Counter
+
+
+async def defeat_boss(user: User, cast: Cast, rng: random.Random | None = None, registry: Registry | None = None) -> BossReward:
+    """Pay out a boss that has been reeled all the way in (once). There is no fish: just bits, xp and loot."""
+    reg = registry or get_registry()
+    b = reg.fishing.boss
+    rng = rng or random.Random()
+    if not cast.boss:
+        raise FishingError("That isn't a boss.")
+    if cast.progress < len(cast.pattern) or cast.escaped:
+        raise FishingError("That boss isn't beaten.")
+    if cast.settled:
+        raise FishingError("You already collected that.")
+    cast.settled = True
+    bits = rng.randint(b.bits_min, b.bits_max)
+    items: Counter = Counter()
+    for row in b.loot:
+        if rng.random() < row.chance:
+            items[row.item] += rng.randint(row.min, row.max)
+    xp = round(b.xp * await xp_multiplier(user.id, reg))
+
+    def win(skill) -> None:
+        skill.xp += xp
+        skill.stats.bosses_beaten += 1
+
+    await user.update_skill("fishing", win)
+    for item_id, quantity in items.items():
+        await user.add_item(item_id, quantity)
+    if bits:
+        await user.add_bits(bits)
+    return BossReward(cast.boss, bits, xp, items)

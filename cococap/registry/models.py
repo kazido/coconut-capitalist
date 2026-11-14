@@ -512,6 +512,18 @@ class CommunityRules(_Data):
     min_share: float = Field(ge=0, le=1)  # you must have done this share of a goal to be paid for it
 
 
+class BossRules(_Data):
+    """A boss on your line: a long reel with no fish of its own at the end, just a big pile of rewards."""
+
+    odds: int = Field(ge=1)  # 1 in N casts
+    length: int = Field(ge=1)  # arrows to press
+    names: list[str] = Field(min_length=1)
+    bits_min: int = Field(ge=0)
+    bits_max: int = Field(ge=0)
+    xp: int = Field(ge=0)
+    loot: list[TreasureLoot]
+
+
 class RecordRules(_Data):
     personal_xp_per_rarity: int = Field(ge=0)  # a new personal best pays rarity x this xp
     server_bits_multiplier: float = Field(ge=0)  # a new server record pays the fish's sell price x this in bits
@@ -526,6 +538,7 @@ class FishingRules(_Data):
     treasure: TreasureRules
     community: CommunityRules
     records: RecordRules
+    boss: BossRules
 
 
 class MinigamePayout(_Data):

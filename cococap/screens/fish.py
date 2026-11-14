@@ -142,6 +142,17 @@ class FishScreen(Screen):
                          button("Leave it", on_click=self._cancel))]
             return Page("Fishing", body, accent=0xF1C40F)
 
+        if cast.boss:
+            slack = f"\n🧵 Slack left: **{cast.slips_left}**" if cast.slips_left else ""
+            body += [
+                text(f"### 💀 **{cast.boss}** is on the line!\nA boss! No fish this time, but a mountain of loot if you land it.\n"
+                     f"{pattern_line(cast)}{slack}\n-# {len(cast.pattern)} arrows. Don't slip!"),
+                row(button("Left", emoji="◀️", style=discord.ButtonStyle.danger, on_click=self._press(fishing.LEFT)),
+                    button("Right", emoji="▶️", style=discord.ButtonStyle.danger, on_click=self._press(fishing.RIGHT)),
+                    button("Let it go", on_click=self._cancel)),
+            ]
+            return Page("Fishing", body, accent=0x7B241C)
+
         # reeling it in
         colour = Rarities.from_value(cast.fish.rarity)
         slack = f"\n🧵 Slack left: **{cast.slips_left}**" if cast.slips_left else ""
@@ -192,6 +203,11 @@ class FishScreen(Screen):
                 if cast.escaped or cast.progress >= len(cast.pattern):
                     self.cast = None
                 return await self.refresh(interaction, str(error))
+            if result == "landed" and cast.boss:
+                self.cast = None
+                won = await fishing.defeat_boss(self.user, cast, self.rng)
+                loot = ", ".join(f"{q:,} {get_registry().item(i).display}" for i, q in won.items.items())
+                return await self.refresh(interaction, f"💀 **You beat {won.name}!**  ·  +{bits(won.bits)} bits, +{won.xp:,} xp\n🎁 Loot: {loot}")
             if result == "landed":
                 self.cast = None
                 catch = await fishing.land(self.user, cast, now=now(), rng=self.rng)
@@ -213,7 +229,9 @@ class FishScreen(Screen):
                 return await self.refresh(interaction, note)
             if result == "escaped":
                 self.cast = None
-                return await self.refresh(interaction, f"🌊 Wrong way! The {cast.fish.display} slipped off the hook.")
+                what = cast.boss or cast.fish.display
+                return await self.refresh(interaction, f"🌊 Wrong way! {what} slipped off the hook." if cast.boss
+                                          else f"🌊 Wrong way! The {what} slipped off the hook.")
             await self.refresh(interaction, "🧵 Wrong way! The line goes slack, but you hold on." if result == "slip" else None)  # (an "echo" is ignored)
 
         return press
