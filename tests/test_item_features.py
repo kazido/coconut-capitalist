@@ -24,8 +24,10 @@ def test_every_item_renders_an_embed(item_id, for_shop):
 
 
 def test_shop_embed_hides_non_shop_fields():
-    full, shop = construct_embed("cod").description, construct_embed("cod", True).description
+    full, shop = construct_embed("copper_ore").description, construct_embed("copper_ore", True).description
     assert "Drop Rate" in full and "Drop Rate" not in shop
+    fish_full, fish_shop = construct_embed("cod").description, construct_embed("cod", True).description
+    assert "Where to catch it" in fish_full and "Where to catch it" not in fish_shop
 
 
 def test_roll_item_respects_drop_table():
