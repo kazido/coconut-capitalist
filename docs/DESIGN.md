@@ -241,6 +241,21 @@ Use them from **Inventory -> Enchant**. Scrolls are found by playing: **Keen** (
 **Lure** (shorter waits), **Steady Line** (forgives more wrong arrows) and Keen come from fishing bosses and treasure
 chests. Soloist is unchanged. Chances are `TODO(balance)` in `configs/items.toml`, `mining.toml` and `fishing.toml`.
 
+## Crab pots
+
+An AFK corner of fishing (fishing level 6; 1 pot at 6, 2 at 12, 3 at 20). **Craft** a pot (25,000 bits, hardwood, plant fiber
+and coral), put it in a water you have opened, and **load bait**: each catch uses one. While you are away it catches
+**rare fish and better only** (never the common ones), one per interval, until it is full or out of bait; you collect
+them later (and they are a way to get fish for the collection books). Nothing is scheduled: the number waiting comes
+from the clock when you look, and collecting is one transaction, so a second click gets nothing.
+
+It is a side dish, not a money maker. A basic pot earns a few thousand bits an hour (a test keeps it under 4% of fishing
+by hand); five pot levels (60 -> 24 minutes a catch, holding 6 -> 24), better bait (**Worm** 300, **Shrimp** 1,500,
+**Squid Chunk** 6,000 bits, and the never-sold **Golden Roe** from chests and bosses), and pets (**Python** for speed,
+**Crab** for rare fish) stack up, but bait costs bits too, so even three max pots with the best of everything net a
+third of what fishing by hand does (a test keeps it under 40%). Everything is in `configs/fishing.toml` `[pots]` and the
+bait items (`TODO(balance)`).
+
 ## Fishing
 
 `/fish` (or Skills -> Fishing). One panel, no channel spam:

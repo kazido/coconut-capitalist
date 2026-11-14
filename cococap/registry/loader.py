@@ -151,6 +151,17 @@ class Registry:
             levels = [w.min_level for w in self.fishing.waters]
             if levels != sorted(levels):
                 problems.append("fishing.toml: waters must be listed shallowest first")
+            pots = self.fishing.pots
+            problems += [f"fishing.toml pots: unknown item '{i}'" for i in (*pots.craft_items, *(m for lv in pots.levels for m in lv.upgrade_items))
+                         if i not in self.items]
+            if pots.slot_levels != sorted(pots.slot_levels) or pots.slot_levels[0] < pots.min_level:
+                problems.append("fishing.toml pots: slot_levels must be ascending and start at min_level")
+            intervals = [lv.interval_minutes for lv in pots.levels]
+            capacities = [lv.capacity for lv in pots.levels]
+            if intervals != sorted(intervals, reverse=True) or capacities != sorted(capacities):
+                problems.append("fishing.toml pots: each pot level must catch faster and hold more than the one before")
+            if not any(i.bait for i in self.items.values()):
+                problems.append("fishing.toml pots: there needs to be at least one bait item")
             problems += [f"fishing.toml boss: unknown loot item '{row.item}'" for row in self.fishing.boss.loot
                          if row.item not in self.items]
             problems += [f"fishing.toml treasure: unknown loot item '{row.item}'" for row in self.fishing.treasure.loot

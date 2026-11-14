@@ -121,6 +121,11 @@ min = 1
 max = 1
 chance = 0.04
 [[treasure.loot]]
+item = "golden_roe"
+min = 1
+max = 2
+chance = 0.05
+[[treasure.loot]]
 item = "familiar_orb"
 min = 1
 max = 1
@@ -294,7 +299,70 @@ giant_squid = 120
 abyssal_angler = 350
 leviathan_pup = 2500
 [[boss.loot]]
+item = "golden_roe"
+min = 1
+max = 3
+chance = 0.10
+[[boss.loot]]
 item = "familiar_orb"
 min = 1
 max = 1
 chance = 0.08
+
+# Crab pots: an AFK extra. Craft a pot, put it in a water you have opened, load it with bait and it catches rare fish
+# (`min_rarity` and up) while you are away, one per interval, using one bait each, until it is full or out of bait. The
+# fish wait for you to collect them. A basic pot earns very little next to fishing yourself; it takes the best bait, a
+# top-level pot and the right pets to make it add up. They are also a way to get fish for your collection books.
+# TODO(balance): all of it
+[pots]
+min_level = 6
+slot_levels = [6, 12, 20]         # you may own 1 pot at fishing level 6, 2 at 12 and 3 at 20
+min_rarity = 3                    # Rare fish and better only
+xp_factor = 0.5
+craft_bits = 25000
+[pots.craft_items]
+hardwood = 10
+plant_fiber = 15
+coral_shard = 5
+
+[[pots.levels]]                   # level 1
+interval_minutes = 60
+capacity = 6
+upgrade_bits = 0
+[[pots.levels]]
+interval_minutes = 52
+capacity = 8
+upgrade_bits = 60000
+[pots.levels.upgrade_items]
+hardwood = 20
+plant_fiber = 20
+coral_shard = 10
+[[pots.levels]]
+interval_minutes = 42
+capacity = 12
+upgrade_bits = 250000
+[pots.levels.upgrade_items]
+hardwood = 50
+plant_fiber = 50
+coral_shard = 25
+salmon = 5
+[[pots.levels]]
+interval_minutes = 32
+capacity = 16
+upgrade_bits = 1000000
+[pots.levels.upgrade_items]
+hardwood = 120
+plant_fiber = 100
+coral_shard = 60
+tuna = 5
+swordfish = 1
+[[pots.levels]]
+interval_minutes = 24
+capacity = 24
+upgrade_bits = 5000000
+[pots.levels.upgrade_items]
+hardwood = 300
+plant_fiber = 250
+coral_shard = 150
+swordfish = 5
+marlin = 1

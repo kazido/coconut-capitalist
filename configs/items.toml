@@ -820,6 +820,66 @@ max = 1
 min = 40
 max = 130
 
+[worm]
+name = "Worm"
+description = "A wriggling worm. Fish aren't picky."
+wiki = "Bait for crab pots: each catch uses one. Luck 1x for rare fish, speed 1x."
+emoji = "🪱"
+rarity = 1
+skill = "fishing"
+category = "bait"
+price = 300  # TODO(balance)
+sell_price = 0
+
+[worm.bait]
+luck = 1.0
+speed = 1.0
+
+[shrimp]
+name = "Shrimp"
+description = "A tasty shrimp: bigger fish take notice."
+wiki = "Bait for crab pots: each catch uses one. Luck 1.5x for rare fish, speed 1.2x."
+emoji = "🦐"
+rarity = 2
+skill = "fishing"
+category = "bait"
+price = 1500  # TODO(balance)
+sell_price = 1500
+
+[shrimp.bait]
+luck = 1.5
+speed = 1.2
+
+[squid_chunk]
+name = "Squid Chunk"
+description = "Strong-smelling, and the deep fish love it."
+wiki = "Bait for crab pots: each catch uses one. Luck 3x for rare fish, speed 1.4x."
+emoji = "🦑"
+rarity = 3
+skill = "fishing"
+category = "bait"
+price = 6000  # TODO(balance)
+sell_price = 6000
+
+[squid_chunk.bait]
+luck = 3.0
+speed = 1.4
+
+[golden_roe]
+name = "Golden Roe"
+description = "Glittering fish eggs. Nothing resists them."
+wiki = "Bait for crab pots: each catch uses one. Luck 6x for rare fish, speed 1.8x."
+emoji = "✨"
+rarity = 5
+skill = "fishing"
+category = "bait"
+price = 0  # TODO(balance)  (found in treasure chests and boss loot, never sold)
+sell_price = 0
+
+[golden_roe.bait]
+luck = 6.0
+speed = 1.8
+
 [coral_shard]
 name = "Coral Shard"
 description = "Sea-hardened and sharp. Smiths use it to temper a pickaxe head."

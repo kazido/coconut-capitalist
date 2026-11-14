@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from cococap import emojis
 
 Skill = Literal["farming", "foraging", "fishing", "mining", "combat", "shepherding"]
-Category = Literal["material", "tool", "key_item", "pet_item", "crop", "seed", "fish", "scroll"]
+Category = Literal["material", "tool", "key_item", "pet_item", "crop", "seed", "fish", "scroll", "bait"]
 ToolKind = Literal["pickaxe", "axe", "sword", "rod"]
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -104,6 +104,13 @@ class Scroll(_Data):
     enchant: str
 
 
+class Bait(_Data):
+    """Bait for crab pots: each catch uses one. `luck` multiplies the chance of rare fish (rarity 4+), `speed` the catches per hour."""
+
+    luck: float = Field(gt=0)
+    speed: float = Field(gt=0)
+
+
 class ReelTell(_Data):
     """How a fish's mystery arrow (❓) behaves. left/right: always that arrow. same/opposite: the arrow before it, or its
     opposite. random: a fresh coin flip every time (can't be learned, only gambled on)."""
@@ -125,6 +132,7 @@ class Item(_Data):
     drop: Drop | None = None
     size: Size | None = None  # fish only
     scroll: Scroll | None = None
+    bait: Bait | None = None
     reel: ReelTell | None = None  # fish of rarity 4+: what their ❓ turns out to be
     crop: Crop | None = None
     seed: Seed | None = None
@@ -571,6 +579,27 @@ class WaterRules(_Data):
     fish: dict[str, int] = Field(min_length=1)
 
 
+class PotLevel(_Data):
+    """One level of crab pot: how often it catches, how many catches it holds, and what it takes to reach this level."""
+
+    interval_minutes: float = Field(gt=0)
+    capacity: int = Field(ge=1)
+    upgrade_bits: int = Field(ge=0)
+    upgrade_items: dict[str, int] = Field(default_factory=dict)
+
+
+class PotRules(_Data):
+    """Crab pots: craft them, load bait, and they catch rare fish while you are away. An extra, never the main earner."""
+
+    min_level: int = Field(ge=1)  # fishing level to have one
+    slot_levels: list[int] = Field(min_length=1)  # the fishing levels at which you may own 1, 2, 3... pots
+    min_rarity: int = Field(ge=1, le=7)  # a pot only brings up fish of this rarity or better
+    xp_factor: float = Field(ge=0)  # a catch gives this share of the xp it would from your rod
+    craft_bits: int = Field(ge=0)
+    craft_items: dict[str, int]
+    levels: list[PotLevel] = Field(min_length=1)
+
+
 class FishingRules(_Data):
     xp_per_rarity: int = Field(ge=0)
     bite: BiteRules
@@ -582,6 +611,7 @@ class FishingRules(_Data):
     records: RecordRules
     boss: BossRules
     waters: list[WaterRules] = Field(min_length=1)
+    pots: PotRules
 
 
 class MinigamePayout(_Data):

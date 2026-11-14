@@ -45,7 +45,18 @@ class TreasureState(BaseModel):
     armed_until: float = 0.0
 
 
+class Pot(BaseModel):
+    """A crab pot. It catches (up to its capacity) from `since` on, using one bait per catch, until the bait runs out."""
+
+    level: int = 1
+    water: str = "pond"
+    bait: str = ""
+    bait_left: int = 0
+    since: float = 0.0
+
+
 class Fishing(Skill):
+    pots: list[Pot] = Field(default_factory=list)
     notes: dict[str, list[str]] = Field(default_factory=dict)  # fish id -> what its ❓ turned out to be ("◄>►": after ◄ came ►)
     records: dict[str, float] = Field(default_factory=dict)  # fish id -> your biggest catch, in cm
     community_claimed: int = 0  # how many completions of the community book you have been paid for

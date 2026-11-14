@@ -6,7 +6,7 @@ import discord
 
 from cococap.constants import Rarities
 from cococap.registry import get_registry
-from cococap.services import fishing, fishing_community, pets
+from cococap.services import fishing, fishing_community, pets, pots
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
 from cococap.ui import Page, PromptModal, Result, Screen
@@ -56,7 +56,7 @@ class FishScreen(Screen):
     label = "Fishing"
     emoji = ROD
     description = "Cast a line and reel in fish"
-    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords")
+    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords", "fishpots")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -134,7 +134,8 @@ class FishScreen(Screen):
                 button("Book", emoji="📖", disabled=not fishing.book_unlocked(level, reg.fishing), on_click=self._book),
                 button("Community", emoji="🌍", disabled=not fishing.quests_unlocked(level, reg.fishing), on_click=self._community),
             ))
-            body.append(row(button("Records", emoji="📏", on_click=self._records)))
+            body.append(row(button("Records", emoji="📏", on_click=self._records),
+                            button("Crab pots", emoji="🦀", disabled=level < reg.fishing.pots.min_level, on_click=self._pots)))
             return Page("Fishing", body, accent=ACCENT)
 
         status = cast.status(now())
@@ -338,6 +339,9 @@ class FishScreen(Screen):
     async def _records(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishrecords")
 
+    async def _pots(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fishpots")
+
     async def _sell(self, interaction: discord.Interaction) -> None:
         total = await fishing.sell_all(self.user)
         await self.refresh(interaction, f"💰 You sold your fish for **{bits(total)}** bits.")
@@ -535,3 +539,122 @@ class FishRecordsScreen(Screen):
 
     async def _back(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fish")
+
+
+class FishPotsScreen(Screen):
+    """Crab pots: craft them, load bait, collect what they caught while you were away."""
+
+    id = "fishpots"
+    label = "Crab Pots"
+    emoji = "🦀"
+    description = "Pots that catch rare fish while you are away"
+    links = ("fish",)
+
+    def __init__(self, nav):
+        super().__init__(nav)
+        self.index = 0
+
+    async def build(self) -> Page:
+        reg = get_registry()
+        rules = reg.fishing
+        skill = await self.user.skill("fishing")
+        level = User.xp_to_level(skill.xp)
+        if level < rules.pots.min_level:
+            return Page("Crab Pots", [*self.note_block(), text(f"Crab pots open at fishing level {rules.pots.min_level}.")], accent=0xD35400)
+        pet = await pets.bonuses(self.user)
+        slots, here = pots.slots_for(level, rules), now()
+        self.index = min(self.index, max(0, len(skill.pots) - 1))
+        body = [*self.note_block()]
+        lines = []
+        for i, pot in enumerate(skill.pots):
+            water = fishing.water_by_id(reg, pot.water)
+            lvl = pots.level_rules(pot, rules)
+            bait = f"{reg.item(pot.bait).display} ×{pot.bait_left}" if pot.bait and pot.bait_left else "no bait"
+            waiting = pots.ready(pot, here, reg, pet)
+            eta = pots.time_to_next(pot, here, reg, pet)
+            status = (f"**{waiting}/{lvl.capacity}** caught" if pot.bait_left or waiting else "idle")
+            if eta is not None:
+                status += f"  ·  next <t:{int(here + eta)}:R>"
+            elif pot.bait_left and waiting:
+                status += "  ·  full" if waiting >= lvl.capacity else "  ·  out of bait soon"
+            lines.append(f"{'➤ ' if i == self.index else ''}🦀 **Pot {i + 1}**  ·  Lv {pot.level}  ·  {water.emoji} {water.name}  ·  {bait}  ·  {status}")
+        body.append(text(f"### 🦀 Crab pots ({len(skill.pots)}/{slots})\n" + ("\n".join(lines) if lines else
+                    f"You have no pots yet. Craft one for **{bits(rules.pots.craft_bits)}** bits and "
+                    + ", ".join(f"{q} {reg.item(i).name}" for i, q in rules.pots.craft_items.items()) + ".")
+                    + f"\n-# Pots only catch {Rarities.from_value(rules.pots.min_rarity).rarity_name} fish and better, one at a time, while you are away."))
+        if len(skill.pots) > 1:
+            body.append(row(select("Pick a pot...", [
+                discord.SelectOption(label=f"Pot {i + 1} · Lv {p.level}", value=str(i), default=i == self.index,
+                                     description=fishing.water_by_id(reg, p.water).name) for i, p in enumerate(skill.pots)], self._pick)))
+        buttons = [button("Collect all", emoji="🧺", style=discord.ButtonStyle.success,
+                          disabled=not any(pots.ready(p, here, reg, pet) for p in skill.pots), on_click=self._collect)]
+        if skill.pots:
+            pot = skill.pots[self.index]
+            if pot.level < len(rules.pots.levels):
+                cost = rules.pots.levels[pot.level]
+                buttons.append(button(f"Upgrade pot {self.index + 1}", emoji="⬆️", on_click=self._upgrade))
+                body.append(text(f"-# Pot {self.index + 1} → level {pot.level + 1}: {bits(cost.upgrade_bits)} bits, "
+                                 + ", ".join(f"{q} {reg.item(i).name}" for i, q in cost.upgrade_items.items())))
+            worth = pots.hourly_value(pot, reg, pet)
+            body.append(text(f"-# Pot {self.index + 1} catches about one fish every **{pots.interval_seconds(pot, reg, pet) / 60:.0f}** minutes "
+                             f"(holds {pots.level_rules(pot, rules).capacity}), worth about **{bits(round(worth))}** bits an hour. "
+                             f"Fishing yourself earns far more."))
+        buttons.append(button("Craft a pot", emoji="🔨", disabled=len(skill.pots) >= slots, on_click=self._craft))
+        body.append(row(*buttons))
+        if skill.pots:
+            owned = await self.user.items()
+            baits = [(reg.item(i), q) for i, q in owned.items() if q > 0 and (it := reg.find_item(i)) and it.bait]
+            if baits:
+                body.append(row(select("Load bait...", [
+                    discord.SelectOption(label=f"{b.name} ×{q:,}", value=b.id, emoji=b.emoji,
+                                         description=f"{b.bait.luck:g}x rare fish, {b.bait.speed:g}x speed") for b, q in baits][:25], self._bait)))
+            else:
+                body.append(text("-# You have no bait. Buy some in the shop (fishing)."))
+            body.append(row(select("Move pot to...", [
+                discord.SelectOption(label=w.name, value=w.id, emoji=w.emoji, default=w.id == skill.pots[self.index].water)
+                for w in fishing.unlocked_waters(level, rules)], self._water)))
+        return Page("Crab Pots", body, accent=0xD35400)
+
+    async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
+        self.index = int(values[0])
+        await self.refresh(interaction)
+
+    async def _craft(self, interaction: discord.Interaction) -> None:
+        await pots.craft(self.user, now())
+        self.index = len((await self.user.skill("fishing")).pots) - 1
+        await self.refresh(interaction, "🦀 You crafted a crab pot! Load some bait to get it fishing.")
+
+    async def _upgrade(self, interaction: discord.Interaction) -> None:
+        pot = await pots.upgrade(self.user, self.index)
+        await self.refresh(interaction, f"⬆️ Pot {self.index + 1} is now level {pot.level}.")
+
+    async def _bait(self, interaction: discord.Interaction, values: list[str]) -> None:
+        bait_id, index = values[0], self.index
+        reg = get_registry()
+        have = await self.user.item_quantity(bait_id)
+
+        async def submitted(modal_interaction: discord.Interaction, raw: str) -> None:
+            quantity = have if raw.strip().lower() in ("all", "") else int(raw.replace(",", "") or 0)
+            loaded, returned = await pots.load_bait(self.user, index, bait_id, quantity, now())
+            note = f"🪱 Loaded {loaded:,} {reg.item(bait_id).display} into pot {index + 1}."
+            if returned:
+                note += f" The {returned:,} left of the old bait came back to you."
+            await self.refresh(modal_interaction, note)
+
+        await interaction.response.send_modal(PromptModal(f"Load {reg.item(bait_id).name}", f"How many? (you have {have:,})", submitted,
+                                                          default=str(have), max_length=9))
+
+    async def _water(self, interaction: discord.Interaction, values: list[str]) -> None:
+        await pots.set_water(self.user, self.index, values[0], now())
+        await self.refresh(interaction, f"🦀 Pot {self.index + 1} moved to {fishing.water_by_id(get_registry(), values[0]).name}.")
+
+    async def _collect(self, interaction: discord.Interaction) -> None:
+        reg = get_registry()
+        haul = await pots.collect_all(self.user, now())
+        if not haul.catches:
+            return await self.refresh(interaction, "🦀 Nothing has been caught yet.")
+        fish = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in sorted(haul.fish.items(), key=lambda kv: -reg.item(kv[0]).rarity))
+        worth = sum(reg.item(i).sell_price * q for i, q in haul.fish.items())
+        self.result = Result("The pots are emptied!", [f"🧺 {fish}", f"Worth about **{bits(worth)}** bits  ·  **+{haul.xp:,}** xp"],
+                             emoji="🦀", accent=0xD35400, back_label="Back to the pots")
+        await self.refresh(interaction)

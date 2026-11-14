@@ -24,7 +24,8 @@ tests, and never touching unrelated code. The game itself is described in the wi
 | **Farming** (`/farm`: plots, hourly rain, harvest, Farmer's Market, land deeds) | done |
 | **Foraging** (`/chop`: private trees, hourly community tree, zones, Soloist) | done (Re-leaf donations / double tree / growth mode still to do) |
 | **Fishing** (`/fish`: cast, wait, reel the arrows, sell) | done: casting, reeling, selling, daily/weekly quests, personal and community collection books, hallucinations and treasure, monthly goals waters, bosses, record fish (only fish appearing in channels still to do) |
-| **Pets** (`/pets`: orbs, stars, crop feeding, bonuses everywhere) | done (crab pots buffs wait for crab pots) |
+| **Pets** (`/pets`: orbs, stars, crop feeding, bonuses everywhere) | done |
+| **Crab pots** (AFK rare fish: craft, bait, upgrade) | done |
 | Combat, explore | **not ported yet** (listed in `constants.DISABLED_EXTENSIONS`) |
 | Database | SQLite + Alembic (old MongoDB import script: `scripts/import_mongo.py`) |
 | Tests | ~300, run in ~3 s with no services; CI on GitHub Actions |
