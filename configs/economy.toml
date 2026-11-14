@@ -6,6 +6,9 @@
 # +xp in EVERY skill while you are in a party, growing with its size: the first number is for 2 members, the next for 3,
 # and the last for that many members or more (so a party of 4 or more gets +50%).  # TODO(balance)
 party_xp_bonus_by_size = [0.10, 0.25, 0.50]
+# Parties only help while their members play: someone who has not pressed any button or command for this many hours is
+# taken out of their party (the party goes to its most recently active member if it was theirs).
+party_idle_hours = 24
 starting_luckbucks = 100
 weekly_luckbucks = 100
 

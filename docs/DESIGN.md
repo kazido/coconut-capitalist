@@ -248,6 +248,14 @@ other skill. Farming has no tool, but its
 first seed is 10,000 bits, so a new player needs a couple of Work claims or another skill first (`TODO(balance)`).
 Whichever skill they pick first pays for the next tool.
 
+## Idle party members
+
+Every command and button press stamps `users.last_active` (written at most once a minute per player). Every 10 minutes the bot
+sweeps (`services/activity.py`): anyone in a party who has been idle longer than `party_idle_hours` (24, in `configs/economy.toml`)
+is taken out in one transaction. If they owned the party it goes to the most recently active remaining member; if nobody active is
+left the party is disbanded. No per-command history is stored, only that one number. Migration 0004 sets everyone to "active now",
+so nobody is kicked the day it ships. Players are not told when it happens (a possible follow-up: a note on their next party screen).
+
 ## The wiki
 
 `/wiki`, or **More -> Wiki**: one page per topic (getting started, each skill, fish, waters, crab pots and bait, tools and

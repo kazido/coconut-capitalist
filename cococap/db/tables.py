@@ -4,6 +4,8 @@ Money-like columns carry CHECK constraints so the database itself refuses to go 
 which code path touches them.
 """
 
+import time
+
 from sqlalchemy import (
     JSON,
     Boolean,
@@ -43,6 +45,7 @@ class UserRow(Base):
     work_cooldown: Mapped[float] = mapped_column(Float, default=0)
     daily_cooldown: Mapped[float] = mapped_column(Float, default=0)
     weekly_cooldown: Mapped[float] = mapped_column(Float, default=0)
+    last_active: Mapped[float] = mapped_column(Float, default=time.time)  # when they last pressed anything (see services/activity)
     # Validated by cococap.models.settings.Settings / pethouse.Pethouse
     settings: Mapped[dict] = mapped_column(JSON, default=dict)
     pethouse: Mapped[dict] = mapped_column(JSON, default=dict)
