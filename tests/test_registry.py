@@ -63,7 +63,7 @@ def edit(path: Path, old: str, new: str):
 
 
 def test_typo_in_a_field_name_is_reported_with_file_and_entry(data):
-    edit(data / "items.toml", "sell_price = 20  # TODO(balance): doubled (was 10)", "sel_price = 20")
+    edit(data / "items.toml", "sell_price = 20  # TODO(balance): doubled (was 10)", "sel_price = 20  # TODO(balance): doubled (was 10)")
     with pytest.raises(RegistryError, match=r"items\.toml \[copper_ore\].*sel_price"):
         load_registry(data)
 
