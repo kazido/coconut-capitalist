@@ -31,6 +31,16 @@ async def set_columns(user, **columns):
 
 
 @pytest.fixture(autouse=True)
+def _no_leftover_invites():
+    """Pending party invites live in memory: never let one test's invite show up in the next."""
+    from cococap.services import party_invites
+
+    party_invites.clear()
+    yield
+    party_invites.clear()
+
+
+@pytest.fixture(autouse=True)
 def _free_pickaxe(request, monkeypatch):
     """Mining needs a pickaxe. Most mining tests are about the mine itself, so they get a power-1 pickaxe for free,
     unless the player really has one equipped. Mark a test ``bare_hands`` to see the real no-pickaxe behaviour."""
