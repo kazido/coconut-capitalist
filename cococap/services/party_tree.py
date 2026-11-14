@@ -76,7 +76,9 @@ def _settle(state: dict, party_id: int, rules: ForagingRules, reg: Registry) -> 
     chops = {int(u): d for u, d in tree["chops"].items()}
     if not chops:
         return
-    shares = foraging.community_shares(tree["max_hp"], tree["status"] == "felled", chops, party_rules(rules), rng, reg, tree["zone"])
+    efforts = {int(u): e for u, e in tree.get("efforts", {}).items()}
+    shares = foraging.community_shares(tree["max_hp"], tree["status"] == "felled", chops, party_rules(rules), rng, reg, tree["zone"],
+                                       efforts=efforts)
     for user_id, share in shares.items():
         state["pending"].setdefault(str(user_id), []).append(
             {"number": tree["number"], "drops": dict(share.drops), "bits": share.bits, "xp": share.xp, "felled": tree["status"] == "felled"})
@@ -145,7 +147,7 @@ async def start(user: User, zone: int, now: float | None = None, registry: Regis
             raise PartyTreeError("Your party already has a tree standing.")
         number = (tree["number"] if tree else 0) + 1
         state["current"] = {"number": number, "zone": zone, "max_hp": hp, "hp": hp, "status": "growing", "opens": now,
-                            "closes": now + rules.party_tree.open_minutes * 60, "chops": {}, "settled": False}
+                            "closes": now + rules.party_tree.open_minutes * 60, "chops": {}, "efforts": {}, "settled": False}
 
     await community.update(_key(party.party_id), KEEP, begin)
     return (await view(user, now, reg))  # type: ignore[return-value]
@@ -158,7 +160,7 @@ class PartyChop:
     felled_now: bool
 
 
-async def chop(user: User, damage: int, now: float | None = None, registry: Registry | None = None) -> PartyChop:
+async def chop(user: User, damage: int, now: float | None = None, registry: Registry | None = None, effort: float = 1.0) -> PartyChop:
     """One chop on your party's tree. Atomic: all members' chops count and the tree falls once."""
     reg = registry or get_registry()
     rules = reg.foraging
@@ -174,6 +176,8 @@ async def chop(user: User, damage: int, now: float | None = None, registry: Regi
         applied = min(max(1, damage), tree["hp"])
         tree["hp"] -= applied
         tree["chops"][str(user.id)] = tree["chops"].get(str(user.id), 0) + applied
+        efforts = tree.setdefault("efforts", {})
+        efforts[str(user.id)] = efforts.get(str(user.id), 0.0) + effort * applied / max(1, damage)
         if tree["hp"] == 0:
             tree["status"] = "felled"
             _settle(state, party.party_id, rules, reg)

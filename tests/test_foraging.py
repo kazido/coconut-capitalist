@@ -74,13 +74,44 @@ def test_chopping_removes_hp_and_stops_at_zero():
         tree.chop(1)
 
 
+# ---- xp is for the work, not for the axe -----------------------------------------------------------------------------
+def test_a_stronger_axe_fells_the_tree_faster_but_does_not_earn_more_xp():
+    def fell(power):
+        tree = f.Tree(1, 100, 100)
+        swings = 0
+        while not tree.felled:
+            tree.chop(power, 1.0)
+            swings += 1
+        return swings, tree.effort
+
+    slow, fast = fell(5), fell(50)
+    assert slow[0] == 20 and fast[0] == 2  # 10x the power: a tenth of the chops
+    assert slow[1] == pytest.approx(20.0) and fast[1] == pytest.approx(2.0)  # ...and a tenth of the xp for this tree
+    assert slow[1] * 5 == pytest.approx(fast[1] * 50)  # the same xp for the same hour of chopping
+
+
+def test_the_last_chop_only_counts_for_the_part_that_was_needed():
+    tree = f.Tree(1, 10, 10)
+    tree.chop(8, 1.0)
+    tree.chop(8, 1.0)  # only 2 of its 8 hp were needed
+    assert tree.effort == pytest.approx(1.25)
+
+
+def test_a_swings_effort_is_its_grain_and_good_chop_not_the_axe():
+    for power in (1, 50, 500):
+        spot = f.Spot("Oak", 1.5, "plain")
+        swing = spot.swing(power, RULES, Random(3))
+        assert swing.effort in (1.5, 1.5 * (1 + RULES.chopping.good_chop_bonus))
+
+
 # ---- private trees ------------------------------------------------------------------------------------------------
 async def test_felling_a_private_tree_pays_once(db):
     user = await player(1)
     tree = f.Tree(2, 100, 100)
-    tree.chop(100)
+    tree.chop(40, 1.0)
+    tree.chop(60, 2.0)  # a good chop on a good grain
     reward = await f.fell_private(user, tree, Random(1))
-    assert reward.bits == round(100 * RULES.bits_per_hp * f.zone_reward_factor(2, RULES)) and reward.xp == round(100 * RULES.xp_per_hp)
+    assert reward.bits == round(100 * RULES.bits_per_hp * f.zone_reward_factor(2, RULES)) and reward.xp == round(3 * RULES.xp_per_swing)
     await user.refresh()
     assert user.purse == 1000 + reward.bits  # the starting purse plus the tree
     skill = await user.skill("foraging")
@@ -227,13 +258,13 @@ async def test_two_final_chops_at_the_same_moment_only_fell_it_once(db):
 
 
 # ---- the community tree: who gets what -------------------------------------------------------------------------------
-def shares(felled, chops, max_hp=1000, seed=1):
-    return f.community_shares(max_hp, felled, chops, RULES, Random(seed), REG)
+def shares(felled, chops, max_hp=1000, seed=1, efforts=None):
+    return f.community_shares(max_hp, felled, chops, RULES, Random(seed), REG, efforts=efforts or {u: d / 10 for u, d in chops.items()})
 
 
 def test_below_the_minimum_share_you_get_xp_but_no_drops_or_bits():
     result = shares(True, {1: 940, 2: 40, 3: 20})  # player 3 chopped 2%: under the 5% minimum
-    assert result[3].drops == {} and result[3].bits == 0 and result[3].xp == round(20 * RULES.xp_per_hp)
+    assert result[3].drops == {} and result[3].bits == 0 and result[3].xp == round(2.0 * RULES.xp_per_swing)
     assert result[1].bits > 0 and result[2].bits == 0  # player 2 chopped 4%: also under it
     assert shares(True, {1: 500, 2: 500})[2].bits > 0
 
@@ -260,7 +291,7 @@ def test_a_tree_that_fell_over_pays_a_consolation_only():
     unfinished = shares(False, {1: 300, 2: 200})
     assert unfinished[1].bits == round(300 * RULES.bits_per_hp * C.expired_factor)
     assert unfinished[1].bits < done[1].bits
-    assert unfinished[1].xp == round(300 * RULES.xp_per_hp)  # but your work still counts for xp
+    assert unfinished[1].xp == round(30.0 * RULES.xp_per_swing)  # but your work still counts for xp
 
 
 # ---- settling and claiming ----------------------------------------------------------------------------------------
@@ -317,7 +348,7 @@ async def test_party_xp_applies_to_claimed_community_rewards(db):
     party = await Party.create(1)
     await party.add_member(2)
     reward = (await f.claim_rewards(user, OPEN, Random(1)))[0]
-    assert reward.xp == round(tree.max_hp * RULES.xp_per_hp * (1 + REG.economy.party_xp_bonus_by_size[0]))
+    assert reward.xp == round(1.0 * RULES.xp_per_swing * (1 + REG.economy.party_xp_bonus_by_size[0]))  # one chop of effort 1
 
 
 # ---- chopping: the spot, its grain and good chops -----------------------------------------------------------------------
@@ -526,7 +557,7 @@ async def test_a_perfect_spot_pays_a_little_xp_scaled_by_its_length_and_your_bon
 
 def test_perfect_xp_is_a_small_extra_next_to_what_a_tree_pays():
     cycle = f.cycle_length(1, RULES)
-    tree_xp = f.average_hp(1, RULES) * RULES.xp_per_hp
+    tree_xp = f.average_hp(1, RULES) / REG.item("starter_axe").tool.power * RULES.xp_per_swing  # swings for a tree at the starter axe
     assert 0 < cycle * CH.perfect_xp_per_step < 0.5 * tree_xp  # "slightly more xp"
 
 

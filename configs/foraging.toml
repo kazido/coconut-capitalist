@@ -10,7 +10,7 @@ zone_levels = [1, 4, 7, 11, 15, 20, 25, 31, 37, 44, 51, 59, 67, 76, 85, 94, 104,
 heavy_zone = 8                    # private trees from this zone up are "heavy"...
 heavy_solo_power = 0.5            # ...and a lone chopper hits at this share of their power (the Soloist enchant removes it)
 zone_hp_growth = 0.75             # a tree's hp = its height x (1 + this x (zone - 1))
-xp_per_hp = 3                     # foraging xp = hp chopped x this
+xp_per_swing = 9                  # foraging xp = this x the quality of every chop (grain and good chops, never the axe). A normal chop is about 1.
 bits_per_hp = 200                 # bits = hp chopped x this (x the zone bonus). Tuned to pay a bit under mining per click
 hp_per_roll = 170                 # a felled tree makes ceil(hp / this) rolls on the foraging drop tables
 zone_reward_growth = 0.07         # each zone above 1 pays +7% per hp (zone 10: x1.63, zone 20: x2.33). Kept small so the deep zones do not run away from the other skills

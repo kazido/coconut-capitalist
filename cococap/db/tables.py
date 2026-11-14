@@ -178,6 +178,7 @@ class TreeChopRow(Base):
         BigInteger, ForeignKey("users.discord_id", ondelete="CASCADE"), primary_key=True
     )
     damage: Mapped[int] = mapped_column(Integer, default=0)
+    effort: Mapped[float] = mapped_column(Float, default=0.0)  # the quality of the chops (pays xp; the axe's power does not)
 
 
 class TreeRewardRow(Base):

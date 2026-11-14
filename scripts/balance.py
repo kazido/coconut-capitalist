@@ -169,12 +169,12 @@ def mining_xp_per_click() -> float:
 
 def foraging_xp_per_click(power: int) -> float:
     rules = REG.foraging
-    rng, dealt, clicks = Random(2), 0, 4000
+    rng, effort, clicks = Random(2), 0.0, 4000
     spot = f.Spot.pick(rules, rng)
     cycle = f.cycle_length(1, rules)
     for _ in range(clicks):
-        dealt += spot.swing(power, rules, rng, 0.0, spot.expected(rules, cycle), cycle).damage
-    return dealt / clicks * rules.xp_per_hp
+        effort += spot.swing(power, rules, rng, 0.0, spot.expected(rules, cycle), cycle).effort
+    return effort / clicks * rules.xp_per_swing
 
 
 def fishing_xp_per_minute(power: int) -> float:
@@ -229,7 +229,8 @@ def xp_report() -> None:
     for label, xp in rows.items():
         print(f"  {label:24}{xp:>10,.0f}  " + "".join(f"{level_xp(lv) / xp:>8,.0f}h" for lv in (20, 50, 90)))
     print("  level costs: " + ", ".join(f"L{lv} = {level_xp(lv):,} total ({level_xp(lv + 1) - level_xp(lv):,} for the next level)" for lv in (10, 20, 50, 90)))
-    print("  farming xp: crop rarity x %d per harvest (a plot waits hours between harvests: see the table below)" % REG.farming.xp_per_rarity)
+    per_cycle = 1 - (1 - REG.farming.grow_chance) * (1 - REG.farming.water_chance)
+    print(f"  farming: {REG.farming.xp_per_cycle} xp per growth cycle = {REG.farming.xp_per_cycle * per_cycle:,.0f} xp/hour per watered plot, x9 plots = {9 * REG.farming.xp_per_cycle * per_cycle:,.0f}")
 
 
 def main() -> None:

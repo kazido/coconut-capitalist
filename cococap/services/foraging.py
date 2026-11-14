@@ -79,6 +79,7 @@ class Swing:
     index: int = 0  # which step of the pattern it was aimed at
     ended: bool = False  # that was the last step: you are on a new spot now
     perfect: bool = False  # ...and every step of the spot was right
+    effort: float = 1.0  # how good the chop was, whatever axe made it (the grain times a good chop's bonus): this is what pays xp
 
 
 @dataclass
@@ -122,7 +123,8 @@ class Spot:
         good-chop chance (a Sharp Eye enchant)."""
         c = rules.chopping
         good = rng.random() < c.good_chop_chance + good_bonus
-        damage = max(1, round(power * self.quality * (1 + c.good_chop_bonus if good else 1)))
+        effort = self.quality * (1 + c.good_chop_bonus if good else 1)
+        damage = max(1, round(power * effort))
         correct, index, ended, perfect = None, self.step, False, False
         if stance is not None and cycle:
             correct = stance == self.expected(rules, cycle)
@@ -131,7 +133,7 @@ class Spot:
             if self.step >= cycle:
                 ended, perfect = True, all(self.marks)
                 self.rotate(rules, rng)
-        return Swing(damage, good, correct, index, ended, perfect)
+        return Swing(damage, good, correct, index, ended, perfect, effort)
 
     def rotate(self, rules: ForagingRules, rng: random.Random) -> None:
         """Move to a new spot: a random grain, back to the start of its pattern. (This happens by itself when you finish a spot.)"""
@@ -212,17 +214,19 @@ class Tree:
     hp: int
     collected: bool = False  # its reward has been paid
     double: bool = False  # a Re-leaf double tree: twice the hp, and a jackpot when it falls
+    effort: float = 0.0  # the quality of every chop made on it so far: its xp
 
     @property
     def felled(self) -> bool:
         return self.hp <= 0
 
-    def chop(self, power: int) -> int:
-        """Take `power` hp off. Returns what was actually removed."""
+    def chop(self, power: int, effort: float = 1.0) -> int:
+        """Take `power` hp off (a last chop only counts for the part that was needed). Returns what was actually removed."""
         if self.felled:
             raise ForagingError("This tree is already down.")
         applied = min(power, self.hp)
         self.hp -= applied
+        self.effort += effort * applied / max(1, power)
         return applied
 
 
@@ -304,7 +308,7 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     tree.collected = True
     drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone), rng), rng, reg)
     bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules))
-    xp = round(tree.max_hp * rules.xp_per_hp * await xp_multiplier(user.id, reg, "foraging"))
+    xp = round(tree.effort * rules.xp_per_swing * await xp_multiplier(user.id, reg, "foraging"))
     await _pay(user, drops, bits, xp, trees=1)
     jackpot = None
     if tree.double:  # a Re-leaf double tree: either a pile of bits or (1 in 100) a Spirit of the Forest
@@ -439,7 +443,7 @@ class CommunityChop:
 
 
 async def chop_community(
-    user: User, power: int, now: float | None = None, registry: Registry | None = None
+    user: User, power: int, now: float | None = None, registry: Registry | None = None, effort: float = 1.0
 ) -> CommunityChop:
     """One chop on the community tree. Atomic: concurrent chops from any number of players all count."""
     rules = (registry or get_registry()).foraging
@@ -453,12 +457,13 @@ async def chop_community(
         if row.hp == 0:
             row.status = "felled"
         await session.flush()
+        earned = effort * applied / max(1, power)  # (a last chop only counts for the part that was needed)
         await session.execute(
             sqlite_insert(TreeChopRow)
-            .values(window=row.window, user_id=user.id, damage=applied)
+            .values(window=row.window, user_id=user.id, damage=applied, effort=earned)
             .on_conflict_do_update(
                 index_elements=[TreeChopRow.window, TreeChopRow.user_id],
-                set_={"damage": TreeChopRow.damage + applied},
+                set_={"damage": TreeChopRow.damage + applied, "effort": TreeChopRow.effort + earned},
             )
         )
         view = await _view(session, row, user.id)
@@ -476,10 +481,10 @@ class Share:
 
 def community_shares(
     max_hp: int, felled: bool, chops: dict[int, int], rules: ForagingRules, rng: random.Random, registry: Registry,
-    zone: int = 1,
+    zone: int = 1, *, efforts: dict[int, float] | None = None,
 ) -> dict[int, Share]:
     """Who gets what from a finished community tree. Pure. Drops and bits go by share of the tree's hp (only for
-    those with at least ``min_share``); xp is for work done, whatever the share."""
+    those with at least ``min_share``); xp is for work done (the quality of each chop, in `efforts`), whatever the share."""
     c = rules.community
     qualifying = [u for u, d in chops.items() if d / max_hp >= c.min_share]
     bonus = min(c.max_group_bonus, c.group_bonus * max(0, len(qualifying) - 1)) if felled else 0.0
@@ -493,7 +498,7 @@ def community_shares(
             rolls = whole_rolls(total_rolls * (damage / max_hp) * (1 + bonus) * factor, rng)
             drops = dict(roll_drops(rolls, rng, registry))
             bits = round(damage * rules.bits_per_hp * pay * (1 + bonus) * factor)
-        shares[user_id] = Share(damage, drops, bits, round(damage * rules.xp_per_hp))
+        shares[user_id] = Share(damage, drops, bits, round((efforts or {}).get(user_id, 0.0) * rules.xp_per_swing))
     return shares
 
 
@@ -515,9 +520,10 @@ async def settle_due(now: float | None = None, rng: random.Random | None = None,
         )).all()
         for tree in trees:
             rows = (await session.execute(
-                select(TreeChopRow.user_id, TreeChopRow.damage).where(TreeChopRow.window == tree.window)
+                select(TreeChopRow.user_id, TreeChopRow.damage, TreeChopRow.effort).where(TreeChopRow.window == tree.window)
             )).all()
-            shares = community_shares(tree.max_hp, tree.status == "felled", {u: d for u, d in rows if d > 0}, rules, rng, reg, tree.zone)
+            shares = community_shares(tree.max_hp, tree.status == "felled", {u: d for u, d, _ in rows if d > 0}, rules, rng, reg, tree.zone,
+                                      efforts={u: e for u, d, e in rows if d > 0})
             for user_id, share in shares.items():
                 session.add(TreeRewardRow(window=tree.window, user_id=user_id, damage=share.damage,
                                           felled=tree.status == "felled", drops=share.drops, bits=share.bits,

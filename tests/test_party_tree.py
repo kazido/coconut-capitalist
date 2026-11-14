@@ -157,7 +157,7 @@ async def fell(users, shares, now=T0):
         await pt.chop(user, round(tree.max_hp * fraction), now + 1, REG)
     left = (await pt.view(users[0], now + 1, REG)).hp
     if left:  # rounding left a sliver: the last chopper finishes it, so the tree really falls
-        await pt.chop(users[len(shares) - 1], left, now + 1, REG)
+        await pt.chop(users[len(shares) - 1], left, now + 1, REG, effort=0.0)  # (finishing the sliver is not extra work)
     return tree
 
 

@@ -523,7 +523,7 @@ class FarmingRules(_Data):
     water_chance: float = Field(gt=0, le=1)  # watering a plot (once an hour) grows it a cycle with this chance
     starter_seeds: dict[str, int]  # a free gift of seeds the first time you farm
     anomaly_odds: int = Field(ge=1)  # 1 in N per harvest
-    xp_per_rarity: int = Field(ge=0)  # xp for a harvest = crop rarity x this
+    xp_per_cycle: int = Field(ge=0)  # xp for a harvest = the seed's growth cycles x this: a long crop pays for the waiting
     deed_item: str
     market: MarketRules
 
@@ -631,7 +631,7 @@ class ForagingRules(_Data):
     heavy_zone: int = Field(ge=1)
     heavy_solo_power: float = Field(gt=0, le=1)
     zone_hp_growth: float = Field(ge=0)
-    xp_per_hp: float = Field(ge=0)
+    xp_per_swing: float = Field(ge=0)  # xp for one chop at full quality. It does not depend on the axe: a better axe fells faster, it does not pay more xp
     bits_per_hp: int = Field(ge=0)
     hp_per_roll: int = Field(ge=1)
     zone_reward_growth: float = Field(ge=0)  # each zone above 1 pays this much more per hp (bits and drop rolls)

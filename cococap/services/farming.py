@@ -371,7 +371,7 @@ async def harvest(
         crop = reg.item(reg.item(plot.crop_id).seed.grows_into)
         taken.update(seed=plot.crop_id, crop=crop.id,
                      amount=max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + pet.get("crop_yield", 0.0)))),
-                     xp=round(crop.rarity * rules.xp_per_rarity * party_bonus))
+                     xp=round(reg.item(plot.crop_id).seed.cycles * rules.xp_per_cycle * party_bonus))
         plot.crop_id, plot.cycle, plot.can_harvest = None, 0, False  # the plot is empty from this moment: once only
         m.xp += taken["xp"]
         m.stats.crops_grown += taken["amount"]

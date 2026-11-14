@@ -9,7 +9,7 @@ grow_chance = 0.5                 # per rain, per growing plot
 blessing_chance = 0.1             # per rain in which any of your crops grew: a rain god's blessing (wiki: 1/10)
 water_chance = 0.8                # WATER your plots (a button, once an hour per plot): each grows a cycle with this chance, on top of the rain
 anomaly_odds = 25                 # 1 in N per harvest: refreshes your work and daily cooldowns (wiki: 1/25)
-xp_per_rarity = 20                # farming xp for a harvest = the crop's rarity x this
+xp_per_cycle = 500               # farming xp for a harvest = the crop's growth cycles x this (apple 500, coconut 50,000). Tools never change xp
 deed_item = "land_deed"
 
 [starter_seeds]                   # a free gift, once, the first time you open your farm, so you can plant straight away

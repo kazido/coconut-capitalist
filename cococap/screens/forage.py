@@ -318,7 +318,7 @@ class TreeScreen(Screen):
         reg = get_registry()
         stats = await foraging.axe_stats(self.user)
         swing, note = await swing_at(self, tree.zone, foraging.swing_power(stats, tree.zone, reg.foraging), stance)
-        applied = tree.chop(swing.damage)
+        applied = tree.chop(swing.damage, swing.effort)
         if tree.felled:
             self.reward = await foraging.fell_private(self.user, tree, self.rng)
             self.result = Result("TIMBER!", [reward_text(self.reward)], emoji="🌳", accent=0x4C8C4A, again=self._again,
@@ -397,7 +397,7 @@ class GroveScreen(Screen):
         view = await foraging.community_tree(self.user)
         zone = view.zone if view else 1
         swing, note = await swing_at(self, zone, foraging.swing_power(stats, zone, rules, community=True), stance)
-        result = await foraging.chop_community(self.user, swing.damage)
+        result = await foraging.chop_community(self.user, swing.damage, effort=swing.effort)
         await self.refresh(interaction, "🌳 **You felled it!**" if result.felled_now else note)
 
     async def _notes(self, interaction: discord.Interaction) -> None:
@@ -462,7 +462,7 @@ class PartyGroveScreen(Screen):
         view = await party_tree.view(self.user)
         zone = view.zone if view else 1
         swing, note = await swing_at(self, zone, foraging.swing_power(stats, zone, rules, community=True), stance)
-        result = await party_tree.chop(self.user, swing.damage)
+        result = await party_tree.chop(self.user, swing.damage, effort=swing.effort)
         await self.refresh(interaction, "🌳 **You felled it!**" if result.felled_now else note)
 
     async def _notes(self, interaction: discord.Interaction) -> None:

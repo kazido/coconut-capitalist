@@ -183,6 +183,19 @@ async def test_a_seed_planted_now_only_feels_the_rain_that_falls_afterwards(db):
     assert f.plot_of(farming, 1).can_harvest
 
 
+# ---- xp follows the waiting ------
+async def test_a_longer_crop_pays_more_xp_in_proportion_to_its_growth_time(db):
+    xp = {}
+    for seed in ("apple_seed", "coconut_seed"):
+        user = await farmer()
+        await ripe_farm(user, seed)
+        xp[seed] = (await f.harvest(user, 1, Random(1), now=T0 + 1000 * HOUR, registry=SURE)).xp
+        await user.update_skill("farming", lambda m: setattr(m, "xp", 0))
+        await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "crop_id", None))
+    assert xp["apple_seed"] == REG.item("apple_seed").seed.cycles * RULES.xp_per_cycle
+    assert xp["coconut_seed"] == REG.item("coconut_seed").seed.cycles * RULES.xp_per_cycle > 50 * xp["apple_seed"]
+
+
 # ---- harvesting ------------------------------------------------------------------------------------------------
 async def ripe_farm(user, seed="apple_seed"):
     await user.add_item(seed, 1)
@@ -198,7 +211,7 @@ async def test_harvesting_gives_crops_xp_and_empties_the_plot_exactly_once(db):
     assert result.crop_id == "apple" and crop.crop.min_harvest <= result.amount <= crop.crop.max_harvest
     assert await user.item_quantity("apple") == result.amount
     skill = await user.skill("farming")
-    assert skill.xp == crop.rarity * RULES.xp_per_rarity == result.xp and skill.stats.crops_grown == result.amount
+    assert skill.xp == REG.item("apple_seed").seed.cycles * RULES.xp_per_cycle == result.xp and skill.stats.crops_grown == result.amount
     assert f.plot_of(skill, 1).crop_id is None
     with pytest.raises(f.FarmingError, match="Nothing is ready"):
         await f.harvest(user, 1, Random(1), now=T0 + 1000 * HOUR, registry=SURE)
