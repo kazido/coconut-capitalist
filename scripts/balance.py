@@ -144,6 +144,94 @@ def tool_table() -> None:
         print(f"  {'':8}" + "  ".join(f"{(t.tool.upgrade.bits if t.tool.upgrade else 0) / 1e6:>6,.1f}M" for t in chain) + "   (bits to upgrade)")
 
 
+def level_xp(level: int) -> int:
+    """Total xp to reach `level` (the curve in User.level_to_xp)."""
+    from cococap.user import User
+
+    return User.level_to_xp(level)
+
+
+def mining_xp_per_click() -> float:
+    runs, lodes, clicks = 400, 0, 0
+    for seed in range(runs):
+        run = m.MineRun(REG.mining, REG, Random(seed), cursors=[2], braces=1)
+        while not run.finished:
+            if run.risk >= 0.07:
+                run.leave()
+                break
+            if run.signs(run.depth)[run.cursors[0]] == "hole":
+                run.move(1)
+            run.dig()
+            clicks += 1
+        lodes += run.lodes
+    return REG.mining.xp_per_column * lodes / clicks
+
+
+def foraging_xp_per_click(power: int) -> float:
+    rules = REG.foraging
+    rng, dealt, clicks = Random(2), 0, 4000
+    spot = f.Spot.pick(rules, rng)
+    cycle = f.cycle_length(1, rules)
+    for _ in range(clicks):
+        dealt += spot.swing(power, rules, rng, 0.0, spot.expected(rules, cycle), cycle).damage
+    return dealt / clicks * rules.xp_per_hp
+
+
+def fishing_xp_per_minute(power: int) -> float:
+    rules = REG.fishing
+    water = next(w for w in rules.waters if w.id == "reef")
+    rng, n, xp, seconds = Random(3), 6000, 0.0, 0.0
+    for _ in range(n):
+        fish = fi.roll_fish(rng, REG, water, fi.rod_luck(power, rules))
+        extra = 1 + rules.rod.extra_fish_per_power * max(0, power - 3)
+        xp += fish.rarity * rules.xp_per_rarity * extra
+        seconds += fi.wait_seconds(power, rules, rng) * water.wait_multiplier + 1.5 * (rules.reel.base_length + 1 + fish.rarity)
+    return xp / seconds * 60
+
+
+def combat_xp_per_hour(encounter_id: str, level: int, power: int, kit: str) -> tuple[float, float]:
+    """(xp per hour, win rate) farming one encounter with a plain 'best ready skill' player, one click per CLICK_SECONDS."""
+    from cococap.services import combat as c
+
+    rules = REG.combat
+    p = rules.player
+    wins, clicks, xp = 0, 0, 0
+    for seed in range(200):
+        me = c.Unit(id="p1", name="Hero", side="player", max_hp=p.base_hp + p.hp_per_level * level,
+                    attack=p.base_attack + p.attack_per_power * power + p.attack_per_level * level,
+                    defense=p.base_defense + p.defense_per_level * level, speed=p.speed, skills=list(rules.kits[kit]))
+        b = c.new_battle(me, encounter_id, rng=Random(seed))
+        while not b.outcome:
+            ready = [x for x in me.skills if me.ready(x) and x != "brace"]
+            b.play(ready[-1], min(b.living("enemy"), key=lambda u: u.hp).id)
+            clicks += 1
+        wins += b.outcome == "win"
+        xp += b.xp_earned
+    seconds = clicks / 200 * CLICK_SECONDS
+    return xp / 200 / seconds * 3600, wins / 200
+
+
+def xp_report() -> None:
+    per_hour = 3600 / CLICK_SECONDS
+    print("\nXP an hour of active play (a click every %ds) against the level curve:" % CLICK_SECONDS)
+    axe, rod = tool_chain("axe"), tool_chain("rod")
+    rows = {
+        "mining": mining_xp_per_click() * per_hour,
+        "foraging L1 axe": foraging_xp_per_click(axe[0].tool.power) * per_hour,
+        "foraging L8 axe": foraging_xp_per_click(axe[-1].tool.power) * per_hour,
+        "fishing L1 rod": fishing_xp_per_minute(rod[0].tool.power) * 60,
+        "fishing L8 rod": fishing_xp_per_minute(rod[-1].tool.power) * 60,
+    }
+    for label, enc, lv, pw, kit in (("combat lv1 lone zombie", "graveyard_lone", 1, 1, "largebranch"),
+                                    ("combat lv8 horde", "graveyard_horde", 8, 20, "dreamnail")):
+        rows[label], win = combat_xp_per_hour(enc, lv, pw, kit)
+    print(f"  {'':24}{'xp/hour':>10}  " + "".join(f"{'to L' + str(lv):>9}" for lv in (20, 50, 90)) + "   (hours of play from level 1)")
+    for label, xp in rows.items():
+        print(f"  {label:24}{xp:>10,.0f}  " + "".join(f"{level_xp(lv) / xp:>8,.0f}h" for lv in (20, 50, 90)))
+    print("  level costs: " + ", ".join(f"L{lv} = {level_xp(lv):,} total ({level_xp(lv + 1) - level_xp(lv):,} for the next level)" for lv in (10, 20, 50, 90)))
+    print("  farming xp: crop rarity x %d per harvest (a plot waits hours between harvests: see the table below)" % REG.farming.xp_per_rarity)
+
+
 def main() -> None:
     mine = mining_per_click()
     print(f"Click every {CLICK_SECONDS:.0f}s -> {60 / CLICK_SECONDS:.0f} clicks per active minute\n")
@@ -154,6 +242,7 @@ def main() -> None:
     worth, seconds = fishing_per_cast()
     print(f"{'fishing':10} {worth:>10,.0f} bits/catch   {worth * 60 / seconds:>12,.0f} bits/active minute ({seconds:.0f}s a catch)")
     tool_table()
+    xp_report()
     print("\nPet food (base pet xp an hour of play; x3 for a pet of that skill):")
     for skill, value in pet_xp_per_hour().items():
         print(f"  {skill:10} {value:>8,.0f} xp/hour")

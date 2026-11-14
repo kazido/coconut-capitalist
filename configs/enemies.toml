@@ -1,5 +1,6 @@
 # Combat enemies. skills are in priority order (the first one off cooldown is used); shield absorbs damage before hp.
-# TODO(balance): every number here. Speed 100 is a normal player. xp is combat xp for the kill.
+# TODO(balance): every number here. Speed 100 is a normal player. xp is combat xp for the kill. Aim: an hour of farming the
+# lowest fights pays about what the other skills pay with starter gear (~7,000 xp); see `python -m scripts.balance`.
 [zombie]
 name = "Zombie"
 emoji = "🧟"
@@ -7,7 +8,7 @@ attack = 12
 hp = 90
 speed = 90
 skills = ["strike"]
-xp = 40
+xp = 55
 
 [armored_zombie]
 name = "Armored Zombie"
@@ -18,7 +19,7 @@ shield = 60
 defense = 25
 speed = 85
 skills = ["armor_slam", "strike"]
-xp = 70
+xp = 90
 
 [skeleton]
 name = "Skeleton"
@@ -27,7 +28,7 @@ attack = 22
 hp = 45
 speed = 115
 skills = ["rattle", "strike"]
-xp = 55
+xp = 70
 
 # --- the final boss of the graveyard. Stun-immune; it always shows what it will do next (telegraph), so Death Knell can be
 # planned for (Brace, slows, killing it faster). Below 60% hp and again below 30% it changes. TODO(balance).
@@ -41,7 +42,7 @@ speed = 95  # just slower than a fresh player: you always get to see the first D
 skills = ["death_knell", "soul_drain", "bone_strike"]
 immune = ["stun"]
 telegraph = true
-xp = 1500
+xp = 8000  # about one whole level at combat level 20 (7,959). Keys keep it rare, so it can be a big prize
 
     [[gravewarden.phases]]
     below = 0.6

@@ -570,3 +570,26 @@ Two screens: **Pets** (`pets`: look at a pet, make it active, feed it, give Spir
 pet), linked by buttons. On the pet page the order is name + stars + level, then the description, the xp bar, the bonuses and one
 line for its skill ("Global 🌐", "Mining ⛏️"). Stars are shown only there (and on the hatch result), never in dropdowns. What a food
 is worth to the pet you are looking at is the hint in the "Feed <pet>..." menu and the amount popup.
+
+## XP and the level curve (audit, `python -m scripts.balance`)
+
+The curve is quadratic: total xp for level L is ((L-1)/0.07)^2. Level 10 = 16.5k, 20 = 73.7k, 50 = 490k, 90 = 1.62M, 100 = 2.0M. The next
+level costs 3.9k at L10, 8k at L20, 20k at L50, 36.5k at L90. Measured with a click every 5 seconds:
+
+| Skill | xp/hour starter gear | xp/hour top tool | Hours from level 1 to L20 / L50 / L90 (starter) |
+|---|---|---|---|
+| Mining | 7,100 | 7,100 (pickaxe adds ore, not xp) | 10 / 69 / 227 |
+| Foraging | 7,000 | 128,000 (xp = hp chopped x 3, faster axes chop more) | 10 / 70 / 230 |
+| Fishing | 7,000 | 79,000 (rarer fish, extra fish) | 10 / 70 / 230 |
+| Combat (lone zombie, level 1) | 6,800 | grows with tougher fights | 11 / 72 / 238 |
+| Farming (9 plots, best crop) | 490 | 490 | 150 / not realistic |
+
+Findings:
+1. **Starter-gear xp is already consistent at about 7k/hour** in the three active skills, and now combat matches.
+2. **Farming xp is far too low**: xp is crop rarity x 20 per harvest (20 to 120 xp), no matter how long the crop takes. A coconut is 100
+   cycles for 80 xp; ambrosia is 777 cycles for 120 xp. Even the best crop on 9 plots gives 490 xp/hour. Proposal: xp scales with growth
+   time (about 450 xp per cycle: apple 450, coconut 45,000, ambrosia 350,000), so 9 plots are worth about 4k/hour, a bit under the active skills.
+3. **Tools scale xp unevenly.** Foraging and fishing xp grow about 11x to 18x with the top tool, mining's stays flat. Top-tool foraging
+   reaches level 90 in about 13 hours, which skips the curve. Proposal: decide whether xp should follow tool power; if so, mining needs it too.
+4. **Combat**: enemy xp must scale with the level the fight is meant for, like foraging zones do. Boss xp is sized as "about one level at
+   its level lock" (8,000 at level 20) because keys keep it rare, not as an hourly rate. Fights for levels 20 to 90 still need tiers.
