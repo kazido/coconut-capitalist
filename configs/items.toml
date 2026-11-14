@@ -934,7 +934,7 @@ rarity = 2
 skill = "foraging"
 category = "material"
 price = 0
-sell_price = 500
+sell_price = 5500  # TODO(balance): flattened (was 500); see DESIGN.md 'Sell prices'
 
 [hardwood.drop]
 rate = 3
@@ -1037,7 +1037,7 @@ rarity = 5
 skill = "foraging"
 category = "material"
 price = 0
-sell_price = 7000000
+sell_price = 3600000  # TODO(balance): flattened (was 7,000,000); see DESIGN.md 'Sell prices'
 
 [aged_feather.drop]
 rate = 1000
@@ -1066,7 +1066,7 @@ rarity = 1
 skill = "foraging"
 category = "material"
 price = 0
-sell_price = 100
+sell_price = 1600  # TODO(balance): flattened (was 100); see DESIGN.md 'Sell prices'
 
 [feather.drop]
 rate = 2
@@ -1080,7 +1080,7 @@ rarity = 3
 skill = "foraging"
 category = "material"
 price = 0
-sell_price = 30000
+sell_price = 36000  # TODO(balance): flattened (was 30,000); see DESIGN.md 'Sell prices'
 
 [fine_bark.drop]
 rate = 12
@@ -1095,7 +1095,7 @@ rarity = 4
 skill = "foraging"
 category = "material"
 price = 0
-sell_price = 500000
+sell_price = 330000  # TODO(balance): flattened (was 500,000); see DESIGN.md 'Sell prices'
 
 [maple_leaf.drop]
 rate = 100
@@ -1111,7 +1111,7 @@ rarity = 5
 skill = "foraging"
 category = "pet_item"
 price = 0
-sell_price = 500000
+sell_price = 400000  # TODO(balance): flattened (was 500,000); see DESIGN.md 'Sell prices'
 
 [spirit_of_the_forest.drop]
 rate = 1100
@@ -1429,7 +1429,7 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 100000
+sell_price = 45000  # TODO(balance): flattened (was 100,000); see DESIGN.md 'Sell prices'
 
 [balance_gemstone.drop]
 rate = 1500
@@ -1461,7 +1461,7 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 100000
+sell_price = 45000  # TODO(balance): flattened (was 100,000); see DESIGN.md 'Sell prices'
 
 [peace_gemstone.drop]
 rate = 1500
@@ -1477,7 +1477,7 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 100000
+sell_price = 45000  # TODO(balance): flattened (was 100,000); see DESIGN.md 'Sell prices'
 
 [rage_gemstone.drop]
 rate = 1500
@@ -1493,7 +1493,7 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 100000
+sell_price = 45000  # TODO(balance): flattened (was 100,000); see DESIGN.md 'Sell prices'
 
 [sanity_gemstone.drop]
 rate = 1500
@@ -1509,7 +1509,7 @@ rarity = 1
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 20  # TODO(balance): doubled (was 10); the vault was most of mining's income and was cut
+sell_price = 50  # TODO(balance): flattened (was 20); see DESIGN.md 'Sell prices'
 
 [copper_ore.drop]
 rate = 2
@@ -1525,7 +1525,7 @@ rarity = 3
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 2000  # TODO(balance): doubled (was 1000); the vault was most of mining's income and was cut
+sell_price = 1900  # TODO(balance): flattened (was 2,000); see DESIGN.md 'Sell prices'
 
 [gold_ore.drop]
 rate = 15
@@ -1541,7 +1541,7 @@ rarity = 2
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 200  # TODO(balance): doubled (was 100); the vault was most of mining's income and was cut
+sell_price = 300  # TODO(balance): flattened (was 200); see DESIGN.md 'Sell prices'
 
 [iron_ore.drop]
 rate = 6
@@ -1573,7 +1573,7 @@ rarity = 5
 skill = "mining"
 category = "pet_item"
 price = 0
-sell_price = 500000
+sell_price = 160000  # TODO(balance): flattened (was 500,000); see DESIGN.md 'Sell prices'
 
 [spirit_of_the_mines.drop]
 rate = 1100

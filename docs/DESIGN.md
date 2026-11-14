@@ -760,3 +760,17 @@ A pass over the busiest pages to cut text without cutting information. The rules
   how far the next landmark is. A milestone can also give pressure relief, braces or a taste of the vault's ore, but each of those made the vault much easier
   to reach (relief of only 4/6 raised the vault rate from 12% to 18% and the mine's pay by 70%), so they are off by default.
 - **Sell list:** a stack reads `x7 · 500 each · 3,500 for all` under the item's name (the count is plain text, not part of the bold heading).
+
+## Reading the rock, flatter sell prices, and the income guards (decided)
+- **Read the rock** (`MineRun.feel`, `soft_below` / `hard_from` in `mining.toml`): from above a cell feels 🟫 **soft** (pressure under 5: copper, nothing, vents, caches),
+  🟧 **firm** (5-8: iron) or 🟥 **hard** (9+: gold), or it is a highlighted rich lode or a wyrmhole. Harder rock costs more pressure to dig and is where the better
+  ore is, so which column to dig is a real choice (a test checks that on average hard cells hold more and cost more). What is *inside* (ore, nothing, a vent, a cache) is
+  still hidden. Veins and spending ore on safety were dropped.
+- **Sell prices were flattened** so common finds are worth something and the very rare ones are not most of the pay, keeping each skill's income (the exact
+  per-roll value) the same. Foraging: feather 100 -> 1,600, hardwood 500 -> 5,500, fine bark 30k -> 36k, maple leaf 500k -> 330k, aged feather 7M -> 3.6M, spirit 500k -> 400k.
+  Mining: copper 20 -> 50, iron 200 -> 300, gold 2,000 -> 1,900, gems 100k -> 45k, spirit 500k -> 160k. Fishing and farming were already spread out and are unchanged.
+  Before, foraging's pay was 38% one 1-in-1,000 feather and 33% one 1-in-100 leaf, so a normal session was pennies and a lucky one was a fortune.
+- **Income guards** (`tests/test_economy_guard.py`, same simulations as `python -m scripts.balance`): an hour of mining, foraging and fishing at starter gear each
+  pays 6k-20k bits a minute and no skill out-earns another by more than about double; no foraging drop is more than 35% of its pay and the everyday finds are at
+  least 15%; no ore or find is more than 55% of mining's; a rare drop is at most 3,000 times a common one; four Work claims a day at ranks 0-7 pay less than an hour of
+  mining. When one fails, a payout was changed without looking at the others.

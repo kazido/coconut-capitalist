@@ -554,7 +554,7 @@ def test_the_vault_holds_all_three_ores_in_proportion_to_how_often_they_drop():
     ratios = {ore: D.vault_ore[ore] / per_roll(ore) for ore in D.vault_ore}
     assert max(ratios.values()) / min(ratios.values()) < 1.15  # the rarer the ore, the fewer of it: as many "rolls" of each
     worth = sum(REG.item(ore).sell_price * q for ore, q in D.vault_ore.items())
-    assert 70_000 <= worth <= 100_000  # (at the doubled ore prices; the ore COUNT is what was cut, to a third)
+    assert 70_000 <= worth <= 120_000  # (the ore COUNT is what was cut, to a third; the price is the flattened one)
 
 
 def test_a_bomb_on_the_last_row_also_opens_the_vault():
