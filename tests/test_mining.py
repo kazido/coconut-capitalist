@@ -3,6 +3,7 @@ from collections import Counter
 from random import Random
 
 import pytest
+from pydantic import ValidationError
 
 from cococap.models.skills.mining import Core, Mining, Reactor
 from cococap.registry import get_registry
@@ -882,7 +883,7 @@ def test_an_ordinary_row_is_not_a_checkpoint():
 
 def test_milestone_rows_must_sit_in_order_above_the_floor_and_below_it():
     for bad in ([{"row": 10}, {"row": 10}], [{"row": 20}, {"row": 10}], [{"row": D.floor}], [{"row": 0}]):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             D.model_validate({**D.model_dump(), "milestones": bad})
 
 
