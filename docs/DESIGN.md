@@ -233,6 +233,17 @@ chests. Soloist is unchanged. Chances are `TODO(balance)` in `configs/items.toml
 Numbers: `configs/fishing.toml` and the fish/rod entries in `configs/items.toml` (`TODO(balance)`). A test pins the
 average catch at ~4-6.5k bits and a catch at ~15-20 s, which is about what foraging earns per second at starter gear.
 
+### A reel with more to it: breaks and mystery arrows
+
+A reel is no longer just ◀ ▶ repeated. Uncommon fish and up make you **stop and press Reel** (🌀, a third button) between
+runs of arrows, about once per four arrows, in a different place every time. **Super rare fish and up hide some arrows
+behind a ❓** (one at rarity 4, up to four at 7). The ❓ is secretly an arrow that follows *that fish's own tell*, set in
+the data: always ◀, always ▶, the same as the arrow before it, or the opposite. Press the ❓ and you find out what it was
+even if you guess wrong, and it is written in your **field notes** (on the Records page) as "after ◀ → ▶", so you can work
+the pattern out over a few catches (a test proves every learnable tell can be worked out from a handful). Some fish are
+pure coin flips (`random`): those can't be learned and hide at most two ❓, so they are luck as well as skill. Slips from
+your rod still forgive wrong guesses. Bosses have breaks but no ❓.
+
 ### When the connection lags: never lose a fish to something outside your control
 
 Discord sometimes drops or delays a click (the "this interaction failed" message). Fishing forgives that in five ways,

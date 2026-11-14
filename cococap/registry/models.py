@@ -104,6 +104,13 @@ class Scroll(_Data):
     enchant: str
 
 
+class ReelTell(_Data):
+    """How a fish's mystery arrow (❓) behaves. left/right: always that arrow. same/opposite: the arrow before it, or its
+    opposite. random: a fresh coin flip every time (can't be learned, only gambled on)."""
+
+    tell: Literal["left", "right", "same", "opposite", "random"]
+
+
 class Item(_Data):
     id: str
     name: str
@@ -118,6 +125,7 @@ class Item(_Data):
     drop: Drop | None = None
     size: Size | None = None  # fish only
     scroll: Scroll | None = None
+    reel: ReelTell | None = None  # fish of rarity 4+: what their ❓ turns out to be
     crop: Crop | None = None
     seed: Seed | None = None
     tool: Tool | None = None
@@ -420,6 +428,10 @@ class BiteRules(_Data):
 class ReelRules(_Data):
     base_length: int = Field(ge=1)
     power_per_slip: int = Field(ge=1)
+    break_from_rarity: int = Field(ge=1)  # fish of this rarity and up make you stop and Reel now and then
+    arrows_per_break: int = Field(ge=1)  # about one Reel break per this many arrows
+    mystery_from_rarity: int = Field(ge=1)  # fish of this rarity and up hide some arrows behind a ❓
+    max_random_mysteries: int = Field(ge=1)  # a coin-flip ❓ can't be learned, so a fish has at most this many of them
     echo_window: float = Field(ge=0)  # pressing the arrow you JUST pressed again within this many seconds is ignored
 
 

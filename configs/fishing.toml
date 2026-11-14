@@ -17,6 +17,10 @@ grace = 3                        # ...plus this many quiet seconds, so a laggy c
 [reel]
 base_length = 2                  # arrows to press = this + the fish's rarity (a rarity-1 fish takes 3)
 power_per_slip = 8               # every this much rod power forgives one wrong arrow (a power-8 rod forgives one)
+break_from_rarity = 2            # uncommon fish and up make you stop and press Reel now and then...
+arrows_per_break = 4             # ...about once per this many arrows
+mystery_from_rarity = 4          # super rare fish and up hide arrows behind a ❓ (rarity 4: one, 5: two, 6: three, 7: four)
+max_random_mysteries = 2         # ...but a fish whose ❓ is a pure coin flip (can't be learned) hides at most this many
 echo_window = 2                  # a second press of the arrow you JUST pressed (e.g. when the panel was slow to update) is ignored, not a slip
 
 # Quests (fishing level `min_level`). Each slot is one quest: "catch N of a fish of this rarity". Which fish, and how many

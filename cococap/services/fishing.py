@@ -24,6 +24,7 @@ from cococap.services.party import xp_multiplier
 from cococap.user import User
 
 LEFT, RIGHT = "◀", "▶"
+REEL, MYSTERY = "🌀", "❓"  # a step that wants the Reel button; an arrow hidden until you press it
 
 
 class FishingError(GameRuleError):
@@ -93,7 +94,65 @@ def reel_pattern(rarity: int, rules: FishingRules, rng: random.Random) -> list[s
     return [rng.choice((LEFT, RIGHT)) for _ in range(rules.reel.base_length + rarity)]
 
 
+def _other(arrow: str) -> str:
+    return RIGHT if arrow == LEFT else LEFT
+
+
+def _mystery_arrow(tell: str, previous: str, rng: random.Random) -> str:
+    """What a fish's ❓ turns out to be, given the arrow before it."""
+    return {"left": LEFT, "right": RIGHT, "same": previous, "opposite": _other(previous)}.get(tell) or rng.choice((LEFT, RIGHT))
+
+
+def build_reel(fish: Item, rules: FishingRules, rng: random.Random, *, arrows: int | None = None,
+               mysteries: bool = True) -> tuple[list[str], list[str]]:
+    """The steps of a reel and what each one really wants. Mostly arrows; tougher fish also make you stop and press
+    Reel now and then, and the toughest hide some arrows behind a ❓ that follows the fish's own hidden pattern (its
+    tell). Returns (what is shown, what is actually required)."""
+    r = rules.reel
+    n = arrows if arrows is not None else r.base_length + fish.rarity
+    actual = [rng.choice((LEFT, RIGHT)) for _ in range(n)]
+    hidden: set[int] = set()
+    if mysteries and fish.reel is not None and fish.rarity >= r.mystery_from_rarity and n > 1:
+        count = fish.rarity - r.mystery_from_rarity + 1
+        if fish.reel.tell == "random":
+            count = min(count, r.max_random_mysteries)
+        for pos in sorted(rng.sample(range(1, n), min(count, n - 1))):
+            actual[pos] = _mystery_arrow(fish.reel.tell, actual[pos - 1], rng)
+            hidden.add(pos)
+    shown = [MYSTERY if i in hidden else a for i, a in enumerate(actual)]
+    breaks = n // r.arrows_per_break if fish.rarity >= r.break_from_rarity else 0
+    for gap in sorted(rng.sample(range(1, n), min(breaks, n - 1)), reverse=True):
+        shown.insert(gap, REEL)
+        actual.insert(gap, REEL)
+    return shown, actual
+
+
 # ---- a cast -----------------------------------------------------------------------------------------------
+NOTES_KEPT = 12  # field notes kept per fish
+
+
+def _remember(skill, cast: "Cast") -> None:
+    """Add what this cast's ❓ steps turned out to be to your field notes for that fish."""
+    if cast.reveals:
+        notes = skill.notes.setdefault(cast.fish.id, [])
+        notes.extend(f"{before}>{truth}" for before, truth in cast.reveals)
+        del notes[:-NOTES_KEPT]
+
+
+async def note_tells(user: User, cast: "Cast") -> None:
+    """A fish got away, but you still learned what its ❓ was: write it in your field notes."""
+    if cast.reveals and not cast.boss:
+        await user.update_skill("fishing", lambda skill: _remember(skill, cast))
+
+
+def read_notes(notes: list[str]) -> str:
+    """Field notes as a short line: "after ◀ it was ▶ (twice), after ▶ it was ▶"."""
+    from collections import Counter as _Counter
+
+    seen = _Counter(notes)
+    return ", ".join(f"after {pair[0]} → {pair[2]}" + (f" ×{n}" if n > 1 else "") for pair, n in seen.items())
+
+
 @dataclass
 class Cast:
     fish: Item
@@ -110,6 +169,9 @@ class Cast:
     attempts_left: int = 0  # tries at the chest's lock
     grace: float = 0.0  # quiet extra seconds to pull up the line (laggy connections)
     echo_window: float = 0.0  # a repeat of the arrow just pressed within this long is ignored
+    truth: list[str] = field(default_factory=list)  # what each step really wants (differs from `pattern` only at a ❓)
+    reveals: list[tuple[str, str]] = field(default_factory=list)  # (the arrow before, what the ❓ was) for each ❓ you pressed
+    revealed: set[int] = field(default_factory=set)
     size: float = 0.0  # in cm, fixed when you cast like everything else
     timed_out: bool = False  # it got away because the time ran out (as opposed to a wrong arrow)
     last_press: tuple[str, float] | None = None  # (the arrow that last counted, when)
@@ -135,9 +197,14 @@ class Cast:
             return "escaped"
         return "bite"
 
+    def wanted(self, index: int) -> str:
+        """What step `index` really needs (a ❓ is secretly an arrow)."""
+        return self.truth[index] if self.truth else self.pattern[index]
+
     @property
     def next_arrow(self) -> str | None:
-        return self.pattern[self.progress] if self.progress < len(self.pattern) else None
+        """What the next press has to be (the truth behind a ❓, which the player can't see)."""
+        return self.wanted(self.progress) if self.progress < len(self.pattern) else None
 
     def hook(self, now: float) -> None:
         """Pull up the line when it bites. Reeling can't start before this, so the game never starts by itself."""
@@ -170,12 +237,17 @@ class Cast:
             raise FishingError("That fish is already gone.")
         if status == "landed":
             raise FishingError("You already landed that one.")
-        if arrow == self.next_arrow:
+        right = arrow == self.next_arrow
+        if not right and self.last_press and arrow == self.last_press[0] and 0 <= now - self.last_press[1] <= self.echo_window:
+            return "echo"
+        if self.pattern[self.progress] == MYSTERY and self.progress not in self.revealed:  # right or wrong, the ❓ is now known
+            before = next((self.wanted(i) for i in range(self.progress - 1, -1, -1) if self.wanted(i) != REEL), LEFT)
+            self.reveals.append((before, self.wanted(self.progress)))
+            self.revealed.add(self.progress)
+        if right:
             self.progress += 1
             self.last_press = (arrow, now)
             return "landed" if self.progress >= len(self.pattern) else "ok"
-        if self.last_press and arrow == self.last_press[0] and 0 <= now - self.last_press[1] <= self.echo_window:
-            return "echo"
         if self.slips_left > 0:
             self.slips_left -= 1
             return "slip"
@@ -199,12 +271,13 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
     fish = roll_fish(rng, reg, water)
     bite_at = now + wait_seconds(stats.power, rules, rng, stats.stats.get("bite_speed", 0.0)) * (
         water.wait_multiplier if water else 1.0)
-    pattern = reel_pattern(fish.rarity, rules, rng)
+    pattern, truth = build_reel(fish, rules, rng)
     cast = Cast(
         fish=fish,
         bite_at=bite_at,
         expires_at=bite_at + rules.bite.window,
         pattern=pattern,
+        truth=truth,
         slips_left=slips_allowed(stats.power, rules, stats.stats.get("slips", 0)),
         grace=rules.bite.grace,
         echo_window=rules.reel.echo_window,
@@ -214,7 +287,7 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
         cast.chest, cast.attempts_left = True, rules.treasure.attempts
     elif rng.randint(1, rules.boss.odds) == 1:
         cast.boss = rng.choice(rules.boss.names)
-        cast.pattern = [rng.choice((LEFT, RIGHT)) for _ in range(rules.boss.length)]
+        cast.pattern, cast.truth = build_reel(fish, rules, rng, arrows=rules.boss.length, mysteries=False)
     return cast
 
 
@@ -311,6 +384,7 @@ class Catch:
     quest_bits: int = 0
     extras: Counter = field(default_factory=Counter)  # things that came up with the fish (coral shards...)
     hallucination: str | None = None  # the numbers you saw, if this catch made you hallucinate
+    reveals: tuple[tuple[str, str], ...] = ()  # what each ❓ in the reel turned out to be
     size: float = 0.0
     personal_best: bool = False  # your biggest of this fish so far (including your first one)
     server_record: bool = False  # the biggest ever caught on the server
@@ -355,6 +429,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     def grant(skill) -> None:
         skill.xp += xp
         skill.stats.fish_caught += 1
+        _remember(skill, cast)
         if cast.size > 0 and cast.size > skill.records.get(cast.fish.id, 0):
             skill.records[cast.fish.id] = cast.size
             skill.xp += cast.fish.rarity * rules.records.personal_xp_per_rarity
@@ -397,7 +472,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
             record_bits = round(cast.fish.sell_price * rules.records.server_bits_multiplier)
             await user.add_bits(record_bits)
     return Catch(cast.fish, xp, tuple(finished), quest_bits, extras, seen[0] if seen else None,
-                 cast.size, bool(best), server_record, record_bits, holder)
+                 tuple(cast.reveals), cast.size, bool(best), server_record, record_bits, holder)
 
 
 RECORDS_KEY = "fishing_records"

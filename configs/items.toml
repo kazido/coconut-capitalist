@@ -374,6 +374,9 @@ max = 1
 min = 400
 max = 900
 
+[leviathan_pup.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "random"
+
 [golden_koi]
 name = "Golden Koi"
 description = "A koi that shines like a coin. Stories say it grants wishes."
@@ -393,6 +396,9 @@ max = 1
 [golden_koi.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 60
 max = 120
+
+[golden_koi.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "opposite"
 
 [oarfish]
 name = "Oarfish"
@@ -414,6 +420,9 @@ max = 1
 min = 300
 max = 800
 
+[oarfish.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "same"
+
 [abyssal_angler]
 name = "Abyssal Angler"
 description = "Its lure glows in the deepest, darkest water."
@@ -433,6 +442,9 @@ max = 1
 [abyssal_angler.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 100
 max = 250
+
+[abyssal_angler.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "random"
 
 [sturgeon]
 name = "Sturgeon"
@@ -454,6 +466,9 @@ max = 1
 min = 150
 max = 400
 
+[sturgeon.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "right"
+
 [marlin]
 name = "Blue Marlin"
 description = "A fast, proud fighter that tests every line."
@@ -473,6 +488,9 @@ max = 1
 [marlin.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 200
 max = 450
+
+[marlin.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "opposite"
 
 [giant_squid]
 name = "Giant Squid"
@@ -494,6 +512,9 @@ max = 1
 min = 300
 max = 1000
 
+[giant_squid.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "random"
+
 [moray_eel]
 name = "Moray Eel"
 description = "Hides in rocks and bites hard."
@@ -513,6 +534,9 @@ max = 1
 [moray_eel.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 80
 max = 200
+
+[moray_eel.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "same"
 
 [swordfish]
 name = "Swordfish"
@@ -534,6 +558,9 @@ max = 1
 min = 150
 max = 400
 
+[swordfish.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "right"
+
 [pufferfish]
 name = "Pufferfish"
 description = "Puffs up when angry. Handle with care."
@@ -553,6 +580,9 @@ max = 1
 [pufferfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 15
 max = 60
+
+[pufferfish.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "left"
 
 [pike]
 name = "Pike"
@@ -574,6 +604,9 @@ max = 1
 min = 60
 max = 130
 
+[pike.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "opposite"
+
 [muskie]
 name = "Muskie"
 description = "The fish of ten thousand casts."
@@ -593,6 +626,9 @@ max = 1
 [muskie.size]  # cm
 min = 80
 max = 160
+
+[muskie.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "random"
 
 [catfish]
 name = "Catfish"

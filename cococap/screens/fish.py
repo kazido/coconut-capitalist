@@ -160,9 +160,10 @@ class FishScreen(Screen):
             slack = f"\n🧵 Slack left: **{cast.slips_left}**" if cast.slips_left else ""
             body += [
                 text(f"### 💀 **{cast.boss}** is on the line!\nA boss! No fish this time, but a mountain of loot if you land it.\n"
-                     f"{pattern_line(cast)}{slack}\n-# {len(cast.pattern)} arrows. Don't slip!"),
+                     f"{pattern_line(cast)}{slack}\n-# {sum(t != fishing.REEL for t in cast.pattern)} arrows and some reeling. Don't slip!"),
                 row(button("Left", emoji="◀️", style=discord.ButtonStyle.danger, on_click=self._press(fishing.LEFT)),
                     button("Right", emoji="▶️", style=discord.ButtonStyle.danger, on_click=self._press(fishing.RIGHT)),
+                    button("Reel", emoji=fishing.REEL, style=discord.ButtonStyle.success, on_click=self._press(fishing.REEL)),
                     button("Let it go", on_click=self._cancel)),
             ]
             return Page("Fishing", body, accent=0x7B241C)
@@ -172,9 +173,12 @@ class FishScreen(Screen):
         slack = f"\n🧵 Slack left: **{cast.slips_left}**" if cast.slips_left else ""
         body += [
             text(f"### 🎣 A **{colour.rarity_name}** fish is on the line!\n{pattern_line(cast)}{slack}\n"
-                 f"-# Press the arrows in this order."),
+                 f"-# Press them in this order: ◀ ▶ are the arrows, 🌀 means press **Reel**"
+                 + (", and ❓ is hidden: it follows this fish's own pattern. Watch what it turns out to be!"
+                    if fishing.MYSTERY in cast.pattern else ".")),
             row(button("Left", emoji="◀️", style=discord.ButtonStyle.primary, on_click=self._press(fishing.LEFT)),
                 button("Right", emoji="▶️", style=discord.ButtonStyle.primary, on_click=self._press(fishing.RIGHT)),
+                button("Reel", emoji=fishing.REEL, style=discord.ButtonStyle.success, on_click=self._press(fishing.REEL)),
                 button("Let it go", on_click=self._cancel)),
         ]
         return Page("Fishing", body, accent=int(colour.color, 16))
@@ -183,6 +187,11 @@ class FishScreen(Screen):
     def _lost(self, title: str, lines: list[str]) -> Result:
         return Result(title, lines + ["Nothing was lost but the fish. Try again!"], emoji="🌊", accent=0x5D6D7E,
                       again=self._cast, again_label="Cast again")
+
+    @staticmethod
+    def _tell_lines(reveals) -> list[str]:
+        """What each ❓ turned out to be: written in your field notes, and shown here so you can start working it out."""
+        return [f"🔍 The ❓ was **{truth}** (after {before}). Added to your field notes." for before, truth in reveals]
 
     def _catch_result(self, catch: fishing.Catch) -> Result:
         reg = get_registry()
@@ -193,6 +202,7 @@ class FishScreen(Screen):
                          + (f" (you beat {catch.record_holder})" if catch.record_holder else ""))
         elif catch.personal_best:
             lines.append("🏅 New personal best!")
+        lines += self._tell_lines(catch.reveals)
         if catch.extras:
             lines.append("🪸 Also washed up: " + ", ".join(f"{q:,} {reg.item(i).display}" for i, q in catch.extras.items()))
         for q in catch.finished:
@@ -278,7 +288,9 @@ class FishScreen(Screen):
             if result == "escaped":
                 self.cast = None
                 what = cast.boss or f"The {cast.fish.display}"
-                self.result = self._lost("🌊 It got away!", [f"Wrong way! {what} slipped off the hook."])
+                lines = [f"Wrong way! {what} slipped off the hook."] + self._tell_lines(cast.reveals)
+                await fishing.note_tells(self.user, cast)
+                self.result = self._lost("🌊 It got away!", lines)
                 return await self.refresh(interaction)
             await self.refresh(interaction, "🧵 Wrong way! The line goes slack, but you hold on." if result == "slip" else None)  # (an "echo" is ignored)
 
@@ -513,8 +525,12 @@ class FishRecordsScreen(Screen):
             record = f"  ·  🏆 {held['size']:g} cm ({held['name']})" if held else ""
             crown = " 👑" if held and best is not None and held["uid"] == self.user.id and held["size"] == best else ""
             lines.append(f"{fish.display}  ·  {yours}{crown}{record}")
+        notes = [f"{reg.item(fid).display}: {fishing.read_notes(entries)}"
+                 for fid, entries in (await self.user.skill("fishing")).notes.items() if entries]
+        field_notes = ("\n### 🔍 Field notes\n-# Some fish hide arrows behind a ❓. What it turns out to be is a pattern you can learn.\n"
+                       + "\n".join(notes)) if notes else ""
         return Page("Fish Records", [*self.note_block(), text("### 📏 Biggest catches\n" + "\n".join(lines)
-                    + "\n-# 🏆 is the biggest ever caught on the server, 👑 means that's you. Beat a record to be paid."),
+                    + "\n-# 🏆 is the biggest ever caught on the server, 👑 means that's you. Beat a record to be paid." + field_notes),
                     row(button("Back to fishing", emoji=ROD, on_click=self._back))], accent=0x2980B9)
 
     async def _back(self, interaction: discord.Interaction) -> None:

@@ -134,6 +134,8 @@ class Registry:
         if self.fishing is not None:
             fish = [i for i in self.items.values() if i.skill == "fishing" and i.category == "fish" and i.drop]
             problems += [f"{i.id}: every fish needs a [size]" for i in fish if i.size is None]
+            problems += [f"{i.id}: fish of rarity {self.fishing.reel.mystery_from_rarity}+ need a [reel] tell for their ❓"
+                         for i in fish if i.rarity >= self.fishing.reel.mystery_from_rarity and i.reel is None]
             if not any(i.drop.rate == 1 for i in fish):
                 problems.append("fishing: at least one fish needs drop rate 1 so every cast catches something")
             cb = self.fishing.community.book

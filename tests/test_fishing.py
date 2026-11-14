@@ -152,7 +152,7 @@ def test_casting_fixes_everything_up_front():
     again = f.cast_line(rod(3), Random(7), T0, REG)
     assert (first.fish.id, first.bite_at, first.pattern) == (again.fish.id, again.bite_at, again.pattern)
     assert first.bite_at > T0 and first.expires_at == first.bite_at + RULES.bite.window
-    assert len(first.pattern) == RULES.reel.base_length + first.fish.rarity
+    assert sum(t != f.REEL for t in first.pattern) == RULES.reel.base_length + first.fish.rarity  # (plus Reel breaks)
 
 
 # ---- paying out -------------------------------------------------------------------------------------------------
@@ -267,6 +267,12 @@ def steady_dice(monkeypatch):
     monkeypatch.setattr(fish_screen, "new_rng", lambda: NoLuck(1))  # (tests that want luck set their own)
 
 
+async def reel_in(nav, inter, cast):
+    """Press every step the reel asks for (arrows, and Reel for a 🌀), seeing through any ❓."""
+    for step in list(cast.truth or cast.pattern):
+        await click(nav, inter, {f.LEFT: "Left", f.RIGHT: "Right", f.REEL: "Reel"}[step])
+
+
 @pytest.fixture
 def clock(monkeypatch):
     now = [T0]
@@ -299,8 +305,7 @@ async def test_casting_waits_then_a_bite_then_reeling_lands_the_fish(db, clock, 
     assert [b.label for b in buttons(nav) if b.label in ("Left", "Right")] == []  # reeling hasn't started
     await click(nav, inter, "Pull up the line")
     assert "is on the line" in all_text(nav)
-    for arrow in list(cast.pattern):
-        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    await reel_in(nav, inter, cast)
     assert nav.screen.id == "result" and "You caught a" in all_text(nav) and nav.screen.origin.cast is None
     assert "Cod" in all_text(nav) and "Common" in all_text(nav) and "cm" in all_text(nav)  # a page of its own, with what she got
     assert find_button(nav, "Cast again") and find_button(nav, "Continue")
@@ -479,8 +484,7 @@ async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
     await nav.screen.nav.refresh(inter)
     cast = nav.screen.cast
     await click(nav, inter, "Pull up the line")
-    for arrow in list(cast.pattern):
-        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    await reel_in(nav, inter, cast)
     assert "You caught a" in all_text(nav)
     await click(nav, inter, "Continue")
     assert not find_button(nav, "Quests").disabled
@@ -854,8 +858,7 @@ async def test_the_screen_flashes_the_numbers_then_hides_them_and_the_chest_open
     await nav.screen.nav.refresh(inter)
     await click(nav, inter, "Pull up the line")
     cast = nav.screen.cast
-    for arrow in list(cast.pattern):
-        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    await reel_in(nav, inter, cast)
     code = (await user.skill("fishing")).treasure.code
     assert nav.screen.id == "result"
     assert code and "   ".join(code) in all_text(nav) and "Remember them" in all_text(nav)  # the numbers flash on the result page
@@ -891,8 +894,7 @@ async def test_a_catch_names_its_rarity(db, clock, monkeypatch):
     clock[0] = nav.screen.cast.bite_at + 1
     await nav.screen.nav.refresh(inter)
     await click(nav, inter, "Pull up the line")
-    for arrow in list(nav.screen.cast.pattern):
-        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    await reel_in(nav, inter, nav.screen.cast)
     assert "You caught a" in all_text(nav) and "Salmon" in all_text(nav) and "**Rare**" in all_text(nav)
 
 
@@ -1007,8 +1009,7 @@ async def test_a_click_made_in_time_but_delivered_late_saves_the_fish_on_the_sam
     clicked(inter, cast.bite_at + 3)  # Discord's stamp: she clicked three seconds after the bite
     await pull_up.callback(inter)
     assert nav.screen.id == "fish" and nav.screen.cast is cast and cast.hooked and "just in time" in all_text(nav) and "is on the line" in all_text(nav)
-    for arrow in list(cast.pattern):
-        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    await reel_in(nav, inter, cast)
     assert await user.item_quantity("cod") == 1
 
 
@@ -1117,8 +1118,7 @@ async def test_a_catch_says_its_size_and_a_record_and_the_records_page_lists_the
     await nav.screen.nav.refresh(inter)
     await click(nav, inter, "Pull up the line")
     size = nav.screen.cast.size
-    for arrow in list(nav.screen.cast.pattern):
-        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    await reel_in(nav, inter, nav.screen.cast)
     text_now = all_text(nav)
     assert f"{size:g} cm" in text_now and "NEW SERVER RECORD" in text_now
     nav2, inter2 = await hub("fishrecords")
@@ -1149,7 +1149,7 @@ def test_a_boss_is_rarer_than_a_fish_and_takes_a_long_reel():
 
 def test_now_and_then_a_cast_is_a_boss_with_a_fifteen_arrow_reel_and_a_name():
     boss = f.cast_line(rod(), Lucky(1), T0, REG)
-    assert boss.boss in BOSS.names and len(boss.pattern) == BOSS.length and not boss.chest
+    assert boss.boss in BOSS.names and sum(t != f.REEL for t in boss.pattern) == BOSS.length and not boss.chest
     assert not f.cast_line(rod(), Unlucky(1), T0, REG).boss
     hits = sum(bool(f.cast_line(rod(), Random(i), T0, REG).boss) for i in range(6000))
     assert 0.5 * 6000 / BOSS.odds < hits < 1.6 * 6000 / BOSS.odds
@@ -1170,7 +1170,7 @@ async def test_a_boss_pays_a_pile_and_no_fish_and_only_once(db):
     boss.hook(boss.bite_at + 1)
     with pytest.raises(f.FishingError, match="isn't beaten"):
         await f.defeat_boss(user, boss, Lucky(2), REG)
-    for arrow in list(boss.pattern):
+    for arrow in list(boss.truth):
         boss.press(arrow, boss.bite_at + 2)
     with pytest.raises(f.FishingError, match="boss, not a fish"):
         await f.land(user, boss, REG, now=T0)  # a boss is not a fish
@@ -1204,8 +1204,7 @@ async def test_beating_a_boss_on_the_screen_pays_and_losing_it_costs_only_the_bo
     assert "A bite!" in all_text(nav) and cast.boss not in all_text(nav)  # no spoilers
     await click(nav, inter, "Pull up the line")
     assert cast.boss in all_text(nav) and "15 arrows" in all_text(nav)
-    for arrow in list(cast.pattern):
-        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    await reel_in(nav, inter, cast)
     assert f"You beat {cast.boss}" in all_text(nav) and "Loot" in all_text(nav)
     assert nav.screen.id == "result" and nav.screen.origin.cast is None and (await user.skill("fishing")).stats.bosses_beaten == 1
 
@@ -1325,3 +1324,219 @@ async def test_the_records_page_is_one_click_from_the_fishing_page_and_shows_ser
     assert "???" in page  # fish nobody has caught stay a mystery
     await click(nav, inter, "Back to fishing")
     assert nav.screen.id == "fish"
+
+
+# ---- a reel with more to it: breaks and mystery arrows --------------------------------------------------------------------
+RL = RULES.reel
+
+
+def fish_of(rarity, tell=None):
+    return next(i for i in f.fish_pool(REG) if i.rarity == rarity and (tell is None or (i.reel and i.reel.tell == tell)))
+
+
+def test_easy_fish_are_plain_arrows_and_tougher_ones_make_you_stop_and_reel():
+    shown, actual = f.build_reel(fish_of(1), RULES, Random(1))
+    assert f.REEL not in shown and f.MYSTERY not in shown and len(shown) == RL.base_length + 1
+    for rarity in range(RL.break_from_rarity, 8):
+        shown, actual = f.build_reel(fish_of(rarity), RULES, Random(2))
+        arrows = RL.base_length + rarity
+        assert shown.count(f.REEL) == arrows // RL.arrows_per_break >= 1 and len(shown) == arrows + shown.count(f.REEL)
+        assert shown[0] != f.REEL and shown[-1] != f.REEL  # you start and finish on an arrow
+        assert not any(a == b == f.REEL for a, b in zip(shown, shown[1:], strict=False))  # never two Reels in a row
+
+
+def test_only_the_toughest_fish_hide_arrows_and_more_of_them_the_rarer_they_are():
+    assert RL.mystery_from_rarity == 4
+    for rarity in range(1, 4):
+        assert f.MYSTERY not in f.build_reel(fish_of(rarity), RULES, Random(3))[0]
+    for rarity in range(4, 8):
+        shown, actual = f.build_reel(fish_of(rarity), RULES, Random(3))
+        fish = fish_of(rarity)
+        most = rarity - RL.mystery_from_rarity + 1
+        assert shown.count(f.MYSTERY) == (min(most, RL.max_random_mysteries) if fish.reel.tell == "random" else most)
+        assert shown.index(f.MYSTERY) > 0 and next(a for a, t in zip(shown, actual, strict=True) if a == f.MYSTERY) is not None
+        assert all(t in (f.LEFT, f.RIGHT, f.REEL) for t in actual)  # what is really wanted is never a ❓
+        assert [s for s in shown if s != f.MYSTERY] == [t for s, t in zip(shown, actual, strict=True) if s != f.MYSTERY]
+
+
+def test_reels_really_vary_from_cast_to_cast():
+    shapes = {tuple(f.build_reel(fish_of(5), RULES, Random(i))[0]) for i in range(60)}
+    assert len(shapes) > 50
+    layouts = {tuple(s == f.REEL for s in f.build_reel(fish_of(6), RULES, Random(i))[0]) for i in range(60)}
+    assert len(layouts) > 10  # the breaks land in different places too
+
+
+def test_every_super_rare_or_better_fish_has_a_tell_and_both_kinds_exist():
+    tells = {i.id: i.reel.tell for i in f.fish_pool(REG) if i.rarity >= RL.mystery_from_rarity}
+    assert all(i.reel is not None for i in f.fish_pool(REG) if i.rarity >= RL.mystery_from_rarity)
+    assert {"left", "right", "same", "opposite", "random"} == set(tells.values())
+    assert all(i.reel is None for i in f.fish_pool(REG) if i.rarity < RL.mystery_from_rarity)
+
+
+@pytest.mark.parametrize("tell", ["left", "right", "same", "opposite"])
+def test_a_learnable_tell_always_does_the_same_thing(tell):
+    fish = next(i for i in f.fish_pool(REG) if i.reel and i.reel.tell == tell)
+    for seed in range(80):
+        shown, actual = f.build_reel(fish, RULES, Random(seed))
+        arrows = [a for a in actual if a != f.REEL]
+        shown_arrows = [a for a in shown if a != f.REEL]
+        for i, s in enumerate(shown_arrows):
+            if s != f.MYSTERY:
+                continue
+            before = arrows[i - 1]
+            expected = {"left": f.LEFT, "right": f.RIGHT, "same": before, "opposite": f.RIGHT if before == f.LEFT else f.LEFT}[tell]
+            assert arrows[i] == expected
+
+
+def test_a_random_tell_really_is_a_coin_flip_you_cannot_learn():
+    fish = next(i for i in f.fish_pool(REG) if i.reel and i.reel.tell == "random")
+    results = {}
+    for seed in range(400):
+        shown, actual = f.build_reel(fish, RULES, Random(seed))
+        arrows = [a for a in actual if a != f.REEL]
+        for i, s in enumerate([a for a in shown if a != f.REEL]):
+            if s == f.MYSTERY:
+                results.setdefault(arrows[i - 1], []).append(arrows[i])
+    for before, truths in results.items():
+        assert 0.35 < truths.count(f.LEFT) / len(truths) < 0.65, before  # either arrow, whatever came before
+
+
+def test_a_player_can_work_out_every_learnable_tell_from_a_few_catches():
+    """The field notes are enough: after a handful of ❓s exactly one rule fits what was seen."""
+    rules = {"left": lambda b: f.LEFT, "right": lambda b: f.RIGHT, "same": lambda b: b,
+             "opposite": lambda b: f.RIGHT if b == f.LEFT else f.LEFT}
+    for tell in ("left", "right", "same", "opposite"):
+        fish = next(i for i in f.fish_pool(REG) if i.reel and i.reel.tell == tell)
+        notes = []
+        for seed in range(6):  # six casts
+            cast = f.cast_line(rod(), Random(seed), 0, REG)
+            shown, actual = f.build_reel(fish, RULES, Random(seed))
+            arrows = [a for a in actual if a != f.REEL]
+            for i, s in enumerate([a for a in shown if a != f.REEL]):
+                if s == f.MYSTERY:
+                    notes.append(f"{arrows[i - 1]}>{arrows[i]}")
+            assert cast
+        fits = [name for name, rule in rules.items() if all(rule(n[0]) == n[2] for n in notes)]
+        assert fits == [tell], (tell, notes, fits)
+
+
+def test_a_boss_has_breaks_but_no_hidden_arrows():
+    boss = f.cast_line(rod(), Lucky(1), T0, REG)
+    assert boss.boss and f.MYSTERY not in boss.pattern and boss.pattern.count(f.REEL) == BOSS.length // RL.arrows_per_break
+
+
+# ---- pressing the new steps -------------------------------------------------------------------------------------------------
+def tricky_cast(pattern, truth, slips=0):
+    cast = cast_of(pattern=pattern, slips=slips)
+    cast.truth = truth
+    return cast
+
+
+def test_a_reel_step_wants_the_reel_button_and_an_arrow_step_does_not_accept_it():
+    cast = tricky_cast([f.LEFT, f.REEL, f.RIGHT], [f.LEFT, f.REEL, f.RIGHT])
+    assert cast.press(f.LEFT, T0 + 11) == "ok"
+    assert cast.press(f.LEFT, T0 + 20) == "escaped"  # an arrow where a Reel was wanted
+    fresh = tricky_cast([f.LEFT, f.REEL, f.RIGHT], [f.LEFT, f.REEL, f.RIGHT])
+    fresh.press(f.LEFT, T0 + 11)
+    assert fresh.press(f.REEL, T0 + 12) == "ok" and fresh.press(f.RIGHT, T0 + 13) == "landed"
+    wrong = tricky_cast([f.LEFT, f.RIGHT], [f.LEFT, f.RIGHT])
+    wrong.press(f.LEFT, T0 + 11)
+    assert wrong.press(f.REEL, T0 + 20) == "escaped"  # Reel where an arrow was wanted
+
+
+def test_a_mystery_arrow_is_secretly_an_arrow_and_pressing_it_teaches_you_what_it_was():
+    cast = tricky_cast([f.LEFT, f.MYSTERY, f.RIGHT], [f.LEFT, f.RIGHT, f.RIGHT])
+    assert cast.next_arrow == f.LEFT
+    cast.press(f.LEFT, T0 + 11)
+    assert cast.next_arrow == f.RIGHT and cast.pattern[1] == f.MYSTERY  # shown as ❓, wanted as ▶
+    assert cast.press(f.RIGHT, T0 + 12) == "ok" and cast.reveals == [(f.LEFT, f.RIGHT)]
+    assert cast.press(f.RIGHT, T0 + 13) == "landed"
+
+
+def test_a_wrong_guess_at_a_mystery_still_shows_you_the_answer_but_only_once():
+    cast = tricky_cast([f.LEFT, f.MYSTERY, f.RIGHT], [f.LEFT, f.RIGHT, f.RIGHT], slips=2)
+    cast.press(f.LEFT, T0 + 11)
+    assert cast.press(f.LEFT, T0 + 20) == "slip" and cast.reveals == [(f.LEFT, f.RIGHT)]  # wrong, but now you know
+    assert cast.press(f.LEFT, T0 + 30) == "slip" and len(cast.reveals) == 1  # guessing again learns nothing new
+    assert cast.press(f.RIGHT, T0 + 31) == "ok"
+
+
+def test_a_double_press_on_a_mystery_does_not_count_as_learning_twice():
+    cast = tricky_cast([f.RIGHT, f.MYSTERY, f.LEFT], [f.RIGHT, f.RIGHT, f.LEFT])
+    cast.echo_window = 2.0
+    cast.press(f.RIGHT, T0 + 11)
+    assert cast.press(f.RIGHT, T0 + 11.5) == "ok" and len(cast.reveals) == 1  # this one is the real answer to the ❓
+    assert cast.press(f.RIGHT, T0 + 11.8) == "echo" and len(cast.reveals) == 1
+
+
+async def test_landing_a_fish_writes_what_its_mystery_was_in_the_field_notes(db):
+    user = await player()
+    cast = tricky_cast([f.LEFT, f.MYSTERY, f.RIGHT], [f.LEFT, f.RIGHT, f.RIGHT])
+    cast.fish = REG.item("pufferfish")
+    for step in cast.truth:
+        cast.press(step, T0 + 11)
+    got = await f.land(user, cast, REG, now=T0)
+    assert got.reveals == ((f.LEFT, f.RIGHT),)
+    assert (await user.skill("fishing")).notes == {"pufferfish": [f"{f.LEFT}>{f.RIGHT}"]}
+
+
+async def test_a_fish_that_got_away_still_teaches_you_and_the_notes_stay_short(db):
+    user = await player()
+    cast = tricky_cast([f.LEFT, f.MYSTERY], [f.LEFT, f.LEFT])
+    cast.fish = REG.item("moray_eel")
+    cast.press(f.LEFT, T0 + 11)
+    assert cast.press(f.RIGHT, T0 + 12) == "escaped"
+    await f.note_tells(user, cast)
+    assert (await user.skill("fishing")).notes == {"moray_eel": [f"{f.LEFT}>{f.LEFT}"]}
+    for i in range(30):
+        again = tricky_cast([f.LEFT, f.MYSTERY], [f.LEFT, f.RIGHT])
+        again.fish = REG.item("moray_eel")
+        again.press(f.LEFT, T0 + 11)
+        again.press(f.RIGHT, T0 + 12)
+        await f.note_tells(user, again)
+    assert len((await user.skill("fishing")).notes["moray_eel"]) == f.NOTES_KEPT
+
+
+def test_field_notes_read_clearly():
+    assert f.read_notes([f"{f.LEFT}>{f.RIGHT}", f"{f.LEFT}>{f.RIGHT}", f"{f.RIGHT}>{f.RIGHT}"]) == "after ◀ → ▶ ×2, after ▶ → ▶"
+
+
+async def test_the_screen_has_a_reel_button_shows_breaks_and_mysteries_and_the_result_says_what_the_mystery_was(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("moray_eel"))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    assert f.MYSTERY in cast.pattern and f.REEL in cast.pattern
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    page = all_text(nav)
+    assert find_button(nav, "Reel") and f.MYSTERY in page and f.REEL in page and "press **Reel**" in page.replace("**Reel**", "**Reel**")
+    await reel_in(nav, inter, cast)
+    assert nav.screen.id == "result" and "The ❓ was" in all_text(nav) and "field notes" in all_text(nav)
+    assert (await user.skill("fishing")).notes["moray_eel"]
+    nav2, _ = await hub("fishrecords")
+    assert "Field notes" in all_text(nav2) and "Moray Eel: after" in all_text(nav2)
+
+
+async def test_losing_at_a_mystery_still_shows_it_on_the_result_page(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("moray_eel"))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    while cast.progress < len(cast.pattern) and cast.pattern[cast.progress] != f.MYSTERY and not cast.escaped:
+        await click(nav, inter, {f.LEFT: "Left", f.RIGHT: "Right", f.REEL: "Reel"}[cast.wanted(cast.progress)])
+    wrong = "Right" if cast.wanted(cast.progress) == f.LEFT else "Left"
+    await click(nav, inter, wrong)
+    assert nav.screen.id == "result" and "slipped off" in all_text(nav) and "The ❓ was" in all_text(nav)
+    assert (await user.skill("fishing")).notes["moray_eel"]
+
+
+def test_a_coin_flip_fish_never_hides_more_arrows_than_you_can_stand():
+    for fish in f.fish_pool(REG):
+        if fish.reel and fish.reel.tell == "random":
+            shown, _ = f.build_reel(fish, RULES, Random(1))
+            assert shown.count(f.MYSTERY) <= RL.max_random_mysteries
