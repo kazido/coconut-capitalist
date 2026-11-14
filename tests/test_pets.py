@@ -454,12 +454,14 @@ def test_every_food_skill_has_three_tiers_that_are_worth_more_and_drop_less_ofte
     assert {i.id for i in REG.items.values() if i.category == "pet_food"} == {f for ids in FOODS.values() for f in ids}
 
 
-def test_every_species_has_a_default_skill_and_a_pet_can_be_changed_to_any():
+def test_every_pet_has_one_fixed_skill_that_matches_what_it_does():
     for pet in REG.pets.values():
-        assert pets.default_skill(pet) in pets.SKILL_CHOICES, pet.id
-    assert pets.default_skill(REG.pets["cat"]) == "fishing" and pets.default_skill(REG.pets["frog"]) == "farming"
-    assert pets.default_skill(REG.pets["dog"]) == "global" and pets.default_skill(REG.pets["koala"]) == "global"
-    assert {pets.default_skill(p) for p in REG.pets.values()} >= {"fishing", "mining", "farming", "foraging", "global"}
+        assert pet.skill == pets.default_skill(pet), pet.id  # the data and the bonuses agree
+        assert pet.skill in pets.SKILL_EMOJI
+    assert {p.id for p in REG.pets.values() if p.skill == "global"} == {"dog", "koala", "phoenix"}  # work wage and every-skill xp
+    assert REG.pets["cat"].skill == "fishing" and REG.pets["frog"].skill == "farming" and REG.pets["otter"].skill == "fishing"
+    assert {p.skill for p in REG.pets.values()} >= {"fishing", "mining", "farming", "foraging", "global"}
+    assert not hasattr(pets, "set_skill")  # a pet's skill is not something you change
 
 
 async def test_food_of_a_pets_own_skill_is_worth_triple_a_global_pet_gets_double_and_the_rest_the_plain_amount(db):
@@ -479,24 +481,6 @@ async def test_food_of_a_pets_own_skill_is_worth_triple_a_global_pet_gets_double
     assert again.xp == base * rules.global_food_multiplier
     assert rules.matched_food_multiplier > rules.global_food_multiplier > 1  # a specialist does best, a generalist still gains
     assert await user.item_quantity("fish_flakes") == 10 - 2 - 1 and user.pethouse.active == "cat"  # (feeding a pet does not make it active)
-
-
-async def test_assigning_a_pet_to_a_skill_changes_what_its_food_is_worth(db):
-    rules = REG.economy.pets
-    user = await with_pet("cat", xp=0)
-    await user.add_item("stone_biscuit", 4)
-    assert (await pets.feed(user, "stone_biscuit", 1, REG)).multiplier == 1.0  # a fishing pet and mining food
-    assert await pets.set_skill(user, "cat", "mining") == "mining"
-    assert user.pethouse.pets["cat"].skill == "mining"
-    assert (await pets.feed(user, "stone_biscuit", 1, REG)).multiplier == rules.matched_food_multiplier
-    assert await pets.set_skill(user, "cat", "global") == "global"
-    assert (await pets.feed(user, "stone_biscuit", 1, REG)).multiplier == rules.global_food_multiplier
-    assert await pets.set_skill(user, "cat", "auto") == "fishing"  # back to what a cat is for
-    for bad in ("sleeping", ""):
-        with pytest.raises(pets.PetError, match="no such skill"):
-            await pets.set_skill(user, "cat", bad)
-    with pytest.raises(pets.PetError, match="don't have that pet"):
-        await pets.set_skill(user, "wolf", "mining")
 
 
 async def test_crops_are_farming_food_so_a_farming_pet_gets_triple_for_them(db):
@@ -562,6 +546,5 @@ async def test_the_pet_house_lets_you_look_after_a_pet_that_is_not_active_and_pi
     await user.refresh()
     assert user.pethouse.pets["cat"].xp == 2 * REG.economy.pets.food_xp[0] * REG.economy.pets.matched_food_multiplier
     assert user.pethouse.pets["dog"].xp == 0  # the cat got it, not the active dog
-    await choose(nav, inter, select_named(nav, "Skill for this pet"), "global")
-    await user.refresh()
-    assert user.pethouse.pets["cat"].skill == "global" and "no skill" in all_text(nav)
+    assert "🎣" in all_text(nav) and "Cat 🎣" in all_text(nav)  # the skill's emoji follows the name
+    assert not [x for x in nav.walk_children() if getattr(x, "placeholder", "").startswith("Skill for this pet")]  # (it cannot be changed)

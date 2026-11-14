@@ -279,10 +279,13 @@ Crops are no longer the only food. **Every skill drops its own food in three tie
 like any foraging drop), mining **Stone Biscuit / Crystal Chew / Geode Feast** (rolled per lode when a run ends), fishing
 **Fish Flakes / Dried Squid / Sea Feast** (one roll per catch, like coral). Crops are **farming's** food. Combat has none yet.
 
-**Every pet looks after one skill.** By default the one its species is for (cat: fishing, frog: farming, dog and koala: none).
-In the Pet House you look at any pet (not just the active one), feed it, and pick its skill ("Its own", "No skill", or one of
-the five). Food of **its skill is worth x3**; a pet with **no skill** gets **x2 from any food**; food of a different skill is the
-plain amount. So a specialist levels fastest on its own skill's food, and a global pet is the flexible, slower choice.
+**Every pet has one fixed skill** (`skill` in `configs/pets.toml`; shown as an emoji after its name: 🎣 ⛏️ 🌳 🌽 ⚔️, or 🌐 for the
+global pets Dog, Koala and Phoenix, whose bonus works everywhere). You cannot change it. In the Pet House you look at any pet
+(not just the active one), feed it, or make it active. Food of **its skill is worth x3**; a 🌐 global pet gets **x2 from any food**;
+food of a different skill is the plain amount. So a specialist levels fastest on its own skill's food, and a global pet is the
+flexible, slower choice. **Why a number "jumps":** a bonus is `value x level factor x stars`, where the level factor goes from 0.5
+(fresh) to 1.0 (level 20), so changing `value` from 0.05 to 1 multiplies what you see by 20 only at the same level; the screen now
+also shows the max-level number in brackets.
 Looking at a pet no longer switches it: **Make active** does. The drop rates aim at roughly 3-5k base pet xp an hour in each
 skill (`python -m scripts.balance` prints it); level 20 is 180k xp.
 

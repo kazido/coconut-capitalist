@@ -41,7 +41,8 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 - Zones: `zone_levels` in `configs/foraging.toml` (zone 20 = level 136). Community tree: hp = typical tree x 5 x recent choppers.
 - Tool income target per level: x1, 1.5, 2.6, 4, 6, 9, 13, 18. Axe power 3..54, pickaxe 1..69 (+25% ore per power), rod 3..120
   (faster bites, rarer fish, extra fish). Each upgrade costs ~5x the last.
-- Pet food xp 200 / 1,000 / 5,000 by tier; matched skill x3, "global" pet x2 from any food.
+- Pet food xp 200 / 1,000 / 5,000 by tier; a pet has ONE fixed skill (`skill` in pets.toml, emoji after its name; 🌐 global = Dog, Koala,
+  Phoenix): its own skill's food x3, a global pet x2 from any food.
 
 ## Open work (in rough priority)
 

@@ -188,13 +188,14 @@ class PetBonus(_Data):
     """One thing a pet does while it is your active pet. `stat` is what the game looks up (see services/pets.py)."""
 
     stat: str
-    value: float = Field(gt=0)  # at one star and the top level
+    value: float = Field(gt=0)  # at one star and the TOP level (a fresh pet gives about half; see [pets] level_floor in economy.toml)
     text: str  # how it reads, with {v} for the number
 
 
 class Pet(_Data):
     id: str
     name: str
+    skill: Literal["global", "mining", "farming", "foraging", "fishing", "combat"] = "global"  # the one skill it looks after
     emoji: str | None = None
     rarity: int = Field(default=1, ge=1, le=5)
     description: str = ""

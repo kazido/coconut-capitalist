@@ -30,8 +30,6 @@ KNOWN_STATS = frozenset({
 })
 
 
-FOOD_SKILLS = ("mining", "farming", "foraging", "fishing", "combat")
-SKILL_CHOICES = ("global", *FOOD_SKILLS)
 _STAT_SKILL = {
     "bite_speed": "fishing", "rare_luck": "fishing", "treasure_luck": "fishing", "pot_speed": "fishing", "pot_luck": "fishing",
     "danger_reduction": "mining", "ore_yield": "mining", "good_chop": "foraging", "grow_chance": "farming", "crop_yield": "farming",
@@ -43,7 +41,7 @@ class PetError(GameRuleError):
 
 
 def default_skill(pet: Pet) -> str:
-    """The skill a species is naturally for: where its first bonus works ("global" for work/all-skill bonuses)."""
+    """The skill the pet's bonuses work in ("global" for work/all-skill bonuses). Used only to check the data in pets.toml."""
     for bonus in pet.bonuses:
         if bonus.stat in _STAT_SKILL:
             return _STAT_SKILL[bonus.stat]
@@ -52,9 +50,11 @@ def default_skill(pet: Pet) -> str:
     return "global"
 
 
-def pet_skill(pet: Pet, owned: OwnedPet) -> str:
-    """The skill a pet is looking after: the one you chose, or what its species is for."""
-    return default_skill(pet) if owned.skill == "auto" else owned.skill
+SKILL_EMOJI = {"global": "🌐", "mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishing": "🎣", "combat": "⚔️"}
+
+
+def skill_emoji(pet: Pet) -> str:
+    return SKILL_EMOJI[pet.skill]
 
 
 def food_xp(item: Item, registry: Registry | None = None) -> int:
@@ -69,10 +69,10 @@ def food_skill(item: Item) -> str | None:
     return "farming" if item.crop else (item.skill if item.pet_food else None)
 
 
-def food_multiplier(pet: Pet, owned: OwnedPet, item: Item, registry: Registry | None = None) -> float:
+def food_multiplier(pet: Pet, item: Item, registry: Registry | None = None) -> float:
     """How much more this food is worth to this pet: x3 for its own skill, x2 for a pet with no skill, x1 otherwise."""
     rules = (registry or get_registry()).economy.pets
-    skill = pet_skill(pet, owned)
+    skill = pet.skill
     if skill == "global":
         return rules.global_food_multiplier
     return rules.matched_food_multiplier if skill == food_skill(item) else 1.0
@@ -111,7 +111,9 @@ def describe(pet: Pet, owned: OwnedPet, registry: Registry | None = None) -> lis
     """The pet's bonuses as the player reads them, at its current strength."""
     reg = registry or get_registry()
     scale = strength(owned, reg)
-    lines = [bonus.text.format(v=bonus.value * scale) for bonus in pet.bonuses]
+    top = (1 + reg.economy.pets.star_bonus * (owned.stars - 1))  # what it gives at the top level, with the stars it has
+    lines = [bonus.text.format(v=bonus.value * scale) + (f" (max level: {bonus.value * top:.0%})" if scale < top - 1e-9 else "")
+             for bonus in pet.bonuses]
     lines += [f"+{reg.economy.pets.spirit_bonus:.0%} {skill} xp (Spirit)" for skill in owned.spirits]
     return lines
 
@@ -289,7 +291,7 @@ async def feed(user: User, food_id: str, quantity: int, registry: Registry | Non
         owned = house.pets.get(target)
         if owned is None:
             return
-        boost = food_multiplier(reg.pets[target], owned, food, reg)
+        boost = food_multiplier(reg.pets[target], food, reg)
         gained = round(worth * quantity * boost)
         outcome.update(before=pet_level(owned.xp, reg), boost=boost, gained=gained)
         owned.xp += gained
@@ -300,25 +302,6 @@ async def feed(user: User, food_id: str, quantity: int, registry: Registry | Non
         await user.add_item(food_id, quantity)
         raise PetError("You need a pet to look after.")
     return Fed(reg.pets[target], quantity, outcome["gained"], outcome["before"], outcome["after"], outcome["boost"])
-
-
-async def set_skill(user: User, pet_id: str, skill: str) -> str:
-    """Choose which skill a pet looks after ("global" for none, "auto" for what its species is for). Returns the skill it now has."""
-    reg = get_registry()
-    if skill not in (*SKILL_CHOICES, "auto"):
-        raise PetError("There is no such skill.")
-    outcome: dict = {}
-
-    def assign(house: Pethouse) -> None:
-        owned = house.pets.get(pet_id)
-        if owned is not None:
-            owned.skill = skill
-            outcome["skill"] = pet_skill(reg.pets[pet_id], owned)
-
-    await user.update_pethouse(assign)
-    if not outcome:
-        raise PetError("You don't have that pet.")
-    return outcome["skill"]
 
 
 async def roll_food(skill: str, rolls: int, rng: random.Random, registry: Registry | None = None) -> dict[str, int]:
