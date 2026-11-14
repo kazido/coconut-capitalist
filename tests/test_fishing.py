@@ -577,9 +577,15 @@ def test_the_book_holds_common_to_super_rare_fish_only():
     assert all(i.rarity <= B.max_rarity for i in book)
 
 
-def test_each_book_level_needs_more_of_every_fish():
-    needs = [f.book_need(level, RULES) for level in range(1, 6)]
-    assert needs == sorted(needs) and needs[0] == B.need_base and len(set(needs)) == 5
+def test_each_book_level_needs_more_but_common_fish_grow_fastest():
+    need = lambda level, rarity: f.book_need(level, rarity, RULES)
+    assert [need(1, r) for r in range(1, 5)] == [B.need_base] * 4  # level 1: one of each
+    assert [need(2, r) for r in range(1, 5)] == [5, 3, 1, 1]  # level 2: 5 common, 3 uncommon, 1 rare, 1 super rare
+    for rarity in range(1, 5):
+        assert [need(level, rarity) for level in range(1, 11)] == sorted(need(level, rarity) for level in range(1, 11))
+    for level in range(2, 11):
+        assert need(level, 1) > need(level, 2) > need(level, 3) >= need(level, 4)
+    assert need(10, 1) > need(5, 1) > need(2, 1)
 
 
 async def test_the_book_is_locked_until_the_level(db):
@@ -592,7 +598,7 @@ async def test_turning_in_fish_pays_a_bonus_and_fills_the_page(db):
     user = await book_player(fish={"cod": 3})
     before_xp, before_bits = (await user.skill("fishing")).xp, user.purse
     done = await f.turn_in(user, "cod", REG)
-    assert done.quantity == B.need_base  # only as many as the page needs
+    assert done.quantity == B.need_base  # only as many as the page needs (level 1: one)
     assert done.bits == round(REG.item("cod").sell_price * B.bits_per_sell * done.quantity)
     assert await user.item_quantity("cod") == 3 - done.quantity  # the rest stay in the bag
     await user.refresh()
@@ -636,7 +642,7 @@ async def test_a_full_book_can_be_finished_and_starts_over_a_level_up(db):
     await user.refresh()
     assert done.new_level == 2 and done.bits == B.completion_bits and user.purse >= before + done.bits
     again = await f.book(user, REG)
-    assert again.level == 2 and not again.complete and all(e.given == 0 and e.need == f.book_need(2, RULES) for e in again.entries)
+    assert again.level == 2 and not again.complete and all(e.given == 0 and e.need == f.book_need(2, e.fish.rarity, RULES) for e in again.entries)
     with pytest.raises(f.FishingError, match="isn't full"):
         await f.complete_book(user, REG)  # no double payout
 
@@ -644,8 +650,8 @@ async def test_a_full_book_can_be_finished_and_starts_over_a_level_up(db):
 async def test_the_book_stops_at_its_top_level(db):
     user = await book_player()
     await user.update_skill("fishing", lambda s: setattr(s.book, "level", B.max_level))
-    need = f.book_need(B.max_level, RULES)
-    await user.update_skill("fishing", lambda s: s.book.given.update({i.id: need for i in f.book_fish(REG)}))
+    await user.update_skill("fishing", lambda s: s.book.given.update(
+        {i.id: f.book_need(B.max_level, i.rarity, RULES) for i in f.book_fish(REG)}))
     with pytest.raises(f.FishingError, match="highest level"):
         await f.complete_book(user, REG)
 
@@ -857,3 +863,18 @@ async def test_a_catch_names_its_rarity(db, clock, monkeypatch):
     for arrow in list(nav.screen.cast.pattern):
         await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
     assert "You caught a" in all_text(nav) and "Salmon" in all_text(nav) and "**Rare**" in all_text(nav)
+
+
+async def test_the_second_book_asks_for_more_common_fish_than_rare_ones(db):
+    user = await book_player(fish={i.id: 10 for i in f.book_fish(REG)})
+    for item in f.book_fish(REG):
+        await f.turn_in(user, item.id, REG)
+    await f.complete_book(user, REG)
+    second = await f.book(user, REG)
+    needs = {e.fish.rarity: e.need for e in second.entries}
+    assert needs == {1: 5, 2: 3, 3: 1, 4: 1}
+    assert not second.complete
+    common = next(e for e in second.entries if e.fish.rarity == 1)
+    done = await f.turn_in(user, common.fish.id, REG)
+    assert done.quantity == 5  # the page takes five, not one
+    assert await user.item_quantity(common.fish.id) == 10 - 1 - 5  # one went in at level 1, five now

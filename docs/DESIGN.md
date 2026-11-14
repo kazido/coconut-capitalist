@@ -236,7 +236,8 @@ the day or week changes. The catch that takes you to level 3 doesn't count towar
 A personal book with a page for every fish up to rarity 4 (common to super rare, 12 of them). **Turn in** a fish and it
 fills that page (the book only takes as many as it needs) and pays **+50% of the fish's value** and xp, so turning in
 beats selling. Fill every page and **Finish the book**: it pays 50,000 bits x its level, goes up a level and starts over
-needing one more of each fish per level (up to level 10). Atomic like everything else: a double click can't over-fill a
+needing more fish, scaled by rarity: level 2 wants 5 of each common fish, 3 of each uncommon and 1 of each rare and
+super rare; level 5 wants 17, 9, 3 and 2 (`need_step_by_rarity`). Up to level 10. Atomic like everything else: a double click can't over-fill a
 page or finish the book twice. Numbers in `configs/fishing.toml` `[book]` (`TODO(balance)`; `min_level` is one number
 to put back to 10).
 

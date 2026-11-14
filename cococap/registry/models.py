@@ -430,11 +430,19 @@ class BookRules(_Data):
     max_rarity: int = Field(ge=1, le=7)  # it holds every fish up to this rarity
     max_level: int = Field(ge=1)
     need_base: int = Field(ge=1)  # fish per entry at book level 1...
-    need_per_level: int = Field(ge=0)  # ...and this many more for each level after
+    # ...and for each level after, this many more per rarity (index 0 = common): common fish pile up fast, rare ones
+    # barely grow. An entry needs need_base + floor((level - 1) x step).
+    need_step_by_rarity: list[float] = Field(min_length=1)
     bits_per_sell: float = Field(ge=0)  # each fish turned in pays this share of its sell price
     xp_per_rarity: int = Field(ge=0)
     completion_bits: int = Field(ge=0)  # finishing the book pays this x its level...
     completion_xp: int = Field(ge=0)  # ...and this x its level
+
+    @model_validator(mode="after")
+    def _steps_cover_every_rarity(self):
+        if len(self.need_step_by_rarity) < self.max_rarity or any(x < 0 for x in self.need_step_by_rarity):
+            raise ValueError("need_step_by_rarity needs one non-negative number per rarity the book holds")
+        return self
 
 
 class TreasureLoot(_Data):

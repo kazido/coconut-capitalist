@@ -284,7 +284,7 @@ class FishBookScreen(Screen):
             *self.note_block(),
             text(f"### 📖 Book level {view.level}\nTurn fish in for **+{rules.bits_per_sell:.0%}** of their value and xp. "
                  f"Fill every page to finish the book: it pays **{bits(rules.completion_bits * view.level)}** bits and the next level "
-                 f"needs more of each fish."),
+                 f"needs more fish, a lot more of the common ones."),
             text("\n".join(lines)),
         ]
         if wanted:

@@ -361,8 +361,10 @@ def book_fish(registry: Registry) -> list[Item]:
     return sorted((i for i in fish_pool(registry) if i.rarity <= rules.max_rarity), key=lambda i: (i.rarity, i.name))
 
 
-def book_need(level: int, rules: FishingRules) -> int:
-    return rules.book.need_base + (level - 1) * rules.book.need_per_level
+def book_need(level: int, rarity: int, rules: FishingRules) -> int:
+    """How many of a fish of this rarity the book wants at this level: common fish grow fastest."""
+    step = rules.book.need_step_by_rarity[rarity - 1]
+    return rules.book.need_base + int((level - 1) * step)
 
 
 def book_unlocked(level: int, rules: FishingRules) -> bool:
@@ -372,8 +374,8 @@ def book_unlocked(level: int, rules: FishingRules) -> bool:
 async def book(user: User, registry: Registry | None = None) -> BookView:
     reg = registry or get_registry()
     saved = (await user.skill("fishing")).book
-    need = book_need(saved.level, reg.fishing)
-    return BookView(saved.level, tuple(BookEntry(i, saved.given.get(i.id, 0), need) for i in book_fish(reg)))
+    return BookView(saved.level, tuple(
+        BookEntry(i, saved.given.get(i.id, 0), book_need(saved.level, i.rarity, reg.fishing)) for i in book_fish(reg)))
 
 
 @dataclass(frozen=True)
@@ -415,7 +417,7 @@ async def turn_in(user: User, fish_id: str, registry: Registry | None = None) ->
     def give(skill) -> None:
         nonlocal credited
         have = skill.book.given.get(fish_id, 0)
-        credited = max(0, min(take, book_need(skill.book.level, rules) - have))  # a second click may have filled it
+        credited = max(0, min(take, book_need(skill.book.level, fish.rarity, rules) - have))  # a second click may have filled it
         skill.book.given[fish_id] = have + credited
         skill.xp += round(credited * fish.rarity * rules.book.xp_per_rarity * multiplier)
 
@@ -447,8 +449,7 @@ async def complete_book(user: User, registry: Registry | None = None) -> BookRew
 
     def finish(skill) -> None:
         level = skill.book.level
-        need = book_need(level, rules)
-        if not all(skill.book.given.get(i.id, 0) >= need for i in book_fish(reg)):
+        if not all(skill.book.given.get(i.id, 0) >= book_need(level, i.rarity, rules) for i in book_fish(reg)):
             outcome["error"] = "Your book isn't full yet."
         elif level >= rules.book.max_level:
             outcome["error"] = "Your book is already at its highest level."
