@@ -320,3 +320,82 @@ async def test_blessings_only_sometimes_become_deeds(db):
 def test_land_deeds_and_the_farming_rules_are_real_data():
     assert REG.item("land_deed").category == "key_item" and RULES.market.days == [4, 5] and RULES.market.min_level == 5
     assert RULES.free_plots == 1 and RULES.anomaly_odds == 25 and RULES.blessing_chance == 0.1
+
+
+# ---- getting started: a gift, cheap first seeds, and watering --------------------------------------------------------------------
+async def test_every_farmer_gets_free_starter_seeds_once(db):
+    user = await User.get(1)
+    gift = await f.starter_gift(user, REG)
+    assert gift == RULES.starter_seeds and await user.item_quantity("apple_seed") == RULES.starter_seeds["apple_seed"]
+    assert await f.starter_gift(user, REG) == {}  # once only
+    assert await user.item_quantity("apple_seed") == RULES.starter_seeds["apple_seed"]
+    assert (await user.skill("farming")).starter_given
+
+
+def test_the_first_seeds_are_cheap_enough_for_a_brand_new_player():
+    start = 1_000  # what a new player has
+    assert REG.item("apple_seed").price * 2 <= start  # a couple of apple seeds is well within reach
+    assert REG.item("apple_seed").price < REG.item("lemon_seed").price < REG.item("hot_pepper_seed").price
+
+
+async def test_watering_grows_plots_you_have_not_watered_this_hour_and_only_once_an_hour(db):
+    user = await User.get(1)
+    await user.add_item("apple_seed", 1)
+    await f.plant(user, 1, "apple_seed", now=T0, registry=REG)
+    first = await f.water(user, T0, REG)
+    assert first.watered == 1
+    again = await f.water(user, T0 + 10, REG)  # the same hour
+    assert again.watered == 0 and again.grew == 0
+    plot = (await user.skill("farming")).farm.plot_1
+    assert plot.watered == int(T0 // 3600)
+    later = await f.water(user, T0 + 3600 * 1.1, REG)  # the next hour: allowed again (if it still grows)
+    assert later.watered in (0, 1)  # (0 only if it was already ripe)
+
+
+async def test_a_watering_grows_a_plot_about_as_often_as_the_water_chance_says_and_the_roll_cannot_be_redone(db):
+    grew = 0
+    for uid in range(1, 301):
+        user = await User.get(uid)
+        await user.add_item("coconut_seed", 1)
+        await f.plant(user, 1, "coconut_seed", now=T0, registry=REG)
+        before = (await user.skill("farming")).farm.plot_1.cycle
+        report = await f.water(user, T0, REG)
+        grew += report.grew
+        assert (await user.skill("farming")).farm.plot_1.cycle == before + report.grew
+        assert (await f.water(user, T0, REG)).watered == 0  # looking again changes nothing
+    assert grew / 300 == pytest.approx(RULES.water_chance, abs=0.07)
+
+
+async def test_watering_can_finish_a_one_cycle_crop_straight_away(db):
+    for uid in range(1, 60):
+        user = await User.get(uid)
+        await user.add_item("apple_seed", 1)
+        await f.plant(user, 1, "apple_seed", now=T0, registry=REG)
+        report = await f.water(user, T0, REG)
+        plot = (await user.skill("farming")).farm.plot_1
+        assert plot.can_harvest == bool(report.grew) and (report.matured == (1,)) == plot.can_harvest
+    assert REG.item("apple_seed").seed.cycles == 1
+
+
+async def test_watering_skips_empty_and_ripe_plots(db):
+    user = await User.get(1)
+    assert (await f.water(user, T0, REG)).watered == 0
+    await user.add_item("apple_seed", 1)
+    await f.plant(user, 1, "apple_seed", now=T0, registry=REG)
+    await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
+    assert (await f.water(user, T0, REG)).watered == 0
+
+
+async def test_the_farm_page_waters_and_marks_watered_plots(db):
+    from tests.test_hub import all_text, click, find_button, hub
+
+    user = await User.get(1)
+    nav, inter = await hub("farm")
+    assert "free seeds" in all_text(nav) or "seeds to start" in all_text(nav)  # the welcome gift
+    assert find_button(nav, "Water").disabled  # nothing is planted yet
+    await click(nav, inter, "1 Plant")
+    assert not find_button(nav, "Water").disabled
+    await click(nav, inter, "Water")
+    assert "You watered 1 plot" in all_text(nav)
+    assert find_button(nav, "Water").disabled and "💧" in all_text(nav)  # watered: wait for the next hour
+    assert user

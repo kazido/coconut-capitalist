@@ -143,6 +143,14 @@ roll is seeded by (player, plot, hour). So reopening the farm can't re-roll, rai
 offline, and there is no hourly job. (Trade-off: no "the rain fell" channel announcement; it can be added later as a
 cosmetic-only task.) Numbers are in `configs/farming.toml` (`TODO(balance)`).
 
+### Getting into farming
+
+Farming used to be slow to start: the first seed cost 10,000 bits (a new player has 1,000) and everything waited on the hourly
+rain. Now every farmer gets **3 free apple seeds** the first time they open their farm, an apple seed costs **500** bits (a
+lemon seed 8,000), and there is a **Water** button: once an hour each growing plot can be watered, and it grows a cycle with an 80%
+chance on top of the rain (the roll is fixed by you, the plot and the hour, so looking again can't redo it). An apple needs one
+cycle, so a new farmer can plant, water and harvest straight away; the long crops (20 to 777 cycles) still take days.
+
 ## Foraging
 
 **Solo always works; friends are better.** The wiki's "two players at zone 7" rule is replaced so nobody is ever

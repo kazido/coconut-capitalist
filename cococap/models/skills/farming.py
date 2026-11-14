@@ -14,6 +14,7 @@ class Plot(BaseModel):
     imbued: bool = False
     unlocked: bool = False
     since: int = 0  # the last rain (hour number) already counted for this plot
+    watered: int = -1  # the hour you last watered this plot (once per hour)
 
 
 def _plot() -> Plot:
@@ -37,3 +38,4 @@ class Farming(Skill):
     stats: Stats = Field(default_factory=Stats)
     applied_fertilizer: Optional[str] = None
     rain_god_blessings: int = 0
+    starter_given: bool = False  # you have had your free starter seeds

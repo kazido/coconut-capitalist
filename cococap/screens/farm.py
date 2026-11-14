@@ -27,8 +27,11 @@ class FarmScreen(Screen):
     # ---- rendering -----------------------------------------------------------------------------
     async def build(self) -> Page:
         reg = get_registry()
+        gift = await farming.starter_gift(self.user)
+        if gift:
+            self.note = "🎁 Welcome, farmer! Here are some seeds to start: " + ", ".join(f"{q} {reg.item(i).display}" for i, q in gift.items())
         skill, rain = await farming.sync(self.user)
-        views = farming.plot_views(skill, reg)
+        views = farming.plot_views(skill, reg, time.time())
         owned = await self.user.items()
         seeds = {i: q for i, q in owned.items() if (item := reg.find_item(i)) and item.seed}
         if self.seed not in seeds:
@@ -60,6 +63,8 @@ class FarmScreen(Screen):
         empty = sum(1 for v in views if v.empty)
         body.append(row(
             button("Harvest all", emoji="🧺", style=discord.ButtonStyle.success, disabled=not any(v.ready for v in views), on_click=self._harvest_all),
+            button("Water", emoji="💧", style=discord.ButtonStyle.primary,
+                   disabled=not any(v.growing and not v.watered for v in views), on_click=self._water),
             button("Plant all", emoji="🌱", disabled=not (self.seed and empty), on_click=self._plant_all),
             button("Market", emoji="🛒", on_click=self._market),
         ))
@@ -71,7 +76,7 @@ class FarmScreen(Screen):
             if v.ready:
                 lines.append(f"**{v.number}** · {reg.item(v.crop_id).display} is **ready**")
             elif v.growing:
-                lines.append(f"**{v.number}** · {reg.item(v.seed_id).display}  {v.cycle}/{v.needed} cycles")
+                lines.append(f"**{v.number}** · {reg.item(v.seed_id).display}  {v.cycle}/{v.needed} cycles" + ("  💧" if v.watered else ""))
         return "\n".join(lines) or "Nothing is growing yet. Pick a seed, then plant it in a plot."
 
     def _plot_button(self, v: farming.PlotView, reg, deeds: int) -> discord.ui.Button:
@@ -119,6 +124,15 @@ class FarmScreen(Screen):
         if not harvests:
             return await self.refresh(interaction, "Nothing is ready yet.")
         await self._report(interaction, harvests)
+
+    async def _water(self, interaction: discord.Interaction) -> None:
+        report = await farming.water(self.user)
+        if not report.watered:
+            return await self.refresh(interaction, "💧 Everything growing has been watered this hour. Come back after the next rain!")
+        note = f"💧 You watered {report.watered} plot(s): **{report.grew}** grew."
+        if report.matured:
+            note += " " + ", ".join(f"Plot {n}" for n in report.matured) + (" is" if len(report.matured) == 1 else " are") + " ready!"
+        await self.refresh(interaction, note)
 
     async def _plant_all(self, interaction: discord.Interaction) -> None:
         views = farming.plot_views(await self.user.skill("farming"), get_registry())

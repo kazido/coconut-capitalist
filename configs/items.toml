@@ -281,7 +281,7 @@ description = "Grows into some apples. Wait, shouldn't it grow into a tree?"
 rarity = 1
 skill = "farming"
 category = "seed"
-price = 10000
+price = 500
 sell_price = 0
 
 [apple_seed.seed]
@@ -339,8 +339,8 @@ description = "Grows into some lemons."
 rarity = 2
 skill = "farming"
 category = "seed"
-price = 80000
-sell_price = 0
+price = 8000
+sell_price = 8000
 
 [lemon_seed.seed]
 grows_into = "lemon"

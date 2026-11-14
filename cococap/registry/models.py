@@ -358,6 +358,8 @@ class FarmingRules(_Data):
     free_plots: int = Field(ge=1, le=9)  # plots you own from the start
     grow_chance: float = Field(gt=0, le=1)  # per rain (every hour), per growing plot
     blessing_chance: float = Field(ge=0, le=1)  # per rain in which something grew
+    water_chance: float = Field(gt=0, le=1)  # watering a plot (once an hour) grows it a cycle with this chance
+    starter_seeds: dict[str, int]  # a free gift of seeds the first time you farm
     anomaly_odds: int = Field(ge=1)  # 1 in N per harvest
     xp_per_rarity: int = Field(ge=0)  # xp for a harvest = crop rarity x this
     deed_item: str

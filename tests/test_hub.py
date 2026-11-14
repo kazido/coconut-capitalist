@@ -252,8 +252,9 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
         return [b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success]
 
     nav, inter = await hub("shop")
-    # with 1,000 bits nothing in the shop is affordable, so every item's Buy button is disabled
-    assert item_buy_buttons(nav) and all(b.disabled for b in item_buy_buttons(nav))
+    # a brand-new player can only afford the very cheapest things (a starter seed for 500), not the tools or the rest
+    cheap = [b for b in item_buy_buttons(nav) if not b.disabled]
+    assert item_buy_buttons(nav) and len(cheap) < len(item_buy_buttons(nav))
     await set_columns(await User.get(1), purse=200_000)
     nav, inter = await hub("shop")
     buy = next(b for b in item_buy_buttons(nav) if not b.disabled)
@@ -918,13 +919,15 @@ async def test_planting_from_the_farm_uses_the_selected_seed(db):
     await user.add_item("apple_seed", 2)
     nav, inter = await hub("farm")
     assert [s for s in selects(nav) if s.placeholder == "Seed to plant"]
+    have = await user.item_quantity("apple_seed")  # (the 2 plus the free starter seeds)
     await click(nav, inter, "1 Plant")
-    assert await user.item_quantity("apple_seed") == 1
+    assert await user.item_quantity("apple_seed") == have - 1
     assert "Planted Apple Seed in plot 1" in all_text(nav)
     assert any(b.label.startswith("1 ·") and b.disabled for b in buttons(nav))  # now shows its progress
 
 
 async def test_planting_without_a_seed_says_so(db):
+    await (await User.get(1)).update_skill("farming", lambda m: setattr(m, "starter_given", True))  # (a farmer who used theirs up)
     nav, inter = await hub("farm")
     await click(nav, inter, "1 Plant")
     assert "no seeds" in all_text(nav)
@@ -945,6 +948,7 @@ async def test_harvesting_a_ripe_plot_from_the_farm(db):
 
 async def test_harvest_all_and_plant_all(db):
     user = await User.get(1)
+    await user.update_skill("farming", lambda m: setattr(m, "starter_given", True))  # (no free seeds mixed in)
     await user.add_item("land_deed", 1)
     await ripen(user, 1)
     nav, inter = await hub("farm")

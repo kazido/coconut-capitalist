@@ -62,6 +62,10 @@ def _blessed(user_id: int, hour: int, chance: float) -> bool:
     return random.Random(f"blessing:{user_id}:{hour}").random() < chance
 
 
+def _waters(user_id: int, plot: int, hour: int, chance: float) -> bool:
+    return random.Random(f"water:{user_id}:{plot}:{hour}").random() < chance
+
+
 @dataclass(frozen=True)
 class RainReport:
     rains: int  # hours in which at least one of your plots grew
@@ -104,6 +108,7 @@ class PlotView:
     cycle: int
     needed: int
     ready: bool
+    watered: bool = False  # you have watered it this hour
 
     @property
     def empty(self) -> bool:
@@ -118,14 +123,16 @@ class PlotView:
         return min(1.0, self.cycle / self.needed) if self.needed else 0.0
 
 
-def plot_views(farming: Farming, registry: Registry) -> list[PlotView]:
+def plot_views(farming: Farming, registry: Registry, now: float | None = None) -> list[PlotView]:
     views = []
+    hour = hour_of(now) if now is not None else None
     for number in range(1, PLOTS + 1):
         plot = plot_of(farming, number)
         seed = registry.item(plot.crop_id).seed if plot.crop_id else None
         views.append(PlotView(
             number, is_unlocked(farming, number, registry.farming), plot.crop_id,
             seed.grows_into if seed else None, plot.cycle, seed.cycles if seed else 0, plot.can_harvest,
+            hour is not None and plot.watered == hour,
         ))
     return views
 
@@ -164,6 +171,59 @@ async def sync(user: User, now: float | None = None, registry: Registry | None =
     grow = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
     farming = await user.update_skill("farming", lambda m: seen.append(apply_rain(m, user.id, now, reg, grow)))
     return farming, seen[0]
+
+
+async def starter_gift(user: User, registry: Registry | None = None) -> dict[str, int]:
+    """The free seeds every farmer gets the first time they open their farm (once). Returns what was given."""
+    reg = registry or get_registry()
+    outcome: dict = {}
+
+    def claim(m: Farming) -> None:
+        if not m.starter_given:
+            m.starter_given = True
+            outcome["given"] = True
+
+    await user.update_skill("farming", claim)
+    if not outcome:
+        return {}
+    for seed_id, quantity in reg.farming.starter_seeds.items():
+        await user.add_item(seed_id, quantity)
+    return dict(reg.farming.starter_seeds)
+
+
+@dataclass(frozen=True)
+class WaterReport:
+    watered: int  # plots that took a watering
+    grew: int  # ...and how many of them grew a cycle
+    matured: tuple[int, ...]  # plots that are ready now
+
+
+async def water(user: User, now: float | None = None, registry: Registry | None = None) -> WaterReport:
+    """Water every growing plot you haven't watered this hour: each grows a cycle with ``water_chance`` (the same roll however
+    often you look: it is worked out from you, the plot and the hour). A way to grow faster than the rain alone, once an hour."""
+    reg, now = registry or get_registry(), now if now is not None else time.time()
+    hour = hour_of(now)
+    pet = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
+    chance = min(1.0, reg.farming.water_chance + pet)
+    outcome: dict = {"watered": 0, "grew": 0, "matured": []}
+
+    def pour(m: Farming) -> None:
+        apply_rain(m, user.id, now, reg, pet)
+        for number in range(1, PLOTS + 1):
+            plot = plot_of(m, number)
+            if not plot.crop_id or plot.can_harvest or plot.watered == hour:
+                continue
+            plot.watered = hour
+            outcome["watered"] += 1
+            if _waters(user.id, number, hour, chance):
+                plot.cycle += 1
+                outcome["grew"] += 1
+                if plot.cycle >= reg.item(plot.crop_id).seed.cycles:
+                    plot.can_harvest = True
+                    outcome["matured"].append(number)
+
+    await user.update_skill("farming", pour)
+    return WaterReport(outcome["watered"], outcome["grew"], tuple(outcome["matured"]))
 
 
 async def buy_plot(user: User, number: int, registry: Registry | None = None) -> None:
