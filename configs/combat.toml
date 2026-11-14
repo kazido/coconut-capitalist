@@ -1,0 +1,106 @@
+# Combat: Summoners War style. Every unit has a SPEED; its turn meter fills by that much per tick and the first to reach
+# meter_full acts. Skills have cooldowns instead of costs, so there are no consumables. TODO(balance): all numbers.
+meter_full = 100
+defense_scale = 100  # damage = attack x skill power x 100 / (100 + defense)
+crit_chance = 15     # percent
+crit_damage = 1.5
+max_rounds = 150     # total turns (everyone's) before a fight counts as lost
+
+[player]
+base_hp = 120
+hp_per_level = 12
+base_attack = 14
+attack_per_power = 3
+attack_per_level = 1
+base_defense = 10
+defense_per_level = 1
+speed = 100
+
+# --- skills -------------------------------------------------------------------------------------------------------
+[skills.strike]
+name = "Strike"
+description = "A plain hit."
+power = 1.0
+
+[skills.slash]
+name = "Slash"
+description = "A clean cut."
+power = 1.0
+
+[skills.cleave]
+name = "Cleave"
+description = "Hit every enemy for a little less."
+power = 0.7
+target = "all_enemies"
+cooldown = 3
+
+[skills.guard_break]
+name = "Guard Break"
+description = "A heavy blow that leaves the enemy's guard down for 2 turns."
+power = 1.3
+cooldown = 4
+effects = [{ kind = "defense_down", turns = 2, value = 0.5 }]
+
+[skills.quick_step]
+name = "Quick Step"
+description = "Move faster for 2 turns and take a step toward your next turn."
+target = "self"
+cooldown = 4
+effects = [{ kind = "speed_up", on = "self", turns = 2, value = 0.3 }, { kind = "meter", on = "self", value = 0.3 }]
+
+[skills.sanguine_priming]
+name = "Sanguine Priming"
+description = "Prime the blade: your next damaging skill deals double."
+target = "self"
+cooldown = 4
+effects = [{ kind = "empower", on = "self", turns = 3, value = 2.0 }]
+
+[skills.enter_the_mind]
+name = "Enter the Mind"
+description = "Strike at a foe's mind. For 3 turns you see what every enemy will do next."
+power = 1.1
+cooldown = 4
+effects = [{ kind = "reveal", on = "self", turns = 3 }]
+
+[skills.glistening_haven]
+name = "Glistening Haven"
+description = "Strike, then heal yourself for 25% of your max hp."
+power = 1.2
+cooldown = 3
+effects = [{ kind = "heal", on = "self", value = 0.25 }]
+
+# enemy skills
+[skills.armor_slam]
+name = "Armor Slam"
+power = 1.6
+cooldown = 3
+effects = [{ kind = "stun", chance = 40 }]
+
+[skills.rattle]
+name = "Bone Rattle"
+power = 0.8
+cooldown = 3
+effects = [{ kind = "bleed", turns = 3, value = 0.25 }]
+
+# --- what each sword lets you do (the first skill is the basic, with no cooldown) ------------------------------------------
+[kits]
+default = ["slash"]  # bare hands
+largebranch = ["slash", "cleave"]
+rustedbroadsword = ["slash", "cleave", "sanguine_priming"]
+dreamnail = ["slash", "guard_break", "enter_the_mind", "quick_step"]
+shiningsilver = ["slash", "cleave", "glistening_haven", "guard_break"]
+
+# --- fights you can pick -------------------------------------------------------------------------------------------------
+[encounters.graveyard_lone]
+name = "A lone zombie"
+enemies = ["zombie"]
+
+[encounters.graveyard_pair]
+name = "Zombie and skeleton"
+enemies = ["zombie", "skeleton"]
+min_level = 3
+
+[encounters.graveyard_horde]
+name = "The graveyard shift"
+enemies = ["armored_zombie", "skeleton", "zombie"]
+min_level = 8

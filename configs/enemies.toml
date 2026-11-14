@@ -1,16 +1,30 @@
-# Combat enemies. shield absorbs damage before hp.
+# Combat enemies. skills are in priority order (the first one off cooldown is used); shield absorbs damage before hp.
+# TODO(balance): every number here. Speed 100 is a normal player. xp is combat xp for the kill.
 [zombie]
 name = "Zombie"
-attack = 1
-hp = 3
+emoji = "🧟"
+attack = 12
+hp = 90
+speed = 90
+skills = ["strike"]
+xp = 40
 
 [armored_zombie]
 name = "Armored Zombie"
-attack = 1
-hp = 3
-shield = 3
+emoji = "🧟‍♂️"
+attack = 12
+hp = 90
+shield = 60
+defense = 25
+speed = 85
+skills = ["armor_slam", "strike"]
+xp = 70
 
 [skeleton]
 name = "Skeleton"
-attack = 3
-hp = 1
+emoji = "💀"
+attack = 22
+hp = 45
+speed = 115
+skills = ["rattle", "strike"]
+xp = 55

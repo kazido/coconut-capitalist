@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import EconomyRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
+from .models import CombatRules, EconomyRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -61,6 +61,7 @@ class Registry:
         farming: FarmingRules | None = None,
         foraging: ForagingRules | None = None,
         fishing: FishingRules | None = None,
+        combat: CombatRules | None = None,
     ):
         self.items: dict[str, Item] = {i.id: i for i in items}
         self.pets: dict[str, Pet] = {p.id: p for p in pets}
@@ -72,6 +73,7 @@ class Registry:
         self.farming = farming
         self.foraging = foraging
         self.fishing = fishing
+        self.combat = combat
         self._validate()
 
     # --- lookups -------------------------------------------------------------------------
@@ -170,11 +172,33 @@ class Registry:
             problems.append(f"foraging.toml releaf: unknown spirit item '{self.foraging.releaf.spirit_item}'")
         if self.farming is not None and self.farming.deed_item not in self.items:
             problems.append(f"farming.toml: unknown deed item '{self.farming.deed_item}'")
+        if self.combat is not None:
+            problems += _validate_combat(self, self.combat)
         expected = list(range(len(self.ranks)))
         if sorted(self.ranks) != expected:
             problems.append(f"ranks must be numbered 0..{len(self.ranks) - 1} without gaps")
         if problems:
             raise RegistryError("; ".join(problems))
+
+
+def _validate_combat(reg: "Registry", rules: CombatRules) -> list[str]:
+    problems = []
+    for key, skill in rules.skills.items():
+        if key != skill.id:
+            problems.append(f"combat.toml skill '{key}' has id '{skill.id}'")
+    for enemy in reg.enemies.values():
+        problems += [f"enemies.toml [{enemy.id}]: unknown skill '{s}'" for s in enemy.skills if s not in rules.skills]
+    for kit, skills in rules.kits.items():
+        if kit != "default" and (kit not in reg.items or reg.items[kit].tool is None or reg.items[kit].tool.kind != "sword"):
+            problems.append(f"combat.toml kits: '{kit}' is not a sword")
+        problems += [f"combat.toml kits.{kit}: unknown skill '{s}'" for s in skills if s not in rules.skills]
+        if not skills or rules.skills.get(skills[0]) and rules.skills[skills[0]].cooldown:
+            problems.append(f"combat.toml kits.{kit}: the first skill must have no cooldown")
+    if "default" not in rules.kits:
+        problems.append("combat.toml kits: a 'default' kit is needed")
+    for enc in rules.encounters:
+        problems += [f"combat.toml encounter '{enc.id}': unknown enemy '{e}'" for e in enc.enemies if e not in reg.enemies]
+    return problems
 
 
 BOMB_ITEM = "scarab_bomb"  # the consumable that clears a row (see services.mining.use_bomb)
@@ -221,7 +245,11 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     farming = _build(FarmingRules, "farming", [("farming", _read(config_dir, "farming"))])[0]
     foraging = _build(ForagingRules, "foraging", [("foraging", _read(config_dir, "foraging"))])[0]
     fishing = _build(FishingRules, "fishing", [("fishing", _read(config_dir, "fishing"))])[0]
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing)
+    raw = _read(config_dir, "combat")
+    raw["skills"] = {k: {"id": k, **v} for k, v in raw.get("skills", {}).items()}
+    raw["encounters"] = [{"id": k, **v} for k, v in raw.get("encounters", {}).items()]
+    combat = _build(CombatRules, "combat", [("combat", raw)])[0]
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat)
 
 
 @lru_cache(maxsize=1)

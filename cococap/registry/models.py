@@ -204,14 +204,113 @@ class Pet(_Data):
     _id = field_validator("id")(check_id)
 
 
+EffectKind = Literal[
+    "attack_up", "attack_down", "defense_up", "defense_down", "speed_up", "speed_down",  # stat changes: value = fraction (0.3 = 30%)
+    "stun",  # the unit loses its turn
+    "bleed",  # damage every turn, ignores defense: value = fraction of the caster's attack
+    "shield",  # absorbs damage: value = fraction of the caster's max hp
+    "heal",  # instant: value = fraction of the target's max hp
+    "meter",  # turn meter: value = fraction of a full bar, negative pulls it back
+    "empower",  # the unit's next damaging skill deals value x damage (once)
+    "reveal",  # the player can see what each enemy will do next
+]
+SkillTarget = Literal["enemy", "all_enemies", "self", "ally"]
+BUFFS = frozenset({"attack_up", "defense_up", "speed_up", "shield", "empower", "reveal"})
+
+
+class SkillEffect(_Data):
+    """Something a skill does besides damage. Timed effects (stat changes, stun, bleed, ...) last `turns` of the
+    affected unit's own turns. `chance` is rolled for every target; `on` says who receives it."""
+
+    kind: EffectKind
+    on: Literal["target", "self"] = "target"
+    chance: int = Field(default=100, ge=1, le=100)
+    turns: int = Field(default=1, ge=1)
+    value: float = 0
+
+    @model_validator(mode="after")
+    def _needs_value(self):
+        if self.kind not in {"stun", "reveal"} and self.value == 0:
+            raise ValueError(f"effect '{self.kind}' needs a value")
+        return self
+
+
+class CombatSkill(_Data):
+    """An action in a fight. `power` multiplies the user's attack (0 = no damage). A skill with a cooldown can be used
+    again after that many of the user's own turns; cooldown 0 can be used every turn."""
+
+    id: str
+    name: str
+    description: str = ""
+    power: float = Field(default=0, ge=0)
+    target: SkillTarget = "enemy"
+    cooldown: int = Field(default=0, ge=0)
+    hits: int = Field(default=1, ge=1)
+    effects: list[SkillEffect] = Field(default_factory=list)
+
+    _id = field_validator("id")(check_id)
+
+    @model_validator(mode="after")
+    def _does_something(self):
+        if self.power == 0 and not self.effects:
+            raise ValueError("a skill needs power or an effect")
+        if self.power > 0 and self.target in {"self", "ally"}:
+            raise ValueError("damaging skills must target enemies")
+        return self
+
+
 class Enemy(_Data):
+    """A monster. `skills` are in priority order: it uses the first one that is off cooldown."""
+
     id: str
     name: str
     attack: int = Field(ge=0)
     hp: int = Field(ge=1)
     shield: int = Field(default=0, ge=0)
+    defense: int = Field(default=0, ge=0)
+    speed: int = Field(default=100, ge=1)
+    skills: list[str] = Field(default_factory=lambda: ["strike"], min_length=1)
+    immune: list[EffectKind] = Field(default_factory=list)  # effects it can never receive (bosses shrug off stuns)
+    xp: int = Field(default=0, ge=0)
+    emoji: str = "👾"
 
     _id = field_validator("id")(check_id)
+
+
+class PlayerRules(_Data):
+    """A player's fighting stats: from their combat level and the sword in their hand."""
+
+    base_hp: int = Field(ge=1)
+    hp_per_level: int = Field(ge=0)
+    base_attack: int = Field(ge=1)
+    attack_per_power: int = Field(ge=0)  # per point of sword power
+    attack_per_level: int = Field(ge=0)
+    base_defense: int = Field(ge=0)
+    defense_per_level: int = Field(ge=0)
+    speed: int = Field(ge=1)
+
+
+class Encounter(_Data):
+    """A fight the player can pick: a group of enemies. `min_level` is the combat level that opens it."""
+
+    id: str
+    name: str
+    enemies: list[str] = Field(min_length=1, max_length=4)
+    min_level: int = Field(default=0, ge=0)
+
+    _id = field_validator("id")(check_id)
+
+
+class CombatRules(_Data):
+    meter_full: int = Field(ge=1)  # a unit acts when its turn meter reaches this
+    defense_scale: int = Field(ge=1)  # damage = attack x power x scale / (scale + defense)
+    crit_chance: int = Field(ge=0, le=100)
+    crit_damage: float = Field(ge=1)
+    max_rounds: int = Field(ge=1)  # a fight this long is a loss (stops stalemates)
+    player: PlayerRules
+    skills: dict[str, CombatSkill]
+    kits: dict[str, list[str]]  # sword item id (or "default") -> skill ids, basic skill first
+    encounters: list[Encounter] = Field(min_length=1)
 
 
 class Rank(_Data):
