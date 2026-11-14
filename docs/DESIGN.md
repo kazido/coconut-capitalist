@@ -215,6 +215,16 @@ each) x level (a fresh pet does half, a max one all of it).
 | Python | faster crab pots |
 | Crab | rarer fish in crab pots |
 | Dragon | hallucinations and chests more often |
+| Otter / Seal | +8% / +14% fishing xp |
+| Beaver / Woodpecker | +8% / +14% foraging xp |
+| Mole / Badger | +8% / +14% mining xp |
+| Rabbit / Hedgehog | +8% / +14% farming xp |
+| Wolf / Lion | +10% / +18% combat xp (combat is coming) |
+| Phoenix | +10% xp in every skill |
+
+**Hunting a pet.** Pick a pet to hunt in the Pet House and orbs are `8x` likelier to give it, plus `1x` more for every orb
+that missed it (up to `40x`), so a long streak of bad luck makes the next orb better. A hit resets the count; a pet you
+already have at every star can't be hunted. The chance per orb is shown for every pet and for your hunt.
 
 The pet bonuses stack with the party xp bonus. All numbers are in `configs/pets.toml` (`TODO(balance)`).
 

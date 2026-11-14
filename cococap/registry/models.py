@@ -663,6 +663,9 @@ class PetRules(_Data):
     level_floor: float = Field(gt=0, le=1)  # a level-1 pet gives this share of its bonus; max level gives all of it
     spirit_bonus: float = Field(ge=0)  # a Spirit given to a pet: +this xp in its skill while that pet is active
     maxed_xp: int = Field(ge=0)  # a duplicate of a pet that already has every star gives it this much xp
+    target_boost: float = Field(ge=1)  # a targeted pet is this many times likelier from an orb...
+    pity_boost: float = Field(ge=0)  # ...plus this much more for every orb that missed it
+    max_boost: float = Field(ge=1)  # ...but never more than this many times
     orb_weights: dict[int, float]  # chance weight of each rarity when you open a Familiar Orb
 
 

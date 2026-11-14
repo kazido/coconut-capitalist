@@ -55,6 +55,21 @@ class PetScreen(Screen):
 
         orbs = owned_items.get(pets.ORB, 0)
         body.append(sep())
+        if house.target in reg.pets:
+            chance = pets.orb_odds(reg, house.target, house.misses)[house.target]
+            body.append(text(f"🎯 **Hunting {reg.pets[house.target].emoji} {reg.pets[house.target].name}**  ·  "
+                             f"**{chance:.1%}** per orb (×{pets.target_boost(house.misses, reg):g})"
+                             + (f"  ·  {house.misses} misses so far make it likelier" if house.misses else "")))
+        hunt = [discord.SelectOption(label="No target", value="none", emoji="🚫", default=house.target is None)]
+        for pet in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)):
+            mine = house.pets.get(pet.id)
+            if mine is not None and mine.stars >= rules.max_stars:
+                continue  # nothing left to hunt
+            chance = pets.orb_odds(reg, pet.id, 0)[pet.id]
+            hunt.append(discord.SelectOption(label=f"{pet.name}" + (f" ({mine.stars}★)" if mine else ""), value=pet.id, emoji=pet.emoji,
+                                             description=f"rarity {pet.rarity}  ·  {chance:.1%} per orb when hunted",
+                                             default=pet.id == house.target))
+        body.append(row(select("Hunt a pet (orbs favour it)...", hunt[:25], self._hunt)))
         body.append(row(button(f"Open a Familiar Orb ({orbs})", emoji="🔮", style=discord.ButtonStyle.primary, disabled=orbs < 1,
                                on_click=self._open_orb)))
         if house.active in house.pets:
@@ -72,6 +87,10 @@ class PetScreen(Screen):
                                        self._spirit)))
         return Page("Pets", body, accent=0x27AE60)
 
+    async def _hunt(self, interaction: discord.Interaction, values: list[str]) -> None:
+        pet = await pets.set_target(self.user, None if values[0] == "none" else values[0])
+        await self.refresh(interaction, f"🎯 Orbs now favour {pet.emoji} **{pet.name}**." if pet else "🎯 You are not hunting anything now.")
+
     async def _switch(self, interaction: discord.Interaction, values: list[str]) -> None:
         pet = await pets.set_active(self.user, values[0])
         await self.refresh(interaction, f"{pet.emoji} **{pet.name}** is your active pet now.")
@@ -81,7 +100,7 @@ class PetScreen(Screen):
         reg = get_registry()
         pet = got.pet
         mine = self.user.pethouse.pets[pet.id]  # (open_orb has refreshed the player)
-        lines = [f"### {pet.emoji} {pet.name}  {stars_text(got.stars)}",
+        lines = [f"### {pet.emoji} {pet.name}  {stars_text(got.stars)}" + ("  🎯 **Target hit!**" if got.target_hit else ""),
                  "**A new friend!**" if got.is_new else (f"Another {pet.name}! It now has **{got.stars}** stars." if not got.maxed
                                                         else f"You already have a five-star {pet.name}: it gains {reg.economy.pets.maxed_xp:,} xp instead."),
                  "\n".join(f"▸ {line}" for line in pets.describe(pet, mine, reg)), f"-# {pet.description}"]

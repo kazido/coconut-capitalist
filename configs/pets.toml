@@ -114,3 +114,113 @@ description = "Hoards treasure, and can smell it. Hallucinations and chests come
 stat = "treasure_luck"
 value = 0.35
 text = "+{v:.0%} hallucination and chest chance"
+
+[otter]
+name = "Otter"
+emoji = "🦦"
+rarity = 2
+description = "Plays in the water and finds the fish. Teaches you a thing or two about fishing."
+[[otter.bonuses]]
+stat = "xp_fishing"
+value = 0.08
+text = "+{v:.0%} fishing xp"
+
+[beaver]
+name = "Beaver"
+emoji = "🦫"
+rarity = 2
+description = "A born lumberjack. Trees teach you more around it."
+[[beaver.bonuses]]
+stat = "xp_foraging"
+value = 0.08
+text = "+{v:.0%} foraging xp"
+
+[mole]
+name = "Mole"
+emoji = "🐀"
+rarity = 2
+description = "Happiest underground. Every dig teaches you more."
+[[mole.bonuses]]
+stat = "xp_mining"
+value = 0.08
+text = "+{v:.0%} mining xp"
+
+[rabbit]
+name = "Rabbit"
+emoji = "🐇"
+rarity = 2
+description = "Loves a vegetable patch. Farming comes more easily."
+[[rabbit.bonuses]]
+stat = "xp_farming"
+value = 0.08
+text = "+{v:.0%} farming xp"
+
+[wolf]
+name = "Wolf"
+emoji = "🐺"
+rarity = 3
+description = "A fighter's companion. (Combat is coming.)"
+[[wolf.bonuses]]
+stat = "xp_combat"
+value = 0.1
+text = "+{v:.0%} combat xp"
+
+[seal]
+name = "Seal"
+emoji = "🦭"
+rarity = 4
+description = "A master of the waves. Fishing practice goes a long way."
+[[seal.bonuses]]
+stat = "xp_fishing"
+value = 0.14
+text = "+{v:.0%} fishing xp"
+
+[woodpecker]
+name = "Woodpecker"
+emoji = "🐦"
+rarity = 4
+description = "Knows trees inside out. You learn faster from every one."
+[[woodpecker.bonuses]]
+stat = "xp_foraging"
+value = 0.14
+text = "+{v:.0%} foraging xp"
+
+[badger]
+name = "Badger"
+emoji = "🦡"
+rarity = 4
+description = "Digs like it was born to. Mining lessons stick."
+[[badger.bonuses]]
+stat = "xp_mining"
+value = 0.14
+text = "+{v:.0%} mining xp"
+
+[hedgehog]
+name = "Hedgehog"
+emoji = "🦔"
+rarity = 4
+description = "Tends the garden with care. Farming practice pays more."
+[[hedgehog.bonuses]]
+stat = "xp_farming"
+value = 0.14
+text = "+{v:.0%} farming xp"
+
+[lion]
+name = "Lion"
+emoji = "🦁"
+rarity = 5
+description = "A king among fighters. (Combat is coming.)"
+[[lion.bonuses]]
+stat = "xp_combat"
+value = 0.18
+text = "+{v:.0%} combat xp"
+
+[phoenix]
+name = "Phoenix"
+emoji = "🔥"
+rarity = 5
+description = "Reborn with every lesson. Everything you learn burns a little brighter."
+[[phoenix.bonuses]]
+stat = "xp_all"
+value = 0.1
+text = "+{v:.0%} xp in every skill"

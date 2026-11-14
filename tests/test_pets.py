@@ -105,7 +105,7 @@ async def test_opening_an_orb_spends_it_gives_a_pet_and_the_first_one_starts_wor
 
 async def test_a_duplicate_adds_a_star_and_a_maxed_one_gives_xp_instead(db, monkeypatch):
     user = await User.get(1)
-    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg: REG.pets["dog"])
+    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0: REG.pets["dog"])
     await user.add_item(pets.ORB, 8)
     stars = [(await pets.open_orb(user, Random(1), REG)).stars for _ in range(RULES.max_stars)]
     assert stars == [1, 2, 3, 4, 5]
@@ -304,7 +304,7 @@ async def test_the_pet_house_for_someone_with_no_pets_explains_orbs(db):
 
 
 async def test_opening_an_orb_from_the_pet_house_shows_a_result_page(db, monkeypatch):
-    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg: REG.pets["cat"])
+    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0: REG.pets["cat"])
     user = await User.get(1)
     await user.add_item(pets.ORB, 2)
     nav, inter = await hub("pets")
@@ -343,3 +343,95 @@ async def test_the_home_page_links_to_the_pet_house(db):
     await click(nav, inter, "Pets")
     assert nav.screen.id == "pets"
     assert asyncio and buttons and set_columns
+
+
+# ---- focused xp pets ---------------------------------------------------------------------------------------------------------------
+def test_every_skill_has_a_pet_that_boosts_just_its_xp_and_a_better_one_is_rarer():
+    for skill in ("fishing", "mining", "foraging", "farming", "combat"):
+        focused = sorted((p for p in REG.pets.values() if any(b.stat == f"xp_{skill}" for b in p.bonuses)), key=lambda p: p.rarity)
+        assert len(focused) >= 2, skill
+        values = [next(b.value for b in p.bonuses if b.stat == f"xp_{skill}") for p in focused]
+        assert values == sorted(values) and values[-1] > values[0], skill  # the rarer pet gives more
+        koala = REG.pets["koala"].bonuses[0].value
+        assert values[-1] > koala  # a specialist beats the all-rounder at its own skill
+    assert len(REG.pets) >= 20
+
+
+async def test_a_specialist_pet_boosts_only_its_own_skill(db):
+    user = await with_pet("otter")
+    assert await xp_multiplier(user.id, REG, "fishing") == pytest.approx(1 + REG.pets["otter"].bonuses[0].value)
+    for other in ("mining", "foraging", "farming"):
+        assert await xp_multiplier(user.id, REG, other) == 1.0
+    phoenix = await with_pet("phoenix", user_id=2)
+    assert await xp_multiplier(phoenix.id, REG, "mining") == pytest.approx(1 + REG.pets["phoenix"].bonuses[0].value)
+
+
+# ---- the target system ----------------------------------------------------------------------------------------------------------------
+def test_the_odds_add_up_and_a_target_is_much_likelier_with_every_miss_making_it_more_so():
+    plain = pets.orb_odds(REG)
+    assert sum(plain.values()) == pytest.approx(1.0) and set(plain) == set(REG.pets)
+    aimed = pets.orb_odds(REG, "dragon")
+    assert aimed["dragon"] == pytest.approx(plain["dragon"] * RULES.target_boost / (1 + plain["dragon"] * (RULES.target_boost - 1)), rel=0.01)
+    assert aimed["dragon"] > 5 * plain["dragon"] and sum(aimed.values()) == pytest.approx(1.0)
+    chances = [pets.orb_odds(REG, "dragon", misses)["dragon"] for misses in (0, 5, 10, 20, 100)]
+    assert chances == sorted(chances) and chances[-1] > chances[0] * 2
+    assert pets.target_boost(10**6, REG) == RULES.max_boost  # there is a ceiling
+    assert all(aimed[p] < plain[p] for p in plain if p != "dragon")  # everything else is a little less likely
+
+
+def test_aiming_really_does_get_you_the_pet_more_often():
+    def hits(target, misses=0, n=20000):
+        rng = Random(2)
+        return sum(pets.roll_pet(rng, REG, target, misses).id == "dragon" for _ in range(n))
+
+    assert hits("dragon") > 5 * hits(None) > 0
+    assert hits("dragon", misses=15) > hits("dragon")
+
+
+async def test_misses_pile_up_a_hit_resets_them_and_a_maxed_target_is_dropped(db, monkeypatch):
+    user = await User.get(1)
+    await user.add_item(pets.ORB, 12)
+    await pets.set_target(user, "dragon", REG)
+    seen = []
+    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0: (seen.append((target, misses)) or REG.pets["dog"]))
+    for _ in range(3):
+        got = await pets.open_orb(user, Random(1), REG)
+        assert not got.target_hit
+    assert seen == [("dragon", 0), ("dragon", 1), ("dragon", 2)] and user.pethouse.misses == 3
+    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0: REG.pets["dragon"])
+    hit = await pets.open_orb(user, Random(1), REG)
+    assert hit.target_hit and user.pethouse.misses == 0 and user.pethouse.target == "dragon" and user.pethouse.pets["dragon"].stars == 1
+    for _ in range(RULES.max_stars - 1):
+        await pets.open_orb(user, Random(1), REG)
+    assert user.pethouse.pets["dragon"].stars == RULES.max_stars
+    assert user.pethouse.target is None  # you have every star: nothing left to hunt
+
+
+async def test_choosing_a_new_target_starts_the_count_again_and_nonsense_is_refused(db):
+    user = await User.get(1)
+    await pets.set_target(user, "dragon", REG)
+    await user.update_pethouse(lambda h: setattr(h, "misses", 7))
+    await pets.set_target(user, "dragon", REG)  # same one: keep the misses
+    assert user.pethouse.misses == 7
+    await pets.set_target(user, "cat", REG)
+    assert user.pethouse.target == "cat" and user.pethouse.misses == 0
+    assert await pets.set_target(user, None, REG) is None and user.pethouse.target is None
+    with pytest.raises(pets.PetError, match="no such pet"):
+        await pets.set_target(user, "unicorn", REG)
+    await with_pet("dog", stars=RULES.max_stars)
+    with pytest.raises(pets.PetError, match="every star"):
+        await pets.set_target(user, "dog", REG)
+
+
+async def test_the_pet_house_lets_you_aim_and_shows_your_chances(db):
+    user = await User.get(1)
+    await user.add_item(pets.ORB, 1)
+    nav, inter = await hub("pets")
+    await choose(nav, inter, select_named(nav, "Hunt a pet"), "dragon")
+    await user.refresh()
+    assert user.pethouse.target == "dragon"
+    page = all_text(nav)
+    assert "Dragon" in page and "Hunting" in page and "%" in page
+    await choose(nav, inter, select_named(nav, "Hunt a pet"), "none")
+    await user.refresh()
+    assert user.pethouse.target is None and "Hunting" not in all_text(nav)

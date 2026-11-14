@@ -25,7 +25,8 @@ KNOWN_STATS = frozenset({
     "danger_reduction", "ore_yield",  # mining
     "good_chop",  # foraging
     "grow_chance", "crop_yield",  # farming
-    "xp_all",  # every skill's xp (and xp_<skill> for a Spirit)
+    "xp_all",  # every skill's xp
+    "xp_fishing", "xp_mining", "xp_foraging", "xp_farming", "xp_combat",  # one skill's xp (a Spirit gives one of these too)
 })
 
 
@@ -93,14 +94,32 @@ class OrbResult:
     is_new: bool
     stars: int
     maxed: bool  # you had it at full stars: it gave xp instead
+    target_hit: bool = False  # it was the pet you were hunting
 
 
-def roll_pet(rng: random.Random, registry: Registry) -> Pet:
+def target_boost(misses: int, registry: Registry) -> float:
+    """How many times likelier your targeted pet is: a base boost, plus a little more for every orb that missed it."""
+    rules = registry.economy.pets
+    return min(rules.max_boost, rules.target_boost + rules.pity_boost * max(0, misses))
+
+
+def orb_odds(registry: Registry, target: str | None = None, misses: int = 0) -> dict[str, float]:
+    """The chance of each pet from one orb (they add up to 1). Each rarity has a weight shared among its species, and a
+    targeted pet's share is boosted."""
     weights = registry.economy.pets.orb_weights
-    pets = sorted(registry.pets.values(), key=lambda p: p.id)
-    total_by_rarity = {r: sum(1 for p in pets if p.rarity == r) for r in weights}
-    # each rarity has its weight, shared among the species of that rarity
-    return rng.choices(pets, weights=[weights.get(p.rarity, 0) / max(1, total_by_rarity.get(p.rarity, 1)) for p in pets])[0]
+    pets_ = sorted(registry.pets.values(), key=lambda p: p.id)
+    per_rarity = {r: sum(1 for p in pets_ if p.rarity == r) for r in weights}
+    raw = {p.id: weights.get(p.rarity, 0) / max(1, per_rarity.get(p.rarity, 1)) for p in pets_}
+    if target in raw:
+        raw[target] *= target_boost(misses, registry)
+    total = sum(raw.values())
+    return {pet_id: w / total for pet_id, w in raw.items()}
+
+
+def roll_pet(rng: random.Random, registry: Registry, target: str | None = None, misses: int = 0) -> Pet:
+    odds = orb_odds(registry, target, misses)
+    ids = sorted(odds)
+    return registry.pets[rng.choices(ids, weights=[odds[i] for i in ids])[0]]
 
 
 async def open_orb(user: User, rng: random.Random, registry: Registry | None = None) -> OrbResult:
@@ -111,10 +130,15 @@ async def open_orb(user: User, rng: random.Random, registry: Registry | None = N
         await user.remove_item(ORB, 1)
     except ValueError:
         raise PetError("You don't have a Familiar Orb.") from None
-    pet = roll_pet(rng, reg)
+    house_now = user.pethouse
+    pet = roll_pet(rng, reg, house_now.target, house_now.misses)
     outcome: dict = {}
 
     def add(house: Pethouse) -> None:
+        if house.target:  # hunting a pet: a miss makes the next orb likelier, a hit resets it
+            hit = pet.id == house.target
+            outcome["target_hit"] = hit
+            house.misses = 0 if hit else house.misses + 1
         owned = house.pets.get(pet.id)
         if owned is None:
             house.pets[pet.id] = OwnedPet()
@@ -127,16 +151,38 @@ async def open_orb(user: User, rng: random.Random, registry: Registry | None = N
         else:
             owned.xp += rules.maxed_xp
             outcome.update(new=False, stars=owned.stars, maxed=True)
+        if house.target and house.target in house.pets and house.pets[house.target].stars >= rules.max_stars:
+            house.target, house.misses = None, 0  # you have it at full stars: nothing left to hunt
 
     try:
         await user.update_pethouse(add)
     except Exception:
         await user.add_item(ORB, 1)  # the pet never arrived: the orb isn't wasted
         raise
-    return OrbResult(pet, outcome["new"], outcome["stars"], outcome["maxed"])
+    return OrbResult(pet, outcome["new"], outcome["stars"], outcome["maxed"], bool(outcome.get("target_hit")))
 
 
 # ---- looking after them -------------------------------------------------------------------------------------
+async def set_target(user: User, pet_id: str | None, registry: Registry | None = None) -> Pet | None:
+    """Choose the pet you are hunting (None to stop). Orbs are likelier to give it, and likelier still for every miss."""
+    reg = registry or get_registry()
+    if pet_id is not None and pet_id not in reg.pets:
+        raise PetError("There is no such pet.")
+    if pet_id is not None:
+        await user.refresh()
+        owned = user.pethouse.pets.get(pet_id)
+        if owned is not None and owned.stars >= reg.economy.pets.max_stars:
+            raise PetError(f"Your {reg.pets[pet_id].name} already has every star.")
+
+    def aim(house: Pethouse) -> None:
+        if house.target != pet_id:
+            house.misses = 0  # a new hunt starts from nothing
+        house.target = pet_id
+
+    await user.update_pethouse(aim)
+    return reg.pets[pet_id] if pet_id else None
+
+
 async def set_active(user: User, pet_id: str, registry: Registry | None = None) -> Pet:
     reg = registry or get_registry()
     outcome: dict = {}

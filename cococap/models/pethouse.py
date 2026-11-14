@@ -10,6 +10,8 @@ class OwnedPet(BaseModel):
 class Pethouse(BaseModel):
     active: str | None = None  # the species whose bonuses are in effect
     pets: dict[str, OwnedPet] = Field(default_factory=dict)  # species id -> your one pet of that kind
+    target: str | None = None  # the pet you are hunting: orbs are likelier to give it
+    misses: int = 0  # orbs opened since that missed it (makes the next one likelier)
 
     @field_validator("active", mode="before")
     @classmethod

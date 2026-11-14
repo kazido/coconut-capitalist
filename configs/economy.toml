@@ -41,6 +41,9 @@ star_bonus = 0.25                  # +25% bonus per extra star
 level_floor = 0.5                  # a fresh pet does half its bonus; a max level one does all of it
 spirit_bonus = 0.15                # a Spirit adds +15% xp in its skill while the pet is active
 maxed_xp = 2000
+target_boost = 8.0                 # a pet you are hunting is this many times likelier from an orb...
+pity_boost = 1.0                   # ...and +1 more for every orb that missed it (reset when you get it)
+max_boost = 40.0                   # ...up to this many times
 [pets.orb_weights]                 # what an orb can turn out to be
 1 = 40
 2 = 30
