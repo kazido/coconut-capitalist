@@ -532,3 +532,27 @@ serialized transaction per change, like everything else):
   it, once, collected from the page (this month's and last month's).
 
 Not built yet (wiki): fish that appear in channels like drops.
+
+## Combat (`/fight`; first slice built)
+
+Modelled on Summoners War: **a turn-meter battle with cooldowns and no consumables.** Engine: `services/combat.py` (no Discord,
+seedable rng), data: `configs/combat.toml` + `configs/enemies.toml`, screen: `screens/fight.py`. All numbers `TODO(balance)`.
+
+- **Turn meter.** Every unit has a speed; its meter fills by that much per tick and the first to reach 100 acts, then drops to 0.
+  The screen shows the next 7 turns, so speed, slows and meter pushes (`meter` effect) are real tactics.
+- **Skills, not items.** Each sword gives a *kit* (`[kits]`): skill 1 is always free, the rest have **cooldowns** (a cooldown of 3
+  means it is back on your 4th turn). Nothing is consumed. Swords unlock more skills (Rusted Broadsword: Sanguine Priming,
+  Dreamnail: Enter the Mind, Shining Silver: Glistening Haven); bare hands only have Slash.
+- **Damage** = attack x skill power x 100 / (100 + defense), only crits are random (15%, x1.5). Shields soak damage first.
+- **Effects** last N of the *affected unit's own* turns: attack/defense/speed up or down, stun (skips the turn), bleed (ignores
+  defense), shield, heal, meter push/pull, empower (next damaging skill x2), reveal (see each enemy's next skill). `chance` is
+  rolled per target; an enemy's `immune` list (bosses: stun) blocks an effect outright. Re-applying refreshes, never stacks.
+- **Enemies** use the first of their `skills` that is off cooldown, so they are readable. Their next skill is planned ahead
+  (`next_skill`); only Enter the Mind shows it for now.
+- **Player stats** come from combat level and the equipped sword's power (`[player]`). A fight is a one-off: you start at full hp,
+  losing costs nothing, a win pays the enemies' combat xp and counts kills.
+- **A fight can last at most `max_rounds` turns** (a stalemate is a loss).
+
+Planned around it: **dungeon keys that drop from these enemies** are the only way into a dungeon; the **final boss** (phases,
+stun-immune, its own skills) closes the dungeon; **enemy drops** become a weighted table of bits *or any item*, with a small
+chance at rare things (the same table also feeds channel drops); then party fights (several player units already work in the engine).

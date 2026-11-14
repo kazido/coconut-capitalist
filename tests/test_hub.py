@@ -404,11 +404,11 @@ async def test_home_links_really_open_the_declared_screens(db):
         assert opened <= set(SCREENS[parent].links) and opened, (parent, opened)
 
 
-async def test_skills_page_lists_all_five_and_only_four_are_open(db):
+async def test_skills_page_lists_all_five_and_all_are_open(db):
     nav, _ = await hub("skills")
     text = all_text(nav)
     assert all(name in text for name in ("Mining", "Farming", "Foraging", "Fishing", "Combat"))
-    assert len([b for b in buttons(nav) if b.label == "Soon" and b.disabled]) == 1  # combat
+    assert not [b for b in buttons(nav) if b.label == "Soon"]
 
 
 async def test_shop_has_a_section_per_skill_and_filters(db):

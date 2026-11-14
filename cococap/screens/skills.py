@@ -11,7 +11,7 @@ SKILL_INFO = {
     "farming": ("Plan your plots and wait for the rain.", "farm"),
     "foraging": ("Fell trees alone or together with the whole server.", "forage"),
     "fishing": ("Cast a line, reel in the big one and sell your catch.", "fish"),
-    "combat": ("Fight through dungeons with your party.", None),
+    "combat": ("Turn-based fights: speed, cooldowns, timing.", "fight"),
 }
 
 
@@ -20,7 +20,7 @@ class SkillsScreen(Screen):
     label = "Skills"
     emoji = "📈"
     description = "Mining, farming, foraging, fishing and combat"
-    links = ("mining", "farm", "forage", "fish")
+    links = ("mining", "farm", "forage", "fish", "fight")
 
     async def build(self) -> Page:
         body = [*self.note_block()]

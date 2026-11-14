@@ -10,6 +10,7 @@ from .casino import CasinoScreen
 from .checkin import CheckInScreen
 from .highlow import HighLowScreen
 from .farm import FarmScreen
+from .fight import FightScreen
 from .flashcard import FlashcardScreen
 from .fish import FishBookScreen, FishCommunityScreen, FishPotsScreen, FishNotesScreen, FishQuestsScreen, FishRecordsScreen, FishScreen
 from .enchant import EnchantScreen
@@ -48,6 +49,7 @@ SCREENS: dict[str, type[Screen]] = {
         CheckInScreen,
         SkillsScreen,
         FarmScreen,
+        FightScreen,
         ForageScreen,
         FishScreen,
         FishQuestsScreen,
