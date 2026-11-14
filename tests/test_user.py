@@ -213,3 +213,24 @@ async def test_deleting_a_user_cascades(db):
     async with get_database().session() as session:
         await session.execute(text("DELETE FROM users WHERE discord_id = 1"))
         assert (await session.scalars(select(ItemRow))).all() == []
+
+
+# ---- rank buffs --------------------------------------------------------------------------------------------------------------------
+async def test_a_higher_rank_gives_more_xp_in_every_skill(db):
+    from cococap.registry import get_registry
+    from cococap.services.party import xp_multiplier
+
+    reg = get_registry()
+    ranks = sorted(reg.ranks)
+    bonuses = [reg.rank(r).xp_bonus for r in ranks]
+    assert bonuses == sorted(bonuses) and bonuses[0] == 0 and bonuses[-1] == 0.15
+    prices = [reg.rank(r).token_price for r in ranks]
+    assert prices == sorted(prices) and [reg.rank(r).wage for r in ranks] == sorted(reg.rank(r).wage for r in ranks)
+    plain = await make_user(1, rank=1)
+    expert = await make_user(2, rank=8)
+    top = await make_user(3, rank=max(ranks))
+    for skill in ("mining", "farming", "foraging", "fishing"):
+        assert await xp_multiplier(1, reg, skill) == pytest.approx(1.01)
+        assert await xp_multiplier(2, reg, skill) == pytest.approx(1.08)
+        assert await xp_multiplier(3, reg, skill) == pytest.approx(1.15)
+    assert plain.rank == 1 and expert.rank == 8 and top.rank == 15

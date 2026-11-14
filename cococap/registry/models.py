@@ -210,6 +210,7 @@ class Rank(_Data):
     color: str = Field(pattern=r"^[0-9a-fA-F]{6}$")  # hex without '#'
     token_price: int = Field(ge=0)
     wage: int = Field(ge=0)
+    xp_bonus: float = Field(default=0.0, ge=0, le=1)  # a global bonus to every skill's xp, for as long as you hold the rank
 
 
 class Effect(_Data):

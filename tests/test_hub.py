@@ -185,7 +185,7 @@ async def test_rank_up_button_needs_tokens_then_works(db):
 
 
 async def test_rank_screen_at_max_rank(db):
-    await set_columns(await User.get(1), rank=8)
+    await set_columns(await User.get(1), rank=max(get_registry().ranks))
     nav, _ = await hub("rank")
     assert "max rank" in all_text(nav) and not any(b.label == "Rank up" for b in buttons(nav))
 

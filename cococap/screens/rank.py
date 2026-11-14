@@ -18,7 +18,7 @@ class RankScreen(Screen):
         nxt = reg.next_rank(rank.rank_id)
         body = [
             *self.note_block(),
-            text(f"### {rank.emoji} {rank.display_name}\n{rank.description}\n**Wage:** {bits(rank.wage)} bits"),
+            text(f"### {rank.emoji} {rank.display_name}\n{rank.description}\n**Wage:** {bits(rank.wage)} bits  ·  **XP:** +{rank.xp_bonus:.0%} to every skill"),
             sep(),
         ]
         if nxt is None:
@@ -28,7 +28,7 @@ class RankScreen(Screen):
             body.append(
                 section(
                     f"### Next: {nxt.emoji} {nxt.display_name}",
-                    f"Wage **{bits(nxt.wage)}** bits  ·  costs **{bits(nxt.token_price)}** 🪙 (you have {bits(self.user.tokens)})",
+                    f"Wage **{bits(nxt.wage)}** bits  ·  XP +{nxt.xp_bonus:.0%}  ·  costs **{bits(nxt.token_price)}** 🪙 (you have {bits(self.user.tokens)})",
                     accessory=button(
                         "Rank up",
                         emoji="🪙",

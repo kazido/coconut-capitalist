@@ -9,7 +9,7 @@ from cococap.registry.loader import CONFIG_DIR
 
 def test_shipped_game_data_is_valid():
     reg = load_registry()  # raises RegistryError naming file/entry if anything is wrong
-    assert len(reg.items) > 40 and len(reg.ranks) == 9
+    assert len(reg.items) > 40 and len(reg.ranks) == 16
 
 
 def test_works_from_any_working_directory(tmp_path, monkeypatch):
