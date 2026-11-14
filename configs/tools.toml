@@ -1,0 +1,22 @@
+# What a tool's POWER gives besides its main effect. Every upgrade should change several things at once, so it feels like a real step up.
+# All of these are per point of power ABOVE 3 (every tool starts at 3, so a starter tool gets none of them). The main effects (ore per lode,
+# hit points per chop, plots watered, sword attack, and the rod's bites, arrows and luck) are in mining.toml, foraging.toml, farming.toml,
+# combat.toml and fishing.toml.  TODO(balance): all numbers
+
+[pickaxe]
+danger_reduction = 0.003    # tunnels creak this much less (power 71: 20% slower pressure)
+rich_chance = 0.0006        # +this chance of a rich lode in every cell (power 71: +4%)
+braces_every = 25           # +1 brace at the start of every dig per this many points
+
+[axe]
+good_chop = 0.002           # +this chance of a good chop (power 54: +10%)
+wear_slow = 0.005           # the spot you chop wears out this much slower (power 54: 25%)
+
+[can]
+crop_yield = 0.04           # bigger harvests (power 9: +24%)
+drop_luck = 0.08            # more farming drops (power 9: +48%)
+seed_back = 0.03            # the chance a harvest gives its seed back (power 9: 18%)
+
+[sword]
+hp = 3                      # extra max hp in a fight
+defense = 0.25              # extra defense in a fight

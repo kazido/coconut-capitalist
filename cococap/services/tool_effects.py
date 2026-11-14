@@ -1,18 +1,21 @@
-"""What a tool's power actually DOES, in numbers, for each kind of tool. Pure: used by the upgrade and tools pages so a player can see what
-an upgrade gives them ("Ore per lode ×1.5 → ×2.5"). The real mechanics live in mining / foraging / fishing / farming / combat; this only
-reads their rules, so it can never disagree with the game."""
+"""What a tool's power DOES, in numbers, for each kind of tool: one main effect, and several smaller ones that come with it, so every upgrade
+changes a few things at once (like the rod always did). `power_stats` is the single source: the game reads the same numbers the upgrade
+page shows, so the page can never disagree with what really happens. Pure; the rules are in `configs/tools.toml` and the main effect of each
+kind is in that skill's own rules."""
 
 from dataclasses import dataclass
 
 from cococap.registry import Registry, get_registry
 
+BASE_POWER = 3  # every tool starts here; the extras count only the points above it
+
 # one line on what power means for each kind (shown on the upgrade page)
 HOW = {
-    "pickaxe": "⛏️ Power = more ore from every lode you dig.",
-    "axe": "🪓 Power = how much of a tree one chop takes off.",
+    "pickaxe": "⛏️ Power = more ore per lode, slower pressure, more rich lodes and a spare brace now and then.",
+    "axe": "🪓 Power = a bigger bite out of a tree, more good chops, and spots that last longer.",
     "rod": "🎣 Power = faster bites, more forgiven arrows, and rarer and extra fish.",
-    "can": "🚿 Power = how many plots you can water an hour.",
-    "sword": "⚔️ Power = how hard you hit in a fight.",
+    "can": "🚿 Power = more plots watered an hour, bigger harvests, more drops, and seeds that come back.",
+    "sword": "⚔️ Power = a harder hit, and a tougher you: more hp and defense in a fight.",
 }
 
 
@@ -22,33 +25,66 @@ class Effect:
     value: str
 
 
+def power_stats(kind: str, power: int, registry: Registry | None = None) -> dict[str, float]:
+    """The extra stats a tool of this kind and power carries (merged into its stats, so Mastery, enchants and the games see them as usual)."""
+    reg = registry or get_registry()
+    above = max(0, power - BASE_POWER)
+    r = reg.tools
+    if kind == "pickaxe":
+        return {"danger_reduction": r.pickaxe.danger_reduction * above, "rich_chance": r.pickaxe.rich_chance * above,
+                "braces": float(above // r.pickaxe.braces_every)}
+    if kind == "axe":
+        return {"good_chop": r.axe.good_chop * above, "wear_slow": r.axe.wear_slow * above}
+    if kind == "can":
+        return {"crop_yield": r.can.crop_yield * above, "drop_luck": r.can.drop_luck * above, "seed_back": min(1.0, r.can.seed_back * above)}
+    return {}
+
+
+def sword_stats(power: int, registry: Registry | None = None) -> tuple[int, float]:
+    """(extra max hp, extra defense) a sword of this power gives in a fight."""
+    reg = registry or get_registry()
+    above = max(0, power - BASE_POWER)
+    return round(reg.tools.sword.hp * above), reg.tools.sword.defense * above
+
+
 def effects(kind: str, power: int, registry: Registry | None = None) -> list[Effect]:
     """The numbers a tool of this kind and power gives."""
     from cococap.services import fishing
 
     reg = registry or get_registry()
+    extra = power_stats(kind, power, reg)
     if kind == "pickaxe":
         d = reg.mining.descent
-        return [Effect("Ore per lode", f"×{1 + d.power_yield_bonus * max(0, power - d.power_base):.2f}")]
+        return [Effect("Ore per lode", f"×{1 + d.power_yield_bonus * max(0, power - d.power_base):.2f}"),
+                Effect("Pressure builds", f"{extra['danger_reduction']:.0%} slower"),
+                Effect("Rich lode chance", f"+{extra['rich_chance']:.1%}"),
+                Effect("Extra braces", f"+{int(extra['braces'])}")]
     if kind == "axe":
-        return [Effect("Hit points per chop", f"{power}")]
+        return [Effect("Hit points per chop", f"{power}"),
+                Effect("Good chop chance", f"+{extra['good_chop']:.1%}"),
+                Effect("Spot wear", f"{extra['wear_slow']:.0%} slower")]
     if kind == "can":
-        return [Effect("Plots watered an hour", f"{power}")]
+        return [Effect("Plots watered an hour", f"{power}"),
+                Effect("Bigger harvests", f"+{extra['crop_yield']:.0%}"),
+                Effect("More drops", f"+{extra['drop_luck']:.0%}"),
+                Effect("Seed comes back", f"{extra['seed_back']:.0%}")]
     if kind == "sword":
-        p = reg.combat.player
-        return [Effect("Attack from the sword", f"+{p.attack_per_power * power}")]
+        hp, defense = sword_stats(power, reg)
+        return [Effect("Attack from the sword", f"+{reg.combat.player.attack_per_power * power}"),
+                Effect("Extra max hp", f"+{hp}"),
+                Effect("Extra defense", f"+{defense:.1f}")]
     if kind == "rod":
         rules = reg.fishing
-        extra = rules.rod.extra_fish_per_power * max(0, power - 3)
+        more = rules.rod.extra_fish_per_power * max(0, power - 3)
         return [Effect("Wait for a bite", f"~{fishing.typical_wait(power, rules):.0f}s"),
                 Effect("Forgiven wrong arrows", f"{fishing.slips_allowed(power, rules)}"),
                 Effect("Rare fish", f"+{fishing.rod_luck(power, rules):.0%} likelier"),
-                Effect("Extra fish per catch", f"+{extra:.1f}")]
+                Effect("Extra fish per catch", f"+{more:.1f}")]
     return []
 
 
 def compare(kind: str, now: int, after: int, registry: Registry | None = None) -> list[str]:
-    """"Ore per lode ×1.50 → ×2.50" for each effect (only the ones that change are worth a line, but all are shown so nothing is hidden)."""
+    """"Ore per lode: ×1.50 → **×2.50**" for each effect (all of them are shown, so nothing is hidden)."""
     return [f"{a.label}: {a.value} → **{b.value}**" for a, b in zip(effects(kind, now, registry), effects(kind, after, registry), strict=True)]
 
 

@@ -328,7 +328,10 @@ async def test_the_other_road_gives_its_own_stats_to_the_tool_in_use(db):
     user, inst = await forked_pickaxe()
     await upgrades.upgrade(user, inst.id)  # the usual road: Warden
     safe = await equipped_stats(user, "mining")
-    assert safe.stats["danger_reduction"] == pytest.approx(0.02) and "ore_yield" not in safe.stats
+    from cococap.services import tool_effects
+
+    own = tool_effects.power_stats("pickaxe", safe.power)["danger_reduction"]  # (the power's own share, on top of the road's 2%)
+    assert safe.stats["danger_reduction"] == pytest.approx(0.02 + own) and "ore_yield" not in safe.stats
     user2 = await User.get(2)
     await set_columns(user2, purse=10**9)
     inst2 = await user2.give_instance("masterwork_pickaxe")
@@ -337,7 +340,7 @@ async def test_the_other_road_gives_its_own_stats_to_the_tool_in_use(db):
         await user2.add_item(item_id, quantity)
     await upgrades.upgrade(user2, inst2.id, path="fork")
     greedy = await equipped_stats(user2, "mining")
-    assert greedy.stats["ore_yield"] == pytest.approx(0.11) and greedy.stats["danger_reduction"] == pytest.approx(-0.005)
+    assert greedy.stats["ore_yield"] == pytest.approx(0.11) and greedy.stats["danger_reduction"] == pytest.approx(-0.005 + own)  # (the same power, so the same own share)
     assert greedy.power == safe.power  # the same power: a different way to dig, not a stronger one
 
 

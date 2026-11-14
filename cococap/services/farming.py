@@ -421,6 +421,8 @@ async def harvest(
         await user.update_skill("farming", restore)  # the crop never arrived: the plot is still ripe
         raise
     extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0)
+    if can and rng.random() < can.stats.get("seed_back", 0.0):  # a good can lets a plant go to seed: the seed comes back
+        extras[taken["seed"]] += 1
     for item_id, quantity in extras.items():
         await user.add_item(item_id, quantity)
     anomaly = rng.randint(1, rules.anomaly_odds) == 1

@@ -1018,3 +1018,33 @@ class MasteryRules(_Data):
 
     def node(self, node_id: str) -> "MasteryNode":
         return next(n for t in self.trees for b in t.branches for n in b.nodes if n.id == node_id)
+
+
+# ---- what tool power gives besides its main effect (configs/tools.toml) -----------------------------------------------------------------
+class PickaxePower(_Data):
+    danger_reduction: float = Field(ge=0)
+    rich_chance: float = Field(ge=0)
+    braces_every: int = Field(ge=1)
+
+
+class AxePower(_Data):
+    good_chop: float = Field(ge=0)
+    wear_slow: float = Field(ge=0)
+
+
+class CanPower(_Data):
+    crop_yield: float = Field(ge=0)
+    drop_luck: float = Field(ge=0)
+    seed_back: float = Field(ge=0, le=1)
+
+
+class SwordPower(_Data):
+    hp: float = Field(ge=0)
+    defense: float = Field(ge=0)
+
+
+class ToolRules(_Data):
+    pickaxe: PickaxePower
+    axe: AxePower
+    can: CanPower
+    sword: SwordPower

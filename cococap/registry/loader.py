@@ -7,7 +7,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
+from .models import ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -65,6 +65,7 @@ class Registry:
         drop_tables: list[DropTable] | None = None,
         bestiary: BestiaryRules | None = None,
         mastery: MasteryRules | None = None,
+        tools: ToolRules | None = None,
     ):
         self.items: dict[str, Item] = {i.id: i for i in items}
         self.pets: dict[str, Pet] = {p.id: p for p in pets}
@@ -79,6 +80,7 @@ class Registry:
         self.combat = combat
         self.bestiary = bestiary
         self.mastery = mastery
+        self.tools = tools
         self.drop_tables: dict[str, DropTable] = {t.id: t for t in drop_tables or []}
         self._validate()
 
@@ -279,7 +281,8 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     drops = _build(DropTable, "drops", ((k, {"id": k, **v}) for k, v in _read(config_dir, "drops").items()))
     bestiary = _build(BestiaryRules, "bestiary", [("bestiary", _read(config_dir, "bestiary"))])[0]
     mastery = _build(MasteryRules, "mastery", [("mastery", _read(config_dir, "mastery"))])[0]
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery)
+    tools = _build(ToolRules, "tools", [("tools", _read(config_dir, "tools"))])[0]
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools)
 
 
 @lru_cache(maxsize=1)

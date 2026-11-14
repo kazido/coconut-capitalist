@@ -2657,7 +2657,6 @@ sell_price = 0
 kind = "can"
 power = 6  # plots it waters an hour
 requirement = 0
-stats = { crop_yield = 0.05 }
 
 [silver_can.tool.upgrade]
 to = "gold_can"
@@ -2683,7 +2682,6 @@ sell_price = 0
 kind = "can"
 power = 7  # plots it waters an hour
 requirement = 0
-stats = { crop_yield = 0.1, drop_luck = 0.15 }
 
 [gold_can.tool.upgrade]
 to = "crystal_can"
@@ -2709,7 +2707,6 @@ sell_price = 0
 kind = "can"
 power = 8  # plots it waters an hour
 requirement = 0
-stats = { crop_yield = 0.15, drop_luck = 0.3 }
 
 [crystal_can.tool.upgrade]
 to = "moonwell_can"
@@ -2736,4 +2733,3 @@ sell_price = 0
 kind = "can"
 power = 9  # plots it waters an hour
 requirement = 0
-stats = { crop_yield = 0.25, drop_luck = 0.5 }

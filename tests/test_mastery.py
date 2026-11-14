@@ -109,7 +109,7 @@ async def test_owned_nodes_change_the_tool_stats_the_game_reads(db):
     user = await User.get(1)
     pick = await user.give_instance("rookiepickaxe")
     await equip(user, "mining", pick.id)
-    assert "danger_reduction" not in (await equipped_stats(user, "mining")).stats
+    assert (await equipped_stats(user, "mining")).stats.get("danger_reduction", 0) == 0
     await level_up(user, "mining", 10)
     await mastery.buy(user, "mining", "steady_hands")
     await mastery.buy(user, "mining", "spare_braces")

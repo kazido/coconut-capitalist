@@ -47,8 +47,8 @@ def test_every_kind_has_a_plain_sentence_about_what_power_is_for_and_a_better_to
     assert set(tool_effects.HOW) == set(STARTERS)
     for kind in STARTERS:
         assert tool_effects.HOW[kind] and tool_effects.effects(kind, 3)
-    assert tool_effects.compare("pickaxe", 3, 9) == ["Ore per lode: ×1.00 → **×2.50**"]
-    assert tool_effects.summary("axe", 5) == "Hit points per chop 5"
+    assert tool_effects.compare("pickaxe", 3, 9)[0] == "Ore per lode: ×1.00 → **×2.50**"
+    assert tool_effects.summary("axe", 5).startswith("Hit points per chop 5")
 
 
 async def test_the_upgrade_page_says_what_the_tool_does_and_what_the_next_one_changes(db):
@@ -118,3 +118,95 @@ async def test_each_requirement_of_an_upgrade_is_on_its_own_line(db):
     bits_line = next(line for line in lines if "bits (you have" in line)
     assert all(requirement not in bits_line for requirement in wanted) and "·" not in bits_line  # (the bits are not squeezed onto the same line)
     assert len({lines.index(next(line for line in lines if r in line)) for r in wanted}) == len(wanted)
+
+
+# ---- every upgrade changes several things at once -------------------------------------------------------------------------------------
+def test_every_kind_of_tool_changes_at_least_three_things_when_it_gets_better():
+    for kind in STARTERS:
+        now, after = tool_effects.effects(kind, 3), tool_effects.effects(kind, 40)
+        changed = [a.label for a, b in zip(now, after, strict=True) if a.value != b.value]
+        assert len(changed) >= 3, (kind, changed)
+        assert [e.label for e in now] == [e.label for e in after]
+
+
+def test_a_starter_tool_gets_none_of_the_extras_so_nothing_changed_at_the_start():
+    for kind in ("pickaxe", "axe", "can"):
+        assert all(v == 0 for v in tool_effects.power_stats(kind, 3).values()), kind
+    assert tool_effects.sword_stats(3) == (0, 0.0)
+
+
+def test_more_power_never_gives_less_of_anything():
+    for kind in ("pickaxe", "axe", "can"):
+        low, high = tool_effects.power_stats(kind, 9), tool_effects.power_stats(kind, 71)
+        assert all(high[k] >= low[k] for k in low) and any(high[k] > low[k] for k in low), kind
+
+
+async def test_the_extras_are_in_the_stats_the_games_read(db):
+    from cococap.services.equipment import effective_stats
+
+    user = await User.get(1)
+    pick = effective_stats(await user.give_instance("ironbound_pickaxe"))
+    assert pick.stats["danger_reduction"] == pytest.approx(0.003 * 12 + 0.02) and pick.stats["braces"] == 0 and pick.stats["rich_chance"] > 0
+    deep = effective_stats(await user.give_instance("mythril_pickaxe"))
+    assert deep.stats["braces"] == 1 and deep.stats["danger_reduction"] > pick.stats["danger_reduction"]
+    axe = effective_stats(await user.give_instance("masterwork_axe"))
+    assert axe.stats["good_chop"] > 0 and axe.stats["wear_slow"] > 0 and effective_stats(await user.give_instance("starter_axe")).stats["good_chop"] == 0
+
+
+async def test_a_better_pickaxe_makes_a_safer_and_richer_start_to_a_dig(db):
+    from cococap.services import mining
+
+    user = await User.get(1)
+    await equip(user, "mining", (await user.give_instance("rookiepickaxe")).id)
+    plain = await mining.start_run(user, Random(1))
+    inst = await user.give_instance("mythril_pickaxe")
+    await equip(user, "mining", inst.id)
+    deep = await mining.start_run(user, Random(1))
+    assert deep.growth_factor < plain.growth_factor and deep.rich_bonus > plain.rich_bonus and deep.braces > plain.braces
+
+
+async def test_a_better_can_gives_bigger_harvests_and_sometimes_the_seed_back(db):
+    from cococap.services import farming as f
+
+    users = {}
+    for uid, can in ((1, "tin_can"), (2, "moonwell_can")):
+        user = await User.get(uid)
+        await equip(user, "farming", (await user.give_instance(can)).id)
+        users[uid] = user
+    back = {}
+    for uid, user in users.items():
+        back[uid] = 0
+        for i in range(120):
+            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
+            await user.add_item("apple_seed", 1)
+            await f.plant(user, 1, "apple_seed", now=0, registry=REG)
+            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
+            back[uid] += (await f.harvest(user, 1, Random(i), 0, REG)).extras["apple_seed"]
+    assert back[1] == 0 and back[2] > 10  # (the starter can never gives a seed back: 18% for the best can)
+
+
+async def test_a_better_sword_makes_you_tougher_not_only_stronger_and_a_starter_is_as_before(db):
+    from cococap.services import combat
+
+    user = await User.get(1)
+    await user.add_xp("combat", User.level_to_xp(10) + 1)
+    bare = await combat.build_player(user, REG)
+    await equip(user, "combat", (await user.give_instance("largebranch")).id)
+    starter = await combat.build_player(user, REG)
+    assert (starter.max_hp, starter.defense) == (bare.max_hp, bare.defense)  # (a power 3 sword adds no hp or defense)
+    await equip(user, "combat", (await user.give_instance("dreamnail")).id)
+    dream = await combat.build_player(user, REG)
+    assert dream.max_hp > starter.max_hp and dream.defense > starter.defense and dream.attack > starter.attack
+
+
+async def test_the_upgrade_page_lists_each_of_the_several_changes_for_every_tool(db):
+    user = await User.get(1)
+    for item in STARTERS.values():
+        await user.give_instance(item)
+    nav, inter = await hub("upgrade")
+    for _ in range(5):
+        arrows = [line for line in all_text(nav).split("\n") if "→ **" in line and ":" in line and "Power" not in line]
+        assert len(arrows) >= 3, arrows  # at least three "label: now → after" lines on every tool's page
+        if next(b for b in buttons(nav) if b.label == "Next").disabled:
+            break
+        await click(nav, inter, "Next")

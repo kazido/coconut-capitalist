@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 from cococap.errors import GameRuleError
 from cococap.registry import Registry, get_registry
 from cococap.registry.models import BUFFS, CombatRules, CombatSkill, Enemy, Phase, SkillEffect
-from cococap.services import equipment, loot
+from cococap.services import equipment, loot, tool_effects
 from cococap.user import User
 
 TIMED = frozenset({"attack_up", "attack_down", "defense_up", "defense_down", "speed_up", "speed_down", "stun", "bleed", "empower", "reveal"})
@@ -397,13 +397,14 @@ async def build_player(user: User, registry: Registry | None = None) -> Unit:
     if instance is not None:
         power = equipment.effective_stats(instance, reg).power
         kit = instance.template_id if instance.template_id in reg.combat.kits else "default"
+    extra_hp, extra_defense = tool_effects.sword_stats(power, reg) if instance is not None else (0, 0.0)
     return Unit(
         id="p1",
         name=user.name,
         side="player",
-        max_hp=rules.base_hp + rules.hp_per_level * level,
+        max_hp=rules.base_hp + rules.hp_per_level * level + extra_hp,
         attack=rules.base_attack + rules.attack_per_power * power + rules.attack_per_level * level,
-        defense=rules.base_defense + rules.defense_per_level * level,
+        defense=round(rules.base_defense + rules.defense_per_level * level + extra_defense),
         speed=rules.speed,
         skills=list(reg.combat.kits[kit]),
     )
