@@ -7,8 +7,8 @@
 xp_per_rarity = 30               # fishing xp for a catch = the fish's rarity x this
 
 [bite]
-wait_min = 8                     # seconds until a bite at rod power 1...
-wait_max = 20                    # ...somewhere between these
+wait_min = 14                    # seconds until a bite at rod power 1...
+wait_max = 32                    # ...somewhere between these
 speedup_per_power = 0.08         # each point of rod power above 1 cuts the wait by this share (compounding as 1/(1+x))
 min_wait_factor = 0.35           # ...but never below this share of the base wait
 window = 6                       # seconds you have to pull up the line once it bites, or the fish gets away
@@ -359,11 +359,11 @@ plant_fiber = 15
 coral_shard = 5
 
 [[pots.levels]]                   # level 1
-interval_minutes = 60
+interval_minutes = 75
 capacity = 6
 upgrade_bits = 0
 [[pots.levels]]
-interval_minutes = 52
+interval_minutes = 65
 capacity = 8
 upgrade_bits = 60000
 [pots.levels.upgrade_items]
@@ -371,7 +371,7 @@ hardwood = 20
 plant_fiber = 20
 coral_shard = 10
 [[pots.levels]]
-interval_minutes = 42
+interval_minutes = 52
 capacity = 12
 upgrade_bits = 250000
 [pots.levels.upgrade_items]
@@ -380,7 +380,7 @@ plant_fiber = 50
 coral_shard = 25
 salmon = 5
 [[pots.levels]]
-interval_minutes = 32
+interval_minutes = 40
 capacity = 16
 upgrade_bits = 1000000
 [pots.levels.upgrade_items]
@@ -390,7 +390,7 @@ coral_shard = 60
 tuna = 5
 swordfish = 1
 [[pots.levels]]
-interval_minutes = 24
+interval_minutes = 30
 capacity = 24
 upgrade_bits = 5000000
 [pots.levels.upgrade_items]

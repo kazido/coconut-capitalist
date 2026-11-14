@@ -67,7 +67,7 @@ def test_a_cast_pays_about_what_it_should_at_starter_gear():
     assert 4_000 <= worth <= 6_500, worth
     power = REG.item("starter_rod").tool.power
     seconds = sum(f.wait_seconds(power, RULES, rng) for _ in range(2000)) / 2000 + 1.5 * (RULES.reel.base_length + 2)
-    assert 10 <= seconds <= 25, seconds  # a catch every ~15-20 seconds: roughly what foraging earns per second
+    assert 22 <= seconds <= 36, seconds  # a catch every ~25-30 seconds: about what mining and foraging pay per active minute
 
 
 # ---- the rod ----------------------------------------------------------------------------------------------------

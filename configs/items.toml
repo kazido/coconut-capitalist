@@ -344,7 +344,7 @@ sell_price = 8000
 
 [lemon_seed.seed]
 grows_into = "lemon"
-cycles = 1  # TODO(balance): not in the old data; placeholder
+cycles = 4  # not in the old data. 4 cycles keeps lemons (140k a harvest) near 30k bits an hour per plot, not 126k
 
 [wilted_rose_seed]
 name = "Corrupted Seed"
