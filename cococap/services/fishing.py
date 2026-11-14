@@ -237,6 +237,7 @@ class Cast:
     boss: str = ""  # the boss's name, if what bit was a boss rather than a fish
     modifiers: list[str] = field(default_factory=list)  # the boss's twists: mirror, reverse, shuffle, fog, wild
     decoys: list[str] = field(default_factory=list)  # what a Reel step looks like until you get to it: an ordinary arrow
+    xp: int = 0  # what landing it pays (the water's, set at the cast); 0 means the default per-catch xp
     extra_fish: int = 0  # more of the same fish this rod hauls in with it (decided at the cast, so it cannot be rerolled)
     chest: bool = False  # a treasure chest instead of a fish (the fish is only a stand-in until it is hooked)
     attempts_left: int = 0  # tries at the chest's lock
@@ -367,6 +368,7 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
         echo_window=rules.reel.echo_window,
         size=roll_size(fish, rng),
         extra_fish=extra_fish(stats.power, rules, rng),
+        xp=water.xp if water else 0,
     )
     if armed and rng.randint(1, max(1, round(rules.treasure.chest_odds / (1 + pet.get("treasure_luck", 0.0))))) == 1:
         cast.chest, cast.attempts_left = True, rules.treasure.attempts
@@ -506,7 +508,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
         raise FishingError("You already took that fish.")
     cast.settled = True
     multiplier = await xp_multiplier(user.id, reg, "fishing")
-    xp = round(cast.fish.rarity * rules.xp_per_rarity * multiplier)
+    xp = round((cast.xp or rules.xp_per_catch) * multiplier)  # not the fish's rarity, not the rod: tools never change xp
     await user.add_item(cast.fish.id, 1 + cast.extra_fish)
     extras = catch_extras(rng or random.Random(), reg)
     for item_id, quantity in extras.items():

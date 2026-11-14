@@ -168,7 +168,7 @@ async def test_landing_a_fish_pays_once(db):
     for arrow in cast.pattern:
         cast.press(arrow, T0 + 11)
     caught = await f.land(user, cast, REG)
-    assert caught.xp == 3 * RULES.xp_per_rarity and caught.fish.id == "salmon"
+    assert caught.xp == RULES.xp_per_catch and caught.fish.id == "salmon"
     assert await user.item_quantity("salmon") == 1
     skill = await user.skill("fishing")
     assert skill.xp == caught.xp and skill.stats.fish_caught == 1
@@ -470,7 +470,7 @@ async def test_quest_xp_is_added_on_top_of_the_catch(db):
     for _ in range(weekly.count):
         got = await catch(user, weekly.fish.id, DAY0)
     gained = (await user.skill("fishing")).xp - before
-    assert got.finished and gained >= weekly.count * weekly.fish.rarity * RULES.xp_per_rarity + weekly.xp
+    assert got.finished and gained >= weekly.count * RULES.xp_per_catch + weekly.xp
 
 
 async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
@@ -1770,3 +1770,28 @@ async def test_the_fishing_page_tells_you_how_long_your_rod_takes_to_bite(db):
     nav, _ = await hub("fish")
     expected = f.typical_wait(REG.item("reinforced_rod").tool.power, RULES)
     assert f"bites in about **{expected:.0f}s**" in all_text(nav) or f"bites in about {expected:.0f}s" in all_text(nav)
+
+
+# ---- xp is for the catch, not the fish or the rod ------------------------------------------------------------------------
+async def test_every_landed_fish_pays_the_same_xp_whatever_its_rarity(db):
+    paid = {}
+    for fish_id in ("cod", "salmon", "pike"):  # rarities 1, 3, 4
+        user = await player()
+        cast = cast_of(fish_id, slips=0)
+        for arrow in cast.pattern:
+            cast.press(arrow, T0 + 11)
+        paid[fish_id] = (await f.land(user, cast, REG)).xp
+    assert len(set(paid.values())) == 1 and paid["cod"] == RULES.xp_per_catch
+
+
+async def test_the_water_sets_the_xp_and_a_better_rod_does_not_change_it(db):
+    deep = f.water_by_id(REG, "deep_sea")
+    pond = f.water_by_id(REG, "pond")
+    assert deep.xp > pond.xp
+    results = {}
+    for power in (3, 120):
+        stats = EffectiveStats(power=power, requirement=0)
+        cast = f.cast_line(stats, Random(1), T0, REG, water=deep)
+        assert cast.xp == deep.xp
+        results[power] = cast.xp
+    assert results[3] == results[120]

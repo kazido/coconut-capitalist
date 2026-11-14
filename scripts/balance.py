@@ -178,15 +178,14 @@ def foraging_xp_per_click(power: int) -> float:
 
 
 def fishing_xp_per_minute(power: int) -> float:
+    """Every fish landed pays its water's xp (never the fish's rarity, never the rod), so only the bites' speed changes it."""
     rules = REG.fishing
     water = next(w for w in rules.waters if w.id == "reef")
-    rng, n, xp, seconds = Random(3), 6000, 0.0, 0.0
+    rng, n, seconds = Random(3), 6000, 0.0
     for _ in range(n):
         fish = fi.roll_fish(rng, REG, water, fi.rod_luck(power, rules))
-        extra = 1 + rules.rod.extra_fish_per_power * max(0, power - 3)
-        xp += fish.rarity * rules.xp_per_rarity * extra
         seconds += fi.wait_seconds(power, rules, rng) * water.wait_multiplier + 1.5 * (rules.reel.base_length + 1 + fish.rarity)
-    return xp / seconds * 60
+    return water.xp * n / seconds * 60
 
 
 def combat_xp_per_hour(encounter_id: str, level: int, power: int, kit: str) -> tuple[float, float]:

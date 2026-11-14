@@ -4,7 +4,8 @@
 # bite come sooner and lets you slip up now and then. Which fish bites is decided when you cast (rarest rolled first,
 # from the fishing items' `drop` odds), so reopening the panel can't re-roll it.
 
-xp_per_rarity = 30               # fishing xp for a catch = the fish's rarity x this
+xp_per_catch = 46                # fishing xp for landing a fish (each water sets its own below). It never depends on the fish's rarity or the rod: tools do not change xp.
+xp_per_rarity = 30               # what quests and crab pots pay per rarity point (those are about the fish asked for, not the rod)
 
 [bite]
 wait_min = 14                    # seconds until a bite at rod power 1...
@@ -276,6 +277,7 @@ emoji = "🏞️"
 description = "Calm water and common fish."
 min_level = 1
 wait_multiplier = 1.0
+xp = 46
 [waters.fish]
 cod = 1
 herring = 2
@@ -294,6 +296,7 @@ emoji = "🌊"
 description = "Faster water, bigger fish, and the odd golden surprise."
 min_level = 3
 wait_multiplier = 1.0
+xp = 55
 [waters.fish]
 perch = 1
 trout = 2
@@ -312,6 +315,7 @@ emoji = "🪸"
 description = "Bright, busy water. Fish take a little longer to find you."
 min_level = 8
 wait_multiplier = 1.2
+xp = 65
 [waters.fish]
 herring = 1
 sardine = 2
@@ -329,6 +333,7 @@ emoji = "🐋"
 description = "Dark, cold and slow. Only the big ones live here."
 min_level = 15
 wait_multiplier = 1.5
+xp = 90
 [waters.fish]
 tuna = 1
 swordfish = 5

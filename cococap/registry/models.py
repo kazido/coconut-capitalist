@@ -812,6 +812,7 @@ class WaterRules(_Data):
     description: str = ""
     min_level: int = Field(ge=1)
     wait_multiplier: float = Field(gt=0)  # deeper water takes longer to bite
+    xp: int = Field(ge=0)  # xp for every fish landed here: deeper waters pay more, a better rod never does
     fish: dict[str, int] = Field(min_length=1)
 
 
@@ -842,6 +843,7 @@ class RodRules(_Data):
 
 
 class FishingRules(_Data):
+    xp_per_catch: int = Field(ge=0)  # xp for landing a fish when the water does not set its own: one catch pays the same whatever the fish or the rod
     xp_per_rarity: int = Field(ge=0)
     bite: BiteRules
     reel: ReelRules

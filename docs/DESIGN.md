@@ -598,3 +598,16 @@ Findings:
    reaches level 90 in about 13 hours, which skips the curve. Proposal: decide whether xp should follow tool power; if so, mining needs it too.
 4. **Combat**: enemy xp must scale with the level the fight is meant for, like foraging zones do. Boss xp is sized as "about one level at
    its level lock" (8,000 at level 20) because keys keep it rare, not as an hourly rate. Fights for levels 20 to 90 still need tiers.
+
+### XP rules (decided): tools never change xp
+**xp comes from rank, party and pets (and the level you are at in the content). A better tool makes the base mechanic easier or faster.**
+Enchants, pets and so on buff the fun parts. What that means per skill (all `TODO(balance)`):
+- **Mining**: `xp_per_column` per column dug. The pickaxe adds ore yield, never xp.
+- **Foraging**: `xp_per_swing` x the **quality of each chop** (the grain and good chops, never the axe's power). A stronger axe fells a
+  tree in fewer swings, so the same minute of chopping pays the same xp. Private, party and community trees all record each chop's
+  `effort` (the community table has a new `tree_chops.effort` column, migration 0007).
+- **Fishing**: every landed fish pays its **water's** `xp` (pond 46, river 55, reef 65, deep sea 90): not the fish's rarity, not the number of
+  extra fish. Deeper waters pay more because you needed the level. What is left: a better rod bites sooner, so about 2x more catches an hour at the top.
+- **Farming**: xp = the seed's growth cycles x `xp_per_cycle` (500): an apple 500, a coconut 50,000. 9 plots are worth about 4k xp/hour.
+- **Combat**: enemy xp by the fight's tier; the sword changes how fast you win, not what you are paid.
+At starter gear that is about 7k xp/hour in mining, foraging and (about 8.5k) fishing, 6.8k combat, and a passive 4k farming.

@@ -151,10 +151,10 @@ async def test_many_members_chopping_at_the_same_moment_lose_nothing_and_it_fall
 
 
 # ---- rewards -------------------------------------------------------------------------------------------------------------------------------
-async def fell(users, shares, now=T0):
+async def fell(users, shares, now=T0, effort=1.0):
     tree = await pt.start(users[0], 1, now, REG)
     for user, fraction in zip(users, shares, strict=False):
-        await pt.chop(user, round(tree.max_hp * fraction), now + 1, REG)
+        await pt.chop(user, round(tree.max_hp * fraction), now + 1, REG, effort=effort)
     left = (await pt.view(users[0], now + 1, REG)).hp
     if left:  # rounding left a sliver: the last chopper finishes it, so the tree really falls
         await pt.chop(users[len(shares) - 1], left, now + 1, REG, effort=0.0)  # (finishing the sliver is not extra work)
@@ -222,7 +222,7 @@ async def test_a_pets_xp_bonus_is_added_to_the_xp_you_collect(db):
     from cococap.services import pets
 
     users = await team(2)
-    await fell(users, [0.5, 0.5])
+    await fell(users, [0.5, 0.5], effort=40.0)  # (enough xp that a percentage bonus shows through the rounding)
     await users[0].update_pethouse(lambda h: (h.pets.update({"koala": OwnedPet(xp=pets.level_xp(20, REG))}), setattr(h, "active", "koala")))
     with_pet, without = (await pt.claim(users[0], T0 + 10, REG))[0], (await pt.claim(users[1], T0 + 10, REG))[0]
     assert with_pet.xp > without.xp > 0  # the same work, but the koala adds its bonus (and both get the party's)
@@ -280,3 +280,27 @@ async def test_the_foraging_page_updates_by_itself_when_a_teammate_starts_a_part
     solo = await player(9)
     nav2, _ = await hub("forage", user_id=9)
     assert solo and nav2.screen.refresh_every is None  # nobody to wait for: no needless redraws
+
+
+async def test_party_tree_xp_follows_the_number_of_chops_not_the_axe_behind_them(db):
+    users = await team(2)
+    tree = await pt.start(users[0], 1, T0, REG)
+    big = tree.max_hp // 2
+    await pt.chop(users[0], big, T0 + 1, REG, effort=3.0)  # one huge chop from a strong axe
+    for _ in range(10):  # ten small ones from a weak axe, each as good a chop as the huge one
+        await pt.chop(users[1], big // 10, T0 + 1, REG, effort=3.0)
+    left = (await pt.view(users[0], T0 + 1, REG)).hp
+    if left:
+        await pt.chop(users[1], left, T0 + 1, REG, effort=0.0)
+    strong, weak = (await pt.claim(users[0], T0 + 10, REG))[0], (await pt.claim(users[1], T0 + 10, REG))[0]
+    assert strong.xp > 0 and weak.xp == pytest.approx(10 * strong.xp, rel=0.15)
+
+
+async def test_a_party_chop_that_overshoots_only_counts_the_part_that_was_needed(db):
+    users = await team(2)
+    tree = await pt.start(users[0], 1, T0, REG)
+    await pt.chop(users[0], tree.max_hp - 10, T0 + 1, REG, effort=1.0)
+    await pt.chop(users[0], 1000, T0 + 1, REG, effort=100.0)  # only 10 of its 1000 were needed
+    reward = (await pt.claim(users[0], T0 + 10, REG))[0]
+    expected_effort = (tree.max_hp - 10) / (tree.max_hp - 10) + 100.0 * 10 / 1000
+    assert reward.xp == round(round(expected_effort * RULES.xp_per_swing) * (1 + REG.economy.party_xp_bonus_by_size[0]))
