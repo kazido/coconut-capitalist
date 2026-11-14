@@ -267,3 +267,16 @@ async def test_the_rewards_arrive_on_a_result_page_when_a_member_looks(db, clock
     nav, _ = await hub("forage", user_id=2)
     assert nav.screen.id == "result" and "(party tree)" in all_text(nav) and "TIMBER" in all_text(nav)
     assert (await User.get(2)).purse > 1000
+
+
+async def test_the_foraging_page_updates_by_itself_when_a_teammate_starts_a_party_tree(db, clock):
+    users = await team(2)
+    nav, inter = await hub("forage")
+    assert nav.screen.refresh_every  # in a party: it redraws on its own
+    assert "No tree is up" in all_text(nav) and find_button(nav, "Start a party tree")
+    await pt.start(users[1], 1, T0 + 5, REG)  # the teammate starts one while she is looking at the page
+    await nav.screen.nav.refresh(inter)  # (what the self-refresh does)
+    assert "falls over" in all_text(nav) and find_button(nav, "Join the party tree")
+    solo = await player(9)
+    nav2, _ = await hub("forage", user_id=9)
+    assert solo and nav2.screen.refresh_every is None  # nobody to wait for: no needless redraws

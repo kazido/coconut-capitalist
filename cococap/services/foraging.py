@@ -16,7 +16,7 @@ All randomness comes from an injected ``random.Random``.
 import random
 import time
 from collections import Counter
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from sqlalchemy import func, select, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -75,34 +75,30 @@ def cycle_length(zone: int, rules: ForagingRules) -> int:
 class Swing:
     damage: int
     good: bool  # a "good chop": extra damage
-    freshness: float  # how fresh the spot was for this swing (1.0 = untouched)
     correct: bool | None = None  # was it the right stance for the step? (None: no stance was used)
-    finisher: bool = False  # this swing finished the pattern
     index: int = 0  # which step of the pattern it was aimed at
-    combo: int = 0  # correct moves in a row, counting this one (0 after a wrong one)
-    ended: str | None = None  # "finished" (the pattern is done) or "failed" (too many mistakes): you are on a new spot now
+    ended: bool = False  # that was the last step: you are on a new spot now
+    perfect: bool = False  # ...and every step of the spot was right
 
 
 @dataclass
 class Spot:
     """The place on the trunk you are chopping. Its **grain** (plain, knotty, twisted...) sets how hard it is and has its own
-    secret pattern of stances: do the right stance for each step in turn and the grain gives (a growing combo and a finisher);
-    the wrong stance is a glancing blow and you stay on the same step. A spot also wears down at random. Rotating (a click
-    that does no damage) moves you to a new spot with a new grain, and starts the pattern again."""
+    secret pattern of stances. For each step you pick a stance; a wrong one puts an X on the step and you move on to the next.
+    When the last step is done you are moved to a new spot (a new grain) by yourself. Chopping always does damage: the pattern
+    is for learning (and a little xp for getting a whole spot right)."""
 
     name: str = "Plain"
     quality: float = 1.0
-    wear: int = 0  # how many steps this spot has worn down
     grain: str = "plain"
     step: int = 0  # where you are in the grain's pattern
-    combo: int = 0  # correct stances in a row
-    strikes: int = 0  # wrong stances on this spot so far
+    marks: list[bool] = field(default_factory=list)  # for each step done on this spot: was it right?
 
     @classmethod
     def pick(cls, rules: ForagingRules, rng: random.Random) -> "Spot":
         grains = rules.chopping.grains
         g = rng.choices(grains, weights=[x.weight for x in grains])[0]
-        return cls(g.name, g.multiplier, 0, g.id)
+        return cls(g.name, g.multiplier, g.id)
 
     def pattern(self, rules: ForagingRules) -> str:
         return rules.chopping.grain(self.grain).pattern if any(g.id == self.grain for g in rules.chopping.grains) else ""
@@ -111,62 +107,36 @@ class Spot:
         pattern = self.pattern(rules)[:cycle]
         return pattern[self.step % len(pattern)] if pattern else None
 
-    def freshness(self, rules: ForagingRules) -> float:
-        c = rules.chopping
-        return max(c.spot_floor, 1 - c.wear_step * self.wear)
-
     def multiplier(self, rules: ForagingRules) -> float:
-        """What this spot does to your axe's power right now."""
-        return self.quality * self.freshness(rules)
-
-    def condition(self, rules: ForagingRules) -> str:
-        fresh = self.freshness(rules)
-        return "fresh" if fresh >= 0.85 else "worn" if fresh >= 0.6 else "dull"
+        """What this spot's grain does to your axe's power."""
+        return self.quality
 
     def preview(self, power: int, rules: ForagingRules, cycle: int | None = None) -> int:
-        """What the next chop would do if you pick the right stance (an ordinary chop if no cycle is given)."""
-        c = rules.chopping
-        factor = 1.0
-        if cycle:
-            factor = (1 + c.combo_step * self.combo) * (c.finisher if self.step + 1 >= cycle else 1.0)
-        return max(1, round(power * self.multiplier(rules) * factor))
+        """What an ordinary chop on this spot would do."""
+        return max(1, round(power * self.quality))
 
     def swing(self, power: int, rules: ForagingRules, rng: random.Random, good_bonus: float = 0.0,
               stance: str | None = None, cycle: int | None = None) -> Swing:
-        """One chop. With a `stance` and the tree's `cycle` length the grain's pattern applies: the right stance moves you on a
-        step, builds the combo and, on the last step, lands the finisher; the wrong one is a glancing blow and you stay put.
-        Without a stance it is a plain chop. ``good_bonus`` is extra good-chop chance (a Sharp Eye enchant)."""
+        """One chop. With a `stance` and the tree's `cycle` length you are also answering the next step of the grain's pattern: right
+        or wrong you move on (a wrong one is marked ❌), and after the last step you are on a new spot. ``good_bonus`` is extra
+        good-chop chance (a Sharp Eye enchant)."""
         c = rules.chopping
-        fresh = self.freshness(rules)
         good = rng.random() < c.good_chop_chance + good_bonus
-        factor, correct, finisher, index, reached, ended = 1.0, None, False, self.step, 0, None
+        damage = max(1, round(power * self.quality * (1 + c.good_chop_bonus if good else 1)))
+        correct, index, ended, perfect = None, self.step, False, False
         if stance is not None and cycle:
             correct = stance == self.expected(rules, cycle)
-            if correct:
-                factor = 1 + c.combo_step * self.combo
-                self.combo += 1
-                reached = self.combo  # (reported even if finishing resets it)
-                self.step += 1
-                if self.step >= cycle:
-                    factor *= c.finisher
-                    finisher, ended = True, "finished"
-            else:
-                factor, self.combo = c.glancing, 0
-                self.strikes += 1
-                if self.strikes >= c.strikes:
-                    ended = "failed"
-        damage = max(1, round(power * self.multiplier(rules) * factor * (1 + c.good_chop_bonus if good else 1)))
-        if rng.random() < c.wear_chance:
-            self.wear += 1
-        if ended:  # a spot that is finished, or has given out, is left behind: on to a new one (and its pattern from the start)
-            self.rotate(rules, rng)
-        return Swing(damage, good, fresh, correct, finisher, index, reached, ended)
+            self.marks.append(correct)
+            self.step += 1
+            if self.step >= cycle:
+                ended, perfect = True, all(self.marks)
+                self.rotate(rules, rng)
+        return Swing(damage, good, correct, index, ended, perfect)
 
     def rotate(self, rules: ForagingRules, rng: random.Random) -> None:
-        """Move to a new spot: a random grain, unworn, and back to the start of its pattern. (This happens by itself when you
-        finish a spot or it gives out.)"""
+        """Move to a new spot: a random grain, back to the start of its pattern. (This happens by itself when you finish a spot.)"""
         new = Spot.pick(rules, rng)
-        self.name, self.quality, self.wear, self.grain, self.step, self.combo, self.strikes = new.name, new.quality, 0, new.grain, 0, 0, 0
+        self.name, self.quality, self.grain, self.step, self.marks = new.name, new.quality, new.grain, 0, []
 
 
 def average_spot_multiplier(rules: ForagingRules) -> float:
@@ -174,29 +144,57 @@ def average_spot_multiplier(rules: ForagingRules) -> float:
     return sum(g.multiplier * g.weight for g in grains) / sum(g.weight for g in grains)
 
 
-async def grain_notes(user: User, registry: Registry | None = None) -> list[tuple[Grain, int]]:
-    """Your notes: each grain and how many steps of its pattern you have learned."""
+# ---- grain notes: what you have found out about each grain's pattern ------------------------------------------------
+@dataclass(frozen=True)
+class StepNote:
+    known: str | None  # the stance letter once you know it
+    ruled_out: str  # stance letters you have seen fail at this step
+
+
+def read_notes(entries: list[str], length: int) -> list[StepNote]:
+    notes = []
+    for i in range(length):
+        entry = entries[i] if i < len(entries) else ""
+        known = next((c.lower() for c in entry if c.isupper()), None)
+        notes.append(StepNote(known, "" if known else "".join(c for c in entry if c.islower())))
+    return notes
+
+
+async def grain_notes(user: User, registry: Registry | None = None) -> list[tuple[Grain, list[StepNote]]]:
+    """Your notes: each grain with what you know (or have crossed off) at each step of its pattern."""
     reg = registry or get_registry()
-    known = (await user.skill("foraging")).grains
-    return [(g, known.get(g.id, 0)) for g in reg.foraging.chopping.grains]
+    saved = (await user.skill("foraging")).grains
+    return [(g, read_notes(saved.get(g.id, []), len(g.pattern))) for g in reg.foraging.chopping.grains]
 
 
-async def learned_steps(user: User, grain: str) -> int:
-    """How many steps of this grain's pattern you have learned (they are remembered for good)."""
-    return (await user.skill("foraging")).grains.get(grain, 0)
-
-
-async def learn(user: User, grain: str, steps: int) -> bool:
-    """Remember that you know the first `steps` steps of this grain's pattern. True if that is new."""
+async def note_step(user: User, grain: str, index: int, stance: str, correct: bool, registry: Registry | None = None) -> bool:
+    """Write down what happened at this step of this grain: a right stance is remembered for good, a wrong one is crossed off.
+    Returns True if that told you something new."""
+    length = len((registry or get_registry()).foraging.chopping.grain(grain).pattern)
     outcome: dict = {}
 
-    def remember(skill: Foraging) -> None:
-        if steps > skill.grains.get(grain, 0):
-            skill.grains[grain] = steps
+    def write(skill: Foraging) -> None:
+        entries = skill.grains.setdefault(grain, [])
+        entries.extend([""] * (length - len(entries)))
+        entry = entries[index]
+        if correct and stance.upper() not in entry:
+            entries[index] = stance.upper()  # it is known now (and the crossed-off guesses no longer matter)
+            outcome["new"] = True
+        elif not correct and not any(c.isupper() for c in entry) and stance not in entry:
+            entries[index] = entry + stance
             outcome["new"] = True
 
-    await user.update_skill("foraging", remember)
+    await user.update_skill("foraging", write)
     return bool(outcome)
+
+
+async def award_perfect(user: User, cycle: int, registry: Registry | None = None) -> int:
+    """A little extra foraging xp for a spot where every step was right. Returns what was paid."""
+    reg = registry or get_registry()
+    xp = round(cycle * reg.foraging.chopping.perfect_xp_per_step * await xp_multiplier(user.id, reg, "foraging"))
+    if xp:
+        await user.update_skill("foraging", lambda s: setattr(s, "xp", s.xp + xp))
+    return xp
 
 
 def average_hp(zone: int, rules: ForagingRules) -> float:

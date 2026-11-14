@@ -32,48 +32,47 @@ def reward_text(reward: foraging.Reward) -> str:
 
 
 async def spot_panel(screen, zone: int, power: int) -> str:
-    """Where you are chopping: the grain, how worn it is, how far through its pattern you are (only the steps you have done on
-    THIS spot show; the rest are ❔, so you have to remember them or look in your grain notes) and your mistakes."""
+    """Where you are chopping: the grain and your place in its pattern. Steps you have done on THIS spot show a tick or a cross; the
+    rest are ❔ (what you have learned is in your Grain notes, so you have to remember it)."""
     reg = get_registry()
     r = reg.foraging
     spot = screen.spot
     cycle = foraging.cycle_length(zone, r)
-    pattern = spot.pattern(r)[:cycle]
     steps = []
-    for i, letter in enumerate(pattern):
-        glyph = foraging.STANCES[letter][1] if i < spot.step else "❔"
+    for i in range(cycle):
+        glyph = ("✅" if spot.marks[i] else "❌") if i < spot.step else "❔"
         steps.append(f"**{glyph}**" if i == spot.step else glyph)
-    quality = f"{spot.quality - 1:+.0%}" if spot.quality != 1 else "±0%"
-    strikes = "❌" * spot.strikes + "⬜" * max(0, r.chopping.strikes - spot.strikes)
-    return (f"🪵 **{spot.name}** grain ({quality})  ·  {spot.condition(r)} {bar(spot.freshness(r), 6)}\n"
-            f"🧭 {' '.join(steps)}" + (f"  ·  combo ×{spot.combo}" if spot.combo else "") + f"  ·  mistakes {strikes}"
-            + f"\n-# step {spot.step + 1}/{cycle}  ·  a right move hits for about **{spot.preview(power, r, cycle)}**"
-            + "  ·  what you have learned is in your **Grain notes**")
+    quality = f"  ({spot.quality - 1:+.0%})" if spot.quality != 1 else ""
+    return f"🪵 **{spot.name}** grain{quality}   🧭 {' '.join(steps)}"
 
 
 async def notes_result(user) -> Result:
     """Your grain notes on a page of their own (it returns you to the tree you were chopping)."""
     lines = []
-    for grain, known in await foraging.grain_notes(user):
-        pattern = grain.pattern
-        shown = " ".join(foraging.STANCES[c][1] if i < known else "❔" for i, c in enumerate(pattern))
-        lines.append(f"**{grain.name}** ({grain.multiplier - 1:+.0%}): {shown}  ·  {known}/{len(pattern)}")
-    return Result("Grain notes", ["Every spot has a grain with its own pattern. What you have learned is written here; the spot "
-                                  "you are chopping shows ❔ again, so remember it!", "\n".join(lines)],
+    for grain, notes in await foraging.grain_notes(user):
+        steps = []
+        for note in notes:
+            if note.known:
+                steps.append(foraging.STANCES[note.known][1])
+            elif note.ruled_out:
+                steps.append("❔" + "".join(f"✖️{foraging.STANCES[c][1]}" for c in note.ruled_out))
+            else:
+                steps.append("❔")
+        known = sum(1 for n in notes if n.known)
+        lines.append(f"**{grain.name}** ({grain.multiplier - 1:+.0%}): {'  '.join(steps)}  ·  {known}/{len(notes)}")
+    return Result("Grain notes", ["Every spot has a grain with its own pattern of stances. ✖️ marks stances you have seen fail at a step, so you "
+                                  "can work out the rest. The spot you are chopping shows ❔ again, so remember what is here!",
+                                  "\n".join(lines)],
                   emoji="📖", accent=0x8D6E63, back_label="Back to chopping")
 
 
 def swing_note(swing: foraging.Swing, stance: str | None = None, applied: int | None = None) -> str:
     dealt = swing.damage if applied is None else applied
     icon = foraging.STANCES[stance][1] if stance in foraging.STANCES else "🪓"
+    good = "  ✨ **Good chop!**" if swing.good else ""
     if swing.correct is None:
         return f"✨ **Good chop!** {dealt}" if swing.good else f"🪓 {dealt}"
-    if not swing.correct:
-        return f"💢 Glancing blow ({dealt}). That wasn't the right move for this step."
-    extra = "  ✨ **Good chop!**" if swing.good else ""
-    if swing.finisher:
-        return f"🌟 **Perfect!** The pattern is done and the axe bites deep: **{dealt}**{extra}"
-    return f"✅ {icon} The grain gives!  combo ×{swing.combo}  ·  {dealt}{extra}"
+    return f"{'✅' if swing.correct else '❌'} {icon}  ·  {dealt}{good}"
 
 
 def stance_buttons(on_click) -> list[discord.ui.Button]:
@@ -83,23 +82,25 @@ def stance_buttons(on_click) -> list[discord.ui.Button]:
 
 
 async def swing_at(screen: Screen, zone: int, power: int, stance: str) -> tuple[foraging.Swing, str]:
-    """Swing in a stance on this screen's spot. Remembers any new step of the pattern you got right. Returns the swing and
-    what to tell the player about it."""
+    """Swing in a stance on this screen's spot. Writes down what you found out about the step (the right stance is remembered, a
+    wrong one is crossed off) and pays the little extra xp for a spot with every step right. Returns the swing and what to tell
+    the player about it."""
     reg = get_registry()
     rules = reg.foraging
     stats = await foraging.axe_stats(screen.user)
-    grain, name = screen.spot.grain, screen.spot.name  # (the spot may change under us when it ends)
-    known = await foraging.learned_steps(screen.user, grain)
+    grain, name, cycle = screen.spot.grain, screen.spot.name, foraging.cycle_length(zone, rules)
     swing = screen.spot.swing(power, rules, screen.rng,
                               stats.stats.get("good_chop", 0.0) + (await pets.bonuses(screen.user)).get("good_chop", 0.0),
-                              stance, foraging.cycle_length(zone, rules))
+                              stance, cycle)
     note = swing_note(swing, stance)
-    if swing.correct and swing.index + 1 > known and await foraging.learn(screen.user, grain, swing.index + 1):
-        note += f"\n📖 You learned step **{swing.index + 1}** of the **{name}** grain!"
-    if swing.ended == "failed":
-        note += f"\n💥 Too many mistakes: the **{name}** spot gives out. You move to a new one ({screen.spot.name} grain)."
-    elif swing.ended == "finished":
-        note += f"\n➡️ You move on to a new spot ({screen.spot.name} grain)."
+    if swing.correct is not None and await foraging.note_step(screen.user, grain, swing.index, stance, swing.correct):
+        note += (f"  📖 Learned step **{swing.index + 1}** of the **{name}** grain!" if swing.correct
+                 else f"  ✖️ {foraging.STANCES[stance][0]} crossed off step **{swing.index + 1}** in your notes")
+    if swing.perfect:
+        xp = await foraging.award_perfect(screen.user, cycle)
+        note += f"\n🌟 **Perfect spot!** Every step right: +{xp} xp"
+    if swing.ended:
+        note += f"\n➡️ New spot: **{screen.spot.name}** grain"
     return swing, note
 
 
@@ -121,6 +122,11 @@ class ForageScreen(Screen):
     def __init__(self, nav):
         super().__init__(nav)
         self.zone: int | None = None
+        self.watching_party = False  # in a party: redraw by itself so a tree a teammate starts shows up
+
+    @property
+    def refresh_every(self) -> float | None:  # type: ignore[override]
+        return get_registry().foraging.party_tree.refresh_seconds if self.watching_party else None
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -185,6 +191,7 @@ class ForageScreen(Screen):
 
     async def _party_section(self, stats) -> list:
         party = await Party.for_user(self.user.id)
+        self.watching_party = party is not None and party.member_count() >= 2
         if party is None or party.member_count() < 2:
             return [text("-# 👥 Chop with friends: join a party and you can start a **party tree** that pays a little better.")]
         pt = await party_tree.view(self.user)

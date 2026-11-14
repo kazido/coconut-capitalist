@@ -166,17 +166,6 @@ their own panel (even if they were offline). Drops and bits go by share of the t
 5% of it; everyone gets xp for the work they did. The group gets a bonus (+5% per extra qualifying chopper, up to +50%).
 A tree nobody finished pays a 25% consolation.
 
-### Chopping: the spot, rotating and good chops
-
-Where you stand matters. Each chop does your axe's power x the **kind of spot** (Knotty x0.7, Plain x1.0, Clean grain
-x1.3) x how **worn** it is. Wear is random: every chop has a 20% chance to wear the spot down a step (-15% each, down to
-40%), so you don't have to rotate on a schedule. **Rotate** (a click that does no damage) moves you to a *random* new
-spot, so it is a real decision: leaving a worn spot is right, leaving a good one wastes a click, and a new spot could be
-worse. The panel shows the spot's kind, its wear and what your next chop will do, and Rotate never lights up to tell
-you. A chop also has a 15% chance to be a **good chop** (+50%). A simulation shows rotating once the spot is below 80% of
-your axe's power earns about 3x what never rotating does, and clearly beats rotating too often or too rarely. The same
-applies to the community tree.
-
 ### Party trees
 
 A party of two or more can start a **party tree** from the Foraging page (any member, in the deepest zone *everyone* in the
@@ -189,25 +178,22 @@ over, and each member collects theirs from their own panel. They pay a little be
 
 ### Stances and grain patterns
 
-Chopping is a small puzzle you master. Every spot has a **grain** (Plain, Knotty, Clean grain, Twisted, Split, Burl; each with its
-own difficulty multiplier) and every grain has its own **secret pattern** of three stances: Overhead, Sidecut and Undercut
-(`configs/foraging.toml` `[[chopping.grains]]`). You pick a stance each chop:
+Chopping has a small puzzle in it. Every spot has a **grain** (Plain, Knotty, Clean grain, Twisted, Split, Burl; each with its own
+difficulty multiplier on your damage) and every grain has its own **secret pattern** of three stances: Overhead, Sidecut and
+Undercut (`configs/foraging.toml` `[[chopping.grains]]`). For each step you pick a stance:
 
-- **The right stance** for your step: the grain gives. You move on a step, a **combo** builds (+10% per correct move in a row) and the
-  last step of the pattern lands a **x1.5 finisher**, then the pattern starts again.
-- **The wrong stance** is a glancing blow (30% damage) and you stay on the same step, with your combo gone. With three stances you can
-  always find a step by trial in at most two wrong guesses (a test checks every grain).
-- **You learn as you go.** Each step you get right is saved for good, per grain, in your **Grain notes** (a button on the foraging pages,
-  a page of its own, like the fishing field notes). But the chopping panel does **not** tell you: every new spot shows ❔ for every step
-  again, so you have to remember the pattern (or open your notes). Only the steps you have done on the current spot show.
-- **Spots end by themselves.** A spot is left behind when you finish its pattern, or when you make **three mistakes** on it ("gives out").
-  You move to a new spot with a new grain automatically, so there is no Rotate button.
-- **Later trees ask for more.** A tree makes you do the first 3 steps of the pattern in zones 1-2, then 4, 5, 6, 7 and 8 steps in zone 10,
+- **Right or wrong, you move on.** A wrong stance puts an ❌ on that step (a right one a ✅) and you go to the next step. Chopping
+  always does its normal damage: the pattern is for learning, not for hitting harder.
+- **Your notes remember.** A right stance is remembered for good; a wrong one is crossed off (✖️) at that step, so you piece each grain
+  together from your guesses (two crossed off and the third is obvious). They live on the **Grain notes** page (a button on every
+  foraging page, like the fishing field notes), which returns you to the same tree.
+- **But the panel makes you remember.** It shows ❔ for every step of a new spot, and only the steps you have done on that spot show.
+- **A spot ends when its pattern is done** and you move to a new spot (a new grain) by yourself: no Rotate button.
+- **Do every step right on one spot** and you earn a little extra xp (10 per step: a 3-step spot pays 30).
+- **Later trees ask for more.** A tree makes you do the first 3 steps of the pattern in zones 1-2, then 4, 5, 6, 7, and 8 in zone 10,
   always the same opening steps, so what you learned still applies and you only learn the new tail.
 
-A master chopper lands about 30% more damage per click than someone chopping blind, so pay per hp was lowered to keep a master a bit
-under mining per click; someone guessing earns well under half that, so learning is worth it. The same stances work on private,
-community and party trees. Spots still wear down a little at random while you work on them.
+The same stances work on private, community and party trees. Chopping pays as it did before the stances: a good chop (15%) hits +50%.
 
 ### Foraging pay vs mining
 

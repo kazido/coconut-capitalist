@@ -406,17 +406,11 @@ class Grain(_Data):
 
 
 class ChoppingRules(_Data):
-    """How a swing's damage varies: the grain's pattern (combo and finisher), good chops, and spots wearing down at random."""
+    """How a swing works: the grain you are on, its pattern of stances (for learning and a little xp), and good chops."""
 
     good_chop_chance: float = Field(ge=0, le=1)
     good_chop_bonus: float = Field(ge=0)  # +50% -> 0.5
-    wear_chance: float = Field(ge=0, le=1)  # each chop: the chance the spot wears down one step
-    wear_step: float = Field(ge=0, lt=1)  # each step makes chops this much weaker
-    spot_floor: float = Field(gt=0, le=1)  # ...but never below this share
-    strikes: int = Field(ge=1)  # wrong stances a spot allows before it gives out and you move to a new one
-    combo_step: float = Field(ge=0)  # each correct stance in a row adds this much damage
-    finisher: float = Field(ge=1)  # finishing the pattern lands this many times harder
-    glancing: float = Field(gt=0, le=1)  # a wrong stance does only this much
+    perfect_xp_per_step: int = Field(ge=0)  # xp for doing every step of a spot right, per step
     cycle_by_zone: list[int] = Field(min_length=1)  # steps of the pattern a tree of zone 1, 2, ... makes you do
     grains: list[Grain] = Field(min_length=1)
 

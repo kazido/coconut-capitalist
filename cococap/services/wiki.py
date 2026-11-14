@@ -91,12 +91,11 @@ def _foraging(reg: Registry) -> list[str]:
         f"**Foraging** needs an axe. Chop a tree down for bits, drops and xp. There are **{f.zones} zones** (a new one every {f.levels_per_zone} levels); "
         f"from zone {f.heavy_zone} alone, trees are heavy and you swing at half power unless your axe has **Soloist**.",
         "**Learn the grain.** Every spot has a grain (Plain, Knotty, Clean, Twisted, Split or Burl), and every grain has its own secret **pattern** "
-        "of the three stances (⬆️ Overhead, ↔️ Sidecut, ⬇️ Undercut). Pick the right stance for your step and the grain gives: you move on, "
-        "build a combo and the last step lands a **finisher**. A wrong stance is a glancing blow and you stay on the same step. "
-        "Every step you get right is remembered for good, so once you know a grain you simply follow it. Deeper trees make you do more steps.",
-        "**Remember it.** A new spot shows ❔ for every step again, so you have to remember what you learned: your **Grain notes** (a button "
-        "on the foraging pages) list every grain and the steps you know. A spot ends when you finish its pattern or make three mistakes on it, "
-        "and you move to a new one by yourself. Spots wear down at random as you chop, and a good chop hits extra hard.",
+        "of the three stances (⬆️ Overhead, ↔️ Sidecut, ⬇️ Undercut). For each step pick a stance: a wrong one puts an ❌ and you move on to the next. "
+        "Your **Grain notes** (a button on the foraging pages) remember the right stances and cross off the wrong ones, so you piece each grain "
+        "together. Get every step of a spot right and you earn a little extra xp.",
+        "**Remember it.** A new spot shows ❔ for every step again, so you have to remember what you learned. When a spot's pattern is done you "
+        "move to a new one by yourself. Deeper trees make you do more steps. A good chop hits extra hard.",
         f"**The community tree.** One grows every hour and stands for {c.open_minutes} minutes. Everyone's chops add up; "
         f"chop at least {c.min_share:.0%} of it to be paid, and a bigger crowd earns a bonus. Rewards arrive in your own panel, even if you were offline.",
     ]

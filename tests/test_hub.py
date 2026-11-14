@@ -1274,22 +1274,21 @@ async def test_home_only_says_whether_check_in_is_ready_and_the_timers_live_on_t
     assert [b for b in buttons(nav) if b.label and b.label.endswith(("h", "m")) and b.disabled]  # timers: on the page
 
 
-async def test_a_spot_moves_on_by_itself_when_it_is_finished_or_gives_out(db, monkeypatch):
+async def test_a_spot_moves_on_by_itself_when_its_pattern_is_done_not_when_you_are_wrong(db, monkeypatch):
     freeze_time(monkeypatch)
     await with_axe(template="reinforced_axe")
     nav, inter = await hub("tree", tree=foraging_service.Tree(1, 100_000, 100_000))
     rules = get_registry().foraging
     assert not [b for b in buttons(nav) if b.label == "Rotate"]  # there is no Rotate button any more
     cycle = foraging_service.cycle_length(1, rules)
-    for _ in range(cycle):
-        await chop(nav, inter)
-    assert nav.screen.spot.step == 0 and "move on to a new spot" in all_text(nav)  # finished: a fresh spot
-    wrong = next(letter for letter in "osu" if letter != nav.screen.spot.expected(rules, cycle))
-    label = foraging_service.STANCES[wrong][0]
-    for strike in range(rules.chopping.strikes):
-        assert nav.screen.spot.strikes == strike
-        await click(nav, inter, label)
-    assert nav.screen.spot.strikes == 0 and nav.screen.spot.step == 0 and "gives out" in all_text(nav)  # failed: a fresh spot
+    for step in range(cycle - 1):  # wrong, wrong... you still move on a step each time and the spot stays
+        wrong = next(letter for letter in "osu" if letter != nav.screen.spot.expected(rules, cycle))
+        await click(nav, inter, foraging_service.STANCES[wrong][0])
+        assert nav.screen.spot.step == step + 1 and nav.screen.spot.marks == [False] * (step + 1)
+    assert all(m is False for m in nav.screen.spot.marks) and "❌" in all_text(nav)
+    await chop(nav, inter)  # the last step (right this time): the spot is done, imperfect, and a new one starts
+    assert nav.screen.spot.step == 0 and nav.screen.spot.marks == [] and "New spot" in all_text(nav)
+    assert "Perfect" not in all_text(nav)
 
 
 async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
