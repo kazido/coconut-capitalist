@@ -1303,3 +1303,17 @@ async def test_a_locked_water_cannot_be_cast_into_even_with_a_stale_menu(db):
     with pytest.raises(f.FishingError, match="opens at fishing level 15"):
         await click(nav, inter, "Cast")
     assert nav.screen.cast is None
+
+
+async def test_the_records_page_is_one_click_from_the_fishing_page_and_shows_server_records_for_every_fish(db):
+    from cococap.services import community
+
+    await community.update(f.RECORDS_KEY, {}, lambda r: r.update({"tuna": {"size": 188.5, "uid": 7, "name": "Ahna"}}))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Records")  # at level 1, straight from the main page
+    assert nav.screen.id == "fishrecords"
+    page = all_text(nav)
+    assert "Tuna" in page and "188.5 cm (Ahna)" in page and "you: not caught yet" in page  # someone's record, not hers yet
+    assert "???" in page  # fish nobody has caught stay a mystery
+    await click(nav, inter, "Back to fishing")
+    assert nav.screen.id == "fish"

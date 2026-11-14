@@ -56,7 +56,7 @@ class FishScreen(Screen):
     label = "Fishing"
     emoji = ROD
     description = "Cast a line and reel in fish"
-    links = ("fishquests", "fishbook", "fishcommunity")
+    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -135,6 +135,7 @@ class FishScreen(Screen):
                 button("Book", emoji="📖", disabled=not fishing.book_unlocked(level, reg.fishing), on_click=self._book),
                 button("Community", emoji="🌍", disabled=not fishing.quests_unlocked(level, reg.fishing), on_click=self._community),
             ))
+            body.append(row(button("Records", emoji="📏", on_click=self._records)))
             return Page("Fishing", body, accent=ACCENT)
 
         status = cast.status(now())
@@ -293,6 +294,9 @@ class FishScreen(Screen):
 
     async def _community(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishcommunity")
+
+    async def _records(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fishrecords")
 
     async def _sell(self, interaction: discord.Interaction) -> None:
         total = await fishing.sell_all(self.user)
@@ -473,16 +477,16 @@ class FishRecordsScreen(Screen):
         server = await fishing.server_records()
         lines = []
         for fish in sorted(fishing.fish_pool(reg), key=lambda i: (i.rarity, i.name)):
-            best = mine.get(fish.id)
-            if best is None:
-                lines.append(f"▫️ ??? ·  {Rarities.from_value(fish.rarity).rarity_name}")
+            best, held = mine.get(fish.id), server.get(fish.id)
+            if best is None and held is None:
+                lines.append(f"▫️ ???  ·  {Rarities.from_value(fish.rarity).rarity_name}  ·  nobody has caught one yet")
                 continue
-            held = server.get(fish.id)
+            yours = f"you **{best:g} cm**" if best is not None else "you: not caught yet"
             record = f"  ·  🏆 {held['size']:g} cm ({held['name']})" if held else ""
-            crown = " 👑" if held and held["uid"] == self.user.id and held["size"] == best else ""
-            lines.append(f"{fish.display}  ·  you **{best:g} cm**{crown}{record}")
+            crown = " 👑" if held and best is not None and held["uid"] == self.user.id and held["size"] == best else ""
+            lines.append(f"{fish.display}  ·  {yours}{crown}{record}")
         return Page("Fish Records", [*self.note_block(), text("### 📏 Biggest catches\n" + "\n".join(lines)
-                    + "\n-# 👑 = you hold the server record. A new record pays bits."),
+                    + "\n-# 🏆 is the biggest ever caught on the server, 👑 means that's you. Beat a record to be paid."),
                     row(button("Back to fishing", emoji=ROD, on_click=self._back))], accent=0x2980B9)
 
     async def _back(self, interaction: discord.Interaction) -> None:
