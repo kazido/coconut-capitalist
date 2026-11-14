@@ -301,7 +301,7 @@ async def test_the_frog_makes_crops_grow_more_often_and_the_bee_makes_harvests_b
 # ---- the Pet House -----------------------------------------------------------------------------------------------------------------------
 async def test_the_pet_house_for_someone_with_no_pets_explains_orbs(db):
     nav, inter = await hub("pets")
-    assert "no pets yet" in all_text(nav) and "Familiar Orb" in all_text(nav)
+    assert "No pets yet" in all_text(nav) and "Familiar Orb" in all_text(nav)
     await click(nav, inter, "Familiar Orbs")
     assert nav.screen.id == "orbs" and find_button(nav, "Open a Familiar Orb (0)").disabled
 

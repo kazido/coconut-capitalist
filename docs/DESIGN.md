@@ -699,3 +699,16 @@ active hours for x1.35). The fix is two layers, **tools** (what you wield) and *
   Living Vine (1 in 150), Golden Pollen (1 in 600), besides Plant Fiber. They upgrade the can and are also in a few steps of every other
   tool (axe, pickaxe, rod and sword), so farming feeds the rest of the game.
 - Existing farmers have no can: they buy a Tin Watering Can first (the Water button says so). `free_plots` is a balance dial (a player set it to 3 by hand).
+
+## Less on the screen (decided)
+A pass over the busiest pages to cut text without cutting information. The rules we follow from now on:
+- **One line per thing.** A list row is `name · number · one short fact`; ranges, odds and flavour go where you choose or act (a menu description,
+  the note after you click), not on every row. Example: a growing plot reads `3 🍋 Lemon 2/4 💧 · ~28h`; the full "about 28h (22h to 35h)"
+  appears once, when you plant, and the seed menu says `~8h`.
+- **Collapse the unknown.** Many "???" rows become one line (`❓ 21 fish nobody has caught yet: Common 3 · Rare 3 ...`) on Records and Field notes.
+- **Costs on one line** (`needs_text`): `✅ 20,000 bits · ❌ Feather 0/40 · ❌ Hardwood 0/6`, used by upgrades, pots and crafting.
+- **Mastery** shows each node on one line; **Collection Book** shows two fish per line; a few intro paragraphs became a single line.
+- **Farm pages:** nine plots to a page (three rows of three) with Prev / Page n/N / Next once there is more than one page. The farm model has room
+  for 27 plots (`MAX_PLOTS`); `services.farming.PLOTS` is how many exist now (9). **Plant page** plants only the plots on the page you are looking
+  at; Harvest all and Water cover every page.
+- **Shop:** tools come first in every section; once you own a kind of tool its Buy button becomes **Upgrade tool** and opens the upgrade page.

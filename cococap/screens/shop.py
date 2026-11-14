@@ -21,6 +21,7 @@ class ShopScreen(Screen):
     label = "Shop"
     emoji = "🛒"
     description = "Buy tools and seeds, sell what you've gathered"
+    links = ("upgrade",)
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -31,7 +32,7 @@ class ShopScreen(Screen):
     async def _entries(self):
         reg = get_registry()
         if self.mode == "buy":
-            items = sorted(reg.shop_items(), key=lambda i: (i.skill or "", i.price, i.name))
+            items = sorted(reg.shop_items(), key=lambda i: (not i.tool, i.skill or "", i.price, i.name))  # tools first in every section
             return [(i, None) for i in items]
         owned = await self.user.items()
         sellable = [(reg.find_item(k), q) for k, q in owned.items()]
@@ -69,9 +70,11 @@ class ShopScreen(Screen):
             if self.mode == "buy":
                 has_one = bool(item.tool and item.tool.kind in have_kinds)
                 blurb = f"**{bits(item.price)}** bits  ·  {item.description}"[:300]
-                if has_one:
-                    blurb = f"✅ You already have a {item.tool.kind}: upgrade it from your inventory.  ·  {item.description}"[:300]
-                accessory = button("Buy", style=discord.ButtonStyle.success, disabled=has_one or self.user.purse < item.price, on_click=self._buy_one(item.id) if item.is_instance else self._ask_quantity(item.id, "buy", 1))
+                if has_one:  # you own this kind of tool: the button takes you to its upgrades instead
+                    blurb = f"✅ Owned  ·  {item.description}"[:300]
+                    accessory = button("Upgrade tool", emoji="🔨", style=discord.ButtonStyle.primary, on_click=self._to_upgrades)
+                else:
+                    accessory = button("Buy", style=discord.ButtonStyle.success, disabled=self.user.purse < item.price, on_click=self._buy_one(item.id) if item.is_instance else self._ask_quantity(item.id, "buy", 1))
             else:
                 blurb = f"You have **{bits(owned)}**  ·  sells for **{bits(item.sell_price)}** each"
                 accessory = button("Sell", style=discord.ButtonStyle.success, on_click=self._ask_quantity(item.id, "sell", owned))
@@ -124,6 +127,9 @@ class ShopScreen(Screen):
             await self.refresh(interaction)
 
         return turn
+
+    async def _to_upgrades(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "upgrade")
 
     def _buy_one(self, item_id: str):
         """Tools and weapons cannot stack (you may own just one of a kind), so there is nothing to ask: one click buys it."""

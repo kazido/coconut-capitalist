@@ -24,6 +24,7 @@ class FarmScreen(Screen):
     def __init__(self, nav):
         super().__init__(nav)
         self.seed: str | None = None  # the seed an empty plot will be planted with
+        self.page = 0  # which page of plots (nine to a page) is showing
 
     # ---- rendering -----------------------------------------------------------------------------
     async def build(self) -> Page:
@@ -43,46 +44,58 @@ class FarmScreen(Screen):
 
         overflow, needed = User.xp_for_next_level(skill.xp)
         can = await equipped_stats(self.user, "farming")
-        can_line = (f"🚿 Watering can: waters **{can.power}** plot(s) an hour" if can
-                    else "🚿 You need a watering can to water. Buy a **Tin Watering Can** in the shop and it equips itself.")
+        can_line = (f"🚿 Can waters **{can.power}** plot(s) an hour" if can
+                    else "🚿 No watering can: buy a **Tin Watering Can** in the shop")
+        pages = max(1, -(-farming.PLOTS // farming.PAGE_PLOTS))
+        self.page = min(self.page, pages - 1)
+        first = self.page * farming.PAGE_PLOTS
+        shown = views[first:first + farming.PAGE_PLOTS]
+        extras = f"  ·  {reg.item(reg.farming.deed_item).display} **{deeds}**" if deeds else ""
         body = [
             *self.note_block(),
-            text(f"**Level {farming.level_of(skill)}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp\n"
-                 f"🌧️ Next rain <t:{farming.next_rain(time.time())}:R>  ·  💧 Blessings: **{skill.rain_god_blessings}**"
-                 + (f"  ·  {reg.item(reg.farming.deed_item).display}: **{deeds}**" if deeds else "") + f"\n{can_line}"),
+            text(f"**Lv {farming.level_of(skill)}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp\n"
+                 f"🌧️ Rain <t:{farming.next_rain(time.time())}:R>  ·  💧 Blessings **{skill.rain_god_blessings}**{extras}\n{can_line}"),
             sep(),
-            text(self._plot_lines(views, reg)),
+            text(self._plot_lines(shown, reg, f"Plots {shown[0].number}-{shown[-1].number}" if pages > 1 else None)),
         ]
-        for start in range(0, farming.PLOTS, PER_ROW):
-            body.append(row(*(self._plot_button(v, reg, deeds) for v in views[start:start + PER_ROW])))
+        for start in range(0, len(shown), PER_ROW):
+            body.append(row(*(self._plot_button(v, reg, deeds) for v in shown[start:start + PER_ROW])))
         if seeds:
             body.append(row(select(
                 "Seed to plant",
                 [discord.SelectOption(
                     label=reg.item(i).name, value=i, default=i == self.seed, emoji=reg.item(i).emoji or "🌱",
-                    description=f"{q:,} owned · {reg.item(i).seed.cycles} cycles · {farming.estimate(reg.item(i).seed.cycles, reg.farming).text()}",
+                    description=f"{q:,} owned · {reg.item(i).seed.cycles} cycles · {farming.estimate(reg.item(i).seed.cycles, reg.farming).short()}",
                 ) for i, q in seeds.items()],
                 self._pick_seed,
             )))
-        empty = sum(1 for v in views if v.empty)
+        empty = sum(1 for v in shown if v.empty)
         body.append(row(
             button("Harvest all", emoji="🧺", style=discord.ButtonStyle.success, disabled=not any(v.ready for v in views), on_click=self._harvest_all),
             button("Water", emoji="💧", style=discord.ButtonStyle.primary,
                    disabled=can is None or not any(v.growing and not v.watered for v in views), on_click=self._water),
-            button("Plant all", emoji="🌱", disabled=not (self.seed and empty), on_click=self._plant_all),
+            button("Plant page" if pages > 1 else "Plant all", emoji="🌱", disabled=not (self.seed and empty), on_click=self._plant_all),
             button("Market", emoji="🛒", on_click=self._market),
         ))
+        if pages > 1:
+            body.append(row(button("Prev", emoji="◀️", disabled=self.page == 0, on_click=self._turn(-1)),
+                            button(f"Page {self.page + 1}/{pages}", disabled=True),
+                            button("Next", emoji="▶️", disabled=self.page >= pages - 1, on_click=self._turn(1))))
         return Page("Farm", body, accent=0x6AA84F)
 
-    def _plot_lines(self, views, reg) -> str:
-        lines = []
+    def _plot_lines(self, views, reg, heading: str | None = None) -> str:
+        """One short line per plot that has something in it: number, crop, progress, watered, time left."""
+        lines = [f"**{heading}**"] if heading else []
         for v in views:
             if v.ready:
-                lines.append(f"**{v.number}** · {reg.item(v.crop_id).display} is **ready**")
+                lines.append(f"**{v.number}** {reg.item(v.crop_id).display}  ✅ **ready**")
             elif v.growing:
-                lines.append(f"**{v.number}** · {reg.item(v.seed_id).display}  {v.cycle}/{v.needed} cycles" + ("  💧" if v.watered else "")
-                             + f"  ·  ready in {farming.estimate(v.needed - v.cycle, reg.farming).text()}")
-        return "\n".join(lines) or "Nothing is growing yet. Pick a seed, then plant it in a plot."
+                seed = reg.item(v.seed_id)
+                lines.append(f"**{v.number}** {seed.emoji or '🌱'} {seed.name.removesuffix(' Seed')}  {v.cycle}/{v.needed}" + (" 💧" if v.watered else "")
+                             + f"  ·  {farming.estimate(v.needed - v.cycle, reg.farming).short()}")
+        if len(lines) == (1 if heading else 0):
+            lines.append("Nothing is growing here yet. Pick a seed, then plant it.")
+        return "\n".join(lines)
 
     def _plot_button(self, v: farming.PlotView, reg, deeds: int) -> discord.ui.Button:
         click = self._clicked(v.number)
@@ -109,7 +122,7 @@ class FarmScreen(Screen):
                 await farming.plant(self.user, number, self.seed)
                 reg = get_registry()
                 when = farming.estimate(reg.item(self.seed).seed.cycles, reg.farming).text()
-                return await self.refresh(interaction, f"Planted {reg.item(self.seed).name} in plot {number}. Ready in {when}.")
+                return await self.refresh(interaction, f"Planted {reg.item(self.seed).name} in plot {number}: ready in {when}.")
             await self.refresh(interaction)
 
         return clicked
@@ -143,10 +156,18 @@ class FarmScreen(Screen):
             note += " " + ", ".join(f"Plot {n}" for n in report.matured) + (" is" if len(report.matured) == 1 else " are") + " ready!"
         await self.refresh(interaction, note)
 
+    def _turn(self, step: int):
+        async def go(interaction: discord.Interaction) -> None:
+            self.page += step
+            await self.refresh(interaction)
+
+        return go
+
     async def _plant_all(self, interaction: discord.Interaction) -> None:
         views = farming.plot_views(await self.user.skill("farming"), get_registry())
+        first = self.page * farming.PAGE_PLOTS
         planted = 0
-        for v in views:
+        for v in views[first:first + farming.PAGE_PLOTS]:  # just this page
             if v.empty and await self.user.item_quantity(self.seed) > 0:
                 await farming.plant(self.user, v.number, self.seed)
                 planted += 1

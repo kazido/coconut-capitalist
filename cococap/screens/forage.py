@@ -241,7 +241,7 @@ class ForageScreen(Screen):
         party = await Party.for_user(self.user.id)
         self.watching_party = party is not None and party.member_count() >= 2
         if party is None or party.member_count() < 2:
-            return [text("-# 👥 Chop with friends: join a party and you can start a **party tree** that pays a little better.")]
+            return [text("-# 👥 In a party you can start a **party tree** (pays better).")]
         pt = await party_tree.view(self.user)
         bonus = get_registry().foraging.party_tree
         if pt is not None and pt.standing:

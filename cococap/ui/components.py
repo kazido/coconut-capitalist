@@ -112,4 +112,4 @@ def needs_text(bits_needed: int, bits_have: int, items: dict[str, int], owned: d
         have = owned.get(item_id, 0)
         item = registry.item(item_id)
         lines.append(f"{'✅' if have >= quantity else '❌'} {item.display}  **{have:,}/{quantity:,}**")
-    return "\n".join(lines)
+    return "  ·  ".join(lines)

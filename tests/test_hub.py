@@ -235,7 +235,7 @@ async def test_shop_buy_opens_a_modal_and_buying_works(db):
     await set_columns(await User.get(1), purse=10_000_000)
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")  # seeds stack, so they ask how many (tools do not: see the next test)
-    buy = next(b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success)
+    buy = [b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success][1]  # (the can comes first: tools lead)
     await buy.callback(inter)
     modal = await submit(inter, "2")
     await modal.on_submit(inter)
@@ -260,7 +260,7 @@ async def test_buying_a_tool_is_one_click_with_no_how_many_popup(db):
     inter.response.send_modal.assert_not_called()  # nothing to ask: you can only own one
     user = await User.get(1)
     assert len(await user.instances()) == 1 and "Bought" in all_text(nav) and "equipped" in all_text(nav)
-    assert "You already have a pickaxe" in all_text(nav)  # and a second one is no longer offered
+    assert "Owned" in all_text(nav) and "Upgrade tool" in {b.label for b in buttons(nav)}  # a second one is no longer offered: it upgrades instead
 
 
 async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
@@ -274,7 +274,7 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
     await set_columns(await User.get(1), purse=200_000)
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")
-    buy = next(b for b in item_buy_buttons(nav) if not b.disabled)
+    buy = [b for b in item_buy_buttons(nav) if not b.disabled][1]  # (the first is the can: a tool, bought in one click)
     await buy.callback(inter)
     modal = await submit(inter, "lots")
     with pytest.raises(CustomError):
@@ -419,12 +419,12 @@ async def test_shop_has_a_section_per_skill_and_filters(db):
     for emoji, skill in (("🌽", "farming"), ("🌳", "foraging"), ("⛏️", "mining")):
         await click(nav, inter, emoji=emoji)
         shown = all_text(nav)
-        expected = sorted((i for i in reg.shop_items() if i.skill == skill), key=lambda i: (i.price, i.name))  # (the shop's own order)
+        expected = sorted((i for i in reg.shop_items() if i.skill == skill), key=lambda i: (not i.tool, i.price, i.name))  # (the shop's own order: tools first)
         assert expected and all(i.name in shown for i in expected[:4]), skill
         others = [i for i in reg.shop_items() if i.skill != skill]
         assert not any(f"### {i.name}" in shown for i in others), skill
     await click(nav, inter, "All")
-    assert "### Apple Seed" in all_text(nav)
+    assert "Tin Watering Can" in all_text(nav) and "### Apple Seed" not in all_text(nav)  # tools lead: seeds are on a later page
 
 
 # ---- the in-window casino --------------------------------------------------------------------------
@@ -927,7 +927,7 @@ async def test_farm_opens_from_skills_and_shows_the_grid(db):
     await farm[1].callback(inter)
     assert nav.screen.id == "farm"
     text = all_text(nav)
-    assert "Next rain" in text and "Blessings" in text and "Nothing is growing" in text
+    assert "Rain" in text and "Blessings" in text and "Nothing is growing" in text
     labels = [b.label for b in buttons(nav)]
     assert "1 Plant" in labels and labels.count("Buy plot") == 8  # plot 1 is free, the other eight are locked
 

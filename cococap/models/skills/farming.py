@@ -22,6 +22,8 @@ def _plot() -> Plot:
 
 
 class Farm(BaseModel):
+    """Room for up to MAX_PLOTS plots (three pages of nine); how many exist in the game is `services.farming.PLOTS`."""
+
     plot_1: Plot = Field(default_factory=_plot)
     plot_2: Plot = Field(default_factory=_plot)
     plot_3: Plot = Field(default_factory=_plot)
@@ -31,6 +33,27 @@ class Farm(BaseModel):
     plot_7: Plot = Field(default_factory=_plot)
     plot_8: Plot = Field(default_factory=_plot)
     plot_9: Plot = Field(default_factory=_plot)
+    plot_10: Plot = Field(default_factory=_plot)
+    plot_11: Plot = Field(default_factory=_plot)
+    plot_12: Plot = Field(default_factory=_plot)
+    plot_13: Plot = Field(default_factory=_plot)
+    plot_14: Plot = Field(default_factory=_plot)
+    plot_15: Plot = Field(default_factory=_plot)
+    plot_16: Plot = Field(default_factory=_plot)
+    plot_17: Plot = Field(default_factory=_plot)
+    plot_18: Plot = Field(default_factory=_plot)
+    plot_19: Plot = Field(default_factory=_plot)
+    plot_20: Plot = Field(default_factory=_plot)
+    plot_21: Plot = Field(default_factory=_plot)
+    plot_22: Plot = Field(default_factory=_plot)
+    plot_23: Plot = Field(default_factory=_plot)
+    plot_24: Plot = Field(default_factory=_plot)
+    plot_25: Plot = Field(default_factory=_plot)
+    plot_26: Plot = Field(default_factory=_plot)
+    plot_27: Plot = Field(default_factory=_plot)
+
+
+MAX_PLOTS = 27
 
 
 class Farming(Skill):

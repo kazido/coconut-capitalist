@@ -27,7 +27,8 @@ from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
 from cococap.user import Cooldowns, User
 
-PLOTS = 9
+PLOTS = 9  # how many plots exist right now (the farm model has room for 27: three pages)
+PAGE_PLOTS = 9  # plots on one page of the farm screen
 MAX_CATCH_UP_HOURS = 24 * 400  # a farm left alone for over a year stops counting (and the loop stays bounded)
 DAY = 86400
 
@@ -110,6 +111,10 @@ class Estimate:
     def text(self) -> str:
         """e.g. "about 3h (1h to 7h)", "about 2.5 days (2 to 3.2 days)"."""
         return f"about {_span(self.typical)} ({_span(self.early)} to {_span(self.late)})"
+
+    def short(self) -> str:
+        """Just the typical time, for crowded places: "~3h", "~2.5 days"."""
+        return f"~{_span(self.typical)}"
 
 
 def _span(hours: float) -> str:

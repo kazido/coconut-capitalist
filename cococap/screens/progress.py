@@ -29,7 +29,7 @@ class ProgressScreen(Screen):
         body = [
             *self.note_block(),
             text(f"### {p.tier.badge} Coconut Level {p.level}  ·  {p.tier.name}\n{bar(p.into / p.needed, 12)}  **{p.into}/{p.needed}** to level {p.level + 1}"
-                 f"\n-# {p.points:,} of {p.max_points:,} points. Every point is a milestone you reach once, so there is no grinding it."),
+                 f"\n-# {p.points:,} of {p.max_points:,} points  ·  each one is a one-time milestone"),
         ]
         nearest = p.next_up(3)
         if nearest:

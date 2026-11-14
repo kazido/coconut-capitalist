@@ -1131,7 +1131,7 @@ async def test_a_catch_says_its_size_and_a_record_and_the_records_page_lists_the
     assert f"{size:g} cm" in text_now and "NEW SERVER RECORD" in text_now
     nav2, inter2 = await hub("fishrecords")
     page = all_text(nav2)
-    assert "Salmon" in page and f"{size:g} cm" in page and "Ahna" in page and "👑" in page and "???" in page  # unseen fish stay hidden
+    assert "Salmon" in page and f"{size:g} cm" in page and "Ahna" in page and "👑" in page and "fish nobody has caught yet" in page  # unseen fish stay hidden, in one line
 
 
 async def test_the_records_page_is_reachable_from_the_book_and_the_community(db):
@@ -1330,7 +1330,7 @@ async def test_the_records_page_is_one_click_from_the_fishing_page_and_shows_ser
     assert nav.screen.id == "fishrecords"
     page = all_text(nav)
     assert "Tuna" in page and "188.5 cm (Ahna)" in page and "you: not caught yet" in page  # someone's record, not hers yet
-    assert "???" in page  # fish nobody has caught stay a mystery
+    assert "fish nobody has caught yet" in page and "???" not in page  # fish nobody has caught stay a mystery (one line, not one each)
     await click(nav, inter, "Back to fishing")
     assert nav.screen.id == "fish"
 
@@ -1739,7 +1739,7 @@ async def test_the_field_notes_page_is_a_button_on_the_fishing_page_even_with_no
     await click(nav, inter, "Field notes")
     assert nav.screen.id == "fishnotes"
     page = all_text(nav)
-    assert "Field notes" in page and "???" in page and "pure luck" in page  # it explains itself and shows what is still unknown
+    assert "Field notes" in page and "not caught yet" in page and "pure luck" in page  # it explains itself and shows what is still unknown
     await click(nav, inter, "Back to fishing")
     assert nav.screen.id == "fish"
     nav2, inter2 = await hub("fishrecords")
@@ -1773,7 +1773,7 @@ async def test_the_fishing_page_tells_you_how_long_your_rod_takes_to_bite(db):
     await equip(user, "fishing", inst.id)
     nav, _ = await hub("fish")
     expected = f.typical_wait(REG.item("reinforced_rod").tool.power, RULES)
-    assert f"bites in about **{expected:.0f}s**" in all_text(nav) or f"bites in about {expected:.0f}s" in all_text(nav)
+    assert f"bites in ~**{expected:.0f}s**" in all_text(nav)
 
 
 # ---- xp is for the catch, not the fish or the rod ------------------------------------------------------------------------

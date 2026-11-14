@@ -118,14 +118,14 @@ class FishScreen(Screen):
             else:
                 slips = fishing.slips_allowed(stats.power, reg.fishing, stats.stats.get("slips", 0))
                 wait = fishing.typical_wait(stats.power, reg.fishing, stats.stats.get("bite_speed", 0.0))
-                body.append(text(f"{ROD} Rod power **{stats.power}**  ·  bites in about **{wait:.0f}s**"
-                                 + (f"  ·  forgives **{slips}** wrong arrow(s)" if slips else "")))
+                body.append(text(f"{ROD} Rod **{stats.power}**  ·  bites in ~**{wait:.0f}s**"
+                                 + (f"  ·  forgives **{slips}** slip(s)" if slips else "")))
             level = User.xp_to_level(skill.xp)
             open_waters = fishing.unlocked_waters(level, reg.fishing)
             if self.water not in {w.id for w in open_waters}:
                 self.water = open_waters[-1].id  # a newly opened water is where you head next
             here = fishing.water_by_id(reg, self.water)
-            body.append(text(f"{here.emoji} **{here.name}**  ·  {here.description}"))
+            body.append(text(f"{here.emoji} **{here.name}**" + (f"  ·  {here.description}" if len(open_waters) == 1 else "")))  # (with a menu, it says what each water is like)
             if len(open_waters) > 1:
                 body.append(row(select("Where to fish...", [
                     discord.SelectOption(label=w.name, value=w.id, emoji=w.emoji, default=w.id == self.water,
@@ -398,6 +398,14 @@ class FishQuestsScreen(Screen):
         await self.go(interaction, "fish")
 
 
+def unknown_summary(rarities: list[int], what: str) -> str:
+    """One line for every fish you have not met yet, instead of one "???" line each: "❓ 21 unknown: Common 3 · Rare 3 ..."."""
+    counts: dict[int, int] = {}
+    for rarity in rarities:
+        counts[rarity] = counts.get(rarity, 0) + 1
+    return f"❓ **{len(rarities)}** {what}: " + " · ".join(f"{Rarities.from_value(r).rarity_name} {n}" for r, n in sorted(counts.items()))
+
+
 class FishBookScreen(Screen):
     id = "fishbook"
     label = "Collection Book"
@@ -421,10 +429,9 @@ class FishBookScreen(Screen):
         wanted = [e for e in view.entries if not e.done and owned.get(e.fish.id)]
         body = [
             *self.note_block(),
-            text(f"### 📖 Book level {view.level}\nTurn fish in for **+{rules.bits_per_sell:.0%}** of their value and xp. "
-                 f"Fill every page to finish the book: it pays **{bits(rules.completion_bits * view.level)}** bits and the next level "
-                 f"needs more fish, a lot more of the common ones."),
-            text("\n".join(lines)),
+            text(f"### 📖 Book level {view.level}\n+**{rules.bits_per_sell:.0%}** value and xp on fish you turn in  ·  "
+                 f"finishing pays **{bits(rules.completion_bits * view.level)}** bits"),
+            text("\n".join("  ·  ".join(lines[i:i + 2]) for i in range(0, len(lines), 2))),
         ]
         if wanted:
             body.append(row(select("Turn in a fish...", [
@@ -544,18 +551,20 @@ class FishRecordsScreen(Screen):
         reg = get_registry()
         mine = (await self.user.skill("fishing")).records
         server = await fishing.server_records()
-        lines = []
+        lines, unknown = [], []
         for fish in sorted(fishing.fish_pool(reg), key=lambda i: (i.rarity, i.name)):
             best, held = mine.get(fish.id), server.get(fish.id)
             if best is None and held is None:
-                lines.append(f"▫️ ???  ·  {Rarities.from_value(fish.rarity).rarity_name}  ·  nobody has caught one yet")
+                unknown.append(fish.rarity)
                 continue
             yours = f"you **{best:g} cm**" if best is not None else "you: not caught yet"
             record = f"  ·  🏆 {held['size']:g} cm ({held['name']})" if held else ""
             crown = " 👑" if held and best is not None and held["uid"] == self.user.id and held["size"] == best else ""
             lines.append(f"{fish.display}  ·  {yours}{crown}{record}")
+        if unknown:
+            lines.append(unknown_summary(unknown, "fish nobody has caught yet"))
         return Page("Fish Records", [*self.note_block(), text("### 📏 Biggest catches\n" + "\n".join(lines)
-                    + "\n-# 🏆 is the biggest ever caught on the server, 👑 means that's you. Beat a record to be paid."),
+                    + "\n-# 🏆 server record  ·  👑 that's you  ·  beat a record to be paid."),
                     row(button("Back to fishing", emoji=ROD, on_click=self._back),
                         button("Field notes", emoji="🔍", on_click=self._notes))], accent=0x2980B9)
 
@@ -578,7 +587,7 @@ class FishNotesScreen(Screen):
     async def build(self) -> Page:
         reg = get_registry()
         skill = await self.user.skill("fishing")
-        lines = []
+        lines, unknown = [], []
         for fish in sorted((i for i in fishing.fish_pool(reg) if i.rarity >= reg.fishing.reel.mystery_from_rarity),
                            key=lambda i: (i.rarity, i.name)):
             entries = skill.notes.get(fish.id, [])
@@ -589,10 +598,11 @@ class FishNotesScreen(Screen):
             elif fish.id in skill.records:
                 lines.append(f"{fish.display}: no ❓ revealed yet. Press the ❓ (or lose at one) to find out what it was.")
             else:
-                lines.append(f"▫️ ???  ·  {Rarities.from_value(fish.rarity).rarity_name}  ·  not caught yet")
-        intro = ("Super rare fish and up hide some arrows behind a ❓. Each fish has its own secret rule for it: always ◄, always ►, "
-                 "the same as the arrow before it, or the opposite (a few are pure luck). Every time a ❓ is revealed it is written "
-                 "here, so you can work out the rule.")
+                unknown.append(fish.rarity)
+        if unknown:
+            lines.append(unknown_summary(unknown, "not caught yet"))
+        intro = ("Rare fish hide arrows behind a ❓. Each fish has its own rule for it: always ◄, always ►, the same as the arrow "
+                 "before it, or the opposite (a few are pure luck). Every ❓ you see is written here.")
         return Page("Field notes", [*self.note_block(), text("### 🔍 Field notes\n-# " + intro + "\n" + "\n".join(lines)),
                     row(button("Back to fishing", emoji=ROD, on_click=self._back))], accent=0x2980B9)
 

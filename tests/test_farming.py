@@ -470,11 +470,12 @@ async def test_the_farm_page_and_the_seed_menu_show_the_wait_before_you_plant(db
     nav, inter = await hub("farm")
     menu = select_named(nav, "Seed to plant")
     lemon = next(o for o in menu.options if o.value == "lemon_seed")
-    assert f"{REG.item('lemon_seed').seed.cycles} cycles" in lemon.description and "about" in lemon.description and "to" in lemon.description
+    assert f"{REG.item('lemon_seed').seed.cycles} cycles" in lemon.description and "~" in lemon.description  # a short wait in the menu
     await choose(nav, inter, menu, "lemon_seed")
     await click(nav, inter, "1 Plant")
-    assert "Ready in about" in all_text(nav)
-    assert "ready in about" in all_text(nav)  # and the plot's own line keeps counting down
+    assert "ready in about" in all_text(nav) and "(" in all_text(nav)  # the full range once, when you plant
+    line = next(l for l in all_text(nav).split("\n") if l.startswith("**1**"))
+    assert "~" in line and "about" not in line and "(" not in line  # the plot's own line stays short
 
 
 # ---- the watering can ---------------------------------------------------------------------------------------------------------------------
@@ -612,3 +613,83 @@ async def test_a_plot_you_watered_and_then_harvested_does_not_use_up_the_can(db)
     await f.harvest(user, 1, Random(1), T0 + 5, REG)  # plot 1 is empty now: its watering no longer counts
     again = await f.water(user, T0 + 10, REG)
     assert again.watered == 1  # the can had one watering left, and plot 4 takes it
+
+
+# ---- pages of plots ---------------------------------------------------------------------------------------------------------------------
+async def many_plots(monkeypatch, plots=18):
+    monkeypatch.setattr(f, "PLOTS", plots)
+    user = await User.get(1)
+    await user.update_skill("farming", lambda m: [setattr(getattr(m.farm, f"plot_{n}"), "unlocked", True) for n in range(1, plots + 1)])
+    await with_can(user)
+    return user
+
+
+async def test_a_farm_of_one_page_has_no_page_controls(db):
+    nav, _ = await hub("farm")
+    labels = {b.label for b in buttons_of(nav)}
+    assert "Plant all" in labels and not any((l or "").startswith("Page") for l in labels)
+
+
+def buttons_of(nav):
+    from tests.test_hub import buttons
+
+    return buttons(nav)
+
+
+async def test_more_than_nine_plots_make_pages_and_each_page_shows_its_own_plots(db, monkeypatch):
+    await many_plots(monkeypatch)
+    nav, inter = await hub("farm")
+    text = all_text(nav)
+    assert "Plots 1-9" in text
+    labels = [b.label for b in buttons_of(nav)]
+    assert "Page 1/2" in labels and "9 Plant" in labels and "10 Plant" not in labels
+    assert next(b for b in buttons_of(nav) if b.label == "Prev").disabled and not next(b for b in buttons_of(nav) if b.label == "Next").disabled
+    await click(nav, inter, "Next")
+    labels = [b.label for b in buttons_of(nav)]
+    assert "Page 2/2" in labels and "10 Plant" in labels and "18 Plant" in labels and "1 Plant" not in labels
+    assert next(b for b in buttons_of(nav) if b.label == "Next").disabled and "Plots 10-18" in all_text(nav)
+    await click(nav, inter, "Prev")
+    assert "Page 1/2" in [b.label for b in buttons_of(nav)]
+
+
+async def test_plant_page_plants_only_the_plots_on_the_page_you_are_looking_at(db, monkeypatch):
+    user = await many_plots(monkeypatch)
+    await user.add_item("apple_seed", 30)
+    nav, inter = await hub("farm")
+    await click(nav, inter, "Plant page")
+    farm = (await user.skill("farming")).farm
+    assert [bool(getattr(farm, f"plot_{n}").crop_id) for n in range(1, 19)] == [True] * 9 + [False] * 9
+    assert await user.item_quantity("apple_seed") == 30 - 9 + 3  # (and the three starter seeds)
+    await click(nav, inter, "Next")
+    await click(nav, inter, "Plant page")
+    farm = (await user.skill("farming")).farm
+    assert all(getattr(farm, f"plot_{n}").crop_id for n in range(1, 19))
+
+
+async def test_harvest_all_and_water_work_across_every_page(db, monkeypatch):
+    user = await many_plots(monkeypatch)
+    await user.add_item("apple_seed", 30)
+    for number in (2, 14):
+        await f.plant(user, number, "apple_seed", now=T0, registry=REG)
+        await user.update_skill("farming", lambda m, n=number: setattr(getattr(m.farm, f"plot_{n}"), "can_harvest", True))
+    nav, inter = await hub("farm")
+    await click(nav, inter, "Harvest all")
+    farm = (await user.skill("farming")).farm
+    assert not farm.plot_2.can_harvest and not farm.plot_14.can_harvest and "Harvested" in all_text(nav)
+
+
+async def test_every_plot_of_the_big_farm_can_be_stored(db, monkeypatch):
+    user = await many_plots(monkeypatch, 27)
+    await user.add_item("apple_seed", 1)
+    await f.plant(user, 27, "apple_seed", now=T0, registry=REG)
+    assert (await user.skill("farming")).farm.plot_27.crop_id == "apple_seed"
+    nav, inter = await hub("farm")
+    assert "Page 1/3" in [b.label for b in buttons_of(nav)]
+
+
+async def test_a_page_number_beyond_the_last_page_falls_back_to_the_last_one(db, monkeypatch):
+    await many_plots(monkeypatch)
+    nav, inter = await hub("farm")
+    nav.screen.page = 7  # (say a plot count shrank, or a stale click)
+    await nav.screen.nav.refresh(inter)
+    assert "Page 2/2" in [b.label for b in buttons_of(nav)] and nav.screen.page == 1

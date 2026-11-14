@@ -47,8 +47,7 @@ class PetScreen(Screen):
         orbs_button = button("Familiar Orbs", emoji="🔮", style=discord.ButtonStyle.primary, on_click=self._to_orbs)
 
         if not house.pets:
-            body.append(text("You have no pets yet. A **Familiar Orb** hatches a random pet: they turn up in treasure chests "
-                             "and boss loot while fishing, and the shop sells them. Every pet gives a bonus somewhere in the game."))
+            body.append(text("No pets yet. A **Familiar Orb** hatches one (found while fishing, or in the shop). Every pet gives a bonus."))
             body.append(row(orbs_button))
             return Page("Pets", body, accent=0x27AE60)
 
@@ -149,8 +148,8 @@ class OrbScreen(Screen):
         house = self.user.pethouse
         orbs = (await self.user.items()).get(pets.ORB, 0)
         body = [*self.note_block(),
-                text(f"### 🔮 Familiar Orbs  ·  you have **{orbs:,}**\nA Familiar Orb hatches a random pet. They turn up in treasure chests and "
-                     "boss loot while fishing, and the shop sells them. A pet you already own gains a star.")]
+                text(f"### 🔮 Familiar Orbs  ·  you have **{orbs:,}**\nAn orb hatches a random pet (a pet you own gains a star). "
+                     "Find them fishing or buy them in the shop.")]
         if house.target in reg.pets:
             target = reg.pets[house.target]
             chance = pets.orb_odds(reg, house.target, house.misses)[house.target]

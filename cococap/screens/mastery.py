@@ -27,9 +27,9 @@ class MasteryScreen(Screen):
         tree = mastery.tree_for(self.skill, reg)
         owned, level, free = await mastery.status(self.user, self.skill, reg)
         body = [*self.note_block(),
-                text(f"### {SKILL_EMOJI.get(self.skill, '🌟')} {self.skill.title()} Mastery  ·  level {level}\n"
-                     f"**{free}** point(s) to spend  ·  one point every {reg.mastery.points_every_levels} levels  ·  "
-                     f"{mastery.points_spent(owned, reg)} spent\n-# Every branch is a different way to play, so you cannot take them all.")]
+                text(f"### {SKILL_EMOJI.get(self.skill, '🌟')} {self.skill.title()} Mastery  ·  lv {level}\n"
+                     f"**{free}** point(s) free  ·  {mastery.points_spent(owned, reg)} spent  ·  1 point per {reg.mastery.points_every_levels} levels\n"
+                     "-# You cannot take every branch: choose how you play.")]
         take = []
         for branch in tree.branches:
             lines = [f"### {branch.emoji} {branch.name}\n-# {branch.description}"]
@@ -37,8 +37,8 @@ class MasteryScreen(Screen):
             for state in mastery.branch_state(branch, owned, level, free):
                 node = state.node
                 mark = "✅" if state.owned else "🔓" if state.available else "🔒"
-                lines.append(f"{mark} **{node.name}**  ·  {node.cost} pt  ·  lv {node.level}\n-# {node.description}"
-                             + (f"  ({state.reason})" if state.reason and not state.owned else ""))
+                why = f"  *({state.reason})*" if state.reason and state.reason != "locked" and not state.owned else ""
+                lines.append(f"{mark} **{node.name}** · {node.cost}pt · lv{node.level} · {node.description}{why}")
                 if next_node is None and not state.owned:
                     next_node = state
             body.append(text("\n".join(lines)))
