@@ -288,7 +288,8 @@ class MineRun:
         if self.passed is not None:
             self.danger = max(0.0, self.danger - self.passed.relief)
             self.braces += self.passed.braces
-            self.passed_haul = Counter({ore: max(1, round(q * self.passed.vault_share)) for ore, q in d.vault_ore.items()})
+            if self.passed.vault_share:  # (a checkpoint with no taste of the vault gives no ore at all)
+                self.passed_haul = Counter({ore: max(1, round(q * self.passed.vault_share)) for ore, q in d.vault_ore.items()})
             self.haul.update(self.passed_haul)
             self.safe = Counter(self.haul)  # a checkpoint: everything you hold is kept from here on
         if self.depth < d.floor:

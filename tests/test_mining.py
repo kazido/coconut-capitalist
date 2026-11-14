@@ -902,3 +902,12 @@ def test_the_screen_marks_the_landmarks_and_the_vault_and_says_what_you_are_digg
     assert any(mine.MILESTONE in line for line in shaft) and not any(mine.VAULT in line for line in shaft)
     run.depth = D.floor - 2
     assert any(mine.VAULT in line for line in mine.render_shaft(run).split("\n"))
+
+
+def test_a_plain_checkpoint_gives_no_ore_and_one_with_a_vault_share_gives_that_share():
+    run = calm_run()
+    dig_to(run, 10)
+    assert run.passed is not None and run.passed_haul == Counter()  # (it once handed out one of every ore)
+    shared = calm_run(milestones=[D.milestones[0].model_copy(update={"vault_share": 0.1})])
+    dig_to(shared, 10)
+    assert shared.passed_haul == Counter({ore: max(1, round(q * 0.1)) for ore, q in D.vault_ore.items()})
