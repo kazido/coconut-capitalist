@@ -30,8 +30,52 @@ KNOWN_STATS = frozenset({
 })
 
 
+FOOD_SKILLS = ("mining", "farming", "foraging", "fishing", "combat")
+SKILL_CHOICES = ("global", *FOOD_SKILLS)
+_STAT_SKILL = {
+    "bite_speed": "fishing", "rare_luck": "fishing", "treasure_luck": "fishing", "pot_speed": "fishing", "pot_luck": "fishing",
+    "danger_reduction": "mining", "ore_yield": "mining", "good_chop": "foraging", "grow_chance": "farming", "crop_yield": "farming",
+}
+
+
 class PetError(GameRuleError):
     """A rule was broken; the message is safe to show the player."""
+
+
+def default_skill(pet: Pet) -> str:
+    """The skill a species is naturally for: where its first bonus works ("global" for work/all-skill bonuses)."""
+    for bonus in pet.bonuses:
+        if bonus.stat in _STAT_SKILL:
+            return _STAT_SKILL[bonus.stat]
+        if bonus.stat.startswith("xp_") and bonus.stat != "xp_all":
+            return bonus.stat[3:]
+    return "global"
+
+
+def pet_skill(pet: Pet, owned: OwnedPet) -> str:
+    """The skill a pet is looking after: the one you chose, or what its species is for."""
+    return default_skill(pet) if owned.skill == "auto" else owned.skill
+
+
+def food_xp(item: Item, registry: Registry | None = None) -> int:
+    """What one of this food is worth before any bonus (crops: their own pet xp)."""
+    reg = registry or get_registry()
+    if item.pet_food:
+        return reg.economy.pets.food_xp[item.pet_food.tier - 1]
+    return crop_pet_xp(item)
+
+
+def food_skill(item: Item) -> str | None:
+    return "farming" if item.crop else (item.skill if item.pet_food else None)
+
+
+def food_multiplier(pet: Pet, owned: OwnedPet, item: Item, registry: Registry | None = None) -> float:
+    """How much more this food is worth to this pet: x3 for its own skill, x2 for a pet with no skill, x1 otherwise."""
+    rules = (registry or get_registry()).economy.pets
+    skill = pet_skill(pet, owned)
+    if skill == "global":
+        return rules.global_food_multiplier
+    return rules.matched_food_multiplier if skill == food_skill(item) else 1.0
 
 
 def pet_level(xp: int, registry: Registry | None = None) -> int:
@@ -205,62 +249,101 @@ class Fed:
     xp: int
     level_before: int
     level_after: int
+    multiplier: float = 1.0
 
 
 def crop_pet_xp(item: Item) -> int:
     return item.crop.pet_xp if item.crop else 0
 
 
-async def feed(user: User, crop_id: str, quantity: int, registry: Registry | None = None) -> Fed:
-    """Give your active pet crops: each is worth its crop's pet xp."""
-    reg = registry or get_registry()
-    crop = reg.find_item(crop_id)
-    if crop is None or crop.crop is None:
-        raise PetError("Pets eat crops.")
+async def _pet_to_look_after(user: User, pet_id: str | None, reg: Registry) -> str:
     await user.refresh()
     house = user.pethouse
-    if not house.active or house.active not in house.pets:
-        raise PetError("You need an active pet to feed.")
+    chosen = pet_id or house.active
+    if not chosen or chosen not in house.pets:
+        raise PetError("You need a pet to look after." if pet_id is None else "You don't have that pet.")
+    return chosen
+
+
+async def feed(user: User, food_id: str, quantity: int, registry: Registry | None = None, pet_id: str | None = None) -> Fed:
+    """Feed a pet (your active one unless you name another) crops or skill food. Food of the pet's skill is worth more."""
+    reg = registry or get_registry()
+    food = reg.find_item(food_id)
+    if food is None or (food.crop is None and food.pet_food is None):
+        raise PetError("Pets eat crops and the food your skills drop.")
+    target = await _pet_to_look_after(user, pet_id, reg)
     if quantity < 1:
         raise PetError("Feed at least one.")
-    worth = crop_pet_xp(crop)
+    worth = food_xp(food, reg)
     if worth <= 0:
-        raise PetError(f"A {crop.name} isn't worth anything to a pet.")
-    if await user.item_quantity(crop_id) < quantity:
-        raise PetError(f"You don't have {quantity:,} {crop.name}.")
+        raise PetError(f"A {food.name} isn't worth anything to a pet.")
+    if await user.item_quantity(food_id) < quantity:
+        raise PetError(f"You don't have {quantity:,} {food.name}.")
     try:
-        await user.remove_item(crop_id, quantity)
+        await user.remove_item(food_id, quantity)
     except ValueError:
-        raise PetError(f"You don't have {quantity:,} {crop.name}.") from None
+        raise PetError(f"You don't have {quantity:,} {food.name}.") from None
     outcome: dict = {}
 
     def eat(house: Pethouse) -> None:
-        owned = house.pets.get(house.active) if house.active else None
+        owned = house.pets.get(target)
         if owned is None:
             return
-        outcome.update(pet=house.active, before=pet_level(owned.xp, reg))
-        owned.xp += worth * quantity
+        boost = food_multiplier(reg.pets[target], owned, food, reg)
+        gained = round(worth * quantity * boost)
+        outcome.update(before=pet_level(owned.xp, reg), boost=boost, gained=gained)
+        owned.xp += gained
         outcome["after"] = pet_level(owned.xp, reg)
 
     await user.update_pethouse(eat)
-    if not outcome:  # the active pet vanished in the meantime
-        await user.add_item(crop_id, quantity)
-        raise PetError("You need an active pet to feed.")
-    return Fed(reg.pets[outcome["pet"]], quantity, worth * quantity, outcome["before"], outcome["after"])
+    if not outcome:  # the pet vanished in the meantime
+        await user.add_item(food_id, quantity)
+        raise PetError("You need a pet to look after.")
+    return Fed(reg.pets[target], quantity, outcome["gained"], outcome["before"], outcome["after"], outcome["boost"])
 
 
-async def give_spirit(user: User, spirit_id: str, registry: Registry | None = None) -> tuple[Pet, str]:
-    """Give a Spirit item to your active pet: +xp in that skill whenever it is active. One per skill per pet."""
+async def set_skill(user: User, pet_id: str, skill: str) -> str:
+    """Choose which skill a pet looks after ("global" for none, "auto" for what its species is for). Returns the skill it now has."""
+    reg = get_registry()
+    if skill not in (*SKILL_CHOICES, "auto"):
+        raise PetError("There is no such skill.")
+    outcome: dict = {}
+
+    def assign(house: Pethouse) -> None:
+        owned = house.pets.get(pet_id)
+        if owned is not None:
+            owned.skill = skill
+            outcome["skill"] = pet_skill(reg.pets[pet_id], owned)
+
+    await user.update_pethouse(assign)
+    if not outcome:
+        raise PetError("You don't have that pet.")
+    return outcome["skill"]
+
+
+async def roll_food(skill: str, rolls: int, rng: random.Random, registry: Registry | None = None) -> dict[str, int]:
+    """The food a skill's work turns up: each of its foods is rolled `rolls` times against its own drop odds."""
+    from cococap.services.loot import roll_drop
+
+    reg = registry or get_registry()
+    found: dict[str, int] = {}
+    for item in reg.items_for_skill(skill):
+        if item.category == "pet_food" and item.drop:
+            for _ in range(max(0, rolls)):
+                if quantity := roll_drop(item, rng):
+                    found[item.id] = found.get(item.id, 0) + quantity
+    return found
+
+
+async def give_spirit(user: User, spirit_id: str, registry: Registry | None = None, pet_id: str | None = None) -> tuple[Pet, str]:
+    """Give a Spirit item to a pet (your active one unless you name another): +xp in that skill whenever it is active. One per skill per pet."""
     reg = registry or get_registry()
     spirit = reg.find_item(spirit_id)
     if spirit is None or spirit.category != "pet_item" or not spirit.skill:
         raise PetError("That isn't a Spirit.")
-    await user.refresh()
-    house = user.pethouse
-    if not house.active or house.active not in house.pets:
-        raise PetError("You need an active pet to give it to.")
-    if spirit.skill in house.pets[house.active].spirits:
-        raise PetError(f"Your {reg.pets[house.active].name} already carries the {spirit.skill} Spirit.")
+    target = await _pet_to_look_after(user, pet_id, reg)
+    if spirit.skill in user.pethouse.pets[target].spirits:
+        raise PetError(f"Your {reg.pets[target].name} already carries the {spirit.skill} Spirit.")
     try:
         await user.remove_item(spirit_id, 1)
     except ValueError:
@@ -268,10 +351,10 @@ async def give_spirit(user: User, spirit_id: str, registry: Registry | None = No
     outcome: dict = {}
 
     def take(house: Pethouse) -> None:
-        owned = house.pets.get(house.active) if house.active else None
+        owned = house.pets.get(target)
         if owned is not None and spirit.skill not in owned.spirits:
             owned.spirits.append(spirit.skill)
-            outcome["pet"] = house.active
+            outcome["pet"] = target
 
     await user.update_pethouse(take)
     if not outcome:

@@ -5,6 +5,7 @@ class OwnedPet(BaseModel):
     stars: int = 1
     xp: int = 0
     spirits: list[str] = Field(default_factory=list)  # skills this pet was given a Spirit for
+    skill: str = "auto"  # the skill you assigned it ("global" = none, so any food counts; "auto" = what its species is good at)
 
 
 class Pethouse(BaseModel):

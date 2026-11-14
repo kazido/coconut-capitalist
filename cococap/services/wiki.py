@@ -212,6 +212,11 @@ def _pets(reg: Registry) -> list[str]:
         f"**Pets** hatch from **Familiar Orbs** (shop, treasure chests, boss loot). Your active pet's bonuses work everywhere. A duplicate adds a star "
         f"(up to {rules.max_stars}, +{rules.star_bonus:.0%} each), crops level them (to {rules.max_level}) and a Spirit adds skill xp. **Hunt** a pet in the "
         f"Pet House and orbs favour it (×{rules.target_boost:g}, more with each miss).",
+        f"**Feeding.** Pets level up on **food**: crops (farming's food) and what each skill drops in three tiers (worth {', '.join(f'{x:,}' for x in rules.food_xp)} pet xp): "
+        "foraging drops **Acorn Mix, Honeycomb and Golden Sap**, mining **Stone Biscuit, Crystal Chew and Geode Feast**, fishing **Fish Flakes, Dried Squid and Sea Feast**. "
+        f"Every pet looks after one skill (its species' own until you pick another): food of **its skill is worth x{rules.matched_food_multiplier:g}**. "
+        f"A pet with **no skill** gets **x{rules.global_food_multiplier:g}** from any food, and food of another skill is worth the plain amount. "
+        "Look at a pet in the Pet House to feed it, change its skill, or make it active.",
         "**All pets** (bonuses at max level, one star)\n" + "\n".join(lines),
     ]
 

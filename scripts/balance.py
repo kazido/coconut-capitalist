@@ -83,6 +83,32 @@ def farming_table() -> list[tuple[str, int, float, float, float]]:
     return sorted(rows, key=lambda r: r[1])
 
 
+def pet_xp_per_hour() -> dict[str, float]:
+    """Base pet xp (before the x3 / x2) an hour of each skill's food drops, at starter gear and the clicks per minute above."""
+    from cococap.registry.models import Item
+
+    xp = lambda item: REG.economy.pets.food_xp[item.pet_food.tier - 1]
+    foods = lambda skill: [i for i in REG.items.values() if isinstance(i, Item) and i.category == "pet_food" and i.skill == skill]
+    per_roll = lambda skill: sum(xp(i) / i.drop.rate for i in foods(skill))
+    clicks_hour = 3600 / CLICK_SECONDS
+    # rolls per hour: foraging = hp chopped / hp_per_roll (zone 1); mining = lodes (about 8 per 40 clicks... one lode per click, roughly); fishing = catches
+    forage_rolls = clicks_hour * foraging_dmg_per_click() / REG.foraging.hp_per_roll
+    _, seconds = fishing_per_cast()
+    return {"foraging": per_roll("foraging") * forage_rolls, "mining": per_roll("mining") * clicks_hour * 0.9,
+            "fishing": per_roll("fishing") * 3600 / seconds}
+
+
+def foraging_dmg_per_click(zone: int = 1) -> float:
+    rules = REG.foraging
+    rng, dealt, clicks = Random(2), 0, 4000
+    spot = f.Spot.pick(rules, rng)
+    cycle = f.cycle_length(zone, rules)
+    power = REG.item("starter_axe").tool.power
+    for _ in range(clicks):
+        dealt += spot.swing(power, rules, rng, 0.0, spot.expected(rules, cycle), cycle).damage
+    return dealt / clicks
+
+
 def main() -> None:
     mine = mining_per_click()
     print(f"Click every {CLICK_SECONDS:.0f}s -> {60 / CLICK_SECONDS:.0f} clicks per active minute\n")
@@ -92,6 +118,9 @@ def main() -> None:
         print(f"{'foraging z' + str(zone):10} {per:>10,.0f} bits/click   {per * 60 / CLICK_SECONDS:>12,.0f} bits/active minute")
     worth, seconds = fishing_per_cast()
     print(f"{'fishing':10} {worth:>10,.0f} bits/catch   {worth * 60 / seconds:>12,.0f} bits/active minute ({seconds:.0f}s a catch)")
+    print("\nPet food (base pet xp an hour of play; x3 for a pet of that skill):")
+    for skill, value in pet_xp_per_hour().items():
+        print(f"  {skill:10} {value:>8,.0f} xp/hour")
     print("\nFarming (per plot, watered once an hour / rain only):")
     for seed, cycles, value, watered, rain in farming_table():
         print(f"  {seed:22} {cycles:>4} cycles  {value:>14,.0f} bits a harvest  {watered:>12,.0f}/h watered  {rain:>12,.0f}/h rain")

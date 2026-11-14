@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from cococap import emojis
 
 Skill = Literal["farming", "foraging", "fishing", "mining", "combat", "shepherding"]
-Category = Literal["material", "tool", "key_item", "pet_item", "crop", "seed", "fish", "scroll", "bait"]
+Category = Literal["material", "tool", "key_item", "pet_item", "pet_food", "crop", "seed", "fish", "scroll", "bait"]
 ToolKind = Literal["pickaxe", "axe", "sword", "rod"]
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -104,6 +104,12 @@ class Scroll(_Data):
     enchant: str
 
 
+class PetFood(_Data):
+    """Food a skill drops for pets. Its tier sets how much pet xp it is worth (economy.toml [pets] food_xp)."""
+
+    tier: int = Field(ge=1, le=3)
+
+
 class Bait(_Data):
     """Bait for crab pots: each catch uses one. `luck` multiplies the chance of rare fish (rarity 4+), `speed` the catches per hour."""
 
@@ -133,6 +139,7 @@ class Item(_Data):
     size: Size | None = None  # fish only
     scroll: Scroll | None = None
     bait: Bait | None = None
+    pet_food: PetFood | None = None
     reel: ReelTell | None = None  # fish of rarity 4+: what their ❓ turns out to be
     crop: Crop | None = None
     seed: Seed | None = None
@@ -145,6 +152,10 @@ class Item(_Data):
         for section, category in (("crop", "crop"), ("seed", "seed")):
             if (getattr(self, section) is not None) != (self.category == category):
                 raise ValueError(f"'{section}' section must be present iff category is '{category}'")
+        if (self.pet_food is not None) != (self.category == "pet_food"):
+            raise ValueError("'pet_food' section must be present iff category is 'pet_food'")
+        if self.category == "pet_food" and not self.skill:
+            raise ValueError("pet food belongs to a skill")
         if self.tool is not None and self.category != "tool":
             raise ValueError("'tool' section requires category 'tool'")
         return self
@@ -725,6 +736,9 @@ class PetRules(_Data):
     star_bonus: float = Field(ge=0)  # each star after the first makes every bonus this much bigger
     level_floor: float = Field(gt=0, le=1)  # a level-1 pet gives this share of its bonus; max level gives all of it
     spirit_bonus: float = Field(ge=0)  # a Spirit given to a pet: +this xp in its skill while that pet is active
+    food_xp: list[int] = Field(min_length=3, max_length=3)  # pet xp of a tier 1, 2 and 3 food
+    matched_food_multiplier: float = Field(ge=1)  # food of the pet's own skill is worth this many times as much...
+    global_food_multiplier: float = Field(ge=1)  # ...and to a pet with no skill, any food is worth this many times as much
     maxed_xp: int = Field(ge=0)  # a duplicate of a pet that already has every star gives it this much xp
     target_boost: float = Field(ge=1)  # a targeted pet is this many times likelier from an orb...
     pity_boost: float = Field(ge=0)  # ...plus this much more for every orb that missed it

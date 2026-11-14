@@ -470,7 +470,7 @@ def catch_extras(rng: random.Random, registry: Registry) -> Counter:
     """Materials that come up with a catch (fishing items that aren't fish but have a drop table)."""
     found: Counter = Counter()
     for item in registry.items_for_skill("fishing"):
-        if item.category == "material" and (quantity := roll_drop(item, rng)):
+        if item.category in ("material", "pet_food") and (quantity := roll_drop(item, rng)):
             found[item.id] += quantity
     return found
 

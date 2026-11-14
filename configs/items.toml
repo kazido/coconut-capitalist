@@ -1664,3 +1664,124 @@ sell_price = 0
 [starfruit_seed.seed]
 grows_into = "starfruit"
 cycles = 80
+
+
+# ---- pet food: each skill drops its own, in three tiers (worth 200 / 1,000 / 5,000 pet xp; see [pets] in economy.toml). Crops are
+# farming's food. Not sold. A pet assigned to the skill gets x3, a pet with no skill x2. TODO(balance): the drop rates aim at
+# roughly 3-5k base pet xp an hour in each skill (python -m scripts.balance prints it).
+[acorn_mix]
+name = "Acorn Mix"
+description = "A crunchy bag of forest snacks. Pets go nuts for it."
+rarity = 2
+skill = "foraging"
+category = "pet_food"
+[acorn_mix.pet_food]
+tier = 1
+[acorn_mix.drop]
+rate = 2
+min = 1
+max = 1
+
+[honeycomb]
+name = "Honeycomb"
+description = "Sticky, golden and a little bit magic."
+rarity = 4
+skill = "foraging"
+category = "pet_food"
+[honeycomb.pet_food]
+tier = 2
+[honeycomb.drop]
+rate = 10
+min = 1
+max = 1
+
+[golden_sap]
+name = "Golden Sap"
+description = "From the oldest tree in the forest. Pets would do anything for it."
+rarity = 5
+skill = "foraging"
+category = "pet_food"
+[golden_sap.pet_food]
+tier = 3
+[golden_sap.drop]
+rate = 50
+min = 1
+max = 1
+
+[stone_biscuit]
+name = "Stone Biscuit"
+description = "Baked hard, like everything down in the mine."
+rarity = 2
+skill = "mining"
+category = "pet_food"
+[stone_biscuit.pet_food]
+tier = 1
+[stone_biscuit.drop]
+rate = 100
+min = 1
+max = 1
+
+[crystal_chew]
+name = "Crystal Chew"
+description = "Rock candy, the mine's way."
+rarity = 4
+skill = "mining"
+category = "pet_food"
+[crystal_chew.pet_food]
+tier = 2
+[crystal_chew.drop]
+rate = 500
+min = 1
+max = 1
+
+[geode_feast]
+name = "Geode Feast"
+description = "Cracked open, it is full of treats."
+rarity = 5
+skill = "mining"
+category = "pet_food"
+[geode_feast.pet_food]
+tier = 3
+[geode_feast.drop]
+rate = 2500
+min = 1
+max = 1
+
+[fish_flakes]
+name = "Fish Flakes"
+description = "Dried and crumbled. Smells like a good day."
+rarity = 2
+skill = "fishing"
+category = "pet_food"
+[fish_flakes.pet_food]
+tier = 1
+[fish_flakes.drop]
+rate = 13
+min = 1
+max = 1
+
+[dried_squid]
+name = "Dried Squid"
+description = "Chewy, salty, and gone in a minute."
+rarity = 4
+skill = "fishing"
+category = "pet_food"
+[dried_squid.pet_food]
+tier = 2
+[dried_squid.drop]
+rate = 130
+min = 1
+max = 1
+
+[sea_feast]
+name = "Sea Feast"
+description = "A whole platter from the deep. Fit for a pet king."
+rarity = 5
+skill = "fishing"
+category = "pet_food"
+[sea_feast.pet_food]
+tier = 3
+[sea_feast.drop]
+rate = 1300
+min = 1
+max = 1

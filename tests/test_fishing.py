@@ -532,7 +532,8 @@ def test_coral_comes_up_now_and_then_but_only_with_a_catch():
     got = Counter()
     for _ in range(6000):
         got += f.catch_extras(rng, REG)
-    assert set(got) == {"coral_shard"} and 600 < got["coral_shard"] < 1400  # about 1 in 6
+    assert {i for i in got if REG.item(i).category != "pet_food"} == {"coral_shard"} and 600 < got["coral_shard"] < 1400  # about 1 in 6
+    assert {i for i in got if REG.item(i).category == "pet_food"} <= {"fish_flakes", "dried_squid", "sea_feast"}  # (and pet food)
 
 
 async def test_landing_a_fish_can_bring_coral_with_it(db):

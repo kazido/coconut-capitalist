@@ -20,6 +20,7 @@ from cococap.models.skills.farming import Farming
 from cococap.models.skills.fishing import Fishing
 from cococap.models.skills.foraging import Foraging
 from cococap.models.skills.mining import Mining
+from cococap.registry import get_registry
 
 log = getLogger(__name__)
 
@@ -107,7 +108,8 @@ class User:
         async with get_database().session() as session:
             await session.execute(
                 sqlite_insert(UserRow)
-                .values(discord_id=discord_id, name="unnamed user", settings={}, pethouse={})
+                .values(discord_id=discord_id, name="unnamed user", settings={}, pethouse={},
+                        luckbucks=get_registry().economy.starting_luckbucks)  # (the setting in configs/economy.toml, not the column default)
                 .on_conflict_do_nothing(index_elements=["discord_id"])
             )
             row = await session.get(UserRow, discord_id)

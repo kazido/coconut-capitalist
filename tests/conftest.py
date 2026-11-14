@@ -5,6 +5,13 @@ from sqlalchemy import update
 from cococap.ui.nav import stop_all_tickers
 from cococap.db import Database, close_database, get_database, init_database
 from cococap.db.tables import UserRow
+from cococap.registry import get_registry
+
+# The tests are written against the shipped economy numbers. Tuning these in configs/economy.toml (a quick idle limit to try the party
+# sweep, no starting luckbucks, ...) must not break them, so they run with these values whatever the file says.
+_economy = get_registry().economy
+for _name, _value in (("starting_luckbucks", 100), ("weekly_luckbucks", 100), ("party_idle_hours", 24)):
+    _economy.__dict__[_name] = _value
 
 
 @pytest_asyncio.fixture

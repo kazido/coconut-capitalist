@@ -9,6 +9,7 @@ from cococap.ui.components import button, row, select, sep, text, xp_bar
 from cococap.user import User
 
 STARS = "⭐"
+SKILL_EMOJI = {"mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishing": "🎣", "combat": "⚔️"}
 
 
 def stars_text(n: int) -> str:
@@ -22,6 +23,15 @@ class PetScreen(Screen):
     description = "Your pets: open orbs, feed them, pick who helps you"
     links = ()
 
+    def __init__(self, nav):
+        super().__init__(nav)
+        self.focus: str | None = None  # the pet you are looking at and looking after (the active one until you pick another)
+
+    def focus_id(self, house) -> str | None:
+        if self.focus in house.pets:
+            return self.focus
+        return house.active if house.active in house.pets else next(iter(sorted(house.pets)), None)
+
     async def build(self) -> Page:
         reg = get_registry()
         rules = reg.economy.pets
@@ -33,25 +43,35 @@ class PetScreen(Screen):
             body.append(text("You have no pets yet. A **Familiar Orb** hatches a random pet: they turn up in treasure chests "
                              "and boss loot while fishing, and the shop sells them. Every pet gives a bonus somewhere in the game."))
         else:
-            active = reg.pets[house.active] if house.active in house.pets else None
+            focus = self.focus_id(house)
+            active = reg.pets[focus]
             if active is not None:
                 mine = house.pets[active.id]
                 level = pets.pet_level(mine.xp, reg)
+                skill = pets.pet_skill(active, mine)
+                looks_after = ("**no skill**: any food counts for it" if skill == "global" else f"**{skill}**") + (" (its species' own)" if mine.skill == "auto" else "")
                 low, high = pets.level_xp(level, reg), pets.level_xp(level + 1, reg)
                 bar = xp_bar((mine.xp - low) / (high - low) if level < rules.max_level and high > low else 1.0)
                 body.append(text(
-                    f"### {active.emoji} {active.name}  {stars_text(mine.stars)}  ·  Lv {level}\n{bar}  "
+                    f"### {active.emoji} {active.name}  {stars_text(mine.stars)}  ·  Lv {level}" + ("  ·  ✅ active" if focus == house.active else "")
+                    + f"\n{bar}  "
                     + (f"{mine.xp - low:,}/{high - low:,} xp" if level < rules.max_level else "max level")
                     + "\n" + "\n".join(f"▸ {line}" for line in pets.describe(active, mine, reg))
-                    + f"\n-# {active.description}"))
+                    + f"\n🍽️ Looks after: {looks_after}\n-# {active.description}"))
             roster = [f"{reg.pets[i].emoji} {reg.pets[i].name} {stars_text(p.stars)} Lv {pets.pet_level(p.xp, reg)}"
                       + (" ✅" if i == house.active else "") for i, p in sorted(house.pets.items())]
             missing = len(reg.pets) - len(house.pets)
             body.append(text("**Your pets:** " + "  ·  ".join(roster) + (f"  ·  ▫️ {missing} more to find" if missing else "")))
-            body.append(row(select("Switch active pet...", [
+            body.append(row(select("Look at a pet...", [
                 discord.SelectOption(label=f"{reg.pets[i].name} {stars_text(p.stars)}", value=i, emoji=reg.pets[i].emoji,
-                                     default=i == house.active, description=pets.describe(reg.pets[i], p, reg)[0][:100])
+                                     default=i == focus, description=(("Active · " if i == house.active else "") + pets.describe(reg.pets[i], p, reg)[0])[:100])
                 for i, p in sorted(house.pets.items())][:25], self._switch)))
+            choices = [("auto", "Its own (what the species is for)", "🧬"), ("global", "No skill: any food, x%g" % rules.global_food_multiplier, "🌐"),
+                       *[(s, f"{s.title()}: its food x%g" % rules.matched_food_multiplier, SKILL_EMOJI[s]) for s in pets.FOOD_SKILLS]]
+            body.append(row(select("Skill for this pet...", [
+                discord.SelectOption(label=label, value=value, emoji=emoji, default=value == mine.skill) for value, label, emoji in choices],
+                self._assign)))
+            body.append(row(button("Make active", emoji="✅", disabled=focus == house.active, on_click=self._make_active)))
 
         orbs = owned_items.get(pets.ORB, 0)
         body.append(sep())
@@ -72,14 +92,19 @@ class PetScreen(Screen):
         body.append(row(select("Hunt a pet (orbs favour it)...", hunt[:25], self._hunt)))
         body.append(row(button(f"Open a Familiar Orb ({orbs})", emoji="🔮", style=discord.ButtonStyle.primary, disabled=orbs < 1,
                                on_click=self._open_orb)))
-        if house.active in house.pets:
-            crops = [(reg.item(i), q) for i, q in owned_items.items() if q > 0 and (it := reg.find_item(i)) and pets.crop_pet_xp(it) > 0]
-            if crops:
-                body.append(row(select("Feed your pet a crop...", [
+        if house.pets:
+            target = house.pets[focus]
+            foods = [(reg.item(i), q) for i, q in owned_items.items() if q > 0 and (it := reg.find_item(i)) and pets.food_xp(it, reg) > 0]
+            foods.sort(key=lambda e: (pets.food_skill(e[0]) or "", pets.food_xp(e[0], reg)))
+            if foods:
+                body.append(row(select("Feed your pet...", [
                     discord.SelectOption(label=f"{c.name} ×{q:,}", value=c.id, emoji=c.emoji,
-                                         description=f"{pets.crop_pet_xp(c):,} pet xp each") for c, q in crops][:25], self._feed)))
+                                         description=self._food_note(c, active, target, reg)) for c, q in foods][:25], self._feed)))
+            else:
+                body.append(text("-# 🍽️ Pets eat crops and the food your skills drop: Acorn Mix from trees, Fish Flakes from fishing, "
+                                 "Stone Biscuits from the mine. Food of a pet's own skill is worth more."))
             spirits = [(reg.item(i), q) for i, q in owned_items.items() if q > 0 and (it := reg.find_item(i)) and it.category == "pet_item"
-                       and it.skill and it.skill not in house.pets[house.active].spirits]
+                       and it.skill and it.skill not in target.spirits]
             if spirits:
                 body.append(row(select("Give a Spirit to your pet...", [
                     discord.SelectOption(label=f"{s.name} ×{q}", value=s.id, emoji=s.emoji,
@@ -87,13 +112,28 @@ class PetScreen(Screen):
                                        self._spirit)))
         return Page("Pets", body, accent=0x27AE60)
 
+    @staticmethod
+    def _food_note(food, pet, owned, reg) -> str:
+        base, boost = pets.food_xp(food, reg), pets.food_multiplier(pet, owned, food, reg)
+        return (f"{base:,} pet xp each" + (f" → {round(base * boost):,} for this pet (x{boost:g})" if boost != 1 else ""))[:100]
+
+    async def _assign(self, interaction: discord.Interaction, values: list[str]) -> None:
+        pet = get_registry().pets[self.focus_id(self.user.pethouse)]
+        skill = await pets.set_skill(self.user, pet.id, values[0])
+        await self.refresh(interaction, f"{pet.emoji} **{pet.name}** now looks after "
+                                        + ("**no skill**: any food counts." if skill == "global" else f"**{skill}**."))
+
+    async def _make_active(self, interaction: discord.Interaction) -> None:
+        pet = await pets.set_active(self.user, self.focus_id(self.user.pethouse))
+        await self.refresh(interaction, f"{pet.emoji} **{pet.name}** is your active pet now.")
+
     async def _hunt(self, interaction: discord.Interaction, values: list[str]) -> None:
         pet = await pets.set_target(self.user, None if values[0] == "none" else values[0])
         await self.refresh(interaction, f"🎯 Orbs now favour {pet.emoji} **{pet.name}**." if pet else "🎯 You are not hunting anything now.")
 
     async def _switch(self, interaction: discord.Interaction, values: list[str]) -> None:
-        pet = await pets.set_active(self.user, values[0])
-        await self.refresh(interaction, f"{pet.emoji} **{pet.name}** is your active pet now.")
+        self.focus = values[0]
+        await self.refresh(interaction)
 
     async def _open_orb(self, interaction: discord.Interaction) -> None:
         got = await pets.open_orb(self.user, random.Random())
@@ -121,8 +161,8 @@ class PetScreen(Screen):
                 quantity = have if raw.strip().lower() in ("all", "") else int(raw.replace(",", ""))
             except ValueError:
                 raise pets.PetError("Enter a whole number, or 'all'.") from None
-            fed = await pets.feed(self.user, crop_id, quantity)
-            note = f"🍎 {fed.pet.name} ate {fed.quantity:,} {reg.item(crop_id).display}  ·  +{fed.xp:,} pet xp"
+            fed = await pets.feed(self.user, crop_id, quantity, pet_id=self.focus_id(self.user.pethouse))
+            note = f"🍎 {fed.pet.name} ate {fed.quantity:,} {reg.item(crop_id).display}  ·  +{fed.xp:,} pet xp" + (f" (x{fed.multiplier:g})" if fed.multiplier != 1 else "")
             if fed.level_after > fed.level_before:
                 note += f"\n🎉 **{fed.pet.name} reached level {fed.level_after}!**"
             await self.refresh(modal_interaction, note)
@@ -131,5 +171,5 @@ class PetScreen(Screen):
                                                           default=str(have), max_length=9))
 
     async def _spirit(self, interaction: discord.Interaction, values: list[str]) -> None:
-        pet, skill = await pets.give_spirit(self.user, values[0])
+        pet, skill = await pets.give_spirit(self.user, values[0], pet_id=self.focus_id(self.user.pethouse))
         await self.refresh(interaction, f"✨ {pet.name} now carries the {skill} Spirit.")

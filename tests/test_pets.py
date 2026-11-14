@@ -1,4 +1,5 @@
 import asyncio
+from collections import Counter
 from random import Random
 
 import pytest
@@ -139,20 +140,20 @@ async def test_switching_pets_only_works_for_pets_you_own(db):
 
 # ---- feeding and spirits ------------------------------------------------------------------------------------------------------
 async def test_feeding_crops_levels_the_active_pet_up(db):
-    user = await with_pet("dog", xp=0)
-    await user.add_item("hot_pepper", 3)  # 1,450 pet xp each
+    user = await with_pet("frog", xp=0)  # a farming pet: crops are its own skill's food
+    await user.add_item("hot_pepper", 3)  # 1,450 pet xp each, x3 for a farming pet
     fed = await pets.feed(user, "hot_pepper", 2, REG)
-    assert fed.xp == 2 * 1450 and fed.level_before == 1 and fed.level_after == pets.pet_level(2900, REG) > 1
-    assert user.pethouse.pets["dog"].xp == 2900 and await user.item_quantity("hot_pepper") == 1
+    assert fed.xp == 2 * 1450 * 3 and fed.level_before == 1 and fed.level_after == pets.pet_level(8700, REG) > 1
+    assert user.pethouse.pets["frog"].xp == 8700 and await user.item_quantity("hot_pepper") == 1
 
 
 async def test_feeding_refuses_nonsense_and_keeps_your_crops(db):
     user = await User.get(1)
     await user.add_item("lemon", 5)
-    with pytest.raises(pets.PetError, match="active pet"):
+    with pytest.raises(pets.PetError, match="need a pet"):
         await pets.feed(user, "lemon", 1, REG)
     user = await with_pet("dog", xp=0)
-    with pytest.raises(pets.PetError, match="eat crops"):
+    with pytest.raises(pets.PetError, match="eat crops and"):
         await pets.feed(user, "cod", 1, REG)
     with pytest.raises(pets.PetError, match="don't have 9"):
         await pets.feed(user, "lemon", 9, REG)
@@ -323,15 +324,17 @@ async def test_the_pet_house_switches_pets_feeds_crops_and_hands_over_spirits(db
     await user.add_item("spirit_of_the_forest", 1)
     nav, inter = await hub("pets")
     assert "Dog" in all_text(nav) and "work" in all_text(nav).lower()
-    await choose(nav, inter, select_named(nav, "Switch active pet"), "cat")
+    await choose(nav, inter, select_named(nav, "Look at a pet"), "cat")
+    assert user.pethouse.active == "dog" and "Cat" in all_text(nav)  # looking is not switching
+    await click(nav, inter, "Make active")
     await user.refresh()
-    assert user.pethouse.active == "cat" and "Cat" in all_text(nav)
+    assert user.pethouse.active == "cat"
     before = user.pethouse.pets["cat"].xp
     await choose(nav, inter, select_named(nav, "Feed your pet"), "lemon")
     modal = inter.response.send_modal.await_args.args[0]
     await modal._handler(inter, "3")
     await user.refresh()
-    assert user.pethouse.pets["cat"].xp == before + 3 * REG.item("lemon").crop.pet_xp and await user.item_quantity("lemon") == 1
+    assert user.pethouse.pets["cat"].xp == before + 3 * REG.item("lemon").crop.pet_xp and await user.item_quantity("lemon") == 1  # (a fishing cat: x1)
     await choose(nav, inter, select_named(nav, "Give a Spirit"), "spirit_of_the_forest")
     await user.refresh()
     assert user.pethouse.pets["cat"].spirits == ["foraging"] and "Spirit" in all_text(nav)
@@ -435,3 +438,130 @@ async def test_the_pet_house_lets_you_aim_and_shows_your_chances(db):
     await choose(nav, inter, select_named(nav, "Hunt a pet"), "none")
     await user.refresh()
     assert user.pethouse.target is None and "Hunting" not in all_text(nav)
+
+
+# ---- skill food and pet skills --------------------------------------------------------------------------------------------------------
+FOODS = {"foraging": ("acorn_mix", "honeycomb", "golden_sap"), "mining": ("stone_biscuit", "crystal_chew", "geode_feast"),
+         "fishing": ("fish_flakes", "dried_squid", "sea_feast")}
+
+
+def test_every_food_skill_has_three_tiers_that_are_worth_more_and_drop_less_often():
+    for skill, ids in FOODS.items():
+        items = [REG.item(i) for i in ids]
+        assert [i.pet_food.tier for i in items] == [1, 2, 3] and all(i.skill == skill and i.category == "pet_food" for i in items)
+        assert [i.drop.rate for i in items] == sorted(i.drop.rate for i in items) and len({i.drop.rate for i in items}) == 3
+        assert [pets.food_xp(i, REG) for i in items] == list(REG.economy.pets.food_xp) and all(i.sell_price == 0 for i in items)
+    assert {i.id for i in REG.items.values() if i.category == "pet_food"} == {f for ids in FOODS.values() for f in ids}
+
+
+def test_every_species_has_a_default_skill_and_a_pet_can_be_changed_to_any():
+    for pet in REG.pets.values():
+        assert pets.default_skill(pet) in pets.SKILL_CHOICES, pet.id
+    assert pets.default_skill(REG.pets["cat"]) == "fishing" and pets.default_skill(REG.pets["frog"]) == "farming"
+    assert pets.default_skill(REG.pets["dog"]) == "global" and pets.default_skill(REG.pets["koala"]) == "global"
+    assert {pets.default_skill(p) for p in REG.pets.values()} >= {"fishing", "mining", "farming", "foraging", "global"}
+
+
+async def test_food_of_a_pets_own_skill_is_worth_triple_a_global_pet_gets_double_and_the_rest_the_plain_amount(db):
+    rules = REG.economy.pets
+    user = await with_pet("cat", xp=0)  # a fishing pet
+    await with_pet("dog", active=False)  # a global one
+    await user.add_item("fish_flakes", 10)
+    await user.add_item("acorn_mix", 10)
+    base = rules.food_xp[0]
+    own = await pets.feed(user, "fish_flakes", 2, REG)
+    assert own.xp == 2 * base * rules.matched_food_multiplier and own.multiplier == rules.matched_food_multiplier
+    other = await pets.feed(user, "acorn_mix", 2, REG)
+    assert other.xp == 2 * base and other.multiplier == 1.0  # foraging food for a fishing pet: the plain amount
+    glob = await pets.feed(user, "acorn_mix", 2, REG, pet_id="dog")  # any food, whatever it is
+    assert glob.xp == 2 * base * rules.global_food_multiplier and glob.pet.id == "dog"
+    again = await pets.feed(user, "fish_flakes", 1, REG, pet_id="dog")
+    assert again.xp == base * rules.global_food_multiplier
+    assert rules.matched_food_multiplier > rules.global_food_multiplier > 1  # a specialist does best, a generalist still gains
+    assert await user.item_quantity("fish_flakes") == 10 - 2 - 1 and user.pethouse.active == "cat"  # (feeding a pet does not make it active)
+
+
+async def test_assigning_a_pet_to_a_skill_changes_what_its_food_is_worth(db):
+    rules = REG.economy.pets
+    user = await with_pet("cat", xp=0)
+    await user.add_item("stone_biscuit", 4)
+    assert (await pets.feed(user, "stone_biscuit", 1, REG)).multiplier == 1.0  # a fishing pet and mining food
+    assert await pets.set_skill(user, "cat", "mining") == "mining"
+    assert user.pethouse.pets["cat"].skill == "mining"
+    assert (await pets.feed(user, "stone_biscuit", 1, REG)).multiplier == rules.matched_food_multiplier
+    assert await pets.set_skill(user, "cat", "global") == "global"
+    assert (await pets.feed(user, "stone_biscuit", 1, REG)).multiplier == rules.global_food_multiplier
+    assert await pets.set_skill(user, "cat", "auto") == "fishing"  # back to what a cat is for
+    for bad in ("sleeping", ""):
+        with pytest.raises(pets.PetError, match="no such skill"):
+            await pets.set_skill(user, "cat", bad)
+    with pytest.raises(pets.PetError, match="don't have that pet"):
+        await pets.set_skill(user, "wolf", "mining")
+
+
+async def test_crops_are_farming_food_so_a_farming_pet_gets_triple_for_them(db):
+    user = await with_pet("frog", xp=0)
+    await user.add_item("lemon", 2)
+    assert (await pets.feed(user, "lemon", 2, REG)).xp == 2 * REG.item("lemon").crop.pet_xp * REG.economy.pets.matched_food_multiplier
+
+
+async def test_feeding_can_name_a_pet_you_do_not_have_and_gives_the_food_back_when_it_fails(db):
+    user = await with_pet("dog", xp=0)
+    await user.add_item("acorn_mix", 3)
+    with pytest.raises(pets.PetError, match="don't have that pet"):
+        await pets.feed(user, "acorn_mix", 1, REG, pet_id="wolf")
+    assert await user.item_quantity("acorn_mix") == 3 and user.pethouse.pets["dog"].xp == 0
+
+
+async def test_skills_turn_up_their_own_food_at_about_the_intended_rates(db):
+    from random import Random
+
+    rng = Random(5)
+    for skill, ids in FOODS.items():
+        got = Counter()
+        for _ in range(120):
+            got.update(await pets.roll_food(skill, 1000, rng, REG))
+        rolls = 120_000
+        for item_id in ids:
+            rate = REG.item(item_id).drop.rate
+            assert got[item_id] == pytest.approx(rolls / rate, rel=0.35), item_id
+        assert set(got) <= set(ids)  # a skill only drops its own food
+    assert await pets.roll_food("combat", 5, rng, REG) == {}  # (no combat food yet)
+
+
+async def test_a_mine_run_can_turn_up_stone_biscuits(db):
+    from random import Random
+
+    from cococap.services import mining as m
+
+    class Lucky(Random):
+        def randint(self, a, b):
+            return 1
+
+        def random(self):
+            return 0.0
+
+    user = await User.get(1)
+    run = m.MineRun(REG.mining, REG, Lucky(1), cursors=[2], braces=1)
+    run.dig()
+    run.leave()
+    summary = await m.settle_run(user, run, REG)
+    assert summary.haul["stone_biscuit"] >= 1 and await user.item_quantity("stone_biscuit") == summary.haul["stone_biscuit"]
+
+
+async def test_the_pet_house_lets_you_look_after_a_pet_that_is_not_active_and_pick_its_skill(db):
+    user = await with_pet("dog", xp=0)
+    await with_pet("cat", xp=0, active=False)
+    await user.add_item("fish_flakes", 5)
+    nav, inter = await hub("pets")
+    await choose(nav, inter, select_named(nav, "Look at a pet"), "cat")
+    assert "Looks after" in all_text(nav) and "fishing" in all_text(nav)
+    await choose(nav, inter, select_named(nav, "Feed your pet"), "fish_flakes")
+    modal = inter.response.send_modal.await_args.args[0]
+    await modal._handler(inter, "2")
+    await user.refresh()
+    assert user.pethouse.pets["cat"].xp == 2 * REG.economy.pets.food_xp[0] * REG.economy.pets.matched_food_multiplier
+    assert user.pethouse.pets["dog"].xp == 0  # the cat got it, not the active dog
+    await choose(nav, inter, select_named(nav, "Skill for this pet"), "global")
+    await user.refresh()
+    assert user.pethouse.pets["cat"].skill == "global" and "no skill" in all_text(nav)

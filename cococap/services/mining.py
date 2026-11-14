@@ -479,6 +479,9 @@ async def settle_run(user: User, run: MineRun, registry: Registry | None = None)
     summary = RunSummary(run.outcome, Counter(run.haul), xp, run.lodes, run.depth)
     log.info("mine over: %s at row %d/%d, pressure %.1f, risk on the last dig %.2f%%, %d lodes",
              run.outcome, run.depth, run.floor, run.last_pressure, run.last_risk * 100, run.lodes)
+    for item_id, quantity in (await pets.roll_food("mining", run.lodes, run.rng, registry)).items():
+        run.haul[item_id] += quantity  # pet food turns up in the rock too
+        summary.haul[item_id] += quantity
     for item_id, quantity in run.haul.items():
         await user.add_item(item_id, quantity)
 

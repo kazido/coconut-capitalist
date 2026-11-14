@@ -43,6 +43,11 @@ max_stars = 5
 star_bonus = 0.25                  # +25% bonus per extra star
 level_floor = 0.5                  # a fresh pet does half its bonus; a max level one does all of it
 spirit_bonus = 0.15                # a Spirit adds +15% xp in its skill while the pet is active
+# Skill food (items with category "pet_food", dropped by their skill) is worth `food_xp` by tier. A pet you assigned to that skill
+# gets it x3; a pet with no skill ("global") gets any food x2; anything else only the plain amount. Crops are farming food.
+food_xp = [200, 1000, 5000]
+matched_food_multiplier = 3.0
+global_food_multiplier = 2.0
 maxed_xp = 2000
 target_boost = 8.0                 # a pet you are hunting is this many times likelier from an orb...
 pity_boost = 1.0                   # ...and +1 more for every orb that missed it (reset when you get it)

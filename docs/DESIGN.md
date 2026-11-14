@@ -268,9 +268,23 @@ pet, upgrade step, bait and enchant and uses the real numbers.
 Pets are the gacha part of the bot, and **every pet gives a bonus somewhere in the game** while it is your active pet
 (one at a time; `/pets` or the Pets shortcut on Home). They come from **Familiar Orbs** (treasure chests, boss loot,
 the shop at 1.5M), which hatch a random pet by rarity (`economy.toml` `[pets.orb_weights]`); a duplicate adds a **star**
-(up to 5; a fifth-star duplicate gives xp instead). Feed them **crops** for pet xp (dearer crops feed more) to level
-them up to 20, and give them a **Spirit** item for +15% xp in its skill. A bonus is its listed value x stars (+25%
+(up to 5; a fifth-star duplicate gives xp instead). Feed them **food** for pet xp to level them up to 20, and give them
+a **Spirit** item for +15% xp in its skill. A bonus is its listed value x stars (+25%
 each) x level (a fresh pet does half, a max one all of it).
+
+### Pet food and pet skills
+
+Crops are no longer the only food. **Every skill drops its own food in three tiers** (`category = "pet_food"` in
+`items.toml`, worth 200 / 1,000 / 5,000 pet xp, never sold): foraging **Acorn Mix / Honeycomb / Golden Sap** (rolled per tree
+like any foraging drop), mining **Stone Biscuit / Crystal Chew / Geode Feast** (rolled per lode when a run ends), fishing
+**Fish Flakes / Dried Squid / Sea Feast** (one roll per catch, like coral). Crops are **farming's** food. Combat has none yet.
+
+**Every pet looks after one skill.** By default the one its species is for (cat: fishing, frog: farming, dog and koala: none).
+In the Pet House you look at any pet (not just the active one), feed it, and pick its skill ("Its own", "No skill", or one of
+the five). Food of **its skill is worth x3**; a pet with **no skill** gets **x2 from any food**; food of a different skill is the
+plain amount. So a specialist levels fastest on its own skill's food, and a global pet is the flexible, slower choice.
+Looking at a pet no longer switches it: **Make active** does. The drop rates aim at roughly 3-5k base pet xp an hour in each
+skill (`python -m scripts.balance` prints it); level 20 is 180k xp.
 
 | Pet | Does |
 |---|---|
