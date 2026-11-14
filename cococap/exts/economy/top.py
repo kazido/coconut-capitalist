@@ -33,6 +33,18 @@ class TopCategories(Enum):
     def from_name(cls, name: str):
         return cls(name.lower())
 
+    def format(self, value: int) -> str:
+        """A score with its unit, so the board says what is being counted: "1,250 bits", "Lv 7 (1,250 xp)"."""
+        if self.key.startswith("skill:"):
+            from cococap.user import User
+
+            return f"Lv {User.xp_to_level(value)} ({value:,} xp)"
+        return f"{value:,} {self.unit}"
+
+    @property
+    def unit(self) -> str:
+        return {"bits": "bits", "luckbucks": "luckbucks", "stat:drops_claimed": "drops claimed"}.get(self.key, "")
+
 
 MEDALS = ["🥇", "🥈", "🥉"]
 
@@ -46,13 +58,13 @@ async def leaderboard_view(category: TopCategories, caller_id: int) -> tuple[str
         medal = MEDALS[entry.rank - 1] if entry.rank <= 3 else f"{entry.rank}."
         if entry.discord_id == caller_id:
             caller_listed = True
-            lines.append(f"{medal} **{entry.name} — {entry.value:,} (you)**")
+            lines.append(f"{medal} **{entry.name} — {category.format(entry.value)} (you)**")
         else:
-            lines.append(f"{medal} {entry.name} — {entry.value:,}")
+            lines.append(f"{medal} {entry.name} — {category.format(entry.value)}")
     if not caller_listed:
         mine = await queries.position_of(category.key, caller_id, exclude=BOT_ID)
         if mine:
-            lines.append(f"\nYour rank:\n**{mine.rank}. {mine.name} — {mine.value:,} (you)**")
+            lines.append(f"\nYour rank:\n**{mine.rank}. {mine.name} — {category.format(mine.value)} (you)**")
     board = "\n".join(lines) or "Nobody is on this board yet."
     if category != TopCategories.BITS:
         return board, None, None

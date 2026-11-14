@@ -1309,3 +1309,20 @@ async def test_the_community_tree_has_the_same_spot_and_rotate(db, monkeypatch):
 
 
 RULES_CHOP = get_registry().foraging.chopping
+
+
+async def test_every_leaderboard_says_what_it_counts(db):
+    from cococap.exts.economy.top import TopCategories, leaderboard_view
+
+    user = await User.get(1)
+    await set_columns(user, purse=1_250, luckbucks=40)
+    await user.inc_stat("drops_claimed", 3)
+    for skill in ("farming", "foraging", "fishing", "mining", "combat"):
+        await user.add_xp(skill, 300)
+    expected = {"bits": "1,250 bits", "luckbucks": "40 luckbucks", "drops": "3 drops claimed"}
+    for category in TopCategories:
+        board, _, _ = await leaderboard_view(category, 1)
+        if category.key.startswith("skill:"):
+            assert "Lv 2 (300 xp)" in board, (category, board)
+        else:
+            assert expected[category.value] in board, (category, board)
