@@ -177,6 +177,16 @@ you. A chop also has a 15% chance to be a **good chop** (+50%). A simulation sho
 your axe's power earns about 3x what never rotating does, and clearly beats rotating too often or too rarely. The same
 applies to the community tree.
 
+### Party trees
+
+A party of two or more can start a **party tree** from the Foraging page (any member, in the deepest zone *everyone* in the
+party has unlocked; one at a time). It stands for 20 minutes and is bigger the more members you have (a typical tree of its
+zone x 4 x the party's size). Only members can chop it; every chop is one atomic update (the same guarantee as the community
+tree), so members chopping at once lose nothing and it falls once. Rewards are worked out exactly once, when it falls or falls
+over, and each member collects theirs from their own panel. They pay a little better than the community tree for the same work:
+**+10% per extra member who did at least 10% of it, up to +50%** (the community tree gives +5% each). This is the first of the
+**party versions of each skill** (the others are still to come). Settings: `configs/foraging.toml` `[party_tree]`.
+
 ### Chop styles
 
 Three ways to swing, shown with what each would do on your current spot: **Chop** (steady), **Heavy swing** (x1.6 damage,

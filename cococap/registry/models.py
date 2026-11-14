@@ -418,6 +418,18 @@ class ChoppingRules(_Data):
     careful: ChopStyle
 
 
+class PartyTreeRules(_Data):
+    """A tree a party chops together: a little better rewards than the community tree for working as a team."""
+
+    open_minutes: int = Field(ge=1, le=120)
+    hp_per_member: float = Field(gt=0)  # tree hp = a typical tree of its zone x this x the party's size
+    min_share: float = Field(ge=0, le=1)
+    group_bonus: float = Field(ge=0)  # +this per extra member who did their share...
+    max_group_bonus: float = Field(ge=0)  # ...up to this
+    expired_factor: float = Field(ge=0, le=1)
+    refresh_seconds: float = Field(gt=0)
+
+
 class ForagingRules(_Data):
     zones: int = Field(ge=1)
     levels_per_zone: int = Field(ge=1)
@@ -431,6 +443,7 @@ class ForagingRules(_Data):
     heights: list[TreeHeight] = Field(min_length=1)
     chopping: ChoppingRules
     community: CommunityRules
+    party_tree: PartyTreeRules
 
     @model_validator(mode="after")
     def _zones_fit(self):

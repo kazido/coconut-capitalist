@@ -68,6 +68,7 @@ Each slice = **data -> service + tests -> thin cog -> enable the extension**, co
 5. **Pets**: needs a design pass first (gacha via familiar orbs, stars, bonuses, xp from crops).
 6. **Enchant sources**: crafting, shop and drops all end in `services.equipment.add_enchant`; add the
    sources as each skill lands. No enchanting table needed yet.
+6b. **Party versions of every skill.** Party trees (foraging) are the first; next are party mines, party farms and party fishing.
 7. Re-enable trivia, the `explore` prototype, and the community drops channel config.
 
 ## Open decisions (yours)

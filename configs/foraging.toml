@@ -72,3 +72,12 @@ group_bonus = 0.05                # +5% drops and bits for everybody per extra q
 max_group_bonus = 0.5             # ...up to +50%
 expired_factor = 0.25             # a tree nobody finished pays this share of what felling it would have
 refresh_seconds = 5               # how often the open panel refreshes itself
+
+[party_tree]                      # a tree only your party can chop: start one from the Foraging page
+open_minutes = 20
+hp_per_member = 4                 # hp = a typical tree of its zone x 4 x the party's size (a party of 4: x16)
+min_share = 0.10                  # you need at least this share of the tree to be paid in drops and bits
+group_bonus = 0.10                # +10% per extra member who did their share (the community tree gives +5%)...
+max_group_bonus = 0.5             # ...up to +50%
+expired_factor = 0.25
+refresh_seconds = 5

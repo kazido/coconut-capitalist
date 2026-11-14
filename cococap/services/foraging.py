@@ -200,6 +200,7 @@ class Reward:
     xp: int
     felled: bool = True  # False: the tree fell over unfinished (a consolation prize)
     window: int | None = None  # the community tree it came from
+    party: bool = False  # ...or it came from a party tree
 
 
 async def _pay(user: User, drops: Counter, bits: int, xp: int, trees: int) -> None:
