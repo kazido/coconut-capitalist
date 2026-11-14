@@ -38,7 +38,7 @@ ability_description = "Let's the wielder peer inside the mind of his foe, reveal
 to = "shiningsilver"
 bits = 200000000  # TODO(balance)
 
-[dreamnail.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
+[dreamnail.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
 gold_ore = 1000
 maple_leaf = 100
 aged_feather = 3
@@ -64,7 +64,7 @@ requirement = 0
 to = "rustedbroadsword"
 bits = 50000  # TODO(balance)
 
-[largebranch.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
+[largebranch.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
 iron_ore = 40
 hardwood = 10
 plant_fiber = 10
@@ -91,7 +91,7 @@ ability_description = "1/10 chance to cause enemies to take 2x damage on your ne
 to = "dreamnail"
 bits = 5000000  # TODO(balance)
 
-[rustedbroadsword.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
+[rustedbroadsword.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
 gold_ore = 200
 fine_bark = 25
 maple_leaf = 10
@@ -876,12 +876,10 @@ requirement = 0
 to = "reinforced_rod"
 bits = 100000  # TODO(balance)
 
-[starter_rod.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
+[starter_rod.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
 herring = 20
+sardine = 20
 bass = 8
-feather = 20
-copper_ore = 100
-plant_fiber = 10
 
 [reinforced_rod]
 name = "Reinforced Rod"
@@ -901,13 +899,13 @@ requirement = 0
 to = "masterwork_rod"
 bits = 2000000  # TODO(balance)
 
-[reinforced_rod.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
+[reinforced_rod.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
 salmon = 15
+trout = 20
 pufferfish = 3
 coral_shard = 20
-fine_bark = 15
-gold_ore = 40
-plant_fiber = 40
+hardwood = 10
+iron_ore = 40
 
 [masterwork_rod]
 name = "Masterwork Rod"
@@ -1045,12 +1043,12 @@ requirement = 0
 to = "masterwork_axe"
 bits = 4000000  # TODO(balance)
 
-[bastards_broadaxe.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
-maple_leaf = 10
-fine_bark = 30
-gold_ore = 60
-coral_shard = 20
-hot_pepper = 5
+[bastards_broadaxe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+maple_leaf = 12
+fine_bark = 40
+hardwood = 100
+gold_ore = 30
+plant_fiber = 40
 
 [masterwork_axe]
 name = "Masterwork Axe"
@@ -1070,12 +1068,14 @@ requirement = 0
 to = "sovereign_hatchet"
 bits = 20000000  # TODO(balance)
 
-[masterwork_axe.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
+[masterwork_axe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
 maple_leaf = 40
 aged_feather = 1
-gold_ore = 150
-plant_fiber = 100
-swordfish = 3
+fine_bark = 80
+hardwood = 200
+gold_ore = 80
+coral_shard = 15
+plant_fiber = 60
 
 [reinforced_axe]
 name = "Reinforced Axe"
@@ -1095,11 +1095,11 @@ requirement = 0
 to = "bastards_broadaxe"
 bits = 800000  # TODO(balance)
 
-[reinforced_axe.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
-fine_bark = 20
-iron_ore = 80
-plant_fiber = 30
-tuna = 3
+[reinforced_axe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+fine_bark = 25
+hardwood = 60
+feather = 150
+iron_ore = 40
 
 [sovereign_hatchet]
 name = "Sovereign Hatchet"
@@ -1119,12 +1119,14 @@ requirement = 0
 to = "wilted_axe"
 bits = 100000000  # TODO(balance)
 
-[sovereign_hatchet.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
+[sovereign_hatchet.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
 maple_leaf = 100
 aged_feather = 4
-gold_ore = 300
-plant_fiber = 200
-pufferfish = 5
+fine_bark = 150
+hardwood = 400
+gold_ore = 200
+plant_fiber = 120
+tuna = 10
 
 [starter_axe]
 name = "Starter Axe"
@@ -1144,10 +1146,9 @@ requirement = 0
 to = "thornwhip_axe"
 bits = 20000  # TODO(balance)
 
-[starter_axe.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
+[starter_axe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
 feather = 40
-copper_ore = 60
-plant_fiber = 5
+hardwood = 6
 
 [thornwhip_axe]
 name = "Thornwhip Axe"
@@ -1167,11 +1168,10 @@ requirement = 0
 to = "reinforced_axe"
 bits = 150000  # TODO(balance)
 
-[thornwhip_axe.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
+[thornwhip_axe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
 feather = 100
-hardwood = 10
-iron_ore = 20
-coral_shard = 3
+hardwood = 25
+fine_bark = 5
 
 [wilted_axe]
 name = "Wilted Axe"
@@ -1450,12 +1450,9 @@ requirement = 0
 to = "reinforced_pickaxe"
 bits = 30000  # TODO(balance)
 
-[rookiepickaxe.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
-copper_ore = 150
-iron_ore = 30
-hardwood = 4
-plant_fiber = 6
-coral_shard = 2
+[rookiepickaxe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+copper_ore = 200
+iron_ore = 40
 
 [reinforced_pickaxe]
 name = "Reinforced Pickaxe"
@@ -1475,12 +1472,12 @@ requirement = 0
 to = "masterwork_pickaxe"
 bits = 500000  # TODO(balance)
 
-[reinforced_pickaxe.tool.upgrade.items]  # TODO(balance): bulk from its own skill, the rest from other skills
+[reinforced_pickaxe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
 iron_ore = 300
 gold_ore = 60
-hardwood = 40
-plant_fiber = 60
-coral_shard = 15
+copper_ore = 400
+hardwood = 20
+coral_shard = 8
 
 [masterwork_pickaxe]
 name = "Masterwork Pickaxe"

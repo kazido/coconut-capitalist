@@ -548,16 +548,18 @@ async def test_landing_a_fish_can_bring_coral_with_it(db):
     assert got.extras["coral_shard"] == 1 and await user.item_quantity("coral_shard") == 1
 
 
-# ---- the pickaxe: upgradable with a bit from every skill -----------------------------------------------------------
-def test_the_first_pickaxe_upgrade_wants_something_from_every_skill():
-    needs = REG.item("rookiepickaxe").tool.upgrade.items
-    skills = {REG.item(i).skill for i in needs}
-    assert skills == {"mining", "foraging", "farming", "fishing"}
-    for item_id in needs:  # every material really drops somewhere
+# ---- the pickaxe: the first upgrade is plain ore, later ones add a little from other skills ----------------------------------
+def test_the_first_pickaxe_upgrade_needs_only_ore_and_the_next_adds_a_little_from_other_skills():
+    first = REG.item("rookiepickaxe").tool.upgrade.items
+    assert {REG.item(i).skill for i in first} == {"mining"}
+    second = REG.item("reinforced_pickaxe").tool.upgrade.items
+    skills = {REG.item(i).skill for i in second}
+    assert "mining" in skills and len(skills) > 1
+    for item_id in (*first, *second):  # every material really drops somewhere
         assert REG.item(item_id).drop is not None, item_id
 
 
-async def test_you_can_upgrade_a_pickaxe_with_materials_from_all_four_skills(db):
+async def test_you_can_upgrade_a_pickaxe_with_nothing_but_ore_at_first(db):
     from cococap.services import upgrades
 
     user = await User.get(1)

@@ -205,14 +205,39 @@ def test_every_kind_of_tool_has_an_upgrade_chain_and_only_the_best_tool_ends_it(
             assert current.id == tops[0].id, (tool.id, current.id)
 
 
-def test_every_upgrade_step_takes_bits_and_things_from_more_than_one_skill():
+TOOL_SKILL = {"pickaxe": "mining", "axe": "foraging", "rod": "fishing"}  # (swords: combat has no materials yet)
+
+
+def chain_of(kind):
+    tools = tools_by_kind()[kind]
+    current = next(t for t in tools if not any(o.tool.upgrade and o.tool.upgrade.to == t.id for o in tools))
+    steps = []
+    while current.tool.upgrade:
+        steps.append(current)
+        current = REG.item(current.tool.upgrade.to)
+    return steps
+
+
+def test_early_upgrades_use_only_the_tools_own_skill_and_later_ones_mostly_do():
+    for kind, skill in TOOL_SKILL.items():
+        steps = chain_of(kind)
+        for index, tool in enumerate(steps):
+            up = tool.tool.upgrade
+            items = {REG.item(m): q for m, q in up.items.items()}
+            own = {i: q for i, q in items.items() if i.skill == skill}
+            foreign = {i: q for i, q in items.items() if i.skill != skill}
+            assert up.bits > 0 and len(own) >= 2, (tool.id, [i.id for i in own])
+            if index == 0 or (index == 1 and len(steps) >= 5):  # the first steps (the first two of a long chain)
+                assert not foreign, (tool.id, [i.id for i in foreign])
+            else:  # later: a majority from its own skill, a smaller share from others
+                assert foreign, (tool.id, "later steps should call on other skills too")
+                assert len(own) > len(foreign) and sum(own.values()) > sum(foreign.values()), tool.id
+
+
+def test_every_upgrade_step_takes_bits_and_several_materials():
     for item in REG.items.values():
-        if not (item.tool and item.tool.upgrade):
-            continue
-        up = item.tool.upgrade
-        skills = {REG.item(m).skill for m in up.items}
-        assert up.bits > 0 and len(up.items) >= 3 and len(skills) >= 3, (item.id, skills)
-        assert any(REG.item(m).skill != REG.item(item.tool.upgrade.to).skill for m in up.items)
+        if item.tool and item.tool.upgrade:
+            assert item.tool.upgrade.bits > 0 and len(item.tool.upgrade.items) >= 2, item.id
 
 
 def test_every_upgrade_material_can_actually_be_found_somewhere():
