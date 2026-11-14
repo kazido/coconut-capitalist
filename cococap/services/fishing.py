@@ -139,6 +139,11 @@ def extra_fish(power: int, rules: FishingRules, rng: random.Random) -> int:
     return whole + (1 if rng.random() < expected - whole else 0)
 
 
+def slack_bonus(worth: int, unused: int, rules: FishingRules) -> int:
+    """What a clean reel earns: every slack you did not need pays `slack_bonus` of the catch's worth (a rod that forgives more pays more)."""
+    return round(worth * rules.reel.slack_bonus * max(0, unused))
+
+
 def reel_pattern(rarity: int, rules: FishingRules, rng: random.Random) -> list[str]:
     return [rng.choice((LEFT, RIGHT)) for _ in range(rules.reel.base_length + rarity)]
 
@@ -483,6 +488,8 @@ class Catch:
     server_record: bool = False  # the biggest ever caught on the server
     record_bits: int = 0
     record_holder: str | None = None  # who held the server record before you
+    slack_left: int = 0  # forgiven wrong arrows you did not need
+    slack_bits: int = 0  # ...and what they paid
 
 
 def catch_extras(rng: random.Random, registry: Registry) -> Counter:
@@ -566,8 +573,11 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
         if server_record:
             record_bits = round(cast.fish.sell_price * rules.records.server_bits_multiplier)
             await user.add_bits(record_bits)
+    slack_bits = slack_bonus(cast.fish.sell_price * (1 + cast.extra_fish), cast.slips_left, rules)
+    if slack_bits:
+        await user.add_bits(slack_bits)
     return Catch(cast.fish, xp, tuple(finished), quest_bits, extras, seen[0] if seen else None,
-                 tuple(cast.reveals), cast.extra_fish, cast.size, bool(best), server_record, record_bits, holder)
+                 tuple(cast.reveals), cast.extra_fish, cast.size, bool(best), server_record, record_bits, holder, cast.slips_left, slack_bits)
 
 
 RECORDS_KEY = "fishing_records"
@@ -832,6 +842,8 @@ class BossReward:
     bits: int
     xp: int
     items: Counter
+    slack_left: int = 0
+    slack_bits: int = 0
 
 
 async def defeat_boss(user: User, cast: Cast, rng: random.Random | None = None, registry: Registry | None = None) -> BossReward:
@@ -861,6 +873,7 @@ async def defeat_boss(user: User, cast: Cast, rng: random.Random | None = None, 
     await user.update_skill("fishing", win)
     for item_id, quantity in items.items():
         await user.add_item(item_id, quantity)
-    if bits:
-        await user.add_bits(bits)
-    return BossReward(cast.boss, bits, xp, items)
+    slack_bits = slack_bonus(bits, cast.slips_left, reg.fishing)
+    if bits + slack_bits:
+        await user.add_bits(bits + slack_bits)
+    return BossReward(cast.boss, bits, xp, items, cast.slips_left, slack_bits)

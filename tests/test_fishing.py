@@ -1807,3 +1807,83 @@ def test_a_fishing_boss_pays_a_haul_of_the_fish_tools_are_upgraded_with():
         assert loot[fish].chance == 1.0 and loot[fish].max >= 6  # a sure haul, like the mining vault
     upgrade_fish = {i for t in REG.items.values() if t.tool and t.tool.upgrade for i in t.tool.upgrade.items if REG.item(i).category == "fish"}
     assert {"salmon", "trout", "pufferfish", "tuna"} <= upgrade_fish and {"salmon", "trout", "pufferfish", "tuna"} <= set(loot)
+
+
+# ---- a clean reel pays, and a cast tells you how long to wait ---------------------------------------------------------------------------
+async def land_with(user, slips_left, fish_id="cod", extra=0):
+    cast = cast_of(fish_id, slips=slips_left)
+    cast.extra_fish = extra
+    for arrow in cast.pattern:
+        cast.press(arrow, T0 + 11)
+    return await f.land(user, cast, REG)
+
+
+async def test_every_slack_you_did_not_need_pays_a_bonus(db):
+    user = await player(1)
+    start = (await User.get(1)).purse
+    none = await land_with(user, 0)
+    assert none.slack_bits == 0 and none.slack_left == 0
+    two = await land_with(user, 2)
+    assert two.slack_left == 2 and two.slack_bits == round(REG.item("cod").sell_price * RULES.reel.slack_bonus * 2)
+    four = await land_with(user, 4)
+    assert four.slack_bits == 2 * two.slack_bits  # it adds up: the more slack to spare, the cleaner the reel
+    await user.refresh()
+    assert user.purse == start + two.slack_bits + four.slack_bits
+
+
+async def test_a_slack_bonus_counts_the_extra_fish_a_good_rod_hauls_in(db):
+    user = await player(1)
+    plain = await land_with(user, 1)
+    hauled = await land_with(user, 1, extra=2)
+    assert hauled.slack_bits == 3 * plain.slack_bits
+
+
+async def test_slack_you_used_is_not_paid_for(db):
+    user = await player(1)
+    cast = cast_of("cod", slips=2)
+    steps = list(cast.pattern)
+    assert cast.press(f.RIGHT if steps[0] == f.LEFT else f.LEFT, T0 + 11) == "slip" and cast.slips_left == 1
+    for step in steps:
+        cast.press(step, T0 + 12)
+    caught = await f.land(user, cast, REG)
+    assert caught.slack_left == 1 and caught.slack_bits == round(REG.item("cod").sell_price * RULES.reel.slack_bonus)
+
+
+async def test_a_boss_reel_with_slack_left_pays_a_bonus_on_its_bits(db):
+    user = await player(1)
+    for left, expect_bonus in ((0, False), (3, True)):
+        boss = cast_of("cod", slips=left)
+        boss.boss, boss.modifiers = "Old Whiskers", []
+        for arrow in boss.pattern:
+            boss.press(arrow, T0 + 11)
+        won = await f.defeat_boss(user, boss, Random(1), REG)
+        assert (won.slack_bits > 0) == expect_bonus and won.slack_left == left
+        if expect_bonus:
+            assert won.slack_bits == round(won.bits * RULES.reel.slack_bonus * 3)
+
+
+async def test_the_catch_page_says_it_was_a_clean_reel_and_the_reel_page_says_slack_pays(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    user, nav, inter = await open_fishing(power_item="reinforced_rod")  # power 8: forgives a wrong arrow
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    assert "each one unused pays a bonus" in all_text(nav)
+    await reel_in(nav, inter, cast)
+    assert "Clean reel" in all_text(nav) and "slack unused" in all_text(nav)
+
+
+async def test_casting_tells_you_how_long_the_bite_should_take_and_a_better_rod_shortens_it(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    waits = {}
+    for uid, item in ((1, "starter_rod"), (2, "masterwork_rod")):
+        user, nav, inter = await open_fishing(uid, item)
+        await click(nav, inter, "Cast")
+        line = next(l for l in all_text(nav).split("\n") if "A bite in about" in l)
+        waits[item] = (int(line.split("**")[1].rstrip("s")), "starter rod" in line)
+    assert waits["starter_rod"][1] is False  # (a starter rod's own line does not compare itself with itself)
+    assert waits["masterwork_rod"][0] < waits["starter_rod"][0] and waits["masterwork_rod"][1] is True
+    starter_wait = round(f.typical_wait(REG.item("starter_rod").tool.power, RULES) * f.water_by_id(REG, nav.screen.water).wait_multiplier)
+    assert waits["starter_rod"][0] == starter_wait

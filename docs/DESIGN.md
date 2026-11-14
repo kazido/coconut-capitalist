@@ -731,8 +731,20 @@ A pass over the busiest pages to cut text without cutting information. The rules
 - **Every tool starts at power 3** (pickaxe, axe, rod, can, sword). The pickaxe used to start at 1 and the sword at 1: both were moved up by 2 all the way
   up their chains, and the formulas moved with them so nothing changed in play: ore per lode is `1 + 0.25 x (power - power_base)` with `power_base = 3`
   in `mining.toml` (Rookie x1.0, Reinforced x1.5, Masterwork x2.5 as before), and the sword's `base_attack` went 14 -> 8 (a starter sword still hits for 17).
+- **Every upgrade changes several things at once** (`configs/tools.toml`, `services/tool_effects.py`): besides its main effect each tool's power also gives extras,
+  per point above 3, so a starter tool gets none. Pickaxe: ore per lode, slower pressure (0.3%/pt), rich lode chance, a spare brace every 25 points. Axe: hit points
+  per chop, good-chop chance (0.2%/pt), spots that wear out slower (0.5%/pt). Can: plots watered, bigger harvests (4%/pt), more drops (8%/pt), the seed comes back
+  (3%/pt). Sword: attack (+3/pt), max hp (+3/pt) and defense (+0.25/pt). Rod: bite wait, forgiven arrows, rare fish, extra fish. The extras are merged into the
+  tool's stats (`equipment.effective_stats`), so every game reads them like it reads an enchant, and the can's old hand-set per-tier stats were dropped for them.
+  The fork roads keep their own stats on top.
 - **What power does**, said on the upgrade page (`services/tool_effects.py` reads the real rules, so it cannot disagree with the game):
   pickaxe = ore per lode (x); axe = hit points a chop takes off; can = plots watered an hour; sword = attack added in a fight (+3 a point);
   rod = shorter wait for a bite, forgiven wrong arrows, rarer fish and extra fish per catch.
 - Each upgrade page opens with that one-line meaning, then for the next tool shows **before -> after for every effect** ("Ore per lode: x1.00 -> x1.50"),
   its extra stats and road, and any new ability. Rolled and enchant power carry over to the next tool, and the page counts them. The Tools page shows each tool's numbers.
+
+## Fishing: a clean reel pays, and the cast tells you how long to wait (decided)
+- **Unused slack pays.** The rod forgives wrong arrows ("slack"); once you know the patterns that safety net is never used, so now every slack you did **not**
+  need pays `reel.slack_bonus` (8%) of the catch's worth in bits (a boss: of its bits), counting the extra fish a good rod hauls in. Bits only, never xp. The
+  reel page says "each one unused pays a bonus"; the catch page says "Clean reel! N slack unused: +X bits". A better rod forgives more, so it can pay more.
+- **The cast shows the wait**: "A bite in about 17s  ·  a starter rod: 29s" (the typical wait for your rod, pet and water, beside a starter rod's), so an upgrade is something you feel.

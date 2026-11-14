@@ -161,7 +161,7 @@ class FishScreen(Screen):
 
         status = cast.status(now())
         if status == "waiting":
-            body += [text("### 🌊 The line is in the water…\nWait for a bite. A stronger rod bites sooner."),
+            body += [text("### 🌊 The line is in the water…\n" + await self._wait_estimate()),
                      row(button("Cancel cast", on_click=self._cancel))]
             return Page("Fishing", body, accent=ACCENT)
 
@@ -179,7 +179,7 @@ class FishScreen(Screen):
             return Page("Fishing", body, accent=0xF1C40F)
 
         rules = reg.fishing
-        slack = f"\n🧵 Slack left: **{cast.slips_left}**" if cast.slips_left else ""
+        slack = (f"\n🧵 Slack left: **{cast.slips_left}**  ·  each one unused pays a bonus" if cast.slips_left else "")
         arrows = sum(t != fishing.REEL for t in cast.pattern)
         if cast.boss:
             twists = "\n".join(rules.boss.modifier_text[m] for m in cast.modifiers)
@@ -201,6 +201,19 @@ class FishScreen(Screen):
         ]
         return Page("Fishing", body, accent=int(colour.color, 16))
 
+    async def _wait_estimate(self) -> str:
+        """About how long a bite takes with YOUR rod here, next to a starter rod's, so an upgrade is something you can feel."""
+        reg = get_registry()
+        rules = reg.fishing
+        stats = await fishing.rod_stats(self.user)
+        water = fishing.water_by_id(reg, self.water) if self.water else None
+        scale = water.wait_multiplier if water else 1.0
+        bite = stats.stats.get("bite_speed", 0.0) + (await pets.bonuses(self.user)).get("bite_speed", 0.0)
+        mine = fishing.typical_wait(stats.power, rules, bite) * scale
+        starter = fishing.typical_wait(reg.item("starter_rod").tool.power, rules) * scale
+        line = f"⏱️ A bite in about **{mine:.0f}s**"
+        return line + (f"  ·  a starter rod: {starter:.0f}s" if round(starter) != round(mine) else "")
+
     # ---- what happened ---------------------------------------------------------------------------
     def _lost(self, title: str, lines: list[str]) -> Result:
         return Result(title, lines + ["Nothing was lost but the fish. Try again!"], emoji="🌊", accent=0x5D6D7E,
@@ -215,6 +228,8 @@ class FishScreen(Screen):
         reg = get_registry()
         rarity = Rarities.from_value(catch.fish.rarity)
         lines = [f"**{rarity.rarity_name}**  ·  📏 **{catch.size:g} cm**  ·  worth **{bits(catch.fish.sell_price)}** bits  ·  **+{catch.xp:,}** xp"]
+        if catch.slack_bits:
+            lines.append(f"🧵 **Clean reel!** {catch.slack_left} slack unused: **+{bits(catch.slack_bits)}** bits")
         if catch.server_record:
             lines.append(f"🏆 **NEW SERVER RECORD!** +{bits(catch.record_bits)} bits"
                          + (f" (you beat {catch.record_holder})" if catch.record_holder else ""))
@@ -295,7 +310,8 @@ class FishScreen(Screen):
                 won = await fishing.defeat_boss(self.user, cast, self.rng)
                 reg = get_registry()
                 loot = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in won.items.items()) or "nothing"
-                self.result = Result(f"You beat {won.name}!", [f"**+{bits(won.bits)}** bits  ·  **+{won.xp:,}** xp", f"🎁 Loot: {loot}"],
+                slack = f"\n🧵 Clean reel: **{won.slack_left}** slack unused  ·  **+{bits(won.slack_bits)}** bits" if won.slack_bits else ""
+                self.result = Result(f"You beat {won.name}!", [f"**+{bits(won.bits)}** bits  ·  **+{won.xp:,}** xp{slack}", f"🎁 Loot: {loot}"],
                                      emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
                 return await self.refresh(interaction)
             if result == "landed":

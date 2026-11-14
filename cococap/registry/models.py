@@ -704,6 +704,7 @@ class BiteRules(_Data):
 class ReelRules(_Data):
     base_length: int = Field(ge=1)
     power_per_slip: int = Field(ge=1)
+    slack_bonus: float = Field(ge=0)  # an unused slack (a forgiven wrong arrow you did not need) pays this share of the catch's worth, each
     max_slips: int = Field(ge=0)  # a rod forgives at most this many wrong arrows by its power alone (enchants add more)
     break_from_rarity: int = Field(ge=1)  # fish of this rarity and up make you stop and Reel now and then
     arrows_per_break: int = Field(ge=1)  # about one Reel break per this many arrows

@@ -21,6 +21,7 @@ extra_fish_per_power = 0.022     # each point of power above 3 adds this many ex
 
 [reel]
 base_length = 2                  # arrows to press = this + the fish's rarity (a rarity-1 fish takes 3)
+slack_bonus = 0.08               # land a fish with slack to spare and it pays this much more (of its worth) for EVERY unused slack: a clean reel earns
 max_slips = 4                    # (a power-120 rod would otherwise forgive 15, and never fail a reel)
 power_per_slip = 8               # every this much rod power forgives one wrong arrow (a power-8 rod forgives one)
 break_from_rarity = 2            # uncommon fish and up make you stop and press Reel now and then...
