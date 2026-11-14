@@ -498,7 +498,8 @@ class TreasureRules(_Data):
     attempts: int = Field(ge=1)  # tries at the lock before the chest sinks
     bits_min: int = Field(ge=0)
     bits_max: int = Field(ge=0)
-    xp: int = Field(ge=0)
+    xp: int = Field(ge=0)  # the least a chest pays...
+    xp_level_fraction: float = Field(ge=0)  # ...or this share of the xp it takes to finish your current level, if more
     loot: list[TreasureLoot]
 
 

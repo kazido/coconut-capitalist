@@ -173,7 +173,7 @@ class FishScreen(Screen):
         slack = f"\n🧵 Slack left: **{cast.slips_left}**" if cast.slips_left else ""
         body += [
             text(f"### 🎣 A **{colour.rarity_name}** fish is on the line!\n{pattern_line(cast)}{slack}\n"
-                 f"-# Press them in this order: ◀ ▶ are the arrows, 🌀 means press **Reel**"
+                 f"-# Press them in this order: ◄ ► are the arrows, 🌀 means press **Reel**"
                  + (", and ❓ is hidden: it follows this fish's own pattern. Watch what it turns out to be!"
                     if fishing.MYSTERY in cast.pattern else ".")),
             row(button("Left", emoji="◀️", style=discord.ButtonStyle.primary, on_click=self._press(fishing.LEFT)),

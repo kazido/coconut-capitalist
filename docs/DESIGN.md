@@ -236,11 +236,11 @@ average catch at ~4-6.5k bits and a catch at ~15-20 s, which is about what forag
 
 ### A reel with more to it: breaks and mystery arrows
 
-A reel is no longer just ◀ ▶ repeated. Uncommon fish and up make you **stop and press Reel** (🌀, a third button) between
+A reel is no longer just ◄ ► repeated. Uncommon fish and up make you **stop and press Reel** (🌀, a third button) between
 runs of arrows, about once per four arrows, in a different place every time. **Super rare fish and up hide some arrows
 behind a ❓** (one at rarity 4, up to four at 7). The ❓ is secretly an arrow that follows *that fish's own tell*, set in
-the data: always ◀, always ▶, the same as the arrow before it, or the opposite. Press the ❓ and you find out what it was
-even if you guess wrong, and it is written in your **field notes** (on the Records page) as "after ◀ → ▶", so you can work
+the data: always ◄, always ►, the same as the arrow before it, or the opposite. Press the ❓ and you find out what it was
+even if you guess wrong, and it is written in your **field notes** (on the Records page) as "after ◄ → ►", so you can work
 the pattern out over a few catches (a test proves every learnable tell can be worked out from a handful). Some fish are
 pure coin flips (`random`): those can't be learned and hide at most two ❓, so they are luck as well as skill. Slips from
 your rod still forgive wrong guesses. Bosses have breaks but no ❓.
@@ -330,7 +330,8 @@ About 1 in 35 catches (a little rarer than the wiki's 1 in 25) makes you halluci
 your panel for 8 seconds, then fade, so you have to remember them. While the hallucination lasts (10 minutes) every
 cast has a 1 in 35 chance (as rare as the hallucination itself) to bring up a **treasure chest** instead of a fish. It
 bites like any fish, but once you pull up the line it wants the numbers instead of arrows: you get 3 tries in a pop-up
-before it sinks. Opening it pays 20-60k bits, xp and a loot table (coral shards, a chance at a sturgeon, oarfish or
+before it sinks. Opening it pays 20-60k bits, xp (at least 150, or a quarter of the xp it takes to finish your current level, so it stays worth
+opening as you grow) and a loot table (coral shards, a chance at a sturgeon, oarfish or
 leviathan pup, and 1 in 1,000 for the **Spirit of the Sea**). One hallucination at a time; the numbers are used up
 when the chest opens or sinks. Everything is in `configs/fishing.toml` `[treasure]` (`TODO(balance)`): with these
 numbers about 1 catch in 60 turns into a chest, which is generous.

@@ -1450,7 +1450,7 @@ def test_a_mystery_arrow_is_secretly_an_arrow_and_pressing_it_teaches_you_what_i
     cast = tricky_cast([f.LEFT, f.MYSTERY, f.RIGHT], [f.LEFT, f.RIGHT, f.RIGHT])
     assert cast.next_arrow == f.LEFT
     cast.press(f.LEFT, T0 + 11)
-    assert cast.next_arrow == f.RIGHT and cast.pattern[1] == f.MYSTERY  # shown as ❓, wanted as ▶
+    assert cast.next_arrow == f.RIGHT and cast.pattern[1] == f.MYSTERY  # shown as ❓, wanted as ►
     assert cast.press(f.RIGHT, T0 + 12) == "ok" and cast.reveals == [(f.LEFT, f.RIGHT)]
     assert cast.press(f.RIGHT, T0 + 13) == "landed"
 
@@ -1500,7 +1500,7 @@ async def test_a_fish_that_got_away_still_teaches_you_and_the_notes_stay_short(d
 
 
 def test_field_notes_read_clearly():
-    assert f.read_notes([f"{f.LEFT}>{f.RIGHT}", f"{f.LEFT}>{f.RIGHT}", f"{f.RIGHT}>{f.RIGHT}"]) == "after ◀ → ▶ ×2, after ▶ → ▶"
+    assert f.read_notes([f"{f.LEFT}>{f.RIGHT}", f"{f.LEFT}>{f.RIGHT}", f"{f.RIGHT}>{f.RIGHT}"]) == "after ◄ → ► ×2, after ► → ►"
 
 
 async def test_the_screen_has_a_reel_button_shows_breaks_and_mysteries_and_the_result_says_what_the_mystery_was(db, clock, monkeypatch):
@@ -1542,3 +1542,24 @@ def test_a_coin_flip_fish_never_hides_more_arrows_than_you_can_stand():
         if fish.reel and fish.reel.tell == "random":
             shown, _ = f.build_reel(fish, RULES, Random(1))
             assert shown.count(f.MYSTERY) <= RL.max_random_mysteries
+
+
+async def test_a_chests_xp_grows_with_your_level_but_never_drops_below_the_floor(db):
+    async def open_one(user_id, level):
+        user = await player(user_id)
+        if level > 1:
+            await user.add_xp("fishing", User.level_to_xp(level) + 1)
+        chest = await armed_chest(user)
+        before = (await user.skill("fishing")).xp
+        got = await f.open_chest(user, chest, "4815", Lucky(3), chest.bite_at + 2, REG)
+        return got.xp, (await user.skill("fishing")).xp - before, before
+
+    low, low_gain, _ = await open_one(1, 1)
+    mid, mid_gain, mid_before = await open_one(2, 10)
+    high, high_gain, high_before = await open_one(3, 30)
+    assert low == low_gain >= T.xp  # a new angler still gets the floor
+    assert mid == mid_gain and high == high_gain and low < mid < high
+    _, needed = User.xp_for_next_level(high_before)
+    assert high == round(needed * T.xp_level_fraction)  # a quarter of the level you are on
+    assert high > 5 * T.xp  # and it is worth something at level 30
+    assert mid_before < high_before

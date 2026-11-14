@@ -23,7 +23,7 @@ from cococap.services.loot import roll_drop, roll_table
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
-LEFT, RIGHT = "◀", "▶"
+LEFT, RIGHT = "◄", "►"  # (not ◀ ▶: Discord draws those as blue emoji in some places and as plain text in others)
 REEL, MYSTERY = "🌀", "❓"  # a step that wants the Reel button; an arrow hidden until you press it
 
 
@@ -146,7 +146,7 @@ async def note_tells(user: User, cast: "Cast") -> None:
 
 
 def read_notes(notes: list[str]) -> str:
-    """Field notes as a short line: "after ◀ it was ▶ (twice), after ▶ it was ▶"."""
+    """Field notes as a short line: "after ◄ it was ► (twice), after ► it was ►"."""
     from collections import Counter as _Counter
 
     seen = _Counter(notes)
@@ -695,12 +695,16 @@ async def open_chest(user: User, cast: Cast, guess: str, rng: random.Random | No
     attempt = _digits(guess)
     outcome: dict = {}
 
+    multiplier = await xp_multiplier(user.id, reg)
+
     def try_lock(skill) -> None:
         code = skill.treasure.code
         if code and attempt == code:
             skill.treasure = TreasureState()  # the numbers are used up
             skill.stats.treasures_found += 1
-            skill.xp += t.xp
+            _, needed = User.xp_for_next_level(skill.xp)  # what finishing your current level takes
+            outcome["xp"] = round(max(t.xp, needed * t.xp_level_fraction) * multiplier)
+            skill.xp += outcome["xp"]
             outcome["ok"] = True
         elif not code:
             outcome["gone"] = True
@@ -717,7 +721,7 @@ async def open_chest(user: User, cast: Cast, guess: str, rng: random.Random | No
             await user.add_item(item_id, quantity)
         if bits:
             await user.add_bits(bits)
-        return ChestAttempt(True, cast.attempts_left, bits=bits, xp=t.xp, items=items)
+        return ChestAttempt(True, cast.attempts_left, bits=bits, xp=outcome["xp"], items=items)
     cast.attempts_left = 0 if outcome.get("gone") else cast.attempts_left - 1
     if cast.attempts_left <= 0:
         cast.escaped = True

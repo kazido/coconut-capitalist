@@ -87,7 +87,8 @@ code_length = 4
 attempts = 3
 bits_min = 20000
 bits_max = 60000
-xp = 150
+xp = 150                          # a chest pays at least this much xp...
+xp_level_fraction = 0.25          # ...or a quarter of the xp it takes to finish your current level, so it stays worth opening as you grow
 
 [[treasure.loot]]
 item = "coral_shard"
