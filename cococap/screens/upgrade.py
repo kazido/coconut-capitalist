@@ -5,7 +5,7 @@ from cococap.services import upgrades
 from cococap.services.equipment import effective_stats
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
-from cococap.ui.components import bits, button, row, section, sep, text
+from cococap.ui.components import button, needs_text, row, section, sep, text
 
 MAX_SHOWN = 6
 
@@ -27,12 +27,10 @@ class UpgradeScreen(Screen):
         owned = await self.user.items()
         for offer in offers[:MAX_SHOWN]:
             cost = offer.cost
-            needs = [f"**{bits(cost.bits)}** bits"] if cost.bits else []
-            needs += [f"{owned.get(i, 0):,}/{q:,} {reg.item(i).name}" for i, q in cost.items.items()]
             now = effective_stats(offer.instance).power
             after = offer.target.tool.power
             lines = (f"### {offer.current.emoji or '🔨'} {instance_label(offer.instance)}  →  {offer.target.name}\n"
-                     f"Power **{now}** → **{after}**  ·  needs " + ", ".join(needs))
+                     f"Power **{now}** → **{after}**\n" + needs_text(cost.bits, self.user.purse, cost.items, owned, reg))
             if offer.level_needed:
                 lines += f"\n-# {offer.target.name} needs level {offer.level_needed} in its skill."
             body.append(section(lines, accessory=button(

@@ -1606,7 +1606,7 @@ def test_you_only_see_the_next_few_steps_and_how_many_more_there_are():
     assert line.count(f.LEFT) + line.count(f.RIGHT) == RL.window and "… +7" in line and line.startswith(f"**{f.LEFT}**")
     cast.progress = 9
     line = fish_screen.pattern_line(cast, RULES)
-    assert "✅×9" in line and "… +" not in line and line.count(f.LEFT) + line.count(f.RIGHT) == 3  # the end is in sight
+    assert "✅" * 9 in line and "✅×" not in line and "… +" not in line and line.count(f.LEFT) + line.count(f.RIGHT) == 3  # the end is in sight
 
 
 def test_a_fog_shows_only_two_steps_and_a_reverse_boss_is_read_from_the_right():

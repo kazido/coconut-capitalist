@@ -338,3 +338,37 @@ async def test_the_pots_page_shows_upgrade_costs_and_what_a_pot_is_worth(db):
     await click(nav, inter, "Craft a pot")
     page = all_text(nav)
     assert find_button(nav, "Upgrade pot 1") and "level 2" in page and "bits an hour" in page and "Fishing yourself earns far more" in page
+
+
+async def test_crafting_shows_what_you_have_against_what_you_need(db):
+    user = await angler(1, materials={"hardwood": 4, "plant_fiber": P.craft_items["plant_fiber"]})
+    nav, _ = await hub("fishpots")
+    page = all_text(nav)
+    assert "Craft a pot" in page and f"Hardwood" in page
+    assert f"**4/{P.craft_items['hardwood']}**" in page and "❌" in page  # not enough hardwood yet
+    assert f"**{P.craft_items['plant_fiber']}/{P.craft_items['plant_fiber']}**" in page and "✅" in page
+    await user.add_item("hardwood", 100)
+    await user.add_item("coral_shard", 100)
+    nav, _ = await hub("fishpots")
+    assert "❌" not in all_text(nav).split("Craft a pot")[1].split("-#")[0]  # every requirement is ticked
+
+
+async def test_upgrading_shows_bits_and_materials_too(db):
+    await angler(1, materials=P.craft_items)
+    nav, inter = await hub("fishpots")
+    await click(nav, inter, "Craft a pot")
+    page = all_text(nav)
+    assert "Upgrade pot 1 to level 2" in page and f"**0/{P.levels[1].upgrade_items['hardwood']}**" in page
+    assert "bits (you have" in page
+
+
+async def test_the_tool_upgrade_page_shows_what_you_have_against_what_you_need(db):
+    from cococap.services.equipment import equip
+
+    user = await User.get(1)
+    inst = await user.give_instance("starter_axe")
+    await equip(user, "foraging", inst.id)
+    await user.add_item("feather", 10)
+    nav, _ = await hub("upgrade")
+    page = all_text(nav)
+    assert "**10/40**" in page and "❌" in page and "bits (you have" in page

@@ -10,7 +10,7 @@ from cococap.services import fishing, fishing_community, pets, pots
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
 from cococap.ui import Page, PromptModal, Result, Screen
-from cococap.ui.components import bar, bits, button, row, select, sep, text, xp_bar
+from cococap.ui.components import bar, bits, button, needs_text, row, select, sep, text, xp_bar
 from cococap.user import User
 
 ROD = "🎣"
@@ -44,7 +44,7 @@ def pattern_line(cast: fishing.Cast, rules=None) -> str:
     window = reel.fog_window if "fog" in cast.modifiers else reel.window
     end = min(len(cast.pattern), cast.progress + window)
     steps = [cast.display(i) for i in range(cast.progress, end)]
-    more, done = len(cast.pattern) - end, (f"✅×{cast.progress}" if cast.progress else "")
+    more, done = len(cast.pattern) - end, "✅" * cast.progress
     if not steps:
         return done
     if "reverse" in cast.modifiers:
@@ -591,10 +591,13 @@ class FishPotsScreen(Screen):
             elif pot.bait_left and waiting:
                 status += "  ·  full" if waiting >= lvl.capacity else "  ·  out of bait soon"
             lines.append(f"{'➤ ' if i == self.index else ''}🦀 **Pot {i + 1}**  ·  Lv {pot.level}  ·  {water.emoji} {water.name}  ·  {bait}  ·  {status}")
-        body.append(text(f"### 🦀 Crab pots ({len(skill.pots)}/{slots})\n" + ("\n".join(lines) if lines else
-                    f"You have no pots yet. Craft one for **{bits(rules.pots.craft_bits)}** bits and "
-                    + ", ".join(f"{q} {reg.item(i).name}" for i, q in rules.pots.craft_items.items()) + ".")
+        owned_now = await self.user.items()
+        body.append(text(f"### 🦀 Crab pots ({len(skill.pots)}/{slots})\n" + ("\n".join(lines) if lines else "You have no pots yet.")
                     + f"\n-# Pots only catch {Rarities.from_value(rules.pots.min_rarity).rarity_name} fish and better, one at a time, while you are away."))
+        if len(skill.pots) < slots:
+            body.append(text("**🔨 Craft a pot**\n" + needs_text(rules.pots.craft_bits, self.user.purse, rules.pots.craft_items, owned_now, reg)))
+        elif len(skill.pots) < len(rules.pots.slot_levels):
+            body.append(text(f"-# Another pot opens at fishing level {rules.pots.slot_levels[len(skill.pots)]}."))
         if len(skill.pots) > 1:
             body.append(row(select("Pick a pot...", [
                 discord.SelectOption(label=f"Pot {i + 1} · Lv {p.level}", value=str(i), default=i == self.index,
@@ -606,8 +609,8 @@ class FishPotsScreen(Screen):
             if pot.level < len(rules.pots.levels):
                 cost = rules.pots.levels[pot.level]
                 buttons.append(button(f"Upgrade pot {self.index + 1}", emoji="⬆️", on_click=self._upgrade))
-                body.append(text(f"-# Pot {self.index + 1} → level {pot.level + 1}: {bits(cost.upgrade_bits)} bits, "
-                                 + ", ".join(f"{q} {reg.item(i).name}" for i, q in cost.upgrade_items.items())))
+                body.append(text(f"**⬆️ Upgrade pot {self.index + 1} to level {pot.level + 1}**\n"
+                                 + needs_text(cost.upgrade_bits, self.user.purse, cost.upgrade_items, owned_now, reg)))
             worth = pots.hourly_value(pot, reg, pet)
             body.append(text(f"-# Pot {self.index + 1} catches about one fish every **{pots.interval_seconds(pot, reg, pet) / 60:.0f}** minutes "
                              f"(holds {pots.level_rules(pot, rules).capacity}), worth about **{bits(round(worth))}** bits an hour. "
