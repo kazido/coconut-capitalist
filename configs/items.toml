@@ -2733,3 +2733,163 @@ sell_price = 0
 kind = "can"
 power = 9  # plots it waters an hour
 requirement = 0
+
+[coal]
+name = "Coal"
+description = "Black and dusty. Burns well."
+wiki = "Found in soft rock in the mines. Sells for bits; nothing uses it yet."
+emoji = "⚫"
+rarity = 1
+skill = "mining"
+category = "material"
+price = 0
+sell_price = 40  # TODO(balance): tuned so mining pays what it did
+
+[coal.drop]
+rate = 3
+min = 1
+max = 3
+
+[clay]
+name = "Clay"
+description = "Cool, damp and good for shaping."
+wiki = "Found in soft rock in the mines. Sells for bits; nothing uses it yet."
+emoji = "🧱"
+rarity = 1
+skill = "mining"
+category = "material"
+price = 0
+sell_price = 90  # TODO(balance): tuned so mining pays what it did
+
+[clay.drop]
+rate = 8
+min = 1
+max = 2
+
+[amber]
+name = "Amber"
+description = "A drop of golden resin, hardened by a very long time."
+wiki = "Found in soft rock in the mines. Sells for bits; nothing uses it yet."
+emoji = "🟠"
+rarity = 3
+skill = "mining"
+category = "material"
+price = 0
+sell_price = 1200  # TODO(balance): tuned so mining pays what it did
+
+[amber.drop]
+rate = 60
+min = 1
+max = 1
+
+[tin_ore]
+name = "Tin Ore"
+description = "Soft, silvery and easy to work."
+wiki = "Found in firm rock in the mines. Sells for bits; nothing uses it yet."
+emoji = "🔘"
+rarity = 2
+skill = "mining"
+category = "material"
+price = 0
+sell_price = 200  # TODO(balance): tuned so mining pays what it did
+
+[tin_ore.drop]
+rate = 5
+min = 1
+max = 2
+
+[silver_ore]
+name = "Silver Ore"
+description = "It shines even in the dark."
+wiki = "Found in firm rock in the mines. Sells for bits; nothing uses it yet."
+emoji = "⚪"
+rarity = 3
+skill = "mining"
+category = "material"
+price = 0
+sell_price = 1000  # TODO(balance): tuned so mining pays what it did
+
+[silver_ore.drop]
+rate = 25
+min = 1
+max = 2
+
+[garnet]
+name = "Garnet"
+description = "A deep red stone that holds the light of a fire."
+wiki = "Found in firm rock in the mines. Sells for bits; nothing uses it yet."
+emoji = "🔴"
+rarity = 4
+skill = "mining"
+category = "material"
+price = 0
+sell_price = 6000  # TODO(balance): tuned so mining pays what it did
+
+[garnet.drop]
+rate = 120
+min = 1
+max = 1
+
+[obsidian]
+name = "Obsidian"
+description = "Black glass from somewhere very hot. Sharp enough to shave with."
+wiki = "Found in hard rock in the mines. Sells for bits; nothing uses it yet."
+emoji = "⬛"
+rarity = 3
+skill = "mining"
+category = "material"
+price = 0
+sell_price = 1700  # TODO(balance): tuned so mining pays what it did
+
+[obsidian.drop]
+rate = 20
+min = 1
+max = 2
+
+[platinum_ore]
+name = "Platinum Ore"
+description = "Heavy, rare and nearly impossible to dull."
+wiki = "Found in hard rock in the mines. Sells for bits; nothing uses it yet."
+emoji = "🪙"
+rarity = 4
+skill = "mining"
+category = "material"
+price = 0
+sell_price = 9000  # TODO(balance): tuned so mining pays what it did
+
+[platinum_ore.drop]
+rate = 55
+min = 1
+max = 1
+
+[sapphire]
+name = "Sapphire"
+description = "A blue stone with a star inside it, if you tilt it."
+wiki = "Found in hard rock in the mines. Sells for bits; nothing uses it yet."
+emoji = "🔷"
+rarity = 5
+skill = "mining"
+category = "material"
+price = 0
+sell_price = 45000  # TODO(balance): tuned so mining pays what it did
+
+[sapphire.drop]
+rate = 700
+min = 1
+max = 1
+
+[emerald]
+name = "Emerald"
+description = "A green gem so clear it looks wet."
+wiki = "Found in hard rock in the mines. Sells for bits; nothing uses it yet."
+emoji = "💚"
+rarity = 5
+skill = "mining"
+category = "material"
+price = 0
+sell_price = 65000  # TODO(balance): tuned so mining pays what it did
+
+[emerald.drop]
+rate = 900
+min = 1
+max = 1

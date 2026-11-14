@@ -953,3 +953,47 @@ def test_a_plain_checkpoint_gives_no_ore_and_one_with_a_vault_share_gives_that_s
     shared = calm_run(milestones=[D.milestones[0].model_copy(update={"vault_share": 0.1})])
     dig_to(shared, 10)
     assert shared.passed_haul == Counter({ore: max(1, round(q * 0.1)) for ore, q in D.vault_ore.items()})
+
+
+# ---- bigger loot pools for soft, firm and hard rock -------------------------------------------------------------------------------
+def rock_of(item_id):
+    h = D.hardness.get(item_id, D.default_hardness)
+    return "soft" if h < D.soft_below else "hard" if h >= D.hard_from else "firm"
+
+
+def test_every_kind_of_rock_has_a_real_pool_of_things_to_find():
+    pools = {"soft": set(), "firm": set(), "hard": set()}
+    for table in RULES.depth_tables:
+        for item in table:
+            pools[rock_of(item)].add(item)
+    assert len(pools["soft"]) >= 4 and len(pools["firm"]) >= 5 and len(pools["hard"]) >= 8, {k: sorted(v) for k, v in pools.items()}
+    assert {"copper_ore", "coal", "clay", "amber"} <= pools["soft"]
+    assert {"iron_ore", "tin_ore", "silver_ore", "garnet"} <= pools["firm"]
+    assert {"gold_ore", "obsidian", "platinum_ore", "sapphire", "emerald"} <= pools["hard"]
+
+
+def test_the_pools_open_up_as_you_go_deeper():
+    sizes = [len(table) for table in RULES.depth_tables]
+    assert sizes == sorted(sizes) and sizes[0] >= 4 and sizes[-1] >= 18  # the top of the mine already has more than copper
+    seen = set()
+    for table in RULES.depth_tables:
+        assert seen <= set(table)  # nothing you could find higher up is lost lower down
+        seen |= set(table)
+
+
+def test_the_new_finds_all_sell_and_nothing_uses_them_yet():
+    new = ("coal", "clay", "amber", "tin_ore", "silver_ore", "garnet", "obsidian", "platinum_ore", "sapphire", "emerald")
+    for item_id in new:
+        item = REG.item(item_id)
+        assert item.skill == "mining" and item.sell_price > 0 and item.drop and item_id in D.hardness
+    used = {i for t in REG.items.values() if t.tool and t.tool.upgrade for i in t.tool.upgrade.items}
+    assert not set(new) & used  # (they are for selling for now; crafting will find a use later)
+
+
+def test_in_each_pool_the_harder_rock_holds_the_better_stuff():
+    worth = {"soft": set(), "firm": set(), "hard": set()}
+    for table in RULES.depth_tables[:3]:  # (above the gems and the spirit, which would swamp the comparison)
+        for item in table:
+            worth[rock_of(item)].add((item, REG.item(item).sell_price))
+    median = lambda pairs: sorted(p for _, p in pairs)[len(pairs) // 2]  # noqa: E731  (a median: one rare amber should not drag soft rock up)
+    assert median(worth["soft"]) < median(worth["firm"]) < median(worth["hard"])

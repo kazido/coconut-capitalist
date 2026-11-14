@@ -7,11 +7,11 @@ columns = 5
 xp_per_column = 10                 # xp for every column dug (kept even if the mine collapses)
 
 depth_tables = [
-  ["copper_ore"],
-  ["iron_ore", "copper_ore"],
-  ["dusty_dandelion_seed", "gold_ore", "iron_ore", "copper_ore"],
-  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "scroll_iron_frame", "dusty_dandelion_seed", "gold_ore", "iron_ore", "copper_ore"],
-  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "scroll_iron_frame", "spirit_of_the_mines", "dusty_dandelion_seed", "gold_ore", "iron_ore", "copper_ore"],
+  ["amber", "clay", "coal", "copper_ore"],
+  ["amber", "clay", "iron_ore", "tin_ore", "coal", "copper_ore"],
+  ["dusty_dandelion_seed", "amber", "silver_ore", "obsidian", "gold_ore", "clay", "iron_ore", "tin_ore", "coal", "copper_ore"],
+  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "scroll_iron_frame", "dusty_dandelion_seed", "garnet", "amber", "platinum_ore", "silver_ore", "obsidian", "gold_ore", "clay", "iron_ore", "tin_ore", "coal", "copper_ore"],
+  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "scroll_iron_frame", "spirit_of_the_mines", "emerald", "sapphire", "dusty_dandelion_seed", "garnet", "amber", "platinum_ore", "silver_ore", "obsidian", "gold_ore", "clay", "iron_ore", "tin_ore", "coal", "copper_ore"],
 ]
 
 [wyrmhole]
@@ -108,6 +108,16 @@ rage_gemstone = 16
 peace_gemstone = 16
 balance_gemstone = 16
 spirit_of_the_mines = 20
+coal = 3
+clay = 3
+amber = 4
+tin_ore = 5
+silver_ore = 7
+garnet = 8
+obsidian = 9
+platinum_ore = 11
+sapphire = 13
+emerald = 14
 
 # What the collapse-risk label says. `from_risk` is the collapse chance where each label begins.
 [[descent.warnings]]
