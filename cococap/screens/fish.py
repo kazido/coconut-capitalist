@@ -62,6 +62,7 @@ class FishScreen(Screen):
         super().__init__(nav)
         self.cast: fishing.Cast | None = None
         self.flash: tuple[str, float] | None = None  # (the hallucination's numbers, when they fade)
+        self.water: str | None = None  # where you are fishing (None = the best water you have opened)
         self.missed: fishing.Cast | None = None  # a fish written off as too slow, which a late-arriving click can still save
         self.rng = new_rng()
 
@@ -101,6 +102,19 @@ class FishScreen(Screen):
             else:
                 slips = fishing.slips_allowed(stats.power, reg.fishing, stats.stats.get("slips", 0))
                 body.append(text(f"{ROD} Rod power **{stats.power}**" + (f"  ·  forgives **{slips}** wrong arrow(s)" if slips else "")))
+            level = User.xp_to_level(skill.xp)
+            open_waters = fishing.unlocked_waters(level, reg.fishing)
+            if self.water not in {w.id for w in open_waters}:
+                self.water = open_waters[-1].id  # a newly opened water is where you head next
+            here = fishing.water_by_id(reg, self.water)
+            body.append(text(f"{here.emoji} **{here.name}**  ·  {here.description}"))
+            if len(open_waters) > 1:
+                body.append(row(select("Where to fish...", [
+                    discord.SelectOption(label=w.name, value=w.id, emoji=w.emoji, default=w.id == self.water,
+                                         description=w.description[:100]) for w in open_waters], self._pick_water)))
+            if len(open_waters) < len(reg.fishing.waters):
+                nxt = reg.fishing.waters[len(open_waters)]
+                body.append(text(f"-# {nxt.emoji} {nxt.name} opens at fishing level {nxt.min_level}."))
             if await fishing.chests_possible(self.user, now()):
                 body.append(text("-# 🌀 The hallucination lingers… something shiny may be down there."))
             haul = await fishing.stock(self.user)
@@ -169,8 +183,15 @@ class FishScreen(Screen):
     async def _cast(self, interaction: discord.Interaction) -> None:
         stats = await fishing.rod_stats(self.user)
         armed = await fishing.chests_possible(self.user, now())
+        level = User.xp_to_level((await self.user.skill("fishing")).xp)
+        water = fishing.require_water(level, self.water or fishing.unlocked_waters(level, get_registry().fishing)[-1].id,
+                                      get_registry().fishing)
         self.missed = None
-        self.cast = fishing.cast_line(stats, self.rng, now(), armed=armed)
+        self.cast = fishing.cast_line(stats, self.rng, now(), armed=armed, water=water)
+        await self.refresh(interaction)
+
+    async def _pick_water(self, interaction: discord.Interaction, values: list[str]) -> None:
+        self.water = values[0]
         await self.refresh(interaction)
 
     async def _cancel(self, interaction: discord.Interaction) -> None:

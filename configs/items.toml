@@ -554,6 +554,46 @@ max = 1
 min = 15
 max = 60
 
+[pike]
+name = "Pike"
+description = "A long, toothy ambusher of the river reeds."
+wiki = "A rarity 4 fish. Sell it, or turn it in to your collection book."
+emoji = "🦈"
+rarity = 4
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 18000  # TODO(balance)
+
+[pike.drop]
+rate = 100  # (only used where no water gives its own odds)
+min = 1
+max = 1
+
+[pike.size]  # cm
+min = 60
+max = 130
+
+[muskie]
+name = "Muskie"
+description = "The fish of ten thousand casts."
+wiki = "A rarity 4 fish. Sell it, or turn it in to your collection book."
+emoji = "🐊"
+rarity = 4
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 20000  # TODO(balance)
+
+[muskie.drop]
+rate = 90  # (only used where no water gives its own odds)
+min = 1
+max = 1
+
+[muskie.size]  # cm
+min = 80
+max = 160
+
 [catfish]
 name = "Catfish"
 description = "Whiskers like a wise old fisher."

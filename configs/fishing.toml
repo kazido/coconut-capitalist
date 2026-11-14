@@ -211,3 +211,75 @@ item = "scroll_keen"
 min = 1
 max = 1
 chance = 0.05
+
+# Waters. You fish where you like among the waters your fishing level has opened; each has its own fish (`fish = N` is
+# 1 in N, rarest rolled first, and the commonest is the catch-all) and deeper water takes longer to bite. Listed
+# shallowest first. The community goals and quests only ask for fish from the first waters, so everyone can finish them.
+# TODO(balance): all of it. Average catch per cast: pond ~3,000 bits, river ~5,400, reef ~7,000, deep sea ~17,000.
+[[waters]]
+id = "pond"
+name = "Quiet Pond"
+emoji = "🏞️"
+description = "Calm water and common fish."
+min_level = 1
+wait_multiplier = 1.0
+[waters.fish]
+cod = 1
+herring = 2
+sardine = 3
+bass = 8
+trout = 10
+perch = 12
+catfish = 40
+salmon = 50
+pufferfish = 150
+
+[[waters]]
+id = "river"
+name = "Winding River"
+emoji = "🌊"
+description = "Faster water, bigger fish, and the odd golden surprise."
+min_level = 3
+wait_multiplier = 1.0
+[waters.fish]
+perch = 1
+trout = 2
+bass = 3
+catfish = 12
+salmon = 15
+pike = 60
+muskie = 70
+sturgeon = 700
+golden_koi = 4000
+
+[[waters]]
+id = "reef"
+name = "Coral Reef"
+emoji = "🪸"
+description = "Bright, busy water. Fish take a little longer to find you."
+min_level = 8
+wait_multiplier = 1.2
+[waters.fish]
+herring = 1
+sardine = 2
+bass = 5
+tuna = 6
+moray_eel = 20
+pufferfish = 25
+swordfish = 40
+oarfish = 600
+
+[[waters]]
+id = "deep_sea"
+name = "The Deep Sea"
+emoji = "🐋"
+description = "Dark, cold and slow. Only the big ones live here."
+min_level = 15
+wait_multiplier = 1.5
+[waters.fish]
+tuna = 1
+swordfish = 5
+marlin = 120
+giant_squid = 120
+abyssal_angler = 350
+leviathan_pup = 2500

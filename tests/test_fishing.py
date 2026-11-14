@@ -286,7 +286,7 @@ async def test_without_a_rod_the_fishing_page_says_how_to_get_one(db):
 
 
 async def test_casting_waits_then_a_bite_then_reeling_lands_the_fish(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
     user, nav, inter = await open_fishing()
     assert nav.screen.refresh_every is None  # nothing in the water: no self-refresh
     await click(nav, inter, "Cast")
@@ -310,7 +310,7 @@ async def test_casting_waits_then_a_bite_then_reeling_lands_the_fish(db, clock, 
 
 
 async def test_a_wrong_arrow_on_the_screen_loses_the_fish_and_a_stale_click_is_harmless(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + 1
@@ -325,7 +325,7 @@ async def test_a_wrong_arrow_on_the_screen_loses_the_fish_and_a_stale_click_is_h
 
 
 async def test_a_fish_that_bites_while_you_are_away_gets_away(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.expires_at + 5
@@ -465,7 +465,7 @@ async def test_quest_xp_is_added_on_top_of_the_catch(db):
 
 
 async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("pufferfish"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("pufferfish"))
     clock[0] = DAY0 + 100
     user, nav, inter = await open_fishing()
     assert find_button(nav, "Quests").disabled and "unlock at fishing level" in all_text(nav)
@@ -486,7 +486,7 @@ async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
 
 
 async def test_a_bite_you_ignore_gets_away_once_the_window_and_the_quiet_grace_are_over(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + RULES.bite.window - 1
@@ -854,7 +854,7 @@ async def test_the_screen_flashes_the_numbers_then_hides_them_and_the_chest_open
     code = (await user.skill("fishing")).treasure.code
     assert code and "   ".join(code) in all_text(nav) and "Remember them" in all_text(nav)
     assert nav.screen.refresh_every  # keeps redrawing so the numbers can fade by themselves
-    assert "Leviathan Pup" in all_text(nav) and "Mythical" in all_text(nav)  # the catch says how rare it was
+    assert "Pufferfish" in all_text(nav) and "Super Rare" in all_text(nav)  # the catch says how rare it was (the pond's rarest fish)
     clock[0] += T.flash_seconds + 1
     await nav.screen.nav.refresh(inter)
     assert "   ".join(code) not in all_text(nav) and "slip away" in all_text(nav) and nav.screen.flash is None
@@ -877,7 +877,7 @@ async def test_the_screen_flashes_the_numbers_then_hides_them_and_the_chest_open
 
 
 async def test_a_catch_names_its_rarity(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("salmon"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("salmon"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + 1
@@ -967,7 +967,7 @@ def clicked(inter, at):
 
 
 async def test_the_screen_uses_when_you_clicked_not_when_the_bot_noticed(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -985,7 +985,7 @@ async def test_the_screen_uses_when_you_clicked_not_when_the_bot_noticed(db, clo
 
 
 async def test_a_click_made_in_time_but_delivered_late_saves_the_fish_on_the_same_screen(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -1005,7 +1005,7 @@ async def test_a_click_made_in_time_but_delivered_late_saves_the_fish_on_the_sam
 
 
 async def test_a_click_that_really_was_too_late_stays_too_late(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -1020,7 +1020,7 @@ async def test_a_click_that_really_was_too_late_stays_too_late(db, clock, monkey
 
 
 async def test_a_double_pressed_arrow_on_the_screen_does_not_cost_the_fish(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + 1
@@ -1101,7 +1101,7 @@ async def test_the_biggest_fish_on_the_server_is_a_record_that_pays_and_names_th
 
 
 async def test_a_catch_says_its_size_and_a_record_and_the_records_page_lists_them(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("salmon"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None: REG.item("salmon"))
     user, nav, inter = await open_fishing()
     await user.set_name("Ahna")
     await click(nav, inter, "Cast")
@@ -1213,3 +1213,93 @@ async def test_slipping_on_a_boss_loses_it(db, clock, monkeypatch):
     wrong = "Right" if cast.next_arrow == f.LEFT else "Left"
     await click(nav, inter, wrong)
     assert "slipped off the hook" in all_text(nav) and (await user.skill("fishing")).stats.bosses_beaten == 0
+
+
+# ---- waters -----------------------------------------------------------------------------------------------------------
+WATERS = RULES.waters
+
+
+def test_waters_open_in_order_and_every_fish_has_a_home():
+    assert [w.min_level for w in WATERS] == sorted(w.min_level for w in WATERS) and WATERS[0].min_level == 1
+    assert [w.wait_multiplier for w in WATERS] == sorted(w.wait_multiplier for w in WATERS)
+    in_some_water = {fish_id for w in WATERS for fish_id in w.fish}
+    assert in_some_water == {i.id for i in f.fish_pool(REG)}  # nothing is uncatchable, nothing is homeless
+
+
+def test_the_first_water_is_open_to_everyone_and_levels_open_the_next():
+    assert [w.id for w in f.unlocked_waters(1, RULES)] == ["pond"]
+    assert [w.id for w in f.unlocked_waters(WATERS[2].min_level, RULES)] == ["pond", "river", "reef"]
+    assert len(f.unlocked_waters(999, RULES)) == len(WATERS)
+    assert f.require_water(1, "pond", RULES).id == "pond"
+    with pytest.raises(f.FishingError, match="opens at fishing level"):
+        f.require_water(1, "deep_sea", RULES)
+    with pytest.raises(f.FishingError, match="no such water"):
+        f.require_water(99, "moon", RULES)
+
+
+def test_each_water_only_gives_its_own_fish_and_rarest_first():
+    for water in WATERS:
+        seen = {f.roll_fish(Random(i), REG, water).id for i in range(4000)}
+        assert seen <= set(water.fish) and len(seen) >= 3, water.id
+    deep = f.water_by_id(REG, "deep_sea")
+    assert "cod" not in {f.roll_fish(Random(i), REG, deep).id for i in range(2000)}
+
+
+def test_deeper_water_pays_more_per_cast_and_takes_longer_to_bite():
+    def worth(water, n=30_000):
+        rng = Random(3)
+        return sum(f.roll_fish(rng, REG, water).sell_price for _ in range(n)) / n
+
+    averages = [worth(w) for w in WATERS]
+    assert averages == sorted(averages) and averages[-1] > 3 * averages[0], averages
+    assert 2_000 < averages[0] < 5_000  # the starting water is a gentle start
+    def mean_wait(water):
+        return sum(f.cast_line(rod(), Random(i), 0, REG, water=water).bite_at for i in range(600)) / 600
+
+    assert mean_wait(WATERS[-1]) / mean_wait(WATERS[0]) == pytest.approx(WATERS[-1].wait_multiplier, rel=0.06)
+
+
+def test_quests_and_community_goals_only_ask_for_fish_from_the_first_waters():
+    pool = {i.id for i in f.quest_pool(REG)}
+    first = {fish_id for w in WATERS if w.min_level <= RULES.quests.min_level for fish_id in w.fish}
+    assert pool == first and "marlin" not in pool and "tuna" not in pool
+    for slot in (*RULES.quests.daily, *RULES.quests.weekly, *[s for s in RULES.community.monthly if s.kind == "fish"]):
+        assert any(REG.item(i).rarity == slot.rarity for i in pool), slot
+    from cococap.services import fishing_community as c
+
+    for period in range(400, 460):
+        assert all(q[0].id in pool for kind in ("daily", "weekly") for q in f._chosen(kind, 1, period, REG))
+        assert next(g for g in c.goals(period, REG) if g.slot.kind == "fish").fish.id in pool
+
+
+async def test_the_page_defaults_to_your_best_water_lets_you_pick_and_hints_at_the_next(db, clock, monkeypatch):
+    seen = []
+
+    def spy(rng, reg=None, water=None):
+        seen.append(water.id)
+        return REG.item("cod")
+
+    monkeypatch.setattr(f, "roll_fish", spy)
+    user, nav, inter = await open_fishing()
+    assert "Quiet Pond" in all_text(nav) and "Winding River opens at fishing level 3" in all_text(nav)
+    assert not [s for s in nav.walk_children() if isinstance(s, __import__("discord").ui.Select)]  # nothing to choose yet
+    await user.add_xp("fishing", User.level_to_xp(WATERS[1].min_level) + 1)
+    nav, inter = await hub("fish")
+    assert "Winding River" in all_text(nav)  # a new water is where you head next
+    await click(nav, inter, "Cast")
+    assert seen == ["river"]
+    await click(nav, inter, "Cancel cast")
+    from tests.test_hub import choose, select_named
+
+    await choose(nav, inter, select_named(nav, "Where to fish"), "pond")
+    assert "Quiet Pond" in all_text(nav)
+    await click(nav, inter, "Cast")
+    assert seen == ["river", "pond"]
+
+
+async def test_a_locked_water_cannot_be_cast_into_even_with_a_stale_menu(db):
+    user, nav, inter = await open_fishing()
+    nav.screen.water = "deep_sea"  # (e.g. picked, then the level somehow dropped)
+    with pytest.raises(f.FishingError, match="opens at fishing level 15"):
+        await click(nav, inter, "Cast")
+    assert nav.screen.cast is None

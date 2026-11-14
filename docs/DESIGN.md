@@ -249,6 +249,17 @@ without changing the rules a player sees:
    editing the message directly, and the self-refresh now never queues up behind a click and gives up after 2 seconds on
    a slow edit. This helps every screen, not just fishing.
 
+### Waters
+
+You fish in one of the **waters** your fishing level has opened, picked from a menu on the Fishing page (it defaults to
+your deepest): the **Quiet Pond** (level 1), **Winding River** (3), **Coral Reef** (8) and **The Deep Sea** (15). Each has
+its own fish and its own odds (`[[waters]]` in `configs/fishing.toml`, `fish = N` meaning 1 in N, rarest first), and
+deeper water takes longer to bite (x1.0, 1.0, 1.2, 1.5). An average catch is worth about 3,000 bits in the pond,
+5,400 in the river, 7,000 on the reef and 17,000 in the deep, so there is always somewhere to climb to. Daily and weekly
+quests and the monthly community goals only ask for fish from the first two waters (the ones open by the level that
+unlocks quests), so anyone who has them can finish them; the collection books ask for fish from everywhere, which is
+what sends people exploring.
+
 ### Bosses
 
 About 1 cast in 80 turns out to be a **boss** instead of a fish. It bites like anything else (nothing gives it away), but

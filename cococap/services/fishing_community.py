@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from cococap.registry import Item, Registry, get_registry
 from cococap.registry.models import FishingRules, MonthlySlot
 from cococap.services import community
-from cococap.services.fishing import FishingError, fish_pool
+from cococap.services.fishing import FishingError, quest_pool
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -203,7 +203,7 @@ class Goal:
 def goals(period: int, registry: Registry) -> list[Goal]:
     """The month's goals: the same for everyone (picked from the month alone)."""
     rng = random.Random(f"fishing-monthly:{period}")
-    pool = sorted(fish_pool(registry), key=lambda i: i.id)
+    pool = sorted(quest_pool(registry), key=lambda i: i.id)
     out = []
     for i, slot in enumerate(registry.fishing.community.monthly):
         fish = rng.choice([f for f in pool if f.rarity == slot.rarity]) if slot.kind == "fish" else None

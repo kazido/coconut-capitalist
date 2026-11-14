@@ -536,6 +536,18 @@ class RecordRules(_Data):
     server_bits_multiplier: float = Field(ge=0)  # a new server record pays the fish's sell price x this in bits
 
 
+class WaterRules(_Data):
+    """A place to fish: unlocked by fishing level, with its own fish (each `fish = N` means 1 in N, rarest rolled first)."""
+
+    id: str
+    name: str
+    emoji: str = "🌊"
+    description: str = ""
+    min_level: int = Field(ge=1)
+    wait_multiplier: float = Field(gt=0)  # deeper water takes longer to bite
+    fish: dict[str, int] = Field(min_length=1)
+
+
 class FishingRules(_Data):
     xp_per_rarity: int = Field(ge=0)
     bite: BiteRules
@@ -546,6 +558,7 @@ class FishingRules(_Data):
     community: CommunityRules
     records: RecordRules
     boss: BossRules
+    waters: list[WaterRules] = Field(min_length=1)
 
 
 class MinigamePayout(_Data):

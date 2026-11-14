@@ -23,7 +23,7 @@ tests, and never touching unrelated code. The game itself is described in the wi
 | **Mining** (`/mine`: mine, wyrmholes, scarab, reactor, magnet) | done, the template for other skills |
 | **Farming** (`/farm`: plots, hourly rain, harvest, Farmer's Market, land deeds) | done |
 | **Foraging** (`/chop`: private trees, hourly community tree, zones, Soloist) | done (Re-leaf donations / double tree / growth mode still to do) |
-| **Fishing** (`/fish`: cast, wait, reel the arrows, sell) | done: casting, reeling, selling, daily/weekly quests, personal and community collection books, hallucinations and treasure, monthly goals (only fish appearing in channels still to do) |
+| **Fishing** (`/fish`: cast, wait, reel the arrows, sell) | done: casting, reeling, selling, daily/weekly quests, personal and community collection books, hallucinations and treasure, monthly goals waters, bosses, record fish (only fish appearing in channels still to do) |
 | Combat, pets, explore | **not ported yet** (listed in `constants.DISABLED_EXTENSIONS`) |
 | Database | SQLite + Alembic (old MongoDB import script: `scripts/import_mongo.py`) |
 | Tests | ~300, run in ~3 s with no services; CI on GitHub Actions |

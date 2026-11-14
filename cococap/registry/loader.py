@@ -141,6 +141,14 @@ class Registry:
                          if f not in self.items or self.items[f].category != "fish"]
             problems += [f"fishing.toml community book: no need for rarity {self.items[f].rarity}" for f in cb.fish
                          if f in self.items and (self.items[f].rarity not in cb.need_base or self.items[f].rarity not in cb.need_step)]
+            for w in self.fishing.waters:
+                problems += [f"fishing.toml water '{w.id}': '{f}' is not a fish" for f in w.fish
+                             if f not in self.items or self.items[f].category != "fish"]
+            if self.fishing.waters[0].min_level != 1:
+                problems.append("fishing.toml: the first water must be open from level 1")
+            levels = [w.min_level for w in self.fishing.waters]
+            if levels != sorted(levels):
+                problems.append("fishing.toml: waters must be listed shallowest first")
             problems += [f"fishing.toml boss: unknown loot item '{row.item}'" for row in self.fishing.boss.loot
                          if row.item not in self.items]
             problems += [f"fishing.toml treasure: unknown loot item '{row.item}'" for row in self.fishing.treasure.loot

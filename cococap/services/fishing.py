@@ -16,7 +16,7 @@ from cococap.constants import Rarities
 from cococap.errors import GameRuleError
 from cococap.models.skills.fishing import TreasureState
 from cococap.registry import Item, Registry, get_registry
-from cococap.registry.models import FishingRules
+from cococap.registry.models import FishingRules, WaterRules
 from cococap.services import shop
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop, roll_table
@@ -37,8 +37,41 @@ def fish_pool(registry: Registry) -> list[Item]:
     return sorted(fish, key=lambda i: (-i.drop.rate, -i.rarity, i.id))
 
 
-def roll_fish(rng: random.Random, registry: Registry | None = None) -> Item:
+def water_by_id(registry: Registry, water_id: str) -> WaterRules:
+    return next(w for w in registry.fishing.waters if w.id == water_id)
+
+
+def unlocked_waters(level: int, rules: FishingRules) -> list[WaterRules]:
+    return [w for w in rules.waters if level >= w.min_level]
+
+
+def require_water(level: int, water_id: str, rules: FishingRules) -> WaterRules:
+    water = next((w for w in rules.waters if w.id == water_id), None)
+    if water is None:
+        raise FishingError("There is no such water.")
+    if level < water.min_level:
+        raise FishingError(f"{water.name} opens at fishing level {water.min_level}.")
+    return water
+
+
+def quest_pool(registry: Registry) -> list[Item]:
+    """The fish quests and community goals may ask for: only those from the first waters (the ones opened by the level
+    that unlocks quests), so everybody who has quests can actually finish them."""
+    rules = registry.fishing
+    open_at = rules.quests.min_level
+    ids = {f for w in rules.waters if w.min_level <= open_at for f in w.fish}
+    return [i for i in fish_pool(registry) if i.id in ids]
+
+
+def roll_fish(rng: random.Random, registry: Registry | None = None, water: WaterRules | None = None) -> Item:
+    """What bites: from one water's fish (rarest first, the commonest as the catch-all), or from every fish."""
     reg = registry or get_registry()
+    if water is not None:
+        odds = sorted(water.fish.items(), key=lambda kv: -kv[1])
+        for fish_id, rate in odds:
+            if rng.randint(1, rate) == 1:
+                return reg.item(fish_id)
+        return reg.item(odds[-1][0])
     found = roll_table([i.id for i in fish_pool(reg)], reg, rng)
     return reg.item(found[0]) if found else fish_pool(reg)[-1]
 
@@ -157,14 +190,15 @@ def roll_size(fish: Item, rng: random.Random) -> float:
 
 
 def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = None, registry: Registry | None = None,
-              *, armed: bool = False) -> Cast:
+              *, armed: bool = False, water: WaterRules | None = None) -> Cast:
     """Put the line in the water: pick the fish, the bite time and the arrows. While a hallucination lasts
     (``armed``), the catch may turn out to be a treasure chest instead."""
     reg = registry or get_registry()
     rules = reg.fishing
     now = time.time() if now is None else now
-    fish = roll_fish(rng, reg)
-    bite_at = now + wait_seconds(stats.power, rules, rng, stats.stats.get("bite_speed", 0.0))
+    fish = roll_fish(rng, reg, water)
+    bite_at = now + wait_seconds(stats.power, rules, rng, stats.stats.get("bite_speed", 0.0)) * (
+        water.wait_multiplier if water else 1.0)
     pattern = reel_pattern(fish.rarity, rules, rng)
     cast = Cast(
         fish=fish,
@@ -230,7 +264,7 @@ def _chosen(kind: str, user_id: int, period: int, reg: Registry) -> list[tuple[I
     rng = random.Random(f"fishing-quests:{kind}:{user_id}:{period}")
     slots = rules.daily if kind == "daily" else rules.weekly
     multiplier = rules.daily_bits_multiplier if kind == "daily" else rules.weekly_bits_multiplier
-    pool, taken, chosen = fish_pool(reg), set(), []
+    pool, taken, chosen = quest_pool(reg), set(), []
     for slot in slots:
         options = [i for i in pool if i.rarity == slot.rarity]
         fresh = [i for i in options if i.id not in taken] or options
