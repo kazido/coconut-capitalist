@@ -782,3 +782,32 @@ async def test_the_better_wedges_really_find_special_spots_more_often(db):
             await f.spend_wedge(user, spot, item, Random(i))
             found[item] += bool(spot.special)
     assert found["gilded_wedge"] > 3 * found["rotation_wedge"]
+
+
+# ---- upgrade materials come at a pace the other skills match ----------------------------------------------------------------------------
+async def test_a_double_tree_also_drops_a_haul_of_upgrade_materials(db):
+    user = await player(1)
+    plain = await f.fell_private(user, f.Tree(1, 100, 0), Random(1))
+    double = await f.fell_private(user, f.Tree(1, 100, 0, double=True), Random(1))
+    for item, quantity in RULES.releaf.double_items.items():
+        assert double.drops[item] - plain.drops[item] >= quantity
+    assert set(RULES.releaf.double_items) <= {i.id for i in REG.items.values() if i.skill == "foraging"}
+
+
+def test_the_axe_materials_come_in_a_couple_of_hours_not_a_working_week():
+    """An hour of chopping should bring a decent share of the next axe's materials (this is what hp_per_roll and the item drop rates are for)."""
+    from cococap.services import loot
+
+    rng = Random(2)
+    spot = f.Spot.pick(RULES, rng)
+    power = REG.item("thornwhip_axe").tool.power
+    dealt = sum(spot.swing(power, RULES, rng, 0.0, spot.stance(RULES)).damage for _ in range(4000)) / 4000
+    rolls_per_hour = dealt / RULES.hp_per_roll * 12 * 60
+    need = {i: q for i, q in REG.item("thornwhip_axe").tool.upgrade.items.items() if REG.item(i).skill == "foraging"}
+
+    def per_roll(item):
+        r = Random(1)
+        return sum(loot.skewed_roll(r, item.drop.min, item.drop.max) for _ in range(5000)) / 5000 / item.drop.rate
+
+    hours = max(q / (per_roll(REG.item(i)) * rolls_per_hour) for i, q in need.items())
+    assert hours < 3.5, hours  # (it was over six)

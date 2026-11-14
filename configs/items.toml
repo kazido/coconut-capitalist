@@ -937,7 +937,7 @@ price = 0
 sell_price = 500
 
 [hardwood.drop]
-rate = 6
+rate = 3
 min = 1
 max = 2
 
@@ -1083,7 +1083,7 @@ price = 0
 sell_price = 30000
 
 [fine_bark.drop]
-rate = 30
+rate = 12
 min = 1
 max = 4
 

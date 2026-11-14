@@ -365,3 +365,63 @@ def test_describe_stats_reads_negative_numbers_as_the_opposite():
 
     assert describe_stats({"ore_yield": 0.04, "danger_reduction": -0.01}) == "+4% more ore, +1% more creaking"
     assert describe_stats({"bite_speed": -0.02, "slips": 1}) == "+2% slower bites, +1 extra forgiven arrow(s)"
+
+
+# ---- one tool per page ---------------------------------------------------------------------------------------------------------------
+async def own_every_kind(user):
+    for template in ("rookiepickaxe", "starter_axe", "starter_rod", "tin_can", "largebranch"):
+        await user.give_instance(template)
+
+
+def tool_page_title(nav) -> str:
+    return next(line for line in all_text(nav).split("\n") if line.startswith("### "))
+
+
+async def test_the_upgrade_page_shows_one_tool_at_a_time_and_pages_between_them(db):
+    user = await User.get(1)
+    await own_every_kind(user)
+    nav, inter = await hub("upgrade")
+    labels = [b.label for b in buttons(nav)]
+    assert "1/5" in labels and next(b for b in buttons(nav) if b.label == "Prev").disabled
+    first = tool_page_title(nav)
+    text = all_text(nav)
+    assert "Rookie Pickaxe" in first and "Reinforced Pickaxe" in text
+    assert not any(name in text for name in ("Starter Axe", "Starter Rod", "Tin Watering Can", "Large Branch"))  # the others are on their own pages
+    seen = [first]
+    for _ in range(4):
+        await click(nav, inter, "Next")
+        seen.append(tool_page_title(nav))
+    assert len(set(seen)) == 5 and "5/5" in [b.label for b in buttons(nav)] and next(b for b in buttons(nav) if b.label == "Next").disabled
+    await click(nav, inter, "Prev")
+    assert "4/5" in [b.label for b in buttons(nav)]
+
+
+async def test_a_page_has_that_tools_costs_and_upgrading_it_keeps_you_on_it(db):
+    user = await User.get(1)
+    await set_columns(user, purse=10**9)
+    await own_every_kind(user)
+    axe_cost = cost_of("starter_axe")
+    for item, quantity in axe_cost.items.items():
+        await user.add_item(item, quantity)
+    nav, inter = await hub("upgrade")
+    await click(nav, inter, "Next")  # to the axe
+    assert "Starter Axe" in tool_page_title(nav) and f"{axe_cost.items['feather']}" in all_text(nav)
+    await click(nav, inter, "Upgrade")
+    assert "became a **Thornwhip Axe**" in all_text(nav) and "Thornwhip Axe" in tool_page_title(nav)  # still on the axe's page, now the next step
+
+
+async def test_a_forked_tool_shows_both_roads_on_its_one_page_and_a_single_tool_has_no_page_buttons(db):
+    user, inst = await forked_pickaxe()
+    nav, _ = await hub("upgrade")
+    text = all_text(nav)
+    assert "Warden path" in text and "Prospector path" in text and len([b for b in buttons(nav) if b.label == "Upgrade"]) == 2
+    assert not any(b.label in ("Prev", "Next") for b in buttons(nav))  # (one tool: nothing to page through)
+
+
+async def test_the_upgrade_page_number_cannot_run_off_the_end(db):
+    user = await User.get(1)
+    await user.give_instance("starter_axe")
+    nav, inter = await hub("upgrade")
+    nav.screen.page = 9
+    await nav.screen.nav.refresh(inter)
+    assert nav.screen.page == 0 and "Starter Axe" in tool_page_title(nav)

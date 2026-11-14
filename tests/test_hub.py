@@ -298,21 +298,47 @@ async def test_shop_sell_mode_sells_the_full_stack_by_default(db):
     assert (await User.get(1)).purse == 1000 + 4 * get_registry().item("gold_ore").sell_price and await user.items() == {}
 
 
-async def test_inventory_lists_items_and_marks_the_equipped_tool_of_every_kind(db):
+async def test_inventory_lists_items_only_and_has_sell_and_tools_buttons(db):
     from cococap.services.equipment import equip
 
     user = await User.get(1)
     await user.add_item("copper_ore", 7)
+    for template, skill in (("starter_axe", "foraging"), ("tin_can", "farming")):
+        await equip(user, skill, (await user.give_instance(template)).id)
+    nav, inter = await hub("inventory")
+    text = all_text(nav)
+    assert "7 Copper Ore" in text and "Starter Axe" not in text and "Watering Can" not in text  # tools are on the Tools page
+    labels = {b.label for b in buttons(nav)}
+    assert {"Sell", "Tools"} <= labels and "Enchant" not in labels and "Upgrade tools" not in labels
+    await click(nav, inter, "Tools")
+    assert nav.screen.id == "tools"
+
+
+async def test_the_sell_button_opens_the_shop_in_sell_mode(db):
+    user = await User.get(1)
+    await user.add_item("copper_ore", 7)
+    nav, inter = await hub("inventory")
+    await click(nav, inter, "Sell")
+    assert nav.screen.id == "shop" and nav.screen.mode == "sell" and "Copper Ore" in all_text(nav)
+    assert any(b.label == "Sell" and b.style == discord.ButtonStyle.success for b in buttons(nav))  # (each stack has its own Sell button)
+
+
+async def test_the_sell_button_is_off_when_you_have_nothing(db):
+    nav, _ = await hub("inventory")
+    assert "don't have any items" in all_text(nav) and find_button(nav, "Sell").disabled
+
+
+async def test_the_tools_page_marks_the_equipped_tool_of_every_kind_including_the_can(db):
+    from cococap.services.equipment import equip
+
+    user = await User.get(1)
     for template, skill in (("starter_axe", "foraging"), ("tin_can", "farming"), ("rookiepickaxe", "mining")):
         await equip(user, skill, (await user.give_instance(template)).id)
     await user.give_instance("starter_rod")  # owned but not equipped
-    nav, inter = await hub("inventory")
+    nav, _ = await hub("tools")
     lines = all_text(nav).split("\n")
-    assert "7 Copper Ore" in all_text(nav) and "#" not in all_text(nav).replace("## ", "")
     marked = {name: any(name in line and "✅" in line for line in lines) for name in ("Starter Axe", "Tin Watering Can", "Rookie Pickaxe", "Starter Rod")}
-    assert marked == {"Starter Axe": True, "Tin Watering Can": True, "Rookie Pickaxe": True, "Starter Rod": False}  # (the can used to be missed)
-    await click(nav, inter, "Tools")
-    assert nav.screen.id == "tools"
+    assert marked == {"Starter Axe": True, "Tin Watering Can": True, "Rookie Pickaxe": True, "Starter Rod": False}
 
 
 async def test_the_tools_page_shows_every_tool_equips_one_and_leads_to_upgrades(db):

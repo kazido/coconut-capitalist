@@ -134,7 +134,7 @@ def test_scrolls_drop_from_chopping_and_mining_and_fishing_bosses_and_chests():
 async def test_the_enchant_screen_picks_a_scroll_then_a_tool(db):
     user, rod = await with_tool("starter_rod", "fishing", scrolls={"scroll_lure": 1})
     axe = await user.give_instance("starter_axe")
-    nav, inter = await hub("inventory")
+    nav, inter = await hub("tools")
     await click(nav, inter, "Enchant")
     assert nav.screen.id == "enchant"
     await choose(nav, inter, select_named(nav, "Pick a scroll"), "scroll_lure")

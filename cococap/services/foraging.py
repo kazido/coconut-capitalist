@@ -332,6 +332,8 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
         raise ForagingError("You already collected this tree.")
     tree.collected = True
     drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus), rng), rng, reg)
+    if tree.double:  # a Re-leaf double tree also drops its haul of materials
+        drops.update(rules.releaf.double_items)
     bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules) * (1 + tree.bonus))
     xp = round(tree.effort * rules.xp_per_swing * await xp_multiplier(user.id, reg, "foraging"))
     await _pay(user, drops, bits, xp, trees=1)

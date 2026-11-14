@@ -640,6 +640,7 @@ class ReleafRules(_Data):
     double_hp: float = Field(ge=1)
     double_bits: int = Field(ge=0)
     double_spirit_chance: float = Field(ge=0, le=1)
+    double_items: dict[str, int] = Field(default_factory=dict)  # a double tree also drops this haul of materials (like the mining vault)
     spirit_item: str
     growth_donations: int = Field(ge=1)
 

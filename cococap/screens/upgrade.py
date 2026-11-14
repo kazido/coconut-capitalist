@@ -7,7 +7,6 @@ from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, needs_text, row, section, sep, text
 
-MAX_SHOWN = 6
 
 # what a tool's extra stats say in words: stat -> (label, how to show the amount)
 STAT_WORDS = {
@@ -29,12 +28,22 @@ def describe_stats(stats: dict[str, float]) -> str:
     return ", ".join(parts)
 
 
+KIND_ORDER = ("pickaxe", "axe", "sword", "rod", "can")
+KIND_SKILL = {"pickaxe": "Mining", "axe": "Foraging", "sword": "Combat", "rod": "Fishing", "can": "Farming"}
+
+
 class UpgradeScreen(Screen):
+    """One tool per page: swipe with Prev / Next between your tools, so each one's costs are easy to read on their own."""
+
     id = "upgrade"
     label = "Upgrade Tools"
     emoji = "🔨"
     description = "Turn a tool into the next one up"
     links = ("tools",)
+
+    def __init__(self, nav):
+        super().__init__(nav)
+        self.page = 0  # which tool is showing
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -43,26 +52,46 @@ class UpgradeScreen(Screen):
         if not offers:
             body.append(text("Nothing to upgrade. Buy a starter tool in the shop first; "
                              "tools that are already the best of their kind don't show up here."))
+            return Page("Upgrade Tools", [*body, sep(), row(button("Back to tools", emoji="🧰", on_click=self._back))], accent=0xB8860B)
+        groups: dict[int, list] = {}
+        for offer in sorted(offers, key=lambda o: KIND_ORDER.index(o.current.tool.kind)):
+            groups.setdefault(offer.instance.id, []).append(offer)
+        tools = list(groups.values())
+        self.page = max(0, min(self.page, len(tools) - 1))
+        mine = tools[self.page]
+        first = mine[0]
         owned = await self.user.items()
-        for offer in offers[:MAX_SHOWN]:
-            cost = offer.cost
-            now = effective_stats(offer.instance).power
-            after = offer.target.tool.power
-            target = offer.target.tool
+        body.append(text(f"### {first.current.emoji or '🔨'} {instance_label(first.instance)}  ·  {KIND_SKILL[first.current.tool.kind]}\n"
+                         f"Power **{effective_stats(first.instance).power}**"
+                         + (f"  ·  {describe_stats(first.current.tool.stats)}" if first.current.tool.stats else "")
+                         + (f"  ·  {first.current.tool.path} path" if first.current.tool.path else "")))
+        for offer in mine:
+            cost, target = offer.cost, offer.target.tool
             road = f"  ·  **{target.path} path**" if target.path and offer.current.tool.fork else ""
-            lines = (f"### {offer.current.emoji or '🔨'} {instance_label(offer.instance)}  →  {offer.target.name}{road}\n"
-                     f"Power **{now}** → **{after}**" + (f"  ·  {describe_stats(target.stats)}" if target.stats else "") + "\n"
-                     + needs_text(cost.bits, self.user.purse, cost.items, owned, reg)
-                     + ("\n-# ⚠️ A fork in the road: the road you take is the one your tool climbs from now on." if offer.current.tool.fork else ""))
+            lines = (f"**→ {offer.target.name}**{road}\n"
+                     f"Power **{effective_stats(offer.instance).power}** → **{target.power}**" + (f"  ·  {describe_stats(target.stats)}" if target.stats else "")
+                     + "\n" + needs_text(cost.bits, self.user.purse, cost.items, owned, reg))
             if offer.level_needed:
                 lines += f"\n-# {offer.target.name} needs level {offer.level_needed} in its skill."
             body.append(section(lines, accessory=button(
                 "Upgrade", style=discord.ButtonStyle.success, disabled=not offer.affordable,
                 on_click=self._upgrade(offer.instance.id, offer.path))))
-        if len(offers) > MAX_SHOWN:
-            body.append(text(f"-# …and {len(offers) - MAX_SHOWN} more tools."))
-        body += [sep(), row(button("Back to tools", emoji="🧰", on_click=self._back))]
+        if first.current.tool.fork:
+            body.append(text("-# ⚠️ A fork in the road: the road you take is the one your tool climbs from now on."))
+        body.append(sep())
+        if len(tools) > 1:
+            body.append(row(button("Prev", emoji="◀️", disabled=self.page == 0, on_click=self._turn(-1)),
+                            button(f"{self.page + 1}/{len(tools)}", disabled=True),
+                            button("Next", emoji="▶️", disabled=self.page >= len(tools) - 1, on_click=self._turn(1))))
+        body.append(row(button("Back to tools", emoji="🧰", on_click=self._back)))
         return Page("Upgrade Tools", body, accent=0xB8860B)
+
+    def _turn(self, step: int):
+        async def go(interaction: discord.Interaction) -> None:
+            self.page += step
+            await self.refresh(interaction)
+
+        return go
 
     def _upgrade(self, instance_id: int, path: str = "up"):
         async def go(interaction: discord.Interaction) -> None:

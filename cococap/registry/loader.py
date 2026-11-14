@@ -184,6 +184,7 @@ class Registry:
                          if row.item not in self.items]
         if self.foraging is not None:
             problems += [f"foraging.toml rotate: unknown wedge item '{w.item}'" for w in self.foraging.rotate.wedges if w.item not in self.items]
+            problems += [f"foraging.toml releaf: unknown double-tree item '{i}'" for i in self.foraging.releaf.double_items if i not in self.items]
         if self.foraging is not None and self.foraging.releaf.spirit_item not in self.items:
             problems.append(f"foraging.toml releaf: unknown spirit item '{self.foraging.releaf.spirit_item}'")
         if self.farming is not None and self.farming.deed_item not in self.items:

@@ -714,3 +714,15 @@ A pass over the busiest pages to cut text without cutting information. The rules
   (copper 20, iron 200, gold 2,000) to keep mining near where it was: mining is now about 85% of foraging per click at that simple strategy
   (it was ahead). The upgrade bits costs did not change. Gems are unchanged.
 - **Skills page:** each skill is its name, level and xp bar and an Open button; no blurbs.
+
+## Inventory, the upgrade page, and how fast each skill upgrades its tool (decided)
+- **Inventory** lists stacks only (tools are on the Tools page) and has **Sell** (opens the shop in sell mode) and **Tools** buttons; Enchant lives on the Tools page.
+- **Upgrade Tools** shows **one tool per page** with Prev / n of N / Next (a tool at a fork shows both roads on its page).
+- **Pace check** (hours of play to gather the materials for the tier-3 step, at that tool's income): mining about 0.5 h (ore pours out: 36 copper a
+  minute), fishing about 1-2 h (but across several waters), foraging was **6+ h** (hardwood 1 in 6 and fine bark 1 in 30 per roll, 170 hp a roll),
+  farming's can **days** (passive). So the others were brought up, not mining down:
+  - **Foraging:** `hp_per_roll` 170 -> 70 (2.4x the rolls), hardwood 1-in-6 -> 1-in-3, fine bark 1-in-30 -> 1-in-12, and `bits_per_hp` 230 -> 60 so the
+    pay stays the same (about 11k bits a minute): the income moved from bits to materials. The first two axe steps now take about 1.5-2 h.
+  - **Double tree** (`releaf.double_items`): also drops a haul (25 hardwood, 60 feather, 8 fine bark, 4 maple leaf), about a third of an axe step, like the vault.
+  - **Fishing boss:** a sure haul of salmon (6-10) and trout (8-12), pufferfish and tuna sometimes, on top of the coral and rare loot.
+  - **Farming:** the drop table rolls once per 2 growth cycles (was 4), up to 60 rolls.

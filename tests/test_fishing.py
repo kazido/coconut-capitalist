@@ -587,8 +587,8 @@ async def test_a_harvest_can_bring_plant_fiber(db):
         def random(self):
             return 0.0
 
-    assert farming.harvest_extras(Lucky(1), REG)["plant_fiber"] == 1
-    assert sum(farming.harvest_extras(Random(2), REG)["plant_fiber"] for _ in range(1000)) > 500
+    assert farming.harvest_extras(Lucky(1), REG, cycles=REG.farming.drop_cycles_per_roll)["plant_fiber"] == 1
+    assert sum(farming.harvest_extras(Random(2), REG, cycles=REG.farming.drop_cycles_per_roll)["plant_fiber"] for _ in range(1000)) > 500
 
 
 # ---- the collection book ----------------------------------------------------------------------------------------------
@@ -1799,3 +1799,11 @@ async def test_the_water_sets_the_xp_and_a_better_rod_does_not_change_it(db):
         assert cast.xp == deep.xp
         results[power] = cast.xp
     assert results[3] == results[120]
+
+
+def test_a_fishing_boss_pays_a_haul_of_the_fish_tools_are_upgraded_with():
+    loot = {row.item: row for row in REG.fishing.boss.loot}
+    for fish in ("salmon", "trout"):
+        assert loot[fish].chance == 1.0 and loot[fish].max >= 6  # a sure haul, like the mining vault
+    upgrade_fish = {i for t in REG.items.values() if t.tool and t.tool.upgrade for i in t.tool.upgrade.items if REG.item(i).category == "fish"}
+    assert {"salmon", "trout", "pufferfish", "tuna"} <= upgrade_fish and {"salmon", "trout", "pufferfish", "tuna"} <= set(loot)

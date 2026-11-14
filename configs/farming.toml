@@ -8,8 +8,8 @@ free_plots = 1                    # plot 1 is yours from the start; plots 2-9 ea
 grow_chance = 0.5                 # per rain, per growing plot
 blessing_chance = 0.1             # per rain in which any of your crops grew: a rain god's blessing (wiki: 1/10)
 water_chance = 1.0                # WATER your plots (a button, once an hour per plot): each ALWAYS grows a cycle, on top of the rain. How many plots your can waters an hour is its power
-drop_cycles_per_roll = 4          # a harvest rolls the farming drop table once per 4 growth cycles of the crop (apple 0.25, lemon 1, coconut 25)...
-max_drop_rolls = 30               # ...up to this many
+drop_cycles_per_roll = 2          # a harvest rolls the farming drop table once per 2 growth cycles of the crop (apple 0.5, lemon 2, coconut 50)...
+max_drop_rolls = 60               # ...up to this many
 anomaly_odds = 25                 # 1 in N per harvest: refreshes your work and daily cooldowns (wiki: 1/25)
 xp_per_cycle = 500               # farming xp for a harvest = the crop's growth cycles x this (apple 500, coconut 50,000). Tools never change xp
 deed_item = "land_deed"

@@ -11,8 +11,8 @@ heavy_zone = 8                    # private trees from this zone up are "heavy".
 heavy_solo_power = 0.5            # ...and a lone chopper hits at this share of their power (the Soloist enchant removes it)
 zone_hp_growth = 0.75             # a tree's hp = its height x (1 + this x (zone - 1))
 xp_per_swing = 10                  # foraging xp = this x the quality of every chop (grain and good chops, never the axe). A normal chop is about 1.
-bits_per_hp = 230                 # bits = hp chopped x this (x the zone bonus). Tuned to pay a bit under mining per click
-hp_per_roll = 170                 # a felled tree makes ceil(hp / this) rolls on the foraging drop tables
+bits_per_hp = 60                  # bits = hp chopped x this (x the zone bonus). Tuned to pay a bit under mining per click
+hp_per_roll = 70                  # a felled tree makes ceil(hp / this) rolls on the foraging drop tables (was 170: upgrade materials came too slowly)
 zone_reward_growth = 0.07         # each zone above 1 pays +7% per hp (zone 10: x1.63, zone 20: x2.33). Kept small so the deep zones do not run away from the other skills
 
 [[heights]]                       # a private tree's height (before the zone scaling), by weight
@@ -167,4 +167,5 @@ double_hp = 2.0                   # a double tree has this many times the hp...
 double_bits = 1000000             # ...and pays this many bits (the wiki says 10,000,000: scaled down to this economy)  TODO(balance)
 double_spirit_chance = 0.01       # ...or, 1 time in 100, a Spirit of the Forest instead
 spirit_item = "spirit_of_the_forest"
+double_items = { hardwood = 25, feather = 60, fine_bark = 8, maple_leaf = 4 }   # a double tree also drops this haul: about a third of an axe upgrade's materials
 growth_donations = 420            # donations needed to unlock growth mode (not built yet)
