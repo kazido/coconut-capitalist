@@ -1885,6 +1885,8 @@ sell_price = 0
 kind = "pickaxe"
 power = 13
 requirement = 0
+path = "Warden"
+stats = { danger_reduction = 0.02 }
 
 [ironbound_pickaxe.tool.upgrade]
 to = "crystal_pickaxe"
@@ -1911,6 +1913,8 @@ sell_price = 0
 kind = "pickaxe"
 power = 21
 requirement = 0
+path = "Warden"
+stats = { danger_reduction = 0.04 }
 
 [crystal_pickaxe.tool.upgrade]
 to = "deepdelver_pickaxe"
@@ -1937,6 +1941,8 @@ sell_price = 0
 kind = "pickaxe"
 power = 33
 requirement = 0
+path = "Warden"
+stats = { danger_reduction = 0.06 }
 
 [deepdelver_pickaxe.tool.upgrade]
 to = "mythril_pickaxe"
@@ -1963,6 +1969,8 @@ sell_price = 0
 kind = "pickaxe"
 power = 49
 requirement = 0
+path = "Warden"
+stats = { danger_reduction = 0.08 }
 
 [mythril_pickaxe.tool.upgrade]
 to = "worldsplitter_pickaxe"
@@ -1989,6 +1997,8 @@ sell_price = 0
 kind = "pickaxe"
 power = 69
 requirement = 0
+path = "Warden"
+stats = { danger_reduction = 0.1 }
 
 
 [tidecaller_rod]
@@ -2004,6 +2014,8 @@ sell_price = 0
 kind = "rod"
 power = 30
 requirement = 0
+path = "Angler"
+stats = { bite_speed = 0.03 }
 
 [tidecaller_rod.tool.upgrade]
 to = "moonlit_rod"
@@ -2031,6 +2043,8 @@ sell_price = 0
 kind = "rod"
 power = 45
 requirement = 0
+path = "Angler"
+stats = { bite_speed = 0.06 }
 
 [moonlit_rod.tool.upgrade]
 to = "leviathan_rod"
@@ -2059,6 +2073,8 @@ sell_price = 0
 kind = "rod"
 power = 65
 requirement = 0
+path = "Angler"
+stats = { bite_speed = 0.09, slips = 1 }
 
 [leviathan_rod.tool.upgrade]
 to = "abyssal_rod"
@@ -2087,6 +2103,8 @@ sell_price = 0
 kind = "rod"
 power = 90
 requirement = 0
+path = "Angler"
+stats = { bite_speed = 0.12 }
 
 [abyssal_rod.tool.upgrade]
 to = "poseidon_rod"
@@ -2116,6 +2134,8 @@ sell_price = 0
 kind = "rod"
 power = 120
 requirement = 0
+path = "Angler"
+stats = { bite_speed = 0.15, slips = 1 }
 
 
 [elderwood_axe]
@@ -2180,3 +2200,281 @@ sell_price = 25000  # TODO(balance)
 rate = 2500  # TODO(balance): 1 in 2500 per drop roll
 min = 1
 max = 1
+
+[masterwork_pickaxe.tool.fork]
+to = "prospector_pickaxe"
+bits = 3000000
+
+[masterwork_pickaxe.tool.fork.items]
+gold_ore = 200
+iron_ore = 800
+copper_ore = 1500
+hardwood = 40
+coral_shard = 20
+
+[prospector_pickaxe]
+name = "Prospector's Pickaxe"
+description = "Light, quick and greedy: it finds more ore, and brings the roof down sooner."
+rarity = 4
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[prospector_pickaxe.tool]
+kind = "pickaxe"
+power = 13
+requirement = 0
+path = "Prospector"
+stats = { ore_yield = 0.04, danger_reduction = -0.01 }
+
+[prospector_pickaxe.tool.upgrade]
+to = "geode_pickaxe"
+bits = 15000000
+
+[prospector_pickaxe.tool.upgrade.items]
+gold_ore = 500
+iron_ore = 2000
+copper_ore = 4000
+hardwood = 100
+coral_shard = 50
+
+[geode_pickaxe]
+name = "Geode Pickaxe"
+description = "Cracks rock to find the sparkle inside. Richer ore, a creakier tunnel."
+rarity = 5
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[geode_pickaxe.tool]
+kind = "pickaxe"
+power = 21
+requirement = 0
+path = "Prospector"
+stats = { ore_yield = 0.08, danger_reduction = -0.02 }
+
+[geode_pickaxe.tool.upgrade]
+to = "seekers_pickaxe"
+bits = 70000000
+
+[geode_pickaxe.tool.upgrade.items]
+gold_ore = 1200
+iron_ore = 4500
+copper_ore = 8000
+hardwood = 250
+tuna = 8
+
+[seekers_pickaxe]
+name = "Seeker's Pickaxe"
+description = "It seems to know where the good stuff is hiding."
+rarity = 6
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[seekers_pickaxe.tool]
+kind = "pickaxe"
+power = 33
+requirement = 0
+path = "Prospector"
+stats = { ore_yield = 0.12, danger_reduction = -0.03 }
+
+[seekers_pickaxe.tool.upgrade]
+to = "veinhunter_pickaxe"
+bits = 300000000
+
+[seekers_pickaxe.tool.upgrade.items]
+gold_ore = 3000
+iron_ore = 10000
+copper_ore = 16000
+maple_leaf = 40
+sturgeon = 2
+
+[veinhunter_pickaxe]
+name = "Vein-Hunter's Pickaxe"
+description = "A hunter's tool. It takes more from every lode, and the mine knows it."
+rarity = 6
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[veinhunter_pickaxe.tool]
+kind = "pickaxe"
+power = 49
+requirement = 0
+path = "Prospector"
+stats = { ore_yield = 0.16, danger_reduction = -0.04 }
+
+[veinhunter_pickaxe.tool.upgrade]
+to = "motherlode_pickaxe"
+bits = 1200000000
+
+[veinhunter_pickaxe.tool.upgrade.items]
+gold_ore = 8000
+iron_ore = 25000
+copper_ore = 40000
+aged_feather = 4
+marlin = 5
+
+[motherlode_pickaxe]
+name = "Motherlode Pickaxe"
+description = "Everything in the mountain wants to be found by this pick."
+rarity = 7
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[motherlode_pickaxe.tool]
+kind = "pickaxe"
+power = 69
+requirement = 0
+path = "Prospector"
+stats = { ore_yield = 0.2, danger_reduction = -0.05 }
+
+[masterwork_rod.tool.fork]
+to = "lantern_rod"
+bits = 10000000
+
+[masterwork_rod.tool.fork.items]
+salmon = 40
+pufferfish = 10
+moray_eel = 4
+coral_shard = 60
+hardwood = 30
+
+[lantern_rod]
+name = "Lantern Rod"
+description = "A glowing lure draws strange things up from the deep. Slower bites, better finds."
+rarity = 5
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[lantern_rod.tool]
+kind = "rod"
+power = 30
+requirement = 0
+path = "Treasure Hunter"
+stats = { rare_luck = 0.06, treasure_luck = 0.1, bite_speed = -0.02 }
+
+[lantern_rod.tool.upgrade]
+to = "siren_rod"
+bits = 40000000
+
+[lantern_rod.tool.upgrade.items]
+tuna = 30
+swordfish = 8
+muskie = 8
+coral_shard = 120
+hardwood = 40
+iron_ore = 60
+
+[siren_rod]
+name = "Siren Rod"
+description = "It hums a tune only the rare fish answer to."
+rarity = 6
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[siren_rod.tool]
+kind = "rod"
+power = 45
+requirement = 0
+path = "Treasure Hunter"
+stats = { rare_luck = 0.12, treasure_luck = 0.2, bite_speed = -0.04 }
+
+[siren_rod.tool.upgrade]
+to = "trident_rod"
+bits = 150000000
+
+[siren_rod.tool.upgrade.items]
+sturgeon = 3
+marlin = 3
+giant_squid = 3
+swordfish = 20
+coral_shard = 250
+hardwood = 100
+gold_ore = 100
+
+[trident_rod]
+name = "Trident Rod"
+description = "Three prongs, three chances at something unusual."
+rarity = 6
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[trident_rod.tool]
+kind = "rod"
+power = 65
+requirement = 0
+path = "Treasure Hunter"
+stats = { rare_luck = 0.18, treasure_luck = 0.3, bite_speed = -0.06 }
+
+[trident_rod.tool.upgrade]
+to = "kraken_rod"
+bits = 500000000
+
+[trident_rod.tool.upgrade.items]
+oarfish = 2
+abyssal_angler = 2
+sturgeon = 8
+marlin = 8
+coral_shard = 500
+maple_leaf = 30
+gold_ore = 200
+
+[kraken_rod]
+name = "Kraken Rod"
+description = "Whatever lives down there, this rod calls it."
+rarity = 7
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[kraken_rod.tool]
+kind = "rod"
+power = 90
+requirement = 0
+path = "Treasure Hunter"
+stats = { rare_luck = 0.24, treasure_luck = 0.4, bite_speed = -0.08 }
+
+[kraken_rod.tool.upgrade]
+to = "trophy_rod"
+bits = 1500000000
+
+[kraken_rod.tool.upgrade.items]
+leviathan_pup = 1
+golden_koi = 1
+oarfish = 4
+abyssal_angler = 4
+giant_squid = 10
+coral_shard = 800
+aged_feather = 3
+gold_ore = 400
+
+[trophy_rod]
+name = "Trophy Rod"
+description = "Hung with trophies, and it earns every one."
+rarity = 7
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[trophy_rod.tool]
+kind = "rod"
+power = 120
+requirement = 0
+path = "Treasure Hunter"
+stats = { rare_luck = 0.3, treasure_luck = 0.5, bite_speed = -0.1 }

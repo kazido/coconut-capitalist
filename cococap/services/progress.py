@@ -87,17 +87,15 @@ def next_step(count: int, steps: list[int]) -> int | None:
 
 
 def tool_levels(registry: Registry) -> dict[str, tuple[str, int]]:
-    """template id -> (kind, level) for every tool, level 1 being the first tool of its upgrade chain."""
+    """template id -> (kind, level) for every tool, level 1 being the first tool of its upgrade chain (both roads of a fork count)."""
     tools = [i for i in registry.items.values() if i.tool]
-    upgraded_to = {i.tool.upgrade.to for i in tools if i.tool.upgrade}
+    upgraded_to = {r.to for i in tools for r in (i.tool.upgrade, i.tool.fork) if r}
     levels: dict[str, tuple[str, int]] = {}
-    for root in (i for i in tools if i.id not in upgraded_to):
-        current, level = root, 1
-        while True:
-            levels[current.id] = (current.tool.kind, level)
-            if not current.tool.upgrade:
-                break
-            current, level = registry.item(current.tool.upgrade.to), level + 1
+    pending = [(i, 1) for i in tools if i.id not in upgraded_to]
+    while pending:
+        current, level = pending.pop()
+        levels[current.id] = (current.tool.kind, level)
+        pending += [(registry.item(r.to), level + 1) for r in (current.tool.upgrade, current.tool.fork) if r]
     return levels
 
 

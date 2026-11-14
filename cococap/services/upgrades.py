@@ -26,6 +26,7 @@ class UpgradeOffer:
     cost: ToolUpgrade
     missing: tuple[str, ...]  # what the player lacks, in words ("12,000 more bits", "Feather 40/100")
     level_needed: int = 0  # the skill level the new tool asks for, if the player is below it
+    path: str = "up"  # "up": the usual next tool. "fork": the other road at a fork in the tool's upgrades
 
     @property
     def affordable(self) -> bool:
@@ -43,13 +44,15 @@ def _missing(purse: int, owned: dict[str, int], cost: ToolUpgrade, reg: Registry
     return tuple(lacking)
 
 
-async def offer_for(user: User, instance: ItemInstance, registry: Registry | None = None) -> UpgradeOffer | None:
-    """What this tool can become, or None if it is already the best of its kind."""
+async def offer_for(user: User, instance: ItemInstance, registry: Registry | None = None, path: str = "up") -> UpgradeOffer | None:
+    """What this tool can become (by the usual road, or `path="fork"` for the other one at a fork), or None if there is no such road."""
     reg = registry or get_registry()
     current = reg.item(instance.template_id)
-    if current.tool is None or current.tool.upgrade is None:
+    if current.tool is None:
         return None
-    cost = current.tool.upgrade
+    cost = current.tool.fork if path == "fork" else current.tool.upgrade
+    if cost is None:
+        return None
     target = reg.item(cost.to)
     skill = skill_for_tool(target.tool.kind)
     level = User.xp_to_level((await user.skill(skill)).xp) if skill else 0
@@ -57,25 +60,27 @@ async def offer_for(user: User, instance: ItemInstance, registry: Registry | Non
     return UpgradeOffer(
         instance, current, target, cost, _missing(user.purse, await user.items(), cost, reg),
         target.tool.requirement if level < target.tool.requirement else 0,
+        path,
     )
 
 
 async def offers(user: User, registry: Registry | None = None) -> list[UpgradeOffer]:
     found = []
     for instance in await user.instances():
-        offer = await offer_for(user, instance, registry)
-        if offer is not None:
-            found.append(offer)
+        for path in ("up", "fork"):  # a tool at a fork has two offers: pick your road
+            offer = await offer_for(user, instance, registry, path)
+            if offer is not None:
+                found.append(offer)
     return found
 
 
-async def upgrade(user: User, instance_id: int, registry: Registry | None = None) -> UpgradeOffer:
-    """Pay for and perform the upgrade. Returns the offer that was carried out."""
+async def upgrade(user: User, instance_id: int, registry: Registry | None = None, path: str = "up") -> UpgradeOffer:
+    """Pay for and perform the upgrade (by `path`: the usual road or the fork). Returns the offer that was carried out."""
     reg = registry or get_registry()
     instance = await user.instance(instance_id)
     if instance is None:
         raise UpgradeError("You don't own that tool.")
-    offer = await offer_for(user, instance, reg)
+    offer = await offer_for(user, instance, reg, path)
     if offer is None:
         raise UpgradeError("That tool can't be upgraded any further.")
     if offer.level_needed:

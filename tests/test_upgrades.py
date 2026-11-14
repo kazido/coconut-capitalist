@@ -190,19 +190,34 @@ def tools_by_kind():
     return kinds
 
 
-def test_every_kind_of_tool_has_an_upgrade_chain_and_only_the_best_tool_ends_it():
+def test_every_kind_of_tool_has_an_upgrade_chain_and_the_best_tools_end_it():
     kinds = tools_by_kind()
     assert set(kinds) == {"pickaxe", "axe", "rod", "sword"}
     for kind, tools in kinds.items():
         tops = [t for t in tools if t.tool.upgrade is None]
-        assert len(tops) == 1, (kind, [t.id for t in tops])
-        assert tops[0].tool.power == max(t.tool.power for t in tools)
-        # ...and every other tool of that kind leads there
-        for tool in tools:
+        top_power = max(t.tool.power for t in tools)
+        forked = any(t.tool.fork for t in tools)
+        assert len(tops) == (2 if forked else 1), (kind, [t.id for t in tops])  # one top per road
+        assert all(t.tool.power == top_power for t in tops)  # (both roads end equally strong)
+        for tool in tools:  # ...and every tool leads to one of them
             current = tool
             while current.tool.upgrade:
                 current = REG.item(current.tool.upgrade.to)
-            assert current.id == tops[0].id, (tool.id, current.id)
+            assert current.id in {t.id for t in tops}, (tool.id, current.id)
+
+
+def test_a_fork_offers_two_roads_of_the_same_power_and_cost_but_different_stats():
+    forks = [t for t in REG.items.values() if t.tool and t.tool.fork]
+    assert {t.tool.kind for t in forks} == {"pickaxe", "rod"}  # the pilot
+    for tool in forks:
+        a, b = REG.item(tool.tool.upgrade.to), REG.item(tool.tool.fork.to)
+        assert a.tool.power == b.tool.power and tool.tool.upgrade.bits == tool.tool.fork.bits and tool.tool.upgrade.items == tool.tool.fork.items
+        assert a.tool.path and b.tool.path and a.tool.path != b.tool.path
+        assert set(a.tool.stats) != set(b.tool.stats)  # different in kind, not just in size
+        while a.tool.upgrade and b.tool.upgrade:  # both roads climb in step: same powers and costs all the way up
+            a, b = REG.item(a.tool.upgrade.to), REG.item(b.tool.upgrade.to)
+            assert a.tool.power == b.tool.power and a.tool.path != b.tool.path
+        assert a.tool.upgrade is None and b.tool.upgrade is None
 
 
 TOOL_SKILL = {"pickaxe": "mining", "axe": "foraging", "rod": "fishing"}  # (swords: combat has no materials yet)
@@ -272,3 +287,74 @@ async def test_every_chain_can_be_climbed_to_the_top_with_the_right_stuff(db):
             await upgrades.upgrade(user, inst.id)
         top = (await user.instance(inst.id)).template_id
         assert REG.item(top).tool.upgrade is None and offer is None, kind
+
+
+# ---- forks: two roads from one tool ----------------------------------------------------------------------------------------------
+async def forked_pickaxe():
+    user, inst = await with_tool("masterwork_pickaxe", "mining", materials=dict(cost_of("masterwork_pickaxe").items))
+    await user.add_xp("mining", User.level_to_xp(1))
+    return user, inst
+
+
+async def test_a_tool_at_a_fork_has_two_offers_and_each_road_is_taken_on_its_own(db):
+    user, inst = await forked_pickaxe()
+    found = await upgrades.offers(user)
+    assert [(o.path, o.target.id) for o in found] == [("up", "ironbound_pickaxe"), ("fork", "prospector_pickaxe")]
+    done = await upgrades.upgrade(user, inst.id, path="fork")
+    assert done.target.id == "prospector_pickaxe" and (await user.instance(inst.id)).template_id == "prospector_pickaxe"
+    assert [o.target.id for o in await upgrades.offers(user)] == ["geode_pickaxe"]  # the road you took is the only one now
+    assert (await user.equipped_instance("mining")).id == inst.id
+
+
+async def test_the_other_road_gives_its_own_stats_to_the_tool_in_use(db):
+    from cococap.services.equipment import equipped_stats
+
+    user, inst = await forked_pickaxe()
+    await upgrades.upgrade(user, inst.id)  # the usual road: Warden
+    safe = await equipped_stats(user, "mining")
+    assert safe.stats["danger_reduction"] == pytest.approx(0.02) and "ore_yield" not in safe.stats
+    user2 = await User.get(2)
+    await set_columns(user2, purse=10**9)
+    inst2 = await user2.give_instance("masterwork_pickaxe")
+    await equip(user2, "mining", inst2.id)
+    for item_id, quantity in cost_of("masterwork_pickaxe").items.items():
+        await user2.add_item(item_id, quantity)
+    await upgrades.upgrade(user2, inst2.id, path="fork")
+    greedy = await equipped_stats(user2, "mining")
+    assert greedy.stats["ore_yield"] == pytest.approx(0.04) and greedy.stats["danger_reduction"] == pytest.approx(-0.01)
+    assert greedy.power == safe.power  # the same power: a different way to dig, not a stronger one
+
+
+async def test_a_tool_with_no_fork_has_no_fork_offer(db):
+    user, inst = await with_tool()
+    assert [o.path for o in await upgrades.offers(user)] == ["up"]
+    with pytest.raises(upgrades.UpgradeError, match="any further"):
+        await upgrades.upgrade(user, inst.id, path="fork")
+
+
+async def test_the_upgrade_screen_shows_both_roads_with_what_each_does(db):
+    user, inst = await forked_pickaxe()
+    nav, inter = await hub("upgrade")
+    text = all_text(nav)
+    assert "Warden path" in text and "Prospector path" in text and "fork in the road" in text
+    assert "less creaking" in text and "more ore" in text and "more creaking" in text  # (the Prospector's price is shown too)
+    ups = [b for b in buttons(nav) if b.label == "Upgrade"]
+    assert len(ups) == 2 and not any(b.disabled for b in ups)
+    await ups[1].callback(inter)
+    assert (await user.instance(inst.id)).template_id == "prospector_pickaxe" and "Prospector's Pickaxe" in all_text(nav)
+
+
+def test_describe_stats_reads_negative_numbers_as_the_opposite():
+    from cococap.screens.upgrade import describe_stats
+
+    assert describe_stats({"ore_yield": 0.04, "danger_reduction": -0.01}) == "+4% more ore, +1% more creaking"
+    assert describe_stats({"bite_speed": -0.02, "slips": 1}) == "+2% slower bites, +1 extra forgiven arrow(s)"
+
+
+def test_both_roads_count_for_the_coconut_level_gear_points():
+    from cococap.services import progress
+
+    levels = progress.tool_levels(REG)
+    assert levels["prospector_pickaxe"] == levels["ironbound_pickaxe"] == ("pickaxe", 4)
+    assert levels["motherlode_pickaxe"] == levels["worldsplitter_pickaxe"] == ("pickaxe", 8)
+    assert levels["trophy_rod"] == levels["poseidon_rod"] == ("rod", 8)

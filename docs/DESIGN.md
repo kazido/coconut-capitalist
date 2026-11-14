@@ -653,7 +653,7 @@ to take down in mining, farming and foraging join the same way (a counter in tha
 - Feeding still works and is faster (food x3 for its own skill, x2 for a global pet). Existing pets keep their xp; they simply land at a higher level.
 - **Bestiary counters never stop** (the kill count is a plain number); only the point milestones end (1, 25, 100, 500, 2,500, 10,000; bosses 1, 5, 25, 100, 500).
 
-## Tool forks and the Mastery tree (design, agreed; not built yet)
+## Tool forks and the Mastery tree (pilot built for mining and fishing)
 
 Problem: every ladder is one chain of "more power", so everyone makes the same choices and the late steps are poor value (payback of 200-300
 active hours for x1.35). The fix is two layers, **tools** (what you wield) and **Mastery** (how you play), and neither touches xp.
@@ -671,3 +671,18 @@ active hours for x1.35). The fix is two layers, **tools** (what you wield) and *
 - **Pilot:** mining and fishing first, then foraging and farming. The first Mastery branch opens at skill level 5 and the first tool fork at 10.
 - **Level unlock audit** (today): mining magnet 5 and gems 10, farming market 5, foraging Re-leaf 10 and zones 4, 7, fishing quests 3, waters
   3/8/15, pot 6, book 10, combat fights 3/8 and the boss 20. Gaps to fill: foraging and fishing at 5, farming at 10, combat at 5.
+
+**What the pilot built** (all numbers `TODO(balance)`):
+- **Mastery** (`configs/mastery.toml`, `services/mastery.py`, `screens/mastery.py`, a "Mastery" button on the mining and fishing pages): one point per
+  5 skill levels (20 at level 100), spent on nodes. Each skill has 3 branches of 5 nodes in a line (each needs the one before it and a skill level
+  5/10/20/35/50, costing 1/1/2/2/3 points, so a full branch is 9 and you cannot take all 27). Mining: **Safe Digger** (less creaking, braces),
+  **Greedy Digger** (more ore and rich lodes, creakier tunnel), **Gem Hunter** (vault gems). Fishing: **Angler** (faster bites, forgiven arrows),
+  **Treasure Hunter** (chests, rare fish), **Trophy Hunter** (more bosses and rare fish, slower bites). A node's effects are plain tool-style stats
+  that `equipment.equipped_stats` adds to the equipped tool, so the games read them like they read an enchant. Respec clears a tree for 100k bits.
+  Stored as `mastery: [node ids]` on each skill. Nothing touches xp.
+- **Tool forks** (`Tool.fork`, `Tool.path`, `Tool.stats`): the Masterwork Pickaxe and Masterwork Rod each branch into two roads of the same power
+  and cost at every tier, with different stats: pickaxe **Warden** (less creaking) vs **Prospector** (more ore, creakier); rod **Angler** (faster
+  bites, extra forgiven arrows) vs **Treasure Hunter** (rare fish and treasure, slower bites). The upgrade page shows both roads with what each does
+  and warns it is a fork. The shop allows one tool per kind, so the road you take is the one you climb. **Not built yet:** changing roads later for bits.
+- **Still to do:** foraging and farming Mastery trees, forks for the axe, a numeric balance pass that the two roads really earn about the same
+  (the rule above: within ~10%), and the level 5/10 unlock content.

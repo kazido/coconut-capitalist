@@ -16,7 +16,8 @@ TOPICS: list[tuple[str, str, str]] = [  # (id, title, emoji)
     ("waters", "Waters", "🌊"),
     ("pots", "Crab pots and bait", "🦀"),
     ("tools", "Tools and upgrades: axes", "🔨"),
-    ("tools2", "Tools: rods, pickaxes, swords", "🎣"),
+    ("tools2", "Tools: rods", "🎣"),
+    ("tools3", "Tools: pickaxes and swords", "⛏️"),
     ("enchants", "Enchants and scrolls", "📜"),
     ("pets", "Pets", "🐾"),
     ("party", "Parties", "👥"),
@@ -183,13 +184,24 @@ def _tools(reg: Registry, only: tuple[str, ...] = ("axe",), intro: bool = True) 
         if item.tool and item.tool.kind in only:
             kinds.setdefault(item.tool.kind, []).append(item)
     for kind, tools in sorted(kinds.items()):
-        current = next(t for t in tools if not any(o.tool.upgrade and o.tool.upgrade.to == t.id for o in tools))
+        targets = {r.to for o in tools for r in (o.tool.upgrade, o.tool.fork) if r}
+        current = next(t for t in tools if t.id not in targets)
         lines = []
-        while current.tool.upgrade:
-            up = current.tool.upgrade
-            nxt = reg.item(up.to)
-            lines.append(f"{current.name} → **{nxt.name}** (power {nxt.tool.power}): {_n(up.bits)} bits, {_materials(up.items, reg)}")
-            current = nxt
+
+        def walk(tool: Item, lines: list[str]) -> None:
+            """List every step up from `tool`. At a fork both roads are listed, each tagged with its path's name."""
+            while tool.tool.upgrade:
+                forked = tool.tool.fork is not None
+                for road in (tool.tool.upgrade, tool.tool.fork):
+                    if road is not None:
+                        nxt = reg.item(road.to)
+                        tag = f" [{nxt.tool.path} path]" if forked and nxt.tool.path else ""
+                        lines.append(f"{tool.name} → **{nxt.name}** (power {nxt.tool.power}){tag}: {_n(road.bits)} bits, {_materials(road.items, reg)}")
+                if forked:
+                    walk(reg.item(tool.tool.fork.to), lines)
+                tool = reg.item(tool.tool.upgrade.to)
+
+        walk(current, lines)
         out.append(f"**{kind.title()}s**\n" + "\n".join(lines))
     return out
 
@@ -243,7 +255,7 @@ def _items(reg: Registry) -> list[str]:
 
 
 _PAGES = {"start": _start, "mining": _mining, "farming": _farming, "foraging": _foraging, "fishing": _fishing, "fish": _fish,
-          "waters": _waters, "pots": _pots, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod", "pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "party": _party, "items": _items}
+          "waters": _waters, "pots": _pots, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "party": _party, "items": _items}
 
 SKILL_FILTERS = ["mining", "farming", "foraging", "fishing", "combat", "general"]
 
