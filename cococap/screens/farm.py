@@ -6,7 +6,7 @@ import discord
 
 from cococap.registry import get_registry
 from cococap.services import farming
-from cococap.ui import Page, Screen
+from cococap.ui import Page, Result, Screen
 from cococap.ui.components import button, row, sep, select, text, xp_bar
 from cococap.user import User
 
@@ -105,13 +105,14 @@ class FarmScreen(Screen):
     async def _report(self, interaction: discord.Interaction, harvests: list[farming.Harvest]) -> None:
         reg = get_registry()
         parts = [f"{h.amount:,} {reg.item(h.crop_id).display}" for h in harvests]
-        note = "Harvested " + ", ".join(parts) + f"  ·  +{sum(h.xp for h in harvests)} xp"
+        lines = ["Harvested " + ", ".join(parts) + f"  ·  **+{sum(h.xp for h in harvests)}** xp"]
         extras = sum((h.extras for h in harvests), Counter())
         if extras:
-            note += "\n🧵 Also found: " + ", ".join(f"{q:,} {reg.item(i).display}" for i, q in extras.items())
+            lines.append("🧵 Also found: " + ", ".join(f"{q:,} {reg.item(i).display}" for i, q in extras.items()))
         if any(h.anomaly for h in harvests):
-            note += "\n✨ **An agricultural anomaly!** Marvelous! Your work and daily are ready again."
-        await self.refresh(interaction, note)
+            lines.append("✨ **An agricultural anomaly!** Marvelous! Your work and daily are ready again.")
+        self.result = Result("Harvest!", lines, emoji="🧺", accent=0x2F919E, back_label="Back to the farm")
+        await self.refresh(interaction)
 
     async def _harvest_all(self, interaction: discord.Interaction) -> None:
         harvests = await farming.harvest_all(self.user, random.Random())

@@ -301,8 +301,11 @@ async def test_casting_waits_then_a_bite_then_reeling_lands_the_fish(db, clock, 
     assert "is on the line" in all_text(nav)
     for arrow in list(cast.pattern):
         await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
-    assert nav.screen.cast is None and nav.screen.refresh_every is None
-    assert "You caught a" in all_text(nav)
+    assert nav.screen.id == "result" and "You caught a" in all_text(nav) and nav.screen.origin.cast is None
+    assert "Cod" in all_text(nav) and "Common" in all_text(nav) and "cm" in all_text(nav)  # a page of its own, with what she got
+    assert find_button(nav, "Cast again") and find_button(nav, "Continue")
+    await click(nav, inter, "Continue")
+    assert nav.screen.id == "fish" and nav.screen.cast is None and nav.screen.refresh_every is None
     assert await user.item_quantity("cod") == 1 and (await user.skill("fishing")).xp > 0
     await click(nav, inter, "Sell fish")
     await user.refresh()
@@ -319,9 +322,9 @@ async def test_a_wrong_arrow_on_the_screen_loses_the_fish_and_a_stale_click_is_h
     wrong = "Right" if nav.screen.cast.next_arrow == f.LEFT else "Left"
     stale = find_button(nav, wrong)
     await click(nav, inter, wrong)
-    assert nav.screen.cast is None and "slipped off" in all_text(nav)
-    await stale.callback(inter)  # a click that was already on its way
-    assert nav.screen.cast is None and await user.item_quantity("cod") == 0
+    assert nav.screen.id == "result" and nav.screen.origin.cast is None and "slipped off" in all_text(nav)
+    await stale.callback(inter)  # a click that was already on its way: the result stays on screen
+    assert nav.screen.id == "result" and nav.screen.origin.cast is None and await user.item_quantity("cod") == 0
 
 
 async def test_a_fish_that_bites_while_you_are_away_gets_away(db, clock, monkeypatch):
@@ -330,8 +333,9 @@ async def test_a_fish_that_bites_while_you_are_away_gets_away(db, clock, monkeyp
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.expires_at + 5
     await nav.screen.nav.refresh(inter)
-    assert nav.screen.cast is None and "too slow" in all_text(nav)
-    assert not find_button(nav, "Cast").disabled
+    assert nav.screen.id == "result" and "too slow" in all_text(nav).lower()
+    await click(nav, inter, "Continue")
+    assert nav.screen.cast is None and not find_button(nav, "Cast").disabled
 
 
 async def test_pulling_up_the_line_costs_nothing(db, clock):
@@ -478,6 +482,7 @@ async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
     for arrow in list(cast.pattern):
         await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
     assert "You caught a" in all_text(nav)
+    await click(nav, inter, "Continue")
     assert not find_button(nav, "Quests").disabled
     await click(nav, inter, "Quests")
     assert nav.screen.id == "fishquests" and "Daily" in all_text(nav) and "Weekly" in all_text(nav)
@@ -497,7 +502,7 @@ async def test_a_bite_you_ignore_gets_away_once_the_window_and_the_quiet_grace_a
     assert "A bite!" in all_text(nav) and nav.screen.cast is not None  # still hers: the connection may be slow
     clock[0] = nav.screen.cast.bite_at + RULES.bite.window + RULES.bite.grace + 1
     await nav.screen.nav.refresh(inter)
-    assert nav.screen.cast is None and "too slow" in all_text(nav)
+    assert nav.screen.id == "result" and nav.screen.origin.cast is None and "too slow" in all_text(nav).lower()
 
 
 # ---- more fish ---------------------------------------------------------------------------------------------------
@@ -852,12 +857,15 @@ async def test_the_screen_flashes_the_numbers_then_hides_them_and_the_chest_open
     for arrow in list(cast.pattern):
         await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
     code = (await user.skill("fishing")).treasure.code
-    assert code and "   ".join(code) in all_text(nav) and "Remember them" in all_text(nav)
+    assert nav.screen.id == "result"
+    assert code and "   ".join(code) in all_text(nav) and "Remember them" in all_text(nav)  # the numbers flash on the result page
     assert nav.screen.refresh_every  # keeps redrawing so the numbers can fade by themselves
     assert "Pufferfish" in all_text(nav) and "Super Rare" in all_text(nav)  # the catch says how rare it was (the pond's rarest fish)
     clock[0] += T.flash_seconds + 1
     await nav.screen.nav.refresh(inter)
-    assert "   ".join(code) not in all_text(nav) and "slip away" in all_text(nav) and nav.screen.flash is None
+    assert "   ".join(code) not in all_text(nav) and "slip away" in all_text(nav) and nav.screen.origin.flash is None
+    assert nav.screen.refresh_every is None
+    await click(nav, inter, "Continue")
     assert "hallucination lingers" in all_text(nav) and nav.screen.refresh_every is None
     await click(nav, inter, "Cast")  # armed: with these dice the next cast is a chest
     assert nav.screen.cast.chest
@@ -872,7 +880,7 @@ async def test_the_screen_flashes_the_numbers_then_hides_them_and_the_chest_open
     assert "Wrong numbers" in all_text(nav) and f"**{T.attempts - 1}** tries left" in all_text(nav)
     await click(nav, inter, "Enter the numbers")
     await inter.response.send_modal.await_args.args[0]._handler(inter, code)
-    assert "lock clicks open" in all_text(nav) and nav.screen.cast is None
+    assert nav.screen.id == "result" and "lock clicks open" in all_text(nav) and nav.screen.origin.cast is None
     assert (await user.skill("fishing")).stats.treasures_found == 1
 
 
@@ -977,7 +985,7 @@ async def test_the_screen_uses_when_you_clicked_not_when_the_bot_noticed(db, clo
     clock[0] = cast.bite_at + RULES.bite.window + RULES.bite.grace + 30
     clicked(inter, cast.bite_at + 2)
     await nav.screen.nav.refresh(inter)  # the redraw notices the fish got away
-    assert nav.screen.cast is None and nav.screen.missed is cast
+    assert nav.screen.id == "result" and nav.screen.origin.cast is None and nav.screen.origin.missed is cast
     await nav.screen.nav.refresh(inter)
     await nav.screen.nav.show(inter, "fish", push=False)
     # (a fresh screen has no memory of it, as it should: salvage only covers the screen the click was made on)
@@ -995,10 +1003,10 @@ async def test_a_click_made_in_time_but_delivered_late_saves_the_fish_on_the_sam
     pull_up = find_button(nav, "Pull up the line")  # the button she clicked
     clock[0] = cast.bite_at + RULES.bite.window + RULES.bite.grace + 5  # ...but the click only reaches us now
     await nav.screen.nav.refresh(inter)
-    assert nav.screen.cast is None and "too slow" in all_text(nav)
+    assert nav.screen.id == "result" and "too slow" in all_text(nav).lower()
     clicked(inter, cast.bite_at + 3)  # Discord's stamp: she clicked three seconds after the bite
     await pull_up.callback(inter)
-    assert nav.screen.cast is cast and cast.hooked and "just in time" in all_text(nav) and "is on the line" in all_text(nav)
+    assert nav.screen.id == "fish" and nav.screen.cast is cast and cast.hooked and "just in time" in all_text(nav) and "is on the line" in all_text(nav)
     for arrow in list(cast.pattern):
         await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
     assert await user.item_quantity("cod") == 1
@@ -1016,7 +1024,7 @@ async def test_a_click_that_really_was_too_late_stays_too_late(db, clock, monkey
     await nav.screen.nav.refresh(inter)
     clicked(inter, cast.bite_at + 30)  # clicked long after it got away
     await pull_up.callback(inter)
-    assert nav.screen.cast is None and await user.item_quantity("cod") == 0
+    assert nav.screen.id == "result" and nav.screen.origin.cast is None and await user.item_quantity("cod") == 0
 
 
 async def test_a_double_pressed_arrow_on_the_screen_does_not_cost_the_fish(db, clock, monkeypatch):
@@ -1199,7 +1207,7 @@ async def test_beating_a_boss_on_the_screen_pays_and_losing_it_costs_only_the_bo
     for arrow in list(cast.pattern):
         await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
     assert f"You beat {cast.boss}" in all_text(nav) and "Loot" in all_text(nav)
-    assert (await user.skill("fishing")).stats.bosses_beaten == 1 and nav.screen.cast is None
+    assert nav.screen.id == "result" and nav.screen.origin.cast is None and (await user.skill("fishing")).stats.bosses_beaten == 1
 
 
 async def test_slipping_on_a_boss_loses_it(db, clock, monkeypatch):

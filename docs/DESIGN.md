@@ -277,6 +277,15 @@ server keeps the biggest ever caught of each fish: beating it pays `2 x` the fis
 old holder ("you beat Ahna"); tying doesn't count. **Records** (from the Book and Community pages) lists your best next
 to the server's, with a crown where you hold it, and hides fish you haven't caught.
 
+### One screen after you win or lose
+
+After a win or a loss the hub shows a **result page** of its own (what you caught, how big, what it paid, records and
+quests, loot) instead of a line at the top of the page you were playing on. Home/Back are locked there so it is seen
+and then you pick **Again** (e.g. "Cast again") or **Continue**. A screen just sets `self.result = Result(...)` and
+redraws; the hub (`ui/nav.py`) does the rest, even when the result comes from a timer (a fish that got away). Used by
+fishing (catches, bosses, chests, escapes), farming harvests and foraging (a felled tree, the community tree's rewards).
+Mining already ends a run on its own summary page.
+
 ### Fishing quests (level 3)
 
 Every player gets **5 daily quests** and **1 weekly** (Monday to Sunday), each asking for a **specific fish**: "Catch 6

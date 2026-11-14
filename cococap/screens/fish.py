@@ -9,7 +9,7 @@ from cococap.registry import get_registry
 from cococap.services import fishing, fishing_community
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
-from cococap.ui import Page, PromptModal, Screen
+from cococap.ui import Page, PromptModal, Result, Screen
 from cococap.ui.components import bar, bits, button, row, select, sep, text, xp_bar
 from cococap.user import User
 
@@ -77,8 +77,7 @@ class FishScreen(Screen):
             if cast.timed_out:
                 self.missed = cast  # kept for a moment: a click made in time may still be on its way
             self.cast, cast = None, None  # nobody picked up the line in time
-            extra = "🌊 The fish got away. You were too slow!"
-            self.note = f"{self.note}\n{extra}" if self.note else extra
+            self.result = self._lost("🌊 Too slow!", ["It bit, but nobody pulled up the line in time. The fish got away."])
         if self.flash is not None and now() >= self.flash[1]:
             self.flash = None  # the numbers have faded
             extra = "🌫️ The numbers slip away… hold on to what you remember."
@@ -180,6 +179,41 @@ class FishScreen(Screen):
         ]
         return Page("Fishing", body, accent=int(colour.color, 16))
 
+    # ---- what happened ---------------------------------------------------------------------------
+    def _lost(self, title: str, lines: list[str]) -> Result:
+        return Result(title, lines + ["Nothing was lost but the fish. Try again!"], emoji="🌊", accent=0x5D6D7E,
+                      again=self._cast, again_label="Cast again")
+
+    def _catch_result(self, catch: fishing.Catch) -> Result:
+        reg = get_registry()
+        rarity = Rarities.from_value(catch.fish.rarity)
+        lines = [f"**{rarity.rarity_name}**  ·  📏 **{catch.size:g} cm**  ·  worth **{bits(catch.fish.sell_price)}** bits  ·  **+{catch.xp:,}** xp"]
+        if catch.server_record:
+            lines.append(f"🏆 **NEW SERVER RECORD!** +{bits(catch.record_bits)} bits"
+                         + (f" (you beat {catch.record_holder})" if catch.record_holder else ""))
+        elif catch.personal_best:
+            lines.append("🏅 New personal best!")
+        if catch.extras:
+            lines.append("🪸 Also washed up: " + ", ".join(f"{q:,} {reg.item(i).display}" for i, q in catch.extras.items()))
+        for q in catch.finished:
+            lines.append(f"📜 **Quest complete:** {q.text}  ·  +{bits(q.bits)} bits, +{q.xp} xp")
+        if catch.hallucination:
+            faded = []
+
+            def live() -> tuple[list[str], bool]:
+                if self.flash is not None and now() < self.flash[1]:
+                    digits = "   ".join(self.flash[0])
+                    return ["### 🌀 The waves of the ocean… the heat of the sun… sirens in the distance, singing…\n"
+                            f"# {digits}\n-# Remember them! They fade in a few seconds."], True
+                if self.flash is not None:
+                    self.flash = None
+                    faded.append(True)
+                return (["🌫️ The numbers slip away… hold on to what you remember."], False) if faded else ([], False)
+        else:
+            live = None
+        return Result(f"You caught a {catch.fish.display}!", lines, emoji="🎣", accent=int(rarity.color, 16),
+                      again=self._cast, again_label="Cast again", live=live)
+
     # ---- handlers --------------------------------------------------------------------------------
     async def _cast(self, interaction: discord.Interaction) -> None:
         stats = await fishing.rod_stats(self.user)
@@ -204,6 +238,7 @@ class FishScreen(Screen):
         if cast is None:  # a click that was already on its way... or one that was made in time but reached us late
             if self.missed is not None and self.missed.salvage(clicked):
                 self.cast, self.missed = self.missed, None
+                self.nav.screen = self  # the "too slow" page was wrong: this click was in time, so carry on playing
                 return await self.refresh(interaction, "🎣 Got it, just in time!")
             return await self.refresh(interaction)
         try:
@@ -228,32 +263,23 @@ class FishScreen(Screen):
             if result == "landed" and cast.boss:
                 self.cast = None
                 won = await fishing.defeat_boss(self.user, cast, self.rng)
-                loot = ", ".join(f"{q:,} {get_registry().item(i).display}" for i, q in won.items.items())
-                return await self.refresh(interaction, f"💀 **You beat {won.name}!**  ·  +{bits(won.bits)} bits, +{won.xp:,} xp\n🎁 Loot: {loot}")
+                reg = get_registry()
+                loot = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in won.items.items()) or "nothing"
+                self.result = Result(f"You beat {won.name}!", [f"**+{bits(won.bits)}** bits  ·  **+{won.xp:,}** xp", f"🎁 Loot: {loot}"],
+                                     emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
+                return await self.refresh(interaction)
             if result == "landed":
                 self.cast = None
                 catch = await fishing.land(self.user, cast, now=now(), rng=self.rng)
-                rarity = Rarities.from_value(catch.fish.rarity).rarity_name
-                note = (f"🎣 **You caught a {catch.fish.display}!**  ·  **{rarity}**  ·  +{catch.xp:,} xp"
-                        f"  ·  worth {bits(catch.fish.sell_price)} bits")
-                note += f"  ·  📏 {catch.size:g} cm"
-                if catch.server_record:
-                    note += (f"\n🏆 **NEW SERVER RECORD!** +{bits(catch.record_bits)} bits"
-                             + (f" (you beat {catch.record_holder})" if catch.record_holder else ""))
-                elif catch.personal_best:
-                    note += "\n🏅 New personal best!"
                 if catch.hallucination:
                     self.flash = (catch.hallucination, now() + get_registry().fishing.treasure.flash_seconds)
-                if catch.extras:
-                    note += "\n🪸 Also washed up: " + ", ".join(f"{q:,} {get_registry().item(i).display}" for i, q in catch.extras.items())
-                for q in catch.finished:
-                    note += f"\n📜 **Quest complete:** {q.text}  ·  +{bits(q.bits)} bits, +{q.xp} xp"
-                return await self.refresh(interaction, note)
+                self.result = self._catch_result(catch)
+                return await self.refresh(interaction)
             if result == "escaped":
                 self.cast = None
-                what = cast.boss or cast.fish.display
-                return await self.refresh(interaction, f"🌊 Wrong way! {what} slipped off the hook." if cast.boss
-                                          else f"🌊 Wrong way! The {what} slipped off the hook.")
+                what = cast.boss or f"The {cast.fish.display}"
+                self.result = self._lost("🌊 It got away!", [f"Wrong way! {what} slipped off the hook."])
+                return await self.refresh(interaction)
             await self.refresh(interaction, "🧵 Wrong way! The line goes slack, but you hold on." if result == "slip" else None)  # (an "echo" is ignored)
 
         return press
@@ -276,11 +302,13 @@ class FishScreen(Screen):
             if result.opened:
                 self.cast = None
                 loot = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in result.items.items())
-                return await self.refresh(modal_interaction, f"🧰 **The lock clicks open!**  ·  +{bits(result.bits)} bits, "
-                                          f"+{result.xp} xp\n🎁 Inside: {loot}")
+                self.result = Result("The lock clicks open!", [f"**+{bits(result.bits)}** bits  ·  **+{result.xp}** xp", f"🎁 Inside: {loot}"],
+                                     emoji="🧰", accent=0xF1C40F, again=self._cast, again_label="Cast again")
+                return await self.refresh(modal_interaction)
             if result.sunk:
                 self.cast = None
-                return await self.refresh(modal_interaction, "🌊 Wrong numbers, and no tries left. The chest sinks back into the deep…")
+                self.result = self._lost("🌊 The chest sinks", ["Wrong numbers, and no tries left. The chest sinks back into the deep…"])
+                return await self.refresh(modal_interaction)
             await self.refresh(modal_interaction, f"🔒 Wrong numbers. The lock holds. **{result.attempts_left}** tries left.")
 
         await interaction.response.send_modal(PromptModal("Unlock the chest", f"The {length} numbers", submitted,

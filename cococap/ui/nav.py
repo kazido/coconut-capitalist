@@ -8,7 +8,8 @@ think about navigation, so no screen can be a dead end.
 
 import asyncio
 import logging
-from dataclasses import dataclass
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass, field
 from typing import ClassVar
 
 import discord
@@ -42,6 +43,25 @@ class Page:
     accent: int = BLURPLE
 
 
+Handler = Callable[[discord.Interaction], Awaitable[None]]
+
+
+@dataclass
+class Result:
+    """What happened when you won or lost something: shown on its own screen, so it is not missed at the top of the
+    page you were playing on. A screen sets ``self.result = Result(...)`` and redraws; the hub does the rest."""
+
+    title: str  # "You caught a Cod!"
+    lines: list[str] = field(default_factory=list)  # markdown, one block each
+    emoji: str = "🎉"
+    accent: int = BLURPLE
+    again: Handler | None = None  # "do it again": a handler of the screen it came from
+    again_label: str = "Again"
+    back: Handler | None = None  # what "Continue" does (default: back to the screen it came from)
+    back_label: str = "Continue"
+    live: Callable[[], tuple[list[str], bool]] | None = None  # (extra lines for now, keep redrawing?): fading numbers...
+
+
 async def report_error(interaction: discord.Interaction, error: Exception, where: str) -> None:
     """Tell the player what went wrong: rule violations verbatim, anything else generically."""
     if isinstance(error, (GameRuleError, CustomError)):
@@ -70,6 +90,7 @@ class Screen:
     def __init__(self, nav: "Navigator"):
         self.nav = nav
         self.note: str | None = None  # shown once at the top of the next render
+        self.result: Result | None = None  # set it to show a win/loss screen at the next redraw
 
     @property
     def user(self) -> User:
@@ -201,6 +222,11 @@ class Navigator(ui.LayoutView):
                     if self.screen is not screen:
                         return
                     await self._render()
+                    if self.screen is not screen:  # it turned into a result page: that has its own redraw timer
+                        self._ticker = None
+                        self._restart_ticker()
+                        await asyncio.wait_for(self.message.edit(view=self), TICK_EDIT_TIMEOUT)
+                        return
                     try:
                         # (a slow edit, e.g. waiting out a rate limit, must not hold up the next click)
                         await asyncio.wait_for(self.message.edit(view=self), TICK_EDIT_TIMEOUT)
@@ -233,6 +259,10 @@ class Navigator(ui.LayoutView):
         screen = self.screen
         await self.user.refresh()  # every render shows current data
         page = await screen.build()
+        if screen.result is not None:  # a win or a loss: show what happened on a page of its own first
+            result, screen.result = screen.result, None
+            screen = self.screen = ResultScreen(self, result, screen)
+            page = await screen.build()
         self._swap_items()
         header = f"## {screen.emoji} {page.title}".strip()
         self.add_item(
@@ -294,3 +324,54 @@ class Navigator(ui.LayoutView):
                 await self.message.edit(view=self)
             except discord.HTTPException:
                 pass
+
+
+class ResultScreen(Screen):
+    """A win or a loss, on a page of its own. "Again" runs the handler of the screen it came from; "Continue" returns to
+    that screen. Home/Back are locked so the result is seen, not skipped."""
+
+    id = "result"
+    label = "Result"
+
+    def __init__(self, nav: "Navigator", result: Result, origin: Screen):
+        super().__init__(nav)
+        self.shown = result
+        self.origin = origin
+        self.emoji = result.emoji
+        self._ticking = False
+
+    @property
+    def refresh_every(self) -> float | None:  # type: ignore[override]
+        return 1.5 if self._ticking else None
+
+    @property
+    def locked(self) -> bool:
+        return True
+
+    async def on_abandon(self) -> None:
+        await self.origin.on_abandon()  # (e.g. a mine you left mid-run still gets settled)
+
+    async def build(self) -> Page:
+        r = self.shown
+        lines = list(r.lines)
+        if r.live is not None:
+            extra, self._ticking = r.live()
+            lines += extra
+        body = [text(line) for line in lines]  # (the panel header already shows the title)
+        buttons = []
+        if r.again is not None:
+            buttons.append(button(r.again_label, emoji="🔁", style=discord.ButtonStyle.primary, on_click=self._again))
+        buttons.append(button(r.back_label, emoji="➡️", on_click=self._back))
+        body.append(row(*buttons))
+        return Page(r.title, body, accent=r.accent)
+
+    async def _again(self, interaction: discord.Interaction) -> None:
+        self.nav.screen = self.origin  # back on the screen it came from, then do it again from there
+        await self.shown.again(interaction)
+
+    async def _back(self, interaction: discord.Interaction) -> None:
+        self.nav.screen = self.origin
+        if self.shown.back is not None:
+            await self.shown.back(interaction)
+        else:
+            await self.origin.refresh(interaction)

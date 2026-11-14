@@ -927,8 +927,10 @@ async def test_harvesting_a_ripe_plot_from_the_farm(db):
     nav, inter = await hub("farm")
     assert "ready" in all_text(nav)
     await click(nav, inter, "1 Harvest")
-    assert "Harvested" in all_text(nav) and await user.item_quantity("apple") >= 10
-    assert (await user.skill("farming")).xp > 0
+    assert nav.screen.id == "result" and "Harvested" in all_text(nav) and await user.item_quantity("apple") >= 10
+    assert find_button(nav, "Back to the farm") and (await user.skill("farming")).xp > 0
+    await click(nav, inter, "Back to the farm")
+    assert nav.screen.id == "farm"
     assert "1 Plant" in [b.label for b in buttons(nav)]  # the plot is empty again
 
 
@@ -943,6 +945,7 @@ async def test_harvest_all_and_plant_all(db):
     nav, inter = await hub("farm")
     await click(nav, inter, "Harvest all")
     assert "Harvested" in all_text(nav)
+    await click(nav, inter, "Back to the farm")
     await click(nav, inter, "Plant all")
     assert await user.item_quantity("lemon_seed") == 3  # two empty plots took one seed each
     assert find_button(nav, "Plant all").disabled  # nothing left to plant into
@@ -1122,10 +1125,10 @@ async def test_chopping_a_private_tree_to_the_ground_pays_out(db, monkeypatch):
     assert nav.screen.id == "tree" and "hp" in all_text(nav)
     nav.screen.tree = foraging_service.Tree(1, 1, 1)  # a one-chop tree, so the test is short
     await click(nav, inter, "Chop")
-    assert nav.screen.reward is not None and "TIMBER" in all_text(nav)
+    assert nav.screen.id == "result" and nav.screen.origin.reward is not None and "TIMBER" in all_text(nav)
     assert (await user.skill("foraging")).stats.trees_chopped == 1 and (await User.get(1)).purse > 1000
     await click(nav, inter, "Another tree")
-    assert nav.screen.reward is None and nav.screen.tree.hp == nav.screen.tree.max_hp
+    assert nav.screen.id == "tree" and nav.screen.reward is None and nav.screen.tree.hp == nav.screen.tree.max_hp
     await click(nav, inter, "Leave")
     assert nav.screen.id == "forage"
 
@@ -1224,10 +1227,11 @@ async def test_felling_the_community_tree_pays_everyone_from_their_own_panel(db,
     nav, inter = await hub("grove", user_id=2)
     await foraging_service.chop_community(bob, tree.max_hp - tree.max_hp // 2, OPEN_HOUR)  # bob's chop fells it
     await nav.screen.refresh(inter)
+    assert nav.screen.id == "result" and "TIMBER" in all_text(nav) and (await User.get(2)).purse > 1000  # bob's share arrived
+    await click(nav, inter, "Continue")
     assert "felled" in all_text(nav)
-    assert "TIMBER" in all_text(nav) and (await User.get(2)).purse > 1000  # bob's share arrived in his panel
     nav_a, _ = await hub("forage", user_id=1)  # alice returns later and finds hers too
-    assert "TIMBER" in all_text(nav_a) and (await User.get(1)).purse > 1000
+    assert nav_a.screen.id == "result" and "TIMBER" in all_text(nav_a) and (await User.get(1)).purse > 1000
 
 
 async def test_the_tree_falling_over_unfinished_ends_the_panel_gracefully(db, monkeypatch):
@@ -1237,6 +1241,8 @@ async def test_the_tree_falling_over_unfinished_ends_the_panel_gracefully(db, mo
     await click(nav, inter, "Chop")
     freeze_time(monkeypatch, OPEN_HOUR + 40 * 60)  # 40 minutes in: it fell over
     await nav.screen.refresh(inter)
+    assert nav.screen.id == "result" and "fell over" in all_text(nav)  # the consolation arrives on its own page
+    await click(nav, inter, "Continue")
     text = all_text(nav)
     assert "fell over" in text and "next one grows" in text
     assert [b for b in buttons(nav) if b.label == "Back to foraging"]
@@ -1427,3 +1433,91 @@ async def test_a_redraw_stuck_on_a_rate_limit_gives_the_lock_back_after_a_short_
     nav._lock.release()
     ticker.cancel()
     await asyncio.gather(ticker, return_exceptions=True)
+
+
+# ---- the result page: one screen after a win or a loss ------------------------------------------------------------
+async def test_a_result_page_shows_what_happened_and_locks_the_menu_until_you_choose(db):
+    from cococap.ui import Result
+
+    nav, inter = await hub("home")
+    calls = []
+
+    async def again(interaction):
+        calls.append("again")
+        await nav.screen.refresh(interaction, "round two")
+
+    nav.screen.result = Result("You won!", ["**+5** bits", "a shiny thing"], emoji="🏆", again=again, again_label="Go again")
+    await nav.refresh(inter)
+    assert nav.screen.id == "result" and "You won!" in all_text(nav) and "a shiny thing" in all_text(nav)
+    assert find_button(nav, "Home").disabled and find_button(nav, "Back").disabled  # you must look, then choose
+    await click(nav, inter, "Go again")
+    assert calls == ["again"] and nav.screen.id == "home" and "round two" in all_text(nav)  # back on the page it came from
+    nav.screen.result = Result("Lost!", ["too bad"])
+    await nav.refresh(inter)
+    assert not [b for b in buttons(nav) if b.label == "Again"]  # nothing to repeat: just Continue
+    await click(nav, inter, "Continue")
+    assert nav.screen.id == "home"
+
+
+async def test_the_result_page_is_not_a_screen_you_can_navigate_to_or_a_dead_end(db):
+    from cococap.ui import Result
+
+    assert "result" not in SCREENS
+    nav, inter = await hub("home")
+    nav.screen.result = Result("Done", ["ok"], back=None)
+    await nav.refresh(inter)
+    await click(nav, inter, "Continue")
+    assert nav.screen.id == "home"
+    nav.to_components()
+
+
+async def test_a_result_that_turns_up_on_its_own_still_gets_its_redraw_timer(db):
+    import asyncio
+
+    from cococap.ui import Result
+
+    nav, inter = await hub("home")
+    state = {"n": 0}
+
+    def live():
+        state["n"] += 1
+        return ([f"tick {state['n']}"], state["n"] < 3)
+
+    nav.screen.result = Result("Numbers", ["hold on"], live=live)
+    await nav.refresh(inter)
+    assert nav.screen.refresh_every and "tick 1" in all_text(nav)
+    await asyncio.sleep(0.05)
+    await nav.stop_ticker()
+
+
+async def test_a_result_that_appears_while_nobody_clicked_swaps_the_page_by_itself(db, monkeypatch):
+    import asyncio
+
+    from cococap.ui import Result, nav as nav_module
+
+    nav_, inter = await hub("home")
+    screen = nav_.screen
+    monkeypatch.setattr(nav_module, "TICK_EDIT_TIMEOUT", 1.0)
+    screen.result = Result("Happened on its own", ["a timer ran out"])
+    ticker = asyncio.create_task(nav_._tick(screen, 0.01))
+    await asyncio.sleep(0.1)
+    assert nav_.screen.id == "result" and "a timer ran out" in all_text(nav_)
+    ticker.cancel()
+    await asyncio.gather(ticker, return_exceptions=True)
+    await nav_.stop_ticker()
+
+
+async def test_leaving_a_result_page_idle_still_abandons_the_screen_it_came_from(db):
+    from cococap.ui import Result
+
+    nav, inter = await hub("home")
+    abandoned = []
+
+    async def on_abandon():
+        abandoned.append(True)
+
+    nav.screen.on_abandon = on_abandon
+    nav.screen.result = Result("x", ["y"])
+    await nav.refresh(inter)
+    await nav.screen.on_abandon()
+    assert abandoned == [True]

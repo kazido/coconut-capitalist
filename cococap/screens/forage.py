@@ -8,7 +8,7 @@ from cococap.registry import get_registry
 from cococap.services import foraging
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
-from cococap.ui import Page, Screen
+from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bar, bits, button, row, sep, select, text, xp_bar
 from cococap.user import User
 
@@ -57,8 +57,8 @@ async def collect_community_rewards(screen: Screen) -> None:
     """Pay out anything this player is owed from finished community trees and tell them."""
     rewards = await foraging.claim_rewards(screen.user)
     if rewards:
-        lines = "\n".join(reward_text(r) for r in rewards)
-        screen.note = f"{screen.note}\n{lines}" if screen.note else lines
+        screen.result = Result("The community tree is down!", [reward_text(r) for r in rewards], emoji="🌳", accent=0x2E7D32,
+                               back_label="Continue")
 
 
 class ForageScreen(Screen):
@@ -167,11 +167,6 @@ class TreeScreen(Screen):
         stats = await foraging.axe_stats(self.user)
         power = foraging.swing_power(stats, tree.zone, rules)
         body = [*self.note_block()]
-        if self.reward is not None:
-            body += [text("## 🌳 TIMBER!\n" + reward_text(self.reward)),
-                     row(button("Another tree", emoji=TREE, style=discord.ButtonStyle.primary, on_click=self._again),
-                         button("Stop", on_click=self._stop))]
-            return Page("Tree", body, accent=0x4C8C4A)
         body.append(text(f"**Zone {tree.zone}**\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
                          f"\n{spot_line(self.spot, power, get_registry())}" + (
                              f"\n-# Heavy tree: alone you swing at half your axe's {stats.power}. A Soloist axe fixes that."
@@ -192,6 +187,9 @@ class TreeScreen(Screen):
         applied = tree.chop(swing.damage)
         if tree.felled:
             self.reward = await foraging.fell_private(self.user, tree, self.rng)
+            self.result = Result("TIMBER!", [reward_text(self.reward)], emoji="🌳", accent=0x4C8C4A, again=self._again,
+                                 again_label="Another tree", back=self._stop, back_label="Back to foraging")
+            return await self.refresh(interaction)
         await self.refresh(interaction, swing_note(swing, applied))
 
     async def _rotate(self, interaction: discord.Interaction) -> None:
