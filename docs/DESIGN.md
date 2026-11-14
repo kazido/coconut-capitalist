@@ -203,6 +203,15 @@ Undercut (`configs/foraging.toml` `[[chopping.grains]]`). For each step you pick
 
 The same stances work on private, community and party trees. Chopping pays as it did before the stances: a good chop (15%) hits +50%.
 
+### Re-leaf donations
+
+From foraging level 10, a felled tree's drops (private, community or party) can be donated from its result page (`services/releaf.py`).
+The meter grows by the **rarest** dropped item's rarity x5 (rarity 5 = 25). Three donations a day (UTC day). At 50 the meter empties
+and the **next private tree is a double tree**: double hp, and when felled it pays 1,000,000 bits or, one time in a hundred, a Spirit of the
+Forest. The flag is cleared when that tree is paid, so a full meter is worth exactly one double tree. Donations take the items atomically
+and give them back if the day's limit was already used (two clicks cannot slip a fourth through). **Growth mode** (420 donations) is not built:
+the wiki says only "grow trees instead of chopping", so it needs a design.
+
 ### Foraging pay vs mining
 
 Measured with fixed-seed simulations (a test guards it): mining at base gear pays about 1,100 bits per click; foraging at

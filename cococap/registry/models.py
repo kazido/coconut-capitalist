@@ -433,6 +433,20 @@ class ChoppingRules(_Data):
         return next(g for g in self.grains if g.id == grain_id)
 
 
+class ReleafRules(_Data):
+    """Re-leaf: give a tree's drops to the foundation instead of keeping them, fill a meter, and your next tree is a double tree."""
+
+    min_level: int = Field(ge=1)
+    daily_limit: int = Field(ge=1)
+    meter_per_rarity: int = Field(ge=1)
+    meter_goal: int = Field(ge=1)
+    double_hp: float = Field(ge=1)
+    double_bits: int = Field(ge=0)
+    double_spirit_chance: float = Field(ge=0, le=1)
+    spirit_item: str
+    growth_donations: int = Field(ge=1)
+
+
 class PartyTreeRules(_Data):
     """A tree a party chops together: a little better rewards than the community tree for working as a team."""
 
@@ -459,6 +473,7 @@ class ForagingRules(_Data):
     chopping: ChoppingRules
     community: CommunityRules
     party_tree: PartyTreeRules
+    releaf: ReleafRules
 
     @model_validator(mode="after")
     def _zones_fit(self):

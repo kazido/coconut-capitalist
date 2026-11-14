@@ -211,6 +211,7 @@ class Tree:
     max_hp: int
     hp: int
     collected: bool = False  # its reward has been paid
+    double: bool = False  # a Re-leaf double tree: twice the hp, and a jackpot when it falls
 
     @property
     def felled(self) -> bool:
@@ -269,6 +270,7 @@ class Reward:
     felled: bool = True  # False: the tree fell over unfinished (a consolation prize)
     window: int | None = None  # the community tree it came from
     party: bool = False  # ...or it came from a party tree
+    jackpot: tuple[str, int] | None = None  # a double tree's prize: ("bits", n) or ("spirit", 1)
 
 
 async def _pay(user: User, drops: Counter, bits: int, xp: int, trees: int) -> None:
@@ -304,7 +306,21 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules))
     xp = round(tree.max_hp * rules.xp_per_hp * await xp_multiplier(user.id, reg, "foraging"))
     await _pay(user, drops, bits, xp, trees=1)
-    return Reward(drops, bits, xp)
+    jackpot = None
+    if tree.double:  # a Re-leaf double tree: either a pile of bits or (1 in 100) a Spirit of the Forest
+        r = rules.releaf
+        jackpot = ("spirit", 1) if rng.random() < r.double_spirit_chance else ("bits", r.double_bits)
+        if jackpot[0] == "spirit":
+            await user.add_item(r.spirit_item, 1)
+        else:
+            await user.add_bits(r.double_bits)
+
+        def done(skill: Foraging) -> None:
+            skill.double_ready = False
+            skill.stats.double_trees_chopped += 1
+
+        await user.update_skill("foraging", done)
+    return Reward(drops, bits, xp, jackpot=jackpot)
 
 
 # ---- the community tree: the clock ---------------------------------------------------------------------------

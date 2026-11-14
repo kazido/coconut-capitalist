@@ -60,6 +60,7 @@ class Result:
     back: Handler | None = None  # what "Continue" does (default: back to the screen it came from)
     back_label: str = "Continue"
     live: Callable[[], tuple[list[str], bool]] | None = None  # (extra lines for now, keep redrawing?): fading numbers...
+    actions: list[tuple[str, str, Handler]] = field(default_factory=list)  # extra buttons: (label, emoji, handler of the origin screen)
 
 
 async def report_error(interaction: discord.Interaction, error: Exception, where: str) -> None:
@@ -358,12 +359,19 @@ class ResultScreen(Screen):
             extra, self._ticking = r.live()
             lines += extra
         body = [text(line) for line in lines]  # (the panel header already shows the title)
-        buttons = []
+        buttons = [button(label, emoji=emoji, on_click=self._act(handler)) for label, emoji, handler in r.actions]
         if r.again is not None:
             buttons.append(button(r.again_label, emoji="🔁", style=discord.ButtonStyle.primary, on_click=self._again))
         buttons.append(button(r.back_label, emoji="➡️", on_click=self._back))
         body.append(row(*buttons))
         return Page(r.title, body, accent=r.accent)
+
+    def _act(self, handler: Handler):
+        async def run(interaction: discord.Interaction) -> None:
+            self.nav.screen = self.origin  # an extra choice (like donating): the screen it came from carries it out
+            await handler(interaction)
+
+        return run
 
     async def _again(self, interaction: discord.Interaction) -> None:
         self.nav.screen = self.origin  # back on the screen it came from, then do it again from there

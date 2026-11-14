@@ -25,5 +25,7 @@ class Foraging(Skill):
         grains = {g.id: g.pattern for g in get_registry().foraging.chopping.grains}
         return {k: ([c.upper() for c in grains.get(k, "")[:v]] if isinstance(v, int) else v) for k, v in value.items()}
 
-    releaf_meter: int = 0  # When this reaches 50, the next tree drops 10m or a special item
+    releaf_meter: int = 0  # When this reaches the goal, your next tree is a double tree
     donations_made_today: int = 0  # Up to 3 donations per day
+    donation_day: int = -1  # the UTC day number donations_made_today counts
+    double_ready: bool = False  # your next tree is a double tree

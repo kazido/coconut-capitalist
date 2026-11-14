@@ -5,7 +5,7 @@ from collections import Counter
 import discord
 
 from cococap.registry import get_registry
-from cococap.services import foraging, party_tree, pets
+from cococap.services import foraging, party_tree, pets, releaf
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import Party, xp_bonus
 from cococap.ui import Page, Result, Screen
@@ -28,7 +28,40 @@ def items_text(drops: Counter | dict) -> str:
 def reward_text(reward: foraging.Reward) -> str:
     what = "🌳 **TIMBER!**" if reward.felled else "🍂 The tree fell over before it was finished."
     where = " (party tree)" if reward.party else " (community tree)" if reward.window is not None else ""
-    return f"{what}{where}  **+{bits(reward.bits)}** bits  ·  {items_text(reward.drops)}  ·  +{reward.xp:,} xp"
+    line = f"{what}{where}  **+{bits(reward.bits)}** bits  ·  {items_text(reward.drops)}  ·  +{reward.xp:,} xp"
+    if reward.jackpot:
+        kind, amount = reward.jackpot
+        line += ("\n🌲🌲 **DOUBLE TREE!** A **Spirit of the Forest** drops: your pet will love it." if kind == "spirit"
+                 else f"\n🌲🌲 **DOUBLE TREE!** A jackpot of **+{bits(amount)}** bits!")
+    return line
+
+
+async def releaf_actions(screen: Screen, drops: Counter, **after) -> list:
+    """The "donate the drops to Re-leaf" button for a result page, if you may (level 10, a donation left today, something to give)."""
+    status = await releaf.status(screen.user)
+    if not (status.unlocked and status.left_today > 0 and any(q > 0 for q in drops.values())):
+        return []
+    gain = releaf.meter_gain(drops, get_registry())
+
+    async def donate(interaction: discord.Interaction) -> None:
+        done = await releaf.donate(screen.user, drops)
+        lines = [f"You gave {items_text(drops)} to the Re-leaf foundation.",
+                 f"🌱 Meter **{done.meter}/{done.goal}**  (+{done.gained})  ·  **{done.left_today}** donation(s) left today"]
+        if done.became_ready:
+            lines.append("🌲🌲 **Your next tree will be a double tree!**")
+        screen.result = Result("The trees thank you!", lines, emoji="🌱", accent=0x2E7D32, **after)
+        await screen.refresh(interaction)
+
+    return [(f"Donate the drops (+{gain})", "🌱", donate)]
+
+
+async def releaf_line(user) -> str | None:
+    """Where your Re-leaf meter stands (nothing before foraging level 10)."""
+    s = await releaf.status(user)
+    if not s.unlocked:
+        return None
+    line = f"🌱 **Re-leaf**  {bar(s.meter / s.goal, 8)}  {s.meter}/{s.goal}  ·  {s.left_today} donation(s) left today"
+    return line + ("\n🌲🌲 **Your next tree is a double tree!**" if s.double_ready else "")
 
 
 async def spot_panel(screen, zone: int, power: int) -> str:
@@ -109,7 +142,9 @@ async def collect_community_rewards(screen: Screen) -> None:
     rewards = await foraging.claim_rewards(screen.user) + await party_tree.claim(screen.user)
     if rewards:
         title = "The tree is down!" if any(r.party for r in rewards) and not any(not r.party for r in rewards) else "The community tree is down!"
-        screen.result = Result(title, [reward_text(r) for r in rewards], emoji="🌳", accent=0x2E7D32, back_label="Continue")
+        drops = sum((r.drops for r in rewards), Counter())
+        screen.result = Result(title, [reward_text(r) for r in rewards], emoji="🌳", accent=0x2E7D32, back_label="Continue",
+                               actions=await releaf_actions(screen, drops, back_label="Continue"))
 
 
 class ForageScreen(Screen):
@@ -149,6 +184,8 @@ class ForageScreen(Screen):
             body.append(text("🪓 You need an axe. Buy a **Starter Axe** in the shop and it equips itself."))
         else:
             body.append(text(f"🪓 Axe power **{stats.power}**" + ("  ·  ✨ Soloist" if stats.has("soloist") else "")))
+        if line := await releaf_line(self.user):
+            body.append(text(line))
         body.append(sep())
 
         # the community tree
@@ -228,7 +265,7 @@ class ForageScreen(Screen):
 
     async def _chop(self, interaction: discord.Interaction) -> None:
         await foraging.axe_stats(self.user)
-        tree = foraging.roll_tree(self.zone, random.Random(), get_registry().foraging)
+        tree = await releaf.new_tree(self.user, self.zone, random.Random())
         await self.go(interaction, "tree", tree=tree)
 
     async def _join(self, interaction: discord.Interaction) -> None:
@@ -260,7 +297,7 @@ class TreeScreen(Screen):
         stats = await foraging.axe_stats(self.user)
         power = foraging.swing_power(stats, tree.zone, rules)
         body = [*self.note_block()]
-        body.append(text(f"**Zone {tree.zone}**\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
+        body.append(text(f"{'🌲🌲 **Double tree!**  ' if tree.double else ''}**Zone {tree.zone}**\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
                          f"\n{await spot_panel(self, tree.zone, power)}" + (
                              f"\n-# Heavy tree: alone you swing at half your axe's {stats.power}. A Soloist axe fixes that."
                              if power < stats.power else "")))
@@ -285,7 +322,9 @@ class TreeScreen(Screen):
         if tree.felled:
             self.reward = await foraging.fell_private(self.user, tree, self.rng)
             self.result = Result("TIMBER!", [reward_text(self.reward)], emoji="🌳", accent=0x4C8C4A, again=self._again,
-                                 again_label="Another tree", back=self._stop, back_label="Back to foraging")
+                                 again_label="Another tree", back=self._stop, back_label="Back to foraging",
+                                 actions=await releaf_actions(self, self.reward.drops, again=self._again, again_label="Another tree",
+                                                              back=self._stop, back_label="Back to foraging"))
             return await self.refresh(interaction)
         await self.refresh(interaction, note)
 
@@ -294,7 +333,7 @@ class TreeScreen(Screen):
         await self.refresh(interaction)
 
     async def _again(self, interaction: discord.Interaction) -> None:
-        self.tree = foraging.roll_tree(self.tree.zone, self.rng, get_registry().foraging)
+        self.tree = await releaf.new_tree(self.user, self.tree.zone, self.rng)
         self.reward = None
         self.spot.rotate(get_registry().foraging, self.rng)
         await self.refresh(interaction)
