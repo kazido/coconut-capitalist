@@ -269,7 +269,7 @@ Tokens buy ranks. A player gets **1 a day** from the daily and finds more **at r
 anything there is a 35% chance (`token_drop_chance`, economy.toml) of one, rolled once an hour and seeded by (player, hour), with the
 hour written first in the same statement, so a second press, a second process or a restart cannot roll again. It shows as a note on
 the next screen. That is about 2 tokens a day for a regular player. Rank prices (`configs/ranks.toml`) were rescaled to match:
-3, 6, 12, 20, 32, 48, 70 (Expert, about 3 months) and on to 350 for rank 15 (about 1.5 years). Not built yet: a pet bonus for tokens.
+3, 6, 12, 20, 32, 48, 70 (Expert, about 3 months), then 110, 150, 200, 260, 330, 410 and 500 for rank 15 (2,150 tokens in all, about 3 years at 2 a day). Not built yet: a pet bonus for tokens.
 
 ## The wiki
 

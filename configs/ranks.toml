@@ -1,5 +1,5 @@
 # Ranks, bought with tokens (1 a day from the daily, plus about 1 a day found at random while playing: see token_drop_chance in
-# economy.toml). Prices climb so Expert (rank 8) takes about 3 months and the top rank about 1.5 years of regular play.
+# economy.toml). Prices climb so Expert (rank 8) takes about 3 months and the top rank about 3 years of regular play (2,150 tokens in all).
 # Ranks, bought with tokens. wage is paid by the Work button. color is hex without '#'.
 # xp_bonus is a global bonus to ALL skill xp (+1% per rank, so +8% at Expert and +15% at the top). It multiplies with the
 # party and pet bonuses; it is small on purpose, because it never goes away.
@@ -90,7 +90,7 @@ display_name = "Distinguished"
 description = "A name people say with a pause before it."
 emoji = ":military_medal:"
 color = "c9a227"
-token_price = 95
+token_price = 110
 wage = 1400000
 xp_bonus = 0.09
 
@@ -99,7 +99,7 @@ display_name = "Noble"
 description = "Born to it? No. Bought into it? Absolutely."
 emoji = ":crown:"
 color = "d4af37"
-token_price = 125
+token_price = 150
 wage = 1900000
 xp_bonus = 0.10
 
@@ -108,7 +108,7 @@ display_name = "Magnate"
 description = "Your signature moves markets. Mostly coconut ones."
 emoji = ":classical_building:"
 color = "3f8f5f"
-token_price = 160
+token_price = 200
 wage = 2500000
 xp_bonus = 0.11
 
@@ -117,7 +117,7 @@ display_name = "Tycoon"
 description = "You own the farm, the forest, and the pond."
 emoji = ":moneybag:"
 color = "2e7d32"
-token_price = 200
+token_price = 260
 wage = 3200000
 xp_bonus = 0.12
 
@@ -126,7 +126,7 @@ display_name = "Sovereign"
 description = "Rules the realm. The realm is a Discord server."
 emoji = ":globe_with_meridians:"
 color = "1e88e5"
-token_price = 250
+token_price = 330
 wage = 4000000
 xp_bonus = 0.13
 
@@ -135,7 +135,7 @@ display_name = "Legend"
 description = "Songs are sung. Mostly in the group chat."
 emoji = ":star2:"
 color = "e91e63"
-token_price = 300
+token_price = 410
 wage = 5000000
 xp_bonus = 0.14
 
@@ -144,6 +144,6 @@ display_name = "Coconut Capitalist"
 description = "The top of the tree. Nothing left but the view."
 emoji = ":coconut:"
 color = "8d5524"
-token_price = 350
+token_price = 500
 wage = 6500000
 xp_bonus = 0.15
