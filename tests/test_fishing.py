@@ -255,6 +255,18 @@ async def test_the_mining_page_asks_for_a_pickaxe_and_locks_the_door(db):
 
 
 # ---- the screen -------------------------------------------------------------------------------------------------
+class NoLuck(Random):
+    """Ordinary dice, except no 1-in-N chance ever hits: no hallucinations, chests or surprise drops to flake a test."""
+
+    def randint(self, a, b):
+        return b
+
+
+@pytest.fixture(autouse=True)
+def steady_dice(monkeypatch):
+    monkeypatch.setattr(fish_screen, "new_rng", lambda: NoLuck(1))  # (tests that want luck set their own)
+
+
 @pytest.fixture
 def clock(monkeypatch):
     now = [T0]
@@ -1022,7 +1034,7 @@ def test_every_fish_has_a_size_range_and_catches_vary_within_it():
         assert fish.size is not None and fish.size.min < fish.size.max
         sizes = [f.roll_size(fish, Random(i)) for i in range(300)]
         assert min(sizes) >= fish.size.min and max(sizes) <= fish.size.max
-        assert len(set(sizes)) > 100 and sum(sizes) / 300 < (fish.size.min + fish.size.max) / 2  # mostly smaller, a few giants
+        assert len(set(sizes)) > 100 and sum(sizes) / 300 < fish.size.min + 0.42 * (fish.size.max - fish.size.min)  # mostly smaller, a few giants
 
 
 def test_a_cast_fixes_its_size_up_front():
