@@ -117,7 +117,9 @@ class FishScreen(Screen):
                 body.append(text("🎣 You need a rod. Buy a **Starter Rod** in the shop and it equips itself."))
             else:
                 slips = fishing.slips_allowed(stats.power, reg.fishing, stats.stats.get("slips", 0))
-                body.append(text(f"{ROD} Rod power **{stats.power}**" + (f"  ·  forgives **{slips}** wrong arrow(s)" if slips else "")))
+                wait = fishing.typical_wait(stats.power, reg.fishing, stats.stats.get("bite_speed", 0.0))
+                body.append(text(f"{ROD} Rod power **{stats.power}**  ·  bites in about **{wait:.0f}s**"
+                                 + (f"  ·  forgives **{slips}** wrong arrow(s)" if slips else "")))
             level = User.xp_to_level(skill.xp)
             open_waters = fishing.unlocked_waters(level, reg.fishing)
             if self.water not in {w.id for w in open_waters}:

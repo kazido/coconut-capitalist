@@ -1749,3 +1749,21 @@ async def test_the_page_shows_what_a_caught_fish_has_taught_you_and_what_it_adds
     await user.update_skill("fishing", lambda s: s.notes[fish.id].append("◄>►"))
     nav, _ = await hub("fishnotes")
     assert "opposite of the arrow before it" in all_text(nav)
+
+
+# ---- a better rod is a noticeably faster rod ----------------------------------------------------------------------------------------------------
+def test_each_rod_upgrade_cuts_the_wait_by_something_you_can_feel():
+    starter, reinforced, master = (f.typical_wait(REG.item(r).tool.power, RULES) for r in ("starter_rod", "reinforced_rod", "masterwork_rod"))
+    assert reinforced < 0.7 * starter and master < 0.65 * reinforced  # each step is a third or more off the wait
+    assert master < 0.4 * starter
+    assert f.typical_wait(100, RULES) >= RULES.bite.wait_min * RULES.bite.min_wait_factor  # (it still never hits zero)
+    assert f.typical_wait(3, RULES, bite_speed=0.2) < f.typical_wait(3, RULES)  # a Lure on top
+
+
+async def test_the_fishing_page_tells_you_how_long_your_rod_takes_to_bite(db):
+    user = await User.get(1)
+    inst = await user.give_instance("reinforced_rod")
+    await equip(user, "fishing", inst.id)
+    nav, _ = await hub("fish")
+    expected = f.typical_wait(REG.item("reinforced_rod").tool.power, RULES)
+    assert f"bites in about **{expected:.0f}s**" in all_text(nav) or f"bites in about {expected:.0f}s" in all_text(nav)

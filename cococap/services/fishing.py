@@ -90,6 +90,18 @@ def wait_seconds(power: int, rules: FishingRules, rng: random.Random, bite_speed
     return base * factor * (1 - min(0.6, max(0.0, bite_speed)))
 
 
+class _Middle(random.Random):
+    """A random source that always lands in the middle of a range (so `typical_wait` is the average, not a roll)."""
+
+    def uniform(self, a, b):
+        return (a + b) / 2
+
+
+def typical_wait(power: int, rules: FishingRules, bite_speed: float = 0.0) -> float:
+    """The middle of how long a bite takes with this rod: what the fishing page tells you to expect."""
+    return wait_seconds(power, rules, _Middle(), bite_speed)
+
+
 def slips_allowed(power: int, rules: FishingRules, bonus: float = 0) -> int:
     """Wrong arrows a rod forgives per fish (a Steady Line enchant adds more: ``bonus``)."""
     return max(0, power) // rules.reel.power_per_slip + int(bonus)
