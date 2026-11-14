@@ -1,3 +1,4 @@
+import datetime
 from collections import Counter
 from random import Random
 
@@ -472,14 +473,17 @@ async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
     assert nav.screen.id == "fish"
 
 
-async def test_a_bite_you_ignore_for_six_seconds_gets_away(db, clock, monkeypatch):
+async def test_a_bite_you_ignore_gets_away_once_the_window_and_the_quiet_grace_are_over(db, clock, monkeypatch):
     monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + RULES.bite.window - 1
     await nav.screen.nav.refresh(inter)
     assert "A bite!" in all_text(nav)
-    clock[0] = nav.screen.cast.bite_at + RULES.bite.window + 1
+    clock[0] = nav.screen.cast.bite_at + RULES.bite.window + RULES.bite.grace - 0.5  # past the six seconds, in the grace
+    await nav.screen.nav.refresh(inter)
+    assert "A bite!" in all_text(nav) and nav.screen.cast is not None  # still hers: the connection may be slow
+    clock[0] = nav.screen.cast.bite_at + RULES.bite.window + RULES.bite.grace + 1
     await nav.screen.nav.refresh(inter)
     assert nav.screen.cast is None and "too slow" in all_text(nav)
 
@@ -878,3 +882,135 @@ async def test_the_second_book_asks_for_more_common_fish_than_rare_ones(db):
     done = await f.turn_in(user, common.fish.id, REG)
     assert done.quantity == 5  # the page takes five, not one
     assert await user.item_quantity(common.fish.id) == 10 - 1 - 5  # one went in at level 1, five now
+
+
+# ---- not losing the fish to lag ---------------------------------------------------------------------------------------
+def laggy_cast(**kw):
+    cast = cast_of(hooked=False, **kw)
+    cast.grace, cast.echo_window = RULES.bite.grace, RULES.reel.echo_window
+    return cast
+
+
+def test_a_laggy_click_in_the_quiet_grace_still_lands_the_fish():
+    cast = laggy_cast()
+    late = T0 + 10 + RULES.bite.window + RULES.bite.grace - 0.1
+    cast.hook(late)  # past the six seconds, inside the grace
+    assert cast.hooked and cast.status(late) == "reeling"
+
+
+def test_a_click_that_was_made_in_time_saves_a_fish_the_bot_already_wrote_off():
+    cast = laggy_cast()
+    assert cast.status(T0 + 10 + RULES.bite.window + RULES.bite.grace + 1) == "escaped" and cast.timed_out
+    assert cast.salvage(T0 + 10 + RULES.bite.window - 1)  # the click itself was made in the window
+    assert cast.hooked and not cast.escaped and cast.status(T0 + 99) == "reeling"
+
+
+def test_a_click_that_really_was_late_does_not_save_it():
+    cast = laggy_cast()
+    cast.status(T0 + 100)
+    assert not cast.salvage(T0 + 10 + RULES.bite.window + RULES.bite.grace + 0.5)
+    assert not cast.salvage(T0 + 5)  # nor one from before it bit
+    assert cast.escaped
+
+
+def test_a_fish_lost_to_a_wrong_arrow_cannot_be_salvaged():
+    cast = cast_of(hooked=True)
+    cast.press(f.RIGHT, T0 + 11)  # wrong (the pattern starts with LEFT) and no slips: it escapes
+    assert cast.escaped and not cast.timed_out and not cast.salvage(T0 + 11)
+
+
+def test_pressing_the_arrow_you_just_pressed_again_is_ignored_when_it_is_a_repeat():
+    cast = cast_of(pattern=[f.LEFT, f.RIGHT, f.LEFT])
+    cast.echo_window = 2.0
+    assert cast.press(f.LEFT, T0 + 11) == "ok"
+    assert cast.press(f.LEFT, T0 + 11.5) == "echo"  # the panel was slow to show the first press
+    assert cast.progress == 1 and not cast.escaped and cast.slips_left == 0
+    assert cast.press(f.RIGHT, T0 + 12) == "ok"  # and the game carries on
+
+
+def test_a_real_mistake_is_still_a_mistake():
+    cast = cast_of(pattern=[f.LEFT, f.RIGHT, f.LEFT])
+    cast.echo_window = 2.0
+    cast.press(f.LEFT, T0 + 11)
+    assert cast.press(f.LEFT, T0 + 14) == "escaped"  # the same arrow, but much later: it was a real slip
+    other = cast_of(pattern=[f.LEFT, f.RIGHT, f.LEFT])
+    other.echo_window = 2.0
+    assert other.press(f.RIGHT, T0 + 11) == "escaped"  # nothing was pressed before: not an echo
+    third = cast_of(pattern=[f.LEFT, f.LEFT, f.RIGHT])
+    third.echo_window = 2.0
+    third.press(f.LEFT, T0 + 11)
+    third.press(f.LEFT, T0 + 11.2)  # a genuine second left, as the pattern asks
+    assert third.press(f.LEFT, T0 + 11.4) == "echo" and third.progress == 2
+
+
+def clicked(inter, at):
+    inter.created_at = datetime.datetime.fromtimestamp(at, datetime.timezone.utc)
+
+
+async def test_the_screen_uses_when_you_clicked_not_when_the_bot_noticed(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    # the bot is slow: it only gets round to the click long after the window shut, but Discord stamped it in time
+    clock[0] = cast.bite_at + RULES.bite.window + RULES.bite.grace + 30
+    clicked(inter, cast.bite_at + 2)
+    await nav.screen.nav.refresh(inter)  # the redraw notices the fish got away
+    assert nav.screen.cast is None and nav.screen.missed is cast
+    await nav.screen.nav.refresh(inter)
+    await nav.screen.nav.show(inter, "fish", push=False)
+    # (a fresh screen has no memory of it, as it should: salvage only covers the screen the click was made on)
+    assert nav.screen.missed is None
+
+
+async def test_a_click_made_in_time_but_delivered_late_saves_the_fish_on_the_same_screen(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    pull_up = None
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    pull_up = find_button(nav, "Pull up the line")  # the button she clicked
+    clock[0] = cast.bite_at + RULES.bite.window + RULES.bite.grace + 5  # ...but the click only reaches us now
+    await nav.screen.nav.refresh(inter)
+    assert nav.screen.cast is None and "too slow" in all_text(nav)
+    clicked(inter, cast.bite_at + 3)  # Discord's stamp: she clicked three seconds after the bite
+    await pull_up.callback(inter)
+    assert nav.screen.cast is cast and cast.hooked and "just in time" in all_text(nav) and "is on the line" in all_text(nav)
+    for arrow in list(cast.pattern):
+        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    assert await user.item_quantity("cod") == 1
+
+
+async def test_a_click_that_really_was_too_late_stays_too_late(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    pull_up = find_button(nav, "Pull up the line")
+    clock[0] = cast.bite_at + 60
+    await nav.screen.nav.refresh(inter)
+    clicked(inter, cast.bite_at + 30)  # clicked long after it got away
+    await pull_up.callback(inter)
+    assert nav.screen.cast is None and await user.item_quantity("cod") == 0
+
+
+async def test_a_double_pressed_arrow_on_the_screen_does_not_cost_the_fish(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("cod"))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    clock[0] = nav.screen.cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    cast = nav.screen.cast
+    first = cast.pattern[0]
+    await click(nav, inter, "Left" if first == f.LEFT else "Right")
+    stale = find_button(nav, "Left" if first == f.LEFT else "Right")  # she presses the same button again (the panel lagged)
+    if cast.pattern[1] != first:
+        await stale.callback(inter)
+        assert nav.screen.cast is cast and not cast.escaped and cast.progress == 1

@@ -1342,3 +1342,88 @@ async def test_the_house_earns_luckbucks_not_bits_on_the_boards(db):
     assert "house" not in all_text(nav).lower()
     await choose(nav, inter, select_named(nav, "Pick a leaderboard"), "luckbucks")
     assert "The house has made: 1,234 luckbucks" in all_text(nav)
+
+
+# ---- lag: a failed answer must not strand the player ---------------------------------------------------------------
+def _http_error(cls, status, code, message):
+    return cls(SimpleNamespace(status=status, reason=message), {"code": code, "message": message})
+
+
+async def test_a_click_acknowledged_too_late_still_updates_the_panel(db):
+    nav, inter = await hub("home")
+    expired = _http_error(discord.NotFound, 404, 10062, "Unknown interaction")
+    inter.response.edit_message = AsyncMock(side_effect=expired)
+    nav.message.edit.reset_mock()
+    await nav.show(inter, "shop")  # Discord refuses our answer ("this interaction failed")...
+    assert nav.screen.id == "shop"
+    nav.message.edit.assert_awaited_once_with(view=nav)  # ...so the message is edited directly instead
+
+
+async def test_an_already_answered_click_also_falls_back(db):
+    nav, inter = await hub("home")
+    inter.response.edit_message = AsyncMock(side_effect=discord.InteractionResponded(inter))
+    nav.message.edit.reset_mock()
+    await nav.refresh(inter)
+    nav.message.edit.assert_awaited_once_with(view=nav)
+
+
+async def test_a_real_error_is_not_swallowed_by_the_fallback(db):
+    nav, inter = await hub("home")
+    bad = _http_error(discord.HTTPException, 400, 50035, "Invalid Form Body")
+    inter.response.edit_message = AsyncMock(side_effect=bad)
+    nav.message.edit.reset_mock()
+    with pytest.raises(discord.HTTPException):
+        await nav.refresh(inter)
+    nav.message.edit.assert_not_awaited()  # a broken layout would just fail again: tell the developer, not the player
+
+
+async def test_if_the_fallback_fails_too_the_original_error_surfaces(db):
+    nav, inter = await hub("home")
+    inter.response.edit_message = AsyncMock(side_effect=_http_error(discord.NotFound, 404, 10062, "Unknown interaction"))
+    nav.message.edit = AsyncMock(side_effect=_http_error(discord.NotFound, 404, 10008, "Unknown Message"))
+    with pytest.raises(discord.NotFound):
+        await nav.refresh(inter)
+
+
+async def test_a_redraw_never_queues_up_behind_a_click_so_the_next_click_is_not_delayed(db, monkeypatch):
+    import asyncio
+
+    from cococap.ui import nav as nav_module
+
+    nav, inter = await hub("home")
+    screen = nav.screen
+
+    async def slow_edit(**kwargs):
+        await asyncio.sleep(30)
+
+    nav.message.edit = slow_edit
+    monkeypatch.setattr(nav_module, "TICK_EDIT_TIMEOUT", 0.2)
+    await nav._lock.acquire()  # a click is being handled
+    ticker = asyncio.create_task(nav._tick(screen, 0.01))
+    await asyncio.sleep(0.1)  # the redraw is due now, but must not line up for the lock
+    nav._lock.release()
+    # the player's NEXT click gets the lock at once: nothing was queued ahead of it
+    await asyncio.wait_for(nav._lock.acquire(), 0.005)
+    nav._lock.release()
+    ticker.cancel()
+    await asyncio.gather(ticker, return_exceptions=True)
+
+
+async def test_a_redraw_stuck_on_a_rate_limit_gives_the_lock_back_after_a_short_wait(db, monkeypatch):
+    import asyncio
+
+    from cococap.ui import nav as nav_module
+
+    nav, inter = await hub("home")
+
+    async def stuck_edit(**kwargs):
+        await asyncio.sleep(30)
+
+    nav.message.edit = stuck_edit
+    monkeypatch.setattr(nav_module, "TICK_EDIT_TIMEOUT", 0.05)
+    ticker = asyncio.create_task(nav._tick(nav.screen, 0.01))
+    await asyncio.sleep(0.03)  # the redraw is now stuck inside its edit, holding the lock...
+    await asyncio.wait_for(nav._lock.acquire(), 1.0)  # ...but a click only has to wait out the short timeout
+    nav._lock.release()
+    ticker.cancel()
+    await asyncio.gather(ticker, return_exceptions=True)

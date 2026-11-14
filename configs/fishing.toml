@@ -12,10 +12,12 @@ wait_max = 20                    # ...somewhere between these
 speedup_per_power = 0.08         # each point of rod power above 1 cuts the wait by this share (compounding as 1/(1+x))
 min_wait_factor = 0.35           # ...but never below this share of the base wait
 window = 6                       # seconds you have to pull up the line once it bites, or the fish gets away
+grace = 3                        # ...plus this many quiet seconds, so a laggy connection or a slow bot doesn't cost you the fish
 
 [reel]
 base_length = 2                  # arrows to press = this + the fish's rarity (a rarity-1 fish takes 3)
 power_per_slip = 8               # every this much rod power forgives one wrong arrow (a power-8 rod forgives one)
+echo_window = 2                  # a second press of the arrow you JUST pressed (e.g. when the panel was slow to update) is ignored, not a slip
 
 # Quests (fishing level `min_level`). Each slot is one quest: "catch N of a fish of this rarity". Which fish, and how many
 # within the slot's range, is picked from the clock and the player, so everyone's list differs and nobody rolls

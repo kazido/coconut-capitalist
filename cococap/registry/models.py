@@ -387,6 +387,7 @@ class BiteRules(_Data):
     speedup_per_power: float = Field(ge=0)
     min_wait_factor: float = Field(gt=0, le=1)
     window: float = Field(gt=0)
+    grace: float = Field(ge=0)  # extra seconds nobody is told about, to forgive a laggy connection
 
     @model_validator(mode="after")
     def _ordered(self):
@@ -398,6 +399,7 @@ class BiteRules(_Data):
 class ReelRules(_Data):
     base_length: int = Field(ge=1)
     power_per_slip: int = Field(ge=1)
+    echo_window: float = Field(ge=0)  # pressing the arrow you JUST pressed again within this many seconds is ignored
 
 
 class QuestSlot(_Data):

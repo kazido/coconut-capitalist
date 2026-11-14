@@ -74,6 +74,14 @@ class Cast:
     settled: bool = False
     chest: bool = False  # a treasure chest instead of a fish (the fish is only a stand-in until it is hooked)
     attempts_left: int = 0  # tries at the chest's lock
+    grace: float = 0.0  # quiet extra seconds to pull up the line (laggy connections)
+    echo_window: float = 0.0  # a repeat of the arrow just pressed within this long is ignored
+    timed_out: bool = False  # it got away because the time ran out (as opposed to a wrong arrow)
+    last_press: tuple[str, float] | None = None  # (the arrow that last counted, when)
+
+    @property
+    def deadline(self) -> float:
+        return self.expires_at + self.grace
 
     def status(self, now: float) -> str:
         """waiting | bite | reeling | chest | landed | escaped.  ("bite" = it's on, pull up the line!)"""
@@ -87,8 +95,8 @@ class Cast:
             return "reeling"
         if now < self.bite_at:
             return "waiting"
-        if now > self.expires_at:
-            self.escaped = True  # nobody pulled up the line in time
+        if now > self.deadline:
+            self.escaped = self.timed_out = True  # nobody pulled up the line in time
             return "escaped"
         return "bite"
 
@@ -106,8 +114,18 @@ class Cast:
         if status == "bite":
             self.hooked = True
 
+    def salvage(self, clicked_at: float) -> bool:
+        """The fish was written off as too slow, but the click that pulls it up was made in time and only reached us
+        late (Discord or the bot lagged). Take the fish back. Returns whether it was saved."""
+        if self.timed_out and self.bite_at <= clicked_at <= self.deadline:
+            self.escaped = self.timed_out = False
+            self.hooked = True
+            return True
+        return False
+
     def press(self, arrow: str, now: float) -> str:
-        """Press an arrow. Returns ``ok | slip | landed | escaped``."""
+        """Press an arrow. Returns ``ok | echo | slip | landed | escaped``.  ("echo" = the same arrow pressed twice
+        in a moment, usually because the panel was slow to show the first press: ignored.)"""
         status = self.status(now)
         if status in ("waiting", "bite"):
             raise FishingError("Nothing is biting yet." if status == "waiting" else "Pull up the line first!")
@@ -119,7 +137,10 @@ class Cast:
             raise FishingError("You already landed that one.")
         if arrow == self.next_arrow:
             self.progress += 1
+            self.last_press = (arrow, now)
             return "landed" if self.progress >= len(self.pattern) else "ok"
+        if self.last_press and arrow == self.last_press[0] and 0 <= now - self.last_press[1] <= self.echo_window:
+            return "echo"
         if self.slips_left > 0:
             self.slips_left -= 1
             return "slip"
@@ -143,6 +164,8 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
         expires_at=bite_at + rules.bite.window,
         pattern=pattern,
         slips_left=slips_allowed(stats.power, rules),
+        grace=rules.bite.grace,
+        echo_window=rules.reel.echo_window,
     )
     if armed and rng.randint(1, rules.treasure.chest_odds) == 1:
         cast.chest, cast.attempts_left = True, rules.treasure.attempts

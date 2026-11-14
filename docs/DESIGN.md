@@ -224,6 +224,22 @@ Rusted Broadsword -> Dreamnail -> Shining Silver (combat isn't playable yet; the
 Numbers: `configs/fishing.toml` and the fish/rod entries in `configs/items.toml` (`TODO(balance)`). A test pins the
 average catch at ~4-6.5k bits and a catch at ~15-20 s, which is about what foraging earns per second at starter gear.
 
+### When the connection lags: never lose a fish to something outside your control
+
+Discord sometimes drops or delays a click (the "this interaction failed" message). Fishing forgives that in five ways,
+without changing the rules a player sees:
+
+1. **Grace period.** The bite lasts 6 seconds on screen, but the fish is only written off 3 quiet seconds later.
+2. **Click time, not arrival time.** Discord stamps every click. If the bot or the connection was slow, the click counts
+   from when it was *made* (never later than our own clock, so a wrong clock can't help anyone cheat).
+3. **Salvage.** If a fish was already written off but the click that pulls it up was made in time and only reached us
+   late, the fish is taken back and the game carries on.
+4. **Echo presses.** Pressing the arrow you *just* pressed again within 2 seconds (because the panel was slow to show the
+   first press) is ignored, not counted as a wrong arrow.
+5. **The hub falls back.** If Discord refuses our answer to a click because it came too late, the panel is updated by
+   editing the message directly, and the self-refresh now never queues up behind a click and gives up after 2 seconds on
+   a slow edit. This helps every screen, not just fishing.
+
 ### Fishing quests (level 3)
 
 Every player gets **5 daily quests** and **1 weekly** (Monday to Sunday), each asking for a **specific fish**: "Catch 6

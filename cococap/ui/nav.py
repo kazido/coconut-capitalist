@@ -23,6 +23,7 @@ log = logging.getLogger(__name__)
 
 BLURPLE = 0x5865F2
 TICKER_TASK = "nav-ticker"  # the name of every panel's self-refresh task
+TICK_EDIT_TIMEOUT = 2.0  # seconds a self-refresh may take to reach Discord before it is skipped
 
 
 async def stop_all_tickers() -> None:
@@ -140,16 +141,31 @@ class Navigator(ui.LayoutView):
         self.message = await interaction.original_response()
         self._restart_ticker()
 
+    async def _respond(self, interaction: discord.Interaction) -> None:
+        """Answer a click by showing the new panel. If Discord won't take the answer any more (the click was
+        acknowledged too late, so "this interaction failed"), the game state has already changed, so show the new panel
+        by editing the message directly instead of leaving the player staring at a stale one."""
+        try:
+            await interaction.response.edit_message(view=self)
+        except (discord.NotFound, discord.InteractionResponded) as error:
+            log.warning("interaction response failed (%s); editing the message directly", error)
+            if self.message is None:
+                raise
+            try:
+                await self.message.edit(view=self)
+            except discord.HTTPException:
+                raise error from None
+
     async def show(self, interaction: discord.Interaction, screen_id: str, *, push: bool = True, **state) -> None:
         async with self._lock:
             await self._enter(screen_id, push=push, **state)
-            await interaction.response.edit_message(view=self)
+            await self._respond(interaction)
         self._restart_ticker()
 
     async def refresh(self, interaction: discord.Interaction) -> None:
         async with self._lock:
             await self._render()
-            await interaction.response.edit_message(view=self)
+            await self._respond(interaction)
         self._restart_ticker()  # a screen can switch its self-refresh on or off as its state changes
 
     async def update(self, interaction: discord.Interaction) -> None:
@@ -179,11 +195,17 @@ class Navigator(ui.LayoutView):
         try:
             while self.screen is screen and not self.is_finished():
                 await asyncio.sleep(seconds)
+                if self._lock.locked():
+                    continue  # the player just clicked: never make their click wait for a redraw
                 async with self._lock:
                     if self.screen is not screen:
                         return
                     await self._render()
-                    await self.message.edit(view=self)
+                    try:
+                        # (a slow edit, e.g. waiting out a rate limit, must not hold up the next click)
+                        await asyncio.wait_for(self.message.edit(view=self), TICK_EDIT_TIMEOUT)
+                    except asyncio.TimeoutError:
+                        log.warning("self-refresh of %s was too slow; skipping this one", screen.id)
                     if not screen.refresh_every:
                         return  # the screen no longer needs redrawing (e.g. the line is out of the water)
         except (discord.HTTPException, asyncio.CancelledError):

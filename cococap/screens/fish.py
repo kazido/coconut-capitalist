@@ -1,3 +1,4 @@
+import datetime
 import random
 import time
 
@@ -27,6 +28,15 @@ def now() -> float:
     return time.time()
 
 
+def clicked_at(interaction: discord.Interaction) -> float:
+    """When the player actually clicked (Discord stamps every interaction), unless that is later than our own clock.
+    If the bot or the connection lagged, the click still counts as made on time."""
+    stamp = getattr(interaction, "created_at", None)
+    if isinstance(stamp, datetime.datetime):
+        return min(now(), stamp.timestamp())
+    return now()
+
+
 def pattern_line(cast: fishing.Cast) -> str:
     """Arrows already pressed turn into ticks; the next one is bold."""
     left = cast.pattern[cast.progress:]
@@ -52,6 +62,7 @@ class FishScreen(Screen):
         super().__init__(nav)
         self.cast: fishing.Cast | None = None
         self.flash: tuple[str, float] | None = None  # (the hallucination's numbers, when they fade)
+        self.missed: fishing.Cast | None = None  # a fish written off as too slow, which a late-arriving click can still save
         self.rng = new_rng()
 
     @property
@@ -62,6 +73,8 @@ class FishScreen(Screen):
         reg = get_registry()
         cast = self.cast
         if cast is not None and cast.status(now()) == "escaped":
+            if cast.timed_out:
+                self.missed = cast  # kept for a moment: a click made in time may still be on its way
             self.cast, cast = None, None  # nobody picked up the line in time
             extra = "🌊 The fish got away. You were too slow!"
             self.note = f"{self.note}\n{extra}" if self.note else extra
@@ -145,6 +158,7 @@ class FishScreen(Screen):
     async def _cast(self, interaction: discord.Interaction) -> None:
         stats = await fishing.rod_stats(self.user)
         armed = await fishing.chests_possible(self.user, now())
+        self.missed = None
         self.cast = fishing.cast_line(stats, self.rng, now(), armed=armed)
         await self.refresh(interaction)
 
@@ -153,11 +167,14 @@ class FishScreen(Screen):
         await self.refresh(interaction, "🎣 You reel the line back in.")
 
     async def _hook(self, interaction: discord.Interaction) -> None:
-        cast = self.cast
-        if cast is None:  # a click that was already on its way
+        cast, clicked = self.cast, clicked_at(interaction)
+        if cast is None:  # a click that was already on its way... or one that was made in time but reached us late
+            if self.missed is not None and self.missed.salvage(clicked):
+                self.cast, self.missed = self.missed, None
+                return await self.refresh(interaction, "🎣 Got it, just in time!")
             return await self.refresh(interaction)
         try:
-            cast.hook(now())
+            cast.hook(clicked)
         except fishing.FishingError as error:
             if cast.escaped:
                 self.cast = None
@@ -170,7 +187,7 @@ class FishScreen(Screen):
             if cast is None:  # a click that was already on its way
                 return await self.refresh(interaction)
             try:
-                result = cast.press(arrow, now())
+                result = cast.press(arrow, clicked_at(interaction))
             except fishing.FishingError as error:
                 if cast.escaped or cast.progress >= len(cast.pattern):
                     self.cast = None
@@ -191,7 +208,7 @@ class FishScreen(Screen):
             if result == "escaped":
                 self.cast = None
                 return await self.refresh(interaction, f"🌊 Wrong way! The {cast.fish.display} slipped off the hook.")
-            await self.refresh(interaction, "🧵 Wrong way! The line goes slack, but you hold on." if result == "slip" else None)
+            await self.refresh(interaction, "🧵 Wrong way! The line goes slack, but you hold on." if result == "slip" else None)  # (an "echo" is ignored)
 
         return press
 
