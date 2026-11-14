@@ -72,16 +72,6 @@ async def test_pay_conserves_bits_and_checks_balance(db):
     assert await alice.get_bits() + await bob.get_bits() == 500
 
 
-async def test_deposit_and_withdraw_are_bounded(db):
-    user = await make_user(purse=100, bank=50)
-    await user.deposit_bits(100)
-    assert (user.purse, user.bank) == (0, 150)
-    with pytest.raises(InsufficientFunds):
-        await user.deposit_bits(1)
-    with pytest.raises(InsufficientFunds):
-        await user.withdraw_bits(151)
-
-
 async def test_cooldown_can_only_be_claimed_once_across_handles(db):
     await make_user()
     handles = [await User.get(1) for _ in range(5)]  # e.g. five open /check-in menus
@@ -201,9 +191,9 @@ async def test_add_tokens_rejects_negative_amounts(db):
 
 async def test_settings_roundtrip_and_validation(db):
     user = await make_user()
-    assert user.settings.auto_deposit is False
-    await user.set_setting("auto_deposit", True)
-    assert (await User.get(1)).settings.auto_deposit is True
+    assert user.settings.model_dump() == {}  # nothing to set yet
+    await user.set_setting("anything", True)  # unknown keys are not stored
+    assert (await User.get(1)).settings.model_dump() == {}
 
 
 async def test_deleting_a_user_cascades(db):

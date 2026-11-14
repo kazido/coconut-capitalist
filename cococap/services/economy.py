@@ -42,11 +42,10 @@ async def _claim(user: User, cooldown: Cooldowns) -> None:
 @dataclass(frozen=True)
 class WorkReward:
     wage: int
-    deposited: bool
 
 
 async def claim_work(user: User, registry: Registry | None = None) -> WorkReward:
-    """Collect this rank's wage. Goes straight to the bank if the player enabled auto-deposit."""
+    """Collect this rank's wage."""
     await _claim(user, Cooldowns.WORK)
     from cococap.services import pets
 
@@ -54,17 +53,13 @@ async def claim_work(user: User, registry: Registry | None = None) -> WorkReward
     wage = round(reg.rank(user.rank).wage * (1 + (await pets.bonuses(user, reg)).get("work_bonus", 0.0)))
     await user.add_bits(wage)
     await user.inc_stat("claimed_work")
-    deposited = False
-    if user.settings.auto_deposit and wage > 0:
-        await user.deposit_bits(wage)
-        deposited = True
-    return WorkReward(wage, deposited)
+    return WorkReward(wage)
 
 
-def bank_interest(bank: int) -> int:
-    """Daily interest: a rate that shrinks as the bank grows, so huge banks can't snowball."""
-    rate = 0.003 + 0.027 * math.exp(-bank / 20_000_000)
-    return round(bank * rate)
+def daily_interest(purse: int) -> int:
+    """Interest on the bits you carry, paid with the daily: a rate that shrinks as the purse grows, so a huge one can't snowball."""
+    rate = 0.003 + 0.027 * math.exp(-purse / 20_000_000)
+    return round(purse * rate)
 
 
 @dataclass(frozen=True)
@@ -76,8 +71,8 @@ class DailyReward:
 async def claim_daily(user: User) -> DailyReward:
     await _claim(user, Cooldowns.DAILY)
     await user.refresh()
-    interest = bank_interest(user.bank)
-    await user.add_bank(interest)
+    interest = daily_interest(user.purse)
+    await user.add_bits(interest)
     await user.add_tokens(DAILY_TOKENS)
     await user.inc_stat("claimed_daily")
     return DailyReward(interest, DAILY_TOKENS)

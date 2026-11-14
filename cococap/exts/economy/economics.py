@@ -26,44 +26,11 @@ PYRAMID_SCHEME_TITLES = [
 ]
 
 
-async def process_deposit(interaction: Interaction, amount: int | str = None):
-    user: User = interaction.extras.get("user")
-    amount = await validate_bits(user=user, amount=amount)
-
-    # Perform deposit
-    await user.deposit_bits(amount=amount)
-    await user.inc_stat("deposits")
-    embed = CustomEmbed(
-        colour=discord.Color.dark_blue(), interaction=interaction, activity="depositing"
-    ).add_field(
-        name="Deposit made!",
-        value=f"You have deposited **{amount:,}** bits",
-    )
-    return await interaction.response.send_message(embed=embed)
-
-
-async def process_withdrawal(interaction: Interaction, amount: int | str = None):
-    user: User = interaction.extras.get("user")
-    amount = await validate_bits(user=user, amount=amount, field="bank")
-
-    # Perform withdrawal
-    await user.withdraw_bits(amount=amount)
-    await user.inc_stat("withdraws")
-
-    embed = CustomEmbed(
-        colour=discord.Color.dark_blue(), interaction=interaction, activity="withdrawing"
-    ).add_field(
-        name="Withdrawal made!",
-        value=f"You withdrew **{amount:,}** bits",
-    )
-    return await interaction.response.send_message(embed=embed)
-
-
 async def process_beg(interaction: Interaction):
     user: User = interaction.extras.get("user")
-    total_balance = user.purse + user.bank
+    total_balance = user.purse
 
-    # If user has 10,000 bits or more in their purse or bank
+    # If user has 10,000 bits or more
     if total_balance >= MAX_BALANCE:
         embed = ErrorEmbed(
             title=random.choice(TOO_RICH_TITLES),
@@ -133,18 +100,6 @@ class EconomyCog(BaseCog, name="Economy"):
     async def check_in(self, interaction: Interaction):
         """Claim your work, daily, and weekly!"""
         await open_screen(interaction, "checkin")
-
-    @app_commands.command(name="deposit", description="Deposit bits into your bank.")
-    @app_commands.describe(amount="amount of bits to deposit")
-    async def deposit(self, interaction: Interaction, amount: str | None):
-        """Deposit some money into the bank for safekeeping."""
-        await process_deposit(interaction=interaction, amount=amount)
-
-    @app_commands.command(name="withdraw", description="Withdraw bits from your bank.")
-    @app_commands.describe(amount="amount of bits you want to withdraw")
-    async def withdraw(self, interaction: Interaction, amount: str):
-        """Withdraw money from your bank."""
-        await process_withdrawal(interaction=interaction, amount=amount)
 
     @app_commands.command(name="pay", description="Pay another player.")
     @app_commands.describe(recipient="discord user you want to pay", amount="amount")

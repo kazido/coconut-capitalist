@@ -32,7 +32,7 @@ class ProfileScreen(Screen):
         body = [
             *self.note_block(),
             header,
-            text(f"💸 Purse **{bits(user.purse)}**\n🏦 Bank **{bits(user.bank)}**\n🪙 Tokens **{bits(user.tokens)}**\n🍀 Luckbucks **{bits(user.luckbucks)}**"),
+            text(f"💸 Purse **{bits(user.purse)}**\n🪙 Tokens **{bits(user.tokens)}**\n🍀 Luckbucks **{bits(user.luckbucks)}**"),
             sep(),
             text("\n".join(skills)),
         ]

@@ -48,8 +48,8 @@ async def test_concurrent_joins_never_double_book_a_user(db):
 
 
 async def test_leaderboards(db):
-    for uid, purse, bank in [(1, 100, 0), (2, 50, 500), (3, 10, 10), (99, 10_000, 0)]:
-        await set_columns(await User.get(uid), purse=purse, bank=bank, name=f"p{uid}")
+    for uid, purse in [(1, 100), (2, 550), (3, 20), (99, 10_000)]:
+        await set_columns(await User.get(uid), purse=purse, name=f"p{uid}")
     await (await User.get(1)).inc_stat("drops_claimed", 4)
     await (await User.get(3)).inc_stat("drops_claimed", 9)
     await (await User.get(2)).add_xp("mining", 300)

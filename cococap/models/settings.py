@@ -2,5 +2,4 @@ from pydantic import BaseModel
 
 
 class Settings(BaseModel):
-    auto_deposit: bool = False
-    # More to come
+    """Per-player options. None yet (the old auto-deposit went away with the bank)."""

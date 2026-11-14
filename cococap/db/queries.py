@@ -23,7 +23,7 @@ class Entry:
 def _value_expression(category: str):
     """SQL expression (and its filter) that a leaderboard category sorts by."""
     if category == "bits":
-        return UserRow.purse + UserRow.bank
+        return UserRow.purse
     if category == "luckbucks":
         return UserRow.luckbucks
     raise KeyError(category)
@@ -84,7 +84,7 @@ async def position_of(category: str, discord_id: int, *, exclude: int | None = N
 
 
 async def bits_in_circulation(*, exclude: int | None = None) -> int:
-    query = select(func.coalesce(func.sum(UserRow.purse + UserRow.bank), 0))
+    query = select(func.coalesce(func.sum(UserRow.purse), 0))
     if exclude is not None:
         query = query.where(UserRow.discord_id != exclude)
     async with get_database().session() as session:

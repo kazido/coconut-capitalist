@@ -16,7 +16,7 @@ PARTY_NAMES_SHOWN = 4
 
 def balance_line(user) -> str:
     return (
-        f"💸 **{bits(user.purse)}**  ·  🏦 **{bits(user.bank)}**  ·  "
+        f"💸 **{bits(user.purse)}**  ·  "
         f"🪙 **{bits(user.tokens)}**  ·  🍀 **{bits(user.luckbucks)}**"
     )
 

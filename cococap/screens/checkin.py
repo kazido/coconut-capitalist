@@ -26,25 +26,22 @@ class CheckInScreen(Screen):
             *self.note_block(),
             section("### 💼 Work", f"Your wage: **{bits(wage)}** bits  ·  every {Cooldowns.WORK.value}h",
                     accessory=self._claim_button(Cooldowns.WORK, self._work)),
-            section("### 🌅 Daily", f"Bank interest + **{economy.DAILY_TOKENS}** token  ·  every {Cooldowns.DAILY.value}h",
+            section("### 🌅 Daily", f"Interest on your bits + **{economy.DAILY_TOKENS}** token  ·  every {Cooldowns.DAILY.value}h",
                     accessory=self._claim_button(Cooldowns.DAILY, self._daily)),
             section("### 🗓️ Weekly", f"**{get_registry().economy.weekly_luckbucks}** luckbucks  ·  every {Cooldowns.WEEKLY.value}h",
                     accessory=self._claim_button(Cooldowns.WEEKLY, self._weekly)),
-            sep(),
-            text(f"🏦 Bank: **{bits(self.user.bank)}** bits"),
         ]
         return Page("Check-in", body, accent=discord.Colour.dark_blue().value)
 
     async def _work(self, interaction: discord.Interaction) -> None:
         reward = await economy.claim_work(self.user)
-        where = "into your bank" if reward.deposited else "to your purse"
-        await self.refresh(interaction, f"💸 Work: +{bits(reward.wage)} bits {where}.")
+        await self.refresh(interaction, f"💸 Work: +{bits(reward.wage)} bits.")
 
     async def _daily(self, interaction: discord.Interaction) -> None:
         reward = await economy.claim_daily(self.user)
         await self.refresh(
             interaction,
-            f"🏦 Daily: +{bits(reward.interest)} bits interest, +{reward.tokens} token.\n> 💡 {randfacts.get_fact()}",
+            f"🌅 Daily: +{bits(reward.interest)} bits interest, +{reward.tokens} token.\n> 💡 {randfacts.get_fact()}",
         )
 
     async def _weekly(self, interaction: discord.Interaction) -> None:

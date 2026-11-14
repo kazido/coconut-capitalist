@@ -46,8 +46,9 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 
 ## Open work (in rough priority)
 
-1. (this session) pet skills fixed per species + emoji; rank token prices vs 1 token/day + random token drops; no popup when
-   buying tools; scrap the bank (interest on daily instead). See the bottom "Session log" for what finished.
+1. DONE this session: tool levels checked (balance table), pet skills fixed + emoji, rank prices + random tokens (35%/active hour),
+   one-click tool purchase, bank scrapped (daily interest on the purse; migrations 0005 and 0006). Not yet in the live bot: restart needed.
+   Possible follow-ups: a pet bonus for tokens, a "you found a token" channel ping, rank xp buff shown on Home.
 2. Migrate old players from MongoDB (needs a working login) and restore ranks; then make `data/cococap.db` live, split a dev DB.
 3. Hosting (VPS + backups + GitHub Action deploy): notes in `docs/HOSTING.md`, nothing built.
 4. Growth mode for Re-leaf (420 donations): the wiki gives no mechanics, needs the user's design.

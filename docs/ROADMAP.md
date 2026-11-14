@@ -15,7 +15,7 @@ tests, and never touching unrelated code. The game itself is described in the wi
 
 | Area | State |
 |---|---|
-| Economy (profile, check-in, bank, pay, beg, rank, top, stats, settings) | working |
+| Economy (profile, check-in with daily interest, pay, beg, rank, top, stats; no bank) | working |
 | Casino (`/highlow`, `/blackjack`) | working, bets settle exactly once |
 | Parties (`/party ...` + right-click invite/kick/promote) | working, context menus unverified live |
 | Items: registry, stackables, unique tool instances, enchants | done |

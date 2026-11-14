@@ -190,11 +190,9 @@ async def test_rank_screen_at_max_rank(db):
     assert "max rank" in all_text(nav) and not any(b.label == "Rank up" for b in buttons(nav))
 
 
-async def test_settings_toggle_persists_instantly(db):
-    nav, inter = await hub("settings")
-    await click(nav, inter, "OFF")
-    assert (await User.get(1)).settings.auto_deposit is True
-    assert find_button(nav, "ON") and "now ON" in all_text(nav)
+async def test_settings_page_says_there_is_nothing_to_change_yet(db):
+    nav, _ = await hub("settings")
+    assert "nothing to change" in all_text(nav)
 
 
 async def test_profile_and_home_show_balances_and_levels(db):

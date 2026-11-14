@@ -61,7 +61,6 @@ class Snapshot:
     name: str
     rank: int
     purse: int
-    bank: int
     tokens: int
     luckbucks: int
     work_cooldown: float
@@ -77,7 +76,6 @@ class Snapshot:
             name=row.name,
             rank=row.rank,
             purse=row.purse,
-            bank=row.bank,
             tokens=row.tokens,
             luckbucks=row.luckbucks,
             work_cooldown=row.work_cooldown,
@@ -138,10 +136,6 @@ class User:
     @property
     def purse(self) -> int:
         return self._s.purse
-
-    @property
-    def bank(self) -> int:
-        return self._s.bank
 
     @property
     def tokens(self) -> int:
@@ -232,21 +226,6 @@ class User:
         """The purse as it is in the database right now."""
         await self.refresh()
         return self.purse
-
-    async def deposit_bits(self, amount: int) -> None:
-        if not await self._update(
-            UserRow.purse >= amount, purse=UserRow.purse - amount, bank=UserRow.bank + amount
-        ):
-            raise InsufficientFunds("Not enough bits in your purse.")
-
-    async def withdraw_bits(self, amount: int) -> None:
-        if not await self._update(
-            UserRow.bank >= amount, purse=UserRow.purse + amount, bank=UserRow.bank - amount
-        ):
-            raise InsufficientFunds("Not enough bits in your bank.")
-
-    async def add_bank(self, amount: int) -> None:
-        await self._update(bank=UserRow.bank + amount)
 
     async def pay(self, recipient: "User", amount: int) -> None:
         """Move `amount` bits from this user's purse to `recipient`'s, in one transaction."""

@@ -4,9 +4,7 @@ from cococap.ui import Page, Screen
 from cococap.ui.components import button, section, text
 
 # key -> (name, what it does)
-SETTINGS = {
-    "auto_deposit": ("Auto deposit", "Your work wage goes straight into the bank."),
-}
+SETTINGS: dict[str, tuple[str, str]] = {}  # nothing to set yet
 
 
 class SettingsScreen(Screen):
@@ -16,7 +14,7 @@ class SettingsScreen(Screen):
     description = "Change how the bot treats you"
 
     async def build(self) -> Page:
-        body = [*self.note_block(), text("Changes save instantly.")]
+        body = [*self.note_block(), text("Changes save instantly." if SETTINGS else "There is nothing to change yet.")]
         for key, (name, blurb) in SETTINGS.items():
             on = getattr(self.user.settings, key)
             body.append(

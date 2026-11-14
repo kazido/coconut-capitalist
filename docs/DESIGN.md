@@ -256,6 +256,13 @@ is taken out in one transaction. If they owned the party it goes to the most rec
 left the party is disbanded. No per-command history is stored, only that one number. Migration 0004 sets everyone to "active now",
 so nobody is kicked the day it ships. Players are not told when it happens (a possible follow-up: a note on their next party screen).
 
+## No bank
+
+The bank is gone (it had no way to withdraw and no real use). Migration 0006 moved everything in it back to the purse (the `bank`
+column stays, always 0, and nothing reads it). `/deposit`, `/withdraw` and the auto-deposit setting are removed. The **daily** now
+pays interest on the bits you carry: 3% for a small purse, shrinking toward 0.3% as it grows past tens of millions
+(`economy.daily_interest`), plus the token. Leaderboards and `/beg` count the purse only. The Settings page is empty for now.
+
 ## Tokens and rank prices
 
 Tokens buy ranks. A player gets **1 a day** from the daily and finds more **at random while playing**: each hour in which you press
