@@ -28,7 +28,7 @@ sell_price = 0
 
 [dreamnail.tool]
 kind = "sword"
-power = 20
+power = 22
 requirement = 10
 ability = "enter_the_mind"
 ability_name = "Enter the Mind"
@@ -58,7 +58,7 @@ sell_price = 0
 
 [largebranch.tool]
 kind = "sword"
-power = 1
+power = 3
 requirement = 0
 
 [largebranch.tool.upgrade]
@@ -82,7 +82,7 @@ sell_price = 0
 
 [rustedbroadsword.tool]
 kind = "sword"
-power = 3
+power = 5
 requirement = 0
 ability = "sanguine_priming"
 ability_name = "Sanguine Priming"
@@ -112,7 +112,7 @@ sell_price = 0
 
 [shiningsilver.tool]
 kind = "sword"
-power = 100
+power = 102
 requirement = 50
 ability = "glistening_haven"
 ability_name = "Glistening Haven"
@@ -1591,7 +1591,7 @@ sell_price = 0
 
 [rookiepickaxe.tool]
 kind = "pickaxe"
-power = 1
+power = 3
 requirement = 0
 
 [rookiepickaxe.tool.upgrade]
@@ -1613,7 +1613,7 @@ sell_price = 0
 
 [reinforced_pickaxe.tool]
 kind = "pickaxe"
-power = 3  # +25% ore per point above 1 (mining.toml): x1.5
+power = 5  # +25% ore per point above 3 (mining.toml): x1.5
 requirement = 0
 
 [reinforced_pickaxe.tool.upgrade]
@@ -1636,7 +1636,7 @@ sell_price = 0
 
 [masterwork_pickaxe.tool]
 kind = "pickaxe"
-power = 7  # x2.5 ore (the same jump for every tool at this step: about x2.6 income)
+power = 9  # x2.5 ore (the same jump for every tool at this step: about x2.6 income)
 requirement = 0
 
 [masterwork_pickaxe.tool.upgrade]
@@ -1889,7 +1889,7 @@ sell_price = 0
 
 [ironbound_pickaxe.tool]
 kind = "pickaxe"
-power = 13
+power = 15
 requirement = 0
 path = "Warden"
 stats = { danger_reduction = 0.02 }
@@ -1917,7 +1917,7 @@ sell_price = 0
 
 [crystal_pickaxe.tool]
 kind = "pickaxe"
-power = 21
+power = 23
 requirement = 0
 path = "Warden"
 stats = { danger_reduction = 0.04 }
@@ -1945,7 +1945,7 @@ sell_price = 0
 
 [deepdelver_pickaxe.tool]
 kind = "pickaxe"
-power = 33
+power = 35
 requirement = 0
 path = "Warden"
 stats = { danger_reduction = 0.06 }
@@ -1973,7 +1973,7 @@ sell_price = 0
 
 [mythril_pickaxe.tool]
 kind = "pickaxe"
-power = 49
+power = 51
 requirement = 0
 path = "Warden"
 stats = { danger_reduction = 0.08 }
@@ -2001,7 +2001,7 @@ sell_price = 0
 
 [worldsplitter_pickaxe.tool]
 kind = "pickaxe"
-power = 69
+power = 71
 requirement = 0
 path = "Warden"
 stats = { danger_reduction = 0.1 }
@@ -2229,7 +2229,7 @@ sell_price = 0
 
 [prospector_pickaxe.tool]
 kind = "pickaxe"
-power = 13
+power = 15
 requirement = 0
 path = "Prospector"
 stats = { ore_yield = 0.11, danger_reduction = -0.005 }  # TODO(balance): simulated (leave at 7% risk) to earn within ~5% of the Warden road
@@ -2256,7 +2256,7 @@ sell_price = 0
 
 [geode_pickaxe.tool]
 kind = "pickaxe"
-power = 21
+power = 23
 requirement = 0
 path = "Prospector"
 stats = { ore_yield = 0.22, danger_reduction = -0.01 }  # TODO(balance): simulated (leave at 7% risk) to earn within ~5% of the Warden road
@@ -2283,7 +2283,7 @@ sell_price = 0
 
 [seekers_pickaxe.tool]
 kind = "pickaxe"
-power = 33
+power = 35
 requirement = 0
 path = "Prospector"
 stats = { ore_yield = 0.33, danger_reduction = -0.015 }  # TODO(balance): simulated (leave at 7% risk) to earn within ~5% of the Warden road
@@ -2310,7 +2310,7 @@ sell_price = 0
 
 [veinhunter_pickaxe.tool]
 kind = "pickaxe"
-power = 49
+power = 51
 requirement = 0
 path = "Prospector"
 stats = { ore_yield = 0.44, danger_reduction = -0.02 }  # TODO(balance): simulated (leave at 7% risk) to earn within ~5% of the Warden road
@@ -2337,7 +2337,7 @@ sell_price = 0
 
 [motherlode_pickaxe.tool]
 kind = "pickaxe"
-power = 69
+power = 71
 requirement = 0
 path = "Prospector"
 stats = { ore_yield = 0.55, danger_reduction = -0.025 }  # TODO(balance): simulated (leave at 7% risk) to earn within ~5% of the Warden road

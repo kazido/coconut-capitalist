@@ -470,6 +470,7 @@ class DescentRules(_Data):
     risk_exponent: float = Field(ge=1)
     collapse_loss: float = Field(ge=0, le=1)
     power_yield_bonus: float = Field(ge=0)
+    power_base: int = Field(ge=1)  # the pickaxe power that mines plain ore (x1): every point above it adds power_yield_bonus
     depth_bonus_per_row: float = Field(ge=0)  # every row deeper pays this much more (so going on is tempting)
     # Special cells. Plain cells show their ore; these show what they are.
     vent_chance: float = Field(ge=0, le=1)  # no loot, but cools the tunnel

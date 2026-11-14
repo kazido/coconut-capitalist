@@ -133,7 +133,7 @@ def tool_table() -> None:
     """Income of every tool level relative to the starter (target: x1, 1.5, 2.6, 4, 6, 9, 13, 18)."""
     yield_bonus = REG.mining.descent.power_yield_bonus if hasattr(REG.mining.descent, "power_yield_bonus") else 0.25
     rows = {"axe": lambda p: p / REG.item("starter_axe").tool.power,
-            "pickaxe": lambda p: (1 + yield_bonus * max(0, p - 1)),
+            "pickaxe": lambda p: (1 + yield_bonus * max(0, p - REG.mining.descent.power_base)),
             "rod": lambda p: rod_per_minute(p) / rod_per_minute(REG.item("starter_rod").tool.power)}
     print("\nTool levels (income relative to the starter tool):")
     for kind, gain in rows.items():

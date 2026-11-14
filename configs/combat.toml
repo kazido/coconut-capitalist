@@ -9,7 +9,7 @@ max_rounds = 150     # total turns (everyone's) before a fight counts as lost
 [player]
 base_hp = 120
 hp_per_level = 12
-base_attack = 14
+base_attack = 8                   # (a sword starts at power 3 like every tool: 8 + 3 x 3 = the 17 the old power-1 sword gave)
 attack_per_power = 3
 attack_per_level = 1
 base_defense = 10

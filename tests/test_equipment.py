@@ -21,7 +21,7 @@ def inst(template_id, enchants=None, rolled=None, id=1):
 # ---- effective_stats is pure ---------------------------------------------------------------
 def test_plain_tool_uses_template_stats():
     stats = effective_stats(inst("dreamnail"))
-    assert (stats.power, stats.requirement, stats.ability) == (20, 10, "enter_the_mind")
+    assert (stats.power, stats.requirement, stats.ability) == (get_registry().item("dreamnail").tool.power, 10, "enter_the_mind")
     assert stats.flags == frozenset()
 
 
@@ -61,14 +61,15 @@ amount = 0.5
 
 
 def test_adds_apply_before_multipliers_and_scale_with_level(stat_registry):
-    # base 20, sharp III (+15) = 35, mighty (x1.5) = 52.5 -> 52 or 53; order of dict must not matter
+    # base + sharp III (+15), then mighty (x1.5); order of dict must not matter
+    base = get_registry().item("dreamnail").tool.power
     a = effective_stats(inst("dreamnail", {"sharp": 3, "mighty": 1}), stat_registry)
     b = effective_stats(inst("dreamnail", {"mighty": 1, "sharp": 3}), stat_registry)
-    assert a.power == b.power == round(35 * 1.5)
+    assert a.power == b.power == round((base + 15) * 1.5)
 
 
 def test_levels_above_the_maximum_are_clamped(stat_registry):
-    assert effective_stats(inst("dreamnail", {"sharp": 99}), stat_registry).power == 20 + 5 * 3
+    assert effective_stats(inst("dreamnail", {"sharp": 99}), stat_registry).power == get_registry().item("dreamnail").tool.power + 5 * 3
 
 
 def test_non_tools_have_no_stats():
@@ -153,7 +154,7 @@ async def test_equip_checks_kind_and_level(db):
         await equip(user, "combat", dream.id)
     await user.add_xp("combat", User.level_to_xp(10) + 1)
     await equip(user, "combat", dream.id)
-    assert (await equipped_stats(user, "combat")).power == 20
+    assert (await equipped_stats(user, "combat")).power == get_registry().item("dreamnail").tool.power
     assert await equipped_stats(user, "mining") is None
 
 

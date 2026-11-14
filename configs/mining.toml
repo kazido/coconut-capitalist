@@ -67,7 +67,8 @@ safe_pressure = 20                 # no collapse risk below this
 max_risk = 0.40                    # collapse chance per dig at 100 pressure
 risk_exponent = 2.0                # how sharply risk climbs between safe and 100
 collapse_loss = 0.5                # share of the unbanked haul lost when the mine collapses
-power_yield_bonus = 0.25           # +25% quantity per point of pickaxe power above 1 (power 7: x2.5, power 69: x18)
+power_base = 3                     # a Rookie Pickaxe (power 3) digs plain ore. Every tool starts at power 3
+power_yield_bonus = 0.25           # +25% quantity per point of pickaxe power above that (power 9: x2.5, power 71: x18)
 depth_bonus_per_row = 0.05         # every row deeper pays +5% more (row 29 pays x2.45)
 
 # Special cells

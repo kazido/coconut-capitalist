@@ -114,7 +114,7 @@ async def test_owned_nodes_change_the_tool_stats_the_game_reads(db):
     await mastery.buy(user, "mining", "steady_hands")
     await mastery.buy(user, "mining", "spare_braces")
     stats = await equipped_stats(user, "mining")
-    assert stats.stats["danger_reduction"] == pytest.approx(0.05) and stats.stats["braces"] == 1 and stats.power == 1
+    assert stats.stats["danger_reduction"] == pytest.approx(0.05) and stats.stats["braces"] == 1 and stats.power == REG.item("rookiepickaxe").tool.power
 
 
 async def test_mastery_changes_how_a_mine_run_starts(db):

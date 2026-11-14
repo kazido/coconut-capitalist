@@ -726,3 +726,13 @@ A pass over the busiest pages to cut text without cutting information. The rules
   - **Double tree** (`releaf.double_items`): also drops a haul (25 hardwood, 60 feather, 8 fine bark, 4 maple leaf), about a third of an axe step, like the vault.
   - **Fishing boss:** a sure haul of salmon (6-10) and trout (8-12), pufferfish and tuna sometimes, on top of the coral and rare loot.
   - **Farming:** the drop table rolls once per 2 growth cycles (was 4), up to 60 rolls.
+
+## What a tool's power means, and every tool starts at 3 (decided)
+- **Every tool starts at power 3** (pickaxe, axe, rod, can, sword). The pickaxe used to start at 1 and the sword at 1: both were moved up by 2 all the way
+  up their chains, and the formulas moved with them so nothing changed in play: ore per lode is `1 + 0.25 x (power - power_base)` with `power_base = 3`
+  in `mining.toml` (Rookie x1.0, Reinforced x1.5, Masterwork x2.5 as before), and the sword's `base_attack` went 14 -> 8 (a starter sword still hits for 17).
+- **What power does**, said on the upgrade page (`services/tool_effects.py` reads the real rules, so it cannot disagree with the game):
+  pickaxe = ore per lode (x); axe = hit points a chop takes off; can = plots watered an hour; sword = attack added in a fight (+3 a point);
+  rod = shorter wait for a bite, forgiven wrong arrows, rarer fish and extra fish per catch.
+- Each upgrade page opens with that one-line meaning, then for the next tool shows **before -> after for every effect** ("Ore per lode: x1.00 -> x1.50"),
+  its extra stats and road, and any new ability. Rolled and enchant power carry over to the next tool, and the page counts them. The Tools page shows each tool's numbers.

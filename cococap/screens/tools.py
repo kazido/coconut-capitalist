@@ -3,6 +3,7 @@ import discord
 from cococap.errors import CustomError
 from cococap.registry import get_registry
 from cococap.services.equipment import TOOL_FOR_SKILL, effective_stats, equip, skill_for_tool
+from cococap.services import tool_effects
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, section, sep, text
@@ -46,7 +47,9 @@ class ToolsScreen(Screen):
             if tool.path:
                 extra.insert(0, f"{tool.path} path")
             line = (f"### {item.emoji or '🔨'} {instance_label(inst)}" + ("  ✅" if inst.id in equipped else "") + "\n"
-                    f"{KIND_LABEL[tool.kind]}  ·  power **{stats.power}**" + "".join(f"  ·  {e}" for e in extra))
+                    f"{KIND_LABEL[tool.kind]}  ·  power **{stats.power}**" + "".join(f"  ·  {e}" for e in extra)
+                    + f"\n-# {tool_effects.summary(tool.kind, stats.power, reg)}"
+                    + (f"  ·  ✨ {tool.ability_name}" if tool.ability_name else ""))
             if inst.id in equipped:
                 accessory = button("Equipped", disabled=True)
             else:

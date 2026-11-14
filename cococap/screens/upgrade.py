@@ -1,7 +1,7 @@
 import discord
 
 from cococap.registry import get_registry
-from cococap.services import upgrades
+from cococap.services import tool_effects, upgrades
 from cococap.services.equipment import effective_stats
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
@@ -64,12 +64,18 @@ class UpgradeScreen(Screen):
         body.append(text(f"### {first.current.emoji or '🔨'} {instance_label(first.instance)}  ·  {KIND_SKILL[first.current.tool.kind]}\n"
                          f"Power **{effective_stats(first.instance).power}**"
                          + (f"  ·  {describe_stats(first.current.tool.stats)}" if first.current.tool.stats else "")
-                         + (f"  ·  {first.current.tool.path} path" if first.current.tool.path else "")))
+                         + (f"  ·  {first.current.tool.path} path" if first.current.tool.path else "")
+                         + f"\n-# {tool_effects.HOW[first.current.tool.kind]}"
+                         + (f"\n-# ✨ {first.current.tool.ability_name}: {first.current.tool.ability_description}" if first.current.tool.ability_name else "")))
         for offer in mine:
             cost, target = offer.cost, offer.target.tool
             road = f"  ·  **{target.path} path**" if target.path and offer.current.tool.fork else ""
+            now = effective_stats(offer.instance).power
+            after = target.power + (now - offer.current.tool.power)  # (enchant and rolled bonuses carry over)
             lines = (f"**→ {offer.target.name}**{road}\n"
-                     f"Power **{effective_stats(offer.instance).power}** → **{target.power}**" + (f"  ·  {describe_stats(target.stats)}" if target.stats else "")
+                     f"Power **{now}** → **{after}**" + (f"  ·  {describe_stats(target.stats)}" if target.stats else "")
+                     + "\n" + "\n".join(tool_effects.compare(target.kind, now, after, reg))
+                     + (f"\n✨ New ability: **{target.ability_name}**: {target.ability_description}" if target.ability_name and target.ability != offer.current.tool.ability else "")
                      + "\n" + needs_text(cost.bits, self.user.purse, cost.items, owned, reg))
             if offer.level_needed:
                 lines += f"\n-# {offer.target.name} needs level {offer.level_needed} in its skill."
