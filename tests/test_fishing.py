@@ -1188,6 +1188,7 @@ async def test_a_boss_pays_a_pile_and_no_fish_and_only_once(db):
     assert await user.item_quantity(boss.fish.id) == won.items[boss.fish.id]  # no fish of its own: only what the loot gave
     skill = await user.skill("fishing")
     assert skill.stats.bosses_beaten == 1 and skill.stats.fish_caught == 0 and skill.xp >= BOSS.xp
+    assert skill.stats.bosses == {boss.boss: 1} and skill.stats.caught == {}  # the Bestiary counts the boss by name, and no fish
     with pytest.raises(f.FishingError, match="already"):
         await f.defeat_boss(user, boss, Lucky(2), REG)
 

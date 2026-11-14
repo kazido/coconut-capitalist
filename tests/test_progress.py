@@ -33,6 +33,8 @@ def maxed_snapshot() -> progress.Snapshot:
     for n in range(1, 10):
         getattr(skills["farming"].farm, f"plot_{n}").unlocked = True
     skills["combat"].kills = {e: 10**9 for e in REG.enemies}
+    skills["fishing"].stats.caught = {i.id: 10**9 for i in REG.items.values() if i.skill == "fishing" and i.category == "fish" and i.drop}
+    skills["fishing"].stats.bosses = {b.name: 10**9 for b in REG.fishing.boss.bosses}
     top_xp = pets.level_xp(REG.economy.pets.max_level, REG)
     house = Pethouse(pets={p: OwnedPet(stars=REG.economy.pets.max_stars + 3, xp=top_xp) for p in REG.pets})
     return empty_snapshot(skills=skills, rank=len(REG.ranks) + 5, pethouse=house, owned_templates=set(progress.tool_levels(REG)))
@@ -101,6 +103,7 @@ def test_doing_everything_gives_exactly_the_maximum_and_doing_more_adds_nothing(
     snap = maxed_snapshot()
     snap.skills["fishing"].stats.fish_caught *= 1000
     snap.skills["combat"].kills = {e: n * 1000 for e, n in snap.skills["combat"].kills.items()}
+    snap.skills["fishing"].stats.caught = {f: n * 1000 for f, n in snap.skills["fishing"].stats.caught.items()}
     assert progress.build(snap, REG).points == p.points  # grinding past the last milestone is worth nothing
 
 
@@ -146,6 +149,51 @@ def test_bestiary_pays_by_kill_milestones_and_bosses_pay_more():
     assert by_name["Zombie"].points == 2 * RULES.bestiary.points
     assert by_name["The Gravewarden"].points == RULES.bestiary.boss_points
     assert by_name["Skeleton"].points == 0
+
+
+def fishing_entries(snap):
+    return {e.label: e for c in progress.build(snap, REG).categories if c.key == "bestiary" for e in c.entries}
+
+
+def test_the_bestiary_counts_every_fish_species_and_fishing_boss():
+    snap = empty_snapshot()
+    names = {c.name for c in progress.creatures(snap, REG)}
+    fish = [i for i in REG.items.values() if i.skill == "fishing" and i.category == "fish" and i.drop]
+    assert {i.name for i in fish} <= names and {b.name for b in REG.fishing.boss.bosses} <= names and {e.name for e in REG.enemies.values()} <= names
+    snap.skills["fishing"].stats.caught = {fish[0].id: RULES.bestiary.fish_steps[1]}
+    snap.skills["fishing"].stats.bosses = {REG.fishing.boss.bosses[0].name: 1}
+    entries = fishing_entries(snap)
+    assert entries[fish[0].name].points == 2 * RULES.bestiary.fish_points
+    assert entries[REG.fishing.boss.bosses[0].name].points == RULES.bestiary.sea_boss_points
+    assert entries[fish[1].name].points == 0
+
+
+def test_a_fish_you_hold_a_record_for_counts_as_met_even_before_the_counter_existed():
+    fish = next(i for i in REG.items.values() if i.skill == "fishing" and i.category == "fish" and i.drop)
+    snap = empty_snapshot()
+    snap.skills["fishing"].records = {fish.id: 31.0}
+    assert fishing_entries(snap)[fish.name].points == RULES.bestiary.fish_points
+
+
+async def test_landing_a_fish_counts_it_in_the_bestiary_with_its_extras(db):
+    from cococap.services import fishing as f
+    user = await User.get(1)
+    cast = f.Cast(REG.item("salmon"), 10.0, 20.0, [f.LEFT], 0, hooked=True, extra_fish=2)
+    cast.press(f.LEFT, 11.0)
+    await f.land(user, cast, REG)
+    assert (await user.skill("fishing")).stats.caught["salmon"] == 3  # the fish and its two extras
+
+
+async def test_the_fishing_bestiary_page_hides_unmet_fish_and_has_a_group_picker(db):
+    user = await User.get(1)
+    fish = next(i for i in REG.items.values() if i.skill == "fishing" and i.category == "fish" and i.drop)
+    await user.update_skill("fishing", lambda s: s.stats.caught.update({fish.id: 7}))
+    nav, inter = await hub("bestiary")
+    menu = select_named(nav, "Show")
+    menu._values = ["fishing"]
+    await menu.callback(inter)
+    text = all_text(nav)
+    assert fish.name in text and "7 caught" in text and "❓ Unknown" in text and "Sea bosses" in text
 
 
 async def test_a_real_player_gains_points_from_real_progress(db):

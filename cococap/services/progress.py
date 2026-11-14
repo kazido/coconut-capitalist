@@ -107,6 +107,46 @@ def stat_value(skills: dict, stat: str) -> int:
     return int(getattr(skills[skill].stats, name))
 
 
+@dataclass(frozen=True)
+class Creature:
+    """One line of the Bestiary: anything you can slay, catch or beat. Each skill adds its own creatures in `creatures`."""
+
+    group: str  # "combat", "fishing" (later mining, farming, foraging)
+    id: str
+    name: str
+    emoji: str
+    boss: bool
+    count: int
+    verb: str  # "slain", "caught", "beaten"
+    steps: list[int]
+    points: int
+    detail: str = ""  # shown once you know it (stats, record...)
+
+
+GROUPS = {"combat": ("⚔️", "Monsters"), "fishing": ("🎣", "Fish and sea bosses")}
+
+
+def creatures(snap: "Snapshot", registry: Registry) -> list[Creature]:
+    """Everything the Bestiary tracks. The counters only ever go up; `steps` are the milestones that pay Coconut Level."""
+    rules = registry.progress.bestiary
+    found: list[Creature] = []
+    kills = snap.skills["combat"].kills
+    for e in registry.enemies.values():
+        steps, each = (rules.boss_steps, rules.boss_points) if e.boss else (rules.steps, rules.points)
+        found.append(Creature("combat", e.id, e.name, e.emoji or "👹", e.boss, kills.get(e.id, 0), "slain", steps, each))
+    fishing = snap.skills["fishing"]
+    fish = sorted((i for i in registry.items.values() if i.skill == "fishing" and i.category == "fish" and i.drop), key=lambda i: (i.rarity, i.name))
+    for item in fish:
+        count = max(fishing.stats.caught.get(item.id, 0), 1 if item.id in fishing.records else 0)  # a personal best proves you landed one
+        best = fishing.records.get(item.id)
+        found.append(Creature("fishing", item.id, item.name, item.emoji or "🐟", False, count, "caught", rules.fish_steps, rules.fish_points,
+                              f"best {best:g} cm" if best else ""))
+    for boss in registry.fishing.boss.bosses:
+        found.append(Creature("fishing", f"boss:{boss.name}", boss.name, "👑", True, fishing.stats.bosses.get(boss.name, 0), "beaten",
+                              rules.boss_steps, rules.sea_boss_points))
+    return found
+
+
 @dataclass
 class Snapshot:
     """Everything the level is made from, loaded once."""
@@ -187,14 +227,11 @@ def build(snap: Snapshot, registry: Registry) -> Progress:
     cats.append(Category("milestones", "Milestones", "🎯", tuple(ladder_entries)))
 
     # bestiary
-    kills = snap.skills["combat"].kills
     beasts = []
-    for enemy in registry.enemies.values():
-        steps, each = (rules.bestiary.boss_steps, rules.bestiary.boss_points) if enemy.boss else (rules.bestiary.steps, rules.bestiary.points)
-        count = kills.get(enemy.id, 0)
-        nxt = next_step(count, steps)
-        beasts.append(Entry(enemy.name, steps_reached(count, steps) * each, len(steps) * each, f"{count:,} slain",
-                            (count, nxt, each) if nxt else None))
+    for c in creatures(snap, registry):
+        nxt = next_step(c.count, c.steps)
+        beasts.append(Entry(c.name, steps_reached(c.count, c.steps) * c.points, len(c.steps) * c.points, f"{c.count:,} {c.verb}",
+                            (c.count, nxt, c.points) if nxt else None))
     cats.append(Category("bestiary", "Bestiary", "📖", tuple(beasts)))
 
     points = sum(c.points for c in cats)

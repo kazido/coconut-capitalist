@@ -58,35 +58,61 @@ class ProgressScreen(Screen):
 
 
 class BestiaryScreen(Screen):
-    """Every enemy: unknown until you slay one, then its stats, and its skills once you know it well. Milestones pay Coconut Level."""
+    """Every creature: unknown until you meet one, then how many, and the next milestone. Milestones pay Coconut Level; the counts never stop."""
 
     id = "bestiary"
     label = "Bestiary"
     emoji = "📖"
-    description = "Every monster you have met, and how many you have slain"
+    description = "Every creature you have met, and how many you have slain, caught or beaten"
     links = ()
+
+    def __init__(self, nav):
+        super().__init__(nav)
+        self.group = "combat"
 
     async def build(self) -> Page:
         reg = get_registry()
-        rules = reg.progress.bestiary
-        kills = (await self.user.skill("combat")).kills
+        snap = await progress.snapshot(self.user)
+        every = progress.creatures(snap, reg)
+        mine = [c for c in every if c.group == self.group]
         blocks = [*self.note_block()]
-        known = 0
-        for enemy in reg.enemies.values():
-            count = kills.get(enemy.id, 0)
-            if count == 0:
-                blocks.append(text("### ❓ Unknown\n-# Slay one to learn about it."))
-                continue
-            known += 1
-            steps, each = (rules.boss_steps, rules.boss_points) if enemy.boss else (rules.steps, rules.points)
-            upcoming = next((s for s in steps if count < s), None)
-            lines = [f"### {enemy.emoji} {enemy.name}" + ("  ·  👑 boss" if enemy.boss else ""),
-                     f"❤️ {enemy.hp}  ⚔️ {enemy.attack}  🛡️ {enemy.defense}  ⚡ {enemy.speed}" + (f"  🔰 {enemy.shield}" if enemy.shield else ""),
-                     f"Slain **{count:,}**" + (f"  ·  next milestone {upcoming:,} (+{each} points)" if upcoming else "  ·  every milestone reached ✅")]
-            if count >= rules.steps[min(1, len(rules.steps) - 1)] or enemy.boss:
-                skill_names = ", ".join(reg.combat.skills[s].name for s in enemy.skills)
-                lines.append(f"Moves: {skill_names}")
-            blocks.append(text("\n".join(lines)))
+        if self.group == "combat":
+            for c in mine:
+                blocks.append(text(self._combat_entry(c, reg) if c.count else "### ❓ Unknown\n-# Slay one to learn about it."))
+        else:
+            fish = [c for c in mine if not c.boss]
+            bosses = [c for c in mine if c.boss]
+            blocks.append(text("### 🐟 Fish\n" + "\n".join(self._line(c) for c in fish)))
+            blocks.append(text("### 👑 Sea bosses\n" + "\n".join(self._line(c) for c in bosses)))
         blocks.append(sep())
-        blocks.append(text(f"-# {known} of {len(reg.enemies)} found"))
+        found = sum(1 for c in every if c.count)
+        blocks.append(text(f"-# {found} of {len(every)} creatures found"))
+        blocks.append(row(select("Show...", [
+            discord.SelectOption(label=name, value=key, emoji=emoji, default=key == self.group) for key, (emoji, name) in progress.GROUPS.items()
+        ], self._pick)))
         return Page("Bestiary", blocks, accent=0x8E44AD)
+
+    @staticmethod
+    def _next(c: progress.Creature) -> str:
+        upcoming = next((n for n in c.steps if c.count < n), None)
+        return f"next {upcoming:,} (+{c.points})" if upcoming else "all milestones ✅"
+
+    def _line(self, c: progress.Creature) -> str:
+        if not c.count:
+            return "❓ Unknown"
+        return f"{c.emoji} **{c.name}**  ·  {c.count:,} {c.verb}  ·  {self._next(c)}" + (f"  ·  {c.detail}" if c.detail else "")
+
+    def _combat_entry(self, c: progress.Creature, reg) -> str:
+        enemy = reg.enemies[c.id]
+        rules = reg.progress.bestiary
+        upcoming = next((n for n in c.steps if c.count < n), None)
+        lines = [f"### {enemy.emoji} {enemy.name}" + ("  ·  👑 boss" if enemy.boss else ""),
+                 f"❤️ {enemy.hp}  ⚔️ {enemy.attack}  🛡️ {enemy.defense}  ⚡ {enemy.speed}" + (f"  🔰 {enemy.shield}" if enemy.shield else ""),
+                 f"Slain **{c.count:,}**" + (f"  ·  next milestone {upcoming:,} (+{c.points} points)" if upcoming else "  ·  every milestone reached ✅")]
+        if c.count >= rules.steps[min(1, len(rules.steps) - 1)] or enemy.boss:
+            lines.append("Moves: " + ", ".join(reg.combat.skills[s].name for s in enemy.skills))
+        return "\n".join(lines)
+
+    async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
+        self.group = values[0]
+        await self.refresh(interaction)

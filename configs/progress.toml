@@ -30,6 +30,9 @@ steps = [1, 25, 100, 500, 2500, 10000]
 points = 5
 boss_steps = [1, 5, 25, 100, 500]
 boss_points = 50
+fish_steps = [1, 25, 100, 500, 2500]   # every fish species you can catch; fishing bosses use boss_steps
+fish_points = 3
+sea_boss_points = 15
 
 # Counters. Each step reached pays `points` once. `stat` is read from your skills (see services/progress.py STATS).
 [[ladders]]

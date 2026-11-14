@@ -523,6 +523,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     def grant(skill) -> None:
         skill.xp += xp
         skill.stats.fish_caught += 1
+        skill.stats.caught[cast.fish.id] = skill.stats.caught.get(cast.fish.id, 0) + 1 + cast.extra_fish
         _remember(skill, cast)
         if cast.size > 0 and cast.size > skill.records.get(cast.fish.id, 0):
             skill.records[cast.fish.id] = cast.size
@@ -855,6 +856,7 @@ async def defeat_boss(user: User, cast: Cast, rng: random.Random | None = None, 
     def win(skill) -> None:
         skill.xp += xp
         skill.stats.bosses_beaten += 1
+        skill.stats.bosses[cast.boss] = skill.stats.bosses.get(cast.boss, 0) + 1
 
     await user.update_skill("fishing", win)
     for item_id, quantity in items.items():

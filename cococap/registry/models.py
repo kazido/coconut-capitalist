@@ -938,10 +938,13 @@ class BestiaryPoints(_Data):
     points: int = Field(ge=0)
     boss_steps: list[int] = Field(min_length=1)
     boss_points: int = Field(ge=0)
+    fish_steps: list[int] = Field(min_length=1)  # fish are not fought, so they have their own (shorter) ladder
+    fish_points: int = Field(ge=0)
+    sea_boss_points: int = Field(ge=0)  # a fishing boss is common compared to a dungeon boss, so it pays less than boss_points
 
     @model_validator(mode="after")
     def _ascending(self):
-        for steps in (self.steps, self.boss_steps):
+        for steps in (self.steps, self.boss_steps, self.fish_steps):
             if steps != sorted(set(steps)) or steps[0] < 1:
                 raise ValueError("bestiary steps must climb from at least 1")
         return self

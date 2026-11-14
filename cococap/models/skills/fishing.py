@@ -8,6 +8,8 @@ class Stats(BaseModel):
     fish_caught: int = 0
     community_book_entries: int = 0
     bosses_beaten: int = 0
+    caught: dict[str, int] = Field(default_factory=dict)  # per fish species, for the Bestiary (counts every fish, extras included)
+    bosses: dict[str, int] = Field(default_factory=dict)  # per fishing boss, by name
 
 
 class Skiff(BaseModel):

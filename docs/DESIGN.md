@@ -629,6 +629,12 @@ explained on the **Progress** page (`services/progress.py`, `configs/progress.to
 tracks what you have *done*: each enemy is "Unknown" until you slay one, then its stats show; at 25 kills its moves show. Kill milestones
 (1, 25, 100, 500; a boss 1, 5, 25) pay Coconut Level once. Kills are counted per enemy in the combat skill (`kills`), only for won fights.
 
+**The Bestiary holds every creature, not only monsters** (decided). `services/progress.py` `creatures()` is the one list: each skill adds its own.
+Today: combat enemies (`combat.kills`), every fish species (`fishing.stats.caught`, extras included; a personal-best record counts as "met" for
+old players) and the fishing bosses (`fishing.stats.bosses`, by name). The page has a menu to switch groups. Fish pay on `fish_steps` (1, 25, 100, 500,
+2,500; 3 points), sea bosses on `boss_steps` but at `sea_boss_points` (15, they are common), dungeon bosses at `boss_points` (50). **Later:** creatures
+to take down in mining, farming and foraging join the same way (a counter in that skill's stats plus a few lines in `creatures()`).
+
 ### Pets: levels to 100, a wide range, and they level as you play (decided)
 - **Levels 1 to 100** (`max_level`, `xp_scale = 300`: level 20 is 108k pet xp, 50 is 720k, 100 is 2.94M). A bonus `value` is what a pet gives at
   **level 100 with one star**; a new pet gives `level_floor` (10%) of it, and every extra star adds +25% (a five-star level-100 pet gives double). So a pet
