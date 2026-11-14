@@ -17,7 +17,7 @@ class InventoryScreen(Screen):
     label = "Inventory"
     emoji = "🎒"
     description = "Your items and tools; equip a tool here"
-    links = ("upgrade",)
+    links = ("upgrade", "enchant")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -67,7 +67,8 @@ class InventoryScreen(Screen):
                 for i in shown
             ]
             body += [sep(), row(select("Equip a tool...", options, self._equip)),
-                     row(button("Upgrade tools", emoji="🔨", on_click=self._upgrades))]
+                     row(button("Upgrade tools", emoji="🔨", on_click=self._upgrades),
+                         button("Enchant", emoji="📜", on_click=self._enchant))]
         return Page("Inventory", body, accent=0x99B0A2)
 
     def _turn(self, step: int):
@@ -76,6 +77,9 @@ class InventoryScreen(Screen):
             await self.refresh(interaction)
 
         return turn
+
+    async def _enchant(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "enchant")
 
     async def _upgrades(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "upgrade")

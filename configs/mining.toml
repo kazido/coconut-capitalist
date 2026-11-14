@@ -10,8 +10,8 @@ depth_tables = [
   ["copper_ore"],
   ["iron_ore", "copper_ore"],
   ["dusty_dandelion_seed", "gold_ore", "iron_ore", "copper_ore"],
-  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "dusty_dandelion_seed", "gold_ore", "iron_ore", "copper_ore"],
-  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "spirit_of_the_mines", "dusty_dandelion_seed", "gold_ore", "iron_ore", "copper_ore"],
+  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "scroll_iron_frame", "dusty_dandelion_seed", "gold_ore", "iron_ore", "copper_ore"],
+  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "scroll_iron_frame", "spirit_of_the_mines", "dusty_dandelion_seed", "gold_ore", "iron_ore", "copper_ore"],
 ]
 
 [wyrmhole]

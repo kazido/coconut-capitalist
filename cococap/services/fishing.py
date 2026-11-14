@@ -44,16 +44,16 @@ def roll_fish(rng: random.Random, registry: Registry | None = None) -> Item:
 
 
 # ---- the rod ----------------------------------------------------------------------------------------------
-def wait_seconds(power: int, rules: FishingRules, rng: random.Random) -> float:
-    """How long until something bites: shorter with a stronger rod, never below the floor."""
+def wait_seconds(power: int, rules: FishingRules, rng: random.Random, bite_speed: float = 0.0) -> float:
+    """How long until something bites: shorter with a stronger rod (and a Lure enchant: ``bite_speed``)."""
     base = rng.uniform(rules.bite.wait_min, rules.bite.wait_max)
     factor = max(rules.bite.min_wait_factor, 1 / (1 + rules.bite.speedup_per_power * max(0, power - 1)))
-    return base * factor
+    return base * factor * (1 - min(0.6, max(0.0, bite_speed)))
 
 
-def slips_allowed(power: int, rules: FishingRules) -> int:
-    """Wrong arrows a rod forgives per fish."""
-    return max(0, power) // rules.reel.power_per_slip
+def slips_allowed(power: int, rules: FishingRules, bonus: float = 0) -> int:
+    """Wrong arrows a rod forgives per fish (a Steady Line enchant adds more: ``bonus``)."""
+    return max(0, power) // rules.reel.power_per_slip + int(bonus)
 
 
 def reel_pattern(rarity: int, rules: FishingRules, rng: random.Random) -> list[str]:
@@ -164,14 +164,14 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
     rules = reg.fishing
     now = time.time() if now is None else now
     fish = roll_fish(rng, reg)
-    bite_at = now + wait_seconds(stats.power, rules, rng)
+    bite_at = now + wait_seconds(stats.power, rules, rng, stats.stats.get("bite_speed", 0.0))
     pattern = reel_pattern(fish.rarity, rules, rng)
     cast = Cast(
         fish=fish,
         bite_at=bite_at,
         expires_at=bite_at + rules.bite.window,
         pattern=pattern,
-        slips_left=slips_allowed(stats.power, rules),
+        slips_left=slips_allowed(stats.power, rules, stats.stats.get("slips", 0)),
         grace=rules.bite.grace,
         echo_window=rules.reel.echo_window,
         size=roll_size(fish, rng),

@@ -206,6 +206,15 @@ double click upgrades once. The chains and costs are in `configs/items.toml` und
 Wilted; pickaxes Rookie -> Reinforced -> Masterwork; rods Starter -> Reinforced -> Masterwork; swords Large Branch ->
 Rusted Broadsword -> Dreamnail -> Shining Silver (combat isn't playable yet; their level requirements still apply).
 
+## Enchants from play: scrolls
+
+Enchants (stored on a tool) now have sources. A **scroll** is a one-use item that adds one level of an enchant to a
+tool of a fitting kind (never past the enchant's maximum); the scroll and the enchant happen together or not at all.
+Use them from **Inventory -> Enchant**. Scrolls are found by playing: **Keen** (+1 power, any pickaxe/axe/rod) and
+**Sharp Eye** (+5% good chops, axes) drop from chopping; **Iron Frame** (less mine pressure) drops deep in the mines;
+**Lure** (shorter waits), **Steady Line** (forgives more wrong arrows) and Keen come from fishing bosses and treasure
+chests. Soloist is unchanged. Chances are `TODO(balance)` in `configs/items.toml`, `mining.toml` and `fishing.toml`.
+
 ## Fishing
 
 `/fish` (or Skills -> Fishing). One panel, no channel spam:

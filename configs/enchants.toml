@@ -11,3 +11,58 @@ max_level = 1
 [[soloist.effects]]
 type = "flag"
 flag = "soloist"
+
+[keen]
+name = "Keen"
+description = "A sharper, stronger tool: +1 power per level."
+applies_to = ["pickaxe", "axe", "rod"]
+max_level = 3
+
+[[keen.effects]]
+type = "stat_add"
+stat = "power"
+amount = 1
+
+[lure]
+name = "Lure"
+description = "Fish find your hook sooner: 10% shorter waits per level."
+applies_to = ["rod"]
+max_level = 3
+
+[[lure.effects]]
+type = "stat_add"
+stat = "bite_speed"
+amount = 0.10
+
+[steady_line]
+name = "Steady Line"
+description = "Forgives one more wrong arrow per level while reeling."
+applies_to = ["rod"]
+max_level = 2
+
+[[steady_line.effects]]
+type = "stat_add"
+stat = "slips"
+amount = 1
+
+[sharp_eye]
+name = "Sharp Eye"
+description = "You see where the wood is weakest: +5% good chop chance per level."
+applies_to = ["axe"]
+max_level = 3
+
+[[sharp_eye.effects]]
+type = "stat_add"
+stat = "good_chop"
+amount = 0.05
+
+[iron_frame]
+name = "Iron Frame"
+description = "A braced pickaxe slows the mine's creaking: 3% less pressure per level."
+applies_to = ["pickaxe"]
+max_level = 3
+
+[[iron_frame.effects]]
+type = "stat_add"
+stat = "danger_reduction"
+amount = 0.03

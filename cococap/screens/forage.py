@@ -187,7 +187,8 @@ class TreeScreen(Screen):
             return await self.refresh(interaction)
         reg = get_registry()
         stats = await foraging.axe_stats(self.user)
-        swing = self.spot.swing(foraging.swing_power(stats, tree.zone, reg.foraging), reg.foraging, self.rng)
+        swing = self.spot.swing(foraging.swing_power(stats, tree.zone, reg.foraging), reg.foraging, self.rng,
+                                stats.stats.get("good_chop", 0.0))
         applied = tree.chop(swing.damage)
         if tree.felled:
             self.reward = await foraging.fell_private(self.user, tree, self.rng)
@@ -256,7 +257,7 @@ class GroveScreen(Screen):
         rules = get_registry().foraging
         view = await foraging.community_tree(self.user)
         power = foraging.swing_power(stats, view.zone if view else 1, rules, community=True)
-        swing = self.spot.swing(power, rules, self.rng)
+        swing = self.spot.swing(power, rules, self.rng, stats.stats.get("good_chop", 0.0))
         result = await foraging.chop_community(self.user, swing.damage)
         note = "🌳 **You felled it!**" if result.felled_now else swing_note(swing, result.applied)
         await self.refresh(interaction, note)

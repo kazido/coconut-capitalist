@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from cococap import emojis
 
 Skill = Literal["farming", "foraging", "fishing", "mining", "combat", "shepherding"]
-Category = Literal["material", "tool", "key_item", "pet_item", "crop", "seed", "fish"]
+Category = Literal["material", "tool", "key_item", "pet_item", "crop", "seed", "fish", "scroll"]
 ToolKind = Literal["pickaxe", "axe", "sword", "rod"]
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -98,6 +98,12 @@ class Size(_Data):
         return self
 
 
+class Scroll(_Data):
+    """A one-use scroll that puts an enchant (one level) on a tool of a fitting kind."""
+
+    enchant: str
+
+
 class Item(_Data):
     id: str
     name: str
@@ -111,6 +117,7 @@ class Item(_Data):
     sell_price: int = Field(default=0, ge=0)  # 0 = cannot be sold
     drop: Drop | None = None
     size: Size | None = None  # fish only
+    scroll: Scroll | None = None
     crop: Crop | None = None
     seed: Seed | None = None
     tool: Tool | None = None

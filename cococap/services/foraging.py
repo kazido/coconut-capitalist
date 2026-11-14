@@ -100,10 +100,11 @@ class Spot:
         """What the next ordinary (not good) chop would do."""
         return max(1, round(power * self.multiplier(rules)))
 
-    def swing(self, power: int, rules: ForagingRules, rng: random.Random) -> Swing:
+    def swing(self, power: int, rules: ForagingRules, rng: random.Random, good_bonus: float = 0.0) -> Swing:
+        """One chop. ``good_bonus`` is extra good-chop chance (a Sharp Eye enchant)."""
         c = rules.chopping
         fresh = self.freshness(rules)
-        good = rng.random() < c.good_chop_chance
+        good = rng.random() < c.good_chop_chance + good_bonus
         damage = max(1, round(power * self.multiplier(rules) * (1 + c.good_chop_bonus if good else 1)))
         if rng.random() < c.wear_chance:
             self.wear += 1

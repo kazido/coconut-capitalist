@@ -12,6 +12,7 @@ from .highlow import HighLowScreen
 from .farm import FarmScreen
 from .flashcard import FlashcardScreen
 from .fish import FishBookScreen, FishCommunityScreen, FishQuestsScreen, FishRecordsScreen, FishScreen
+from .enchant import EnchantScreen
 from .forage import ForageScreen, GroveScreen, TreeScreen
 from .sequence import SequenceScreen
 from .trivia import TriviaScreen
@@ -67,6 +68,7 @@ SCREENS: dict[str, type[Screen]] = {
         BlackjackScreen,
         InventoryScreen,
         UpgradeScreen,
+        EnchantScreen,
         ShopScreen,
         RankScreen,
         TopScreen,

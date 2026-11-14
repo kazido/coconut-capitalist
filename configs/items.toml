@@ -1111,6 +1111,91 @@ kind = "axe"
 power = 40  # TODO(balance): grows with rarity
 requirement = 0
 
+[scroll_keen]
+name = "Scroll of Keenness"
+description = "A scroll that sharpens any pickaxe, axe or rod."
+wiki = "Use it from your inventory (Enchant) to put Keen on a fitting tool. One use."
+emoji = "📜"
+rarity = 4
+skill = "foraging"
+category = "scroll"
+price = 0
+sell_price = 0
+
+[scroll_keen.scroll]
+enchant = "keen"
+
+[scroll_keen.drop]
+rate = 700  # TODO(balance): 1 in 700 per drop roll
+min = 1
+max = 1
+
+[scroll_lure]
+name = "Scroll of the Lure"
+description = "Fish seem to find your hook sooner."
+wiki = "Use it from your inventory (Enchant) to put Lure on a fitting tool. One use."
+emoji = "📜"
+rarity = 4
+skill = "fishing"
+category = "scroll"
+price = 0
+sell_price = 0
+
+[scroll_lure.scroll]
+enchant = "lure"
+
+[scroll_steady_line]
+name = "Scroll of the Steady Line"
+description = "Your line holds when your hands slip."
+wiki = "Use it from your inventory (Enchant) to put Steady Line on a fitting tool. One use."
+emoji = "📜"
+rarity = 4
+skill = "fishing"
+category = "scroll"
+price = 0
+sell_price = 0
+
+[scroll_steady_line.scroll]
+enchant = "steady_line"
+
+[scroll_sharp_eye]
+name = "Scroll of the Sharp Eye"
+description = "See where the wood is weakest."
+wiki = "Use it from your inventory (Enchant) to put Sharp Eye on a fitting tool. One use."
+emoji = "📜"
+rarity = 4
+skill = "foraging"
+category = "scroll"
+price = 0
+sell_price = 0
+
+[scroll_sharp_eye.scroll]
+enchant = "sharp_eye"
+
+[scroll_sharp_eye.drop]
+rate = 900  # TODO(balance): 1 in 900 per drop roll
+min = 1
+max = 1
+
+[scroll_iron_frame]
+name = "Scroll of the Iron Frame"
+description = "Braces a pickaxe against the creaking mine."
+wiki = "Use it from your inventory (Enchant) to put Iron Frame on a fitting tool. One use."
+emoji = "📜"
+rarity = 4
+skill = "mining"
+category = "scroll"
+price = 0
+sell_price = 0
+
+[scroll_iron_frame.scroll]
+enchant = "iron_frame"
+
+[scroll_iron_frame.drop]
+rate = 1200  # TODO(balance): found deep in the mines
+min = 1
+max = 1
+
 [balance_gemstone]
 name = "Balance"
 description = "Find your balance."

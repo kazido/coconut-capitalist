@@ -123,6 +123,8 @@ class Registry:
                 elif target.tool.power <= item.tool.power:
                     problems.append(f"{item.id}: upgrade target '{up.to}' must be stronger")
                 problems += [f"{item.id}: upgrade needs unknown item '{m}'" for m in up.items if m not in self.items]
+            if item.scroll and item.scroll.enchant not in self.enchants:
+                problems.append(f"{item.id}: scroll of unknown enchant '{item.scroll.enchant}'")
             if item.seed:
                 crop = self.items.get(item.seed.grows_into)
                 if crop is None or crop.crop is None:

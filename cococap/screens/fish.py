@@ -99,7 +99,7 @@ class FishScreen(Screen):
             if stats is None:
                 body.append(text("🎣 You need a rod. Buy a **Starter Rod** in the shop and it equips itself."))
             else:
-                slips = fishing.slips_allowed(stats.power, reg.fishing)
+                slips = fishing.slips_allowed(stats.power, reg.fishing, stats.stats.get("slips", 0))
                 body.append(text(f"{ROD} Rod power **{stats.power}**" + (f"  ·  forgives **{slips}** wrong arrow(s)" if slips else "")))
             if await fishing.chests_possible(self.user, now()):
                 body.append(text("-# 🌀 The hallucination lingers… something shiny may be down there."))
