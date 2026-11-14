@@ -21,6 +21,7 @@ VENT = "💨"
 CACHE = "📦"
 BOMB = "💣"
 CURSOR = "🔻"
+SOFT, FIRM, HARD = "🟫", "🟧", "🟥"  # the rock from above: soft (little pressure, copper), firm (iron), hard (a lot of pressure, the best ore)
 NOTCH = "▪️"
 MILESTONE = "🏁"  # a landmark row: finish it and the tunnel is shored up
 VAULT = "🏆"  # the last row: the vault is worth getting to
@@ -47,10 +48,10 @@ def loot_lines(loot: Counter) -> str:
     return "\n".join(lines)
 
 
-def cell_emoji(sign: str) -> str:
-    """A cell as it looks from above. Ore, empty cells, vents and caches all look like plain rock;
-    only rich lodes and wyrmholes stand out."""
-    return {"rich": _rich(), "hole": _hole()}.get(sign) or _cell()
+def cell_emoji(feel: str) -> str:
+    """A cell as it feels from above: soft, firm or hard rock, a highlighted rich lode, or a wyrmhole. You cannot tell ore, nothing, vents and
+    caches apart inside the same kind of rock, only how hard it is."""
+    return {"rich": _rich(), "hole": _hole(), "soft": SOFT, "firm": FIRM, "hard": HARD}.get(feel) or _cell()
 
 
 def dug_emoji(sign: str, cell) -> str:
@@ -86,7 +87,7 @@ def render_shaft(run: mining.MineRun) -> str:
     for dug in run.history[-SHOWN_ROWS:]:
         # What you dug shows what it gave; what you left behind stays as it looked.
         lines.append("".join(
-            dug_emoji(dug.kinds[c], dug.cells[c]) if c in dug.dug else cell_emoji(dug.kinds[c])
+            dug_emoji(dug.kinds[c], dug.cells[c]) if c in dug.dug else cell_emoji(run.feel(dug.depth)[c])
             for c in range(columns)
         ))
     if not run.finished:
@@ -100,7 +101,7 @@ def render_shaft(run: mining.MineRun) -> str:
             depth = run.depth + ahead
             if depth >= run.floor:
                 break
-            lines.append("".join(cell_emoji(sign) for sign in run.signs(depth)) + row_mark(run, depth))
+            lines.append("".join(cell_emoji(feel) for feel in run.feel(depth)) + row_mark(run, depth))
     return "\n".join(lines)
 
 
@@ -118,7 +119,8 @@ def carrying(haul: Counter) -> str:
 
 
 HELP = (
-    "Every cell hides what's inside: ore, nothing, a **vent** that cools the tunnel, or a **cache** with a brace.\n"
+    f"Read the rock: {SOFT} **soft** (little pressure, mostly copper)  ·  {FIRM} **firm** (iron)  ·  {HARD} **hard** (a lot of pressure, the best ore).\n"
+    "Inside it hides ore, nothing, a **vent** that cools the tunnel, or a **cache** with a brace.\n"
     "cell_upgraded: a **rich lode**, a mystery with better loot  ·  wyrmhole: a way out, if you dig it\n"
     f"{BOMB} **bomb**: clears a whole row  ·  {MAGNET} a charged magnet marks the richest cell"
 )

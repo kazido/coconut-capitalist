@@ -496,10 +496,14 @@ class DescentRules(_Data):
     vault_gem_chance: float = Field(ge=0, le=1)  # chance the vault also holds one random reactor gem (gems are rare!)
     vault_ore: dict[str, int]
     warnings: list[RiskLabel] = Field(min_length=1)
+    soft_below: float = Field(default=5, ge=0)  # a cell whose hardness is under this FEELS soft from above (copper, empty cells, vents and caches)...
+    hard_from: float = Field(default=9, ge=0)  # ...and from this up it feels hard (gold): in between is firm (iron). Harder rock is where the better ore is
     milestones: list[Milestone] = Field(default_factory=list)  # landmark rows (10, 20...) that reward you; the vault is the last one
 
     @model_validator(mode="after")
     def _milestones_fit(self):
+        if self.soft_below > self.hard_from:
+            raise ValueError("soft_below must not be above hard_from")
         rows = [m.row for m in self.milestones]
         if rows != sorted(set(rows)) or any(not 1 <= r < self.floor for r in rows):
             raise ValueError("milestone rows must be different, climbing, and above the floor (the vault is the last landmark)")

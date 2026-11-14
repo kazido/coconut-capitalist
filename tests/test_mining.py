@@ -728,11 +728,13 @@ def test_rows_you_passed_keep_their_signs_for_the_cells_you_did_not_dig():
     assert first.count(_rich()) == 4  # the four rich lodes you left behind are still marked
 
 
-def test_cells_are_hidden_whatever_they_hold_except_rich_lodes_and_wyrmholes():
-    from cococap.screens.mine import _cell, _hole, _rich, cell_emoji
+def test_cells_show_only_how_hard_the_rock_is_plus_rich_lodes_and_wyrmholes():
+    from cococap.screens.mine import FIRM, HARD, SOFT, _hole, _rich, cell_emoji
 
-    assert {cell_emoji(kind) for kind in ("ore", "vent", "cache")} == {_cell()}  # you can't tell them apart
-    assert cell_emoji("rich") == _rich() != _cell() and cell_emoji("hole") == _hole() != _cell()
+    assert len({cell_emoji(f) for f in ("soft", "firm", "hard", "rich", "hole")}) == 5  # five different looks
+    assert cell_emoji("soft") == SOFT and cell_emoji("firm") == FIRM and cell_emoji("hard") == HARD
+    assert cell_emoji("rich") == _rich() and cell_emoji("hole") == _hole()
+    assert {cell_emoji(kind) for kind in ("ore", "vent", "cache")} == {cell_emoji("ore")}  # (what is inside is not shown, only the rock)
 
 
 def test_a_cell_is_revealed_once_you_dig_it():
@@ -743,15 +745,55 @@ def test_a_cell_is_revealed_once_you_dig_it():
     assert dug_emoji("ore", None) not in (VENT, CACHE, item_emoji("copper_ore"))
 
 
-def test_the_map_shows_three_rows_ahead_with_only_rich_lodes_and_holes_standing_out():
-    from cococap.screens.mine import _cell, _rich, render_shaft
+def test_the_map_shows_three_rows_ahead_and_a_vent_looks_like_any_other_soft_rock():
+    from cococap.screens.mine import SOFT, render_shaft
 
     run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=1.0, cache_chance=0.0))
     shaft = render_shaft(run).splitlines()
     assert len(shaft) == 1 + D.lookahead
-    assert all(line == _cell() * RULES.columns for line in shaft[1:])  # vents everywhere, yet nothing shows
+    assert all(line.startswith(SOFT * RULES.columns) for line in shaft[1:])  # vents everywhere, all of it just soft rock: nothing gives them away
+    from cococap.screens.mine import _rich
+
     rich = make_run(rules=rules_with(rich_chance=1.0, vent_chance=0.0, cache_chance=0.0))
-    assert render_shaft(rich).splitlines()[1] == _rich() * RULES.columns
+    assert render_shaft(rich).splitlines()[1].startswith(_rich() * RULES.columns)  # a rich lode still stands out
+
+
+def test_every_cell_feels_soft_firm_or_hard_by_how_much_pressure_it_costs_and_rich_lodes_and_holes_stand_out():
+    run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0))
+    force_row(run, [None, COPPER, ("iron_ore", 1), GOLD, ("hardwood", 1)])
+    feel = run.feel(run.depth)
+    assert feel[:4] == ["soft", "soft", "firm", "hard"]  # nothing and copper: soft. iron: firm. gold: hard
+    assert D.hardness["copper_ore"] < D.soft_below <= D.hardness["iron_ore"] < D.hard_from <= D.hardness["gold_ore"]
+    force_row(run, [GOLD] * 5, kinds=["rich", "ore", "vent", "cache", "ore"], holes={1})
+    assert run.feel(run.depth)[:2] == ["rich", "hole"]
+    vent_row = run.feel(run.depth)
+    assert vent_row[2] == "hard"  # (the sign is irrelevant: it is the rock that is read)
+
+
+def test_the_hint_is_a_real_clue_to_the_ore_and_to_the_pressure_it_costs():
+    """Over many rows: hard cells hold the better ore and cost more pressure to dig, soft cells the cheaper ore."""
+    worth = {"soft": [], "firm": [], "hard": []}
+    pressure = {"soft": [], "firm": [], "hard": []}
+    for seed in range(60):
+        run = make_run(seed, rules=rules_with(rich_chance=0.0))
+        for depth in range(0, D.floor):
+            for feel, cell in zip(run.feel(depth), run.row(depth), strict=True):
+                if feel in worth:
+                    worth[feel].append(REG.item(cell[0]).sell_price * cell[1] if cell else 0)
+                    pressure[feel].append(run.hardness(cell))
+    mean = lambda xs: sum(xs) / len(xs)  # noqa: E731
+    assert mean(worth["soft"]) < mean(worth["firm"]) < mean(worth["hard"])
+    assert mean(pressure["soft"]) < mean(pressure["firm"]) < mean(pressure["hard"])
+
+
+def test_rows_you_left_behind_still_show_the_rock_you_did_not_dig():
+    from cococap.screens.mine import SOFT, render_shaft
+
+    run = make_run(rules=rules_with(vent_chance=0.0, rich_chance=0.0, cache_chance=0.0))
+    run.cursors, run.rng = [0], Rig(0.99)
+    force_row(run, [None, None, None, None, None])
+    run.dig()
+    assert render_shaft(run).splitlines()[0].count(SOFT) == RULES.columns - 1  # the four you left are soft rock; the one you dug shows what it held
 
 
 def test_the_shown_risk_is_the_real_chance_of_collapse_for_that_dig():

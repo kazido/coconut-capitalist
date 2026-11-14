@@ -210,6 +210,19 @@ class MineRun:
         self.row(depth)
         return ["hole" if col in self._holes[depth] else self._kinds[depth][col] for col in range(self.rules.columns)]
 
+    def feel(self, depth: int) -> list[str]:
+        """What each cell of row `depth` feels like from above: soft, firm or hard rock (how much pressure it will cost, and so what kind of ore is
+        likely in it), a highlighted rich lode, or a wyrmhole. This is what you choose a column by."""
+        d = self.rules.descent
+        feels = []
+        for col, sign in enumerate(self.signs(depth)):
+            if sign in ("rich", "hole"):
+                feels.append(sign)
+                continue
+            hardness = self.hardness(self._rows[depth][col])
+            feels.append("soft" if hardness < d.soft_below else "hard" if hardness >= d.hard_from else "firm")
+        return feels
+
     def wyrmholes_ahead(self) -> set[int]:
         self.row(self.depth)
         return self._holes[self.depth]

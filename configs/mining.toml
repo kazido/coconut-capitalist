@@ -81,6 +81,8 @@ cache_min_depth = 2
 cache_braces = 1                   # +1 brace
 bomb_pressure = 8                  # a bomb clears a whole row for this flat pressure
 bombs_per_run = 3                  # most bombs you can carry down
+soft_below = 5                     # from above, a cell's rock feels SOFT (hardness under 5: copper, nothing, vents, caches), FIRM (5 to 8: iron) or HARD (9 and up: gold).
+hard_from = 9                      # Hard rock takes more pressure to dig and is where the better ore is: that is the choice of column.
 lookahead = 3                      # rows ahead you can see (only rich lodes and wyrmholes show; the rest is hidden)
 vault_gem_chance = 0.03            # a reactor gem is rare: only this chance of one in the vault...
 [descent.vault_ore]                # ...but these ores are always there: all three, in the proportion you would mine them (the rarer, the fewer).
