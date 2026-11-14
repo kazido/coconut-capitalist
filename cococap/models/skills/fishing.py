@@ -45,6 +45,7 @@ class TreasureState(BaseModel):
 
 
 class Fishing(Skill):
+    records: dict[str, float] = Field(default_factory=dict)  # fish id -> your biggest catch, in cm
     community_claimed: int = 0  # how many completions of the community book you have been paid for
     monthly_claimed: dict[str, list[bool]] = Field(default_factory=dict)  # month -> which community quests you were paid for
     treasure: TreasureState = Field(default_factory=TreasureState)

@@ -370,6 +370,10 @@ rate = 8000  # 1 in 8000 per cast, rarest rolled first; the common cod (1 in 1) 
 min = 1
 max = 1
 
+[leviathan_pup.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 400
+max = 900
+
 [golden_koi]
 name = "Golden Koi"
 description = "A koi that shines like a coin. Stories say it grants wishes."
@@ -385,6 +389,10 @@ sell_price = 2500000  # TODO(balance)
 rate = 5000  # 1 in 5000 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
+
+[golden_koi.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 60
+max = 120
 
 [oarfish]
 name = "Oarfish"
@@ -402,6 +410,10 @@ rate = 1500  # 1 in 1500 per cast, rarest rolled first; the common cod (1 in 1) 
 min = 1
 max = 1
 
+[oarfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 300
+max = 800
+
 [abyssal_angler]
 name = "Abyssal Angler"
 description = "Its lure glows in the deepest, darkest water."
@@ -417,6 +429,10 @@ sell_price = 500000  # TODO(balance)
 rate = 1200  # 1 in 1200 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
+
+[abyssal_angler.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 100
+max = 250
 
 [sturgeon]
 name = "Sturgeon"
@@ -434,6 +450,10 @@ rate = 700  # 1 in 700 per cast, rarest rolled first; the common cod (1 in 1) is
 min = 1
 max = 1
 
+[sturgeon.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 150
+max = 400
+
 [marlin]
 name = "Blue Marlin"
 description = "A fast, proud fighter that tests every line."
@@ -449,6 +469,10 @@ sell_price = 100000  # TODO(balance)
 rate = 600  # 1 in 600 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
+
+[marlin.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 200
+max = 450
 
 [giant_squid]
 name = "Giant Squid"
@@ -466,6 +490,10 @@ rate = 600  # 1 in 600 per cast, rarest rolled first; the common cod (1 in 1) is
 min = 1
 max = 1
 
+[giant_squid.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 300
+max = 1000
+
 [moray_eel]
 name = "Moray Eel"
 description = "Hides in rocks and bites hard."
@@ -481,6 +509,10 @@ sell_price = 24000  # TODO(balance)
 rate = 120  # 1 in 120 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
+
+[moray_eel.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 80
+max = 200
 
 [swordfish]
 name = "Swordfish"
@@ -498,6 +530,10 @@ rate = 100  # 1 in 100 per cast, rarest rolled first; the common cod (1 in 1) is
 min = 1
 max = 1
 
+[swordfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 150
+max = 400
+
 [pufferfish]
 name = "Pufferfish"
 description = "Puffs up when angry. Handle with care."
@@ -513,6 +549,10 @@ sell_price = 20000  # TODO(balance)
 rate = 80  # 1 in 80 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
+
+[pufferfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 15
+max = 60
 
 [catfish]
 name = "Catfish"
@@ -530,6 +570,10 @@ rate = 45  # 1 in 45 per cast, rarest rolled first; the common cod (1 in 1) is t
 min = 1
 max = 1
 
+[catfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 30
+max = 140
+
 [tuna]
 name = "Tuna"
 description = "Fast, strong and delicious."
@@ -545,6 +589,10 @@ sell_price = 10000  # TODO(balance)
 rate = 40  # 1 in 40 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
+
+[tuna.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 60
+max = 250
 
 [salmon]
 name = "Salmon"
@@ -562,6 +610,10 @@ rate = 35  # 1 in 35 per cast, rarest rolled first; the common cod (1 in 1) is t
 min = 1
 max = 1
 
+[salmon.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 50
+max = 120
+
 [perch]
 name = "Perch"
 description = "Stripey and quick to bite."
@@ -577,6 +629,10 @@ sell_price = 3200  # TODO(balance)
 rate = 12  # 1 in 12 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
+
+[perch.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 15
+max = 50
 
 [trout]
 name = "Trout"
@@ -594,6 +650,10 @@ rate = 10  # 1 in 10 per cast, rarest rolled first; the common cod (1 in 1) is t
 min = 1
 max = 1
 
+[trout.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 25
+max = 80
+
 [bass]
 name = "Bass"
 description = "A solid catch with a good bit of fight."
@@ -609,6 +669,10 @@ sell_price = 4000  # TODO(balance)
 rate = 8  # 1 in 8 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
+
+[bass.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 25
+max = 70
 
 [sardine]
 name = "Sardine"
@@ -626,6 +690,10 @@ rate = 3  # 1 in 3 per cast, rarest rolled first; the common cod (1 in 1) is the
 min = 1
 max = 1
 
+[sardine.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 10
+max = 25
+
 [herring]
 name = "Herring"
 description = "Silver and plentiful."
@@ -642,6 +710,10 @@ rate = 2  # 1 in 2 per cast, rarest rolled first; the common cod (1 in 1) is the
 min = 1
 max = 1
 
+[herring.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 20
+max = 40
+
 [cod]
 name = "Cod"
 description = "A common fish."
@@ -657,6 +729,10 @@ sell_price = 2500  # TODO(balance)
 rate = 1  # 1 in 1 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
+
+[cod.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+min = 40
+max = 130
 
 [coral_shard]
 name = "Coral Shard"

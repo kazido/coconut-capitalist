@@ -198,6 +198,12 @@ class FishScreen(Screen):
                 rarity = Rarities.from_value(catch.fish.rarity).rarity_name
                 note = (f"🎣 **You caught a {catch.fish.display}!**  ·  **{rarity}**  ·  +{catch.xp:,} xp"
                         f"  ·  worth {bits(catch.fish.sell_price)} bits")
+                note += f"  ·  📏 {catch.size:g} cm"
+                if catch.server_record:
+                    note += (f"\n🏆 **NEW SERVER RECORD!** +{bits(catch.record_bits)} bits"
+                             + (f" (you beat {catch.record_holder})" if catch.record_holder else ""))
+                elif catch.personal_best:
+                    note += "\n🏅 New personal best!"
                 if catch.hallucination:
                     self.flash = (catch.hallucination, now() + get_registry().fishing.treasure.flash_seconds)
                 if catch.extras:
@@ -285,7 +291,7 @@ class FishBookScreen(Screen):
     label = "Collection Book"
     emoji = "📖"
     description = "Turn in fish for rewards and level the book up"
-    links = ("fish",)
+    links = ("fish", "fishrecords")
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -316,6 +322,7 @@ class FishBookScreen(Screen):
         body.append(row(
             button("Finish the book", emoji="🏆", style=discord.ButtonStyle.success, disabled=not view.complete or view.level >= rules.max_level,
                    on_click=self._finish),
+            button("Records", emoji="📏", on_click=self._records),
             button("Back to fishing", emoji=ROD, on_click=self._back),
         ))
         return Page("Collection Book", body, accent=0x8E44AD)
@@ -323,6 +330,9 @@ class FishBookScreen(Screen):
     async def _turn_in(self, interaction: discord.Interaction, values: list[str]) -> None:
         done = await fishing.turn_in(self.user, values[0])
         await self.refresh(interaction, f"📖 You added {done.quantity:,} {done.fish.display} to the book  ·  +{bits(done.bits)} bits, +{done.xp} xp")
+
+    async def _records(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fishrecords")
 
     async def _finish(self, interaction: discord.Interaction) -> None:
         done = await fishing.complete_book(self.user)
@@ -339,7 +349,7 @@ class FishCommunityScreen(Screen):
     label = "Fishing Community"
     emoji = "🌍"
     description = "The community book and this month's goals"
-    links = ("fish",)
+    links = ("fish", "fishrecords")
     refresh_every = 10.0
 
     async def build(self) -> Page:
@@ -391,8 +401,12 @@ class FishCommunityScreen(Screen):
         body += [sep(), text("### 🗓️ This month's goals\n" + "\n".join(lines)
                              + f"\n-# Everyone fishing adds up. Do at least {rules.community.min_share:.0%} of a goal to be paid when "
                                f"it is reached. New goals <t:{int(ends)}:R>."),
-                 row(button("Back to fishing", emoji=ROD, on_click=self._back))]
+                 row(button("Records", emoji="📏", on_click=self._records),
+                     button("Back to fishing", emoji=ROD, on_click=self._back))]
         return Page("Fishing Community", body, accent=0x16A085)
+
+    async def _records(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fishrecords")
 
     async def _donate(self, interaction: discord.Interaction, values: list[str]) -> None:
         done = await fishing_community.donate(self.user, values[0])
@@ -400,6 +414,37 @@ class FishCommunityScreen(Screen):
         if done.finished_level:
             note += f"\n🎉 **That finished the book!** It is now level {done.finished_level + 1} and everyone will be paid."
         await self.refresh(interaction, note)
+
+    async def _back(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "fish")
+
+
+class FishRecordsScreen(Screen):
+    """The biggest of every fish: yours, and the biggest ever caught on the server."""
+
+    id = "fishrecords"
+    label = "Fish Records"
+    emoji = "📏"
+    description = "Your biggest catches and the server records"
+    links = ("fish",)
+
+    async def build(self) -> Page:
+        reg = get_registry()
+        mine = (await self.user.skill("fishing")).records
+        server = await fishing.server_records()
+        lines = []
+        for fish in sorted(fishing.fish_pool(reg), key=lambda i: (i.rarity, i.name)):
+            best = mine.get(fish.id)
+            if best is None:
+                lines.append(f"▫️ ??? ·  {Rarities.from_value(fish.rarity).rarity_name}")
+                continue
+            held = server.get(fish.id)
+            record = f"  ·  🏆 {held['size']:g} cm ({held['name']})" if held else ""
+            crown = " 👑" if held and held["uid"] == self.user.id and held["size"] == best else ""
+            lines.append(f"{fish.display}  ·  you **{best:g} cm**{crown}{record}")
+        return Page("Fish Records", [*self.note_block(), text("### 📏 Biggest catches\n" + "\n".join(lines)
+                    + "\n-# 👑 = you hold the server record. A new record pays bits."),
+                    row(button("Back to fishing", emoji=ROD, on_click=self._back))], accent=0x2980B9)
 
     async def _back(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fish")

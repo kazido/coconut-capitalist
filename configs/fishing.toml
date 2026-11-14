@@ -148,3 +148,9 @@ rarity = 4
 count = 15
 bits = 400000
 xp = 1200
+
+# Record fish. Every catch has its own size (most are small, a few are giants). You keep your biggest of each fish,
+# and the server keeps the biggest ever caught: beat them and you are paid.
+[records]
+personal_xp_per_rarity = 10       # a new personal best (or the first one of a fish) pays rarity x this xp
+server_bits_multiplier = 2.0      # a new server record pays this x the fish's sell price in bits

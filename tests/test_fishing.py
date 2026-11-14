@@ -1014,3 +1014,97 @@ async def test_a_double_pressed_arrow_on_the_screen_does_not_cost_the_fish(db, c
     if cast.pattern[1] != first:
         await stale.callback(inter)
         assert nav.screen.cast is cast and not cast.escaped and cast.progress == 1
+
+
+# ---- record fish ------------------------------------------------------------------------------------------------------
+def test_every_fish_has_a_size_range_and_catches_vary_within_it():
+    for fish in f.fish_pool(REG):
+        assert fish.size is not None and fish.size.min < fish.size.max
+        sizes = [f.roll_size(fish, Random(i)) for i in range(300)]
+        assert min(sizes) >= fish.size.min and max(sizes) <= fish.size.max
+        assert len(set(sizes)) > 100 and sum(sizes) / 300 < (fish.size.min + fish.size.max) / 2  # mostly smaller, a few giants
+
+
+def test_a_cast_fixes_its_size_up_front():
+    first = f.cast_line(rod(3), Random(7), T0, REG)
+    again = f.cast_line(rod(3), Random(7), T0, REG)
+    assert first.size == again.size and first.fish.size.min <= first.size <= first.fish.size.max
+
+
+async def test_your_biggest_catch_of_each_fish_is_kept_and_beating_it_pays_xp(db):
+    user = await player()
+    first = cast_of("cod")
+    first.size = 50.0
+    for arrow in first.pattern:
+        first.press(arrow, T0 + 11)
+    got = await f.land(user, first, REG, now=T0)
+    assert got.size == 50 and got.personal_best  # the first of a fish is a best
+    assert (await user.skill("fishing")).records == {"cod": 50.0}
+    xp_after_first = (await user.skill("fishing")).xp
+    smaller = cast_of("cod")
+    smaller.size = 40.0
+    for arrow in smaller.pattern:
+        smaller.press(arrow, T0 + 11)
+    small = await f.land(user, smaller, REG, now=T0)
+    assert not small.personal_best and (await user.skill("fishing")).records["cod"] == 50.0
+    bigger = cast_of("cod")
+    bigger.size = 90.0
+    for arrow in bigger.pattern:
+        bigger.press(arrow, T0 + 11)
+    assert (await f.land(user, bigger, REG, now=T0)).personal_best
+    assert (await user.skill("fishing")).records["cod"] == 90.0 and (await user.skill("fishing")).xp > xp_after_first
+
+
+async def test_the_biggest_fish_on_the_server_is_a_record_that_pays_and_names_the_old_holder(db):
+    alice, bob = await player(1), await player(2)
+    await alice.set_name("Alice")
+    await bob.set_name("Bob")
+
+    async def land_size(user, size, fish="salmon"):
+        cast = cast_of(fish)
+        cast.size = size
+        for arrow in cast.pattern:
+            cast.press(arrow, T0 + 11)
+        return await f.land(user, cast, REG, now=T0)
+
+    first = await land_size(alice, 80.0)
+    assert first.server_record and first.record_holder is None
+    assert first.record_bits == round(REG.item("salmon").sell_price * RULES.records.server_bits_multiplier)
+    smaller = await land_size(bob, 70.0)
+    assert smaller.personal_best and not smaller.server_record and smaller.record_bits == 0  # his best, not the server's
+    before = bob.purse
+    beaten = await land_size(bob, 95.0)
+    await bob.refresh()
+    assert beaten.server_record and beaten.record_holder == "Alice" and bob.purse >= before + beaten.record_bits
+    assert (await f.server_records())["salmon"] == {"size": 95.0, "uid": 2, "name": "Bob"}
+    tie = await land_size(alice, 95.0)
+    assert not tie.server_record  # you have to beat it, not match it
+
+
+async def test_a_catch_says_its_size_and_a_record_and_the_records_page_lists_them(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None: REG.item("salmon"))
+    user, nav, inter = await open_fishing()
+    await user.set_name("Ahna")
+    await click(nav, inter, "Cast")
+    clock[0] = nav.screen.cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    size = nav.screen.cast.size
+    for arrow in list(nav.screen.cast.pattern):
+        await click(nav, inter, "Left" if arrow == f.LEFT else "Right")
+    text_now = all_text(nav)
+    assert f"{size:g} cm" in text_now and "NEW SERVER RECORD" in text_now
+    nav2, inter2 = await hub("fishrecords")
+    page = all_text(nav2)
+    assert "Salmon" in page and f"{size:g} cm" in page and "Ahna" in page and "👑" in page and "???" in page  # unseen fish stay hidden
+
+
+async def test_the_records_page_is_reachable_from_the_book_and_the_community(db):
+    user = await User.get(1)
+    await user.add_xp("fishing", User.level_to_xp(RULES.book.min_level) + 1)
+    for screen in ("fishbook", "fishcommunity"):
+        nav, inter = await hub(screen)
+        await click(nav, inter, "Records")
+        assert nav.screen.id == "fishrecords"
+        await click(nav, inter, "Back to fishing")
+        assert nav.screen.id == "fish"

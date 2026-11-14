@@ -85,6 +85,19 @@ class Tool(_Data):
     upgrade: ToolUpgrade | None = None
 
 
+class Size(_Data):
+    """How big a fish can be, in cm: every catch gets its own size, and there are records to beat."""
+
+    min: float = Field(gt=0)
+    max: float = Field(gt=0)
+
+    @model_validator(mode="after")
+    def _ordered(self):
+        if self.max <= self.min:
+            raise ValueError("size max must be greater than min")
+        return self
+
+
 class Item(_Data):
     id: str
     name: str
@@ -97,6 +110,7 @@ class Item(_Data):
     price: int = Field(default=0, ge=0)  # 0 = not sold in the shop
     sell_price: int = Field(default=0, ge=0)  # 0 = cannot be sold
     drop: Drop | None = None
+    size: Size | None = None  # fish only
     crop: Crop | None = None
     seed: Seed | None = None
     tool: Tool | None = None
@@ -498,6 +512,11 @@ class CommunityRules(_Data):
     min_share: float = Field(ge=0, le=1)  # you must have done this share of a goal to be paid for it
 
 
+class RecordRules(_Data):
+    personal_xp_per_rarity: int = Field(ge=0)  # a new personal best pays rarity x this xp
+    server_bits_multiplier: float = Field(ge=0)  # a new server record pays the fish's sell price x this in bits
+
+
 class FishingRules(_Data):
     xp_per_rarity: int = Field(ge=0)
     bite: BiteRules
@@ -506,6 +525,7 @@ class FishingRules(_Data):
     book: BookRules
     treasure: TreasureRules
     community: CommunityRules
+    records: RecordRules
 
 
 class MinigamePayout(_Data):

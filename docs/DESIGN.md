@@ -240,6 +240,14 @@ without changing the rules a player sees:
    editing the message directly, and the self-refresh now never queues up behind a click and gives up after 2 seconds on
    a slow edit. This helps every screen, not just fishing.
 
+### Record fish
+
+Every catch has its own size in cm, fixed when you cast (most are smallish, the odd one is a giant: `size.min`/`max` on
+each fish). You keep your biggest of each fish; the first of a fish and every new personal best pays a little xp. The
+server keeps the biggest ever caught of each fish: beating it pays `2 x` the fish's sell price in bits and names the
+old holder ("you beat Ahna"); tying doesn't count. **Records** (from the Book and Community pages) lists your best next
+to the server's, with a crown where you hold it, and hides fish you haven't caught.
+
 ### Fishing quests (level 3)
 
 Every player gets **5 daily quests** and **1 weekly** (Monday to Sunday), each asking for a **specific fish**: "Catch 6

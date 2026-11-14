@@ -76,6 +76,7 @@ class Cast:
     attempts_left: int = 0  # tries at the chest's lock
     grace: float = 0.0  # quiet extra seconds to pull up the line (laggy connections)
     echo_window: float = 0.0  # a repeat of the arrow just pressed within this long is ignored
+    size: float = 0.0  # in cm, fixed when you cast like everything else
     timed_out: bool = False  # it got away because the time ran out (as opposed to a wrong arrow)
     last_press: tuple[str, float] | None = None  # (the arrow that last counted, when)
 
@@ -148,6 +149,12 @@ class Cast:
         return "escaped"
 
 
+def roll_size(fish: Item, rng: random.Random) -> float:
+    """A fish's size in cm: most catches are smallish, the odd one is a giant."""
+    size = fish.size
+    return round(size.min + (size.max - size.min) * rng.random() ** 2, 1)
+
+
 def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = None, registry: Registry | None = None,
               *, armed: bool = False) -> Cast:
     """Put the line in the water: pick the fish, the bite time and the arrows. While a hallucination lasts
@@ -166,6 +173,7 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
         slips_left=slips_allowed(stats.power, rules),
         grace=rules.bite.grace,
         echo_window=rules.reel.echo_window,
+        size=roll_size(fish, rng),
     )
     if armed and rng.randint(1, rules.treasure.chest_odds) == 1:
         cast.chest, cast.attempts_left = True, rules.treasure.attempts
@@ -265,6 +273,11 @@ class Catch:
     quest_bits: int = 0
     extras: Counter = field(default_factory=Counter)  # things that came up with the fish (coral shards...)
     hallucination: str | None = None  # the numbers you saw, if this catch made you hallucinate
+    size: float = 0.0
+    personal_best: bool = False  # your biggest of this fish so far (including your first one)
+    server_record: bool = False  # the biggest ever caught on the server
+    record_bits: int = 0
+    record_holder: str | None = None  # who held the server record before you
 
 
 def catch_extras(rng: random.Random, registry: Registry) -> Counter:
@@ -295,12 +308,17 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
         await user.add_item(item_id, quantity)
     finished: list[Quest] = []
     seen: list[str] = []
+    best: list[bool] = []
     counts_for_community: list[bool] = []
     dice = rng or random.Random()
 
     def grant(skill) -> None:
         skill.xp += xp
         skill.stats.fish_caught += 1
+        if cast.size > 0 and cast.size > skill.records.get(cast.fish.id, 0):
+            skill.records[cast.fish.id] = cast.size
+            skill.xp += cast.fish.rarity * rules.records.personal_xp_per_rarity
+            best.append(True)
         t = rules.treasure
         if skill.treasure.armed_until <= now and dice.randint(1, t.hallucination_odds) == 1:
             code = "".join(dice.choice("0123456789") for _ in range(t.code_length))
@@ -332,7 +350,40 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     quest_bits = sum(q.bits for q in finished)
     if quest_bits:
         await user.add_bits(quest_bits)
-    return Catch(cast.fish, xp, tuple(finished), quest_bits, extras, seen[0] if seen else None)
+    server_record, holder, record_bits = False, None, 0
+    if best:
+        server_record, holder = await _claim_server_record(user, cast.fish, cast.size)
+        if server_record:
+            record_bits = round(cast.fish.sell_price * rules.records.server_bits_multiplier)
+            await user.add_bits(record_bits)
+    return Catch(cast.fish, xp, tuple(finished), quest_bits, extras, seen[0] if seen else None,
+                 cast.size, bool(best), server_record, record_bits, holder)
+
+
+RECORDS_KEY = "fishing_records"
+
+
+async def _claim_server_record(user: User, fish: Item, size: float) -> tuple[bool, str | None]:
+    """Is this the biggest of its kind ever caught here? Returns (yes?, who held it before)."""
+    from cococap.services import community
+
+    outcome: dict = {}
+
+    def claim(records: dict) -> None:
+        held = records.get(fish.id)
+        outcome["holder"] = held["name"] if held else None
+        if held is None or size > held["size"]:
+            records[fish.id] = {"size": size, "uid": user.id, "name": user.name}
+            outcome["won"] = True
+
+    await community.update(RECORDS_KEY, {}, claim)
+    return bool(outcome.get("won")), outcome["holder"]
+
+
+async def server_records() -> dict[str, dict]:
+    from cococap.services import community
+
+    return await community.read(RECORDS_KEY, {})
 
 
 @dataclass(frozen=True)
