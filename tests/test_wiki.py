@@ -163,3 +163,21 @@ def test_the_wiki_tells_you_the_best_water_for_every_fish():
     best, chance = fishing.where_to_catch(eel.id, REG)[0]
     assert all(chance >= c for _, c in fishing.where_to_catch(eel.id, REG)) and f"Best in {best.emoji} {best.name}" in page
     assert "casts" in page and "Needs fishing level" in page
+
+
+async def test_looking_up_a_fish_says_where_it_is_caught_not_a_raw_drop_rate(db):
+    from cococap.services import fishing
+
+    nav, inter = await hub("wiki")
+    await choose(nav, inter, select_named(nav, "Pick a topic"), "items")
+    await choose(nav, inter, select_named(nav, "Pick a skill"), "fishing")
+    for fish_id in ("muskie", "cod", "golden_koi"):
+        nav.screen.item = fish_id
+        await nav.screen.nav.refresh(inter)
+        page = all_text(nav)
+        best, chance = fishing.where_to_catch(fish_id, REG)[0]
+        assert f"Where to catch it" in page and f"Best in {best.emoji} {best.name}" in page and "Drop Rate" not in page, fish_id
+        assert "Size" in page
+    nav.screen.skill, nav.screen.item = "foraging", "acorn_mix"
+    await nav.screen.nav.refresh(inter)
+    assert "Drop Rate" in all_text(nav) and "Pet xp" in all_text(nav)  # other things still show their drop rate

@@ -41,9 +41,17 @@ def item_attributes(item: Item, for_shop: bool = False) -> str:
     add(f"**Type**: *{item.category.replace('_', ' ').title()}*")
     if item.skill:
         add(f"**Category**: *{item.skill.title()}*")
-    if item.drop:
+    if item.category == "fish":  # a fish's drop odds are a roll order, not its real chance: say where it lives instead
+        from cococap.services import wiki
+
+        if item.size:
+            add(f"**Size**: *{item.size.min:g}-{item.size.max:g} cm*")
+        add(f"**Where to catch it**: {wiki.where_to_catch_text(item, reg)}")
+    elif item.drop:
         add(f"**Drop Rate**: 1/*{item.drop.rate:,}*")
         add(f"**Drops**: *{item.drop.min:,}*" + (f"-*{item.drop.max:,}*" if item.drop.max > item.drop.min else ""))
+    if item.pet_food:
+        add(f"**Pet xp**: *{reg.economy.pets.food_xp[item.pet_food.tier - 1]:,}* (tier {item.pet_food.tier}), more for a pet of its skill", shop=True)
     if item.crop:
         add(f"**Harvest**: *{item.crop.min_harvest:,}*-*{item.crop.max_harvest:,}*")
         add(f"**Pet XP**: *{item.crop.pet_xp:,}*", shop=True)

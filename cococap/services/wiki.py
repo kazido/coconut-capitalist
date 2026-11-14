@@ -122,7 +122,7 @@ def _one_in(chance: float) -> str:
     return "every cast" if chance >= 0.995 else f"1 in {round(1 / chance):,} casts"
 
 
-def _where(fish: Item, reg: Registry) -> str:
+def where_to_catch_text(fish: Item, reg: Registry) -> str:
     """Where to catch a fish: the best water first, with the real chance of it on a cast there."""
     places = fishing.where_to_catch(fish.id, reg)
     if not places:
@@ -139,7 +139,7 @@ def _fish(reg: Registry) -> list[str]:
         fish = [i for i in reg.items.values() if i.category == "fish" and i.rarity == rarity]
         if not fish:
             continue
-        lines = [f"{i.display}: {_n(i.sell_price)} bits, {i.size.min:g}-{i.size.max:g} cm\n-# {_where(i, reg)}" for i in sorted(fish, key=lambda x: -x.sell_price)]
+        lines = [f"{i.display}: {_n(i.sell_price)} bits, {i.size.min:g}-{i.size.max:g} cm\n-# {where_to_catch_text(i, reg)}" for i in sorted(fish, key=lambda x: -x.sell_price)]
         out.append(f"**{Rarities.from_value(rarity).rarity_name}**\n" + "\n".join(lines))
     return out
 
