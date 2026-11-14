@@ -5,6 +5,10 @@
 
 # +xp in EVERY skill while you are in a party, growing with its size: the first number is for 2 members, the next for 3,
 # and the last for that many members or more (so a party of 4 or more gets +50%).  # TODO(balance)
+# Tokens (they buy ranks) come 1 a day from the daily, and now also at random while you play: every hour you press anything there is
+# this chance of finding one (rolled once an hour, seeded, so reopening or restarting cannot reroll it). About 3 active hours a day
+# is roughly +1 a day, so a regular player earns about 2 tokens a day in all.
+token_drop_chance = 0.35
 party_xp_bonus_by_size = [0.10, 0.25, 0.50]
 # Parties only help while their members play: someone who has not pressed any button or command for this many hours is
 # taken out of their party (the party goes to its most recently active member if it was theirs).

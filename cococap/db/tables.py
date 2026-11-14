@@ -45,6 +45,7 @@ class UserRow(Base):
     work_cooldown: Mapped[float] = mapped_column(Float, default=0)
     daily_cooldown: Mapped[float] = mapped_column(Float, default=0)
     weekly_cooldown: Mapped[float] = mapped_column(Float, default=0)
+    last_token_roll: Mapped[int] = mapped_column(BigInteger, default=0)  # the hour (since 1970) of the last token roll
     last_active: Mapped[float] = mapped_column(Float, default=time.time)  # when they last pressed anything (see services/activity)
     # Validated by cococap.models.settings.Settings / pethouse.Pethouse
     settings: Mapped[dict] = mapped_column(JSON, default=dict)

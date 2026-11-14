@@ -5,6 +5,7 @@ members who have been idle longer than ``party_idle_hours``, so a party's size, 
 about the people actually playing. Nothing is stored per command: one number per player, written at most once a minute.
 """
 
+import random
 import time
 from dataclasses import dataclass
 
@@ -18,14 +19,41 @@ TOUCH_EVERY = 60.0  # seconds: pressing buttons all day writes to the database o
 _last_written: dict[int, float] = {}
 
 
-async def touch(user_id: int, now: float | None = None) -> None:
-    """Note that `user_id` just did something. Players who have never been seen are left alone (no row is made)."""
+async def touch(user_id: int, now: float | None = None, registry: Registry | None = None) -> None:
+    """Note that `user_id` just did something (and maybe find a token). Players who have never been seen are left alone (no row is made)."""
     now = time.time() if now is None else now
     if now - _last_written.get(user_id, 0.0) < TOUCH_EVERY:
         return
     _last_written[user_id] = now
     async with get_database().session() as session:
         await session.execute(update(UserRow).where(UserRow.discord_id == user_id).values(last_active=now))
+    if await roll_token(user_id, now, registry):
+        notices.setdefault(user_id, []).append("🪙 You found a **token** while you were out and about!")
+
+
+notices: dict[int, list[str]] = {}  # things to tell a player the next time a screen is drawn (e.g. a token they found)
+
+
+def pop_notices(user_id: int) -> list[str]:
+    return notices.pop(user_id, [])
+
+
+async def roll_token(user_id: int, now: float, registry: Registry | None = None) -> bool:
+    """Once an hour of play, a chance of one token. The roll is fixed by (player, hour), and the hour is written first in one
+    statement, so a second press, a second process or a restart cannot roll it again."""
+    chance = (registry or get_registry()).economy.token_drop_chance
+    hour = int(now // 3600)
+    async with get_database().session() as session:
+        claimed = await session.execute(
+            update(UserRow).where(UserRow.discord_id == user_id, UserRow.last_token_roll < hour).values(last_token_roll=hour))
+        if claimed.rowcount != 1 or random.Random(f"token:{user_id}:{hour}").random() >= chance:
+            return False
+        await session.execute(update(UserRow).where(UserRow.discord_id == user_id).values(tokens=UserRow.tokens + 1))
+    from cococap.user import User
+
+    user = await User.get(user_id)
+    await user.inc_stat("tokens_earned")
+    return True
 
 
 @dataclass(frozen=True)

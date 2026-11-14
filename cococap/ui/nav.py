@@ -117,6 +117,11 @@ class Screen:
         await self.nav.show(interaction, screen_id, **state)
 
     def note_block(self) -> list[ui.Item]:
+        from cococap.services import activity
+
+        found = activity.pop_notices(self.nav.user.id)
+        if found:
+            self.note = "\n".join(filter(None, [self.note, *found]))
         if not self.note:
             return []
         note, self.note = self.note, None

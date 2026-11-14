@@ -1,3 +1,4 @@
+import random
 from types import SimpleNamespace
 
 import pytest
@@ -114,3 +115,58 @@ async def test_it_is_a_setting_not_a_constant(db):
     await seen(2, 2 * HOUR)
     short = SimpleNamespace(economy=SimpleNamespace(party_idle_hours=1))
     assert [k.user_id for k in await activity.sweep(NOW, short)] == [2]
+
+
+# ---- random tokens while you play ------------------------------------------------------------------------------------------------------
+def with_chance(chance):
+    return SimpleNamespace(economy=SimpleNamespace(token_drop_chance=chance, party_idle_hours=24))
+
+
+async def tokens_of(user_id):
+    async with get_database().session() as session:
+        return await session.scalar(select(UserRow.tokens).where(UserRow.discord_id == user_id))
+
+
+async def test_a_token_is_found_at_most_once_an_hour_and_never_re_rolled(db):
+    await User.get(1)
+    assert await activity.roll_token(1, NOW, with_chance(1.0)) is True and await tokens_of(1) == 1
+    assert await activity.roll_token(1, NOW + 100, with_chance(1.0)) is False  # same hour: nothing more
+    assert await activity.roll_token(1, NOW + 3600, with_chance(1.0)) is True and await tokens_of(1) == 2
+    assert await activity.roll_token(1, NOW + 2 * 3600, with_chance(0.0)) is False and await tokens_of(1) == 2
+
+
+async def test_a_lost_roll_is_not_rolled_again_by_pressing_more_things(db):
+    await User.get(2)
+    loser = next(h for h in range(10_000) if random.Random(f"token:2:{h}").random() >= 0.5)  # an hour that fails at 50%
+    now = loser * 3600 + 5
+    assert await activity.roll_token(2, now, with_chance(0.5)) is False
+    assert await activity.roll_token(2, now + 60, with_chance(1.0)) is False  # (even if the odds got better meanwhile)
+    assert await tokens_of(2) == 0
+
+
+async def test_two_presses_at_once_find_one_token_at_most(db):
+    import asyncio
+
+    await User.get(3)
+    results = await asyncio.gather(*[activity.roll_token(3, NOW, with_chance(1.0)) for _ in range(5)])
+    assert results.count(True) == 1 and await tokens_of(3) == 1
+
+
+async def test_the_odds_follow_the_setting_and_about_match_it(db):
+    await User.get(4)
+    found = 0
+    for hour in range(600):
+        found += await activity.roll_token(4, (50_000 + hour) * 3600 + 1, with_chance(0.35))
+    assert 150 < found < 270 and await tokens_of(4) == found  # about 35% of 600 hours
+
+
+async def test_touching_says_so_when_a_token_turns_up_and_the_screen_shows_it_once(db):
+    await User.get(5)
+    await activity.touch(5, NOW, with_chance(1.0))
+    assert activity.notices[5] and "token" in activity.notices[5][0]
+    from tests.test_hub import all_text, hub
+
+    nav, _ = await hub("home", user_id=5)
+    assert "found a **token**" in all_text(nav) or "found a token" in all_text(nav)
+    nav2, _ = await hub("home", user_id=5)
+    assert "found a" not in all_text(nav2)

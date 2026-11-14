@@ -756,6 +756,7 @@ class PetRules(_Data):
 
 class EconomyRules(_Data):
     pets: PetRules
+    token_drop_chance: float = Field(ge=0, le=1)  # each hour you play (press anything), this chance of finding a token
     party_idle_hours: float = Field(gt=0)  # a party member who has pressed nothing for this long is removed from their party
     party_xp_bonus_by_size: list[float] = Field(min_length=1)  # skill xp bonus for a party of 2, 3, ... (the last applies to bigger ones)
     starting_luckbucks: int = Field(ge=0)

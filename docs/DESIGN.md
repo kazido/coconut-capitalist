@@ -256,6 +256,14 @@ is taken out in one transaction. If they owned the party it goes to the most rec
 left the party is disbanded. No per-command history is stored, only that one number. Migration 0004 sets everyone to "active now",
 so nobody is kicked the day it ships. Players are not told when it happens (a possible follow-up: a note on their next party screen).
 
+## Tokens and rank prices
+
+Tokens buy ranks. A player gets **1 a day** from the daily and finds more **at random while playing**: each hour in which you press
+anything there is a 35% chance (`token_drop_chance`, economy.toml) of one, rolled once an hour and seeded by (player, hour), with the
+hour written first in the same statement, so a second press, a second process or a restart cannot roll again. It shows as a note on
+the next screen. That is about 2 tokens a day for a regular player. Rank prices (`configs/ranks.toml`) were rescaled to match:
+3, 6, 12, 20, 32, 48, 70 (Expert, about 3 months) and on to 350 for rank 15 (about 1.5 years). Not built yet: a pet bonus for tokens.
+
 ## The wiki
 
 `/wiki`, or **More -> Wiki**: one page per topic (getting started, each skill, fish, waters, crab pots and bait, tools and
