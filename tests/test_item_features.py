@@ -70,9 +70,9 @@ async def test_inventory_lists_tools_with_enchants_and_equipped_mark(db):
     a = await user.give_instance("starter_axe")
     b = await user.give_instance("starter_axe")
     a = await add_enchant(user, a.id, "soloist")
-    assert instance_label(a) == f"Starter Axe #{a.id} [Soloist]"
+    assert instance_label(a) == "Starter Axe [Soloist]"  # no "#4": you own one tool of each kind
     lines = instance_lines([a, b], {b.id}, None)
     assert any("[Soloist]" in l and "✅" not in l for l in lines)
-    assert any(f"#{b.id}" in l and "✅" in l for l in lines)
+    assert any("Starter Axe" in l and "✅" in l and "#" not in l for l in lines)
     assert len(instance_lines([a, b], set(), "soloist")) == 1  # filter matches enchant names
     assert instance_lines([a, b], set(), "nothing") == []

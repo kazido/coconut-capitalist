@@ -276,7 +276,7 @@ async def test_inventory_lists_items_and_equips_a_tool_from_the_select(db):
     await user.add_item("copper_ore", 7)
     axe = await user.give_instance("starter_axe")
     nav, inter = await hub("inventory")
-    assert "7 Copper Ore" in all_text(nav) and f"#{axe.id}" in all_text(nav)
+    assert "7 Copper Ore" in all_text(nav) and "Starter Axe" in all_text(nav) and "#" not in all_text(nav).replace("## ", "")
     await choose(nav, inter, select_named(nav, "Equip"), str(axe.id))
     assert (await user.skill("foraging")).equipped_instance_id == axe.id
     assert "✅" in all_text(nav)

@@ -32,7 +32,7 @@ def inventory_lines(items: dict[str, int], filter: str | None = None) -> list[st
 
 
 def instance_label(instance: ItemInstance) -> str:
-    """e.g. "Starter Axe #4 [Soloist]" -- the id disambiguates identical-looking tools."""
+    """e.g. "Starter Axe [Soloist]". (You own one tool of each kind, so there is nothing to tell apart by number.)"""
     reg = get_registry()
     template = reg.item(instance.template_id)
     enchants = ", ".join(
@@ -40,7 +40,7 @@ def instance_label(instance: ItemInstance) -> str:
         + (f" {lvl}" if lvl > 1 else "")
         for e, lvl in sorted(instance.enchants.items())
     )
-    return f"{template.name} #{instance.id}" + (f" [{enchants}]" if enchants else "")
+    return template.name + (f" [{enchants}]" if enchants else "")
 
 
 def instance_lines(instances: list[ItemInstance], equipped_ids: set[int], filter: str | None = None) -> list[str]:
