@@ -15,7 +15,7 @@ TOPICS: list[tuple[str, str, str]] = [  # (id, title, emoji)
     ("fish", "Fish", "🐟"),
     ("waters", "Waters", "🌊"),
     ("pots", "Crab pots and bait", "🦀"),
-    ("tools", "Tools and upgrades: axes", "🔨"),
+    ("tools", "Tools and upgrades: axes and cans", "🔨"),
     ("tools2", "Tools: rods", "🎣"),
     ("tools3", "Tools: pickaxes and swords", "⛏️"),
     ("enchants", "Enchants and scrolls", "📜"),
@@ -78,8 +78,12 @@ def _farming(reg: Registry) -> list[str]:
     crops = sorted((i for i in reg.items.values() if i.crop), key=lambda i: i.sell_price)
     lines = [f"{c.display}: sells {_n(c.sell_price)}, {reg.item(c.crop.seed).seed.cycles} rains to grow, feeds a pet {_n(c.crop.pet_xp)}" for c in crops]
     return [
-        f"**Farming** has no tool, only seeds. You start with {f.free_plots} plot; up to 9 with **land deeds**. Each hour it **rains** and every "
+        f"**Farming** needs seeds and a **watering can**. You start with {f.free_plots} plot; up to 9 with **land deeds**. Each hour it **rains** and every "
         f"growing plot has a {f.grow_chance:.0%} chance to grow a step (even while you are away). When it is ripe, harvest it.",
+        "**Watering.** Once an hour you can water your plots: each one you water always grows a step. Your can only reaches so many plots an "
+        "hour (the Tin Watering Can: 3), so a bigger farm needs a better can (see Tools: the can goes up to the whole farm, and the better ones also "
+        "give bigger harvests and more drops). A harvest also drops **materials** (Rich Compost, Morning Dewdrop, Beeswax, Living Vine, Golden Pollen, Plant Fiber): "
+        "longer crops roll more often, and you spend them upgrading cans and a little in every other tool.",
         f"**Extras.** A rain in which something grew may bring a rain god's blessing. A harvest has a 1 in {f.anomaly_odds} chance of an "
         f"anomaly that refreshes your Work and Daily. The **Farmer's Market** (farming level {f.market.min_level}, Fri and Sat) pays "
         f"+{f.market.price_bonus:.0%} for crops.",
@@ -174,7 +178,7 @@ def _pots(reg: Registry) -> list[str]:
     ]
 
 
-def _tools(reg: Registry, only: tuple[str, ...] = ("axe",), intro: bool = True) -> list[str]:
+def _tools(reg: Registry, only: tuple[str, ...] = ("axe", "can"), intro: bool = True) -> list[str]:
     out = ["**One tool of each kind.** The shop sells only the starter tool, and you can't buy a second. Everything better comes from "
            "**Inventory → Upgrade tools**: your tool keeps its enchants and becomes the next one up for bits and materials. The first steps "
            "use only the tool's own skill; later ones add a little from others. Each level earns clearly more than the last: about x1.5 at "

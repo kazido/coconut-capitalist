@@ -192,7 +192,7 @@ def tools_by_kind():
 
 def test_every_kind_of_tool_has_an_upgrade_chain_and_the_best_tools_end_it():
     kinds = tools_by_kind()
-    assert set(kinds) == {"pickaxe", "axe", "rod", "sword"}
+    assert set(kinds) == {"pickaxe", "axe", "rod", "sword", "can"}
     for kind, tools in kinds.items():
         tops = [t for t in tools if t.tool.upgrade is None]
         top_power = max(t.tool.power for t in tools)
@@ -220,7 +220,7 @@ def test_a_fork_offers_two_roads_of_the_same_power_and_cost_but_different_stats(
         assert a.tool.upgrade is None and b.tool.upgrade is None
 
 
-TOOL_SKILL = {"pickaxe": "mining", "axe": "foraging", "rod": "fishing"}  # (swords: combat has no materials yet)
+TOOL_SKILL = {"pickaxe": "mining", "axe": "foraging", "rod": "fishing", "can": "farming"}  # (swords: combat has no materials yet)
 
 
 def chain_of(kind):

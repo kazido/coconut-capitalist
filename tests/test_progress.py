@@ -123,7 +123,7 @@ def test_ranks_pets_stars_and_max_level_pets_each_pay():
 
 def test_only_your_best_tool_of_each_kind_counts():
     levels = progress.tool_levels(REG)
-    assert levels["starter_axe"] == ("axe", 1) and {kind for kind, _ in levels.values()} == {"axe", "pickaxe", "rod", "sword"}
+    assert levels["starter_axe"] == ("axe", 1) and {kind for kind, _ in levels.values()} == {"axe", "pickaxe", "rod", "sword", "can"}
     chain = sorted((lv, tid) for tid, (kind, lv) in levels.items() if kind == "axe")
     snap = empty_snapshot(owned_templates={chain[0][1], chain[2][1]})  # an old axe and a better one
     gear = next(c for c in progress.build(snap, REG).categories if c.key == "gear")

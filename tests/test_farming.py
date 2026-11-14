@@ -18,6 +18,15 @@ HOUR = 3600
 T0 = 1_800_000_000 // HOUR * HOUR  # a clean hour boundary
 
 
+async def with_can(user, template="tin_can"):
+    """Give a player a watering can and equip it (watering needs one)."""
+    from cococap.services.equipment import equip
+
+    inst = await user.give_instance(template)
+    await equip(user, "farming", inst.id)
+    return inst
+
+
 def registry_with(**changes):
     """A copy of the registry whose farming rules are tweaked (rules are frozen, so rebuild them)."""
     reg = copy.copy(REG)
@@ -354,6 +363,7 @@ def test_the_first_seeds_are_cheap_enough_for_a_brand_new_player():
 
 async def test_watering_grows_plots_you_have_not_watered_this_hour_and_only_once_an_hour(db):
     user = await User.get(1)
+    await with_can(user)
     await user.add_item("apple_seed", 1)
     await f.plant(user, 1, "apple_seed", now=T0, registry=REG)
     first = await f.water(user, T0, REG)
@@ -370,6 +380,7 @@ async def test_a_watering_grows_a_plot_about_as_often_as_the_water_chance_says_a
     grew = 0
     for uid in range(1, 301):
         user = await User.get(uid)
+        await with_can(user)
         await user.add_item("coconut_seed", 1)
         await f.plant(user, 1, "coconut_seed", now=T0, registry=REG)
         before = (await user.skill("farming")).farm.plot_1.cycle
@@ -377,12 +388,13 @@ async def test_a_watering_grows_a_plot_about_as_often_as_the_water_chance_says_a
         grew += report.grew
         assert (await user.skill("farming")).farm.plot_1.cycle == before + report.grew
         assert (await f.water(user, T0, REG)).watered == 0  # looking again changes nothing
-    assert grew / 300 == pytest.approx(RULES.water_chance, abs=0.07)
+    assert grew == 300  # a watering ALWAYS grows a cycle now (water_chance is 100%)
 
 
 async def test_watering_can_finish_a_one_cycle_crop_straight_away(db):
     for uid in range(1, 60):
         user = await User.get(uid)
+        await with_can(user)
         await user.add_item("apple_seed", 1)
         await f.plant(user, 1, "apple_seed", now=T0, registry=REG)
         report = await f.water(user, T0, REG)
@@ -393,6 +405,7 @@ async def test_watering_can_finish_a_one_cycle_crop_straight_away(db):
 
 async def test_watering_skips_empty_and_ripe_plots(db):
     user = await User.get(1)
+    await with_can(user)
     assert (await f.water(user, T0, REG)).watered == 0
     await user.add_item("apple_seed", 1)
     await f.plant(user, 1, "apple_seed", now=T0, registry=REG)
@@ -404,6 +417,7 @@ async def test_the_farm_page_waters_and_marks_watered_plots(db):
     from tests.test_hub import all_text, click, find_button, hub
 
     user = await User.get(1)
+    await with_can(user)
     nav, inter = await hub("farm")
     assert "free seeds" in all_text(nav) or "seeds to start" in all_text(nav)  # the welcome gift
     assert find_button(nav, "Water").disabled  # nothing is planted yet
@@ -461,3 +475,140 @@ async def test_the_farm_page_and_the_seed_menu_show_the_wait_before_you_plant(db
     await click(nav, inter, "1 Plant")
     assert "Ready in about" in all_text(nav)
     assert "ready in about" in all_text(nav)  # and the plot's own line keeps counting down
+
+
+# ---- the watering can ---------------------------------------------------------------------------------------------------------------------
+async def plant_many(user, count):
+    """Own `count` plots, all planted with apples (a one-cycle crop that is never ripe before it is watered here)."""
+    await user.update_skill("farming", lambda m: [setattr(getattr(m.farm, f"plot_{n}"), "unlocked", True) for n in range(1, 10)])
+    await user.add_item("coconut_seed", count)
+    for number in range(1, count + 1):
+        await f.plant(user, number, "coconut_seed", now=T0, registry=REG)
+
+
+async def test_watering_needs_a_can(db):
+    user = await User.get(1)
+    await user.add_item("apple_seed", 1)
+    await f.plant(user, 1, "apple_seed", now=T0, registry=REG)
+    with pytest.raises(f.FarmingError, match="watering can"):
+        await f.water(user, T0, REG)
+
+
+def test_a_watering_always_grows_a_cycle():
+    assert RULES.water_chance == 1.0
+    assert f.hourly_chance(RULES, watered=True) == 1.0
+
+
+async def test_a_can_only_waters_as_many_plots_an_hour_as_its_power(db):
+    user = await User.get(1)
+    can = await with_can(user)
+    await plant_many(user, 6)
+    power = REG.item("tin_can").tool.power
+    report = await f.water(user, T0, REG)
+    assert (report.watered, report.thirsty, report.capacity) == (power, 6 - power, power) and report.grew == power
+    plots = (await user.skill("farming")).farm
+    assert [getattr(plots, f"plot_{n}").watered == T0 // HOUR for n in range(1, 7)] == [True] * power + [False] * (6 - power)  # lowest numbers first
+    again = await f.water(user, T0 + 60, REG)
+    assert again.watered == 0 and again.thirsty == 6 - power  # the can is spent for this hour
+    await user.update_skill("farming", lambda m: None)
+    nxt = await f.water(user, T0 + HOUR + 60, REG)
+    assert nxt.watered == power  # a new hour: the can is full again
+    assert can.id
+
+
+async def test_a_better_can_waters_more_plots(db):
+    user = await User.get(1)
+    await with_can(user, "iron_can")
+    await plant_many(user, 6)
+    report = await f.water(user, T0, REG)
+    assert report.watered == REG.item("iron_can").tool.power == 5 and report.thirsty == 1
+
+
+async def test_plots_watered_before_a_new_one_is_planted_still_use_up_the_can(db):
+    user = await User.get(1)
+    await with_can(user)
+    await plant_many(user, 3)
+    assert (await f.water(user, T0, REG)).watered == 3
+    await user.add_item("coconut_seed", 1)
+    await f.plant(user, 4, "coconut_seed", now=T0, registry=REG)
+    late = await f.water(user, T0 + 30, REG)
+    assert late.watered == 0 and late.thirsty == 1  # the can was already used on three plots this hour
+
+
+def test_the_can_chain_is_a_chain_of_waters_that_ends_at_the_whole_farm():
+    chain = []
+    tool = REG.item("tin_can")
+    while tool:
+        chain.append(tool)
+        tool = REG.item(tool.tool.upgrade.to) if tool.tool.upgrade else None
+    assert [t.tool.power for t in chain] == sorted({t.tool.power for t in chain}) and chain[0].tool.power == 3 and chain[-1].tool.power == f.PLOTS
+    assert all(t.tool.kind == "can" and t.skill == "farming" for t in chain)
+    assert REG.item("tin_can").price > 0 and all(t.price == 0 for t in chain[1:])  # only the first is sold
+
+
+async def test_a_better_can_brings_bigger_harvests_and_more_drops(db):
+    plain, rich = await User.get(1), await User.get(2)
+    await with_can(plain)
+    await with_can(rich, "moonwell_can")
+    amounts, drops = {}, {}
+    for user in (plain, rich):
+        total, found = 0, 0
+        for i in range(80):
+            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
+            await user.add_item("lemon_seed", 1)
+            await f.plant(user, 1, "lemon_seed", now=T0, registry=SURE)
+            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
+            h = await f.harvest(user, 1, Random(i), T0, SURE)
+            total += h.amount
+            found += sum(h.extras.values())
+        amounts[user.id], drops[user.id] = total, found
+    assert amounts[2] > 1.1 * amounts[1] and drops[2] > 1.2 * drops[1]
+
+
+def test_longer_crops_roll_the_farming_drop_table_more_often():
+    rng = Random(1)
+    rolls = lambda cycles: sum(f.drop_rolls(cycles, RULES, rng) for _ in range(2000)) / 2000  # noqa: E731
+    assert rolls(1) == pytest.approx(1 / RULES.drop_cycles_per_roll, abs=0.05)
+    assert rolls(40) == pytest.approx(40 / RULES.drop_cycles_per_roll, abs=0.1)
+    assert rolls(10_000) == RULES.max_drop_rolls  # (there is a ceiling)
+    assert f.drop_rolls(8, RULES, Random(1), luck=0.5) >= 3
+
+
+async def test_a_harvest_pays_farming_materials_in_proportion_to_the_crop(db):
+    user = await User.get(1)
+    await with_can(user)
+    found = {}
+    for seed in ("apple_seed", "watermelon_seed"):
+        total = Counter()
+        for i in range(60):
+            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
+            await user.add_item(seed, 1)
+            await f.plant(user, 1, seed, now=T0, registry=SURE)
+            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
+            total += (await f.harvest(user, 1, Random(i), T0, SURE)).extras
+        found[seed] = total
+    assert sum(found["watermelon_seed"].values()) > 8 * sum(found["apple_seed"].values())
+    assert {"compost", "plant_fiber"} <= set(found["watermelon_seed"])  # the common ones come first
+
+
+def test_the_farming_materials_are_used_by_upgrades_across_the_game():
+    made = {"compost", "dewdrop", "beeswax", "living_vine", "golden_pollen"}
+    assert all(REG.item(m).skill == "farming" and REG.item(m).drop for m in made)
+    used = {m for t in REG.items.values() if t.tool and t.tool.upgrade for m in t.tool.upgrade.items}
+    assert made <= used  # every one of them is something you spend
+    outside = {t.tool.kind for t in REG.items.values() if t.tool and t.tool.kind != "can" and t.tool.upgrade and made & set(t.tool.upgrade.items)}
+    assert {"axe", "pickaxe", "rod", "sword"} <= outside  # ...in other skills' tools too, not only the can
+    rates = [REG.item(m).drop.rate for m in ("compost", "dewdrop", "beeswax", "living_vine", "golden_pollen")]
+    assert rates == sorted(rates) and len(set(rates)) == 5  # each rarer than the last
+
+
+async def test_a_plot_you_watered_and_then_harvested_does_not_use_up_the_can(db):
+    user = await User.get(1)
+    await with_can(user)
+    await plant_many(user, 4)
+    first = await f.water(user, T0, REG)
+    assert first.watered == 3 and first.thirsty == 1
+    await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
+    await f.harvest(user, 1, Random(1), T0 + 5, REG)  # plot 1 is empty now: its watering no longer counts
+    again = await f.water(user, T0 + 10, REG)
+    assert again.watered == 1  # the can had one watering left, and plot 4 takes it

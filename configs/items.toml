@@ -39,6 +39,7 @@ to = "shiningsilver"
 bits = 200000000  # TODO(balance)
 
 [dreamnail.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+living_vine = 10
 gold_ore = 1000
 maple_leaf = 100
 aged_feather = 3
@@ -92,6 +93,7 @@ to = "dreamnail"
 bits = 5000000  # TODO(balance)
 
 [rustedbroadsword.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+beeswax = 10
 gold_ore = 200
 fine_bark = 25
 maple_leaf = 10
@@ -1005,6 +1007,7 @@ to = "tidecaller_rod"
 bits = 10000000
 
 [masterwork_rod.tool.upgrade.items]
+dewdrop = 20
 salmon = 40
 pufferfish = 10
 moray_eel = 4
@@ -1134,11 +1137,12 @@ to = "masterwork_axe"
 bits = 4000000  # TODO(balance)
 
 [bastards_broadaxe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+dewdrop = 30
 maple_leaf = 12
 fine_bark = 40
 hardwood = 100
 gold_ore = 30
-plant_fiber = 40
+
 
 [masterwork_axe]
 name = "Masterwork Axe"
@@ -1159,13 +1163,14 @@ to = "sovereign_hatchet"
 bits = 20000000  # TODO(balance)
 
 [masterwork_axe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+beeswax = 15
 maple_leaf = 40
 aged_feather = 1
 fine_bark = 80
 hardwood = 200
 gold_ore = 80
 coral_shard = 15
-plant_fiber = 60
+
 
 [reinforced_axe]
 name = "Reinforced Axe"
@@ -1186,6 +1191,7 @@ to = "bastards_broadaxe"
 bits = 800000  # TODO(balance)
 
 [reinforced_axe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+compost = 60
 fine_bark = 25
 hardwood = 60
 feather = 150
@@ -1210,12 +1216,12 @@ to = "wilted_axe"
 bits = 100000000  # TODO(balance)
 
 [sovereign_hatchet.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+living_vine = 5
 maple_leaf = 100
 aged_feather = 4
 fine_bark = 150
 hardwood = 400
 gold_ore = 200
-plant_fiber = 120
 tuna = 10
 
 [starter_axe]
@@ -1924,7 +1930,7 @@ bits = 70000000
 gold_ore = 1200
 iron_ore = 4500
 copper_ore = 8000
-hardwood = 250
+beeswax = 8
 tuna = 8
 
 
@@ -2263,7 +2269,7 @@ bits = 70000000
 gold_ore = 1200
 iron_ore = 4500
 copper_ore = 8000
-hardwood = 250
+beeswax = 8
 tuna = 8
 
 [seekers_pickaxe]
@@ -2341,6 +2347,7 @@ to = "lantern_rod"
 bits = 10000000
 
 [masterwork_rod.tool.fork.items]
+dewdrop = 20
 salmon = 40
 pufferfish = 10
 moray_eel = 4
@@ -2478,3 +2485,255 @@ power = 120
 requirement = 0
 path = "Treasure Hunter"
 stats = { rare_luck = 0.3, treasure_luck = 0.5, bite_speed = -0.1 }
+
+[compost]
+name = "Rich Compost"
+description = "Dark, crumbly and alive. Every workbench seems to want a little."
+wiki = "Turns up when you harvest (longer crops make more rolls). Used to upgrade watering cans, and a little of it in other tools' upgrades."
+emoji = "🍂"
+rarity = 1
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 150
+
+[compost.drop]
+rate = 3  # TODO(balance): 1 in 3 per drop roll
+min = 1
+max = 4
+
+[dewdrop]
+name = "Morning Dewdrop"
+description = "A bead of water that never dries. Farmers treasure them."
+wiki = "Turns up when you harvest (longer crops make more rolls). Used to upgrade watering cans, and a little of it in other tools' upgrades."
+emoji = "💧"
+rarity = 2
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 800
+
+[dewdrop.drop]
+rate = 12  # TODO(balance): 1 in 12 per drop roll
+min = 1
+max = 2
+
+[beeswax]
+name = "Beeswax"
+description = "A golden block, still warm. The bees will not miss it. Much."
+wiki = "Turns up when you harvest (longer crops make more rolls). Used to upgrade watering cans, and a little of it in other tools' upgrades."
+emoji = "🕯️"
+rarity = 3
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 3000
+
+[beeswax.drop]
+rate = 40  # TODO(balance): 1 in 40 per drop roll
+min = 1
+max = 2
+
+[living_vine]
+name = "Living Vine"
+description = "It keeps growing in your pack. Handle with care."
+wiki = "Turns up when you harvest (longer crops make more rolls). Used to upgrade watering cans, and a little of it in other tools' upgrades."
+emoji = "🌿"
+rarity = 4
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 12000
+
+[living_vine.drop]
+rate = 150  # TODO(balance): 1 in 150 per drop roll
+min = 1
+max = 1
+
+[golden_pollen]
+name = "Golden Pollen"
+description = "A pinch of it makes a plant forget how to stop growing."
+wiki = "Turns up when you harvest (longer crops make more rolls). Used to upgrade watering cans, and a little of it in other tools' upgrades."
+emoji = "✨"
+rarity = 5
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 50000
+
+[golden_pollen.drop]
+rate = 600  # TODO(balance): 1 in 600 per drop roll
+min = 1
+max = 1
+
+[tin_can]
+name = "Tin Watering Can"
+description = "Dented, leaky, and yours. It waters three plots an hour."
+wiki = "Waters 3 plots an hour: each always grows a cycle."
+emoji = "🚿"
+rarity = 2
+skill = "farming"
+category = "tool"
+price = 2000
+sell_price = 0
+
+[tin_can.tool]
+kind = "can"
+power = 3  # plots it waters an hour
+requirement = 0
+
+[tin_can.tool.upgrade]
+to = "copper_can"
+bits = 20000
+
+[tin_can.tool.upgrade.items]
+compost = 30
+plant_fiber = 20
+
+[copper_can]
+name = "Copper Watering Can"
+description = "A proper spout and a handle that fits."
+wiki = "Waters 4 plots an hour: each always grows a cycle."
+emoji = "🚿"
+rarity = 3
+skill = "farming"
+category = "tool"
+price = 0
+sell_price = 0
+
+[copper_can.tool]
+kind = "can"
+power = 4  # plots it waters an hour
+requirement = 0
+
+[copper_can.tool.upgrade]
+to = "iron_can"
+bits = 150000
+
+[copper_can.tool.upgrade.items]
+compost = 80
+dewdrop = 10
+plant_fiber = 40
+
+[iron_can]
+name = "Iron Watering Can"
+description = "Heavy when full, and it never seems to run dry."
+wiki = "Waters 5 plots an hour: each always grows a cycle."
+emoji = "🚿"
+rarity = 4
+skill = "farming"
+category = "tool"
+price = 0
+sell_price = 0
+
+[iron_can.tool]
+kind = "can"
+power = 5  # plots it waters an hour
+requirement = 0
+
+[iron_can.tool.upgrade]
+to = "silver_can"
+bits = 800000
+
+[iron_can.tool.upgrade.items]
+compost = 150
+dewdrop = 40
+beeswax = 5
+plant_fiber = 100
+hardwood = 20
+
+[silver_can]
+name = "Silver Watering Can"
+description = "Rain looks nicer coming out of silver. Crops thrive on it."
+wiki = "Waters 6 plots an hour: each always grows a cycle."
+emoji = "🚿"
+rarity = 5
+skill = "farming"
+category = "tool"
+price = 0
+sell_price = 0
+
+[silver_can.tool]
+kind = "can"
+power = 6  # plots it waters an hour
+requirement = 0
+stats = { crop_yield = 0.05 }
+
+[silver_can.tool.upgrade]
+to = "gold_can"
+bits = 4000000
+
+[silver_can.tool.upgrade.items]
+dewdrop = 100
+beeswax = 20
+hardwood = 50
+
+[gold_can]
+name = "Gold Watering Can"
+description = "Whatever it waters comes up richer."
+wiki = "Waters 7 plots an hour: each always grows a cycle."
+emoji = "🚿"
+rarity = 6
+skill = "farming"
+category = "tool"
+price = 0
+sell_price = 0
+
+[gold_can.tool]
+kind = "can"
+power = 7  # plots it waters an hour
+requirement = 0
+stats = { crop_yield = 0.1, drop_luck = 0.15 }
+
+[gold_can.tool.upgrade]
+to = "crystal_can"
+bits = 20000000
+
+[gold_can.tool.upgrade.items]
+beeswax = 60
+living_vine = 6
+coral_shard = 40
+
+[crystal_can]
+name = "Crystal Watering Can"
+description = "The water inside is older than the farm."
+wiki = "Waters 8 plots an hour: each always grows a cycle."
+emoji = "🚿"
+rarity = 7
+skill = "farming"
+category = "tool"
+price = 0
+sell_price = 0
+
+[crystal_can.tool]
+kind = "can"
+power = 8  # plots it waters an hour
+requirement = 0
+stats = { crop_yield = 0.15, drop_luck = 0.3 }
+
+[crystal_can.tool.upgrade]
+to = "moonwell_can"
+bits = 100000000
+
+[crystal_can.tool.upgrade.items]
+living_vine = 25
+golden_pollen = 3
+beeswax = 120
+gold_ore = 30
+
+[moonwell_can]
+name = "Moonwell Watering Can"
+description = "Filled at a well that is only there at night. It waters the whole farm."
+wiki = "Waters 9 plots an hour: each always grows a cycle."
+emoji = "🚿"
+rarity = 7
+skill = "farming"
+category = "tool"
+price = 0
+sell_price = 0
+
+[moonwell_can.tool]
+kind = "can"
+power = 9  # plots it waters an hour
+requirement = 0
+stats = { crop_yield = 0.25, drop_luck = 0.5 }

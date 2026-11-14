@@ -46,7 +46,7 @@ async def test_only_starter_tools_are_sold_the_rest_are_upgrades(db):
     from cococap.registry import get_registry
 
     tools = [i.id for i in get_registry().shop_items() if i.tool]
-    assert sorted(tools) == ["rookiepickaxe", "starter_axe", "starter_rod"]
+    assert sorted(tools) == ["rookiepickaxe", "starter_axe", "starter_rod", "tin_can"]
     user = await rich()
     with pytest.raises(ShopError, match="isn't sold"):
         await buy(user, "reinforced_axe")

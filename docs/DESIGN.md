@@ -686,3 +686,16 @@ active hours for x1.35). The fix is two layers, **tools** (what you wield) and *
   and warns it is a fork. The shop allows one tool per kind, so the road you take is the one you climb. The rod roads are NOT simulated yet (treasure and rare-fish luck are hard to price). **Not built yet:** changing roads later for bits.
 - **Still to do:** foraging and farming Mastery trees, forks for the axe, a numeric balance pass that the two roads really earn about the same
   (the rule above: within ~10%), and the level 5/10 unlock content.
+
+## The watering can and farming drops (decided)
+- **A new tool for farming: the watering can** (`kind = "can"`; Tin, Copper, Iron, Silver, Gold, Crystal, Moonwell; the Tin Watering Can is
+  sold for 2,000 bits and equips itself like the other starter tools). Its **power is how many plots it waters an hour**, 3 up to 9 (the whole farm).
+- **Watering is now 100%**: a plot you water always grows a cycle, once an hour per plot, on top of the rain. If the can cannot reach every
+  growing plot the lowest plot numbers go first and the page says how many stayed dry. Plots you watered earlier in the hour use up the can.
+- **Tools never change xp, so the can does not grow crops faster than that.** Past the first four it gives other things instead: `crop_yield`
+  (bigger harvests, +5% to +25%) and `drop_luck` (more farming drops, +15% to +50%). Capacity is the main draw: a bigger farm needs a bigger can.
+- **Farming drops:** a harvest rolls the farming drop table once per `drop_cycles_per_roll` (4) growth cycles of the crop (a long crop pays for
+  the waiting; at most 30 rolls). New materials, each rarer than the last: Rich Compost (1 in 3), Morning Dewdrop (1 in 12), Beeswax (1 in 40),
+  Living Vine (1 in 150), Golden Pollen (1 in 600), besides Plant Fiber. They upgrade the can and are also in a few steps of every other
+  tool (axe, pickaxe, rod and sword), so farming feeds the rest of the game.
+- Existing farmers have no can: they buy a Tin Watering Can first (the Water button says so). `free_plots` is a balance dial (a player set it to 3 by hand).

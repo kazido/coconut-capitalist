@@ -13,7 +13,7 @@ from cococap import emojis
 
 Skill = Literal["farming", "foraging", "fishing", "mining", "combat", "shepherding"]
 Category = Literal["material", "tool", "key_item", "pet_item", "pet_food", "crop", "seed", "fish", "scroll", "bait"]
-ToolKind = Literal["pickaxe", "axe", "sword", "rod"]
+ToolKind = Literal["pickaxe", "axe", "sword", "rod", "can"]
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 
@@ -525,7 +525,9 @@ class FarmingRules(_Data):
     free_plots: int = Field(ge=1, le=9)  # plots you own from the start
     grow_chance: float = Field(gt=0, le=1)  # per rain (every hour), per growing plot
     blessing_chance: float = Field(ge=0, le=1)  # per rain in which something grew
-    water_chance: float = Field(gt=0, le=1)  # watering a plot (once an hour) grows it a cycle with this chance
+    water_chance: float = Field(gt=0, le=1)  # watering a plot (once an hour) grows it a cycle with this chance (1: it always does)
+    drop_cycles_per_roll: float = Field(gt=0)  # a harvest rolls the farming drop table once per this many of the crop's growth cycles...
+    max_drop_rolls: int = Field(ge=1)  # ...but never more than this many times
     starter_seeds: dict[str, int]  # a free gift of seeds the first time you farm
     anomaly_odds: int = Field(ge=1)  # 1 in N per harvest
     xp_per_cycle: int = Field(ge=0)  # xp for a harvest = the seed's growth cycles x this: a long crop pays for the waiting

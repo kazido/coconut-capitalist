@@ -8,7 +8,7 @@ from cococap.registry import Registry, get_registry
 from cococap.user import User
 
 # Which kind of tool each skill uses.
-TOOL_FOR_SKILL = {"mining": "pickaxe", "foraging": "axe", "combat": "sword", "fishing": "rod"}
+TOOL_FOR_SKILL = {"mining": "pickaxe", "foraging": "axe", "combat": "sword", "fishing": "rod", "farming": "can"}
 
 
 def skill_for_tool(kind: str) -> str | None:

@@ -584,6 +584,9 @@ async def test_a_harvest_can_bring_plant_fiber(db):
         def randint(self, a, b):
             return 1
 
+        def random(self):
+            return 0.0
+
     assert farming.harvest_extras(Lucky(1), REG)["plant_fiber"] == 1
     assert sum(farming.harvest_extras(Random(2), REG)["plant_fiber"] for _ in range(1000)) > 500
 

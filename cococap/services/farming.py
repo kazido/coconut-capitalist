@@ -22,6 +22,7 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.farming import Farming, Plot
 from cococap.registry import Registry, get_registry
 from cococap.services import pets
+from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
 from cococap.user import Cooldowns, User
@@ -250,23 +251,39 @@ class WaterReport:
     watered: int  # plots that took a watering
     grew: int  # ...and how many of them grew a cycle
     matured: tuple[int, ...]  # plots that are ready now
+    thirsty: int = 0  # growing plots the can could not reach this hour (it waters `power` plots an hour)
+    capacity: int = 0  # how many plots the can waters an hour
+
+
+async def can_stats(user: User, registry: Registry | None = None) -> EffectiveStats:
+    stats = await equipped_stats(user, "farming", registry)
+    if stats is None:
+        raise FarmingError("You need a watering can. Buy a Tin Watering Can in the shop (it's equipped for you).")
+    return stats
 
 
 async def water(user: User, now: float | None = None, registry: Registry | None = None) -> WaterReport:
-    """Water every growing plot you haven't watered this hour: each grows a cycle with ``water_chance`` (the same roll however
-    often you look: it is worked out from you, the plot and the hour). A way to grow faster than the rain alone, once an hour."""
+    """Water your growing plots with your can. Each plot can be watered once an hour and then ALWAYS grows a cycle; the can only waters
+    `power` plots an hour (the plots you already watered this hour count), lowest plot number first. Which hour you watered in is kept, so
+    looking again changes nothing. A way to grow faster than the rain alone, once an hour."""
     reg, now = registry or get_registry(), now if now is not None else time.time()
+    can = await can_stats(user, reg)
     hour = hour_of(now)
     pet = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
     chance = min(1.0, reg.farming.water_chance + pet)
-    outcome: dict = {"watered": 0, "grew": 0, "matured": []}
+    outcome: dict = {"watered": 0, "grew": 0, "matured": [], "thirsty": 0}
 
     def pour(m: Farming) -> None:
         apply_rain(m, user.id, now, reg, pet)
-        for number in range(1, PLOTS + 1):
-            plot = plot_of(m, number)
+        plots = {n: plot_of(m, n) for n in range(1, PLOTS + 1)}
+        room = can.power - sum(1 for p in plots.values() if p.crop_id and p.watered == hour)  # what the can can still do this hour
+        for number, plot in plots.items():
             if not plot.crop_id or plot.can_harvest or plot.watered == hour:
                 continue
+            if room <= 0:
+                outcome["thirsty"] += 1
+                continue
+            room -= 1
             plot.watered = hour
             outcome["watered"] += 1
             if _waters(user.id, number, hour, chance):
@@ -277,7 +294,7 @@ async def water(user: User, now: float | None = None, registry: Registry | None 
                     outcome["matured"].append(number)
 
     await user.update_skill("farming", pour)
-    return WaterReport(outcome["watered"], outcome["grew"], tuple(outcome["matured"]))
+    return WaterReport(outcome["watered"], outcome["grew"], tuple(outcome["matured"]), outcome["thirsty"], can.power)
 
 
 async def buy_plot(user: User, number: int, registry: Registry | None = None) -> None:
@@ -345,12 +362,22 @@ class Harvest:
     extras: Counter = field(default_factory=Counter)  # leftovers from the harvest (plant fiber...)
 
 
-def harvest_extras(rng: random.Random, registry: Registry) -> Counter:
-    """Materials that come along with a harvest (items of the farming skill that have a drop table)."""
+def drop_rolls(cycles: int, rules, rng: random.Random, luck: float = 0.0) -> int:
+    """How many times a harvest rolls the farming drop table: one per `drop_cycles_per_roll` growth cycles of the crop (a fraction
+    is a chance of one more), a can's `drop_luck` makes it more, never over `max_drop_rolls`."""
+    expected = cycles / rules.drop_cycles_per_roll * (1 + luck)
+    whole = int(expected)
+    return min(rules.max_drop_rolls, whole + (1 if rng.random() < expected - whole else 0))
+
+
+def harvest_extras(rng: random.Random, registry: Registry, cycles: int = 4, luck: float = 0.0) -> Counter:
+    """Materials that come along with a harvest (items of the farming skill that have a drop table): longer crops roll more."""
     found: Counter = Counter()
-    for item in registry.items_for_skill("farming"):
-        if item.category == "material" and (quantity := roll_drop(item, rng)):
-            found[item.id] += quantity
+    materials = [i for i in registry.items_for_skill("farming") if i.category == "material" and i.drop]
+    for _ in range(drop_rolls(cycles, registry.farming, rng, luck)):
+        for item in materials:
+            if quantity := roll_drop(item, rng):
+                found[item.id] += quantity
     return found
 
 
@@ -362,6 +389,8 @@ async def harvest(
     taken: dict = {}
     party_bonus = await xp_multiplier(user.id, reg, "farming")
     pet = await pets.bonuses(user, reg)
+    can = await equipped_stats(user, "farming", reg)  # (a can with better stats gives bigger harvests and more drops; no can: no bonus)
+    crop_yield = pet.get("crop_yield", 0.0) + (can.stats.get("crop_yield", 0.0) if can else 0.0)
 
     def pick(m: Farming) -> None:
         apply_rain(m, user.id, now, reg, pet.get("grow_chance", 0.0))
@@ -370,7 +399,7 @@ async def harvest(
             raise FarmingError("Nothing is ready to harvest on that plot.")
         crop = reg.item(reg.item(plot.crop_id).seed.grows_into)
         taken.update(seed=plot.crop_id, crop=crop.id,
-                     amount=max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + pet.get("crop_yield", 0.0)))),
+                     amount=max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield))),
                      xp=round(reg.item(plot.crop_id).seed.cycles * rules.xp_per_cycle * party_bonus))
         plot.crop_id, plot.cycle, plot.can_harvest = None, 0, False  # the plot is empty from this moment: once only
         m.xp += taken["xp"]
@@ -386,7 +415,7 @@ async def harvest(
 
         await user.update_skill("farming", restore)  # the crop never arrived: the plot is still ripe
         raise
-    extras = harvest_extras(rng, reg)
+    extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0)
     for item_id, quantity in extras.items():
         await user.add_item(item_id, quantity)
     anomaly = rng.randint(1, rules.anomaly_odds) == 1

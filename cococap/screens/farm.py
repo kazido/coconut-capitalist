@@ -6,6 +6,7 @@ import discord
 
 from cococap.registry import get_registry
 from cococap.services import farming
+from cococap.services.equipment import equipped_stats
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import button, row, sep, select, text, xp_bar
 from cococap.user import User
@@ -41,11 +42,14 @@ class FarmScreen(Screen):
             self.note = "🌧️ " + ", ".join(f"Plot {n}" for n in rain.matured) + (" is" if len(rain.matured) == 1 else " are") + " ready to harvest!"
 
         overflow, needed = User.xp_for_next_level(skill.xp)
+        can = await equipped_stats(self.user, "farming")
+        can_line = (f"🚿 Watering can: waters **{can.power}** plot(s) an hour" if can
+                    else "🚿 You need a watering can to water. Buy a **Tin Watering Can** in the shop and it equips itself.")
         body = [
             *self.note_block(),
             text(f"**Level {farming.level_of(skill)}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp\n"
                  f"🌧️ Next rain <t:{farming.next_rain(time.time())}:R>  ·  💧 Blessings: **{skill.rain_god_blessings}**"
-                 + (f"  ·  {reg.item(reg.farming.deed_item).display}: **{deeds}**" if deeds else "")),
+                 + (f"  ·  {reg.item(reg.farming.deed_item).display}: **{deeds}**" if deeds else "") + f"\n{can_line}"),
             sep(),
             text(self._plot_lines(views, reg)),
         ]
@@ -64,7 +68,7 @@ class FarmScreen(Screen):
         body.append(row(
             button("Harvest all", emoji="🧺", style=discord.ButtonStyle.success, disabled=not any(v.ready for v in views), on_click=self._harvest_all),
             button("Water", emoji="💧", style=discord.ButtonStyle.primary,
-                   disabled=not any(v.growing and not v.watered for v in views), on_click=self._water),
+                   disabled=can is None or not any(v.growing and not v.watered for v in views), on_click=self._water),
             button("Plant all", emoji="🌱", disabled=not (self.seed and empty), on_click=self._plant_all),
             button("Market", emoji="🛒", on_click=self._market),
         ))
@@ -133,6 +137,8 @@ class FarmScreen(Screen):
         if not report.watered:
             return await self.refresh(interaction, "💧 Everything growing has been watered this hour. Come back after the next rain!")
         note = f"💧 You watered {report.watered} plot(s): **{report.grew}** grew."
+        if report.thirsty:
+            note += f" 🚿 Your can only reaches {report.capacity} plots an hour: **{report.thirsty}** plot(s) stayed dry. A better can waters more."
         if report.matured:
             note += " " + ", ".join(f"Plot {n}" for n in report.matured) + (" is" if len(report.matured) == 1 else " are") + " ready!"
         await self.refresh(interaction, note)
