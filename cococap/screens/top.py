@@ -27,8 +27,8 @@ class TopScreen(Screen):
             sep(),
             text(board),
         ]
-        if circulation:
-            body += [sep(), text(f"{circulation}\n-# {house}")]
+        if circulation or house:
+            body += [sep(), text("\n".join(filter(None, (circulation, f"-# {house}" if house else None))))]
         return Page(f"{self.category.display_name} Leaderboard", body, accent=int(self.category.color, 16))
 
     async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:

@@ -1326,3 +1326,19 @@ async def test_every_leaderboard_says_what_it_counts(db):
             assert "Lv 2 (300 xp)" in board, (category, board)
         else:
             assert expected[category.value] in board, (category, board)
+
+
+async def test_the_house_earns_luckbucks_not_bits_on_the_boards(db):
+    from cococap.constants import BOT_ID
+    from cococap.exts.economy.top import TopCategories, leaderboard_view
+
+    house = await User.get(BOT_ID)
+    await set_columns(house, purse=999, luckbucks=1_234)
+    _, bits_line, bits_footer = await leaderboard_view(TopCategories.BITS, 1)
+    assert "bits in the economy" in bits_line and bits_footer is None  # no "the house has made N bits"
+    _, _, luck_footer = await leaderboard_view(TopCategories.LUCKBUCKS, 1)
+    assert luck_footer == "The house has made: 1,234 luckbucks"
+    nav, inter = await hub("top")
+    assert "house" not in all_text(nav).lower()
+    await choose(nav, inter, select_named(nav, "Pick a leaderboard"), "luckbucks")
+    assert "The house has made: 1,234 luckbucks" in all_text(nav)

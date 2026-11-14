@@ -66,18 +66,15 @@ async def leaderboard_view(category: TopCategories, caller_id: int) -> tuple[str
         if mine:
             lines.append(f"\nYour rank:\n**{mine.rank}. {mine.name} — {category.format(mine.value)} (you)**")
     board = "\n".join(lines) or "Nobody is on this board yet."
-    if category != TopCategories.BITS:
-        return board, None, None
-
     from cococap.user import User
 
-    circulation = await queries.bits_in_circulation(exclude=BOT_ID)
-    house = await User.get(BOT_ID)
-    return (
-        board,
-        f"There are currently **{circulation:,}** bits in the economy.",
-        f"The house has made: {house.purse:,} bits",
-    )
+    if category == TopCategories.BITS:  # the casino pays in luckbucks now, so the house has no bits to speak of
+        circulation = await queries.bits_in_circulation(exclude=BOT_ID)
+        return board, f"There are currently **{circulation:,}** bits in the economy.", None
+    if category == TopCategories.LUCKBUCKS:
+        house = await User.get(BOT_ID)
+        return board, None, f"The house has made: {house.luckbucks:,} luckbucks"
+    return board, None, None
 
 
 async def build_leaderboard_embed(interaction: Interaction, category: TopCategories):
