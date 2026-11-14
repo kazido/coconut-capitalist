@@ -62,29 +62,52 @@ def swing_power(stats: EffectiveStats, zone: int, rules: ForagingRules, *, commu
     return max(1, power)
 
 
+STANCES = {"o": ("Overhead", "⬆️"), "s": ("Sidecut", "↔️"), "u": ("Undercut", "⬇️")}
+
+
+def cycle_length(zone: int, rules: ForagingRules) -> int:
+    """How many steps of a grain's pattern a tree of this zone makes you do (deeper trees: longer)."""
+    table = rules.chopping.cycle_by_zone
+    return table[min(max(zone, 1), len(table)) - 1]
+
+
 @dataclass(frozen=True)
 class Swing:
     damage: int
     good: bool  # a "good chop": extra damage
     freshness: float  # how fresh the spot was for this swing (1.0 = untouched)
-    missed: bool = False  # a heavy swing that hit nothing
-    style: str = "normal"
+    correct: bool | None = None  # was it the right stance for the step? (None: no stance was used)
+    finisher: bool = False  # this swing finished the pattern
+    index: int = 0  # which step of the pattern it was aimed at
+    combo: int = 0  # correct moves in a row, counting this one (0 after a wrong one)
 
 
 @dataclass
 class Spot:
-    """The place on the trunk you are chopping. Spots differ (``quality``: knotty, plain, clean grain), and each chop
-    has a chance to wear the spot down a step. Rotating (a click that does no damage) moves you to a random new spot,
-    so it is worth it when your spot has worn below what an average new one would give."""
+    """The place on the trunk you are chopping. Its **grain** (plain, knotty, twisted...) sets how hard it is and has its own
+    secret pattern of stances: do the right stance for each step in turn and the grain gives (a growing combo and a finisher);
+    the wrong stance is a glancing blow and you stay on the same step. A spot also wears down at random. Rotating (a click
+    that does no damage) moves you to a new spot with a new grain, and starts the pattern again."""
 
     name: str = "Plain"
     quality: float = 1.0
     wear: int = 0  # how many steps this spot has worn down
+    grain: str = "plain"
+    step: int = 0  # where you are in the grain's pattern
+    combo: int = 0  # correct stances in a row
 
     @classmethod
     def pick(cls, rules: ForagingRules, rng: random.Random) -> "Spot":
-        kind = rng.choices(rules.chopping.spots, weights=[k.weight for k in rules.chopping.spots])[0]
-        return cls(kind.name, kind.multiplier)
+        grains = rules.chopping.grains
+        g = rng.choices(grains, weights=[x.weight for x in grains])[0]
+        return cls(g.name, g.multiplier, 0, g.id)
+
+    def pattern(self, rules: ForagingRules) -> str:
+        return rules.chopping.grain(self.grain).pattern if any(g.id == self.grain for g in rules.chopping.grains) else ""
+
+    def expected(self, rules: ForagingRules, cycle: int) -> str | None:
+        pattern = self.pattern(rules)[:cycle]
+        return pattern[self.step % len(pattern)] if pattern else None
 
     def freshness(self, rules: ForagingRules) -> float:
         c = rules.chopping
@@ -98,35 +121,67 @@ class Spot:
         fresh = self.freshness(rules)
         return "fresh" if fresh >= 0.85 else "worn" if fresh >= 0.6 else "dull"
 
-    def preview(self, power: int, rules: ForagingRules, style: str = "normal") -> int:
-        """What the next ordinary (not good) chop of this style would do (a heavy one, if it lands)."""
-        factor = 1.0 if style == "normal" else getattr(rules.chopping, style).damage
+    def preview(self, power: int, rules: ForagingRules, cycle: int | None = None) -> int:
+        """What the next chop would do if you pick the right stance (an ordinary chop if no cycle is given)."""
+        c = rules.chopping
+        factor = 1.0
+        if cycle:
+            factor = (1 + c.combo_step * self.combo) * (c.finisher if self.step + 1 >= cycle else 1.0)
         return max(1, round(power * self.multiplier(rules) * factor))
 
     def swing(self, power: int, rules: ForagingRules, rng: random.Random, good_bonus: float = 0.0,
-              style: str = "normal") -> Swing:
-        """One chop. ``good_bonus`` is extra good-chop chance (a Sharp Eye enchant). A *heavy* swing hits harder, wears
-        the spot faster and may miss; a *careful* cut hits softer, never wears the spot and lands good chops more often."""
+              stance: str | None = None, cycle: int | None = None) -> Swing:
+        """One chop. With a `stance` and the tree's `cycle` length the grain's pattern applies: the right stance moves you on a
+        step, builds the combo and, on the last step, lands the finisher; the wrong one is a glancing blow and you stay put.
+        Without a stance it is a plain chop. ``good_bonus`` is extra good-chop chance (a Sharp Eye enchant)."""
         c = rules.chopping
         fresh = self.freshness(rules)
-        way = None if style == "normal" else getattr(c, style)
-        if way is not None and way.miss and rng.random() < way.miss:
-            return Swing(0, False, fresh, missed=True, style=style)  # (a miss does not wear the spot: nothing touched it)
-        good = rng.random() < c.good_chop_chance + good_bonus + (way.good_bonus if way else 0.0)
-        damage = max(1, round(power * self.multiplier(rules) * (way.damage if way else 1.0) * (1 + c.good_chop_bonus if good else 1)))
-        if rng.random() < min(1.0, c.wear_chance * (way.wear if way else 1.0)):
+        good = rng.random() < c.good_chop_chance + good_bonus
+        factor, correct, finisher, index, reached = 1.0, None, False, self.step, 0
+        if stance is not None and cycle:
+            correct = stance == self.expected(rules, cycle)
+            if correct:
+                factor = 1 + c.combo_step * self.combo
+                self.combo += 1
+                reached = self.combo  # (reported even if finishing resets it)
+                self.step += 1
+                if self.step >= cycle:
+                    factor *= c.finisher
+                    finisher, self.step, self.combo = True, 0, 0
+            else:
+                factor, self.combo = c.glancing, 0
+        damage = max(1, round(power * self.multiplier(rules) * factor * (1 + c.good_chop_bonus if good else 1)))
+        if rng.random() < c.wear_chance:
             self.wear += 1
-        return Swing(damage, good, fresh, style=style)
+        return Swing(damage, good, fresh, correct, finisher, index, reached)
 
     def rotate(self, rules: ForagingRules, rng: random.Random) -> None:
-        """Move to a new spot: a random kind, and unworn."""
+        """Move to a new spot: a random grain, unworn, and back to the start of its pattern."""
         new = Spot.pick(rules, rng)
-        self.name, self.quality, self.wear = new.name, new.quality, 0
+        self.name, self.quality, self.wear, self.grain, self.step, self.combo = new.name, new.quality, 0, new.grain, 0, 0
 
 
 def average_spot_multiplier(rules: ForagingRules) -> float:
-    spots = rules.chopping.spots
-    return sum(k.multiplier * k.weight for k in spots) / sum(k.weight for k in spots)
+    grains = rules.chopping.grains
+    return sum(g.multiplier * g.weight for g in grains) / sum(g.weight for g in grains)
+
+
+async def learned_steps(user: User, grain: str) -> int:
+    """How many steps of this grain's pattern you have learned (they are remembered for good)."""
+    return (await user.skill("foraging")).grains.get(grain, 0)
+
+
+async def learn(user: User, grain: str, steps: int) -> bool:
+    """Remember that you know the first `steps` steps of this grain's pattern. True if that is new."""
+    outcome: dict = {}
+
+    def remember(skill: Foraging) -> None:
+        if steps > skill.grains.get(grain, 0):
+            skill.grains[grain] = steps
+            outcome["new"] = True
+
+    await user.update_skill("foraging", remember)
+    return bool(outcome)
 
 
 def average_hp(zone: int, rules: ForagingRules) -> float:

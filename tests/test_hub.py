@@ -71,6 +71,15 @@ async def click(nav, inter, label=None, emoji=None):
     await button.callback(inter)
 
 
+async def chop(nav, inter, zone=1):
+    """Chop with the stance that is right for the spot's grain at its current step (the player knows the pattern)."""
+    from cococap.services import foraging as forage
+
+    spot, rules = nav.screen.spot, get_registry().foraging
+    letter = spot.expected(rules, forage.cycle_length(zone, rules))
+    await click(nav, inter, forage.STANCES[letter][0])
+
+
 async def choose(nav, inter, select, value):
     select._values = [value]
     inter.response.edit_message.reset_mock()
@@ -1124,7 +1133,7 @@ async def test_chopping_a_private_tree_to_the_ground_pays_out(db, monkeypatch):
     await click(nav, inter, "Chop a tree")
     assert nav.screen.id == "tree" and "hp" in all_text(nav)
     nav.screen.tree = foraging_service.Tree(1, 1, 1)  # a one-chop tree, so the test is short
-    await click(nav, inter, "Chop")
+    await chop(nav, inter)
     assert nav.screen.id == "result" and nav.screen.origin.reward is not None and "TIMBER" in all_text(nav)
     assert (await user.skill("foraging")).stats.trees_chopped == 1 and (await User.get(1)).purse > 1000
     await click(nav, inter, "Another tree")
@@ -1137,7 +1146,7 @@ async def test_a_second_chop_click_on_a_fallen_tree_does_not_pay_twice(db, monke
     freeze_time(monkeypatch)
     await with_axe()
     nav, inter = await hub("tree", tree=foraging_service.Tree(1, 1, 1))
-    stale = find_button(nav, "Chop")
+    stale = find_button(nav, "Overhead")
     await stale.callback(inter)
     purse = (await User.get(1)).purse
     await stale.callback(inter)
@@ -1177,9 +1186,9 @@ async def test_two_players_chop_the_community_tree_together(db, monkeypatch):
     await click(a_nav, a_inter, "Join the community tree")
     await click(b_nav, b_inter, "Join the community tree")
     assert a_nav.screen.id == "grove" and b_nav.screen.id == "grove"
-    await click(a_nav, a_inter, "Chop")
-    await click(a_nav, a_inter, "Chop")
-    await click(b_nav, b_inter, "Chop")
+    await chop(a_nav, a_inter)
+    await chop(a_nav, a_inter)
+    await chop(b_nav, b_inter)
     tree = await foraging_service.community_tree(alice, OPEN_HOUR)
     power = get_registry().item("starter_axe").tool.power
     assert tree.hp == tree.max_hp - 3 * power and tree.choppers == 2
@@ -1238,7 +1247,7 @@ async def test_the_tree_falling_over_unfinished_ends_the_panel_gracefully(db, mo
     freeze_time(monkeypatch)
     user = await with_axe()
     nav, inter = await hub("grove")
-    await click(nav, inter, "Chop")
+    await chop(nav, inter)
     freeze_time(monkeypatch, OPEN_HOUR + 40 * 60)  # 40 minutes in: it fell over
     await nav.screen.refresh(inter)
     assert nav.screen.id == "result" and "fell over" in all_text(nav)  # the consolation arrives on its own page
@@ -1270,18 +1279,18 @@ async def test_rotating_gives_a_new_spot_and_costs_a_click(db, monkeypatch):
     user = await with_axe(template="reinforced_axe")
     power = get_registry().item("reinforced_axe").tool.power
     nav, inter = await hub("tree", tree=foraging_service.Tree(1, 10_000, 10_000))
-    assert "**Plain** spot" in all_text(nav) and f"next: 🪓 **{power}**" in all_text(nav)
+    assert "**Plain** grain" in all_text(nav) and f"about **{power}**" in all_text(nav)
     assert find_button(nav, "Rotate").style == discord.ButtonStyle.secondary  # never lit: when to rotate is your call
-    await click(nav, inter, "Chop")
+    await chop(nav, inter)
     assert nav.screen.spot.wear == 0  # a spot only wears now and then (here the dice say no)
     nav.screen.spot.wear = 4  # ...and when it has, you can see it
     await nav.screen.nav.refresh(inter)
-    assert "dull" in all_text(nav) and f"next: 🪓 **{power}**" not in all_text(nav)
+    assert "dull" in all_text(nav) and f"about **{power}**" not in all_text(nav)
     assert find_button(nav, "Rotate").style == discord.ButtonStyle.secondary
     hp = nav.screen.tree.hp
     await click(nav, inter, "Rotate")
     assert nav.screen.tree.hp == hp  # rotating does no damage
-    assert nav.screen.spot.wear == 0 and f"next: 🪓 **{power}**" in all_text(nav) and "You move around the trunk" in all_text(nav)
+    assert nav.screen.spot.wear == 0 and f"about **{power}**" in all_text(nav) and "You move around the trunk" in all_text(nav)
 
 
 async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
@@ -1289,12 +1298,12 @@ async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
     await with_axe(template="reinforced_axe")
     power = get_registry().item("reinforced_axe").tool.power
     nav, inter = await hub("tree", tree=foraging_service.Tree(1, 10_000, 10_000))
-    await click(nav, inter, "Chop")
+    await chop(nav, inter)
     bonus = round(power * (1 + RULES_CHOP.good_chop_bonus))
     assert "Good chop" in all_text(nav) and nav.screen.tree.hp == 10_000 - bonus
     freeze_time(monkeypatch, good_chops=False)
     nav2, inter2 = await hub("tree", tree=foraging_service.Tree(1, 10_000, 10_000))
-    await click(nav2, inter2, "Chop")
+    await chop(nav2, inter2)
     assert "Good chop" not in all_text(nav2) and nav2.screen.tree.hp == 10_000 - power
 
 
@@ -1303,14 +1312,14 @@ async def test_the_community_tree_has_the_same_spot_and_rotate(db, monkeypatch):
     user = await with_axe(template="reinforced_axe")
     power = get_registry().item("reinforced_axe").tool.power
     nav, inter = await hub("grove")
-    assert "spot" in all_text(nav) and find_button(nav, "Rotate")
-    await click(nav, inter, "Chop")
+    assert "grain" in all_text(nav) and find_button(nav, "Rotate")
+    await chop(nav, inter)
     nav.screen.spot.wear = 3
-    await click(nav, inter, "Chop")
+    await chop(nav, inter)
     worn = (await foraging_service.community_tree(user, OPEN_HOUR)).yours
     assert worn < 2 * power  # the second chop, on a worn spot, did less
     await click(nav, inter, "Rotate")
-    await click(nav, inter, "Chop")
+    await chop(nav, inter)
     assert (await foraging_service.community_tree(user, OPEN_HOUR)).yours - worn == power  # a new spot hits full again
 
 

@@ -90,8 +90,12 @@ def _foraging(reg: Registry) -> list[str]:
     return [
         f"**Foraging** needs an axe. Chop a tree down for bits, drops and xp. There are **{f.zones} zones** (a new one every {f.levels_per_zone} levels); "
         f"from zone {f.heavy_zone} alone, trees are heavy and you swing at half power unless your axe has **Soloist**.",
-        "**Where you stand matters.** Spots come Knotty, Plain or Clean grain, and wear down at random as you chop. **Rotate** to a new spot "
-        "when yours is worn: it costs a click, and the new spot could be worse. A good chop hits extra hard.",
+        "**Learn the grain.** Every spot has a grain (Plain, Knotty, Clean, Twisted, Split or Burl), and every grain has its own secret **pattern** "
+        "of the three stances (⬆️ Overhead, ↔️ Sidecut, ⬇️ Undercut). Pick the right stance for your step and the grain gives: you move on, "
+        "build a combo and the last step lands a **finisher**. A wrong stance is a glancing blow and you stay on the same step. "
+        "Every step you get right is remembered for good, so once you know a grain you simply follow it. Deeper trees make you do more steps.",
+        "**Spots wear down** at random as you chop. **Rotate** to a new spot (and a new grain, back to step one) when yours is worn: it costs a "
+        "click, and the new spot could be worse. A good chop hits extra hard.",
         f"**The community tree.** One grows every hour and stands for {c.open_minutes} minutes. Everyone's chops add up; "
         f"chop at least {c.min_share:.0%} of it to be paid, and a bigger crowd earns a bonus. Rewards arrive in your own panel, even if you were offline.",
     ]

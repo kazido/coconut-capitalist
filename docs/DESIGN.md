@@ -187,12 +187,24 @@ over, and each member collects theirs from their own panel. They pay a little be
 **+10% per extra member who did at least 10% of it, up to +50%** (the community tree gives +5% each). This is the first of the
 **party versions of each skill** (the others are still to come). Settings: `configs/foraging.toml` `[party_tree]`.
 
-### Chop styles
+### Stances and grain patterns
 
-Three ways to swing, shown with what each would do on your current spot: **Chop** (steady), **Heavy swing** (x1.6 damage,
-but 25% of swings miss and it wears the spot out three times as fast) and **Careful cut** (x0.7 damage, never wears the
-spot, and good chops are 12% likelier). None is the right answer: a fresh Clean-grain spot suits a heavy swing, a spot you
-want to keep suits careful cuts, and a test keeps every style within about 25% of an ordinary chop.
+Chopping is a small puzzle you master. Every spot has a **grain** (Plain, Knotty, Clean grain, Twisted, Split, Burl; each with its
+own difficulty multiplier) and every grain has its own **secret pattern** of three stances: Overhead, Sidecut and Undercut
+(`configs/foraging.toml` `[[chopping.grains]]`). You pick a stance each chop:
+
+- **The right stance** for your step: the grain gives. You move on a step, a **combo** builds (+10% per correct move in a row) and the
+  last step of the pattern lands a **x1.5 finisher**, then the pattern starts again.
+- **The wrong stance** is a glancing blow (30% damage) and you stay on the same step, with your combo gone. With three stances you can
+  always find a step by trial in at most two wrong guesses (a test checks every grain).
+- **You learn as you go.** Each step you get right is saved for good, per grain. The page shows what you know (and "?" for the rest),
+  so once you know a grain you just follow it ("📖 mastered").
+- **Later trees ask for more.** A tree makes you do the first 3 steps of the pattern in zones 1-2, then 4, 5, 6, 7 and 8 steps in zone 10,
+  always the same opening steps, so what you learned still applies and you only learn the new tail.
+
+A master chopper lands about 30% more damage per click than someone chopping blind, so pay per hp was lowered to keep a master a bit
+under mining per click; someone guessing earns well under that, so learning is worth it. The same stances work on private,
+community and party trees. Spots still wear down at random and **Rotate** still moves you to a new grain (back to step one).
 
 ### Foraging pay vs mining
 

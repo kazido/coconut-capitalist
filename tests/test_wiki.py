@@ -117,3 +117,11 @@ async def test_the_wiki_is_on_the_more_page_and_the_command_opens_it(db):
     assert "Wiki" in all_text(nav)
     opened, _ = await hub("wiki", topic="items", skill="fishing", item="marlin")
     assert "Blue Marlin" in all_text(opened)
+
+
+def test_the_foraging_page_explains_stances_without_giving_the_patterns_away():
+    page = all_blocks("foraging")
+    assert "pattern" in page and "Overhead" in page and "Sidecut" in page and "Undercut" in page and "finisher" in page
+    for grain in REG.foraging.chopping.grains:
+        assert grain.pattern not in page  # the wiki teaches the game, it doesn't hand you the answers
+    assert all(g.name in page or g.name.split()[0] in page for g in REG.foraging.chopping.grains)

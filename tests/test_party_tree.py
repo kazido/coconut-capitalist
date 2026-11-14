@@ -9,7 +9,7 @@ from cococap.services import party_tree as pt
 from cococap.services.equipment import equip
 from cococap.services.party import Party
 from cococap.user import User
-from tests.test_hub import all_text, click, find_button, hub
+from tests.test_hub import all_text, chop, click, find_button, hub
 
 REG = get_registry()
 RULES = REG.foraging
@@ -250,12 +250,12 @@ async def test_a_party_can_start_and_chop_a_tree_from_the_foraging_page(db, cloc
     assert "Party tree" in all_text(nav)
     await click(nav, inter, "Start a party tree")
     assert nav.screen.id == "partygrove" and "Zone 1" in all_text(nav) and "Nobody has chopped yet" in all_text(nav)
-    for label in ("Chop", "Heavy", "Careful", "Rotate", "Leave"):
+    for label in ("Overhead", "Sidecut", "Undercut", "Rotate", "Leave"):
         assert find_button(nav, label)
-    await click(nav, inter, "Chop")
+    await chop(nav, inter)
     assert "you" in all_text(nav) and "hp (" in all_text(nav)
     other, other_inter = await hub("partygrove", user_id=2)
-    await click(other, other_inter, "Chop")
+    await chop(other, other_inter)
     assert "(you)" in all_text(other) and "hp (" in all_text(other)
     await click(nav, inter, "Leave")
     assert nav.screen.id == "forage" and find_button(nav, "Join the party tree")

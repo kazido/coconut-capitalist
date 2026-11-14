@@ -388,34 +388,52 @@ class CommunityRules(_Data):
     refresh_seconds: float = Field(gt=0)
 
 
-class SpotKind(_Data):
-    """A kind of place on the trunk: some are easier to cut than others."""
+class Grain(_Data):
+    """A kind of wood at the place you chop. It sets how hard the spot is to cut, and has its own secret pattern of stances."""
 
+    id: str
     name: str
     multiplier: float = Field(gt=0)
     weight: float = Field(gt=0)
+    pattern: str  # one letter per step: o = overhead, s = sidecut, u = undercut
 
-
-class ChopStyle(_Data):
-    """A way of swinging: harder hits that wear the spot faster and sometimes miss, or gentle ones that last."""
-
-    damage: float = Field(gt=0)  # x the damage of an ordinary chop
-    wear: float = Field(ge=0)  # x the usual chance of wearing the spot down
-    miss: float = Field(ge=0, lt=1)  # chance the swing hits nothing
-    good_bonus: float = Field(ge=0)  # extra good-chop chance
+    @field_validator("pattern")
+    @classmethod
+    def _stances(cls, value: str) -> str:
+        if not value or set(value) - set("osu"):
+            raise ValueError("a grain's pattern may only use the stances o, s and u")
+        return value
 
 
 class ChoppingRules(_Data):
-    """How a swing's damage varies: good chops, the kind of spot you stand at, and spots wearing down at random."""
+    """How a swing's damage varies: the grain's pattern (combo and finisher), good chops, and spots wearing down at random."""
 
     good_chop_chance: float = Field(ge=0, le=1)
     good_chop_bonus: float = Field(ge=0)  # +50% -> 0.5
     wear_chance: float = Field(ge=0, le=1)  # each chop: the chance the spot wears down one step
     wear_step: float = Field(ge=0, lt=1)  # each step makes chops this much weaker
     spot_floor: float = Field(gt=0, le=1)  # ...but never below this share
-    spots: list[SpotKind] = Field(min_length=1)
-    heavy: ChopStyle
-    careful: ChopStyle
+    combo_step: float = Field(ge=0)  # each correct stance in a row adds this much damage
+    finisher: float = Field(ge=1)  # finishing the pattern lands this many times harder
+    glancing: float = Field(gt=0, le=1)  # a wrong stance does only this much
+    cycle_by_zone: list[int] = Field(min_length=1)  # steps of the pattern a tree of zone 1, 2, ... makes you do
+    grains: list[Grain] = Field(min_length=1)
+
+    @model_validator(mode="after")
+    def _patterns_fit(self):
+        longest = max(len(g.pattern) for g in self.grains)
+        if any(len(g.pattern) < max(self.cycle_by_zone) for g in self.grains):
+            raise ValueError("every grain's pattern must be at least as long as the longest cycle")
+        if len({g.id for g in self.grains}) != len(self.grains):
+            raise ValueError("grain ids must be unique")
+        if len({g.pattern[:3] for g in self.grains}) != len(self.grains):
+            raise ValueError("grains must differ in their first three steps, or you could not tell them apart by playing")
+        if self.cycle_by_zone != sorted(self.cycle_by_zone) or longest < 1:
+            raise ValueError("cycle_by_zone must not shrink as the zones get deeper")
+        return self
+
+    def grain(self, grain_id: str) -> Grain:
+        return next(g for g in self.grains if g.id == grain_id)
 
 
 class PartyTreeRules(_Data):
