@@ -748,3 +748,15 @@ A pass over the busiest pages to cut text without cutting information. The rules
   need pays `reel.slack_bonus` (8%) of the catch's worth in bits (a boss: of its bits), counting the extra fish a good rod hauls in. Bits only, never xp. The
   reel page says "each one unused pays a bonus"; the catch page says "Clean reel! N slack unused: +X bits". A better rod forgives more, so it can pay more.
 - **The cast shows the wait**: "A bite in about 17s  ·  a starter rod: 29s" (the typical wait for your rod, pet and water, beside a starter rod's), so an upgrade is something you feel.
+
+## Where the bits come from, checkpoints in the mine, and the sell list (decided)
+- **Where players' bits really came from:** the **Work** button (every 6 hours) at 240k-375k a claim at ranks 6-7, plus the mining vault: a rank-7 player
+  who pressed Work twice already holds 750k without selling anything. Next to that, an hour of mining at starter gear is about 570k bits and a single
+  ore sells for 20-2,000, so selling felt like pocket change. **Wages were cut to 30% from rank 2 up** (rank 7: 375k -> 112k, 4 claims a day is about
+  450k, under an hour of play), so skills and what you gather are the economy. Ranks 0 and 1 still pay 2,500 for a start. Other direct payouts (fishing
+  quests at about 6x the fish's worth, boss bits, community books, the double-tree jackpot) were looked at but not changed yet.
+- **Checkpoints** (`[[descent.milestones]]`, rows 10 and 20; the vault is row 30): finishing one makes a checkpoint, so what is in your pack is safe from
+  a collapse from then on (a collapse takes its share only of what you dug after it). The rows ahead show 🏁 checkpoint and 🏆 vault, and the header says
+  how far the next landmark is. A milestone can also give pressure relief, braces or a taste of the vault's ore, but each of those made the vault much easier
+  to reach (relief of only 4/6 raised the vault rate from 12% to 18% and the mine's pay by 70%), so they are off by default.
+- **Sell list:** a stack reads `x7 · 500 each · 3,500 for all` under the item's name (the count is plain text, not part of the bold heading).

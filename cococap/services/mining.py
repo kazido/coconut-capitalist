@@ -21,7 +21,7 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.mining import Mining
 from cococap.registry import Registry, get_registry
 from cococap.registry.loader import BOMB_ITEM
-from cococap.registry.models import MiningRules, RiskLabel
+from cococap.registry.models import MiningRules, Milestone, RiskLabel
 from cococap.services.equipment import equipped_stats
 from cococap.services.loot import roll_table
 from cococap.services import pets
@@ -81,6 +81,8 @@ class DigResult:
     vented: int = 0  # cooling vents dug (each bled pressure)
     caches: int = 0  # supply caches dug (each gave braces)
     vault: Counter[str] = field(default_factory=Counter)  # what the vault gave, if this dig reached the floor
+    milestone: Milestone | None = None  # the landmark row this dig finished, if any (already applied)
+    milestone_haul: Counter[str] = field(default_factory=Counter)  # the ore it gave
 
 
 @dataclass
@@ -140,6 +142,9 @@ class MineRun:
         self.outcome: str | None = None  # "left" | "collapse" | "wyrmhole" | "floor"
         self.settled = False
         self.history: list[DugRow] = []
+        self.safe: Counter[str] = Counter()  # what the last checkpoint made safe from a collapse
+        self.passed = None  # the landmark the last dig finished
+        self.passed_haul: Counter[str] = Counter()
         self._rows: dict[int, list[Cell]] = {}
         self._holes: dict[int, set[int]] = {}
         self._kinds: dict[int, list[str]] = {}
@@ -278,6 +283,14 @@ class MineRun:
         gain = pressure * self.growth_factor
         self.danger = min(100.0, max(0.0, self.danger + gain - vents * d.vent_relief))
         self.depth += 1
+        self.passed = next((m for m in d.milestones if m.row == self.depth), None)  # (the row you just finished, if it is a landmark)
+        self.passed_haul = Counter()
+        if self.passed is not None:
+            self.danger = max(0.0, self.danger - self.passed.relief)
+            self.braces += self.passed.braces
+            self.passed_haul = Counter({ore: max(1, round(q * self.passed.vault_share)) for ore, q in d.vault_ore.items()})
+            self.haul.update(self.passed_haul)
+            self.safe = Counter(self.haul)  # a checkpoint: everything you hold is kept from here on
         if self.depth < d.floor:
             return Counter()
         self.outcome = "floor"
@@ -298,7 +311,9 @@ class MineRun:
         if self.rng.random() < self.risk:
             lost: Counter[str] = Counter()
             for item_id, quantity in list(self.haul.items()):
-                keep = int(quantity * (1 - d.collapse_loss))
+                safe = min(quantity, self.safe[item_id])  # (what a checkpoint saved cannot be lost)
+                risked = quantity - safe
+                keep = safe + int(risked * (1 - d.collapse_loss))
                 lost[item_id] = quantity - keep
                 if keep:
                     self.haul[item_id] = keep
@@ -308,7 +323,7 @@ class MineRun:
             return DigResult(Counter(), collapsed=True, lost=+lost)
         found, vents, caches, hardness = self._mine(sorted(set(self.cursors)))
         vault = self._descend(d.creak + hardness, vents)
-        return DigResult(found, vented=vents, caches=caches, vault=vault)
+        return DigResult(found, vented=vents, caches=caches, vault=vault, milestone=self.passed, milestone_haul=self.passed_haul)
 
     def bomb(self) -> DigResult:
         """Blow the whole row (except wyrmholes): every cell, one flat pressure hit, no collapse check."""
@@ -322,7 +337,7 @@ class MineRun:
         columns = [c for c in range(self.rules.columns) if c not in self._holes[self.depth]]
         found, vents, caches, _ = self._mine(columns)
         vault = self._descend(d.creak + d.bomb_pressure, vents)
-        return DigResult(found, bombed=True, vented=vents, caches=caches, vault=vault)
+        return DigResult(found, bombed=True, vented=vents, caches=caches, vault=vault, milestone=self.passed, milestone_haul=self.passed_haul)
 
     def brace(self) -> None:
         """Shore up the tunnel: lower the pressure (uses a brace, skips a dig)."""

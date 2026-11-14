@@ -451,6 +451,16 @@ class RiskLabel(_Data):
     from_risk: float = Field(ge=0, le=1)  # this label applies from this collapse chance upward
 
 
+class Milestone(_Data):
+    """A landmark row on the way down. Finishing it makes a CHECKPOINT: everything in your pack at that moment is safe from a collapse
+    (a collapse only costs what you dug after it). It can also give a little extra (pressure relief, braces, a taste of the vault's ore)."""
+
+    row: int = Field(ge=1)  # the row number you finish (1-based, like the page says)
+    relief: float = Field(default=0, ge=0)  # pressure taken off
+    braces: int = Field(default=0, ge=0)
+    vault_share: float = Field(default=0, ge=0, le=1)  # this share of the vault's ore, as a taste of what is below
+
+
 class DescentRules(_Data):
     floor: int = Field(ge=1)  # rows in the shaft; digging the last one reaches the vault
     rows_per_tier: int = Field(ge=1)
@@ -486,6 +496,14 @@ class DescentRules(_Data):
     vault_gem_chance: float = Field(ge=0, le=1)  # chance the vault also holds one random reactor gem (gems are rare!)
     vault_ore: dict[str, int]
     warnings: list[RiskLabel] = Field(min_length=1)
+    milestones: list[Milestone] = Field(default_factory=list)  # landmark rows (10, 20...) that reward you; the vault is the last one
+
+    @model_validator(mode="after")
+    def _milestones_fit(self):
+        rows = [m.row for m in self.milestones]
+        if rows != sorted(set(rows)) or any(not 1 <= r < self.floor for r in rows):
+            raise ValueError("milestone rows must be different, climbing, and above the floor (the vault is the last landmark)")
+        return self
 
     @model_validator(mode="after")
     def _warnings_ascend_from_zero(self):

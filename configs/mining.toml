@@ -88,6 +88,14 @@ copper_ore = 330                   # Worth about 94,000 bits at the doubled ore 
 iron_ore = 90                      # asks for 400 copper, 300 iron and 60 gold: one vault covers about a third of the iron, so it takes a few visits
 gold_ore = 30
 
+# Landmark rows: finish row 10 or 20 and you reach a CHECKPOINT: what is in your pack is safe from a collapse from then on (a collapse only
+# takes a share of what you dug after it). So you can push on knowing what you already have is kept. (relief / braces / vault_share can add a
+# little extra but each of those makes the vault easier to reach and the mine pay much more, so they are off.) Row 30 is the vault.
+[[descent.milestones]]
+row = 10
+[[descent.milestones]]
+row = 20
+
 [descent.hardness]                 # pressure added when this item is dug (empty cells use empty_hardness)
 copper_ore = 4
 iron_ore = 6

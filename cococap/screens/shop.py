@@ -76,7 +76,7 @@ class ShopScreen(Screen):
                 else:
                     accessory = button("Buy", style=discord.ButtonStyle.success, disabled=self.user.purse < item.price, on_click=self._buy_one(item.id) if item.is_instance else self._ask_quantity(item.id, "buy", 1))
             else:
-                blurb = f"You have **{bits(owned)}**  ·  sells for **{bits(item.sell_price)}** each"
+                blurb = f"×{owned:,}  ·  {bits(item.sell_price)} each  ·  **{bits(item.sell_price * owned)}** for all"  # (the count is plain text, not in the bold heading)
                 accessory = button("Sell", style=discord.ButtonStyle.success, on_click=self._ask_quantity(item.id, "sell", owned))
             body.append(section(f"### {item.display}\n{blurb}", accessory=accessory))
         if pages > 1:

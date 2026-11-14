@@ -89,3 +89,25 @@ async def test_selling(db):
     with pytest.raises(ShopError):
         await sell(user, "starter_axe", 1)  # unique items aren't sold by id
     assert await user.get_bits() == 2 * price
+
+
+async def test_the_sell_list_shows_the_count_the_price_each_and_the_price_for_all(db):
+    from tests.test_hub import all_text, hub
+
+    user = await User.get(1)
+    await user.add_item("coral_shard", 7)
+    price = get_registry().item("coral_shard").sell_price
+    nav, _ = await hub("shop")
+    nav.screen.mode = "sell"
+    await nav.screen.nav.refresh(_)
+    text = all_text(nav)
+    assert f"×7  ·  {price:,} each  ·  **{price * 7:,}** for all" in text
+    assert "sells for" not in text and "You have **7" not in text
+    heading = next(line for line in text.split("\n") if line.startswith("### ") and "Coral Shard" in line)
+    assert "×" not in heading  # (the count is not in the bold heading)
+
+
+def test_work_wages_climb_with_rank_and_the_early_ranks_still_give_a_start():
+    wages = [get_registry().rank(r).wage for r in range(16)]
+    assert wages == sorted(wages) and wages[0] == wages[1] == 2500
+    assert wages[7] <= 120_000 and wages[15] <= 2_000_000  # (cut to 30%: skills, not the Work button, are where the bits come from)

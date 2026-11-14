@@ -822,3 +822,82 @@ def test_one_vault_is_a_part_of_the_next_pickaxe_not_the_whole_of_it():
         assert quantity <= ask[ore], ore  # never more than the whole ask of any ore...
     shares = [D.vault_ore[ore] / ask[ore] for ore in ask]
     assert min(shares) <= 0.35 and max(shares) < 1  # ...and well under half of at least one of them: it takes several trips
+
+
+# ---- checkpoints: landmark rows ---------------------------------------------------------------------------------------------------
+def calm_run(**kw):
+    run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0, **kw))
+    run.rng = Rig(0.99)  # no collapse, nothing lucky
+    return run
+
+
+def dig_to(run, rows):
+    for _ in range(rows):
+        run.danger = 0
+        run.dig()
+
+
+def test_the_milestone_rows_are_in_the_data_and_below_the_vault():
+    rows = [ms.row for ms in D.milestones]
+    assert rows == [10, 20] and all(r < D.floor for r in rows)
+
+
+def test_finishing_a_landmark_row_makes_a_checkpoint_of_what_you_hold():
+    run = calm_run()
+    dig_to(run, 9)
+    run.haul = Counter(copper_ore=40)
+    run.danger = 0
+    assert run.safe == Counter()
+    result = run.dig()  # finishes row 10
+    assert result.milestone is not None and result.milestone.row == 10 and run.depth == 10
+    assert run.safe == Counter(run.haul) and run.safe["copper_ore"] >= 40
+
+
+def test_a_collapse_after_a_checkpoint_only_costs_what_you_dug_since():
+    run = calm_run()
+    dig_to(run, 10)
+    run.haul = Counter(copper_ore=100)
+    run.safe = Counter(copper_ore=80)  # 80 are safe, 20 are at risk
+    run.row(run.depth)  # (roll the row first: a rigged dice would put a wyrmhole in it)
+    run.rng = Rig(0.0)
+    run.danger = 100
+    result = run.dig()
+    assert result.collapsed and run.haul["copper_ore"] == 80 + int(20 * (1 - D.collapse_loss))
+    before = calm_run()
+    before.haul = Counter(copper_ore=100)
+    before.row(before.depth)
+    before.rng = Rig(0.0)
+    before.danger = 100
+    before.dig()
+    assert before.haul["copper_ore"] == int(100 * (1 - D.collapse_loss))  # with no checkpoint a collapse takes its usual share of everything
+
+
+def test_an_ordinary_row_is_not_a_checkpoint():
+    run = calm_run()
+    dig_to(run, 4)
+    run.danger = 0
+    result = run.dig()
+    assert result.milestone is None and run.safe == Counter()
+
+
+def test_milestone_rows_must_sit_in_order_above_the_floor_and_below_it():
+    for bad in ([{"row": 10}, {"row": 10}], [{"row": 20}, {"row": 10}], [{"row": D.floor}], [{"row": 0}]):
+        with pytest.raises(Exception):
+            D.model_validate({**D.model_dump(), "milestones": bad})
+
+
+def test_the_screen_marks_the_landmarks_and_the_vault_and_says_what_you_are_digging_toward():
+    from cococap.screens import mine
+
+    run = calm_run()
+    assert "checkpoint at row 10 (10 to go)" in mine.next_landmark(run)
+    run.depth = 9
+    assert mine.row_mark(run, 9) == f"  {mine.MILESTONE} checkpoint" and mine.row_mark(run, 8) == ""
+    assert mine.row_mark(run, D.floor - 1) == f"  {mine.VAULT} vault"
+    run.depth = 25
+    assert mine.next_landmark(run).startswith(mine.VAULT) and "5 to go" in mine.next_landmark(run)
+    run.depth = 8  # three rows ahead are shown: rows 9, 10 and 11, and row 10 carries the flag
+    shaft = mine.render_shaft(run).split("\n")
+    assert any(mine.MILESTONE in line for line in shaft) and not any(mine.VAULT in line for line in shaft)
+    run.depth = D.floor - 2
+    assert any(mine.VAULT in line for line in mine.render_shaft(run).split("\n"))

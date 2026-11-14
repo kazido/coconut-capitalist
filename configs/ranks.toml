@@ -1,6 +1,7 @@
 # Ranks, bought with tokens (1 a day from the daily, plus about 1 a day found at random while playing: see token_drop_chance in
 # economy.toml). Prices climb so Expert (rank 8) takes about 3 months and the top rank about 3 years of regular play (2,150 tokens in all).
-# Ranks, bought with tokens. wage is paid by the Work button. color is hex without '#'.
+# Ranks, bought with tokens. wage is paid by the Work button (every 6 hours). The wages were cut to 30% from rank 2 up: they were most of what players held,
+# next to what skills pay for the same time (an hour of mining at starter gear is about 570,000 bits), so selling what you gather barely mattered. color is hex without '#'.
 # xp_bonus is a global bonus to ALL skill xp (+1% per rank, so +8% at Expert and +15% at the top). It multiplies with the
 # party and pet bonuses; it is small on purpose, because it never goes away.
 
@@ -28,7 +29,7 @@ description = "A hard working farmer."
 emoji = ":basket:"
 color = "f6f69f"
 token_price = 3
-wage = 10000
+wage = 3000
 xp_bonus = 0.02
 
 [3]
@@ -37,7 +38,7 @@ description = "The beginning of a new chapter. Welcome to the real world."
 emoji = ":busts_in_silhouette:"
 color = "bae9a6"
 token_price = 6
-wage = 25000
+wage = 7500
 xp_bonus = 0.03
 
 [4]
@@ -46,7 +47,7 @@ description = "Why not get a 31 on your ACT and get into a pretty nice college?"
 emoji = ":book:"
 color = "84a0f0"
 token_price = 12
-wage = 60000
+wage = 18000
 xp_bonus = 0.04
 
 [5]
@@ -55,7 +56,7 @@ description = "It's been a while since college. Things are less fun, but more...
 emoji = ":money_with_wings:"
 color = "88cad8"
 token_price = 20
-wage = 130000
+wage = 40000
 xp_bonus = 0.05
 
 [6]
@@ -64,7 +65,7 @@ description = "Once you were a peasant. Now, you can look back and smile!"
 emoji = ":mountain:"
 color = "9b51aa"
 token_price = 32
-wage = 240000
+wage = 72000
 xp_bonus = 0.06
 
 [7]
@@ -73,7 +74,7 @@ description = "I farm, therefore I am."
 emoji = ":trident:"
 color = "b396d8"
 token_price = 48
-wage = 375000
+wage = 112000
 xp_bonus = 0.07
 
 [8]
@@ -82,7 +83,7 @@ description = "Master to all. Servant to none. Bit expert."
 emoji = ":gem:"
 color = "a60000"
 token_price = 70
-wage = 1000000
+wage = 300000
 xp_bonus = 0.08
 
 [9]
@@ -91,7 +92,7 @@ description = "A name people say with a pause before it."
 emoji = ":military_medal:"
 color = "c9a227"
 token_price = 110
-wage = 1400000
+wage = 420000
 xp_bonus = 0.09
 
 [10]
@@ -100,7 +101,7 @@ description = "Born to it? No. Bought into it? Absolutely."
 emoji = ":crown:"
 color = "d4af37"
 token_price = 150
-wage = 1900000
+wage = 570000
 xp_bonus = 0.10
 
 [11]
@@ -109,7 +110,7 @@ description = "Your signature moves markets. Mostly coconut ones."
 emoji = ":classical_building:"
 color = "3f8f5f"
 token_price = 200
-wage = 2500000
+wage = 750000
 xp_bonus = 0.11
 
 [12]
@@ -118,7 +119,7 @@ description = "You own the farm, the forest, and the pond."
 emoji = ":moneybag:"
 color = "2e7d32"
 token_price = 260
-wage = 3200000
+wage = 960000
 xp_bonus = 0.12
 
 [13]
@@ -127,7 +128,7 @@ description = "Rules the realm. The realm is a Discord server."
 emoji = ":globe_with_meridians:"
 color = "1e88e5"
 token_price = 330
-wage = 4000000
+wage = 1200000
 xp_bonus = 0.13
 
 [14]
@@ -136,7 +137,7 @@ description = "Songs are sung. Mostly in the group chat."
 emoji = ":star2:"
 color = "e91e63"
 token_price = 410
-wage = 5000000
+wage = 1500000
 xp_bonus = 0.14
 
 [15]
@@ -145,5 +146,5 @@ description = "The top of the tree. Nothing left but the view."
 emoji = ":coconut:"
 color = "8d5524"
 token_price = 500
-wage = 6500000
+wage = 1950000
 xp_bonus = 0.15

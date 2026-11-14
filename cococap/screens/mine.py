@@ -22,6 +22,8 @@ CACHE = "📦"
 BOMB = "💣"
 CURSOR = "🔻"
 NOTCH = "▪️"
+MILESTONE = "🏁"  # a landmark row: finish it and the tunnel is shored up
+VAULT = "🏆"  # the last row: the vault is worth getting to
 MAGNET = "✨"
 ACCENT = {"Calm": 0x2ECC71, "Tremors": 0xF1C40F, "Unstable": 0xE67E22, "Critical": 0xE74C3C}
 SHOWN_ROWS = 1  # rows you've already passed that stay on screen
@@ -60,6 +62,23 @@ def dug_emoji(sign: str, cell) -> str:
     return item_emoji(cell[0]) if cell else _cell_empty()
 
 
+def row_mark(run: mining.MineRun, depth: int) -> str:
+    """A landmark beside a row you can see ahead: 🏁 on a milestone row, 🏆 on the last one (the vault)."""
+    if depth == run.floor - 1:
+        return f"  {VAULT} vault"
+    if any(m.row == depth + 1 for m in run.rules.descent.milestones):
+        return f"  {MILESTONE} checkpoint"
+    return ""
+
+
+def next_landmark(run: mining.MineRun) -> str:
+    """"🏁 row 10 (3 to go)" or "🏆 the vault (12 to go)": what you are digging toward."""
+    for m in run.rules.descent.milestones:
+        if m.row > run.depth:
+            return f"{MILESTONE} checkpoint at row {m.row} ({m.row - run.depth} to go)"
+    return f"{VAULT} the vault ({run.floor - run.depth} to go)"
+
+
 def render_shaft(run: mining.MineRun) -> str:
     """The last row you dug, a cursor line, then the rows ahead with everything visible."""
     columns = run.rules.columns
@@ -81,7 +100,7 @@ def render_shaft(run: mining.MineRun) -> str:
             depth = run.depth + ahead
             if depth >= run.floor:
                 break
-            lines.append("".join(cell_emoji(sign) for sign in run.signs(depth)))
+            lines.append("".join(cell_emoji(sign) for sign in run.signs(depth)) + row_mark(run, depth))
     return "\n".join(lines)
 
 
@@ -139,7 +158,7 @@ class MineScreen(Screen):
         warning = run.warning
         body = [
             *self.note_block(),
-            text(f"**Row {run.depth + 1} of {run.floor}**     {warning.emoji} **{risk_text(run.risk)}** collapse risk"),
+            text(f"**Row {run.depth + 1} of {run.floor}**  ·  {next_landmark(run)}     {warning.emoji} **{risk_text(run.risk)}** collapse risk"),
             text(render_shaft(run)),
             text(carrying(run.haul)),
         ]
@@ -218,6 +237,16 @@ class MineScreen(Screen):
                 note += " The vent hisses; the tunnel cools."
             if result.caches:
                 note += f" Supplies! +{result.caches} brace."
+            if result.milestone:
+                m = result.milestone
+                extra = ""
+                if m.relief:
+                    extra += f" Pressure -{m.relief:g}."
+                if m.braces:
+                    extra += f" +{m.braces} brace."
+                if result.milestone_haul:
+                    extra += " A taste of the vault: " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.milestone_haul.items()) + "."
+                note += f" {MILESTONE} **Row {m.row}: checkpoint!** What is in your pack is safe from a collapse now.{extra}"
             if result.vault:
                 note += " The vault opens: " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.vault.items()) + "."
         if self.run.finished:
