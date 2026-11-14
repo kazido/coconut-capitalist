@@ -1376,6 +1376,25 @@ rate = 900  # TODO(balance): 1 in 900 per drop roll
 min = 1
 max = 1
 
+[scroll_double_strike]
+name = "Scroll of the Double Strike"
+description = "Your axe bites twice."
+wiki = "Use it from your inventory (Enchant) to put Double Strike on an axe. One use."
+emoji = "📜"
+rarity = 5
+skill = "foraging"
+category = "scroll"
+price = 0
+sell_price = 0
+
+[scroll_double_strike.scroll]
+enchant = "double_strike"
+
+[scroll_double_strike.drop]
+rate = 1200  # TODO(balance): 1 in 1200 per drop roll
+min = 1
+max = 1
+
 [scroll_iron_frame]
 name = "Scroll of the Iron Frame"
 description = "Braces a pickaxe against the creaking mine."
@@ -2117,32 +2136,47 @@ requirement = 0
 [rotation_wedge]
 name = "Rotation Wedge"
 description = "Drive it into a bad spot and the grain gives way to another."
-wiki = "Use it while chopping to move off your spot at once: you land on a random new grain. One use."
+wiki = "Use it while chopping to move off your spot at once: you land on a random new grain, with a slightly better chance of a special spot. Buy it or find it chopping. One use."
 emoji = "🪚"
 rarity = 2
 skill = "foraging"
 category = "material"
-price = 2000  # TODO(balance)
-sell_price = 1000
+price = 1000  # TODO(balance)
+sell_price = 500  # TODO(balance)
+
+[rotation_wedge.drop]
+rate = 60  # TODO(balance): 1 in 60 per drop roll
+min = 1
+max = 1
 
 [iron_wedge]
 name = "Iron Wedge"
 description = "A better wedge: the new spot is more often a good one."
-wiki = "Like a Rotation Wedge, but the grain you land on leans toward the clean ones. One use."
+wiki = "Like a Rotation Wedge, but the grain leans toward the good ones and special spots are about 4x likelier. One use."
 emoji = "🪚"
 rarity = 4
 skill = "foraging"
 category = "material"
-price = 25000  # TODO(balance)
-sell_price = 12000
+price = 8000  # TODO(balance)
+sell_price = 4000  # TODO(balance)
+
+[iron_wedge.drop]
+rate = 400  # TODO(balance): 1 in 400 per drop roll
+min = 1
+max = 1
 
 [gilded_wedge]
 name = "Gilded Wedge"
 description = "The finest wedge there is: it almost never lands you on a poor spot."
-wiki = "Like a Rotation Wedge, but the grain you land on is very likely a good one. One use."
+wiki = "Like a Rotation Wedge, but the grain is very likely a good one and special spots are about 10x likelier. One use."
 emoji = "🪚"
 rarity = 6
 skill = "foraging"
 category = "material"
-price = 200000  # TODO(balance)
-sell_price = 100000
+price = 50000  # TODO(balance)
+sell_price = 25000  # TODO(balance)
+
+[gilded_wedge.drop]
+rate = 2500  # TODO(balance): 1 in 2500 per drop roll
+min = 1
+max = 1

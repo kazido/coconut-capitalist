@@ -72,59 +72,92 @@ class Swing:
     good: bool  # a "good chop": extra damage
     correct: bool | None = None  # was it the grain's style? (None: no stance was used)
     ended: bool = False  # the spot wore out on this chop: you are on a new one now
+    doubled: bool = False  # a double chop (the enchant): it hit twice
+    special: str = ""  # the special spot's effect that fired on this chop ("damage", "xp" or "mark"), if any
+    mark: float = 0.0  # reward this chop added to the tree (a Rich Seam)
     effort: float = 1.0  # how good the chop was, whatever axe made it (grain x wear x style x a good chop's bonus): this is what pays xp
 
 
 @dataclass
 class Spot:
     """The place on the trunk you are chopping. Its **grain** (plain, knotty, clean...) sets how hard it is, how fast it wears and the one
-    chop style it likes. Chopping wears the spot (the good grains slowest) and a worn spot chops weaker; when it is fully worn you are
-    moved to a new spot (a random grain) by yourself, or you can spend a rotation wedge to leave early."""
+    chop style it likes. Now and then a spot is a **special** one (Heartwood, Golden Knot, Rich Seam): chopped in the right style it does
+    something big, and it wears out fast. Chopping wears the spot (the good grains slowest) and a worn spot chops weaker; when it is
+    fully worn you are moved to a new spot by yourself, or you can spend a rotation wedge to leave early."""
 
     name: str = "Plain"
     quality: float = 1.0
     grain: str = "plain"
     wear: float = 0.0  # 0 fresh .. 1 worn out
+    special: str = ""  # a special spot's id, or ""
+    private: bool = True  # a tree of your own (marks only work there)
 
     @classmethod
-    def pick(cls, rules: ForagingRules, rng: random.Random, bias: float = 0.0, exclude: str | None = None) -> "Spot":
-        """A new spot. `bias` tilts the roll toward good grains (a wedge); `exclude` is the grain you are leaving."""
-        grains = [g for g in rules.chopping.grains if g.id != exclude] or rules.chopping.grains
-        weights = [g.weight * g.multiplier**bias for g in grains]
-        g = rng.choices(grains, weights=weights)[0]
-        return cls(g.name, g.multiplier, g.id)
+    def pick(cls, rules: ForagingRules, rng: random.Random, bias: float = 0.0, exclude: str | None = None,
+             special_mult: float = 1.0, private: bool = True) -> "Spot":
+        """A new spot. `bias` tilts the roll toward good grains and `special_mult` makes a special spot likelier (a wedge); `exclude` is the
+        grain you are leaving; `private` is False on a shared tree (no marks there)."""
+        c = rules.chopping
+        grains = [g for g in c.grains if g.id != exclude] or c.grains
+        g = rng.choices(grains, weights=[g.weight * g.multiplier**bias for g in grains])[0]
+        special = ""
+        if rng.random() < min(1.0, c.special_chance * special_mult):
+            kinds = [sp for sp in c.specials if private or not sp.private_only]
+            special = rng.choices(kinds, weights=[sp.weight for sp in kinds])[0].id
+        return cls(g.name, g.multiplier, g.id, 0.0, special, private)
 
     def stance(self, rules: ForagingRules) -> str:
         return rules.chopping.grain(self.grain).stance
+
+    def kind(self, rules: ForagingRules):
+        """The special this spot is, if it is one."""
+        return rules.chopping.special(self.special) if self.special else None
+
+    def title(self, rules: ForagingRules) -> str:
+        sp = self.kind(rules)
+        return f"{sp.emoji} {sp.name}: {self.name}" if sp else self.name
 
     def strength(self, rules: ForagingRules) -> float:
         """What this spot does to your axe's power right now: the grain's quality, less what the wear has taken."""
         return self.quality * (1 - rules.chopping.wear_penalty * min(1.0, self.wear))
 
     def preview(self, power: int, rules: ForagingRules) -> int:
-        """What a chop in the right style would do right now."""
-        return max(1, round(power * self.strength(rules)))
+        """What a chop in the right style would do right now (a Heartwood's big hit included)."""
+        sp = self.kind(rules)
+        return max(1, round(power * self.strength(rules) * (sp.amount if sp and sp.effect == "damage" else 1)))
 
     def swing(self, power: int, rules: ForagingRules, rng: random.Random, good_bonus: float = 0.0,
-              stance: str | None = None, wear_slow: float = 0.0) -> Swing:
+              stance: str | None = None, wear_slow: float = 0.0, double_chance: float = 0.0) -> Swing:
         """One chop. In the grain's style it hits fully, in another style it glances off (`wrong_stance_factor`). It also wears the spot,
-        and when that is used up you are on a new one. ``good_bonus`` is extra good-chop chance (Sharp Eye); ``wear_slow`` is how much
-        slower the spot wears (Seasoned)."""
+        and when that is used up you are on a new one. ``good_bonus`` is extra good-chop chance (Sharp Eye), ``wear_slow`` how much slower the
+        spot wears (Seasoned) and ``double_chance`` the chance of a double chop (Double Strike). On a special spot a RIGHT chop also fires its
+        effect: bigger damage, more xp, or a mark on the tree."""
         c = rules.chopping
         good = rng.random() < c.good_chop_chance + good_bonus
+        doubled = rng.random() < double_chance
         correct = None if stance is None else stance == self.stance(rules)
-        effort = self.strength(rules) * (c.wrong_stance_factor if correct is False else 1.0) * (1 + c.good_chop_bonus if good else 1)
-        damage = max(1, round(power * effort))
-        self.wear += c.wear_per_chop * c.grain(self.grain).wear * max(MIN_WEAR_FACTOR, 1 - wear_slow)
+        quality = self.strength(rules) * (c.wrong_stance_factor if correct is False else 1.0) * (1 + c.good_chop_bonus if good else 1)
+        hits, effort, fired, mark = 2.0 if doubled else 1.0, quality, "", 0.0  # (the effort is what pays xp: a double chop is still one swing)
+        sp = self.kind(rules)
+        if sp and correct is not False:  # (a chop with no style at all counts as right)
+            fired = sp.effect
+            if sp.effect == "damage":
+                hits *= sp.amount
+            elif sp.effect == "xp":
+                effort *= sp.amount
+            elif self.private:
+                mark = sp.amount
+        damage = max(1, round(power * quality * hits))
+        self.wear += c.wear_per_chop * c.grain(self.grain).wear * (sp.wear if sp else 1.0) * max(MIN_WEAR_FACTOR, 1 - wear_slow)
         ended = self.wear >= 1
         if ended:
             self.rotate(rules, rng)
-        return Swing(damage, good, correct, ended, effort)
+        return Swing(damage, good, correct, ended, doubled, fired, mark, effort)
 
-    def rotate(self, rules: ForagingRules, rng: random.Random, bias: float = 0.0) -> None:
+    def rotate(self, rules: ForagingRules, rng: random.Random, bias: float = 0.0, special_mult: float = 1.0) -> None:
         """Move to a new spot: a different grain (tilted by `bias`), unworn. Happens by itself when a spot wears out, or with a wedge."""
-        new = Spot.pick(rules, rng, bias, exclude=self.grain)
-        self.name, self.quality, self.grain, self.wear = new.name, new.quality, new.grain, 0.0
+        new = Spot.pick(rules, rng, bias, exclude=self.grain, special_mult=special_mult, private=self.private)
+        self.name, self.quality, self.grain, self.wear, self.special = new.name, new.quality, new.grain, 0.0, new.special
 
 
 def average_spot_multiplier(rules: ForagingRules) -> float:
@@ -150,7 +183,7 @@ async def spend_wedge(user: User, spot: Spot, item_id: str, rng: random.Random, 
         await user.remove_item(item_id, 1)
     except ValueError:
         raise ForagingError(f"You have no {reg.item(item_id).name}.") from None
-    spot.rotate(reg.foraging, rng, wedge.bias)
+    spot.rotate(reg.foraging, rng, wedge.bias, wedge.special_mult)
 
 
 # ---- grain notes: which style each grain likes, as you have found out -----------------------------------------------
@@ -206,6 +239,7 @@ class Tree:
     collected: bool = False  # its reward has been paid
     double: bool = False  # a Re-leaf double tree: twice the hp, and a jackpot when it falls
     effort: float = 0.0  # the quality of every chop made on it so far: its xp
+    bonus: float = 0.0  # marked by Rich Seams: +this to its bits and drops when it falls (0.25 = +25%)
 
     @property
     def felled(self) -> bool:
@@ -297,8 +331,8 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     if tree.collected:
         raise ForagingError("You already collected this tree.")
     tree.collected = True
-    drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone), rng), rng, reg)
-    bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules))
+    drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus), rng), rng, reg)
+    bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules) * (1 + tree.bonus))
     xp = round(tree.effort * rules.xp_per_swing * await xp_multiplier(user.id, reg, "foraging"))
     await _pay(user, drops, bits, xp, trees=1)
     jackpot = None

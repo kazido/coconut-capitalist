@@ -207,6 +207,13 @@ a thing you learn once and remember, not a pattern you re-read every spot.
 - **Rotation wedges** are consumable items (shop): use one to leave the spot at once and land on a different grain. Three tiers
   (`[rotate]`): Rotation Wedge (random), Iron Wedge and Gilded Wedge, which lean toward good grains (a new grain's chance is its weight
   x multiplier ** bias). So you can only rotate as often as you can afford wedges.
+- **Special spots** (`[[chopping.specials]]`, `special_chance` 8% of new spots): a grain plus a special, shown by name. Chopped in the grain's RIGHT
+  style: 💎 **Heartwood** x4 damage, ✨ **Golden Knot** x2 xp (effort, not damage), 🏷️ **Rich Seam** +15% bits and drops when the tree falls (tree-wide
+  cap `mark_cap` 50%, private trees only, so it is never rolled on shared trees). They wear x6 faster, so you get about four chops. Wrong style = just
+  a glancing blow. Wedges multiply the special chance (1.5x / 4x / 10x) on top of their grain bias.
+- **Wedges are found as well as bought:** they are on the foraging drop table (1 in 60 / 400 / 2,500 per roll) and cost 1k / 8k / 50k in the shop
+  (a wedge only moves you to a new spot, so it should not be expensive).
+- **Double Strike** enchant (axe, 3 levels, +8% each): a chop hits twice as hard, still one swing for xp. Scroll drops from chopping.
 - **Upgrades that slow wear:** the **Seasoned** enchant (axe, 3 levels, -15% wear each; the scroll drops from chopping). Wear can never be
   slowed below a quarter of normal.
 - Same on private, community and party trees. Wear is per screen, like the spot always was. Xp follows the quality of the chop, so wear and

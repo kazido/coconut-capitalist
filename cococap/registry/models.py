@@ -568,11 +568,26 @@ class Grain(_Data):
     wear: float = Field(gt=0)  # how fast a chop wears the spot out, relative to 1 (good grains last, bad ones go quickly)
 
 
+class Special(_Data):
+    """A rare special spot. Chopped in the grain's right style it does something big; chopped wrong it is just a spot."""
+
+    id: str
+    name: str
+    emoji: str
+    effect: Literal["damage", "xp", "mark"]  # damage: x amount damage. xp: x amount xp for the chop. mark: +amount to the tree's rewards (capped)
+    amount: float = Field(gt=0)
+    weight: float = Field(gt=0)  # which special it is, among the specials
+    wear: float = Field(gt=0)  # relative wear: special spots are short-lived (a big number)
+    private_only: bool = False  # a mark only means something on a tree of your own
+
+
 class Wedge(_Data):
-    """A rotation wedge: a consumable item that moves you off a spot onto a new grain. Better ones tilt the roll toward good grains."""
+    """A rotation wedge: a consumable item that moves you off a spot onto a new grain. Better ones tilt the roll toward good grains
+    and make a special spot more likely."""
 
     item: str  # the item's id (it must exist in items.toml)
     bias: float = Field(ge=0)  # a new grain's weight is its weight x multiplier ** bias: 0 is a plain random pick
+    special_mult: float = Field(ge=0, default=1.0)  # x the chance that the new spot is a special one
 
 
 class RotateRules(_Data):
@@ -587,7 +602,10 @@ class ChoppingRules(_Data):
     wrong_stance_factor: float = Field(gt=0, le=1)  # the wrong style chops at this share of the damage (and xp)
     wear_per_chop: float = Field(gt=0)  # a chop on a grain of wear 1 wears the spot out by this much (of a whole 1.0)
     wear_penalty: float = Field(ge=0, lt=1)  # a spot about to wear out chops at (1 - this) of its strength
+    special_chance: float = Field(ge=0, le=1)  # the chance a new spot is a special one
+    mark_cap: float = Field(ge=0)  # the most extra reward (+0.5 = +50%) marks can put on one tree
     grains: list[Grain] = Field(min_length=2)
+    specials: list[Special] = Field(min_length=1)
 
     @model_validator(mode="after")
     def _grains_fit(self):
@@ -595,10 +613,15 @@ class ChoppingRules(_Data):
             raise ValueError("grain ids must be unique")
         if {g.stance for g in self.grains} != {"o", "s", "u"}:
             raise ValueError("every stance needs at least one grain that wants it")
+        if len({sp.id for sp in self.specials}) != len(self.specials) or all(sp.private_only for sp in self.specials):
+            raise ValueError("special ids must be unique, and at least one special must work on shared trees")
         return self
 
     def grain(self, grain_id: str) -> Grain:
         return next(g for g in self.grains if g.id == grain_id)
+
+    def special(self, special_id: str) -> Special:
+        return next(sp for sp in self.specials if sp.id == special_id)
 
 
 class ReleafRules(_Data):

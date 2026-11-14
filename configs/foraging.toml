@@ -38,6 +38,8 @@ good_chop_bonus = 0.5             # +50%
 wrong_stance_factor = 0.5         # the wrong style chops at half the damage (and half the xp): learn the grain's style once and it is yours
 wear_per_chop = 0.04              # a spot of wear 1 lasts 25 chops (then you move to a new spot by yourself)
 wear_penalty = 0.4                # as a spot wears out it chops weaker: at the very end it is at 60%
+special_chance = 0.08             # the chance a new spot is a SPECIAL one (see [[chopping.specials]])
+mark_cap = 0.5                    # marks can put at most +50% on one tree's rewards
 
 # Every spot has a grain, and every grain likes ONE chop style: o = overhead, s = sidecut, u = undercut. Chop in that style for the
 # full effect; any other is a glancing blow. Your Grain notes remember what you find out, so you learn each grain once and know it
@@ -87,18 +89,50 @@ weight = 0.10
 stance = "u"
 wear = 0.6
 
+# Special spots: rare. Chop one in its grain's RIGHT style and it does something big (a wrong style is just a glancing blow). They wear out
+# fast, so you get a few good chops. The spot shows its name, so you know to get the style right.  TODO(balance): all numbers
+[[chopping.specials]]
+id = "heartwood"
+name = "Heartwood"
+emoji = "💎"
+effect = "damage"                 # a right chop does this many times the damage to the tree
+amount = 4.0
+weight = 0.40
+wear = 6.0
+[[chopping.specials]]
+id = "golden_knot"
+name = "Golden Knot"
+emoji = "✨"
+effect = "xp"                     # a right chop pays this many times the xp
+amount = 2.0
+weight = 0.35
+wear = 6.0
+[[chopping.specials]]
+id = "rich_seam"
+name = "Rich Seam"
+emoji = "🏷️"
+effect = "mark"                   # a right chop marks your tree: +15% bits and drops when it falls (up to mark_cap)
+amount = 0.15
+weight = 0.25
+wear = 6.0
+private_only = true
+
 # Rotation wedges: consumables (bought in the shop) that move you off the spot you are on. A better wedge tilts the new grain toward
-# the good ones: its chance is the grain's weight x its multiplier ** bias.  TODO(balance): prices
+# the good ones (its chance is the grain's weight x its multiplier ** bias) and makes a special spot likelier (special_mult x the chance).
+# You can buy them in the shop or find them chopping (they are on the foraging drop table).
 [rotate]
 [[rotate.wedges]]
 item = "rotation_wedge"
 bias = 0
+special_mult = 1.5
 [[rotate.wedges]]
 item = "iron_wedge"
 bias = 4
+special_mult = 4
 [[rotate.wedges]]
 item = "gilded_wedge"
 bias = 12
+special_mult = 10
 
 [community]                       # the tree everyone can join: one per hour, standing for `open_minutes`
 open_minutes = 30

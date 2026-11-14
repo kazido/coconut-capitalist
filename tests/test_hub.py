@@ -1129,7 +1129,7 @@ def freeze_time(monkeypatch, now=OPEN_HOUR, good_chops=False):
     """Fix the clock, and make chopping predictable: no good chops unless asked for."""
     monkeypatch.setattr("cococap.screens.forage.new_rng", lambda: Rig(0.0 if good_chops else 0.99))
     plain = foraging_service.Spot  # every spot is a plain one, so damage is predictable
-    monkeypatch.setattr(plain, "pick", classmethod(lambda cls, rules, rng, bias=0.0, exclude=None: cls("Plain", 1.0)))
+    monkeypatch.setattr(plain, "pick", classmethod(lambda cls, rules, rng, bias=0.0, exclude=None, special_mult=1.0, private=True: cls("Plain", 1.0)))
     clock = SimpleNamespace(time=lambda: now)
     for target in ("cococap.screens.forage.time", "cococap.services.foraging.time"):
         monkeypatch.setattr(target, clock)

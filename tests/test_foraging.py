@@ -554,6 +554,82 @@ async def test_a_better_wedge_really_lands_you_on_better_grains(db):
     assert share["gilded_wedge"] > share["rotation_wedge"] + 0.3
 
 
+# ---- special spots ---------------------------------------------------------------------------------------------------------------
+def special(kind, **kw):
+    sp = CH.special(kind)
+    return f.Spot("Plain", 1.0, "plain", special=kind, **kw), sp
+
+
+def test_a_heartwood_spot_hits_far_harder_but_only_in_the_right_style():
+    spot, sp = special("heartwood")
+    hit = spot.swing(100, RULES, NoGood(1), 0.0, right(spot))
+    assert hit.damage == round(100 * sp.amount) and hit.special == "damage"
+    spot, _ = special("heartwood")
+    miss = spot.swing(100, RULES, NoGood(1), 0.0, wrong(spot))
+    assert miss.damage == round(100 * CH.wrong_stance_factor) and miss.special == ""  # just a glancing blow
+    assert special("heartwood")[0].preview(100, RULES) == round(100 * sp.amount)
+
+
+def test_a_golden_knot_pays_more_xp_without_hitting_harder():
+    spot, sp = special("golden_knot")
+    hit = spot.swing(100, RULES, NoGood(1), 0.0, right(spot))
+    assert hit.damage == 100 and hit.effort == pytest.approx(sp.amount) and hit.special == "xp"
+    spot, _ = special("golden_knot")
+    assert spot.swing(100, RULES, NoGood(1), 0.0, wrong(spot)).effort == pytest.approx(CH.wrong_stance_factor)
+
+
+def test_a_rich_seam_marks_a_private_tree_only_and_a_wrong_chop_marks_nothing():
+    spot, sp = special("rich_seam")
+    assert spot.swing(100, RULES, NoGood(1), 0.0, right(spot)).mark == sp.amount
+    spot, _ = special("rich_seam")
+    assert spot.swing(100, RULES, NoGood(1), 0.0, wrong(spot)).mark == 0
+    shared, _ = special("rich_seam", )
+    shared.private = False
+    assert shared.swing(100, RULES, NoGood(1), 0.0, right(shared)).mark == 0
+    assert all(f.Spot.pick(RULES, Random(i), special_mult=50, private=False).special != "rich_seam" for i in range(400))
+
+
+def test_special_spots_are_rare_short_lived_and_a_wedge_makes_them_likelier():
+    share = lambda mult: sum(bool(f.Spot.pick(RULES, Random(i), special_mult=mult).special) for i in range(6000)) / 6000  # noqa: E731
+    assert share(1) == pytest.approx(CH.special_chance, abs=0.02) and share(4) > 2.5 * share(1)
+    spot, _ = special("heartwood")
+    assert sum(1 for _ in iter(lambda: spot.swing(10, RULES, NoGood(1), 0.0, None).ended, True)) < 8  # a few chops, not twenty-five
+    assert CH.special("heartwood").wear > 3  # (a big wear number: it is gone quickly)
+
+
+async def test_felling_a_marked_tree_pays_the_bonus_on_bits(db):
+    user = await player(1)
+    base, marked = f.Tree(1, 1000, 0), f.Tree(1, 1000, 0, bonus=0.5)
+    a = await f.fell_private(user, base, Random(1))
+    b = await f.fell_private(user, marked, Random(1))
+    assert b.bits == round(a.bits * 1.5)
+
+
+def test_double_chop_hits_twice_but_pays_the_xp_of_one_swing():
+    never = f.Spot().swing(100, RULES, NoGood(1), 0.0, None, 0.0, 0.0)
+    assert never.damage == 100 and not never.doubled
+    sure = f.Spot().swing(100, RULES, Random(1), 0.0, None, 0.0, 1.0)
+    assert sure.doubled and sure.damage in (200, 300) and sure.effort in (1.0, 1 + CH.good_chop_bonus)  # (300: a good chop too)
+    hits = sum(f.Spot().swing(10, RULES, Random(i), 0.0, None, 0.0, 0.3).doubled for i in range(4000)) / 4000
+    assert hits == pytest.approx(0.3, abs=0.03)
+
+
+async def test_the_double_strike_enchant_gives_the_chance(db):
+    user = await player(1)
+    inst = await user.give_instance("starter_axe")
+    await add_enchant(user, inst.id, "double_strike")
+    await add_enchant(user, inst.id, "double_strike")
+    assert effective_stats(await user.instance(inst.id), REG).stats["double_chop"] == pytest.approx(0.16)
+
+
+def test_wedges_can_be_found_chopping_and_the_better_ones_are_rarer():
+    pool = {i.id: i for i in f.drop_pool(REG)}
+    rates = [pool[w.item].drop.rate for w in RULES.rotate.wedges]
+    assert rates == sorted(rates) and len(set(rates)) == 3
+    assert [w.special_mult for w in RULES.rotate.wedges] == sorted(w.special_mult for w in RULES.rotate.wedges)
+    assert REG.item("gilded_wedge").price <= 100_000  # (a wedge only moves you to a new spot: it should not cost a fortune)
+
+
 def test_the_wedges_get_better_and_cost_more():
     wedges = RULES.rotate.wedges
     assert [w.bias for w in wedges] == sorted(w.bias for w in wedges) and wedges[0].bias == 0
@@ -652,3 +728,55 @@ async def test_a_wedge_button_appears_with_a_wedge_and_moves_you_to_a_new_spot(d
     assert [b.label for b in buttons(nav) if "Wedge" in (b.label or "")] == ["Iron Wedge ×2"]
     await click(nav, inter, "Iron Wedge ×2")
     assert nav.screen.spot.wear == 0 and await user.item_quantity("iron_wedge") == 1
+
+
+async def test_a_heartwood_spot_on_screen_shows_itself_and_hits_the_tree_hard_and_a_rich_seam_marks_it(db, monkeypatch):
+    from tests.test_hub import chop, freeze_time, hub, with_axe
+
+    freeze_time(monkeypatch)
+    await with_axe()
+    power = REG.item("starter_axe").tool.power
+    nav, inter = await hub("tree", tree=f.Tree(1, 100_000, 100_000))
+    nav.screen.spot = f.Spot("Plain", 1.0, "plain", special="heartwood")
+    await nav._render()
+    text_now = lambda: " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))  # noqa: E731
+    assert "Heartwood" in text_now() and f"**{round(power * CH.special('heartwood').amount)}** a chop" in text_now()
+    await chop(nav, inter)
+    assert nav.screen.tree.hp == 100_000 - round(power * CH.special("heartwood").amount) and "Heartwood: a huge hit" in text_now()
+    nav.screen.spot = f.Spot("Plain", 1.0, "plain", special="rich_seam")
+    await chop(nav, inter)
+    assert nav.screen.tree.bonus == pytest.approx(CH.special("rich_seam").amount) and "Marked" in text_now()
+    for _ in range(6):
+        nav.screen.spot = f.Spot("Plain", 1.0, "plain", special="rich_seam")
+        await chop(nav, inter)
+    assert nav.screen.tree.bonus == CH.mark_cap  # (marks stop adding at the cap)
+
+
+def test_a_shared_tree_spot_never_becomes_a_rich_seam_when_it_rotates():
+    spot = f.Spot(private=False)
+    for i in range(400):
+        spot.rotate(RULES, Random(i), special_mult=50)
+        assert spot.special != "rich_seam"
+    mine = f.Spot()
+    assert any((mine.rotate(RULES, Random(i), special_mult=50), mine.special)[1] == "rich_seam" for i in range(400))
+
+
+async def test_a_marked_tree_makes_more_drop_rolls(db):
+    user = await player(1)
+    plain = await f.fell_private(user, f.Tree(1, 50_000, 0), Random(1))
+    marked = await f.fell_private(user, f.Tree(1, 50_000, 0, bonus=0.5), Random(1))
+    assert sum(marked.drops.values()) > 1.3 * sum(plain.drops.values())
+
+
+async def test_the_better_wedges_really_find_special_spots_more_often(db):
+    user = await player(1)
+    await user.add_item("rotation_wedge", 400)
+    await user.add_item("gilded_wedge", 400)
+    found = {}
+    for item in ("rotation_wedge", "gilded_wedge"):
+        found[item] = 0
+        for i in range(400):
+            spot = f.Spot()
+            await f.spend_wedge(user, spot, item, Random(i))
+            found[item] += bool(spot.special)
+    assert found["gilded_wedge"] > 3 * found["rotation_wedge"]

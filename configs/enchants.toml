@@ -77,3 +77,14 @@ max_level = 3
 type = "stat_add"
 stat = "wear_slow"
 amount = 0.15
+
+[double_strike]
+name = "Double Strike"
+description = "Your axe sometimes bites twice: 8% chance per level that a chop hits twice as hard (it is still one swing, so it pays the same xp)."
+applies_to = ["axe"]
+max_level = 3
+
+[[double_strike.effects]]
+type = "stat_add"
+stat = "double_chop"
+amount = 0.08

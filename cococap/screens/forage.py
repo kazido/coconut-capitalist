@@ -72,7 +72,7 @@ async def spot_panel(screen, power: int) -> str:
     quality = f" ({spot.quality - 1:+.0%})" if spot.quality != 1 else ""
     left = max(0.0, 1 - spot.wear)
     wedges = sum(q for _, q in await foraging.wedges(screen.user))
-    return (f"🪵 **{spot.name}** grain{quality}   🪚 spot {bar(left, 6)} {left:.0%}   🪓 **{spot.preview(power, reg.foraging)}** a chop"
+    return (f"🪵 **{spot.title(reg.foraging)}** grain{quality}   🪚 spot {bar(left, 6)} {left:.0%}   🪓 **{spot.preview(power, reg.foraging)}** a chop"
             + (f"   ·   🔩 {wedges} wedge(s)" if wedges else ""))
 
 
@@ -98,9 +98,12 @@ def swing_note(swing: foraging.Swing, stance: str | None = None, applied: int | 
     dealt = swing.damage if applied is None else applied
     icon = foraging.STANCES[stance][1] if stance in foraging.STANCES else "🪓"
     good = "  ✨ **Good chop!**" if swing.good else ""
+    extra = "  🪓🪓 **Double chop!**" if swing.doubled else ""
+    extra += {"damage": "  💎 **Heartwood: a huge hit!**", "xp": "  ✨ **Golden Knot: double xp!**",
+              "mark": f"  🏷️ **Marked: +{swing.mark:.0%} rewards**"}.get(swing.special, "")
     if swing.correct is None:
-        return f"✨ **Good chop!** {dealt}" if swing.good else f"🪓 {dealt}"
-    return f"{'✅' if swing.correct else '❌ glanced off'} {icon}  ·  {dealt}{good}"
+        return (f"✨ **Good chop!** {dealt}" if swing.good else f"🪓 {dealt}") + extra
+    return f"{'✅' if swing.correct else '❌ glanced off'} {icon}  ·  {dealt}{good}{extra}"
 
 
 def stance_buttons(on_click) -> list[discord.ui.Button]:
@@ -119,7 +122,7 @@ async def wedge_row(screen: Screen):
     def use(item_id: str):
         async def go(interaction: discord.Interaction) -> None:
             await foraging.spend_wedge(screen.user, screen.spot, item_id, screen.rng)
-            await screen.refresh(interaction, f"🪚 You drive a wedge in: new spot, **{screen.spot.name}** grain.")
+            await screen.refresh(interaction, f"🪚 You drive a wedge in: new spot, **{screen.spot.title(reg.foraging)}** grain.")
 
         return go
 
@@ -135,13 +138,13 @@ async def swing_at(screen: Screen, power: int, stance: str) -> tuple[foraging.Sw
     grain, name = screen.spot.grain, screen.spot.name
     pet = await pets.bonuses(screen.user)
     swing = screen.spot.swing(power, rules, screen.rng, stats.stats.get("good_chop", 0.0) + pet.get("good_chop", 0.0), stance,
-                              stats.stats.get("wear_slow", 0.0))
+                              stats.stats.get("wear_slow", 0.0), stats.stats.get("double_chop", 0.0))
     note = swing_note(swing, stance)
     if swing.correct is not None and await foraging.note_style(screen.user, grain, stance, swing.correct):
         note += (f"  📖 Learned: the **{name}** grain likes **{foraging.STANCES[stance][0]}**!" if swing.correct
                  else f"  ✖️ {foraging.STANCES[stance][0]} crossed off the **{name}** grain in your notes")
     if swing.ended:
-        note += f"\n🪵 The spot wore out. New spot: **{screen.spot.name}** grain"
+        note += f"\n🪵 The spot wore out. New spot: **{screen.spot.title(rules)}** grain"
     return swing, note
 
 
@@ -306,7 +309,7 @@ class TreeScreen(Screen):
         power = foraging.swing_power(stats, tree.zone, rules)
         body = [*self.note_block()]
         body.append(text(f"{'🌲🌲 **Double tree!**  ' if tree.double else ''}**Zone {tree.zone}**\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
-                         f"\n{await spot_panel(self, power)}" + (
+                         f"\n{await spot_panel(self, power)}" + (f"\n🏷️ Marked: **+{tree.bonus:.0%}** bits and drops when it falls" if tree.bonus else "") + (
                              f"\n-# Heavy tree: alone you swing at half your axe's {stats.power}. A Soloist axe fixes that."
                              if power < stats.power else "")))
         body.append(row(*stance_buttons(self._chop)))
@@ -329,6 +332,8 @@ class TreeScreen(Screen):
         stats = await foraging.axe_stats(self.user)
         swing, note = await swing_at(self, foraging.swing_power(stats, tree.zone, reg.foraging), stance)
         applied = tree.chop(swing.damage, swing.effort)
+        if swing.mark:
+            tree.bonus = min(reg.foraging.chopping.mark_cap, tree.bonus + swing.mark)
         if tree.felled:
             self.reward = await foraging.fell_private(self.user, tree, self.rng)
             self.result = Result("TIMBER!", [reward_text(self.reward)], emoji="🌳", accent=0x4C8C4A, again=self._again,
@@ -365,7 +370,7 @@ class GroveScreen(Screen):
         super().__init__(nav)
         self.refresh_every = get_registry().foraging.community.refresh_seconds
         self.rng = new_rng()
-        self.spot = foraging.Spot.pick(get_registry().foraging, self.rng)
+        self.spot = foraging.Spot.pick(get_registry().foraging, self.rng, private=False)
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -433,7 +438,7 @@ class PartyGroveScreen(Screen):
         super().__init__(nav)
         self.refresh_every = get_registry().foraging.party_tree.refresh_seconds
         self.rng = new_rng()
-        self.spot = foraging.Spot.pick(get_registry().foraging, self.rng)
+        self.spot = foraging.Spot.pick(get_registry().foraging, self.rng, private=False)
 
     async def build(self) -> Page:
         reg = get_registry()
