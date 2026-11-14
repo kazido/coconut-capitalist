@@ -295,7 +295,7 @@ async def test_shop_sell_mode_sells_the_full_stack_by_default(db):
     assert modal.field.default == "4"
     modal.field._value = "4"
     await modal.on_submit(inter)
-    assert (await User.get(1)).purse == 1000 + 4000 and await user.items() == {}
+    assert (await User.get(1)).purse == 1000 + 4 * get_registry().item("gold_ore").sell_price and await user.items() == {}
 
 
 async def test_inventory_lists_items_and_marks_the_equipped_tool_of_every_kind(db):

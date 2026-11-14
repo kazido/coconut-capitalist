@@ -553,7 +553,7 @@ def test_the_vault_holds_all_three_ores_in_proportion_to_how_often_they_drop():
     ratios = {ore: D.vault_ore[ore] / per_roll(ore) for ore in D.vault_ore}
     assert max(ratios.values()) / min(ratios.values()) < 1.15  # the rarer the ore, the fewer of it: as many "rolls" of each
     worth = sum(REG.item(ore).sell_price * q for ore, q in D.vault_ore.items())
-    assert 120_000 <= worth <= 170_000  # about what 150 gold was worth
+    assert 70_000 <= worth <= 100_000  # (at the doubled ore prices; the ore COUNT is what was cut, to a third)
 
 
 def test_a_bomb_on_the_last_row_also_opens_the_vault():
@@ -813,3 +813,12 @@ def test_going_deeper_is_a_real_choice_not_always_the_right_one():
 
     cautious, balanced, reckless = average_value(0.02), average_value(0.08), average_value(1.0)
     assert balanced > cautious * 1.2 and balanced > reckless * 1.2
+
+
+def test_one_vault_is_a_part_of_the_next_pickaxe_not_the_whole_of_it():
+    """The reward for reaching the bottom should not pay for a pickaxe upgrade on its own: the ores it holds are a fraction of what Masterwork asks."""
+    ask = REG.item("reinforced_pickaxe").tool.upgrade.items
+    for ore, quantity in D.vault_ore.items():
+        assert quantity <= ask[ore], ore  # never more than the whole ask of any ore...
+    shares = [D.vault_ore[ore] / ask[ore] for ore in ask]
+    assert min(shares) <= 0.35 and max(shares) < 1  # ...and well under half of at least one of them: it takes several trips

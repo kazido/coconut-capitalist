@@ -1509,7 +1509,7 @@ rarity = 1
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 10
+sell_price = 20  # TODO(balance): doubled (was 10); the vault was most of mining's income and was cut
 
 [copper_ore.drop]
 rate = 2
@@ -1525,7 +1525,7 @@ rarity = 3
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 1000
+sell_price = 2000  # TODO(balance): doubled (was 1000); the vault was most of mining's income and was cut
 
 [gold_ore.drop]
 rate = 15
@@ -1541,7 +1541,7 @@ rarity = 2
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 100
+sell_price = 200  # TODO(balance): doubled (was 100); the vault was most of mining's income and was cut
 
 [iron_ore.drop]
 rate = 6

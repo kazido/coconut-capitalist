@@ -2,6 +2,7 @@ import asyncio
 
 import pytest
 
+from cococap.registry import get_registry
 from cococap.services.shop import ShopError, buy, sell
 from cococap.user import User
 from tests.conftest import set_columns
@@ -77,8 +78,9 @@ async def test_concurrent_purchases_cannot_overspend(db):
 async def test_selling(db):
     user = await rich(0)
     await user.add_item("gold_ore", 5)
-    assert await sell(user, "gold_ore", 2) == 2000
-    assert await user.get_bits() == 2000 and await user.item_quantity("gold_ore") == 3
+    price = get_registry().item("gold_ore").sell_price
+    assert await sell(user, "gold_ore", 2) == 2 * price
+    assert await user.get_bits() == 2 * price and await user.item_quantity("gold_ore") == 3
     with pytest.raises(ShopError, match="don't have"):
         await sell(user, "gold_ore", 4)
     with pytest.raises(ShopError):
@@ -86,4 +88,4 @@ async def test_selling(db):
     await user.give_instance("starter_axe")
     with pytest.raises(ShopError):
         await sell(user, "starter_axe", 1)  # unique items aren't sold by id
-    assert await user.get_bits() == 2000
+    assert await user.get_bits() == 2 * price

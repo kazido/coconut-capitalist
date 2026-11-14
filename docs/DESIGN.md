@@ -708,6 +708,9 @@ A pass over the busiest pages to cut text without cutting information. The rules
   road, a check mark on the equipped one for every skill (the watering can was missing from the inventory's check), an Equip button, and Upgrade /
   Enchant / Inventory buttons. With one tool per kind equipping is mostly automatic, so the page is mainly the doorway to upgrades; it is the place
   to grow if tools ever differ (an open question: the game may not need alternates).
-- **The mining vault** pays all three ores in the proportion you would mine them (copper 1,100, iron 300, gold 100: the rarer, the fewer),
-  worth about 140,000 bits, instead of 150 gold. Gems are unchanged.
+- **The mining vault** pays all three ores in the proportion you would mine them (the rarer, the fewer). It first paid 1,100 copper / 300 iron /
+  100 gold, but that covered the whole ore ask of the Masterwork pickaxe in one visit, so it was **cut to a third: 330 / 90 / 30** (one vault is
+  about a third of the iron Masterwork needs). In the balance simulation the vault was about 75% of mining's bits, so **ore sell prices doubled**
+  (copper 20, iron 200, gold 2,000) to keep mining near where it was: mining is now about 85% of foraging per click at that simple strategy
+  (it was ahead). The upgrade bits costs did not change. Gems are unchanged.
 - **Skills page:** each skill is its name, level and xp bar and an Open button; no blurbs.
