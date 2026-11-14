@@ -4,6 +4,7 @@ text blocks."""
 
 from cococap.constants import Rarities
 from cococap.registry import Item, Registry, get_registry
+from cococap.services import fishing
 
 TOPICS: list[tuple[str, str, str]] = [  # (id, title, emoji)
     ("start", "Getting started", "🥥"),
@@ -117,17 +118,28 @@ def _fishing(reg: Registry) -> list[str]:
     ]
 
 
+def _one_in(chance: float) -> str:
+    return "every cast" if chance >= 0.995 else f"1 in {round(1 / chance):,} casts"
+
+
+def _where(fish: Item, reg: Registry) -> str:
+    """Where to catch a fish: the best water first, with the real chance of it on a cast there."""
+    places = fishing.where_to_catch(fish.id, reg)
+    if not places:
+        return "not found in any water yet"
+    best, chance = places[0]
+    text = f"Best in {best.emoji} {best.name} ({_one_in(chance)})"
+    others = ", ".join(f"{w.name} ({_one_in(c)})" for w, c in places[1:])
+    return text + (f"; also {others}" if others else "") + f". Needs fishing level {min(w.min_level for w, _ in places)}."
+
+
 def _fish(reg: Registry) -> list[str]:
-    waters = {}
-    for w in reg.fishing.waters:
-        for fish_id in w.fish:
-            waters.setdefault(fish_id, []).append(w.name)
     out = []
     for rarity in range(7, 0, -1):
         fish = [i for i in reg.items.values() if i.category == "fish" and i.rarity == rarity]
         if not fish:
             continue
-        lines = [f"{i.display}: {_n(i.sell_price)} bits, {i.size.min:g}-{i.size.max:g} cm, " + ", ".join(waters.get(i.id, ["?"])) for i in sorted(fish, key=lambda x: -x.sell_price)]
+        lines = [f"{i.display}: {_n(i.sell_price)} bits, {i.size.min:g}-{i.size.max:g} cm\n-# {_where(i, reg)}" for i in sorted(fish, key=lambda x: -x.sell_price)]
         out.append(f"**{Rarities.from_value(rarity).rarity_name}**\n" + "\n".join(lines))
     return out
 
@@ -135,7 +147,7 @@ def _fish(reg: Registry) -> list[str]:
 def _waters(reg: Registry) -> list[str]:
     out = []
     for w in reg.fishing.waters:
-        odds = ", ".join(f"{reg.item(i).name} 1/{n:,}" for i, n in sorted(w.fish.items(), key=lambda kv: -kv[1]))
+        odds = ", ".join(f"{reg.item(i).name} {_one_in(c).replace(' casts', '')}" for i, c in sorted(fishing.water_chances(w).items(), key=lambda kv: kv[1]))
         out.append(f"**{w.emoji} {w.name}** (level {w.min_level}, waits ×{w.wait_multiplier:g})\n{w.description}\n-# {odds}")
     return out
 

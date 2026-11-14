@@ -82,6 +82,24 @@ def roll_fish(rng: random.Random, registry: Registry | None = None, water: Water
     return reg.item(found[0]) if found else fish_pool(reg)[-1]
 
 
+def water_chances(water: WaterRules) -> dict[str, float]:
+    """The real chance of each fish on one cast in this water (rarest rolled first, the commonest takes what is left), without luck."""
+    odds = sorted(water.fish.items(), key=lambda kv: -kv[1])
+    chances, left = {}, 1.0
+    for index, (fish_id, rate) in enumerate(odds):
+        p = left if index == len(odds) - 1 else left / rate
+        chances[fish_id] = p
+        left -= p
+    return chances
+
+
+def where_to_catch(fish_id: str, registry: Registry | None = None) -> list[tuple[WaterRules, float]]:
+    """Every water this fish lives in with its chance per cast there, the best place first."""
+    reg = registry or get_registry()
+    found = [(w, water_chances(w)[fish_id]) for w in reg.fishing.waters if fish_id in w.fish]
+    return sorted(found, key=lambda e: -e[1])
+
+
 # ---- the rod ----------------------------------------------------------------------------------------------
 def wait_seconds(power: int, rules: FishingRules, rng: random.Random, bite_speed: float = 0.0) -> float:
     """How long until something bites: shorter with a stronger rod (and a Lure enchant: ``bite_speed``)."""

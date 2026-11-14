@@ -125,3 +125,41 @@ def test_the_foraging_page_explains_stances_without_giving_the_patterns_away():
     for grain in REG.foraging.chopping.grains:
         assert grain.pattern not in page  # the wiki teaches the game, it doesn't hand you the answers
     assert all(g.name in page or g.name.split()[0] in page for g in REG.foraging.chopping.grains)
+
+
+# ---- where to catch each fish -----------------------------------------------------------------------------------------------------------
+def test_every_waters_chances_add_up_and_the_rare_ones_are_rarer():
+    from cococap.services import fishing
+
+    for water in REG.fishing.waters:
+        chances = fishing.water_chances(water)
+        assert sum(chances.values()) == pytest.approx(1.0) and all(c > 0 for c in chances.values()), water.id
+        by_rate = sorted(water.fish.items(), key=lambda kv: -kv[1])
+        assert chances[by_rate[0][0]] < chances[by_rate[-1][0]]  # the rarest is less likely than the catch-all
+
+
+def test_chances_match_what_casting_really_gives():
+    from random import Random
+
+    from cococap.services import fishing
+
+    water = REG.fishing.waters[0]
+    rng, seen = Random(3), {}
+    for _ in range(40_000):
+        fish = fishing.roll_fish(rng, REG, water)
+        seen[fish.id] = seen.get(fish.id, 0) + 1
+    for fish_id, chance in fishing.water_chances(water).items():
+        if chance > 0.02:
+            assert seen.get(fish_id, 0) / 40_000 == pytest.approx(chance, rel=0.12), fish_id
+
+
+def test_the_wiki_tells_you_the_best_water_for_every_fish():
+    from cococap.services import fishing, wiki
+
+    page = "\n".join(wiki.page_text("fish", REG)) if hasattr(wiki, "page_text") else "\n".join(wiki._fish(REG))
+    fish = [i for i in REG.items.values() if i.category == "fish" and fishing.where_to_catch(i.id, REG)]
+    assert fish and page.count("Best in") == len(fish)
+    eel = next(i for i in fish if len(fishing.where_to_catch(i.id, REG)) > 1)
+    best, chance = fishing.where_to_catch(eel.id, REG)[0]
+    assert all(chance >= c for _, c in fishing.where_to_catch(eel.id, REG)) and f"Best in {best.emoji} {best.name}" in page
+    assert "casts" in page and "Needs fishing level" in page
