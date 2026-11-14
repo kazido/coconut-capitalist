@@ -10,8 +10,8 @@ zone_levels = [1, 4, 7, 11, 15, 20, 25, 31, 37, 44, 51, 59, 67, 76, 85, 94, 104,
 heavy_zone = 8                    # private trees from this zone up are "heavy"...
 heavy_solo_power = 0.5            # ...and a lone chopper hits at this share of their power (the Soloist enchant removes it)
 zone_hp_growth = 0.75             # a tree's hp = its height x (1 + this x (zone - 1))
-xp_per_swing = 9                  # foraging xp = this x the quality of every chop (grain and good chops, never the axe). A normal chop is about 1.
-bits_per_hp = 200                 # bits = hp chopped x this (x the zone bonus). Tuned to pay a bit under mining per click
+xp_per_swing = 10                  # foraging xp = this x the quality of every chop (grain and good chops, never the axe). A normal chop is about 1.
+bits_per_hp = 230                 # bits = hp chopped x this (x the zone bonus). Tuned to pay a bit under mining per click
 hp_per_roll = 170                 # a felled tree makes ceil(hp / this) rolls on the foraging drop tables
 zone_reward_growth = 0.07         # each zone above 1 pays +7% per hp (zone 10: x1.63, zone 20: x2.33). Kept small so the deep zones do not run away from the other skills
 
@@ -32,54 +32,73 @@ min = 90
 max = 100
 weight = 0.001
 
-[chopping]                        # a swing is your axe's power x the spot's grain (x a good chop's bonus)
+[chopping]                        # a swing is your axe's power x the spot's grain x the spot's wear (x a good chop's bonus)
 good_chop_chance = 0.15           # a "good chop" does extra damage
 good_chop_bonus = 0.5             # +50%
+wrong_stance_factor = 0.5         # the wrong style chops at half the damage (and half the xp): learn the grain's style once and it is yours
+wear_per_chop = 0.04              # a spot of wear 1 lasts 25 chops (then you move to a new spot by yourself)
+wear_penalty = 0.4                # as a spot wears out it chops weaker: at the very end it is at 60%
 
-# Every spot has a grain, and every grain has its own secret PATTERN of three stances: o = overhead, s = sidecut, u = undercut.
-# For each step you pick a stance. A wrong one puts an X on the step and you move on to the next (the swing still chops: it only
-# matters for learning); the right one is remembered for good, and a wrong one is crossed off in your notes, so you piece each
-# grain together from your guesses. Do every step right on one spot and you earn a little extra xp. When the pattern is done you
-# move to a new spot (a new grain) by yourself. Deeper trees make you do more steps (the first steps are always the same).
-perfect_xp_per_step = 10          # a spot done with every step right pays this much foraging xp per step
-cycle_by_zone = [3, 3, 3, 4, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8]   # how many steps of the pattern a tree of this zone (1, 2, ...) makes you do
-
-[[chopping.grains]]               # rotating lands you on one of these (by weight): is the new spot better than the one you have?
+# Every spot has a grain, and every grain likes ONE chop style: o = overhead, s = sidecut, u = undercut. Chop in that style for the
+# full effect; any other is a glancing blow. Your Grain notes remember what you find out, so you learn each grain once and know it
+# for good. Chopping wears the spot out, and the good grains wear slowest (the bad ones go quickly), so a clean spot is worth
+# staying on. When a spot is worn out you move to a new one (a random grain) by yourself. Do not like the grain you got? Spend a
+# rotation wedge (see [rotate]) to move on at once.
+[[chopping.grains]]
 id = "plain"
 name = "Plain"
 multiplier = 1.0
 weight = 0.30
-pattern = "sussuuoo"
+stance = "s"
+wear = 1.0
 [[chopping.grains]]
 id = "knotty"
 name = "Knotty"
 multiplier = 0.7
 weight = 0.20
-pattern = "usuuooss"
+stance = "u"
+wear = 1.6
 [[chopping.grains]]
 id = "clean"
 name = "Clean grain"
 multiplier = 1.3
 weight = 0.15
-pattern = "suoussou"
+stance = "o"
+wear = 0.7
 [[chopping.grains]]
 id = "twisted"
 name = "Twisted"
 multiplier = 0.9
 weight = 0.15
-pattern = "soouosos"
+stance = "s"
+wear = 1.3
 [[chopping.grains]]
 id = "split"
 name = "Split"
 multiplier = 1.1
 weight = 0.10
-pattern = "oussosso"
+stance = "o"
+wear = 0.9
 [[chopping.grains]]
 id = "burl"
 name = "Burl"
 multiplier = 1.4
 weight = 0.10
-pattern = "ouosusos"
+stance = "u"
+wear = 0.6
+
+# Rotation wedges: consumables (bought in the shop) that move you off the spot you are on. A better wedge tilts the new grain toward
+# the good ones: its chance is the grain's weight x its multiplier ** bias.  TODO(balance): prices
+[rotate]
+[[rotate.wedges]]
+item = "rotation_wedge"
+bias = 0
+[[rotate.wedges]]
+item = "iron_wedge"
+bias = 4
+[[rotate.wedges]]
+item = "gilded_wedge"
+bias = 12
 
 [community]                       # the tree everyone can join: one per hour, standing for `open_minutes`
 open_minutes = 30

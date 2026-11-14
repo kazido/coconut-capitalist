@@ -1357,6 +1357,25 @@ rate = 900  # TODO(balance): 1 in 900 per drop roll
 min = 1
 max = 1
 
+[scroll_seasoned]
+name = "Scroll of Seasoning"
+description = "Spots wear out more slowly under your axe."
+wiki = "Use it from your inventory (Enchant) to put Seasoned on an axe. One use."
+emoji = "📜"
+rarity = 4
+skill = "foraging"
+category = "scroll"
+price = 0
+sell_price = 0
+
+[scroll_seasoned.scroll]
+enchant = "seasoned"
+
+[scroll_seasoned.drop]
+rate = 900  # TODO(balance): 1 in 900 per drop roll
+min = 1
+max = 1
+
 [scroll_iron_frame]
 name = "Scroll of the Iron Frame"
 description = "Braces a pickaxe against the creaking mine."
@@ -2094,3 +2113,36 @@ kind = "axe"
 power = 54
 requirement = 0
 
+
+[rotation_wedge]
+name = "Rotation Wedge"
+description = "Drive it into a bad spot and the grain gives way to another."
+wiki = "Use it while chopping to move off your spot at once: you land on a random new grain. One use."
+emoji = "🪚"
+rarity = 2
+skill = "foraging"
+category = "material"
+price = 2000  # TODO(balance)
+sell_price = 1000
+
+[iron_wedge]
+name = "Iron Wedge"
+description = "A better wedge: the new spot is more often a good one."
+wiki = "Like a Rotation Wedge, but the grain you land on leans toward the clean ones. One use."
+emoji = "🪚"
+rarity = 4
+skill = "foraging"
+category = "material"
+price = 25000  # TODO(balance)
+sell_price = 12000
+
+[gilded_wedge]
+name = "Gilded Wedge"
+description = "The finest wedge there is: it almost never lands you on a poor spot."
+wiki = "Like a Rotation Wedge, but the grain you land on is very likely a good one. One use."
+emoji = "🪚"
+rarity = 6
+skill = "foraging"
+category = "material"
+price = 200000  # TODO(balance)
+sell_price = 100000

@@ -56,7 +56,7 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 6. **Combat in progress** (branch `claude/combat-item-drops-566935`, built on top of the audit branch): the battle engine and `/fight`
    are done (see DESIGN.md "Combat"). The final boss (Gravewarden: phases, telegraph, stun-immune, Brace counterplay) is built too. Enemy drops (weighted tables, bits or any item, `configs/drops.toml`) and the Graveyard Key that opens the boss are built too. Next: channel drops
    rolling the same tables (`exts/economy/drops.py` is still the old Mongo code), combat tiers for levels 20-90, balance, party fights. Done since: the xp audit (tools never change xp: foraging pays per chop quality, fishing per catch by water, farming by
-   growth time; migration 0007) and **Coconut Level** + the Bestiary (DESIGN.md). Still open: combat tiers for levels 20-90, more point sources later
+   growth time; migration 0007) and **Coconut Level** + the Bestiary (DESIGN.md). Foraging was reworked (one chop style per grain, spot wear, rotation wedges, Seasoned enchant; see DESIGN.md) and the Bestiary now holds fish and sea bosses. Next: **tool forks + Mastery tree** (designed in DESIGN.md, pilot mining and fishing), level 5/10 unlocks, then combat tiers for levels 20-90 and more point sources
    (collection books, achievements as new skills/features arrive). Then: mining rework (last), party versions
    of each skill.
 7. Foraging tree events, channel drops / megadrop, Familiar Orb sources, and a "you were removed from your party" notice.

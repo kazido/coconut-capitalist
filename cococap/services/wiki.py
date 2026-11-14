@@ -92,12 +92,13 @@ def _foraging(reg: Registry) -> list[str]:
     return [
         f"**Foraging** needs an axe. Chop a tree down for bits, drops and xp. There are **{f.zones} zones**: zone 2 needs level {f.zone_levels[1]}, zone 10 level {f.zone_levels[9]} and zone {f.zones} level {f.zone_levels[-1]}, and each takes a little longer than the last; "
         f"from zone {f.heavy_zone} alone, trees are heavy and you swing at half power unless your axe has **Soloist**.",
-        "**Learn the grain.** Every spot has a grain (Plain, Knotty, Clean, Twisted, Split or Burl), and every grain has its own secret **pattern** "
-        "of the three stances (⬆️ Overhead, ↔️ Sidecut, ⬇️ Undercut). For each step pick a stance: a wrong one puts an ❌ and you move on to the next. "
-        "Your **Grain notes** (a button on the foraging pages) remember the right stances and cross off the wrong ones, so you piece each grain "
-        "together. Get every step of a spot right and you earn a little extra xp.",
-        "**Remember it.** A new spot shows ❔ for every step again, so you have to remember what you learned. When a spot's pattern is done you "
-        "move to a new one by yourself. Deeper trees make you do more steps. A good chop hits extra hard.",
+        "**Learn the grain.** Every spot has a grain (Plain, Knotty, Clean, Twisted, Split or Burl), and every grain likes **one chop style** "
+        "(⬆️ Overhead, ↔️ Sidecut or ⬇️ Undercut). Chop in that style for full strength; any other glances off at half. "
+        "Your **Grain notes** (a button on the foraging pages) remember the style you have found and cross off the ones that failed, so you learn each grain once. "
+        "The spot never tells you its style, so you have to remember it.",
+        "**Spots wear out.** Every chop wears the spot, and a worn spot chops weaker. Good grains (Clean, Burl) wear slowly and bad ones (Knotty, Twisted) "
+        "go quickly; when a spot is gone you move to a new random grain by yourself. An axe with **Seasoned** makes spots last longer. "
+        "Stuck on a bad grain? Use a **rotation wedge** (bought in the shop) to move off at once: the Iron and Gilded wedges lean toward the good grains. A good chop hits extra hard.",
         f"**Re-leaf** (level {f.releaf.min_level}): after felling a tree you can **donate its drops** ({f.releaf.daily_limit} a day). The rarest item "
         f"fills the meter by its rarity x{f.releaf.meter_per_rarity}; at **{f.releaf.meter_goal}** your next tree is a **double tree** with double the hp "
         f"and a jackpot: {f.releaf.double_bits:,} bits, or a 1 in {round(1 / f.releaf.double_spirit_chance)} chance of a Spirit of the Forest.",

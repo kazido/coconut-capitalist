@@ -193,24 +193,25 @@ over, and each member collects theirs from their own panel. They pay a little be
 **+10% per extra member who did at least 10% of it, up to +50%** (the community tree gives +5% each). This is the first of the
 **party versions of each skill** (the others are still to come). Settings: `configs/foraging.toml` `[party_tree]`.
 
-### Stances and grain patterns
+### Grains, one chop style each, spot wear and rotation wedges (decided; replaced the 8-step patterns)
 
-Chopping has a small puzzle in it. Every spot has a **grain** (Plain, Knotty, Clean grain, Twisted, Split, Burl; each with its own
-difficulty multiplier on your damage) and every grain has its own **secret pattern** of three stances: Overhead, Sidecut and
-Undercut (`configs/foraging.toml` `[[chopping.grains]]`). For each step you pick a stance:
-
-- **Right or wrong, you move on.** A wrong stance puts an ❌ on that step (a right one a ✅) and you go to the next step. Chopping
-  always does its normal damage: the pattern is for learning, not for hitting harder.
-- **Your notes remember.** A right stance is remembered for good; a wrong one is crossed off (✖️) at that step, so you piece each grain
-  together from your guesses (two crossed off and the third is obvious). They live on the **Grain notes** page (a button on every
-  foraging page, like the fishing field notes), which returns you to the same tree.
-- **But the panel makes you remember.** It shows ❔ for every step of a new spot, and only the steps you have done on that spot show.
-- **A spot ends when its pattern is done** and you move to a new spot (a new grain) by yourself: no Rotate button.
-- **Do every step right on one spot** and you earn a little extra xp (10 per step: a 3-step spot pays 30).
-- **Later trees ask for more.** A tree makes you do the first 3 steps of the pattern in zones 1-2, then 4, 5, 6, 7, and 8 in zone 10,
-  always the same opening steps, so what you learned still applies and you only learn the new tail.
-
-The same stances work on private, community and party trees. Chopping pays as it did before the stances: a good chop (15%) hits +50%.
+Every spot has a **grain** (Plain, Knotty, Clean grain, Twisted, Split, Burl) and every grain likes **one chop style**: Overhead,
+Sidecut or Undercut (`configs/foraging.toml` `[[chopping.grains]]`, each stance liked by two grains). One grain = one style, so it is
+a thing you learn once and remember, not a pattern you re-read every spot.
+- **Right style = full strength; any other glances off** at `wrong_stance_factor` (half) of the damage and xp.
+- **Your Grain notes remember.** A style that worked is kept for good; a wrong one is crossed off (✖️), so two wrong guesses give away the
+  third. The panel never tells you the style (it shows the grain, its quality, the spot's wear and what a chop does right now).
+- **Spots wear.** Each chop wears the spot by `wear_per_chop` x the grain's `wear` (so a plain spot lasts 25 chops). **Good grains wear
+  slowly and bad ones fast** (Burl 0.6, Clean 0.7 ... Knotty 1.6): a clean spot is worth staying on, a knotty one burns out. A worn
+  spot chops weaker (down to 60% at the end, `wear_penalty`). When it is used up you are moved to a new random grain by yourself.
+- **Rotation wedges** are consumable items (shop): use one to leave the spot at once and land on a different grain. Three tiers
+  (`[rotate]`): Rotation Wedge (random), Iron Wedge and Gilded Wedge, which lean toward good grains (a new grain's chance is its weight
+  x multiplier ** bias). So you can only rotate as often as you can afford wedges.
+- **Upgrades that slow wear:** the **Seasoned** enchant (axe, 3 levels, -15% wear each; the scroll drops from chopping). Wear can never be
+  slowed below a quarter of normal.
+- Same on private, community and party trees. Wear is per screen, like the spot always was. Xp follows the quality of the chop, so wear and
+  a wrong style cost xp too; `xp_per_swing` and `bits_per_hp` were raised a little to keep foraging where the xp audit put it (about 6,800 xp/h, a little under mining).
+- **Old notes:** the 8-step pattern notes are ignored (a new `styles` field); everyone relearns six styles, which takes minutes.
 
 ### Re-leaf donations
 
@@ -644,3 +645,22 @@ to take down in mining, farming and foraging join the same way (a counter in tha
   (`User.add_xp` and `User.update_skill` both call `pets.grant_play_xp`), so every skill works without being touched, and the xp counted is what you were actually paid.
 - Feeding still works and is faster (food x3 for its own skill, x2 for a global pet). Existing pets keep their xp; they simply land at a higher level.
 - **Bestiary counters never stop** (the kill count is a plain number); only the point milestones end (1, 25, 100, 500, 2,500, 10,000; bosses 1, 5, 25, 100, 500).
+
+## Tool forks and the Mastery tree (design, agreed; not built yet)
+
+Problem: every ladder is one chain of "more power", so everyone makes the same choices and the late steps are poor value (payback of 200-300
+active hours for x1.35). The fix is two layers, **tools** (what you wield) and **Mastery** (how you play), and neither touches xp.
+- **Tool forks.** From about tier 3 a tool upgrades into one of two or three different tools instead of one: each has its own ability and some
+  stats are better and some worse (axe: Broadaxe, fewer bigger chops with a finishing crit, vs Hatchet, fast chops that build a combo; pickaxe:
+  one branch lowers the danger meter, the other digs richer lodes for more pressure; rod: faster bites and more slips vs slower with more
+  treasure and bosses). Switching costs bits. Data: `upgrade` becomes a list of branches; `ability` already exists on tools.
+- **Mastery tree per skill:** about 3 branches x 5 nodes, so you cannot fill it and must choose. Points come from skill levels (e.g. 1 per
+  5 levels) plus a few one-time Coconut Level milestones, never from upgrade count. Respec costs bits. Every node is a trade-off that
+  bends the skill's own mechanic (mining: Safe / Greedy / Gem hunter; fishing: Angler / Treasure hunter / Trophy; foraging: Solo / Party /
+  Forester; farming: Gardener / Trader / Botanist; combat: its kit pool is already this). Nodes may give bits or drop bonuses (this is
+  where tool bits/drop multipliers live; **tool parts are deferred**).
+- **Balance rule:** at equal investment every branch earns within about 10% of the others in bits per minute (checked with the balance script).
+  Differences are playstyle, not power.
+- **Pilot:** mining and fishing first, then foraging and farming. The first Mastery branch opens at skill level 5 and the first tool fork at 10.
+- **Level unlock audit** (today): mining magnet 5 and gems 10, farming market 5, foraging Re-leaf 10 and zones 4, 7, fishing quests 3, waters
+  3/8/15, pot 6, book 10, combat fights 3/8 and the boss 20. Gaps to fill: foraging and fishing at 5, farming at 10, combat at 5.

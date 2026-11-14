@@ -72,11 +72,10 @@ async def click(nav, inter, label=None, emoji=None):
 
 
 async def chop(nav, inter, zone=1):
-    """Chop with the stance that is right for the spot's grain at its current step (the player knows the pattern)."""
+    """Chop in the style the spot's grain likes (the player knows their grains)."""
     from cococap.services import foraging as forage
 
-    spot, rules = nav.screen.spot, get_registry().foraging
-    letter = spot.expected(rules, forage.cycle_length(zone, rules))
+    letter = nav.screen.spot.stance(get_registry().foraging)
     await click(nav, inter, forage.STANCES[letter][0])
 
 
@@ -1130,7 +1129,7 @@ def freeze_time(monkeypatch, now=OPEN_HOUR, good_chops=False):
     """Fix the clock, and make chopping predictable: no good chops unless asked for."""
     monkeypatch.setattr("cococap.screens.forage.new_rng", lambda: Rig(0.0 if good_chops else 0.99))
     plain = foraging_service.Spot  # every spot is a plain one, so damage is predictable
-    monkeypatch.setattr(plain, "pick", classmethod(lambda cls, rules, rng: cls("Plain", 1.0)))
+    monkeypatch.setattr(plain, "pick", classmethod(lambda cls, rules, rng, bias=0.0, exclude=None: cls("Plain", 1.0)))
     clock = SimpleNamespace(time=lambda: now)
     for target in ("cococap.screens.forage.time", "cococap.services.foraging.time"):
         monkeypatch.setattr(target, clock)
@@ -1297,21 +1296,23 @@ async def test_home_only_says_whether_check_in_is_ready_and_the_timers_live_on_t
     assert [b for b in buttons(nav) if b.label and b.label.endswith(("h", "m")) and b.disabled]  # timers: on the page
 
 
-async def test_a_spot_moves_on_by_itself_when_its_pattern_is_done_not_when_you_are_wrong(db, monkeypatch):
+async def test_a_spot_wears_out_and_moves_on_by_itself_and_a_wrong_style_only_glances_off(db, monkeypatch):
     freeze_time(monkeypatch)
-    await with_axe(template="reinforced_axe")
-    nav, inter = await hub("tree", tree=foraging_service.Tree(1, 100_000, 100_000))
+    user = await with_axe(template="reinforced_axe")
+    power = get_registry().item("reinforced_axe").tool.power
+    nav, inter = await hub("tree", tree=foraging_service.Tree(1, 1_000_000, 1_000_000))
     rules = get_registry().foraging
-    assert not [b for b in buttons(nav) if b.label == "Rotate"]  # there is no Rotate button any more
-    cycle = foraging_service.cycle_length(1, rules)
-    for step in range(cycle - 1):  # wrong, wrong... you still move on a step each time and the spot stays
-        wrong = next(letter for letter in "osu" if letter != nav.screen.spot.expected(rules, cycle))
-        await click(nav, inter, foraging_service.STANCES[wrong][0])
-        assert nav.screen.spot.step == step + 1 and nav.screen.spot.marks == [False] * (step + 1)
-    assert all(m is False for m in nav.screen.spot.marks) and "❌" in all_text(nav)
-    await chop(nav, inter)  # the last step (right this time): the spot is done, imperfect, and a new one starts
-    assert nav.screen.spot.step == 0 and nav.screen.spot.marks == [] and "New spot" in all_text(nav)
-    assert "Perfect" not in all_text(nav)
+    right = nav.screen.spot.stance(rules)
+    wrong = next(letter for letter in "osu" if letter != right)
+    await click(nav, inter, foraging_service.STANCES[wrong][0])
+    assert nav.screen.tree.hp == 1_000_000 - round(power * rules.chopping.wrong_stance_factor) and "glanced off" in all_text(nav)
+    assert 0 < nav.screen.spot.wear and "crossed off" in all_text(nav)
+    wear = nav.screen.spot.wear
+    for _ in range(int(1 / wear) + 1):  # keep chopping until the spot is used up
+        await chop(nav, inter)
+    assert nav.screen.spot.wear < 1  # it wore out on the way and was renewed (a spot is never left at 100%)
+    skill = await user.skill("foraging")
+    assert skill.styles["plain"] == right.upper()  # the right style was learned on the way
 
 
 async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
@@ -1328,17 +1329,17 @@ async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
     assert "Good chop" not in all_text(nav2) and nav2.screen.tree.hp == 10_000 - power
 
 
-async def test_the_community_tree_has_the_same_spot_and_rotate(db, monkeypatch):
+async def test_the_community_tree_has_the_same_spot_and_wear(db, monkeypatch):
     freeze_time(monkeypatch)
     user = await with_axe(template="reinforced_axe")
     power = get_registry().item("reinforced_axe").tool.power
     nav, inter = await hub("grove")
-    assert "grain" in all_text(nav) and not [b for b in buttons(nav) if b.label == "Rotate"]
+    assert "grain" in all_text(nav) and "a chop" in all_text(nav)
     await chop(nav, inter, zone=3)
-    nav.screen.spot.wear = 3
+    nav.screen.spot.wear = 0.9
     await chop(nav, inter, zone=3)
     worn = (await foraging_service.community_tree(user, OPEN_HOUR)).yours
-    assert worn < 2 * power * 1.1  # the second chop, on a worn spot, did less than a fresh one would have
+    assert worn < 2 * power  # the second chop, on a worn spot, did less than a fresh one would have
 
 
 RULES_CHOP = get_registry().foraging.chopping

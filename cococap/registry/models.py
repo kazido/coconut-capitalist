@@ -558,42 +558,43 @@ class CommunityRules(_Data):
 
 
 class Grain(_Data):
-    """A kind of wood at the place you chop. It sets how hard the spot is to cut, and has its own secret pattern of stances."""
+    """A kind of wood at the place you chop. It sets how hard the spot is to cut and how fast it wears out, and it wants one chop style."""
 
     id: str
     name: str
-    multiplier: float = Field(gt=0)
-    weight: float = Field(gt=0)
-    pattern: str  # one letter per step: o = overhead, s = sidecut, u = undercut
+    multiplier: float = Field(gt=0)  # what it does to your damage (and xp): a clean grain is better than a knotty one
+    weight: float = Field(gt=0)  # how often a new spot has this grain
+    stance: Literal["o", "s", "u"]  # the one style it likes: o = overhead, s = sidecut, u = undercut
+    wear: float = Field(gt=0)  # how fast a chop wears the spot out, relative to 1 (good grains last, bad ones go quickly)
 
-    @field_validator("pattern")
-    @classmethod
-    def _stances(cls, value: str) -> str:
-        if not value or set(value) - set("osu"):
-            raise ValueError("a grain's pattern may only use the stances o, s and u")
-        return value
+
+class Wedge(_Data):
+    """A rotation wedge: a consumable item that moves you off a spot onto a new grain. Better ones tilt the roll toward good grains."""
+
+    item: str  # the item's id (it must exist in items.toml)
+    bias: float = Field(ge=0)  # a new grain's weight is its weight x multiplier ** bias: 0 is a plain random pick
+
+
+class RotateRules(_Data):
+    wedges: list[Wedge] = Field(min_length=1)
 
 
 class ChoppingRules(_Data):
-    """How a swing works: the grain you are on, its pattern of stances (for learning and a little xp), and good chops."""
+    """How a swing works: the grain you are on, the one style it likes, how the spot wears, and good chops."""
 
     good_chop_chance: float = Field(ge=0, le=1)
     good_chop_bonus: float = Field(ge=0)  # +50% -> 0.5
-    perfect_xp_per_step: int = Field(ge=0)  # xp for doing every step of a spot right, per step
-    cycle_by_zone: list[int] = Field(min_length=1)  # steps of the pattern a tree of zone 1, 2, ... makes you do
-    grains: list[Grain] = Field(min_length=1)
+    wrong_stance_factor: float = Field(gt=0, le=1)  # the wrong style chops at this share of the damage (and xp)
+    wear_per_chop: float = Field(gt=0)  # a chop on a grain of wear 1 wears the spot out by this much (of a whole 1.0)
+    wear_penalty: float = Field(ge=0, lt=1)  # a spot about to wear out chops at (1 - this) of its strength
+    grains: list[Grain] = Field(min_length=2)
 
     @model_validator(mode="after")
-    def _patterns_fit(self):
-        longest = max(len(g.pattern) for g in self.grains)
-        if any(len(g.pattern) < max(self.cycle_by_zone) for g in self.grains):
-            raise ValueError("every grain's pattern must be at least as long as the longest cycle")
+    def _grains_fit(self):
         if len({g.id for g in self.grains}) != len(self.grains):
             raise ValueError("grain ids must be unique")
-        if len({g.pattern[:3] for g in self.grains}) != len(self.grains):
-            raise ValueError("grains must differ in their first three steps, or you could not tell them apart by playing")
-        if self.cycle_by_zone != sorted(self.cycle_by_zone) or longest < 1:
-            raise ValueError("cycle_by_zone must not shrink as the zones get deeper")
+        if {g.stance for g in self.grains} != {"o", "s", "u"}:
+            raise ValueError("every stance needs at least one grain that wants it")
         return self
 
     def grain(self, grain_id: str) -> Grain:
@@ -638,6 +639,7 @@ class ForagingRules(_Data):
     zone_reward_growth: float = Field(ge=0)  # each zone above 1 pays this much more per hp (bits and drop rolls)
     heights: list[TreeHeight] = Field(min_length=1)
     chopping: ChoppingRules
+    rotate: RotateRules
     community: CommunityRules
     party_tree: PartyTreeRules
     releaf: ReleafRules

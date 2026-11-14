@@ -66,3 +66,14 @@ max_level = 3
 type = "stat_add"
 stat = "danger_reduction"
 amount = 0.03
+
+[seasoned]
+name = "Seasoned"
+description = "A well-seasoned handle: the spot you chop wears out 15% slower per level."
+applies_to = ["axe"]
+max_level = 3
+
+[[seasoned.effects]]
+type = "stat_add"
+stat = "wear_slow"
+amount = 0.15

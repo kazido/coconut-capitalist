@@ -50,9 +50,8 @@ def foraging_per_click(zone: int = 1, axe: str = "starter_axe") -> float:
     power = REG.item(axe).tool.power
     rng, dealt, clicks = Random(2), 0, 4000
     spot = f.Spot.pick(rules, rng)
-    cycle = f.cycle_length(zone, rules)
     for _ in range(clicks):
-        dealt += spot.swing(power, rules, rng, 0.0, spot.expected(rules, cycle), cycle).damage
+        dealt += spot.swing(power, rules, rng, 0.0, spot.stance(rules)).damage
     pay_per_hp = rules.bits_per_hp * f.zone_reward_factor(zone, rules) + per_roll * f.expected_rolls(1, rules, zone)
     return pay_per_hp * dealt / clicks
 
@@ -102,10 +101,9 @@ def foraging_dmg_per_click(zone: int = 1) -> float:
     rules = REG.foraging
     rng, dealt, clicks = Random(2), 0, 4000
     spot = f.Spot.pick(rules, rng)
-    cycle = f.cycle_length(zone, rules)
     power = REG.item("starter_axe").tool.power
     for _ in range(clicks):
-        dealt += spot.swing(power, rules, rng, 0.0, spot.expected(rules, cycle), cycle).damage
+        dealt += spot.swing(power, rules, rng, 0.0, spot.stance(rules)).damage
     return dealt / clicks
 
 
@@ -171,9 +169,8 @@ def foraging_xp_per_click(power: int) -> float:
     rules = REG.foraging
     rng, effort, clicks = Random(2), 0.0, 4000
     spot = f.Spot.pick(rules, rng)
-    cycle = f.cycle_length(1, rules)
     for _ in range(clicks):
-        effort += spot.swing(power, rules, rng, 0.0, spot.expected(rules, cycle), cycle).effort
+        effort += spot.swing(power, rules, rng, 0.0, spot.stance(rules)).effort
     return effort / clicks * rules.xp_per_swing
 
 
