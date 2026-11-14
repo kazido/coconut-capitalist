@@ -32,10 +32,18 @@ async def player(user_id, axe_name="starter_axe"):
 
 # ---- zones and swings -------------------------------------------------------------------------------------------
 def test_zones_unlock_with_level():
-    assert f.zone_level(1, RULES) == 1 and f.zone_level(7, RULES) == 1 + 6 * RULES.levels_per_zone
+    assert f.zone_level(1, RULES) == 1 and f.zone_level(7, RULES) == RULES.zone_levels[6]
     assert f.unlocked_zones(1, RULES) == [1]
     assert f.unlocked_zones(f.zone_level(7, RULES), RULES) == list(range(1, 8))
+    assert f.unlocked_zones(f.zone_level(7, RULES) - 1, RULES) == list(range(1, 7))
     assert f.unlocked_zones(999, RULES) == list(range(1, RULES.zones + 1))
+    assert f.unlocked_zones(7, RULES) == [1, 2, 3]  # level 7 is zone 3: zones are no longer a new one every two levels
+
+
+def test_every_zone_takes_longer_to_reach_than_the_one_before():
+    levels = RULES.zone_levels
+    gaps = [b - a for a, b in zip(levels, levels[1:], strict=False)]
+    assert len(levels) == RULES.zones == 20 and gaps == sorted(gaps) and gaps[0] >= 3 and gaps[-1] > gaps[0]
 
 
 def test_a_lone_chopper_is_slowed_on_heavy_trees_unless_soloist():
@@ -121,10 +129,28 @@ async def test_xp_is_boosted_in_a_party(db):
 def test_each_hours_tree_is_fixed_by_the_clock():
     assert f.community_spec(WINDOW, RULES) == f.community_spec(WINDOW, RULES)
     zones = {f.community_spec(WINDOW + n, RULES)[0] for n in range(80)}
-    assert zones <= set(range(C.min_zone, C.max_zone + 1)) and len(zones) > 2
+    assert zones <= set(range(C.default_zone - C.zone_below, C.default_zone + C.zone_above + 1)) and len(zones) > 2
     zone, hp = f.community_spec(WINDOW, RULES)
-    typical = f.average_hp(zone, RULES) * C.hp_multiplier
+    typical = f.average_hp(zone, RULES) * C.hp_per_active * C.min_active
     assert 0.8 * typical <= hp <= 1.2 * typical
+
+
+def test_the_community_tree_follows_who_has_been_chopping():
+    deep = f.zone_level(12, RULES)
+    zones = {f.community_spec(WINDOW + n, RULES, [deep] * 5)[0] for n in range(120)}
+    assert zones == set(range(12 - C.zone_below, 12 + C.zone_above + 1))
+    assert max(f.community_spec(WINDOW + n, RULES, [1] * 5)[0] for n in range(120)) <= 1 + C.zone_above  # beginners get beginner trees
+    middle = [1, 1, deep, deep, deep]  # the middle of the crowd decides, not its richest member
+    assert max(f.community_spec(WINDOW + n, RULES, middle)[0] for n in range(120)) <= 12 + C.zone_above
+
+
+def test_a_bigger_crowd_gets_a_bigger_tree_up_to_a_limit():
+    def hp_for(people):
+        return sum(f.community_spec(WINDOW + n, RULES, [1] * people)[1] / f.average_hp(f.community_spec(WINDOW + n, RULES, [1] * people)[0], RULES)
+                   for n in range(60)) / 60
+    assert hp_for(1) == pytest.approx(hp_for(C.min_active), rel=0.01)  # a quiet hour still gets a proper tree
+    assert hp_for(12) > 3 * hp_for(3) and hp_for(24) > 1.8 * hp_for(12)
+    assert hp_for(C.max_active) == pytest.approx(hp_for(C.max_active * 5), rel=0.01)  # ...and a mob does not get an endless one
 
 
 def test_a_tree_stands_for_open_minutes_each_hour():

@@ -22,7 +22,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 
 from cococap.db import get_database
-from cococap.db.tables import CommunityTreeRow, TreeChopRow, TreeRewardRow
+from cococap.db.tables import CommunityTreeRow, SkillRow, TreeChopRow, TreeRewardRow
 from cococap.errors import GameRuleError
 from cococap.models.skills.foraging import Foraging
 from cococap.registry import Registry, get_registry
@@ -42,7 +42,7 @@ class ForagingError(GameRuleError):
 # ---- zones --------------------------------------------------------------------------------------------
 def zone_level(zone: int, rules: ForagingRules) -> int:
     """The foraging level a zone needs."""
-    return 1 + (zone - 1) * rules.levels_per_zone
+    return rules.zone_levels[min(max(zone, 1), rules.zones) - 1]
 
 
 def unlocked_zones(level: int, rules: ForagingRules) -> list[int]:
@@ -338,12 +338,33 @@ def next_tree_at(now: float) -> float:
     return (window_of(now) + 1) * HOUR
 
 
-def community_spec(window: int, rules: ForagingRules) -> tuple[int, int]:
-    """(zone, hp) of the hour's tree: the same for everybody, from the clock alone."""
+def community_spec(window: int, rules: ForagingRules, crowd: list[int] | tuple[int, ...] = ()) -> tuple[int, int]:
+    """(zone, hp) of the hour's tree. `crowd` is the foraging levels of the people who chopped lately: the tree is picked
+    around what the typical one of them can reach, and is as big as that many choppers can finish. It is worked out once,
+    when the hour's tree is made, and stored, so everybody sees the same tree."""
+    c = rules.community
     rng = random.Random(f"community-tree:{window}")
-    zone = rng.randint(rules.community.min_zone, rules.community.max_zone)
-    hp = round(average_hp(zone, rules) * rules.community.hp_multiplier * rng.uniform(0.85, 1.15))
+    if crowd:
+        middle = sorted(crowd)[len(crowd) // 2]
+        reach = unlocked_zones(middle, rules)[-1]
+    else:
+        reach = c.default_zone
+    zone = rng.randint(max(1, reach - c.zone_below), min(rules.zones, reach + c.zone_above))
+    people = min(max(len(crowd), c.min_active), c.max_active)
+    hp = round(average_hp(zone, rules) * c.hp_per_active * people * rng.uniform(0.85, 1.15))
     return zone, max(1, hp)
+
+
+async def recent_crowd(session, window: int, rules: ForagingRules) -> list[int]:
+    """The foraging levels of everyone who chopped a community tree in the last few hours."""
+    first = window - rules.community.recent_windows
+    rows = await session.execute(
+        select(SkillRow.xp)
+        .join(TreeChopRow, TreeChopRow.user_id == SkillRow.user_id)
+        .where(SkillRow.skill == "foraging", TreeChopRow.window >= first, TreeChopRow.window < window)
+        .distinct()
+    )
+    return [User.xp_to_level(xp) for (xp,) in rows]
 
 
 @dataclass(frozen=True)
@@ -382,7 +403,7 @@ async def _ensure(session, now: float, rules: ForagingRules) -> CommunityTreeRow
     window = window_of(now)
     opens, closes = window_times(window, rules)
     if now < closes:
-        zone, hp = community_spec(window, rules)
+        zone, hp = community_spec(window, rules, await recent_crowd(session, window, rules))
         await session.execute(
             sqlite_insert(CommunityTreeRow)
             .values(window=window, zone=zone, max_hp=hp, hp=hp, status="growing", opens_at=opens, closes_at=closes,

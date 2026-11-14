@@ -212,6 +212,17 @@ Forest. The flag is cleared when that tree is paid, so a full meter is worth exa
 and give them back if the day's limit was already used (two clicks cannot slip a fourth through). **Growth mode** (420 donations) is not built:
 the wiki says only "grow trees instead of chopping", so it needs a design.
 
+### Zones and the community tree (v2)
+
+There are **20 zones**; zone N needs the foraging level `zone_levels[N-1]` in `configs/foraging.toml` (1, 4, 7, 11, 15, 20, 25, 31, ...
+136). The gaps grow, so each zone takes longer than the last (the level curve is quadratic: level 20 is about 74k xp, level 100 about
+2M). Trees from zone 8 are heavy. Deeper zones pay only +7% per hp each (zone 20: x2.3), so depth does not run away from other skills.
+
+The **community tree** now follows the crowd. When an hour's tree is made (and stored, so everyone sees the same one) the server
+looks at who chopped a community tree in the last 24 hours: the zone is picked around what the *median* of them can reach
+(`reach - 2` to `reach + 1`), and hp = a typical tree of that zone x 5 x the number of choppers (counted as at least 3, at most 40).
+A quiet hour gets a small tree you can finish, a busy one a bigger tree; with nobody chopping it falls back to zone 3.
+
 ### Foraging pay vs mining
 
 Measured with fixed-seed simulations (a test guards it): mining at base gear pays about 1,100 bits per click; foraging at

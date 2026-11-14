@@ -88,7 +88,7 @@ def _foraging(reg: Registry) -> list[str]:
     f = reg.foraging
     c = f.community
     return [
-        f"**Foraging** needs an axe. Chop a tree down for bits, drops and xp. There are **{f.zones} zones** (a new one every {f.levels_per_zone} levels); "
+        f"**Foraging** needs an axe. Chop a tree down for bits, drops and xp. There are **{f.zones} zones**: zone 2 needs level {f.zone_levels[1]}, zone 10 level {f.zone_levels[9]} and zone {f.zones} level {f.zone_levels[-1]}, and each takes a little longer than the last; "
         f"from zone {f.heavy_zone} alone, trees are heavy and you swing at half power unless your axe has **Soloist**.",
         "**Learn the grain.** Every spot has a grain (Plain, Knotty, Clean, Twisted, Split or Burl), and every grain has its own secret **pattern** "
         "of the three stances (⬆️ Overhead, ↔️ Sidecut, ⬇️ Undercut). For each step pick a stance: a wrong one puts an ❌ and you move on to the next. "

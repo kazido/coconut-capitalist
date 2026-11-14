@@ -380,9 +380,13 @@ class TreeHeight(_Data):
 
 class CommunityRules(_Data):
     open_minutes: int = Field(ge=1, le=60)
-    min_zone: int = Field(ge=1)
-    max_zone: int = Field(ge=1)
-    hp_multiplier: float = Field(ge=1)
+    default_zone: int = Field(ge=1)      # its zone when nobody has chopped lately
+    zone_below: int = Field(ge=0)        # its zone is picked from (the zone most recent choppers can reach) - this ...
+    zone_above: int = Field(ge=0)        # ... to + this
+    hp_per_active: float = Field(ge=0.1)  # hp = a typical tree of its zone x this x the number of recent choppers
+    min_active: int = Field(ge=1)        # (counted as at least this many...
+    max_active: int = Field(ge=1)        # ... and at most this many)
+    recent_windows: int = Field(ge=1)    # "recent" = the choppers of this many past hours
     min_share: float = Field(ge=0, le=1)
     group_bonus: float = Field(ge=0)
     max_group_bonus: float = Field(ge=0)
@@ -461,7 +465,7 @@ class PartyTreeRules(_Data):
 
 class ForagingRules(_Data):
     zones: int = Field(ge=1)
-    levels_per_zone: int = Field(ge=1)
+    zone_levels: list[int] = Field(min_length=1)  # the foraging level each zone needs (zone 1 first; must climb)
     heavy_zone: int = Field(ge=1)
     heavy_solo_power: float = Field(gt=0, le=1)
     zone_hp_growth: float = Field(ge=0)
@@ -477,8 +481,12 @@ class ForagingRules(_Data):
 
     @model_validator(mode="after")
     def _zones_fit(self):
-        if not 1 <= self.community.min_zone <= self.community.max_zone <= self.zones:
-            raise ValueError("community zones must satisfy 1 <= min_zone <= max_zone <= zones")
+        if len(self.zone_levels) != self.zones or self.zone_levels[0] != 1:
+            raise ValueError("zone_levels needs one level per zone, starting at level 1")
+        if any(b <= a for a, b in zip(self.zone_levels, self.zone_levels[1:], strict=False)):
+            raise ValueError("zone_levels must climb")
+        if not 1 <= self.community.default_zone <= self.zones or self.community.min_active > self.community.max_active:
+            raise ValueError("community default_zone must be a real zone and min_active <= max_active")
         return self
 
 

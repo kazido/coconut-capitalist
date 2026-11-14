@@ -1,18 +1,19 @@
 # Foraging rules (see the wiki). Balance data: change numbers freely.  # TODO(balance): all numbers are guesses
 #
 # Chop a private tree any time, or join the community tree that grows every hour. A tree has hit points; every chop
-# takes off your axe's power. Zones 1..`zones` make trees bigger; a zone needs foraging level
-# 1 + (zone - 1) x levels_per_zone.
+# takes off your axe's power. Zones 1..`zones` make trees bigger; zone N needs foraging level zone_levels[N - 1].
+# The gaps between levels grow (3, 3, 4, 4, 5, ...) so each zone takes a little longer than the one before. (The level
+# curve is quadratic: level 20 is about 74k xp, level 50 about 490k, level 100 about 2M.)
 
-zones = 10
-levels_per_zone = 2               # zone 7 needs level 13
-heavy_zone = 7                    # private trees from this zone up are "heavy"...
+zones = 20
+zone_levels = [1, 4, 7, 11, 15, 20, 25, 31, 37, 44, 51, 59, 67, 76, 85, 94, 104, 114, 125, 136]
+heavy_zone = 8                    # private trees from this zone up are "heavy"...
 heavy_solo_power = 0.5            # ...and a lone chopper hits at this share of their power (the Soloist enchant removes it)
 zone_hp_growth = 0.75             # a tree's hp = its height x (1 + this x (zone - 1))
 xp_per_hp = 3                     # foraging xp = hp chopped x this
 bits_per_hp = 200                 # bits = hp chopped x this (x the zone bonus). Tuned to pay a bit under mining per click
 hp_per_roll = 170                 # a felled tree makes ceil(hp / this) rolls on the foraging drop tables
-zone_reward_growth = 0.15         # each zone above 1 pays +15% per hp (zone 7: x1.9, zone 10: x2.35)
+zone_reward_growth = 0.07         # each zone above 1 pays +7% per hp (zone 10: x1.63, zone 20: x2.33). Kept small so the deep zones do not run away from the other skills
 
 [[heights]]                       # a private tree's height (before the zone scaling), by weight
 min = 20
@@ -41,7 +42,7 @@ good_chop_bonus = 0.5             # +50%
 # grain together from your guesses. Do every step right on one spot and you earn a little extra xp. When the pattern is done you
 # move to a new spot (a new grain) by yourself. Deeper trees make you do more steps (the first steps are always the same).
 perfect_xp_per_step = 10          # a spot done with every step right pays this much foraging xp per step
-cycle_by_zone = [3, 3, 4, 4, 5, 5, 6, 6, 7, 8]   # how many steps of the pattern a tree of this zone (1, 2, ...) makes you do
+cycle_by_zone = [3, 3, 3, 4, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 8, 8, 8]   # how many steps of the pattern a tree of this zone (1, 2, ...) makes you do
 
 [[chopping.grains]]               # rotating lands you on one of these (by weight): is the new spot better than the one you have?
 id = "plain"
@@ -82,9 +83,13 @@ pattern = "ouosusos"
 
 [community]                       # the tree everyone can join: one per hour, standing for `open_minutes`
 open_minutes = 30
-min_zone = 3                      # its zone is picked from the hour (min..max), the same for everybody
-max_zone = 8
-hp_multiplier = 15                # community hp = a typical tree's hp in that zone x this
+default_zone = 3                  # its zone when nobody has chopped lately
+zone_below = 2                    # its zone is picked from (the zone the typical recent chopper can reach) - this...
+zone_above = 1                    # ...to + this, the same for everybody that hour
+hp_per_active = 5                 # community hp = a typical tree's hp in that zone x this x the number of recent choppers
+min_active = 3                    # (counted as at least 3, so a quiet server still gets a proper tree...
+max_active = 40                   # ...and at most 40, so a huge crowd does not get an endless one)
+recent_windows = 24               # "recent" = people who chopped a community tree in the last 24 hours
 min_share = 0.05                  # you need at least this share of the tree's hp to be paid in drops and bits
 group_bonus = 0.05                # +5% drops and bits for everybody per extra qualifying chopper...
 max_group_bonus = 0.5             # ...up to +50%

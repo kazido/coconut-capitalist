@@ -1173,7 +1173,7 @@ async def test_you_can_pick_a_zone_you_have_unlocked(db, monkeypatch):
     user = await with_axe()
     nav, _ = await hub("forage")
     assert not [s for s in selects(nav) if s.placeholder == "Zone"]  # only zone 1 so far
-    await user.add_xp("foraging", User.level_to_xp(5) + 1)  # level 5 -> zones 1-3
+    await user.add_xp("foraging", User.level_to_xp(8) + 1)  # level 8 -> zones 1-3
     nav, inter = await hub("forage")
     menu = select_named(nav, "Zone")
     assert [o.value for o in menu.options] == ["1", "2", "3"] and nav.screen.zone == 3
