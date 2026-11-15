@@ -856,8 +856,18 @@ class BossEntry(_Data):
     modifiers: list[Literal["mirror", "reverse", "shuffle", "fog", "wild"]] = Field(min_length=1)
 
 
+class PartyBossRules(_Data):
+    """A boss hooked by a party member can be joined by the rest of the party: each reels their OWN set of arrows, and every one who lands theirs is paid."""
+
+    fight_seconds: int = Field(ge=30)  # how long the fight stays open for joining and reeling, from the moment it is hooked
+    bonus_per_extra: float = Field(ge=0)  # +this share of the reward for every EXTRA member who lands their reel
+    max_bonus: float = Field(ge=0)  # ...up to this much
+
+
 class BossRules(_Data):
     """A boss on your line: a long reel with no fish of its own at the end, just a big pile of rewards."""
+
+    party: PartyBossRules
 
     odds: int = Field(ge=1)  # 1 in N casts
     length: int = Field(ge=1)  # arrows to press

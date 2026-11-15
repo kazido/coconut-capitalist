@@ -202,6 +202,11 @@ bits_max = 200000
 xp = 400
 
 # Each boss has its own twist (or two), so no two fights feel the same. They show before you start reeling.
+[boss.party]                      # a boss hooked by someone in a party of two or more opens a PARTY FIGHT: the others can join from their Fishing page
+fight_seconds = 180               # it stays open this long, for joining and for reeling
+bonus_per_extra = 0.25            # every EXTRA member who lands their own reel adds this share to everyone's reward...
+max_bonus = 1.0                   # ...up to doubling it
+
 [[boss.bosses]]
 name = "Old Whiskers"
 modifiers = ["mirror"]

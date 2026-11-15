@@ -257,6 +257,7 @@ class Cast:
     auto_steps: int = 0  # the Angler's Auto-Reel: this many of the first plain arrows are pressed for you when you pull up the line
     bycatch: float = 0.0  # the Treasure Hunter's Bycatch: the chance a catch brings a second, different fish
     water: object = None  # the water it was cast in (bycatch comes from there)
+    party_fight: int | None = None  # the number of the party boss fight this reel belongs to (everyone in it reels their own set of arrows)
 
     @property
     def deadline(self) -> float:
@@ -393,13 +394,30 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
     if armed and rng.randint(1, max(1, round(rules.treasure.chest_odds / (1 + pet.get("treasure_luck", 0.0) + stats.stats.get("treasure_luck", 0.0))))) == 1:
         cast.chest, cast.attempts_left = True, rules.treasure.attempts
     elif rng.randint(1, max(1, round(rules.boss.odds / (1 + stats.stats.get("boss_luck", 0.0))))) == 1:
-        entry = rng.choice(rules.boss.bosses)
-        cast.boss, cast.modifiers = entry.name, list(entry.modifiers)
-        cast.pattern, cast.truth = build_reel(fish, rules, rng, arrows=rules.boss.length, mysteries=False,
-                                              wild=rules.boss.wild_mysteries if "wild" in entry.modifiers else 0)
-        cast.decoys = [rng.choice((LEFT, RIGHT)) if step == REEL else "" for step in cast.pattern]
-        if "mirror" in entry.modifiers:  # press the OPPOSITE of what is shown
-            cast.truth = [_other(t) if t in (LEFT, RIGHT) else t for t in cast.truth]
+        make_boss(cast, rng.choice(rules.boss.bosses).name, rules, rng)
+    return cast
+
+
+def make_boss(cast: "Cast", boss_name: str, rules: FishingRules, rng: random.Random) -> None:
+    """Turn a cast into a fight with the named boss: its own long reel (a different one for everyone who fights it) and its twists."""
+    entry = next(b for b in rules.boss.bosses if b.name == boss_name)
+    cast.boss, cast.modifiers = entry.name, list(entry.modifiers)
+    cast.pattern, cast.truth = build_reel(cast.fish, rules, rng, arrows=rules.boss.length, mysteries=False,
+                                          wild=rules.boss.wild_mysteries if "wild" in entry.modifiers else 0)
+    cast.decoys = [rng.choice((LEFT, RIGHT)) if step == REEL else "" for step in cast.pattern]
+    if "mirror" in entry.modifiers:  # press the OPPOSITE of what is shown
+        cast.truth = [_other(t) if t in (LEFT, RIGHT) else t for t in cast.truth]
+
+
+def join_boss_cast(stats: EffectiveStats, rng: random.Random, now: float, boss_name: str, registry: Registry | None = None,
+                   pet: dict[str, float] | None = None) -> Cast:
+    """Your own line in a party fight: already on, already hooked, with YOUR set of arrows to reel and your rod's slack."""
+    reg = registry or get_registry()
+    cast = cast_line(stats, rng, now, reg, armed=False, pet=pet)
+    cast.chest, cast.attempts_left = False, 0
+    make_boss(cast, boss_name, reg.fishing, rng)
+    cast.hooked = True
+    cast._auto_reel()
     return cast
 
 
@@ -873,6 +891,17 @@ class BossReward:
     slack_bits: int = 0
 
 
+def roll_boss_reward(registry: Registry, rng: random.Random) -> tuple[int, Counter]:
+    """A boss's bits and loot (the xp is a fixed amount, paid with the player's bonuses)."""
+    b = registry.fishing.boss
+    bits = rng.randint(b.bits_min, b.bits_max)
+    items: Counter = Counter()
+    for row in b.loot:
+        if rng.random() < row.chance:
+            items[row.item] += rng.randint(row.min, row.max)
+    return bits, items
+
+
 async def defeat_boss(user: User, cast: Cast, rng: random.Random | None = None, registry: Registry | None = None) -> BossReward:
     """Pay out a boss that has been reeled all the way in (once). There is no fish: just bits, xp and loot."""
     reg = registry or get_registry()
@@ -885,11 +914,7 @@ async def defeat_boss(user: User, cast: Cast, rng: random.Random | None = None, 
     if cast.settled:
         raise FishingError("You already collected that.")
     cast.settled = True
-    bits = rng.randint(b.bits_min, b.bits_max)
-    items: Counter = Counter()
-    for row in b.loot:
-        if rng.random() < row.chance:
-            items[row.item] += rng.randint(row.min, row.max)
+    bits, items = roll_boss_reward(reg, rng)
     xp = round(b.xp * await xp_multiplier(user.id, reg, "fishing"))
 
     def win(skill) -> None:

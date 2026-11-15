@@ -6,7 +6,7 @@ import discord
 
 from cococap.constants import Rarities
 from cococap.registry import get_registry
-from cococap.services import fishing, fishing_community, pets, pots
+from cococap.services import fishing, fishing_community, party_boss, pets, pots
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
 from cococap.ui import Page, PromptModal, Result, Screen
@@ -81,11 +81,12 @@ class FishScreen(Screen):
         self.flash: tuple[str, float] | None = None  # (the hallucination's numbers, when they fade)
         self.water: str | None = None  # where you are fishing (None = the best water you have opened)
         self.missed: fishing.Cast | None = None  # a fish written off as too slow, which a late-arriving click can still save
+        self.watching = False  # your party has a boss fight open: the page redraws by itself so it shows up and ends
         self.rng = new_rng()
 
     @property
-    def refresh_every(self) -> float | None:  # redraw by itself while a line is in the water or numbers are flashing
-        return REFRESH if self.cast is not None or self.flash is not None else None
+    def refresh_every(self) -> float | None:  # redraw by itself while a line is in the water or numbers are flashing, or a party fight is open
+        return REFRESH if self.cast is not None or self.flash is not None or self.watching else None
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -101,6 +102,11 @@ class FishScreen(Screen):
             self.note = f"{self.note}\n{extra}" if self.note else extra
         stats = await equipped_stats(self.user, "fishing")
         body = [*self.note_block()]
+        fight = None
+        if cast is None:
+            await self._collect_party_boss()  # a finished fight pays you, and the page says so
+            fight = await party_boss.view(self.user, now())
+        self.watching = fight is not None and fight.is_open
         if self.flash is not None:
             digits = "   ".join(self.flash[0])
             body.append(text("### 🌀 The waves of the ocean… the heat of the sun… sirens in the distance, singing…\n"
@@ -113,6 +119,13 @@ class FishScreen(Screen):
             if bonus := await xp_bonus(self.user.id):
                 header += f"\n👥 Party bonus: **+{bonus:.0%}** xp"
             body.append(text(header))
+            if fight is not None and fight.is_open:
+                if fight.you is None:
+                    body += [text(f"### 💀 **{fight.boss}** is on your party's line!\n**{fight.reeling}** reeling · closes <t:{int(fight.closes_at)}:R>\n"
+                                  "-# Join with your own set of arrows. Everyone who lands theirs is paid, and more for every teammate who does too."),
+                             row(button("Join the fight", emoji="💀", style=discord.ButtonStyle.danger, disabled=stats is None, on_click=self._join_boss))]
+                elif fight.you == "done":
+                    body.append(text(f"### ✅ You landed your part of the fight with **{fight.boss}**\n**{fight.reeling}** still reeling · closes <t:{int(fight.closes_at)}:R>"))
             if stats is None:
                 body.append(text("🎣 You need a rod. Buy a **Starter Rod** in the shop and it equips itself."))
             else:
@@ -184,7 +197,8 @@ class FishScreen(Screen):
         if cast.boss:
             twists = "\n".join(rules.boss.modifier_text[m] for m in cast.modifiers)
             body += [
-                text(f"### 💀 **{cast.boss}** is on the line!\nA boss! No fish this time, but a mountain of loot if you land it.\n{twists}\n"
+                text(f"### 💀 **{cast.boss}** is on the line!\nA boss! No fish this time, but a mountain of loot if you land it.\n{twists}"
+                     + ("\n👥 **Party fight:** you reel your own set of arrows, and everyone who lands theirs is paid." if cast.party_fight is not None else "") + "\n"
                      f"{pattern_line(cast, rules)}{slack}\n-# {arrows} arrows, and some of them turn into **Reel** when you get there. Don't slip!"),
                 row(*reel_buttons(cast, self.rng, self._press, discord.ButtonStyle.danger), button("Let it go", on_click=self._cancel)),
             ]
@@ -276,7 +290,38 @@ class FishScreen(Screen):
         self.water = values[0]
         await self.refresh(interaction)
 
+    async def _collect_party_boss(self) -> bool:
+        """Pay out any finished party boss fight and show it on a page of its own (True if there was one)."""
+        if self.result is not None:
+            return False  # (a page is already waiting to be shown: the payout is collected on the next look)
+        paid = await party_boss.claim(self.user, now())
+        if not paid:
+            return False
+        reg = get_registry()
+        lines = []
+        for p in paid:
+            loot = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in p.items.items()) or "nothing"
+            team = f"  ·  👥 team bonus **+{p.bonus:.0%}** ({p.teammates} teammate(s) landed theirs)" if p.teammates else ""
+            lines += [f"💀 **{p.boss}** is beaten!  **+{bits(p.bits)}** bits  ·  **+{p.xp:,}** xp{team}", f"🎁 Loot: {loot}"]
+            if p.slack_bits:
+                lines.append(f"🧵 Clean reel bonus included: **+{bits(p.slack_bits)}** bits")
+        self.result = Result("The party beat the boss!", lines, emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
+        return True
+
+    async def _join_boss(self, interaction: discord.Interaction) -> None:
+        stats = await fishing.rod_stats(self.user)
+        try:
+            fight = await party_boss.join(self.user, now())
+        except party_boss.PartyBossError as error:
+            return await self.refresh(interaction, str(error))
+        cast = fishing.join_boss_cast(stats, self.rng, now(), fight.boss, get_registry(), await pets.bonuses(self.user))
+        cast.party_fight = fight.number
+        self.cast, self.missed = cast, None
+        await self.refresh(interaction, f"💀 You join the fight with **{fight.boss}**! Reel your own set of arrows.")
+
     async def _cancel(self, interaction: discord.Interaction) -> None:
+        if self.cast is not None and self.cast.party_fight is not None:
+            await party_boss.report(self.user, "failed", 0, now())  # you let it go: your part of the fight is over
         self.cast = None
         await self.refresh(interaction, "🎣 You reel the line back in.")
 
@@ -294,7 +339,13 @@ class FishScreen(Screen):
             if cast.escaped:
                 self.cast = None
             return await self.refresh(interaction, str(error))
-        await self.refresh(interaction)
+        note = None
+        if cast.boss and cast.hooked and cast.party_fight is None:  # a boss on the line: if you are in a party, the rest of it can join the fight
+            fight = await party_boss.open_fight(self.user, cast.boss, cast.modifiers, now())
+            if fight is not None:
+                cast.party_fight = fight.number
+                note = "👥 **Your party can join this fight!** They will see it on their Fishing page."
+        await self.refresh(interaction, note)
 
     def _press(self, arrow: str):
         async def press(interaction: discord.Interaction) -> None:
@@ -307,6 +358,16 @@ class FishScreen(Screen):
                 if cast.escaped or cast.progress >= len(cast.pattern):
                     self.cast = None
                 return await self.refresh(interaction, str(error))
+            if result == "landed" and cast.boss and cast.party_fight is not None:
+                self.cast = None
+                await party_boss.report(self.user, "done", cast.slips_left, now())
+                if await self._collect_party_boss():  # you were the last one: the fight is over and you are paid right now
+                    return await self.refresh(interaction)
+                self.result = Result("You landed your part!", [f"💀 **{cast.boss}** is hooked! Your reel is done."
+                                                                 + (f"\n🧵 Clean reel: **{cast.slips_left}** slack unused." if cast.slips_left else "")
+                                                                 + "\nYour reward comes when your party's reels are all in (or the fight ends): it is on your Fishing page."],
+                                     emoji="💀", accent=0x7B241C, back_label="Back to fishing")
+                return await self.refresh(interaction)
             if result == "landed" and cast.boss:
                 self.cast = None
                 won = await fishing.defeat_boss(self.user, cast, self.rng)
@@ -325,6 +386,8 @@ class FishScreen(Screen):
                 return await self.refresh(interaction)
             if result == "escaped":
                 self.cast = None
+                if cast.party_fight is not None:
+                    await party_boss.report(self.user, "failed", 0, now())
                 what = cast.boss or f"The {cast.fish.display}"
                 lines = [f"Wrong way! {what} slipped off the hook."] + self._tell_lines(cast.reveals)
                 await fishing.note_tells(self.user, cast)

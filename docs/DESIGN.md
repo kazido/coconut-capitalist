@@ -801,3 +801,14 @@ so the choice is also a choice of what you go out and collect.
 - **Materials per step** were generated so each road takes about as long to collect as the old shared recipe did (each step's rate of finds at that tool's power), keeping non-mining extras like
   hardwood and coral the same for both roads. The upgrade page shows each road's ability, its own numbers (`Pressure builds: 2% slower -> 6% slower` for the Warden, `-> 0% slower` for the
   Prospector, ore per lode including the road's extra ore) and its materials. The ten new mine finds now have a use.
+
+## Party invites without chat spam, party tree rewards you always see, and party boss fights (decided)
+- **Invites are never posted in the chat.** They show on the Party page only (the inviter gets a private note); the old Join/Decline message (`ui/party_invite.py`) is gone.
+- **A party tree a teammate fells while your panel is old** no longer says "no party tree": a chop on the old panel just redraws it, which collects and shows your rewards. And **a result
+  that never reached you is never lost**: the hub (`ui/nav.py`) remembers the last result page it built until an edit of the message succeeds, and shows it on your next click (a self-refresh
+  of a message older than 15 minutes cannot be edited, which is how rewards used to be paid without being shown).
+- **Party boss fights** (`services/party_boss.py`, `[boss.party]` in `fishing.toml`): when a member of a party of two or more **hooks a boss**, a fight opens for the party for 180 seconds.
+  The others see "💀 Old Whiskers is on your party's line! Join the fight" on their Fishing page (it redraws by itself while a fight is open). Joining gives you your **own set of
+  arrows** (the same boss and twists, a different reel, with your rod's own slack). Everyone who lands theirs is paid the boss's rewards, with **+25% for every extra teammate who landed
+  theirs, up to double**, plus their own clean-reel bonus. Slipping off the hook (or letting it go, or running out of time) only loses your own share; if nobody lands theirs it is lost.
+  One fight at a time per party (a second boss is a solo fight). The fight is settled once in one transaction and each member collects their payout from their Fishing page, like a party tree.
