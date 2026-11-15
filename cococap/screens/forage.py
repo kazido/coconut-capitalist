@@ -70,19 +70,23 @@ async def releaf_line(user) -> str | None:
 
 
 async def spot_panel(screen, power: int) -> str:
-    """Where you are chopping: the grain, how worn the spot is and what a chop in the right style does right now. The style the grain
-    likes is NOT shown: it is in your Grain notes, so you have to remember it."""
+    """Where you are chopping: the grain (its pull on your damage, less what the wear has taken, so it matches the swing number), how much of the spot is left and
+    about how many chops that is, and what a chop in the right style does right now. The style the grain likes is NOT shown: it is in your Grain notes."""
     reg = get_registry()
     spot = screen.spot
-    strength = spot.strength(reg.foraging) - 1  # the grain's pull on your damage, less what the wear has taken (so it matches the swing below)
+    strength = spot.strength(reg.foraging) - 1
     quality = f" ({strength:+.0%})" if round(strength, 2) else ""
     left = max(0.0, 1 - spot.wear)
-    wear = "Fresh" if spot.wear < 1 / 3 else "Worn" if spot.wear < 2 / 3 else "Nearly gone"
+    stats = await equipped_stats(screen.user, "foraging")  # (no axe yet: the page still draws)
+    chops = spot.chops_left(reg.foraging, stats.stats.get("wear_slow", 0.0) if stats else 0.0)
     wedges = sum(q for _, q in await foraging.wedges(screen.user))
     rules = reg.foraging.chopping
-    streak = (f"\n🔥 Right-style streak **{spot.streak}**: **+{rules.streak_bonus * min(spot.streak, rules.streak_max):.0%}** damage"
-              + (" (the most)" if spot.streak >= rules.streak_max else "")) if spot.streak and rules.streak_max else ""
-    return (f"🪵 **{spot.title(reg.foraging)}** grain{quality}  \n{bar(left, 6)} **{wear}**   🪓 **{spot.preview(power, reg.foraging)}** per swing"
+    streak = ""
+    if rules.streak_max and (spot.streak or not spot.clean):
+        streak = (f"\n🔥 Clean grains in a row **{spot.streak}**: **+{rules.streak_bonus * min(spot.streak, rules.streak_max):.0%}** damage"
+                  + (" (the most)" if spot.streak >= rules.streak_max else "")
+                  + ("  ·  a wrong chop on this grain ends it when the spot wears out" if not spot.clean else ""))
+    return (f"🪵 **{spot.title(reg.foraging)}** grain{quality}  \n{bar(left, 6)} **{left:.0%}** left (about {chops} chops)   🪓 **{spot.preview(power, reg.foraging)}** per swing"
             + (f"   ·   🔩 {wedges} wedge(s)" if wedges else "") + streak
             + (f"\n🪚 Wedge bonus: **{spot.boost:+.0%}** for **{spot.boost_chops}** more chops" if spot.boost_chops else ""))
 

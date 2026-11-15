@@ -13,6 +13,7 @@
 All randomness comes from an injected ``random.Random``.
 """
 
+import math
 import random
 import time
 from collections import Counter
@@ -94,7 +95,8 @@ class Spot:
     private: bool = True  # a tree of your own (marks only work there)
     boost: float = 0.0  # a wedge's lasting bonus: every chop hits (and pays xp) this much harder...
     boost_chops: int = 0  # ...for this many more chops (it follows you when a worn spot moves you on)
-    streak: int = 0  # right-style chops in a row on this tree (a small, capped damage bonus; a wrong style or a new tree resets it)
+    streak: int = 0  # grains in a row you finished with every chop in the right style (a small, capped damage bonus; one slip or a new tree resets it)
+    clean: bool = True  # no wrong-style chop on THIS grain yet
     streak_tree: object = None  # which tree the streak belongs to (a different one starts it over)
 
     @classmethod
@@ -151,10 +153,8 @@ class Spot:
             self.boost_chops -= 1
         hits, effort, fired, mark = 2.0 if doubled else 1.0, quality, "", 0.0  # (the effort is what pays xp: a double chop is still one swing)
         hits *= 1 + c.streak_bonus * min(self.streak, c.streak_max)  # (the streak adds damage only, never xp)
-        if correct is True:
-            self.streak += 1
-        elif correct is False:
-            self.streak = 0
+        if correct is False:
+            self.clean = False
         sp = self.kind(rules)
         if sp and correct is not False:  # (a chop with no style at all counts as right)
             fired = sp.effect
@@ -167,20 +167,30 @@ class Spot:
         if correct and clean_cut:  # Clean Cut (Mastery): a chop in the grain's own style hits harder
             quality *= 1 + clean_cut
         damage = max(1, round(power * quality * hits))
-        grain_wear = c.grain(self.grain).wear
-        # Seasoning keeps a spot lasting, but it is a trade: it slows a plain or good grain and speeds a BAD one (wear above normal) up by the same amount,
-        # so a tool that wears slowly makes the good grains better and the bad ones worth leaving sooner.
-        seasoning = 1 + wear_slow if grain_wear > 1 else max(MIN_WEAR_FACTOR, 1 - wear_slow)
-        self.wear += c.wear_per_chop * grain_wear * (sp.wear if sp else 1.0) * seasoning
+        self.wear += self.wear_per_chop(rules, wear_slow)
         ended = self.wear >= 1
-        if ended:
+        if ended:  # the grain is finished: done right all the way through, the streak grows; one wrong chop and it starts over
+            self.streak = min(c.streak_max, self.streak + 1) if self.clean else 0
             self.rotate(rules, rng)
         return Swing(damage, good, correct, ended, doubled, fired, mark, effort)
+
+    def wear_per_chop(self, rules: ForagingRules, wear_slow: float = 0.0) -> float:
+        """How much one chop wears this spot. Seasoning keeps a spot lasting, but it is a trade: it slows a plain or good grain and speeds a BAD one (wear above
+        normal) up by the same amount, so a tool that wears slowly makes the good grains better and the bad ones worth leaving sooner."""
+        c = rules.chopping
+        grain_wear = c.grain(self.grain).wear
+        seasoning = 1 + wear_slow if grain_wear > 1 else max(MIN_WEAR_FACTOR, 1 - wear_slow)
+        sp = self.kind(rules)
+        return c.wear_per_chop * grain_wear * (sp.wear if sp else 1.0) * seasoning
+
+    def chops_left(self, rules: ForagingRules, wear_slow: float = 0.0) -> int:
+        """About how many more chops this spot lasts (so you can tell when you will be moved on)."""
+        return max(1, math.ceil(max(0.0, 1 - self.wear) / self.wear_per_chop(rules, wear_slow) - 1e-9))
 
     def rotate(self, rules: ForagingRules, rng: random.Random, bias: float = 0.0, special_mult: float = 1.0) -> None:
         """Move to a new spot: a different grain (tilted by `bias`), unworn. Happens by itself when a spot wears out, or with a wedge."""
         new = Spot.pick(rules, rng, bias, exclude=self.grain, special_mult=special_mult, private=self.private)
-        self.name, self.quality, self.grain, self.wear, self.special = new.name, new.quality, new.grain, 0.0, new.special
+        self.name, self.quality, self.grain, self.wear, self.special, self.clean = new.name, new.quality, new.grain, 0.0, new.special, True
 
 
 def average_spot_multiplier(rules: ForagingRules) -> float:

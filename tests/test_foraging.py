@@ -693,7 +693,7 @@ async def test_the_panel_shows_the_spot_and_its_wear_but_never_the_style(db, mon
     nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
     text_now = lambda: " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))  # noqa: E731
     page = text_now()
-    assert "Plain" in page and "grain" in page and "Fresh" in page and "100%" not in page and "per swing" in page
+    assert "Plain" in page and "grain" in page and "left (about" in page and "chops" in page and "per swing" in page
     assert "likes" not in page and not any(name in page for name, _ in f.STANCES.values())  # the style is only in your notes
     wrong_label = f.STANCES[wrong(nav.screen.spot)][0]
     await click(nav, inter, wrong_label)
@@ -984,32 +984,74 @@ def _damage(spot, stance=None, power=1000):
     return spot.swing(power, RULES, Calm(1), 0.0, stance)
 
 
-def test_right_style_chops_in_a_row_add_a_small_capped_bonus_and_a_wrong_one_resets_it():
+def test_finishing_grains_with_every_chop_right_builds_a_small_capped_bonus_and_one_slip_resets_it():
     ch = RULES.chopping
+
+    def finish_grain(spot, stance):
+        """Chop (in `stance`) until the spot wears out; returns the damage of the first chop."""
+        first = None
+        while True:
+            swing = _damage(spot, stance)
+            first = first or swing
+            if swing.ended:
+                return first
+
     spot = f.Spot()  # plain: likes the sidecut ("s")
-    first = _damage(spot, "s")
-    assert spot.streak == 1
-    spot.wear = 0  # keep the spot fresh so only the streak differs
+    base = finish_grain(spot, "s")
+    assert spot.streak == 1 and spot.grain != "plain" or spot.streak == 1  # one clean grain done (and you are on a new spot now)
+    spot.grain, spot.quality, spot.wear = "plain", 1.0, 0.0  # (back on plain, so the numbers compare)
     second = _damage(spot, "s")
-    assert second.damage == pytest.approx(first.damage * (1 + ch.streak_bonus), abs=1)
-    for _ in range(ch.streak_max + 15):
-        spot.wear = 0
-        top = _damage(spot, "s")
-    assert top.damage == pytest.approx(first.damage * (1 + ch.streak_bonus * ch.streak_max), abs=1)  # it stops growing
-    assert top.effort == pytest.approx(first.effort)  # damage only: the xp is the same
+    assert second.damage == pytest.approx(base.damage * (1 + ch.streak_bonus), abs=1)  # the bonus is for the NEXT chops, grain by grain, not chop by chop
     spot.wear = 0
-    _damage(spot, "o")  # the wrong style
-    assert spot.streak == 0
-    spot.streak = 4
-    _damage(spot, None)  # no style at all: neither counts nor resets
-    assert spot.streak == 4
+    third = _damage(spot, "s")
+    assert third.damage == pytest.approx(second.damage, abs=1)  # a clean chop in the middle of a grain adds nothing yet
+    for _ in range(ch.streak_max + 4):
+        spot.grain, spot.quality, spot.wear, spot.clean = "plain", 1.0, 0.0, True
+        finish_grain(spot, "s")
+    spot.grain, spot.quality, spot.wear = "plain", 1.0, 0.0
+    top = _damage(spot, "s")
+    assert top.damage == pytest.approx(base.damage * (1 + ch.streak_bonus * ch.streak_max), abs=1) and top.effort == pytest.approx(base.effort)  # capped, damage only
+    spot.grain, spot.quality, spot.wear, spot.clean = "plain", 1.0, 0.0, True
+    _damage(spot, "o")  # one wrong-style chop spoils this grain...
+    assert spot.streak == ch.streak_max and not spot.clean  # ...but the streak stands until the grain is finished
+    while not _damage(spot, "s").ended:
+        pass
+    assert spot.streak == 0 and spot.clean  # the spoiled grain ended it; the next grain starts clean
+    spot.streak = 2
+    _damage(spot, None)  # chopping with no style at all neither helps nor spoils
+    assert spot.streak == 2 and spot.clean
     spot.on_tree("another tree")
     assert spot.streak == 0
-    spot.streak = 3
+    spot.streak = 1
     spot.on_tree("another tree")
-    assert spot.streak == 3  # (the same tree keeps it)
+    assert spot.streak == 1  # (the same tree keeps it)
+
+
+def test_a_wedge_move_does_not_count_as_finishing_a_grain():
+    spot = f.Spot()
+    spot.streak, spot.clean = 2, False
+    spot.rotate(RULES, Random(1))
+    assert spot.streak == 2 and spot.clean  # (you left early: nothing gained, nothing lost, and the new grain starts clean)
+
+
+def test_chops_left_matches_how_the_spot_really_wears():
+    for grain, slow in (("plain", 0.0), ("knotty", 0.0), ("clean", 0.25), ("knotty", 0.25)):
+        spot = f.Spot("x", 1.0, grain)
+        guess = spot.chops_left(RULES, slow)
+        n = 0
+        while not _damage_wear(spot, slow):
+            n += 1
+        assert abs(n + 1 - guess) <= 1, grain  # (the chop that wears it out is the last one; adding up fractions can make it one more)
+
+
+def _damage_wear(spot, slow):
+    class Calm(Random):
+        def random(self):
+            return 0.99
+
+    return spot.swing(100, RULES, Calm(1), 0.0, None, slow).ended
 
 
 def test_the_streak_cap_is_small_enough_for_shared_trees():
     ch = RULES.chopping
-    assert 0 < ch.streak_bonus * ch.streak_max <= 0.15  # a skilled chopper out-damages a careless one by a bit, never by a lot
+    assert 0 < ch.streak_bonus * ch.streak_max <= 0.1501 and ch.streak_max <= 3  # a skilled chopper out-damages a careless one by a bit, never by a lot

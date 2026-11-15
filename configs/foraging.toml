@@ -39,8 +39,9 @@ wrong_stance_factor = 0.5         # the wrong style chops at half the damage (an
 wear_per_chop = 0.1              # a spot of wear 1 lasts 25 chops (then you move to a new spot by yourself)
 wear_penalty = 0.4                # as a spot wears out it chops weaker: at the very end it is at 60%
 special_chance = 0.08             # the chance a new spot is a SPECIAL one (see [[chopping.specials]])
-streak_bonus = 0.01               # every chop in a row in the grain's RIGHT style adds this much damage to your next chops on the same tree...
-streak_max = 10                   # ...up to this many in a row (+10%). A wrong style (or a new tree) starts it over. Damage only: no extra xp. Same on private, party and community trees
+streak_bonus = 0.05               # every GRAIN you finish with every chop in its right style adds this much damage to your next chops on the same tree...
+streak_max = 3                    # ...up to this many grains (+15%). One wrong-style chop on a grain (or a new tree) starts it over. A private tree only has a grain or two, so it is worth
+                                  # up to +5-10% there; shared trees go on long enough to hit the cap. Damage only: no extra xp. The same cap on private, party and community trees
 mark_cap = 0.5                    # marks can put at most +50% on one tree's rewards
 
 # Every spot has a grain, and every grain likes ONE chop style: o = overhead, s = sidecut, u = undercut. Chop in that style for the
