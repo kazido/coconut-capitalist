@@ -5,7 +5,7 @@ from cococap.services import shipments
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bar, bits, button, row, select, sep, text
 
-EMOJI = {"mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishing": "🐟", "mixed": "📦"}
+EMOJI = {"mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishing": "🐟"}
 
 
 class ShipmentsScreen(Screen):
@@ -19,25 +19,33 @@ class ShipmentsScreen(Screen):
 
     def __init__(self, nav):
         super().__init__(nav)
-        self.page = 0  # which shipment is showing: your crates in order, then the community one
+        self.page = ""  # which shipment is showing (its id, like "mining:basic", or "community")
 
     async def build(self) -> Page:
         reg = get_registry()
-        if paid := await shipments.claim_community(self.user):
+        community_on = reg.shipments.community.enabled
+        if community_on and (paid := await shipments.claim_community(self.user)):
             self.result = Result("The community shipment is out!", [f"📦 **+{bits(p.bits)}** bits  ·  **+{p.xp:,}** {p.skill} xp for your part" for p in paid],
                                  emoji="📦", accent=0xB8860B, back_label="Continue")
         owned = await self.user.items()
         body = [*self.note_block()]
         crates = await shipments.mine(self.user, reg)
-        view = await shipments.community_now(self.user)
-        names = [("Mixed shipment" if c.theme == "mixed" else f"{c.theme.title()} shipment", EMOJI.get(c.theme, "📦")) for c in crates] + [("Community shipment", "🌍")]
-        self.page = max(0, min(self.page, len(names) - 1))
-        body.append(row(select("Pick a shipment...", [
-            discord.SelectOption(label=name, value=str(i), emoji=emoji, default=i == self.page,
-                                 description=("Ready to ship" if i < len(crates) and crates[i].done() else "Full" if i >= len(crates) and view.done else None))
-            for i, (name, emoji) in enumerate(names)], self._pick)))
-        if self.page < len(crates):
-            index, ship = self.page, crates[self.page]
+        locked = await shipments.locked(self.user, reg)
+        if not crates and not community_on:
+            first = min(shipments.unlock_level(t, reg) for _, t in shipments.slot_ids(reg))
+            body.append(text(f"### 📦 Shipments\nEach skill unlocks its first shipment at level **{first}**. Keep gathering!"))
+            return Page("Shipments", body, accent=0xB8860B)
+        view = await shipments.community_now(self.user) if community_on else None
+        names = {c.id: (self._name(c), EMOJI.get(c.theme, "📦")) for c in crates}
+        ids = [c.id for c in crates] + (["community"] if community_on else [])
+        if self.page not in ids:
+            self.page = ids[0]
+        options = [discord.SelectOption(label=names[c.id][0], value=c.id, emoji=names[c.id][1], default=c.id == self.page, description="Ready to ship" if c.done() else None) for c in crates]
+        if community_on:
+            options.append(discord.SelectOption(label="Community shipment", value="community", emoji="🌍", default=self.page == "community", description="Full" if view.done else None))
+        body.append(row(select("Pick a shipment...", options, self._pick)))
+        if self.page != "community":
+            ship = next(c for c in crates if c.id == self.page)
             reward_bits, reward_xp = shipments.reward(ship, reg)
             xp_text = ", ".join(f"{EMOJI.get(s, '')} {x:,}" for s, x in sorted(reward_xp.items(), key=lambda kv: -kv[1]) if x)
             lines = []
@@ -45,11 +53,11 @@ class ShipmentsScreen(Screen):
                 have = ship.have.get(item_id, 0)
                 item = reg.item(item_id)
                 lines.append(f"{'✅' if have >= need else '▫️'} {item.display}  **{have:,}/{need:,}**" + (f"  ·  you have {owned.get(item_id, 0):,}" if have < need and owned.get(item_id, 0) else ""))
-            name, emoji = names[index]
+            name, emoji = names[ship.id]
             body.append(text(f"### {emoji} {name}\n" + "\n".join(lines) + f"\n-# Ships for **{bits(reward_bits)}** bits and {xp_text} xp"))
             usable = any(owned.get(i, 0) and ship.have.get(i, 0) < q for i, q in ship.need.items())
-            body.append(row(button("Fill", emoji="📥", style=discord.ButtonStyle.primary, disabled=ship.done() or not usable, on_click=self._fill(index)),
-                            button("Ship", emoji="🚚", style=discord.ButtonStyle.success, disabled=not ship.done(), on_click=self._ship(index))))
+            body.append(row(button("Fill", emoji="📥", style=discord.ButtonStyle.primary, disabled=ship.done() or not usable, on_click=self._fill(ship.id)),
+                            button("Ship", emoji="🚚", style=discord.ButtonStyle.success, disabled=not ship.done(), on_click=self._ship(ship.id))))
         else:
             c = reg.shipments.community
             lines = []
@@ -60,16 +68,23 @@ class ShipmentsScreen(Screen):
                              + "\n" + "\n".join(lines)
                              + f"\n-# Sized for **{view.players}** active player(s): **{bits(view.value)}** bits' worth in all. You have given **{bits(view.yours)}** bits' worth. Finishing pays everyone who gave at least {c.min_share:.0%} {c.bits_factor:.1f}x what they gave, and {c.xp:,} xp."))
             body.append(row(button("Give what it needs", emoji="🎁", style=discord.ButtonStyle.primary, disabled=view.done, on_click=self._donate)))
+        if locked:
+            soonest = sorted(locked, key=lambda e: e[2])[:3]
+            body.append(text("-# Locked: " + ", ".join(f"{s.title()} {t} (level {n})" for s, t, n in soonest) + (" …" if len(locked) > 3 else "")))
         return Page("Shipments", body, accent=0xB8860B)
 
+    @staticmethod
+    def _name(ship: shipments.Shipment) -> str:
+        return f"{ship.theme.title()} shipment" + (" (hard)" if ship.tier != "basic" else "")
+
     async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
-        self.page = int(values[0])
+        self.page = values[0]
         await self.refresh(interaction)
 
-    def _fill(self, index: int):
+    def _fill(self, slot_id: str):
         async def go(interaction: discord.Interaction) -> None:
             try:
-                moved = await shipments.fill(self.user, index)
+                moved = await shipments.fill(self.user, slot_id)
             except shipments.ShipmentError as error:
                 return await self.refresh(interaction, str(error))
             reg = get_registry()
@@ -77,10 +92,10 @@ class ShipmentsScreen(Screen):
 
         return go
 
-    def _ship(self, index: int):
+    def _ship(self, slot_id: str):
         async def go(interaction: discord.Interaction) -> None:
             try:
-                sent = await shipments.ship(self.user, index)
+                sent = await shipments.ship(self.user, slot_id)
             except shipments.ShipmentError as error:
                 return await self.refresh(interaction, str(error))
             xp = ", ".join(f"{EMOJI.get(s, '')} {x:,} {s} xp" for s, x in sent.xp.items() if x)

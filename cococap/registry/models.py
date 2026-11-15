@@ -1108,24 +1108,31 @@ class ToolRules(_Data):
 
 
 # ---- Shipments (configs/shipments.toml) ------------------------------------------------------------------------------------------------
-class PersonalShipments(_Data):
-    slots: int = Field(ge=1)
-    kinds: int = Field(ge=2)
-    theme_kinds: int = Field(ge=1)
-    value_base: int = Field(ge=1)
-    value_per_level: int = Field(ge=0)
+class ShipmentTier(_Data):
+    """One kind of personal crate (every skill has one of each tier, once its level reaches `unlock_level`)."""
+
+    unlock_level: int = Field(ge=1)
+    kinds: int = Field(ge=2)  # different materials in the crate
+    theme_kinds: int = Field(ge=1)  # of which this many are from the crate's own skill
+    value_base: int = Field(ge=1)  # bits' worth of materials at skill level 1...
+    value_per_level: int = Field(ge=0)  # ...plus this per level of that skill
     bits_factor: float = Field(gt=0)
     xp_per_bit: float = Field(ge=0)
-    rate_per_level: int = Field(ge=1)
 
     @model_validator(mode="after")
     def _fit(self):
         if self.theme_kinds >= self.kinds:
-            raise ValueError("a themed shipment must leave room for other skills' materials")
+            raise ValueError("a shipment must leave room for other skills' materials")
         return self
 
 
+class PersonalShipments(_Data):
+    rate_per_level: int = Field(ge=1)
+    tiers: dict[str, ShipmentTier] = Field(min_length=1)  # in page order: basic first
+
+
 class CommunityShipments(_Data):
+    enabled: bool = True  # off: the page does not show it (the rules and saved state stay)
     value_per_player: int = Field(ge=1)
     value_per_level: int = Field(ge=0)
     active_days: int = Field(ge=1)

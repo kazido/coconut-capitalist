@@ -1,6 +1,6 @@
 """Shipments: fill a crate with materials from several skills and ship it for xp and bits.
 
-* **Personal shipments.** You always have a few (two themed on one skill's materials, one mixed from different skills). Which materials and how many comes from
+* **Personal shipments.** A basic crate per skill (unlocks at that skill's level 10) and a harder one later, each mostly that skill's materials with a few from others. Which materials and how many comes from
   a seed (you, and how many you have shipped), so nobody rerolls by looking again. "Fill" moves what you hold toward the crate (the items leave your pack and stay
   in it); once every material is in, "Ship" pays xp and bits and gives you a new crate. A crate never expires, so nothing you put in is lost.
 * **The community shipment.** One a week, much bigger, that the whole server fills together. Whoever gave at least a small share is paid when it is finished, once:
@@ -47,9 +47,14 @@ def pool(skill: str, level: int, registry: Registry, budget: int, cheapest: int 
 
 @dataclass(frozen=True)
 class Shipment:
-    theme: str  # a skill, or "mixed"
+    theme: str  # the skill whose materials it mostly asks for
     need: dict[str, int]
     have: dict[str, int] = field(default_factory=dict)
+    tier: str = "basic"  # "basic" or "hard"
+
+    @property
+    def id(self) -> str:
+        return f"{self.theme}:{self.tier}"
 
     def done(self) -> bool:
         return all(self.have.get(i, 0) >= q for i, q in self.need.items())
@@ -59,41 +64,47 @@ def worth(need: dict[str, int], registry: Registry) -> int:
     return sum(registry.item(i).sell_price * q for i, q in need.items())
 
 
-def make_shipment(rng: random.Random, theme: str, levels: dict[str, int], registry: Registry | None = None) -> Shipment:
-    """A new crate: `kinds` different materials, worth about the same in total whatever they are."""
+def slot_ids(registry: Registry) -> list[tuple[str, str]]:
+    """Every (skill, tier) a player can eventually have a crate for, in page order."""
+    return [(skill, tier) for skill in SKILLS for tier in registry.shipments.personal.tiers]
+
+
+def unlock_level(tier: str, registry: Registry) -> int:
+    return registry.shipments.personal.tiers[tier].unlock_level
+
+
+def make_shipment(rng: random.Random, theme: str, levels: dict[str, int], registry: Registry | None = None, tier: str = "basic") -> Shipment:
+    """A new crate for one skill at one tier: `kinds` different materials (mostly the skill's own), worth about the same in total whatever they are.
+    The value grows with that skill's level, so a player at the unlock level can finish it."""
     reg = registry or get_registry()
     p = reg.shipments.personal
-    basis = levels[theme] if theme in levels else round(sum(levels.values()) / len(levels))
-    total = p.value_base + p.value_per_level * basis
-    per_kind = total / p.kinds
+    t = p.tiers[tier]
+    total = t.value_base + t.value_per_level * levels[theme]
+    per_kind = total / t.kinds
     others = [s for s in SKILLS if s != theme]
-    if theme == "mixed":
-        skills = [SKILLS[i] for i in rng.sample(range(len(SKILLS)), min(p.kinds, len(SKILLS)))]
-        skills += [rng.choice(SKILLS) for _ in range(p.kinds - len(skills))]
-    else:
-        skills = [theme] * p.theme_kinds + [rng.choice(others) for _ in range(p.kinds - p.theme_kinds)]
+    skills = [theme] * t.theme_kinds + [rng.choice(others) for _ in range(t.kinds - t.theme_kinds)]
     need: dict[str, int] = {}
     for skill in skills:
-        options = [i for i in pool(skill, levels.get(skill, basis), reg, round(per_kind * 3), round(per_kind / MAX_QUANTITY)) if i.id not in need]
+        options = [i for i in pool(skill, levels.get(skill, 1), reg, round(per_kind * 3), round(per_kind / MAX_QUANTITY)) if i.id not in need]
         if not options:  # (a low level with little to choose from: allow cheaper things first, and only then rarer ones, rather than ask for nothing)
-            options = [i for i in pool(skill, levels.get(skill, basis), reg, round(per_kind * 3)) if i.id not in need]
+            options = [i for i in pool(skill, levels.get(skill, 1), reg, round(per_kind * 3)) if i.id not in need]
         if not options:
             options = [i for i in pool(skill, 100, reg, round(per_kind * 3)) if i.id not in need]
         item = rng.choice(options)
         need[item.id] = max(1, round(per_kind / item.sell_price))
-    return Shipment(theme, need)
+    return Shipment(theme, need, tier=tier)
 
 
 def reward(ship: Shipment, registry: Registry) -> tuple[int, dict[str, int]]:
     """(bits, xp by skill) for shipping this crate."""
-    p = registry.shipments.personal
+    t = registry.shipments.personal.tiers[ship.tier]
     value = worth(ship.need, registry)
     by_skill: Counter = Counter()
     for item_id, qty in ship.need.items():
         item = registry.item(item_id)
         by_skill[item.skill] += item.sell_price * qty
-    xp = {skill: round(v * p.xp_per_bit) for skill, v in by_skill.items()}
-    return round(value * p.bits_factor), xp
+    xp = {skill: round(v * t.xp_per_bit) for skill, v in by_skill.items()}
+    return round(value * t.bits_factor), xp
 
 
 # ---- your shipments (kept in the community store under your id: no migration) ------------------------------------------
@@ -102,59 +113,87 @@ def _key(user_id: int) -> str:
 
 
 DEFAULT = {"made": 0, "slots": []}
-THEMES = ("themed", "themed", "mixed")
 
 
 async def _levels(user: User) -> dict[str, int]:
     return {skill: User.xp_to_level((await user.skill(skill)).xp) for skill in SKILLS}
 
 
-def _theme_for(slot: int, user_id: int, serial: int) -> str:
-    """Slot 0 and 1 are themed (two different skills), the last is mixed."""
-    if slot >= 2 or slot >= len(THEMES) or THEMES[slot] == "mixed":
-        return "mixed"
-    rng = random.Random(f"theme:{user_id}:{serial // 3}")
-    first, second = rng.sample(SKILLS, 2)
-    return first if slot == 0 else second
+def _new_slot(data: dict, user_id: int, skill: str, tier: str, levels: dict[str, int], reg: Registry) -> dict:
+    data["made"] += 1
+    ship = make_shipment(random.Random(f"shipment:{user_id}:{skill}:{tier}:{data['made']}"), skill, levels, reg, tier)
+    return {"id": ship.id, "theme": skill, "tier": tier, "need": ship.need, "have": {}}
 
 
 def _fill_slots(data: dict, user_id: int, levels: dict[str, int], reg: Registry) -> None:
-    slots = reg.shipments.personal.slots
-    while len(data["slots"]) < slots:
-        index = len(data["slots"])
-        data["made"] += 1
-        theme = _theme_for(index, user_id, data["made"])
-        ship = make_shipment(random.Random(f"shipment:{user_id}:{data['made']}"), theme, levels, reg)
-        data["slots"].append({"theme": theme, "need": ship.need, "have": {}})
+    """Make a crate for every (skill, tier) the player has reached the level for and has none of yet."""
+    have = {s["id"] for s in data["slots"]}
+    for skill, tier in slot_ids(reg):
+        if f"{skill}:{tier}" not in have and levels[skill] >= unlock_level(tier, reg):
+            data["slots"].append(_new_slot(data, user_id, skill, tier, levels, reg))
 
 
-def _view(data: dict) -> list[Shipment]:
-    return [Shipment(s["theme"], dict(s["need"]), dict(s["have"])) for s in data["slots"]]
+def _view(data: dict, reg: Registry) -> list[Shipment]:
+    by_id = {s["id"]: s for s in data["slots"]}
+    out = []
+    for skill, tier in slot_ids(reg):
+        if (s := by_id.get(f"{skill}:{tier}")) is not None:
+            out.append(Shipment(s["theme"], dict(s["need"]), dict(s["have"]), s["tier"]))
+    return out
+
+
+async def _migrate(user: User) -> None:
+    """Crates from the old layout (three crates by theme, no ids) are cleared and anything already put in is handed back."""
+    def clear(data: dict) -> dict[str, int]:
+        if all("id" in s for s in data["slots"]):
+            return {}
+        refund: dict[str, int] = {}
+        for slot in data["slots"]:
+            if "id" not in slot:
+                for item_id, qty in slot.get("have", {}).items():
+                    refund[item_id] = refund.get(item_id, 0) + qty
+        data["slots"] = [s for s in data["slots"] if "id" in s]
+        return refund
+
+    for item_id, qty in (await community.update(_key(user.id), DEFAULT, clear)).items():
+        await user.add_item(item_id, qty)
 
 
 async def mine(user: User, registry: Registry | None = None) -> list[Shipment]:
-    """Your shipments (the first look makes them)."""
+    """Your shipments: a basic and a harder one per skill, each once the skill is high enough (the first look makes them)."""
     reg = registry or get_registry()
+    await _migrate(user)
     levels = await _levels(user)
 
     def look(data: dict) -> list[Shipment]:
         _fill_slots(data, user.id, levels, reg)
-        return _view(data)
+        return _view(data, reg)
 
     return await community.update(_key(user.id), DEFAULT, look)
 
 
-async def fill(user: User, index: int, registry: Registry | None = None) -> dict[str, int]:
+async def locked(user: User, registry: Registry | None = None) -> list[tuple[str, str, int]]:
+    """(skill, tier, level needed) for the crates you have not unlocked yet."""
+    reg = registry or get_registry()
+    levels = await _levels(user)
+    return [(s, t, unlock_level(t, reg)) for s, t in slot_ids(reg) if levels[s] < unlock_level(t, reg)]
+
+
+async def fill(user: User, slot_id: str, registry: Registry | None = None) -> dict[str, int]:
     """Put what you hold toward a crate. Returns what went in (the items leave your pack, atomically with the crate)."""
     reg = registry or get_registry()
     await mine(user, reg)
     owned = await user.items()
     moved: dict[str, int] = {}
 
-    def put(data: dict) -> None:
-        if not 0 <= index < len(data["slots"]):
+    def slot_of(data: dict) -> dict:
+        slot = next((s for s in data["slots"] if s["id"] == slot_id), None)
+        if slot is None:
             raise ShipmentError("There is no such shipment.")
-        slot = data["slots"][index]
+        return slot
+
+    def put(data: dict) -> None:
+        slot = slot_of(data)
         for item_id, need in slot["need"].items():
             take = min(owned.get(item_id, 0), need - slot["have"].get(item_id, 0))
             if take > 0:
@@ -175,8 +214,9 @@ async def fill(user: User, index: int, registry: Registry | None = None) -> dict
             await user.add_item(item_id, qty)
 
         def undo(data: dict) -> None:
+            slot = slot_of(data)
             for item_id, qty in moved.items():
-                data["slots"][index]["have"][item_id] = max(0, data["slots"][index]["have"].get(item_id, 0) - qty)
+                slot["have"][item_id] = max(0, slot["have"].get(item_id, 0) - qty)
 
         await community.update(_key(user.id), DEFAULT, undo)
         raise ShipmentError("Your pack changed; try again.") from None
@@ -190,25 +230,23 @@ class Shipped:
     xp: dict[str, int]
 
 
-async def ship(user: User, index: int, registry: Registry | None = None) -> Shipped:
+async def ship(user: User, slot_id: str, registry: Registry | None = None) -> Shipped:
     """Ship a full crate: bits and xp, and a new crate in its place. Once only."""
     reg = registry or get_registry()
+    await mine(user, reg)
     levels = await _levels(user)
     outcome: dict = {}
 
     def send(data: dict) -> None:
-        if not 0 <= index < len(data["slots"]):
+        index = next((n for n, s in enumerate(data["slots"]) if s["id"] == slot_id), None)
+        if index is None:
             raise ShipmentError("There is no such shipment.")
         slot = data["slots"][index]
-        crate = Shipment(slot["theme"], dict(slot["need"]), dict(slot["have"]))
+        crate = Shipment(slot["theme"], dict(slot["need"]), dict(slot["have"]), slot["tier"])
         if not crate.done():
             raise ShipmentError("It is not full yet.")
         outcome["crate"] = crate
-        # (the new crate takes the old one's place, so the themed ones stay first and the mixed one last)
-        data["made"] += 1
-        theme = _theme_for(index, user.id, data["made"])
-        fresh = make_shipment(random.Random(f"shipment:{user.id}:{data['made']}"), theme, levels, reg)
-        data["slots"][index] = {"theme": theme, "need": fresh.need, "have": {}}
+        data["slots"][index] = _new_slot(data, user.id, slot["theme"], slot["tier"], levels, reg)  # (a new crate takes its place)
 
     await community.update(_key(user.id), DEFAULT, send)
     crate = outcome["crate"]

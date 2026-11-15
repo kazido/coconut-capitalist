@@ -1,4 +1,4 @@
-"""Shipments: crates filled with materials from several skills, shipped for xp and bits, plus a weekly one the whole server fills."""
+"""Shipments: a basic and a harder crate per skill (unlocked by that skill's level), filled with materials and shipped for xp and bits. The weekly community one is off by default."""
 
 import asyncio
 from random import Random
@@ -8,49 +8,60 @@ import pytest
 from cococap.registry import get_registry
 from cococap.services import shipments as sh
 from cococap.user import User
-from tests.test_hub import all_text, buttons, choose, click, find_button, hub, select_named
+from tests.test_hub import all_text, buttons, choose, find_button, hub, select_named
 
 REG = get_registry()
 P = REG.shipments.personal
+BASIC, HARD = P.tiers["basic"], P.tiers["hard"]
 C = REG.shipments.community
 LEVELS = lambda n: {s: n for s in sh.SKILLS}  # noqa: E731
 
 
+XP10, XP30 = 20_000, 180_000  # about level 10 and level 30
+
+
+async def level_up(user, skill="mining", xp=XP10):
+    await user.add_xp(skill, xp)
+    return user
+
+
 # ---- making a crate --------------------------------------------------------------------------------------------------------------------------
-def test_a_crate_has_the_right_number_of_different_materials_worth_about_the_same_whatever_they_are():
-    for level in (1, 10, 40):
-        for theme in (*sh.SKILLS, "mixed"):
-            for seed in range(20):
-                ship = sh.make_shipment(Random(seed), theme, LEVELS(level), REG)
-                assert len(ship.need) == P.kinds and all(q >= 1 for q in ship.need.values())
-                target = P.value_base + P.value_per_level * level
-                assert 0.6 * target <= sh.worth(ship.need, REG) <= 2 * target, (level, theme, seed)
-                assert all(q <= sh.MAX_QUANTITY * 1.2 or REG.item(i).sell_price * q <= target for i, q in ship.need.items())  # (nobody is asked for 5,000 of something)
+def test_a_crate_has_the_right_number_of_different_materials_worth_about_what_its_tier_says():
+    for tier in P.tiers:
+        t = P.tiers[tier]
+        for level in (t.unlock_level, 40, 80):
+            for skill in sh.SKILLS:
+                for seed in range(15):
+                    ship = sh.make_shipment(Random(seed), skill, LEVELS(level), REG, tier)
+                    assert len(ship.need) == t.kinds and all(q >= 1 for q in ship.need.values()) and ship.id == f"{skill}:{tier}"
+                    target = t.value_base + t.value_per_level * level
+                    assert 0.6 * target <= sh.worth(ship.need, REG) <= 2 * target, (tier, level, skill, seed)
 
 
-def test_a_themed_crate_favours_its_skill_and_a_mixed_one_spreads_across_skills():
-    for seed in range(30):
-        themed = sh.make_shipment(Random(seed), "mining", LEVELS(15), REG)
-        skills = [REG.item(i).skill for i in themed.need]
-        assert skills.count("mining") >= P.theme_kinds and len(set(skills)) >= 2  # mostly mining, but something else as well
-        mixed = sh.make_shipment(Random(seed), "mixed", LEVELS(15), REG)
-        assert len({REG.item(i).skill for i in mixed.need}) >= 3
+def test_a_crate_is_mostly_its_own_skill_with_something_from_another():
+    for tier, t in P.tiers.items():
+        for seed in range(30):
+            ship = sh.make_shipment(Random(seed), "mining", LEVELS(40), REG, tier)
+            skills = [REG.item(i).skill for i in ship.need]
+            assert skills.count("mining") >= t.theme_kinds - 1 and len(set(skills)) >= 2  # (a skill with few materials can fall short by one)
 
 
-def test_low_levels_are_not_asked_for_rare_finds_and_the_same_seed_makes_the_same_crate():
-    for seed in range(30):
-        ship = sh.make_shipment(Random(seed), "mixed", LEVELS(1), REG)
-        for item_id in ship.need:
-            item = REG.item(item_id)
-            assert item.category == "crop" or item.drop.rate <= 5 + P.rate_per_level * 1 or REG.item(item_id).sell_price > 0
+def test_the_harder_crate_is_worth_much_more_than_the_basic_one_and_pays_a_better_rate():
+    assert HARD.value_base > 3 * BASIC.value_base and HARD.unlock_level > BASIC.unlock_level and HARD.bits_factor > BASIC.bits_factor
+    easy, hard = (sh.make_shipment(Random(3), "fishing", LEVELS(40), REG, t) for t in ("basic", "hard"))
+    assert sh.worth(hard.need, REG) > 2.5 * sh.worth(easy.need, REG)
+
+
+def test_the_same_seed_makes_the_same_crate():
     assert sh.make_shipment(Random(7), "fishing", LEVELS(9), REG) == sh.make_shipment(Random(7), "fishing", LEVELS(9), REG)
 
 
 def test_shipping_pays_more_than_selling_the_materials_and_gives_xp_to_the_skills_involved():
-    ship = sh.make_shipment(Random(2), "mixed", LEVELS(10), REG)
-    bits, xp = sh.reward(ship, REG)
-    assert bits == round(sh.worth(ship.need, REG) * P.bits_factor) > sh.worth(ship.need, REG)
-    assert set(xp) == {REG.item(i).skill for i in ship.need} and all(v > 0 for v in xp.values())
+    for tier in P.tiers:
+        ship = sh.make_shipment(Random(2), "farming", LEVELS(35), REG, tier)
+        bits, xp = sh.reward(ship, REG)
+        assert bits == round(sh.worth(ship.need, REG) * P.tiers[tier].bits_factor) > sh.worth(ship.need, REG)
+        assert set(xp) == {REG.item(i).skill for i in ship.need} and all(v > 0 for v in xp.values())
 
 
 def test_wedges_and_things_you_cannot_sell_are_never_asked_for():
@@ -61,69 +72,89 @@ def test_wedges_and_things_you_cannot_sell_are_never_asked_for():
 
 
 # ---- your crates ------------------------------------------------------------------------------------------------------------------------------
-async def test_you_always_have_your_slots_two_themed_and_one_mixed_and_looking_twice_changes_nothing(db):
+async def test_a_skill_unlocks_its_basic_crate_at_its_own_level_and_the_hard_one_later(db):
     user = await User.get(1)
+    assert await sh.mine(user) == []  # (nothing is open at level 1)
+    assert {(s, t) for s, t, _ in await sh.locked(user)} == set(sh.slot_ids(REG))
+    await level_up(user, "mining")
+    mine = await sh.mine(user)
+    assert [c.id for c in mine] == ["mining:basic"]  # (only mining is high enough)
+    await level_up(user, "fishing", XP30)
+    assert [c.id for c in await sh.mine(user)] == ["mining:basic", "fishing:basic", "fishing:hard"]
+    assert ("mining", "hard", HARD.unlock_level) in await sh.locked(user)
     first = await sh.mine(user)
-    assert len(first) == P.slots and [s.theme == "mixed" for s in first] == [False, False, True]
-    assert first[0].theme != first[1].theme and first == await sh.mine(user)
-    other = await sh.mine(await User.get(2))
-    assert other != first  # (everyone's crates differ)
+    assert first == await sh.mine(user)  # (looking twice changes nothing)
+    other = await level_up(await User.get(2), "mining")
+    assert (await sh.mine(other))[0] != first[0]  # (everyone's crates differ)
 
 
 async def total_xp(user):
     return sum([(await user.skill(s)).xp for s in sh.SKILLS])
 
 
-async def fill_it(user, index):
-    """Give the player everything crate `index` asks for."""
-    ship = (await sh.mine(user))[index]
+async def fill_it(user, slot_id="mining:basic"):
+    """Give the player everything the crate asks for."""
+    await level_up(user, slot_id.split(":")[0], XP30)
+    ship = next(c for c in await sh.mine(user) if c.id == slot_id)
     for item_id, need in ship.need.items():
         await user.add_item(item_id, need)
     return ship
 
 
 async def test_fill_moves_what_you_hold_into_the_crate_and_ship_pays_and_replaces_it(db):
-    user = await User.get(1)
+    user = await level_up(await User.get(1), "mining", XP10)
     ship = (await sh.mine(user))[0]
     item = next(iter(ship.need))
     with pytest.raises(sh.ShipmentError, match="nothing it still needs"):
-        await sh.fill(user, 0)
+        await sh.fill(user, "mining:basic")
     await user.add_item(item, ship.need[item] + 5)
-    moved = await sh.fill(user, 0)
+    moved = await sh.fill(user, "mining:basic")
     assert moved == {item: ship.need[item]} and await user.item_quantity(item) == 5  # only what it needs: the rest stays
     assert (await sh.mine(user))[0].have == {item: ship.need[item]}
     with pytest.raises(sh.ShipmentError, match="not full"):
-        await sh.ship(user, 0)
+        await sh.ship(user, "mining:basic")
     for other, need in ship.need.items():
         await user.add_item(other, need)
-    await sh.fill(user, 0)
+    await sh.fill(user, "mining:basic")
     assert (await sh.mine(user))[0].done()
     await user.refresh()
     before, xp_before = user.purse, {s: (await user.skill(s)).xp for s in sh.SKILLS}
-    sent = await sh.ship(user, 0)
+    sent = await sh.ship(user, "mining:basic")
     await user.refresh()
     bits, xp = sh.reward(ship, REG)
     assert sent.bits == bits and user.purse == before + bits
     for s, x in xp.items():
         assert (await user.skill(s)).xp - xp_before[s] >= x
     crates = await sh.mine(user)
-    assert len(crates) == P.slots and crates[0] != ship and not crates[0].have  # a new, empty crate took its place
-    assert [c.theme == "mixed" for c in crates] == [False, False, True]
+    assert [c.id for c in crates] == ["mining:basic"] and crates[0] != ship and not crates[0].have  # a new, empty crate took its place
 
 
 async def test_two_ships_at_once_pay_once(db):
     user = await User.get(1)
-    ship = await fill_it(user, 0)
-    await sh.fill(user, 0)
-    a, b = await asyncio.gather(sh.ship(user, 0), sh.ship(user, 0), return_exceptions=True)
+    ship = await fill_it(user)
+    await sh.fill(user, "mining:basic")
+    a, b = await asyncio.gather(sh.ship(user, "mining:basic"), sh.ship(user, "mining:basic"), return_exceptions=True)
     assert sum(isinstance(r, sh.Shipped) for r in (a, b)) == 1 and ship
 
 
-async def test_a_bad_slot_number_is_refused(db):
+async def test_a_locked_or_unknown_crate_is_refused(db):
     user = await User.get(1)
-    for call in (sh.fill(user, 9), sh.ship(user, 9)):
+    for call in (sh.fill(user, "mining:hard"), sh.ship(user, "nothing:basic")):
         with pytest.raises(sh.ShipmentError, match="no such"):
             await call
+
+
+async def test_crates_from_the_old_layout_are_cleared_and_what_was_inside_is_handed_back(db):
+    from cococap.services import community
+
+    user = await User.get(1)
+    old = {"made": 5, "slots": [{"theme": "mining", "need": {"copper_ore": 100}, "have": {"copper_ore": 40, "tin_ore": 3}}, {"theme": "mixed", "need": {"coal": 5}, "have": {}}]}
+    await community.update(sh._key(user.id), sh.DEFAULT, lambda d: d.update(old))
+    assert await sh.mine(user) == []
+    assert await user.item_quantity("copper_ore") == 40 and await user.item_quantity("tin_ore") == 3
+    await sh.mine(user)
+    assert await user.item_quantity("copper_ore") == 40  # (handed back once)
+
 
 
 # ---- the community shipment --------------------------------------------------------------------------------------------------------------------
@@ -187,33 +218,32 @@ async def test_someone_who_barely_helped_is_not_paid_and_a_new_week_starts_a_new
 
 
 # ---- the screen --------------------------------------------------------------------------------------------------------------------------------
-async def test_shipments_sit_on_the_home_page_between_skills_and_minigames_and_open_one_at_a_time(db):
+async def test_shipments_sit_on_the_home_page_between_skills_and_minigames_and_say_when_they_unlock(db):
     nav, inter = await hub("home")
     text = all_text(nav)
     assert text.index("Skills") < text.index("Shipments") < text.index("Minigames")
     nav, inter = await hub("shipments")
-    assert find_button(nav, "Home") and "shipment" in all_text(nav).lower()
-    assert all_text(nav).count("Ships for") == 1 and "Community shipment" not in all_text(nav).split("Pick a shipment")[-1]
-    assert len([b for b in buttons(nav) if b.label in ("Fill", "Ship")]) == 2
+    assert f"level **{BASIC.unlock_level}**" in all_text(nav) and not [b for b in buttons(nav) if b.label in ("Fill", "Ship")]
 
 
-async def test_the_dropdown_lists_every_crate_and_the_community_one_and_each_has_its_own_page(db):
+async def test_the_dropdown_lists_the_unlocked_crates_one_page_each_and_mentions_what_is_locked(db):
+    user = await User.get(1)
+    await level_up(user, "mining")
+    await level_up(user, "fishing", XP30)
     nav, inter = await hub("shipments")
     menu = select_named(nav, "Pick a shipment")
-    assert len(menu.options) == P.slots + 1 and menu.options[-1].label == "Community shipment"
+    assert [o.value for o in menu.options] == ["mining:basic", "fishing:basic", "fishing:hard"] and "Community" not in all_text(nav)
     seen = set()
     for option in menu.options:
         await choose(nav, inter, select_named(nav, "Pick a shipment"), option.value)
         seen.add(all_text(nav))
-    assert len(seen) == len(menu.options)
-    assert find_button(nav, "Give what it needs")  # (the last page is the community one)
-    first = all_text(nav)
-    assert "Community shipment" in first and "Ships for" not in first
+        assert all_text(nav).count("Ships for") == 1
+    assert len(seen) == 3 and "Locked:" in all_text(nav)
 
 
 async def test_filling_and_shipping_from_the_page(db):
     user = await User.get(1)
-    ship = await fill_it(user, 0)
+    ship = await fill_it(user)
     nav, inter = await hub("shipments")
     fills = [b for b in buttons(nav) if b.label == "Fill"]
     assert not fills[0].disabled
@@ -228,22 +258,23 @@ async def test_filling_and_shipping_from_the_page(db):
 
 
 async def test_fill_is_off_when_you_have_nothing_useful_and_ship_is_off_until_full(db):
+    await level_up(await User.get(1), "mining")
     nav, _ = await hub("shipments")
     assert all(b.disabled for b in buttons(nav) if b.label in ("Fill", "Ship"))
 
 
-async def test_the_page_pays_a_finished_community_shipment_on_a_page_of_its_own(db, monkeypatch):
-    import time as _time
-
-    monkeypatch.setattr(sh, "time", type("T", (), {"time": staticmethod(lambda: NOW)}))
-    monkeypatch.setattr(_time, "time", lambda: NOW)
-    users = [await User.get(i) for i in (1, 2)]
-    view = await sh.community_now(users[0], NOW)
-    for item_id, need in view.need.items():
-        await users[0].add_item(item_id, need)
-    await sh.donate(users[0], NOW)
-    nav, _ = await hub("shipments", user_id=1)
-    assert nav.screen.id == "result" and "community shipment is out" in all_text(nav).lower() and "bits" in all_text(nav)
+async def test_the_community_shipment_is_off_but_comes_back_when_the_flag_is_on(db):
+    assert C.enabled is False
+    await level_up(await User.get(1), "mining")
+    object.__setattr__(C, "enabled", True)  # (the rules are frozen: flip it for this test only)
+    try:
+        nav, inter = await hub("shipments")
+        menu = select_named(nav, "Pick a shipment")
+        assert menu.options[-1].label == "Community shipment"
+        await choose(nav, inter, menu, "community")
+        assert find_button(nav, "Give what it needs")
+    finally:
+        object.__setattr__(C, "enabled", False)
 
 
 # ---- the community goal is sized by who is playing -------------------------------------------------------------------------------------------
