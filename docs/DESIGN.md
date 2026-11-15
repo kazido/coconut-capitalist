@@ -117,7 +117,7 @@ All numbers are `TODO(balance)` in `configs/mining.toml` `[descent]`.
 | Reactor level | pressure builds 2% slower per level (max 50%), +1 brace per 5 levels, +1 column per 5 levels, auto-miner lodes | built |
 | Reactor gems | each placed gem makes wyrmholes more likely | built |
 | Pickaxe power | +10% yield per point above 1 | built (only the Rookie Pickaxe exists) |
-| Pickaxe upgrade template | raises pickaxe power (the scarab's level-6 reward) | **not built** |
+| Pickaxe upgrade template | raises pickaxe power (once the scarab's reward; the scarab now gives other prizes) | **dropped** |
 | Mining enchants | see below | **not built** |
 
 Proposed roles: the **reactor is endurance** (how deep a run can go: stability, braces, bombs carried, passive
@@ -774,3 +774,13 @@ A pass over the busiest pages to cut text without cutting information. The rules
   pays 6k-20k bits a minute and no skill out-earns another by more than about double; no foraging drop is more than 35% of its pay and the everyday finds are at
   least 15%; no ore or find is more than 55% of mining's; a rare drop is at most 3,000 times a common one; four Work claims a day at ranks 0-7 pay less than an hour of
   mining. When one fails, a payout was changed without looking at the others.
+
+## Bigger mine loot pools and the scarab (decided)
+- **Ten new finds**, so each kind of rock has a real pool (coal, clay, amber and copper in soft rock; tin, silver, garnet, iron in firm; obsidian, platinum,
+  sapphire, emerald and gold in hard; the gems and the spirit stay deep). They are in the depth tables, so the pool opens up as you go deeper (the top of the mine
+  has 4 things to find, the bottom 20). **They only sell for now**; crafting and other uses come later. Their prices were tuned so mining pays what it did
+  (857 bits a click in the simulation, was 860). Harder rock holds the better things (a test checks the medians).
+- **Subterranean scarabs** can show up after **any** mine, however it ended (a safe exit, the vault, a collapse or a wyrmhole), 1 in 12 mines (it was 1 in 51
+  and only after a safe exit). The scroll takes **45 seconds** to unscramble (was 30). The old "level 6" bonus level never existed; the text now just says it will
+  reward you. A solved scroll gives one **prize by weight** (`[[scarab.prizes]]`): 3 scarab bombs (35), 1,500 mining xp (35), a hoard of ore plus 400 xp (20) or a
+  sapphire and an emerald plus 800 xp (10). The xp gets the usual party, rank and pet bonuses.

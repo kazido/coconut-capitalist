@@ -42,11 +42,29 @@ copper_ore = 1
 iron_ore = 10
 gold_ore = 100
 
-[scarab]
-chance = 51                        # 1-in-N after finishing a mine (the old code used 1/51)
-seconds = 30                       # time to unscramble the scroll
-reward_item = "scarab_bomb"        # level-6 reward (quantity from the item's drop min/max)
-# TODO(wiki): the pickaxe upgrade template reward needs an item definition first.
+[scarab]                           # a subterranean scarab can turn up after ANY mine (a safe exit, the vault, a collapse or a wyrmhole), holding a scrambled scroll
+chance = 12                        # 1 in 12 mines (it was 1 in 51, and only after a safe exit)
+seconds = 45                       # time to unscramble the scroll (it was 30)
+
+# What it gives for the right word: one prize, by weight.  TODO(balance)
+[[scarab.prizes]]
+name = "Bombs"
+weight = 35
+items = { scarab_bomb = 3 }
+[[scarab.prizes]]
+name = "A lesson in the rock"
+weight = 35
+xp = 1500                          # about 13 minutes of mining xp
+[[scarab.prizes]]
+name = "A scarab's hoard"
+weight = 20
+items = { copper_ore = 120, iron_ore = 35, gold_ore = 8 }   # about a sixth of a vault's ore
+xp = 400
+[[scarab.prizes]]
+name = "A glittering find"
+weight = 10
+items = { sapphire = 1, emerald = 1 }
+xp = 800
 
 # ---- The descent: a shaft of `floor` rows. Plain cells show their ore; richer ore is harder to dig and adds
 # more pressure; pressure sets the collapse risk (always shown). Reach the floor to open the vault.  # TODO(balance): all numbers

@@ -646,7 +646,7 @@ async def test_scarab_answered_in_time_pays_out_and_late_or_wrong_does_not(db):
 
     for answer, delay, rewarded in (("lantern", 0, True), ("lantern", 999, False), ("nope", 0, False)):
         user = await User.get(1)
-        before = await user.item_quantity("scarab_bomb")
+        before = (sum((await user.items()).values()), (await user.skill("mining")).xp)
         nav, inter = await enter_mines()
         nav.screen.run.leave()
         await nav.screen._end(None)
@@ -656,8 +656,8 @@ async def test_scarab_answered_in_time_pays_out_and_late_or_wrong_does_not(db):
         await find_button(nav, "Answer").callback(inter)
         modal = await submit(inter, answer)
         await modal.on_submit(fake_interaction())
-        gained = await user.item_quantity("scarab_bomb") - before
-        assert (gained > 0) is rewarded, (answer, delay)
+        after = (sum((await user.items()).values()), (await user.skill("mining")).xp)
+        assert (after != before) is rewarded, (answer, delay)  # (a prize is items, xp, or both)
 
 
 async def test_leaving_the_hub_idle_mid_run_banks_the_haul(db):
@@ -1617,3 +1617,27 @@ async def test_the_skills_page_shows_each_skill_with_its_level_and_no_blurb(db):
     for blurb in ("Push your luck", "wait for the rain", "Fell trees", "reel in the big one", "Turn-based"):
         assert blurb not in text
     assert len([b for b in buttons(nav) if b.label == "Open"]) == 5
+
+
+async def test_a_scarab_can_turn_up_after_any_mine_and_never_says_level_six(db, monkeypatch):
+    from cococap.services import mining as mining_service
+
+    monkeypatch.setattr(mining_service, "scarab_appears", lambda rules, rng: True)
+    for how in ("left", "collapse", "wyrmhole", "floor"):
+        nav, inter = await enter_mines()
+        run = nav.screen.run
+        run.outcome = how
+        await nav.screen._end(None)
+        await nav.screen.refresh(inter)
+        assert nav.screen.challenge is not None, how
+        text = all_text(nav)
+        assert "scarab" in text and "level 6" not in text.lower() and "reward you" in text, how
+
+
+async def test_the_scarab_gives_you_more_time_than_it_used_to(db):
+    import random as _random
+
+    from cococap.services.mining import make_scarab
+
+    rules = get_registry().mining
+    assert make_scarab(["lantern"], rules, _random.Random(1)).seconds == rules.scarab.seconds > 30

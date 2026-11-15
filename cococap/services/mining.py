@@ -409,7 +409,7 @@ def generate_wyrmhole(rules: MiningRules, rng: random.Random) -> WyrmholeSession
 # ---- the scarab -------------------------------------------------------------------------------
 @dataclass(frozen=True)
 class ScarabChallenge:
-    """Unscramble the word within `seconds` to be taken to the bonus level."""
+    """Unscramble the word within `seconds` to win the scarab's prize."""
 
     word: str
     scrambled: str
@@ -433,11 +433,19 @@ def make_scarab(words: list[str], rules: MiningRules, rng: random.Random) -> Sca
     return ScarabChallenge(word, "".join(letters), rules.scarab.seconds)
 
 
-def scarab_reward(registry: Registry, rules: MiningRules, rng: random.Random) -> Counter[str]:
-    """Level-6 loot for solving the scroll."""
-    item = registry.item(rules.scarab.reward_item)
-    quantity = rng.randint(item.drop.min, item.drop.max) if item.drop else 1
-    return Counter({item.id: quantity})
+@dataclass(frozen=True)
+class ScarabWin:
+    """What a solved scroll gave."""
+
+    name: str
+    items: Counter[str]
+    xp: int
+
+
+def scarab_reward(registry: Registry, rules: MiningRules, rng: random.Random) -> ScarabWin:
+    """Draw the scarab's prize for a solved scroll (by weight): items, mining xp, or both. The xp here is the base amount."""
+    prize = rng.choices(rules.scarab.prizes, weights=[p.weight for p in rules.scarab.prizes])[0]
+    return ScarabWin(prize.name, Counter(prize.items), prize.xp)
 
 
 # ---- operations on a player (these persist) ----------------------------------------------------
@@ -545,12 +553,16 @@ async def finish_wyrmhole(user: User, session: WyrmholeSession) -> tuple[str, in
     return item_id, quantity
 
 
-async def claim_scarab_reward(user: User, rng: random.Random, registry: Registry | None = None) -> Counter[str]:
+async def claim_scarab_reward(user: User, rng: random.Random, registry: Registry | None = None) -> ScarabWin:
+    """Pay out a solved scroll: the items, and mining xp (with your party, rank and pet bonuses like any xp)."""
     reg = registry or get_registry()
-    reward = scarab_reward(reg, reg.mining, rng)
-    for item_id, quantity in reward.items():
+    prize = scarab_reward(reg, reg.mining, rng)
+    for item_id, quantity in prize.items.items():
         await user.add_item(item_id, quantity)
-    return reward
+    xp = round(prize.xp * await xp_multiplier(user.id, reg, "mining")) if prize.xp else 0
+    if xp:
+        await user.add_xp("mining", xp)
+    return ScarabWin(prize.name, prize.items, xp)
 
 
 # ---- the reactor ------------------------------------------------------------------------------

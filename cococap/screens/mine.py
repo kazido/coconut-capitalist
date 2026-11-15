@@ -196,7 +196,7 @@ class MineScreen(Screen):
             body.append(text(("**Banked**\n" + loot_lines(summary.haul)) if summary.haul else "Nothing to bank this time."))
         if self.challenge is not None:
             body += [sep(), text(f"🪲 **A subterranean scarab appears!** It holds a scroll: **{self.challenge.scrambled}**\n"
-                                 f"Unscramble it before <t:{int(self.challenge_deadline)}:R> to visit level 6!"),
+                                 f"Unscramble it before <t:{int(self.challenge_deadline)}:R> and it will reward you!"),
                      row(button("Answer", emoji="📜", style=discord.ButtonStyle.primary, on_click=self._ask_scarab),
                          button("Ignore", on_click=self._skip_scarab))]
         elif self.scarab_result:
@@ -273,10 +273,10 @@ class MineScreen(Screen):
         await self.refresh(interaction)
 
     async def _end(self, note: str | None) -> None:
-        """The run is over: bank it, and maybe a scarab shows up (only after a safe exit)."""
+        """The run is over: bank it, and maybe a scarab shows up (after any mine, however it ended)."""
         self.summary = await mining.settle_run(self.user, self.run)
         rules = get_registry().mining
-        if self.run.outcome in ("left", "floor") and mining.scarab_appears(rules, random.Random()):
+        if mining.scarab_appears(rules, random.Random()):
             self.challenge = mining.make_scarab(_words(), rules, random.Random())
             self.challenge_deadline = time.time() + self.challenge.seconds
 
@@ -288,8 +288,11 @@ class MineScreen(Screen):
             if time.time() > self.challenge_deadline:
                 self.scarab_result = f"🪲 Too slow! The scarab scuttled away. (It was **{challenge.word}**.)"
             elif challenge.check(answer):
-                reward = await mining.claim_scarab_reward(self.user, random.Random())
-                self.scarab_result = "🪲 The scarab is pleased! Level 6 yields:\n" + loot_lines(reward)
+                win = await mining.claim_scarab_reward(self.user, random.Random())
+                gifts = [loot_lines(win.items)] if win.items else []
+                if win.xp:
+                    gifts.append(f"✨ +{win.xp:,} mining xp")
+                self.scarab_result = f"🪲 The scarab is pleased! **{win.name}**:\n" + "\n".join(gifts)
             else:
                 self.scarab_result = f"🪲 Wrong! The scarab scuttles away. (It was **{challenge.word}**.)"
             await self.refresh(modal_interaction)

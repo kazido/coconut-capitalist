@@ -437,10 +437,25 @@ class MagnetRules(_Data):
     values: dict[str, int]
 
 
+class ScarabPrize(_Data):
+    """One thing a scarab can give for a solved scroll: items, mining xp, or both."""
+
+    name: str
+    weight: float = Field(gt=0)
+    items: dict[str, int] = Field(default_factory=dict)
+    xp: int = Field(default=0, ge=0)
+
+    @model_validator(mode="after")
+    def _gives_something(self):
+        if not self.items and not self.xp:
+            raise ValueError("a scarab prize must give items or xp")
+        return self
+
+
 class ScarabRules(_Data):
-    chance: int = Field(ge=1)
-    seconds: int = Field(ge=1)
-    reward_item: str
+    chance: int = Field(ge=1)  # 1 in this many mines (however they ended) brings a scarab
+    seconds: int = Field(ge=1)  # time to unscramble its scroll
+    prizes: list[ScarabPrize] = Field(min_length=1)
 
 
 class RiskLabel(_Data):

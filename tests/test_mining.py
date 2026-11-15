@@ -68,12 +68,22 @@ def test_scarab_scroll_is_scrambled_and_checkable():
     assert challenge.check(" Lantern ") and not challenge.check("lantern!")
 
 
-def test_scarab_frequency_and_reward():
-    hits = sum(m.scarab_appears(RULES, Random(s)) for s in range(5000))
-    assert 50 < hits < 160  # about 1 in 51
-    reward = m.scarab_reward(REG, RULES, Random(1))
-    bomb = REG.item("scarab_bomb")
-    assert list(reward) == ["scarab_bomb"] and bomb.drop.min <= reward["scarab_bomb"] <= bomb.drop.max
+def test_scarabs_are_common_enough_to_see_and_give_more_than_bombs():
+    hits = sum(m.scarab_appears(RULES, Random(s)) for s in range(6000))
+    assert 6000 / RULES.scarab.chance * 0.8 < hits < 6000 / RULES.scarab.chance * 1.2  # about 1 mine in 12
+    assert RULES.scarab.chance <= 15 and RULES.scarab.seconds > 30  # it used to be 1 in 51 and 30 seconds
+    wins = Counter(m.scarab_reward(REG, RULES, Random(s)).name for s in range(3000))
+    assert set(wins) == {p.name for p in RULES.scarab.prizes} and len(wins) >= 4
+    prizes = {p.name: p for p in RULES.scarab.prizes}
+    assert any(p.xp for p in prizes.values()) and any(set(p.items) - {"scarab_bomb"} for p in prizes.values())  # xp, and loot that is not a bomb
+    assert wins["Bombs"] > wins["A glittering find"] and "scarab_bomb" in prizes["Bombs"].items  # (the bombs are the common one, the find the rare one)
+
+
+def test_a_prize_must_give_something():
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        RULES.scarab.prizes[0].model_validate({"name": "nothing", "weight": 1})
 
 
 # ---- operations that persist -------------------------------------------------------------------------
@@ -186,9 +196,31 @@ async def test_wyrmhole_reward_is_banked(db):
 
 async def test_scarab_reward_is_banked(db):
     user = await player()
-    reward = await m.claim_scarab_reward(user, Random(1))
-    assert await user.items() == dict(reward)
+    for seed in range(40):
+        before_xp = (await user.skill("mining")).xp
+        before = Counter(await user.items())
+        win = await m.claim_scarab_reward(user, Random(seed))
+        assert Counter(await user.items()) - before == win.items  # the items are banked
+        assert (await user.skill("mining")).xp - before_xp == win.xp  # ...and the xp
+    assert (await user.skill("mining")).xp > 0
 
+
+async def test_scarab_xp_gets_the_usual_bonuses(db):
+    from cococap.services.party import Party
+
+    user = await player()
+    other = await User.get(2)
+    party = await Party.create(1)
+    await party.add_member(2)
+    xp_prizes = [p for p in RULES.scarab.prizes if p.xp]
+    seen = set()
+    for seed in range(400):
+        win = await m.claim_scarab_reward(user, Random(seed))
+        if win.xp:
+            seen.add(win.xp)
+    base = {p.xp for p in xp_prizes}
+    assert seen and all(x > b for x in seen for b in [min(base)]) and seen != base  # (paid more than the base amount: the party bonus applies)
+    assert other
 
 
 # ---- the descent (pure rules) ------------------------------------------------------------------
