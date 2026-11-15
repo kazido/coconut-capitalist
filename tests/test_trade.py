@@ -184,8 +184,9 @@ async def test_the_trade_page_is_reachable_from_inventory_and_more(db):
     nav, inter = await hub("inventory")
     await find_button(nav, "Trade").callback(inter)
     assert nav.screen.id == "trade"
-    nav, _ = await hub("more")
-    assert "Trade" in all_text(nav)
+    nav, inter = await hub("home")
+    await find_button(nav, "Trade").callback(inter)
+    assert nav.screen.id == "trade"
 
 
 async def test_asking_from_the_page_shows_the_request_to_the_other_player_who_accepts_into_a_shared_window(db):
