@@ -222,17 +222,23 @@ def test_every_kind_of_tool_has_an_upgrade_chain_and_the_best_tools_end_it():
             assert current.id in {t.id for t in tops}, (tool.id, current.id)
 
 
-def test_a_fork_offers_two_roads_of_the_same_power_and_cost_but_different_stats():
+def test_a_fork_offers_two_roads_of_the_same_power_and_bits_but_different_abilities_stats_and_materials():
     forks = [t for t in REG.items.values() if t.tool and t.tool.fork]
     assert {t.tool.kind for t in forks} == {"pickaxe", "rod"}  # the pilot
     for tool in forks:
-        a, b = REG.item(tool.tool.upgrade.to), REG.item(tool.tool.fork.to)
-        assert a.tool.power == b.tool.power and tool.tool.upgrade.bits == tool.tool.fork.bits and tool.tool.upgrade.items == tool.tool.fork.items
-        assert a.tool.path and b.tool.path and a.tool.path != b.tool.path
-        assert set(a.tool.stats) != set(b.tool.stats)  # different in kind, not just in size
-        while a.tool.upgrade and b.tool.upgrade:  # both roads climb in step: same powers and costs all the way up
-            a, b = REG.item(a.tool.upgrade.to), REG.item(b.tool.upgrade.to)
-            assert a.tool.power == b.tool.power and a.tool.path != b.tool.path
+        up, fork = tool.tool.upgrade, tool.tool.fork
+        a, b = REG.item(up.to), REG.item(fork.to)
+        while True:
+            assert a.tool.power == b.tool.power and up.bits == fork.bits  # (the same power and the same bits at every step)
+            assert a.tool.path and b.tool.path and a.tool.path != b.tool.path
+            assert a.tool.ability and b.tool.ability and a.tool.ability != b.tool.ability  # a different ability on each road
+            assert set(a.tool.stats) != set(b.tool.stats)  # different in kind, not just in size
+            mats = lambda cost, kind=tool.tool.kind: {i for i in cost.items if (REG.item(i).skill == "mining" if kind == "pickaxe" else REG.item(i).category == "fish")}  # noqa: E731
+            assert mats(up) and mats(fork) and not mats(up) & mats(fork), (up.to, fork.to)  # each road asks for its own materials
+            if not (a.tool.upgrade and b.tool.upgrade):
+                break
+            up, fork = a.tool.upgrade, b.tool.upgrade
+            a, b = REG.item(up.to), REG.item(fork.to)
         assert a.tool.upgrade is None and b.tool.upgrade is None
 
 
@@ -307,7 +313,8 @@ async def test_every_chain_can_be_climbed_to_the_top_with_the_right_stuff(db):
 
 # ---- forks: two roads from one tool ----------------------------------------------------------------------------------------------
 async def forked_pickaxe():
-    user, inst = await with_tool("masterwork_pickaxe", "mining", materials=dict(cost_of("masterwork_pickaxe").items))
+    both = {**cost_of("masterwork_pickaxe").items, **REG.item("masterwork_pickaxe").tool.fork.items}  # (the stock for either road)
+    user, inst = await with_tool("masterwork_pickaxe", "mining", materials=both)
     await user.add_xp("mining", User.level_to_xp(1))
     return user, inst
 
@@ -322,25 +329,26 @@ async def test_a_tool_at_a_fork_has_two_offers_and_each_road_is_taken_on_its_own
     assert (await user.equipped_instance("mining")).id == inst.id
 
 
-async def test_the_other_road_gives_its_own_stats_to_the_tool_in_use(db):
+async def test_each_road_gives_its_own_stats_and_ability_to_the_tool_in_use(db):
+    from cococap.services import tool_effects
     from cococap.services.equipment import equipped_stats
 
     user, inst = await forked_pickaxe()
     await upgrades.upgrade(user, inst.id)  # the usual road: Warden
     safe = await equipped_stats(user, "mining")
-    from cococap.services import tool_effects
-
-    own = tool_effects.power_stats("pickaxe", safe.power)["danger_reduction"]  # (the power's own share, on top of the road's 2%)
-    assert safe.stats["danger_reduction"] == pytest.approx(0.02 + own) and "ore_yield" not in safe.stats
+    warden = tool_effects.power_stats("pickaxe", safe.power, REG, "Warden")
+    assert safe.stats["danger_reduction"] == pytest.approx(warden["danger_reduction"]) and "ore_yield" not in safe.stats
+    assert safe.stats["auto_bomb"] == 32 and "multi_mine" not in safe.stats and safe.stats["rich_chance"] == 0  # safety and an Auto-Bomb, no rich-lode bonus
     user2 = await User.get(2)
     await set_columns(user2, purse=10**9)
     inst2 = await user2.give_instance("masterwork_pickaxe")
     await equip(user2, "mining", inst2.id)
-    for item_id, quantity in cost_of("masterwork_pickaxe").items.items():
+    for item_id, quantity in REG.item("masterwork_pickaxe").tool.fork.items.items():
         await user2.add_item(item_id, quantity)
     await upgrades.upgrade(user2, inst2.id, path="fork")
     greedy = await equipped_stats(user2, "mining")
-    assert greedy.stats["ore_yield"] == pytest.approx(0.11) and greedy.stats["danger_reduction"] == pytest.approx(-0.005 + own)  # (the same power, so the same own share)
+    assert greedy.stats["ore_yield"] == pytest.approx(0.11) and greedy.stats["multi_mine"] == 0.25 and "auto_bomb" not in greedy.stats
+    assert greedy.stats["danger_reduction"] == 0 and greedy.stats["braces"] == 0 and greedy.stats["rich_chance"] > 0  # NO pressure slow, but more rich lodes
     assert greedy.power == safe.power  # the same power: a different way to dig, not a stronger one
 
 
@@ -356,7 +364,11 @@ async def test_the_upgrade_screen_shows_both_roads_with_what_each_does(db):
     nav, inter = await hub("upgrade")
     text = all_text(nav)
     assert "Warden path" in text and "Prospector path" in text and "fork in the road" in text
-    assert "less creaking" in text and "more ore" in text and "more creaking" in text  # (the Prospector's price is shown too)
+    assert "Auto-Bomb" in text and "Multi-Mine" in text  # each road's ability is announced
+    assert "Ore per lode: ×2.50 → **×4.44**" in text and "Ore per lode: ×2.50 → **×4.00**" in text  # the Prospector digs more ore per lode, the Warden is safer
+    assert "Tin Ore" in text and "Obsidian" in text  # ...and each asks for its own materials
+    assert "Pressure builds: 2% slower → **0% slower**" in text and "Rich lode chance: +0.4% → **+1.8%**" in text  # the Prospector's own numbers...
+    assert "Pressure builds: 2% slower → **6% slower**" in text and "Rich lode chance: +0.4% → **+0.0%**" in text  # ...are not the Warden's
     ups = [b for b in buttons(nav) if b.label == "Upgrade"]
     assert len(ups) == 2 and not any(b.disabled for b in ups)
     await ups[1].callback(inter)

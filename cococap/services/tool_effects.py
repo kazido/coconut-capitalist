@@ -25,14 +25,17 @@ class Effect:
     value: str
 
 
-def power_stats(kind: str, power: int, registry: Registry | None = None) -> dict[str, float]:
-    """The extra stats a tool of this kind and power carries (merged into its stats, so Mastery, enchants and the games see them as usual)."""
+def power_stats(kind: str, power: int, registry: Registry | None = None, path: str | None = None) -> dict[str, float]:
+    """The extra stats a tool of this kind and power carries (merged into its stats, so Mastery, enchants and the games see them as usual).
+    A forked tool's `path` leans them (the pickaxe's Warden keeps the safety, the Prospector the rich lodes)."""
     reg = registry or get_registry()
     above = max(0, power - BASE_POWER)
     r = reg.tools
     if kind == "pickaxe":
-        return {"danger_reduction": r.pickaxe.danger_reduction * above, "rich_chance": r.pickaxe.rich_chance * above,
-                "braces": float(above // r.pickaxe.braces_every)}
+        w = r.pickaxe.paths.get(path or "")
+        wd, wr, wb = (w.danger_reduction, w.rich_chance, w.braces) if w else (1.0, 1.0, 1.0)
+        return {"danger_reduction": r.pickaxe.danger_reduction * above * wd, "rich_chance": r.pickaxe.rich_chance * above * wr,
+                "braces": float(int(above * wb) // r.pickaxe.braces_every)}
     if kind == "axe":
         return {"good_chop": r.axe.good_chop * above, "wear_slow": r.axe.wear_slow * above}
     if kind == "can":
@@ -47,15 +50,16 @@ def sword_stats(power: int, registry: Registry | None = None) -> tuple[int, floa
     return round(reg.tools.sword.hp * above), reg.tools.sword.defense * above
 
 
-def effects(kind: str, power: int, registry: Registry | None = None) -> list[Effect]:
-    """The numbers a tool of this kind and power gives."""
+def effects(kind: str, power: int, registry: Registry | None = None, path: str | None = None, stats: dict[str, float] | None = None) -> list[Effect]:
+    """The numbers a tool of this kind and power gives (on `path`, if it has forked; `stats` are the tool's own, like a road's extra ore)."""
     from cococap.services import fishing
 
     reg = registry or get_registry()
-    extra = power_stats(kind, power, reg)
+    extra = power_stats(kind, power, reg, path)
     if kind == "pickaxe":
         d = reg.mining.descent
-        return [Effect("Ore per lode", f"×{1 + d.power_yield_bonus * max(0, power - d.power_base):.2f}"),
+        ore = (1 + d.power_yield_bonus * max(0, power - d.power_base)) * (1 + (stats or {}).get("ore_yield", 0.0))
+        return [Effect("Ore per lode", f"×{ore:.2f}"),
                 Effect("Pressure builds", f"{extra['danger_reduction']:.0%} slower"),
                 Effect("Rich lode chance", f"+{extra['rich_chance']:.1%}"),
                 Effect("Extra braces", f"+{int(extra['braces'])}")]
@@ -83,11 +87,13 @@ def effects(kind: str, power: int, registry: Registry | None = None) -> list[Eff
     return []
 
 
-def compare(kind: str, now: int, after: int, registry: Registry | None = None) -> list[str]:
-    """"Ore per lode: ×1.50 → **×2.50**" for each effect (all of them are shown, so nothing is hidden)."""
-    return [f"{a.label}: {a.value} → **{b.value}**" for a, b in zip(effects(kind, now, registry), effects(kind, after, registry), strict=True)]
+def compare(kind: str, now: int, after: int, registry: Registry | None = None, now_path: str | None = None, after_path: str | None = None,
+            now_stats: dict[str, float] | None = None, after_stats: dict[str, float] | None = None) -> list[str]:
+    """"Ore per lode: ×1.50 → **×2.50**" for each effect (all of them are shown, so nothing is hidden). A road can change the extras."""
+    return [f"{a.label}: {a.value} → **{b.value}**"
+            for a, b in zip(effects(kind, now, registry, now_path, now_stats), effects(kind, after, registry, after_path, after_stats), strict=True)]
 
 
-def summary(kind: str, power: int, registry: Registry | None = None) -> str:
+def summary(kind: str, power: int, registry: Registry | None = None, path: str | None = None, stats: dict[str, float] | None = None) -> str:
     """One line of a tool's current numbers, for the Tools page."""
-    return "  ·  ".join(f"{e.label} {e.value}" for e in effects(kind, power, registry))
+    return "  ·  ".join(f"{e.label} {e.value}" for e in effects(kind, power, registry, path, stats))

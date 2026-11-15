@@ -146,9 +146,11 @@ async def test_the_extras_are_in_the_stats_the_games_read(db):
 
     user = await User.get(1)
     pick = effective_stats(await user.give_instance("ironbound_pickaxe"))
-    assert pick.stats["danger_reduction"] == pytest.approx(0.003 * 12 + 0.02) and pick.stats["braces"] == 0 and pick.stats["rich_chance"] > 0
+    assert pick.stats["danger_reduction"] == pytest.approx(0.003 * 12 * 1.6) and pick.stats["braces"] == 0 and pick.stats["rich_chance"] == 0  # (the Warden leans safe)
     deep = effective_stats(await user.give_instance("mythril_pickaxe"))
     assert deep.stats["braces"] == 1 and deep.stats["danger_reduction"] > pick.stats["danger_reduction"]
+    prospector = effective_stats(await user.give_instance("prospector_pickaxe"))
+    assert prospector.stats["danger_reduction"] == 0 and prospector.stats["braces"] == 0 and prospector.stats["rich_chance"] == pytest.approx(0.0006 * 12 * 2.5)
     axe = effective_stats(await user.give_instance("masterwork_axe"))
     assert axe.stats["good_chop"] > 0 and axe.stats["wear_slow"] > 0 and effective_stats(await user.give_instance("starter_axe")).stats["good_chop"] == 0
 
@@ -159,10 +161,13 @@ async def test_a_better_pickaxe_makes_a_safer_and_richer_start_to_a_dig(db):
     user = await User.get(1)
     await equip(user, "mining", (await user.give_instance("rookiepickaxe")).id)
     plain = await mining.start_run(user, Random(1))
-    inst = await user.give_instance("mythril_pickaxe")
+    inst = await user.give_instance("mythril_pickaxe")  # a Warden: safety and braces
     await equip(user, "mining", inst.id)
     deep = await mining.start_run(user, Random(1))
-    assert deep.growth_factor < plain.growth_factor and deep.rich_bonus > plain.rich_bonus and deep.braces > plain.braces
+    assert deep.growth_factor < plain.growth_factor and deep.braces > plain.braces and deep.auto_bomb_every == 17
+    await equip(user, "mining", (await user.give_instance("veinhunter_pickaxe")).id)  # a Prospector: rich lodes and Multi-Mine, no pressure slow
+    rich = await mining.start_run(user, Random(1))
+    assert rich.growth_factor == 1.0 and rich.rich_bonus > plain.rich_bonus and rich.multi_mine == 0.55 and rich.auto_bomb_every == 0
 
 
 async def test_a_better_can_gives_bigger_harvests_and_sometimes_the_seed_back(db):

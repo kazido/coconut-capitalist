@@ -74,7 +74,7 @@ class UpgradeScreen(Screen):
             after = target.power + (now - offer.current.tool.power)  # (enchant and rolled bonuses carry over)
             lines = (f"**→ {offer.target.name}**{road}\n"
                      f"Power **{now}** → **{after}**" + (f"  ·  {describe_stats(target.stats)}" if target.stats else "")
-                     + "\n" + "\n".join(tool_effects.compare(target.kind, now, after, reg))
+                     + "\n" + "\n".join(tool_effects.compare(target.kind, now, after, reg, offer.current.tool.path, target.path, offer.current.tool.stats, target.stats))
                      + (f"\n✨ New ability: **{target.ability_name}**: {target.ability_description}" if target.ability_name and target.ability != offer.current.tool.ability else "")
                      + "\n" + needs_text(cost.bits, self.user.purse, cost.items, owned, reg))
             if offer.level_needed:

@@ -160,7 +160,8 @@ class MineScreen(Screen):
         warning = run.warning
         body = [
             *self.note_block(),
-            text(f"**Row {run.depth + 1} of {run.floor}**  ·  {next_landmark(run)}     {warning.emoji} **{risk_text(run.risk)}** collapse risk"),
+            text(f"**Row {run.depth + 1} of {run.floor}**  ·  {next_landmark(run)}     {warning.emoji} **{risk_text(run.risk)}** collapse risk"
+                 + (f"\n💣 Auto-Bomb: **{'this dig!' if run.auto_bomb_in == 1 else f'in {run.auto_bomb_in} rows'}**" if run.auto_bomb_every else "")),
             text(render_shaft(run)),
             text(carrying(run.haul)),
         ]
@@ -230,11 +231,13 @@ class MineScreen(Screen):
     async def _after(self, interaction: discord.Interaction, result: mining.DigResult) -> None:
         reg = get_registry()
         found = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.found.items())
+        auto = "💣 **Auto-Bomb!** " if result.auto_bombed else ""
+        multi = f"⛏️⛏️ **Multi-Mine!** (+{len(result.multi)} column) " if result.multi else ""
         if result.collapsed:
             lost = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.lost.items())
             note = "The tunnel gave way!" + (f" You lost {lost}." if lost else "")
         else:
-            note = ("💥 BOOM! " if result.bombed else "") + (f"Found {found}." if found else ("" if result.wyrmhole else "Nothing here."))
+            note = auto + multi + ("💥 BOOM! " if result.bombed and not result.auto_bombed else "") + (f"Found {found}." if found else ("" if result.wyrmhole else "Nothing here."))
             if result.vented:
                 note += " The vent hisses; the tunnel cools."
             if result.caches:

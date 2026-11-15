@@ -1059,10 +1059,19 @@ class MasteryRules(_Data):
 
 
 # ---- what tool power gives besides its main effect (configs/tools.toml) -----------------------------------------------------------------
+class PathWeights(_Data):
+    """How much of each power-derived extra a road of a forked tool keeps (1 is the normal amount, 0 none of it): a road leans one way."""
+
+    danger_reduction: float = Field(default=1.0, ge=0)
+    rich_chance: float = Field(default=1.0, ge=0)
+    braces: float = Field(default=1.0, ge=0)
+
+
 class PickaxePower(_Data):
     danger_reduction: float = Field(ge=0)
     rich_chance: float = Field(ge=0)
     braces_every: int = Field(ge=1)
+    paths: dict[str, PathWeights] = Field(default_factory=dict)  # by road name (Warden, Prospector); a tool on no road gets the normal amount
 
 
 class AxePower(_Data):

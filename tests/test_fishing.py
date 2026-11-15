@@ -1887,3 +1887,94 @@ async def test_casting_tells_you_how_long_the_bite_should_take_and_a_better_rod_
     assert waits["masterwork_rod"][0] < waits["starter_rod"][0] and waits["masterwork_rod"][1] is True
     starter_wait = round(f.typical_wait(REG.item("starter_rod").tool.power, RULES) * f.water_by_id(REG, nav.screen.water).wait_multiplier)
     assert waits["starter_rod"][0] == starter_wait
+
+
+# ---- rod abilities: the Angler's Auto-Reel and the Treasure Hunter's Bycatch -----------------------------------------------------------
+def test_auto_reel_presses_the_first_plain_arrows_when_you_pull_up_the_line():
+    cast = cast_of("cod", pattern=[f.LEFT, f.RIGHT, f.LEFT, f.RIGHT, f.LEFT], hooked=False)
+    cast.auto_steps = 2
+    cast.hook(T0 + 11)
+    assert cast.hooked and cast.progress == 2 and cast.next_arrow == f.LEFT  # the first two are done for you
+
+
+def test_auto_reel_stops_at_a_reel_break_a_mystery_and_the_last_step_and_never_lands_the_fish_by_itself():
+    cast = cast_of("cod", pattern=[f.LEFT, f.REEL, f.LEFT], hooked=False)
+    cast.auto_steps = 3
+    cast.hook(T0 + 11)
+    assert cast.progress == 1  # a Reel break is yours to press
+    short = cast_of("cod", pattern=[f.LEFT, f.RIGHT], hooked=False)
+    short.auto_steps = 9
+    short.hook(T0 + 11)
+    assert short.progress == 1 and short.status(T0 + 12) == "reeling"  # always leaves you the last press
+    mystery = cast_of("cod", pattern=[f.LEFT, f.MYSTERY, f.LEFT, f.RIGHT], hooked=False)
+    mystery.truth = [f.LEFT, f.RIGHT, f.LEFT, f.RIGHT]
+    mystery.auto_steps = 3
+    mystery.hook(T0 + 11)
+    assert mystery.progress == 1
+
+
+def test_without_auto_reel_you_start_at_the_first_arrow():
+    cast = cast_of("cod", hooked=False)
+    cast.hook(T0 + 11)
+    assert cast.progress == 0
+
+
+def test_a_cast_carries_the_rods_abilities():
+    from cococap.models.instance import ItemInstance
+    from cococap.services.equipment import effective_stats
+
+    for template, field, value in (("tidecaller_rod", "auto_steps", 1), ("abyssal_rod", "auto_steps", 2), ("lantern_rod", "bycatch", 0.10)):
+        stats = effective_stats(ItemInstance(id=1, owner_id=1, template_id=template, enchants={}, rolled={}), REG)
+        cast = f.cast_line(stats, Random(1), T0, REG)
+        assert getattr(cast, field) == pytest.approx(value), template
+
+
+async def test_bycatch_brings_a_second_different_fish_and_counts_it(db):
+    user = await player(1)
+    cast = cast_of("cod", slips=0)
+    cast.bycatch, cast.water = 1.0, next(w for w in RULES.waters if w.id == "river")
+    for arrow in cast.pattern:
+        cast.press(arrow, T0 + 11)
+    caught = await f.land(user, cast, REG, rng=Random(3))
+    assert caught.bycatch is not None and caught.bycatch.id != "cod"
+    assert await user.item_quantity(caught.bycatch.id) == 1 and (await user.skill("fishing")).stats.caught[caught.bycatch.id] == 1
+    none = cast_of("cod")
+    none.bycatch = 0.0
+    for arrow in none.pattern:
+        none.press(arrow, T0 + 11)
+    assert (await f.land(user, none, REG, rng=Random(3))).bycatch is None
+
+
+async def test_the_catch_page_mentions_the_bycatch(db, clock, monkeypatch):
+    fish = iter([REG.item("cod"), REG.item("bass")])  # the cast brings a cod; the bycatch roll brings a bass
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: next(fish))
+    user, nav, inter = await open_fishing(power_item="lantern_rod")
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    cast.bycatch = 1.0
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    await reel_in(nav, inter, cast)
+    assert "Bycatch" in all_text(nav) and await user.item_quantity("bass") == 1
+
+
+def test_the_rod_roads_data_each_road_has_its_own_ability_and_fish():
+    angler = ["tidecaller_rod", "moonlit_rod", "leviathan_rod", "abyssal_rod", "poseidon_rod"]
+    treasure = ["lantern_rod", "siren_rod", "trident_rod", "kraken_rod", "trophy_rod"]
+    steps = [REG.item(a).tool.stats["auto_reel"] for a in angler]
+    chances = [REG.item(t).tool.stats["bycatch"] for t in treasure]
+    assert steps == sorted(steps) and chances == sorted(chances) and steps[-1] > steps[0]
+    for a, t in zip(angler, treasure, strict=True):
+        assert REG.item(a).tool.ability == "auto_reel" and REG.item(t).tool.ability == "bycatch"
+
+
+async def test_bycatch_is_never_a_second_helping_of_the_same_fish(db, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))  # the water only ever gives cod
+    user = await player(1)
+    cast = cast_of("cod")
+    cast.bycatch, cast.water = 1.0, next(w for w in RULES.waters if w.id == "pond")
+    for arrow in cast.pattern:
+        cast.press(arrow, T0 + 11)
+    caught = await f.land(user, cast, REG, rng=Random(3))
+    assert caught.bycatch is None and await user.item_quantity("cod") == 1  # (it gives up rather than hand you the same fish again)

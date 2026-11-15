@@ -81,6 +81,8 @@ class DigResult:
     vented: int = 0  # cooling vents dug (each bled pressure)
     caches: int = 0  # supply caches dug (each gave braces)
     vault: Counter[str] = field(default_factory=Counter)  # what the vault gave, if this dig reached the floor
+    auto_bombed: bool = False  # the Warden's Auto-Bomb went off on this row
+    multi: tuple[int, ...] = ()  # extra columns the Prospector's Multi-Mine dug beside yours
     milestone: Milestone | None = None  # the landmark row this dig finished, if any (already applied)
     milestone_haul: Counter[str] = field(default_factory=Counter)  # the ore it gave
 
@@ -125,12 +127,16 @@ class MineRun:
         wyrmhole_odds_value: int | None = None,
         rich_bonus: float = 0.0,
         vault_gem_bonus: float = 0.0,
+        auto_bomb_every: int = 0,
+        multi_mine: float = 0.0,
     ):
         self.rules, self.registry, self.rng = rules, registry, rng
         self.cursors = list(cursors)
         self.growth_factor, self.yield_factor = growth_factor, yield_factor
         self.braces, self.bombs, self.magnet = braces, bombs, magnet
         self.rich_bonus, self.vault_gem_bonus = rich_bonus, vault_gem_bonus  # Mastery: more rich lodes, more vault gems
+        self.auto_bomb_every, self.multi_mine = auto_bomb_every, multi_mine  # pickaxe abilities (0: none)
+        self.auto_counter = 0  # rows dug since the last Auto-Bomb
         self.bombs_used = 0
         self.xp_awarded = 0
         self.last_risk = self.last_pressure = 0.0
@@ -314,6 +320,11 @@ class MineRun:
         self.haul.update(vault)
         return vault
 
+    @property
+    def auto_bomb_in(self) -> int | None:
+        """Rows until the Auto-Bomb goes off (this one counts: 1 means the next dig), or None without the ability."""
+        return max(1, self.auto_bomb_every - self.auto_counter) if self.auto_bomb_every else None
+
     def dig(self) -> DigResult:
         self._require_live()
         d = self.rules.descent
@@ -321,6 +332,8 @@ class MineRun:
         if any(col in self._holes[self.depth] for col in self.cursors):
             self.outcome = "wyrmhole"  # you broke into a wyrmhole: the mine ends and the haul is yours
             return DigResult(Counter(), wyrmhole=True)
+        if self.auto_bomb_every and self.auto_counter + 1 >= self.auto_bomb_every:  # the Warden's charge goes off: this row is blown, free
+            return self._blow(auto=True)
         self.last_risk, self.last_pressure = self.risk, self.danger  # kept for the log when something goes wrong
         if self.rng.random() < self.risk:
             lost: Counter[str] = Counter()
@@ -335,23 +348,36 @@ class MineRun:
                     del self.haul[item_id]
             self.outcome = "collapse"
             return DigResult(Counter(), collapsed=True, lost=+lost)
-        found, vents, caches, hardness = self._mine(sorted(set(self.cursors)))
+        columns = sorted(set(self.cursors))
+        extra: list[int] = []
+        if self.multi_mine and self.rng.random() < self.multi_mine:  # the Prospector's Multi-Mine: the pick bites the rock beside you too
+            beside = [c for c in {(col + step) % self.rules.columns for col in columns for step in (-1, 1)}
+                      if c not in columns and c not in self._holes[self.depth]]
+            if beside:
+                extra = [self.rng.choice(sorted(beside))]
+        found, vents, caches, hardness = self._mine(sorted(columns + extra))
+        self.auto_counter += 1
         vault = self._descend(d.creak + hardness, vents)
-        return DigResult(found, vented=vents, caches=caches, vault=vault, milestone=self.passed, milestone_haul=self.passed_haul)
+        return DigResult(found, vented=vents, caches=caches, vault=vault, multi=tuple(extra), milestone=self.passed, milestone_haul=self.passed_haul)
 
     def bomb(self) -> DigResult:
         """Blow the whole row (except wyrmholes): every cell, one flat pressure hit, no collapse check."""
         self._require_live()
-        d = self.rules.descent
         if self.bombs <= 0:
             raise MiningError("You have no bombs left.")
-        self.row(self.depth)
         self.bombs -= 1
         self.bombs_used += 1
+        return self._blow()
+
+    def _blow(self, auto: bool = False) -> DigResult:
+        """The blast itself, for a bomb from your pack or an Auto-Bomb: every cell of the row, one flat pressure hit, no collapse check."""
+        d = self.rules.descent
+        self.row(self.depth)
         columns = [c for c in range(self.rules.columns) if c not in self._holes[self.depth]]
         found, vents, caches, _ = self._mine(columns)
+        self.auto_counter = 0 if auto else self.auto_counter + 1
         vault = self._descend(d.creak + d.bomb_pressure, vents)
-        return DigResult(found, bombed=True, vented=vents, caches=caches, vault=vault, milestone=self.passed, milestone_haul=self.passed_haul)
+        return DigResult(found, bombed=True, auto_bombed=auto, vented=vents, caches=caches, vault=vault, milestone=self.passed, milestone_haul=self.passed_haul)
 
     def brace(self) -> None:
         """Shore up the tunnel: lower the pressure (uses a brace, skips a dig)."""
@@ -483,6 +509,8 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         wyrmhole_odds_value=wyrmhole_odds(gems_placed(mining), rules),
         rich_bonus=tool.stats.get("rich_chance", 0.0),
         vault_gem_bonus=tool.stats.get("vault_gem", 0.0),
+        auto_bomb_every=int(tool.stats.get("auto_bomb", 0)),
+        multi_mine=tool.stats.get("multi_mine", 0.0),
     )
 
 

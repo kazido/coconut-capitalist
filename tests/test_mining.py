@@ -1013,13 +1013,25 @@ def test_the_pools_open_up_as_you_go_deeper():
         seen |= set(table)
 
 
-def test_the_new_finds_all_sell_and_nothing_uses_them_yet():
+def test_the_new_finds_all_sell_and_each_road_of_the_pickaxe_upgrades_with_its_own_rock():
     new = ("coal", "clay", "amber", "tin_ore", "silver_ore", "garnet", "obsidian", "platinum_ore", "sapphire", "emerald")
     for item_id in new:
         item = REG.item(item_id)
         assert item.skill == "mining" and item.sell_price > 0 and item.drop and item_id in D.hardness
-    used = {i for t in REG.items.values() if t.tool and t.tool.upgrade for i in t.tool.upgrade.items}
-    assert not set(new) & used  # (they are for selling for now; crafting will find a use later)
+    def spent_on(road):
+        found, tool = set(), REG.item("masterwork_pickaxe")
+        costs = [tool.tool.upgrade if road == "Warden" else tool.tool.fork]
+        item = REG.item(costs[0].to)
+        while item.tool.upgrade:
+            costs.append(item.tool.upgrade)
+            item = REG.item(item.tool.upgrade.to)
+        for cost in costs:
+            found |= set(cost.items)
+        return found
+    warden, prospector = spent_on("Warden"), spent_on("Prospector")
+    assert {"coal", "clay", "tin_ore", "silver_ore", "amber", "garnet"} <= warden  # soft and firm rock
+    assert {"obsidian", "platinum_ore", "sapphire", "emerald", "gold_ore"} <= prospector  # hard rock
+    assert not {i for i in new if rock_of(i) == "hard"} & warden and not {i for i in new if rock_of(i) != "hard"} & prospector
 
 
 def test_in_each_pool_the_harder_rock_holds_the_better_stuff():
@@ -1029,3 +1041,77 @@ def test_in_each_pool_the_harder_rock_holds_the_better_stuff():
             worth[rock_of(item)].add((item, REG.item(item).sell_price))
     median = lambda pairs: sorted(p for _, p in pairs)[len(pairs) // 2]  # noqa: E731  (a median: one rare amber should not drag soft rock up)
     assert median(worth["soft"]) < median(worth["firm"]) < median(worth["hard"])
+
+
+# ---- pickaxe abilities: the Warden's Auto-Bomb and the Prospector's Multi-Mine -----------------------------------------------------------
+def test_the_auto_bomb_blows_every_nth_row_for_free_with_no_collapse_check():
+    run = calm_run()
+    run.auto_bomb_every = 4
+    assert run.auto_bomb_in == 4
+    for expected_in in (4, 3, 2):
+        assert run.auto_bomb_in == expected_in
+        run.danger = 0
+        assert not run.dig().auto_bombed
+    assert run.auto_bomb_in == 1  # the next dig is the charge
+    run.danger = 100
+    run.row(run.depth)  # (roll the row first: a rigged dice would put a wyrmhole in it)
+    run.rng = Rig(0.0)  # a collapse is certain on any ordinary dig...
+    result = run.dig()
+    assert result.auto_bombed and result.bombed and not result.collapsed  # ...but a blast has no collapse check
+    assert run.bombs_used == 0 and run.auto_counter == 0 and run.auto_bomb_in == 4  # it cost no bomb, and the count starts again
+
+
+def test_the_auto_bomb_clears_the_whole_row_for_a_flat_pressure():
+    run = calm_run()
+    run.auto_bomb_every = 1
+    force_row(run, [COPPER, COPPER, GOLD, COPPER, COPPER])
+    before = run.danger
+    result = run.dig()
+    assert result.auto_bombed and sum(result.found.values()) >= 5 and "gold_ore" in result.found
+    assert run.danger == pytest.approx(before + (D.creak + D.bomb_pressure) * run.growth_factor)
+
+
+def test_without_the_ability_nothing_blows_by_itself():
+    run = calm_run()
+    assert run.auto_bomb_in is None
+    for _ in range(25):
+        run.danger = 0
+        assert not run.dig().auto_bombed
+
+
+def test_multi_mine_sometimes_digs_the_rock_beside_you_and_pays_its_hardness():
+    plain, lucky = calm_run(), calm_run()
+    lucky.multi_mine = 1.0  # every dig
+    for run in (plain, lucky):
+        force_row(run, [COPPER, GOLD, GOLD, GOLD, COPPER])
+        run.cursors = [2]
+    one, two = plain.dig(), lucky.dig()
+    assert not one.multi and len(two.multi) == 1 and two.multi[0] in (1, 3)
+    assert sum(two.found.values()) > sum(one.found.values())
+    assert lucky.danger > plain.danger  # more rock dug, more pressure
+    assert lucky.lodes == 2 and plain.lodes == 1
+
+
+def test_multi_mine_never_digs_a_wyrmhole_or_the_column_you_already_dug():
+    for seed in range(40):
+        run = make_run(seed, rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0))
+        run.multi_mine, run.cursors = 1.0, [2]
+        run.row(0)
+        run._holes[0] = {3}  # a wyrmhole beside you
+        run.rng = Random(seed)
+        result = run.dig()
+        assert result.multi in ((1,), ()) and 2 not in result.multi and 3 not in result.multi
+
+
+def test_the_roads_chain_climbs_the_abilities_and_the_numbers_in_the_text_match_the_stats():
+    wardens = ["ironbound_pickaxe", "crystal_pickaxe", "deepdelver_pickaxe", "mythril_pickaxe", "worldsplitter_pickaxe"]
+    prospectors = ["prospector_pickaxe", "geode_pickaxe", "seekers_pickaxe", "veinhunter_pickaxe", "motherlode_pickaxe"]
+    bombs = [REG.item(w).tool.stats["auto_bomb"] for w in wardens]
+    multis = [REG.item(p).tool.stats["multi_mine"] for p in prospectors]
+    assert bombs == sorted(bombs, reverse=True) and multis == sorted(multis)  # better tools: sooner bombs, more multi-mining
+    for w, b in zip(wardens, bombs, strict=True):
+        tool = REG.item(w).tool
+        assert tool.ability == "auto_bomb" and tool.ability_name == "Auto-Bomb" and f"Every {int(b)} rows" in tool.ability_description
+    for p, mm in zip(prospectors, multis, strict=True):
+        tool = REG.item(p).tool
+        assert tool.ability == "multi_mine" and tool.ability_name == "Multi-Mine" and f"{mm:.0%}" in tool.ability_description

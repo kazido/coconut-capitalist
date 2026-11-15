@@ -67,7 +67,7 @@ def effective_stats(instance: ItemInstance, registry: Registry | None = None) ->
     from cococap.services import tool_effects  # (pure; imported here so the two modules can know each other)
 
     power = round(stats["power"])
-    for stat, bonus in tool_effects.power_stats(template.tool.kind, power, reg).items():  # what this much power gives besides its main effect
+    for stat, bonus in tool_effects.power_stats(template.tool.kind, power, reg, template.tool.path).items():  # what this much power gives besides its main effect
         stats[stat] = stats.get(stat, 0.0) + bonus
     return EffectiveStats(
         power=power,

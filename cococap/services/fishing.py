@@ -254,6 +254,9 @@ class Cast:
     size: float = 0.0  # in cm, fixed when you cast like everything else
     timed_out: bool = False  # it got away because the time ran out (as opposed to a wrong arrow)
     last_press: tuple[str, float] | None = None  # (the arrow that last counted, when)
+    auto_steps: int = 0  # the Angler's Auto-Reel: this many of the first plain arrows are pressed for you when you pull up the line
+    bycatch: float = 0.0  # the Treasure Hunter's Bycatch: the chance a catch brings a second, different fish
+    water: object = None  # the water it was cast in (bycatch comes from there)
 
     @property
     def deadline(self) -> float:
@@ -302,6 +305,14 @@ class Cast:
             raise FishingError("The fish got away.")
         if status == "bite":
             self.hooked = True
+            self._auto_reel()
+
+    def _auto_reel(self) -> None:
+        """Auto-Reel: press the first few plain arrows for the player (never a Reel break or a ❓, and never the last step)."""
+        done = 0
+        while done < self.auto_steps and done < len(self.pattern) - 1 and self.pattern[done] in (LEFT, RIGHT):
+            done += 1
+        self.progress = max(self.progress, done)
 
     def salvage(self, clicked_at: float) -> bool:
         """The fish was written off as too slow, but the click that pulls it up was made in time and only reached us
@@ -309,6 +320,7 @@ class Cast:
         if self.timed_out and self.bite_at <= clicked_at <= self.deadline:
             self.escaped = self.timed_out = False
             self.hooked = True
+            self._auto_reel()
             return True
         return False
 
@@ -374,6 +386,9 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
         size=roll_size(fish, rng),
         extra_fish=extra_fish(stats.power, rules, rng),
         xp=water.xp if water else 0,
+        auto_steps=int(stats.stats.get("auto_reel", 0)),
+        bycatch=stats.stats.get("bycatch", 0.0),
+        water=water,
     )
     if armed and rng.randint(1, max(1, round(rules.treasure.chest_odds / (1 + pet.get("treasure_luck", 0.0) + stats.stats.get("treasure_luck", 0.0))))) == 1:
         cast.chest, cast.attempts_left = True, rules.treasure.attempts
@@ -490,6 +505,7 @@ class Catch:
     record_holder: str | None = None  # who held the server record before you
     slack_left: int = 0  # forgiven wrong arrows you did not need
     slack_bits: int = 0  # ...and what they paid
+    bycatch: Item | None = None  # a second, different fish the Treasure Hunter's rod brought up
 
 
 def catch_extras(rng: random.Random, registry: Registry) -> Counter:
@@ -517,6 +533,15 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     multiplier = await xp_multiplier(user.id, reg, "fishing")
     xp = round((cast.xp or rules.xp_per_catch) * multiplier)  # not the fish's rarity, not the rod: tools never change xp
     await user.add_item(cast.fish.id, 1 + cast.extra_fish)
+    bycatch = None
+    if cast.bycatch and (rng or random.Random()).random() < cast.bycatch:  # the Treasure Hunter's Bycatch: a second, different fish in the net
+        for _ in range(8):
+            found = roll_fish(rng or random.Random(), reg, cast.water, 0.0)
+            if found.id != cast.fish.id:
+                bycatch = found
+                break
+    if bycatch is not None:
+        await user.add_item(bycatch.id, 1)
     extras = catch_extras(rng or random.Random(), reg)
     for item_id, quantity in extras.items():
         await user.add_item(item_id, quantity)
@@ -531,6 +556,8 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
         skill.xp += xp
         skill.stats.fish_caught += 1
         skill.stats.caught[cast.fish.id] = skill.stats.caught.get(cast.fish.id, 0) + 1 + cast.extra_fish
+        if bycatch is not None:
+            skill.stats.caught[bycatch.id] = skill.stats.caught.get(bycatch.id, 0) + 1
         _remember(skill, cast)
         if cast.size > 0 and cast.size > skill.records.get(cast.fish.id, 0):
             skill.records[cast.fish.id] = cast.size
@@ -577,7 +604,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     if slack_bits:
         await user.add_bits(slack_bits)
     return Catch(cast.fish, xp, tuple(finished), quest_bits, extras, seen[0] if seen else None,
-                 tuple(cast.reveals), cast.extra_fish, cast.size, bool(best), server_record, record_bits, holder, cast.slips_left, slack_bits)
+                 tuple(cast.reveals), cast.extra_fish, cast.size, bool(best), server_record, record_bits, holder, cast.slips_left, slack_bits, bycatch)
 
 
 RECORDS_KEY = "fishing_records"

@@ -8,6 +8,17 @@ danger_reduction = 0.003    # tunnels creak this much less (power 71: 20% slower
 rich_chance = 0.0006        # +this chance of a rich lode in every cell (power 71: +4%)
 braces_every = 25           # +1 brace at the start of every dig per this many points
 
+# The two roads of the pickaxe lean different ways. The Warden keeps the safety (extra pressure slow, braces) and has no rich-lode bonus; the Prospector gets NO pressure slow
+# at all and double the rich-lode chance. (Their main numbers and abilities differ too: see the tools in items.toml.)
+[pickaxe.paths.Warden]
+danger_reduction = 1.6
+rich_chance = 0.0
+braces = 1.0
+[pickaxe.paths.Prospector]
+danger_reduction = 0.0
+rich_chance = 2.5
+braces = 0.0
+
 [axe]
 good_chop = 0.002           # +this chance of a good chop (power 54: +10%)
 wear_slow = 0.005           # the spot you chop wears out this much slower (power 54: 25%)

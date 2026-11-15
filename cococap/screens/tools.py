@@ -48,7 +48,7 @@ class ToolsScreen(Screen):
                 extra.insert(0, f"{tool.path} path")
             line = (f"### {item.emoji or '🔨'} {instance_label(inst)}" + ("  ✅" if inst.id in equipped else "") + "\n"
                     f"{KIND_LABEL[tool.kind]}  ·  power **{stats.power}**" + "".join(f"  ·  {e}" for e in extra)
-                    + f"\n-# {tool_effects.summary(tool.kind, stats.power, reg)}"
+                    + f"\n-# {tool_effects.summary(tool.kind, stats.power, reg, tool.path, tool.stats)}"
                     + (f"  ·  ✨ {tool.ability_name}" if tool.ability_name else ""))
             if inst.id in equipped:
                 accessory = button("Equipped", disabled=True)

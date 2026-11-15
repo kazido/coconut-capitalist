@@ -784,3 +784,20 @@ A pass over the busiest pages to cut text without cutting information. The rules
   and only after a safe exit). The scroll takes **45 seconds** to unscramble (was 30). The old "level 6" bonus level never existed; the text now just says it will
   reward you. A solved scroll gives one **prize by weight** (`[[scarab.prizes]]`): 3 scarab bombs (35), 1,500 mining xp (35), a hoard of ore plus 400 xp (20) or a
   sapphire and an emerald plus 800 xp (10). The xp gets the usual party, rank and pet bonuses.
+
+## The forks got real: abilities, different numbers and different materials (decided)
+A road is no longer "the same tool with other stats". Each road of a forked tool has its **own ability**, leans its **numbers** a different way, and is built from **its own materials**,
+so the choice is also a choice of what you go out and collect.
+- **Pickaxe, Warden (safe):** **Auto-Bomb**: every 32 rows at the first tier down to every 14 at the last, a charge blows the whole row for free (flat pressure, no collapse check). It keeps
+  the pressure slow (x1.6) and braces, and has no rich-lode bonus. Built from **soft and firm rock**: coal, clay, tin, iron, silver, amber, garnet.
+- **Pickaxe, Prospector (greedy):** **Multi-Mine**: each dig has a 25% chance (60% at the last tier) to bite the rock beside you too (its hardness adds pressure). It gets **no pressure slow
+  and no braces**, but extra ore per lode (+11% per tier on top of x4.0 and so on) and 2.5x the rich-lode chance. Built from **hard rock**: gold, obsidian, platinum, sapphire, emerald.
+  (`configs/tools.toml` `[pickaxe.paths.*]` holds the weights; the abilities and stats are on the tools in `items.toml`.) A mining simulation (leave at 7% risk) puts the two roads within about
+  10% of each other at every tier (1.05, 1.01, 0.95, 1.10, 1.03 for Prospector over Warden), tuned with the intervals and chances above.
+- **Rod, Angler (steady):** **Auto-Reel**: the first 1-3 plain arrows of every reel are pressed for you (never a Reel break, a ❓ or the last press), plus faster bites and extra forgiven arrows.
+  Built from **river, pond and reef fish**: salmon, trout, catfish, pike, muskie, sturgeon, oarfish, golden koi.
+- **Rod, Treasure Hunter:** **Bycatch**: 10% to 30% of catches also bring up a second, **different** fish from the water; plus rare-fish and treasure luck, slower bites. Built from
+  **deep-sea and rare fish**: swordfish, tuna, marlin, giant squid, abyssal angler, leviathan pup. (The rod roads are not simulated; their numbers are a first guess.)
+- **Materials per step** were generated so each road takes about as long to collect as the old shared recipe did (each step's rate of finds at that tool's power), keeping non-mining extras like
+  hardwood and coral the same for both roads. The upgrade page shows each road's ability, its own numbers (`Pressure builds: 2% slower -> 6% slower` for the Warden, `-> 0% slower` for the
+  Prospector, ore per lode including the road's extra ore) and its materials. The ten new mine finds now have a use.
