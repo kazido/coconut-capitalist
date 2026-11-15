@@ -1987,3 +1987,11 @@ def test_big_accomplishments_pay_well_in_xp():
     assert all(goal.xp >= 1500 for goal in RULES.community.monthly)
     assert RULES.quests.xp_per_rarity >= 60
     assert RULES.boss.bits_max > 0 and RULES.book.completion_bits > 0  # (and they still pay bits too: bits are not being removed)
+
+
+async def test_the_wait_estimate_can_be_turned_off_in_settings(db):
+    user = await User.get(1)
+    await equip(user, "fishing", (await user.give_instance("reinforced_rod")).id)
+    await user.set_setting("fishing_estimate", False)
+    nav, _ = await hub("fish")
+    assert "bites in" not in all_text(nav) and "Rod **" in all_text(nav)

@@ -22,7 +22,8 @@ async def start_sell_all(screen: Screen, interaction: discord.Interaction, skill
     """A skill's Sell all button: straight to selling if you turned confirming off, otherwise to the confirm page."""
     if screen.user.settings.confirm_sell_all:
         return await screen.go(interaction, "sellall", skill=skill)
-    earned, sold = await shop.sell_all_for_skill(screen.user, skill)
+    keep = await upgrade_needs(screen.user) if screen.user.settings.keep_upgrade_materials else None
+    earned, sold = await shop.sell_all_for_skill(screen.user, skill, keep=keep)
     await screen.refresh(interaction, f"💰 Sold {sum(sold.values()):,} items for **{bits(earned)}** bits." if sold else "You have nothing from this skill to sell.")
 
 
@@ -59,7 +60,7 @@ class SellAllScreen(Screen):
         body = [*self.note_block(),
                 text(f"### {SKILL_EMOJI.get(self.skill, '💰')} Sell everything from {self.skill.title()}?\n{lines}" + (f"\n-# …and {more} more kinds" if more > 0 else "")
                      + f"\n**{sum(everything.values()):,}** items for **{bits(worth)}** bits{warn}"),
-                row(button("Sell everything", emoji="💰", style=discord.ButtonStyle.danger, on_click=self._sell(False)),
+                row(button("Sell, keep upgrade materials" if self.user.settings.keep_upgrade_materials else "Sell everything", emoji="💰", style=discord.ButtonStyle.danger, on_click=self._sell(self.user.settings.keep_upgrade_materials)),
                     button(f"Sell, keep upgrade materials ({bits(keep_worth)})" if reserved else "Sell, keep upgrade materials", emoji="🔨",
                            disabled=not reserved or not kept, on_click=self._sell(True)),
                     button("Cancel", on_click=self._cancel))]

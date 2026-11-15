@@ -44,6 +44,7 @@ class UpgradeScreen(Screen):
     def __init__(self, nav):
         super().__init__(nav)
         self.page = 0  # which tool is showing
+        self.sure: tuple[int, str] | None = None  # the upgrade waiting for its second press (when confirming is on)
         self.road: dict[int, str] = {}  # tool id -> the path showing, for a tool at a fork
 
     async def build(self) -> Page:
@@ -88,7 +89,8 @@ class UpgradeScreen(Screen):
             if offer.level_needed:
                 lines += f"\n-# {offer.target.name} needs level {offer.level_needed} in its skill."
             body.append(section(lines, accessory=button(
-                "Upgrade", style=discord.ButtonStyle.success, disabled=not offer.affordable,
+                "Sure?" if self.sure == (offer.instance.id, offer.path) else "Upgrade",
+                style=discord.ButtonStyle.danger if self.sure == (offer.instance.id, offer.path) else discord.ButtonStyle.success, disabled=not offer.affordable,
                 on_click=self._upgrade(offer.instance.id, offer.path))))
         if first.current.tool.fork:
             body.append(text("-# ⚠️ A fork in the road: the path you take is the one your tool climbs from now on."))
@@ -103,6 +105,7 @@ class UpgradeScreen(Screen):
     def _turn(self, step: int):
         async def go(interaction: discord.Interaction) -> None:
             self.page += step
+            self.sure = None
             await self.refresh(interaction)
 
         return go
@@ -110,12 +113,17 @@ class UpgradeScreen(Screen):
     def _road(self, instance_id: int):
         async def pick(interaction: discord.Interaction, values: list[str]) -> None:
             self.road[instance_id] = values[0]
+            self.sure = None
             await self.refresh(interaction)
 
         return pick
 
     def _upgrade(self, instance_id: int, path: str = "up"):
         async def go(interaction: discord.Interaction) -> None:
+            if self.user.settings.confirm_upgrades and self.sure != (instance_id, path):
+                self.sure = (instance_id, path)
+                return await self.refresh(interaction, "Press **Sure?** to upgrade, or look at something else to cancel.")
+            self.sure = None
             done = await upgrades.upgrade(self.user, instance_id, path=path)
             await self.refresh(interaction, f"🔨 Your {done.current.name} became a **{done.target.name}**!")
 

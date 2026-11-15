@@ -819,3 +819,10 @@ so the choice is also a choice of what you go out and collect.
 - **Bits come mainly from selling.** Daily interest and some accomplishments still pay bits, but big accomplishments (quests, books, community goals, bosses) now pay much more *xp*. The double-tree jackpot pays foraging xp (`double_xp`) instead of a million bits.
 - **Shipments** (`configs/shipments.toml`, `services/shipments.py`): tasks you fill with materials from several skills, then ship for bits (1.3x their sell value) and xp in the skills involved. Each player has 3 crates: two themed on a skill (a few of its materials plus others) and one mixed. Shipping replaces the crate in the same slot. A weekly *community* shipment is filled by everyone; once full, everyone who gave at least 2% of it claims 1.5x what they gave plus xp. State lives in the community store (`shipments:{uid}`, `shipment_community`), so there are no migrations.
 - **Settings audit** and **combat redesign** are still open (see HANDOFF).
+
+## Combat paused, settings, upgrade paths
+
+- **Combat is paused** while it is redesigned: the Skills page shows a disabled "Paused" button, `/fight` says so, and nothing links to the fight screen (code and tests stay). Ideas for the rework: stance/counters, a resource/combo system, interrupts and targeting.
+- **Settings** (Settings page, all saved per player): `confirm_sell_all` (on), `keep_upgrade_materials` (off: Sell all always holds back what your next upgrades need), `confirm_upgrades` (off: upgrades take a second "Sure?" press), `fishing_estimate` (on). A test keeps the page's list equal to the `Settings` model.
+- **Upgrade paths**: a tool at a fork shows one path at a time, swapped with a "Pick a path" dropdown; tools are still one per page.
+- **Shipments cooldown**: deliberately none. Materials are the limit and shipping only pays a modest premium over selling.

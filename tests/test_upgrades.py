@@ -464,3 +464,27 @@ async def test_the_upgrade_page_number_cannot_run_off_the_end(db):
     nav.screen.page = 9
     await nav.screen.nav.refresh(inter)
     assert nav.screen.page == 0 and "Starter Axe" in tool_page_title(nav)
+
+
+async def test_confirm_upgrades_needs_a_second_press_and_moving_away_cancels_it(db):
+    user, inst = await forked_pickaxe()
+    await user.set_setting("confirm_upgrades", True)
+    nav, inter = await hub("upgrade")
+    up = [b for b in buttons(nav) if b.label == "Upgrade"][0]
+    await up.callback(inter)
+    assert (await user.instance(inst.id)).template_id != "prospector_pickaxe" and any(b.label == "Sure?" for b in buttons(nav))
+    from tests.test_hub import choose, select_named
+
+    menu = select_named(nav, "Pick a path")
+    await choose(nav, inter, menu, menu.options[1].value)
+    assert not any(b.label == "Sure?" for b in buttons(nav))  # (looking elsewhere cancels it)
+    await [b for b in buttons(nav) if b.label == "Upgrade"][0].callback(inter)
+    await [b for b in buttons(nav) if b.label == "Sure?"][0].callback(inter)
+    assert (await user.instance(inst.id)).template_id != inst.template_id
+
+
+async def test_upgrades_are_one_press_by_default(db):
+    user, inst = await forked_pickaxe()
+    nav, inter = await hub("upgrade")
+    await [b for b in buttons(nav) if b.label == "Upgrade"][0].callback(inter)
+    assert (await user.instance(inst.id)).template_id != inst.template_id

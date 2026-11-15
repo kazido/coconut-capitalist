@@ -132,7 +132,8 @@ class FishScreen(Screen):
             else:
                 slips = fishing.slips_allowed(stats.power, reg.fishing, stats.stats.get("slips", 0))
                 wait = fishing.typical_wait(stats.power, reg.fishing, stats.stats.get("bite_speed", 0.0))
-                body.append(text(f"{ROD} Rod **{stats.power}**  ·  bites in ~**{wait:.0f}s**"
+                body.append(text(f"{ROD} Rod **{stats.power}**"
+                                 + (f"  ·  bites in ~**{wait:.0f}s**" if self.user.settings.fishing_estimate else "")
                                  + (f"  ·  forgives **{slips}** slip(s)" if slips else "")))
             level = User.xp_to_level(skill.xp)
             open_waters = fishing.unlocked_waters(level, reg.fishing)

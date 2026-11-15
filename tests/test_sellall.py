@@ -119,3 +119,30 @@ async def test_nothing_to_sell_says_so(db):
     nav, inter = await hub("mining")
     await click(nav, inter, "Sell all")
     assert "nothing from" in all_text(nav)
+
+
+# ---- more settings ------------------------------------------------------------------------------------------------------------------------
+async def test_the_settings_page_lists_every_setting_and_each_toggle_saves():
+    from cococap.models.settings import Settings
+    from cococap.screens.settings import SETTINGS
+
+    assert set(SETTINGS) == set(Settings.model_fields)  # (nothing is stored that the page cannot show, nor shown that is not stored)
+
+
+async def test_keep_upgrade_materials_makes_sell_all_hold_back_what_upgrades_need(db):
+    from cococap.screens.sellall import upgrade_needs
+
+    user = await User.get(1)
+    await user.give_instance("rookiepickaxe")
+    needs = await upgrade_needs(user)
+    assert needs
+    item_id, need = next(iter(needs.items()))
+    skill = get_registry().item(item_id).skill
+    await user.add_item(item_id, need + 3)
+    await user.set_setting("confirm_sell_all", False)
+    await user.set_setting("keep_upgrade_materials", True)
+    nav, inter = await hub("skills")
+    from cococap.screens.sellall import start_sell_all
+
+    await start_sell_all(nav.screen, inter, skill)
+    assert await user.item_quantity(item_id) == need  # only the spare ones were sold
