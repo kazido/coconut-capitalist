@@ -76,7 +76,7 @@ amount = 0.03
 [seasoned]
 name = "Seasoned"
 emoji = "🌰"
-description = "A well-seasoned handle: the spot you chop wears out 15% slower per level."
+description = "A well-seasoned handle: plain and good grains wear out 15% slower per level, but bad grains (knotty, twisted) wear out 15% faster, so you leave them sooner."
 applies_to = ["axe"]
 max_level = 3
 

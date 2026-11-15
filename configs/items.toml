@@ -244,7 +244,7 @@ rarity = 3
 skill = "combat"
 category = "key_item"
 price = 0
-sell_price = 0
+sell_price = 5000  # TODO(balance)
 
 [familiar_orb]
 name = "Familiar Orb"
@@ -254,7 +254,7 @@ emoji = "🔮"
 rarity = 4
 category = "key_item"
 price = 1500000  # TODO(balance): also found in drops, chests and boss loot
-sell_price = 0
+sell_price = 750000  # TODO(balance)
 
 [land_deed]
 name = "Land Deed"
@@ -265,7 +265,7 @@ rarity = 4
 skill = "farming"
 category = "key_item"
 price = 0
-sell_price = 0
+sell_price = 1000000  # TODO(balance)
 
 [spirit_of_the_fields]
 name = "Spirit of the Fields"
@@ -291,7 +291,7 @@ rarity = 6
 skill = "farming"
 category = "seed"
 price = 0
-sell_price = 0
+sell_price = 12500000  # TODO(balance)
 
 [ambrosia_seed.drop]
 rate = 5000
@@ -310,7 +310,7 @@ rarity = 1
 skill = "farming"
 category = "seed"
 price = 500
-sell_price = 0
+sell_price = 250  # TODO(balance)
 
 [apple_seed.seed]
 grows_into = "apple"
@@ -324,7 +324,7 @@ rarity = 4
 skill = "farming"
 category = "seed"
 price = 1600000
-sell_price = 0
+sell_price = 800000  # TODO(balance)
 
 [coconut_seed.seed]
 grows_into = "coconut"
@@ -338,7 +338,7 @@ rarity = 3
 skill = "farming"
 category = "seed"
 price = 0
-sell_price = 0
+sell_price = 12500  # TODO(balance)
 
 [dusty_dandelion_seed.drop]
 rate = 150
@@ -357,7 +357,7 @@ rarity = 3
 skill = "farming"
 category = "seed"
 price = 480000
-sell_price = 0
+sell_price = 240000  # TODO(balance)
 
 [hot_pepper_seed.seed]
 grows_into = "hot_pepper"
@@ -385,7 +385,7 @@ rarity = 5
 skill = "farming"
 category = "seed"
 price = 0
-sell_price = 0
+sell_price = 250000  # TODO(balance)
 
 [wilted_rose_seed.drop]
 rate = 10000
@@ -861,7 +861,7 @@ rarity = 1
 skill = "fishing"
 category = "bait"
 price = 300  # TODO(balance)
-sell_price = 0
+sell_price = 150  # TODO(balance)
 
 [worm.bait]
 luck = 1.0
@@ -906,7 +906,7 @@ rarity = 5
 skill = "fishing"
 category = "bait"
 price = 0  # TODO(balance)  (found in treasure chests and boss loot, never sold)
-sell_price = 0
+sell_price = 20000  # TODO(balance)
 
 [golden_roe.bait]
 luck = 6.0
@@ -1076,7 +1076,7 @@ rarity = 4
 skill = "foraging"
 category = "pet_food"
 price = 0
-sell_price = 0
+sell_price = 100000  # TODO(balance)
 
 [burger.pet_food]
 tier = 3
@@ -1368,13 +1368,13 @@ rarity = 4
 skill = "foraging"
 category = "scroll"
 price = 0
-sell_price = 0
+sell_price = 400000  # TODO(balance)
 
 [scroll_keen.scroll]
 enchant = "keen"
 
 [scroll_keen.drop]
-rate = 700  # TODO(balance): 1 in 700 per drop roll
+rate = 3500  # TODO(balance): 1 in 700 per drop roll
 min = 1
 max = 1
 
@@ -1387,7 +1387,7 @@ rarity = 4
 skill = "fishing"
 category = "scroll"
 price = 0
-sell_price = 0
+sell_price = 400000  # TODO(balance)
 
 [scroll_lure.scroll]
 enchant = "lure"
@@ -1401,7 +1401,7 @@ rarity = 4
 skill = "fishing"
 category = "scroll"
 price = 0
-sell_price = 0
+sell_price = 400000  # TODO(balance)
 
 [scroll_steady_line.scroll]
 enchant = "steady_line"
@@ -1415,13 +1415,13 @@ rarity = 4
 skill = "foraging"
 category = "scroll"
 price = 0
-sell_price = 0
+sell_price = 400000  # TODO(balance)
 
 [scroll_sharp_eye.scroll]
 enchant = "sharp_eye"
 
 [scroll_sharp_eye.drop]
-rate = 900  # TODO(balance): 1 in 900 per drop roll
+rate = 4500  # TODO(balance): 1 in 900 per drop roll
 min = 1
 max = 1
 
@@ -1434,13 +1434,13 @@ rarity = 4
 skill = "foraging"
 category = "scroll"
 price = 0
-sell_price = 0
+sell_price = 400000  # TODO(balance)
 
 [scroll_seasoned.scroll]
 enchant = "seasoned"
 
 [scroll_seasoned.drop]
-rate = 900  # TODO(balance): 1 in 900 per drop roll
+rate = 4500  # TODO(balance): 1 in 900 per drop roll
 min = 1
 max = 1
 
@@ -1453,13 +1453,13 @@ rarity = 5
 skill = "foraging"
 category = "scroll"
 price = 0
-sell_price = 0
+sell_price = 1200000  # TODO(balance)
 
 [scroll_double_strike.scroll]
 enchant = "double_strike"
 
 [scroll_double_strike.drop]
-rate = 1200  # TODO(balance): 1 in 1200 per drop roll
+rate = 6000  # TODO(balance): 1 in 1200 per drop roll
 min = 1
 max = 1
 
@@ -1472,13 +1472,13 @@ rarity = 4
 skill = "mining"
 category = "scroll"
 price = 0
-sell_price = 0
+sell_price = 400000  # TODO(balance)
 
 [scroll_iron_frame.scroll]
 enchant = "iron_frame"
 
 [scroll_iron_frame.drop]
-rate = 1200  # TODO(balance): found deep in the mines
+rate = 6000  # TODO(balance): found deep in the mines
 min = 1
 max = 1
 
@@ -1759,7 +1759,7 @@ rarity = 2
 skill = "farming"
 category = "seed"
 price = 30000
-sell_price = 0
+sell_price = 15000  # TODO(balance)
 
 [blueberry_seed.seed]
 grows_into = "blueberry"
@@ -1789,7 +1789,7 @@ rarity = 3
 skill = "farming"
 category = "seed"
 price = 150000
-sell_price = 0
+sell_price = 75000  # TODO(balance)
 
 [watermelon_seed.seed]
 grows_into = "watermelon"
@@ -1819,7 +1819,7 @@ rarity = 4
 skill = "farming"
 category = "seed"
 price = 900000
-sell_price = 0
+sell_price = 450000  # TODO(balance)
 
 [starfruit_seed.seed]
 grows_into = "starfruit"
@@ -1836,6 +1836,7 @@ description = "A crunchy bag of forest snacks. Pets go nuts for it."
 rarity = 2
 skill = "foraging"
 category = "pet_food"
+sell_price = 500  # TODO(balance)
 [acorn_mix.pet_food]
 tier = 1
 [acorn_mix.drop]
@@ -1850,6 +1851,7 @@ description = "Sticky, golden and a little bit magic."
 rarity = 4
 skill = "foraging"
 category = "pet_food"
+sell_price = 6000  # TODO(balance)
 [honeycomb.pet_food]
 tier = 2
 [honeycomb.drop]
@@ -1864,6 +1866,7 @@ description = "From the oldest tree in the forest. Pets would do anything for it
 rarity = 5
 skill = "foraging"
 category = "pet_food"
+sell_price = 60000  # TODO(balance)
 [golden_sap.pet_food]
 tier = 3
 [golden_sap.drop]
@@ -1878,6 +1881,7 @@ description = "Baked hard, like everything down in the mine."
 rarity = 2
 skill = "mining"
 category = "pet_food"
+sell_price = 500  # TODO(balance)
 [stone_biscuit.pet_food]
 tier = 1
 [stone_biscuit.drop]
@@ -1892,6 +1896,7 @@ description = "Rock candy, the mine's way."
 rarity = 4
 skill = "mining"
 category = "pet_food"
+sell_price = 6000  # TODO(balance)
 [crystal_chew.pet_food]
 tier = 2
 [crystal_chew.drop]
@@ -1906,6 +1911,7 @@ description = "Cracked open, it is full of treats."
 rarity = 5
 skill = "mining"
 category = "pet_food"
+sell_price = 60000  # TODO(balance)
 [geode_feast.pet_food]
 tier = 3
 [geode_feast.drop]
@@ -1920,6 +1926,7 @@ description = "Dried and crumbled. Smells like a good day."
 rarity = 2
 skill = "fishing"
 category = "pet_food"
+sell_price = 500  # TODO(balance)
 [fish_flakes.pet_food]
 tier = 1
 [fish_flakes.drop]
@@ -1934,6 +1941,7 @@ description = "Chewy, salty, and gone in a minute."
 rarity = 4
 skill = "fishing"
 category = "pet_food"
+sell_price = 6000  # TODO(balance)
 [dried_squid.pet_food]
 tier = 2
 [dried_squid.drop]
@@ -1948,6 +1956,7 @@ description = "A whole platter from the deep. Fit for a pet king."
 rarity = 5
 skill = "fishing"
 category = "pet_food"
+sell_price = 60000  # TODO(balance)
 [sea_feast.pet_food]
 tier = 3
 [sea_feast.drop]

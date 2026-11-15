@@ -91,7 +91,7 @@ def _foraging(reg: Registry) -> list[str]:
     f = reg.foraging
     c = f.community
     return [
-        f"**Foraging** needs an axe. Chop a tree down for bits, drops and xp. There are **{f.zones} zones**: zone 2 needs level {f.zone_levels[1]}, zone 10 level {f.zone_levels[9]} and zone {f.zones} level {f.zone_levels[-1]}, and each takes a little longer than the last; "
+        f"**Foraging** needs an axe. Chop a tree down for drops (sell them for bits) and xp. There are **{f.zones} zones**: zone 2 needs level {f.zone_levels[1]}, zone 10 level {f.zone_levels[9]} and zone {f.zones} level {f.zone_levels[-1]}, and each takes a little longer than the last; "
         f"from zone {f.heavy_zone} alone, trees are heavy and you swing at half power unless your axe has **Soloist**.",
         "**Learn the grain.** Every spot has a grain (Plain, Knotty, Clean, Twisted, Split or Burl), and every grain likes **one chop style** "
         "(⬆️ Overhead, ↔️ Sidecut or ⬇️ Undercut). Chop in that style for full strength; any other glances off at half. "
@@ -101,7 +101,7 @@ def _foraging(reg: Registry) -> list[str]:
         "go quickly; when a spot is gone you move to a new random grain by yourself. An axe with **Seasoned** makes spots last longer. "
         "Stuck on a bad grain? Use a **rotation wedge** (buy it in the shop or find it chopping) to move off at once: the Iron and Gilded wedges lean toward the good grains. A good chop hits extra hard.",
         "**Special spots** are rare and wear out fast, but chopped in the right style they pay off: 💎 **Heartwood** hits the tree several times harder, ✨ **Golden Knot** pays double xp, "
-        "and 🏷️ **Rich Seam** marks a tree of your own for more bits and drops when it falls. Better wedges make them likelier. An axe with **Double Strike** sometimes chops twice.",
+        "and 🏷️ **Rich Seam** marks a tree of your own for more drops when it falls. Better wedges make them likelier. An axe with **Double Strike** sometimes chops twice.",
         f"**Re-leaf** (level {f.releaf.min_level}): after felling a tree you can **donate its drops** ({f.releaf.daily_limit} a day). The rarest item "
         f"fills the meter by its rarity x{f.releaf.meter_per_rarity}; at **{f.releaf.meter_goal}** your next tree is a **double tree** with double the hp "
         f"and a jackpot: {f.releaf.double_xp:,} foraging xp, or a 1 in {round(1 / f.releaf.double_spirit_chance)} chance of a Spirit of the Forest.",

@@ -11,7 +11,7 @@ heavy_zone = 8                    # private trees from this zone up are "heavy".
 heavy_solo_power = 0.5            # ...and a lone chopper hits at this share of their power (the Soloist enchant removes it)
 zone_hp_growth = 0.75             # a tree's hp = its height x (1 + this x (zone - 1))
 xp_per_swing = 10                  # foraging xp = this x the quality of every chop (grain and good chops, never the axe). A normal chop is about 1.
-bits_per_hp = 60                  # bits = hp chopped x this (x the zone bonus). Tuned to pay a bit under mining per click
+bits_per_hp = 0                   # no bits for chopping itself: foraging pays through what the tree drops (sell it) and xp. (Was 60.)
 hp_per_roll = 70                  # a felled tree makes ceil(hp / this) rolls on the foraging drop tables (was 170: upgrade materials came too slowly)
 zone_reward_growth = 0.07         # each zone above 1 pays +7% per hp (zone 10: x1.63, zone 20: x2.33). Kept small so the deep zones do not run away from the other skills
 
@@ -111,7 +111,7 @@ wear = 6.0
 id = "rich_seam"
 name = "Rich Seam"
 emoji = "🏷️"
-effect = "mark"                   # a right chop marks your tree: +15% bits and drops when it falls (up to mark_cap)
+effect = "mark"                   # a right chop marks your tree: +15% drops when it falls (up to mark_cap)
 amount = 0.15
 weight = 0.25
 wear = 6.0

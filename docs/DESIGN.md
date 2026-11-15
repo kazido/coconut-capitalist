@@ -866,3 +866,11 @@ A gadget (an upgrade level on your fishing skill, like the mining reactor, not a
 - **Scroll wiki pages** show the enchant they apply (its description, what it goes on, max level).
 - **Rare-drop fanfare** (`cococap/ui/flair.py`): level 1 (rarity 4+, odds 1-in-100 or rarer) is a highlighted line; level 2 (rarity 5+ or 1-in-700+) is a big banner. Everyday finds, fish and crops never get one. Wired into chopping, digging, banked mining loot, fishing extras/boss loot/chests and farming extras.
 - **Emoji:** every item and enchant now has a placeholder emoji (a test fails if one has none), ready to be swapped for custom ones.
+
+## Seasoning trade-off, everything sells, rare scrolls, no chop bits, Back = up one level
+
+- **Wear-slowing gear is a trade.** `wear_slow` (Seasoned, axe stats, mastery) slows plain and good grains and speeds BAD grains (grain wear above 1: knotty, twisted) up by the same amount, so you leave bad spots sooner.
+- **Everything but tools can be sold** (seeds, bait, keys, deeds, orbs, scrolls, pet food; a test enforces it). **Sell all** still leaves the things you keep to use (`KEPT_BY_SELL_ALL` in `services/shop.py`: seeds, bait, key items, scrolls, pet food, pet items).
+- **Scrolls are rare**: foraging 1-in-3,500 to 1-in-6,000 per drop roll, mining 1-in-6,000 (moved ahead of the gemstones in the depth tables so the list stays rarest-first), fishing chest/boss chances quartered, combat weights cut. They sell for 400,000+.
+- **Chopping pays no bits** (`bits_per_hp = 0`): foraging pays xp and drops (sell them). It was only about 5% of foraging pay, so no other number changed. The bit-sharing rules still exist and are tested with the value turned on.
+- **Back goes up one level.** The nav stack is the path down from Home; opening a screen that is already on it cuts the path back to that screen instead of stacking a second copy, so Back is never an "undo".

@@ -123,12 +123,12 @@ chance = 0.01
 item = "scroll_lure"
 min = 1
 max = 1
-chance = 0.08
+chance = 0.02
 [[treasure.loot]]
 item = "scroll_steady_line"
 min = 1
 max = 1
-chance = 0.04
+chance = 0.01
 [[treasure.loot]]
 item = "golden_roe"
 min = 1
@@ -280,17 +280,17 @@ chance = 0.03
 item = "scroll_lure"
 min = 1
 max = 1
-chance = 0.15
+chance = 0.04
 [[boss.loot]]
 item = "scroll_steady_line"
 min = 1
 max = 1
-chance = 0.08
+chance = 0.02
 [[boss.loot]]
 item = "scroll_keen"
 min = 1
 max = 1
-chance = 0.05
+chance = 0.0125
 
 # Waters. You fish where you like among the waters your fishing level has opened; each has its own fish (`fish = N` is
 # 1 in N, rarest rolled first, and the commonest is the catch-all) and deeper water takes longer to bite. Listed

@@ -11,6 +11,15 @@ from cococap.user import User
 
 REG = get_registry()
 RULES = REG.foraging
+
+
+@pytest.fixture(autouse=True)
+def chopping_pays_bits():
+    """Chopping itself pays no bits in the shipped data, but the rules for sharing a tree's pay still work on them: these tests turn it on so bits can stand for the pay."""
+    old = RULES.bits_per_hp
+    RULES.__dict__["bits_per_hp"] = 60
+    yield
+    RULES.__dict__["bits_per_hp"] = old
 C = RULES.community
 WINDOW = 490_000
 T0 = WINDOW * 3600  # the start of an hour
@@ -946,3 +955,21 @@ def test_every_item_and_enchant_has_an_emoji_and_scrolls_say_what_they_do():
     assert all(e.emoji for e in REG.enchants.values())
     text = item_attributes(REG.item("scroll_keen"))
     assert REG.enchants["keen"].description in text and "Max level" in text
+
+
+def test_wear_slowing_gear_makes_bad_grains_wear_faster_by_the_same_amount():
+    knotty, twisted, plain, clean = (f.Spot("K", 0.7, "knotty"), f.Spot("T", 0.9, "twisted"), f.Spot(), f.Spot("C", 1.3, "clean"))
+    base = {}
+    for spot in (knotty, twisted, plain, clean):
+        base[spot.grain] = CH.wear_per_chop * CH.grain(spot.grain).wear
+    for spot in (knotty, twisted, plain, clean):
+        spot.swing(10, RULES, NoGood(1), 0.0, None, wear_slow=0.25)
+    assert knotty.wear == pytest.approx(base["knotty"] * 1.25) and twisted.wear == pytest.approx(base["twisted"] * 1.25)  # bad grains: faster
+    assert plain.wear == pytest.approx(base["plain"] * 0.75) and clean.wear == pytest.approx(base["clean"] * 0.75)  # the rest: slower
+
+
+def test_chopping_itself_pays_no_bits_in_the_shipped_data():
+    assert REG.foraging.__class__ is type(RULES) and RULES.bits_per_hp == 60  # (the fixture above turns it on for these tests)
+    from cococap.registry import load_registry
+
+    assert load_registry().foraging.bits_per_hp == 0  # what the game ships: drops and xp are the pay, bits come from selling

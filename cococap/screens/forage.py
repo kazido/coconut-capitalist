@@ -30,7 +30,8 @@ def items_text(drops: Counter | dict) -> str:
 def reward_text(reward: foraging.Reward) -> str:
     what = "🌳 **TIMBER!**" if reward.felled else "🍂 The tree fell over before it was finished."
     where = " (party tree)" if reward.party else " (community tree)" if reward.window is not None else ""
-    line = f"{what}{where}  **+{bits(reward.bits)}** bits  ·  {items_text(reward.drops)}  ·  +{reward.xp:,} xp"
+    paid = f"  **+{bits(reward.bits)}** bits  ·" if reward.bits else ""  # (chopping itself pays no bits: the drops are what you sell)
+    line = f"{what}{where}{paid}  {items_text(reward.drops)}  ·  +{reward.xp:,} xp"
     if fanfare := flair.banner(reward.drops):
         line += "\n" + fanfare
     if reward.jackpot:
@@ -326,7 +327,7 @@ class TreeScreen(Screen):
         power = foraging.swing_power(stats, tree.zone, rules)
         body = [*self.note_block()]
         body.append(text(f"{'🌲🌲 **Double tree!**  ' if tree.double else ''}**Zone {tree.zone}**\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
-                         f"\n{await spot_panel(self, power)}" + (f"\n🏷️ Marked: **+{tree.bonus:.0%}** bits and drops when it falls" if tree.bonus else "") + (
+                         f"\n{await spot_panel(self, power)}" + (f"\n🏷️ Marked: **+{tree.bonus:.0%}** drops when it falls" if tree.bonus else "") + (
                              f"\n-# Heavy tree: alone you swing at half your axe's {stats.power}. A Soloist axe fixes that."
                              if power < stats.power else "")))
         body.append(row(*stance_buttons(self._chop)))

@@ -13,6 +13,15 @@ from tests.test_hub import all_text, chop, click, find_button, hub
 
 REG = get_registry()
 RULES = REG.foraging
+
+
+@pytest.fixture(autouse=True)
+def chopping_pays_bits():
+    """Chopping itself pays no bits in the shipped data, but the rules for sharing a tree's pay still work on them: these tests turn it on so bits can stand for the pay."""
+    old = RULES.bits_per_hp
+    RULES.__dict__["bits_per_hp"] = 60
+    yield
+    RULES.__dict__["bits_per_hp"] = old
 P = RULES.party_tree
 T0 = 1_000_000.0
 

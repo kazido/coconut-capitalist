@@ -131,8 +131,7 @@ class Spot:
     def swing(self, power: int, rules: ForagingRules, rng: random.Random, good_bonus: float = 0.0,
               stance: str | None = None, wear_slow: float = 0.0, double_chance: float = 0.0, clean_cut: float = 0.0) -> Swing:
         """One chop. In the grain's style it hits fully, in another style it glances off (`wrong_stance_factor`). It also wears the spot,
-        and when that is used up you are on a new one. ``good_bonus`` is extra good-chop chance (Sharp Eye), ``wear_slow`` how much slower the
-        spot wears (Seasoned) and ``double_chance`` the chance of a double chop (Double Strike). On a special spot a RIGHT chop also fires its
+        and when that is used up you are on a new one. ``good_bonus`` is extra good-chop chance (Sharp Eye), ``wear_slow`` how much slower a plain or good grain wears (Seasoned) and how much FASTER a bad grain does, and ``double_chance`` the chance of a double chop (Double Strike). On a special spot a RIGHT chop also fires its
         effect: bigger damage, more xp, or a mark on the tree."""
         c = rules.chopping
         good = rng.random() < c.good_chop_chance + good_bonus
@@ -155,7 +154,11 @@ class Spot:
         if correct and clean_cut:  # Clean Cut (Mastery): a chop in the grain's own style hits harder
             quality *= 1 + clean_cut
         damage = max(1, round(power * quality * hits))
-        self.wear += c.wear_per_chop * c.grain(self.grain).wear * (sp.wear if sp else 1.0) * max(MIN_WEAR_FACTOR, 1 - wear_slow)
+        grain_wear = c.grain(self.grain).wear
+        # Seasoning keeps a spot lasting, but it is a trade: it slows a plain or good grain and speeds a BAD one (wear above normal) up by the same amount,
+        # so a tool that wears slowly makes the good grains better and the bad ones worth leaving sooner.
+        seasoning = 1 + wear_slow if grain_wear > 1 else max(MIN_WEAR_FACTOR, 1 - wear_slow)
+        self.wear += c.wear_per_chop * grain_wear * (sp.wear if sp else 1.0) * seasoning
         ended = self.wear >= 1
         if ended:
             self.rotate(rules, rng)

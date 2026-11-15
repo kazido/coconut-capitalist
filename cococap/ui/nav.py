@@ -129,7 +129,7 @@ class Screen:
 
 
 class Navigator(ui.LayoutView):
-    """The hub message. Holds the back-stack and swaps screens in place."""
+    """The hub message. Holds the path down from Home (Back = up one level) and swaps screens in place."""
 
     def __init__(self, owner: discord.abc.User, user: User, screens: dict[str, type[Screen]], *, timeout: float = 300):
         super().__init__(timeout=timeout)
@@ -265,8 +265,13 @@ class Navigator(ui.LayoutView):
         self.screen = self.screens[screen_id](self)
         for key, value in state.items():  # e.g. open the leaderboard on a chosen category
             setattr(self.screen, key, value)
-        if push and (not self.stack or self.stack[-1] != screen_id):
-            self.stack.append(screen_id)
+        if push:
+            # The stack is the way DOWN from Home, so Back goes UP one level, not "undo the last click". Opening a screen that is already on the way
+            # down (a Back-like link, or hopping between two pages of the same skill) cuts the path back to it instead of piling a second copy on.
+            if screen_id in self.stack:
+                del self.stack[self.stack.index(screen_id) + 1:]
+            else:
+                self.stack.append(screen_id)
         await self._render()
 
     # ---- rendering --------------------------------------------------------------------------

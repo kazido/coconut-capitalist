@@ -459,7 +459,7 @@ def test_every_food_skill_has_three_tiers_that_are_worth_more_and_drop_less_ofte
         items = [REG.item(i) for i in ids]
         assert [i.pet_food.tier for i in items] == [1, 2, 3] and all(i.skill == skill and i.category == "pet_food" for i in items)
         assert [i.drop.rate for i in items] == sorted(i.drop.rate for i in items) and len({i.drop.rate for i in items}) == 3
-        assert [pets.food_xp(i, REG) for i in items] == list(REG.economy.pets.food_xp) and all(i.sell_price == 0 for i in items)
+        assert [pets.food_xp(i, REG) for i in items] == list(REG.economy.pets.food_xp) and all(i.sell_price > 0 for i in items)  # (sellable like everything but tools)
     assert {i.id for i in REG.items.values() if i.category == "pet_food"} == {f for ids in FOODS.values() for f in ids} | FEASTS
 
 

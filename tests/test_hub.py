@@ -1207,7 +1207,7 @@ async def test_chopping_a_private_tree_to_the_ground_pays_out(db, monkeypatch):
     nav.screen.tree = foraging_service.Tree(1, 1, 1)  # a one-chop tree, so the test is short
     await chop(nav, inter)
     assert nav.screen.id == "result" and nav.screen.origin.reward is not None and "TIMBER" in all_text(nav)
-    assert (await user.skill("foraging")).stats.trees_chopped == 1 and (await User.get(1)).purse > 1000
+    assert (await user.skill("foraging")).stats.trees_chopped == 1 and (await user.skill("foraging")).xp > 0  # (it pays xp and drops, not bits)
     await click(nav, inter, "Another tree")
     assert nav.screen.id == "tree" and nav.screen.reward is None and nav.screen.tree.hp == nav.screen.tree.max_hp
     await click(nav, inter, "Leave")
@@ -1308,11 +1308,11 @@ async def test_felling_the_community_tree_pays_everyone_from_their_own_panel(db,
     nav, inter = await hub("grove", user_id=2)
     await foraging_service.chop_community(bob, tree.max_hp - tree.max_hp // 2, OPEN_HOUR)  # bob's chop fells it
     await nav.screen.refresh(inter)
-    assert nav.screen.id == "result" and "TIMBER" in all_text(nav) and (await User.get(2)).purse > 1000  # bob's share arrived
+    assert nav.screen.id == "result" and "TIMBER" in all_text(nav) and (await bob.skill("foraging")).xp > 0  # bob's share arrived (xp and drops: chopping pays no bits)
     await click(nav, inter, "Continue")
     assert "felled" in all_text(nav)
     nav_a, _ = await hub("forage", user_id=1)  # alice returns later and finds hers too
-    assert nav_a.screen.id == "result" and "TIMBER" in all_text(nav_a) and (await User.get(1)).purse > 1000
+    assert nav_a.screen.id == "result" and "TIMBER" in all_text(nav_a) and (await (await User.get(1)).skill("foraging")).xp > 0
 
 
 async def test_the_tree_falling_over_unfinished_ends_the_panel_gracefully(db, monkeypatch):
@@ -1642,3 +1642,22 @@ async def test_the_scarab_gives_you_more_time_than_it_used_to(db):
 
     rules = get_registry().mining
     assert make_scarab(["lantern"], rules, _random.Random(1)).seconds == rules.scarab.seconds > 30
+
+
+async def test_back_goes_up_one_level_instead_of_undoing_the_last_click(db):
+    nav, inter = await hub("home")
+    await nav.show(inter, "skills")
+    await nav.show(inter, "fish")
+    await nav.show(inter, "radar")
+    await nav.show(inter, "fish")  # (the radar's own way back to the fishing page)
+    assert nav.stack == ["home", "skills", "fish"]  # the radar is not left behind as a place to "go back" to
+    await nav.back(inter)
+    assert nav.screen.id == "skills"
+    await nav.back(inter)
+    assert nav.screen.id == "home"
+
+
+def test_only_tools_cannot_be_sold():
+    reg = get_registry()
+    assert [i.id for i in reg.items.values() if not i.is_instance and not i.sellable] == []
+    assert all(not i.sellable for i in reg.items.values() if i.is_instance)

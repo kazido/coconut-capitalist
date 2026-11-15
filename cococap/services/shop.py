@@ -107,13 +107,18 @@ async def sell(user: User, item_id: str, quantity: int = 1, registry: Registry |
     return earned
 
 
+# Everything can be sold one by one except tools, but "Sell all" leaves the things you keep to USE: seeds to plant, bait, keys and deeds, scrolls to
+# enchant with, and food and spirits for your pets.
+KEPT_BY_SELL_ALL = frozenset({"seed", "bait", "key_item", "scroll", "pet_food", "pet_item"})
+
+
 def sellable_for_skill(owned: dict[str, int], skill: str, registry: Registry | None = None, keep: dict[str, int] | None = None) -> dict[str, int]:
     """What a skill's Sell all would sell: every sellable stack of that skill's items you hold, less what you asked to `keep` (item -> how many)."""
     reg = registry or get_registry()
     found: dict[str, int] = {}
     for item_id, quantity in owned.items():
         item = reg.find_item(item_id)
-        if item is None or item.skill != skill or not item.sellable or item.is_instance or item.sell_price <= 0:
+        if item is None or item.skill != skill or not item.sellable or item.is_instance or item.sell_price <= 0 or item.category in KEPT_BY_SELL_ALL:
             continue
         spare = quantity - (keep or {}).get(item_id, 0)
         if spare > 0:

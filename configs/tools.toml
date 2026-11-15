@@ -21,7 +21,7 @@ braces = 0.0
 
 [axe]
 good_chop = 0.002           # +this chance of a good chop (power 54: +10%)
-wear_slow = 0.005           # the spot you chop wears out this much slower (power 54: 25%)
+wear_slow = 0.005           # a plain or good grain wears out this much slower, and a BAD grain this much faster (power 54: 25%)
 
 # The two roads of the axe. The Lumberjack lands more good chops and double chops (the Timber ability: its tools carry `double_chop`); the Forager's spots last longer and its
 # chops shake loose drops (the Shake the Branches ability: `shake`). TODO(balance)
