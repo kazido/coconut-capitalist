@@ -34,7 +34,7 @@ class InventoryScreen(Screen):
             )
         body += [sep(), row(button("Sell", emoji="💰", style=discord.ButtonStyle.success, disabled=not lines, on_click=self._sell),
                             button("Tools", emoji="🧰", on_click=self._tools),
-                            button("Trade", emoji="🎁", on_click=self._trade))]
+                            button("Trade", emoji="🤝", on_click=self._trade))]
         return Page("Inventory", body, accent=0x99B0A2)
 
     def _turn(self, step: int):

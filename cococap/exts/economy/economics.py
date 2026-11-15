@@ -107,9 +107,9 @@ class EconomyCog(BaseCog, name="Economy"):
         """Pay someone else some bits, if you're feeling nice!"""
         await process_payment(interaction=interaction, recipient=recipient, amount=amount)
 
-    @app_commands.command(name="trade", description="Send items and bits to another player.")
+    @app_commands.command(name="trade", description="Trade items and bits with another player.")
     async def trade(self, interaction: Interaction):
-        """Open the Trade page: build a gift, and they accept it."""
+        """Open the Trade page: ask a player, then fill the shared window and both accept."""
         await open_screen(interaction, "trade")
 
 
