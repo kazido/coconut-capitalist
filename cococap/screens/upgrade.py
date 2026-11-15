@@ -53,7 +53,7 @@ class UpgradeScreen(Screen):
         body = [*self.note_block()]
         if not offers:
             body.append(text("Nothing to upgrade. Buy a starter tool in the shop first; "
-                             "tools that are already the best of their kind don't show up here."))
+                             "tools that are already maxed don't show up here."))
             return Page("Upgrade Tools", [*body, sep(), row(button("Back to tools", emoji="🧰", on_click=self._back))], accent=0xB8860B)
         groups: dict[int, list] = {}
         for offer in sorted(offers, key=lambda o: KIND_ORDER.index(o.current.tool.kind)):

@@ -599,6 +599,7 @@ class CommunityRules(_Data):
     min_share: float = Field(ge=0, le=1)
     group_bonus: float = Field(ge=0)
     max_group_bonus: float = Field(ge=0)
+    max_share: float = Field(gt=0, le=1, default=1.0)  # one chopper is paid for at most this share of the tree, however much of it they chopped alone
     expired_factor: float = Field(ge=0, le=1)
     refresh_seconds: float = Field(gt=0)
 

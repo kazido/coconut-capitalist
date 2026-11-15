@@ -82,12 +82,10 @@ async def spot_panel(screen, power: int) -> str:
     wedges = sum(q for _, q in await foraging.wedges(screen.user))
     rules = reg.foraging.chopping
     streak = ""
-    if rules.streak_max and (spot.streak or not spot.clean):
-        streak = (f"\n🔥 Clean grains in a row **{spot.streak}**: **+{rules.streak_bonus * min(spot.streak, rules.streak_max):.0%}** damage"
-                  + (" (the most)" if spot.streak >= rules.streak_max else "")
-                  + ("  ·  a wrong chop on this grain ends it when the spot wears out" if not spot.clean else ""))
-    return (f"🪵 **{spot.title(reg.foraging)}** grain{quality}  \n{bar(left, 6)} **{left:.0%}** left (about {chops} chops)   🪓 **{spot.preview(power, reg.foraging)}** per swing"
-            + (f"   ·   🔩 {wedges} wedge(s)" if wedges else "") + streak
+    if rules.streak_max and spot.streak:  # (one short bit on the swing line: no warnings, no sentences)
+        streak = f"  🔥 **+{rules.streak_bonus * min(spot.streak, rules.streak_max):.0%}**" + (" max" if spot.streak >= rules.streak_max else "")
+    return (f"🪵 **{spot.title(reg.foraging)}** grain{quality}  \n{bar(left, 6)} **{left:.0%}** left (about {chops} chops)   🪓 **{spot.preview(power, reg.foraging)}** per swing{streak}"
+            + (f"   ·   🔩 {wedges} wedge(s)" if wedges else "")
             + (f"\n🪚 Wedge bonus: **{spot.boost:+.0%}** for **{spot.boost_chops}** more chops" if spot.boost_chops else ""))
 
 
@@ -415,6 +413,8 @@ class GroveScreen(Screen):
 
         need = rules.community.min_share
         status = "✅ you qualify for drops" if view.share >= need else f"keep going: **{need:.0%}** of the tree qualifies you for drops"
+        if view.share >= rules.community.max_share:
+            status = f"✅ max: you are paid for {rules.community.max_share:.0%} of the tree"
         stats = await equipped_stats(self.user, "foraging")
         power = foraging.swing_power(stats, view.zone, rules, community=True) if stats else 1
         body += [

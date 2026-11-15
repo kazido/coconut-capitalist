@@ -159,10 +159,10 @@ def test_the_wiki_tells_you_the_best_water_for_every_fish():
 
     page = "\n".join(wiki.page_text("fish", REG)) if hasattr(wiki, "page_text") else "\n".join(wiki._fish(REG))
     fish = [i for i in REG.items.values() if i.category == "fish" and fishing.where_to_catch(i.id, REG)]
-    assert fish and page.count("Best in") == len(fish)
+    assert fish and page.count("Max odds in") == len(fish)
     eel = next(i for i in fish if len(fishing.where_to_catch(i.id, REG)) > 1)
     best, chance = fishing.where_to_catch(eel.id, REG)[0]
-    assert all(chance >= c for _, c in fishing.where_to_catch(eel.id, REG)) and f"Best in {best.emoji} {best.name}" in page
+    assert all(chance >= c for _, c in fishing.where_to_catch(eel.id, REG)) and f"Max odds in {best.emoji} {best.name}" in page
     assert "casts" in page and "Needs fishing level" in page
 
 
@@ -177,7 +177,7 @@ async def test_looking_up_a_fish_says_where_it_is_caught_not_a_raw_drop_rate(db)
         await nav.screen.nav.refresh(inter)
         page = all_text(nav)
         best, chance = fishing.where_to_catch(fish_id, REG)[0]
-        assert "Where to catch it" in page and f"Best in {best.emoji} {best.name}" in page and "Drop Rate" not in page, fish_id
+        assert "Where to catch it" in page and f"Max odds in {best.emoji} {best.name}" in page and "Drop Rate" not in page, fish_id
         assert "Size" in page
     nav.screen.skill, nav.screen.item = "foraging", "acorn_mix"
     await nav.screen.nav.refresh(inter)

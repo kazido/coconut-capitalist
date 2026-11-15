@@ -22,7 +22,7 @@ VENT = "💨"
 CACHE = "📦"
 BOMB = "💣"
 CURSOR = "🔻"
-SOFT, FIRM, HARD = "🟫", "🟧", "🟥"  # the rock from above: soft (little pressure, copper), firm (iron), hard (a lot of pressure, the best ore)
+SOFT, FIRM, HARD = "🟫", "🟧", "🟥"  # the rock from above: soft (little pressure, copper), firm (iron), hard (a lot of pressure, the top ore)
 NOTCH = "▪️"
 MILESTONE = "🏁"  # a landmark row: finish it and the tunnel is shored up
 VAULT = "🏆"  # the last row: the vault is worth getting to
@@ -122,7 +122,7 @@ def carrying(haul: Counter) -> str:
 
 
 HELP = (
-    f"Read the rock: {SOFT} **soft** (little pressure, mostly copper)  ·  {FIRM} **firm** (iron)  ·  {HARD} **hard** (a lot of pressure, the best ore).\n"
+    f"Read the rock: {SOFT} **soft** (little pressure, mostly copper)  ·  {FIRM} **firm** (iron)  ·  {HARD} **hard** (a lot of pressure, the top ore).\n"
     "Inside it hides ore, nothing, a **vent** that cools the tunnel, or a **cache** with a brace.\n"
     "cell_upgraded: a **rich lode**, a mystery with better loot  ·  wyrmhole: a way out, if you dig it\n"
     f"{BOMB} **bomb**: clears a whole row  ·  {MAGNET} a charged magnet marks the richest cell"

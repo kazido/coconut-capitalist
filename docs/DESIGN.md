@@ -890,3 +890,9 @@ A gadget (an upgrade level on your fishing skill, like the mining reactor, not a
 
 - The foraging streak counts **grains**, not chops: when a spot wears out and every chop on it was in the grain's right style (`Spot.clean`), the streak grows by one; a single wrong-style chop spoils that grain and the streak resets when it wears out. Each streak step adds `streak_bonus = 5%` damage to the next chops on the same tree, capped at `streak_max = 3` (+15%). A private tree has only a grain or two, so it is worth +5-10% there; party and community trees run long enough to reach the cap, which is the same everywhere. Leaving a grain early with a wedge neither counts nor resets.
 - The spot panel shows the grain with its pull net of wear (so it matches the swing number), the bar with **how much is left in percent**, and **about how many chops** (`Spot.chops_left`, which knows the grain's wear and your Seasoning).
+
+## Community tree cap, compact streak text, "max" wording
+
+- **A lone community chopper is paid for at most half the tree** (`[community] max_share = 0.5`): drops and bits go by `min(your share of the hp, max_share)`; xp still counts all the work. Party trees have no cap (`party_rules` lifts it). The community page shows "max: you are paid for 50% of the tree" once you reach it.
+- The streak shows only as `🔥 +10%` (and `max` at the cap) on the swing line; no sentences.
+- Player-facing text says **max** for "the most/the best" (the wiki says "Max odds in" for a fish's best water; upgrades say "maxed").

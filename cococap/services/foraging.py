@@ -591,9 +591,10 @@ def community_shares(
     for user_id, damage in sorted(chops.items()):
         drops, bits = {}, 0
         if user_id in qualifying:
-            rolls = whole_rolls(total_rolls * (damage / max_hp) * (1 + bonus) * factor, rng)
+            paid_share = min(damage / max_hp, c.max_share)  # (a lone chopper is paid for at most max_share of the tree)
+            rolls = whole_rolls(total_rolls * paid_share * (1 + bonus) * factor, rng)
             drops = dict(roll_drops(rolls, rng, registry))
-            bits = round(damage * rules.bits_per_hp * pay * (1 + bonus) * factor)
+            bits = round(paid_share * max_hp * rules.bits_per_hp * pay * (1 + bonus) * factor)
         shares[user_id] = Share(damage, drops, bits, round((efforts or {}).get(user_id, 0.0) * rules.xp_per_swing))
     return shares
 

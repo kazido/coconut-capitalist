@@ -153,6 +153,7 @@ recent_windows = 24               # "recent" = people who chopped a community tr
 min_share = 0.05                  # you need at least this share of the tree's hp to be paid in drops and bits
 group_bonus = 0.05                # +5% drops and bits for everybody per extra qualifying chopper...
 max_group_bonus = 0.5             # ...up to +50%
+max_share = 0.5                   # you are paid for at most this share of the tree (max 50%), so chopping it alone does not pay more than half
 expired_factor = 0.25             # a tree nobody finished pays this share of what felling it would have
 refresh_seconds = 5               # how often the open panel refreshes itself
 

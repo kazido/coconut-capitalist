@@ -281,7 +281,7 @@ def test_below_the_minimum_share_you_get_xp_but_no_drops_or_bits():
 def test_bits_follow_your_share_and_the_group_gets_a_bonus():
     solo = shares(True, {1: 1000})[1]
     pair = shares(True, {1: 500, 2: 500})
-    assert solo.bits == 1000 * RULES.bits_per_hp  # no group bonus alone
+    assert solo.bits == round(1000 * C.max_share * RULES.bits_per_hp)  # no group bonus alone, and a lone chopper is paid for at most max_share of the tree
     bonus = min(C.max_group_bonus, C.group_bonus)
     assert pair[1].bits == round(500 * RULES.bits_per_hp * (1 + bonus)) and pair[1].bits == pair[2].bits
     assert pair[1].bits + pair[2].bits > solo.bits  # working together pays more in total
@@ -1055,3 +1055,23 @@ def _damage_wear(spot, slow):
 def test_the_streak_cap_is_small_enough_for_shared_trees():
     ch = RULES.chopping
     assert 0 < ch.streak_bonus * ch.streak_max <= 0.1501 and ch.streak_max <= 3  # a skilled chopper out-damages a careless one by a bit, never by a lot
+
+
+def test_one_chopper_alone_on_the_community_tree_is_paid_for_at_most_half_of_it():
+    c = RULES.community
+    assert c.max_share == 0.5 and c.max_share < 1
+
+    def haul(damage_share):
+        rng = Random(7)
+        max_hp = 1_000_000
+        chops = {1: round(max_hp * damage_share)}
+        shares = community_shares_for(max_hp, chops, rng)
+        return shares[1]
+
+    def community_shares_for(max_hp, chops, rng):
+        return f.community_shares(max_hp, True, chops, RULES, rng, REG, 3)
+
+    alone, half = haul(1.0), haul(0.5)
+    assert alone.bits == half.bits  # the same pay for all of it as for half of it (bits are worked out from the share, so they match exactly)
+    assert sum(alone.drops.values()) == pytest.approx(sum(half.drops.values()), rel=0.35)  # (drops are dice: about the same)
+    assert alone.damage == 1_000_000  # the damage (and xp) still counts in full

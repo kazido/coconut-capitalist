@@ -64,7 +64,7 @@ def _mining(reg: Registry) -> list[str]:
         "**Reading the mine.** Signs tell you what lies below: ore, a rich lode, a cooling vent, a cache or a hole. Braces calm the pressure "
         f"(you start with {m.descent.braces_base}), Scarab Bombs blow a whole row, and the vault at the bottom pays big.",
         f"**Ores** (copper, iron, gold) sell or feed the **magnet** (level {m.magnet.level}, {_n(m.magnet.capacity)} to fill: your next mine "
-        f"shows the best columns). **Gems** are rare; with mining level {m.reactor.gem_slot_level} you can set them in the **reactor**, which also "
+        f"shows the richest columns). **Gems** are rare; with mining level {m.reactor.gem_slot_level} you can set them in the **reactor**, which also "
         "mines lodes for you while you are away.",
     ]
 
@@ -133,7 +133,7 @@ def where_to_catch_text(fish: Item, reg: Registry) -> str:
     if not places:
         return "not found in any water yet"
     best, chance = places[0]
-    text = f"Best in {best.emoji} {best.name} ({_one_in(chance)})"
+    text = f"Max odds in {best.emoji} {best.name} ({_one_in(chance)})"
     others = ", ".join(f"{w.name} ({_one_in(c)})" for w, c in places[1:])
     return text + (f"; also {others}" if others else "") + f". Needs fishing level {min(w.min_level for w, _ in places)}."
 
