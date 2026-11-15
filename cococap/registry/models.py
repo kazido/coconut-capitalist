@@ -1105,3 +1105,34 @@ class ToolRules(_Data):
     axe: AxePower
     can: CanPower
     sword: SwordPower
+
+
+# ---- Shipments (configs/shipments.toml) ------------------------------------------------------------------------------------------------
+class PersonalShipments(_Data):
+    slots: int = Field(ge=1)
+    kinds: int = Field(ge=2)
+    theme_kinds: int = Field(ge=1)
+    value_base: int = Field(ge=1)
+    value_per_level: int = Field(ge=0)
+    bits_factor: float = Field(gt=0)
+    xp_per_bit: float = Field(ge=0)
+    rate_per_level: int = Field(ge=1)
+
+    @model_validator(mode="after")
+    def _fit(self):
+        if self.theme_kinds >= self.kinds:
+            raise ValueError("a themed shipment must leave room for other skills' materials")
+        return self
+
+
+class CommunityShipments(_Data):
+    value: int = Field(ge=1)
+    kinds: int = Field(ge=2)
+    min_share: float = Field(ge=0, le=1)
+    bits_factor: float = Field(gt=0)
+    xp: int = Field(ge=0)
+
+
+class ShipmentRules(_Data):
+    personal: PersonalShipments
+    community: CommunityShipments

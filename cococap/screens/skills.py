@@ -2,7 +2,7 @@ import discord
 
 from cococap.services.stats import SKILL_ICONS
 from cococap.ui import Page, Screen
-from cococap.ui.components import button, section, xp_bar
+from cococap.ui.components import button, row, section, xp_bar
 from cococap.user import User
 
 # skill -> the screen that plays it
@@ -14,7 +14,7 @@ class SkillsScreen(Screen):
     label = "Skills"
     emoji = "📈"
     description = "Mining, farming, foraging, fishing and combat"
-    links = ("mining", "farm", "forage", "fish", "fight")
+    links = ("mining", "farm", "forage", "fish", "fight", "shipments")
 
     async def build(self) -> Page:
         body = [*self.note_block()]
@@ -29,6 +29,7 @@ class SkillsScreen(Screen):
                 else button("Soon", disabled=True)
             )
             body.append(section(line, accessory=accessory))
+        body.append(row(button("Shipments", emoji="📦", on_click=self._opener("shipments"))))
         return Page("Skills", body, accent=0x9E492F)
 
     def _opener(self, screen_id: str):

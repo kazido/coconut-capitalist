@@ -812,3 +812,10 @@ so the choice is also a choice of what you go out and collect.
   arrows** (the same boss and twists, a different reel, with your rod's own slack). Everyone who lands theirs is paid the boss's rewards, with **+25% for every extra teammate who landed
   theirs, up to double**, plus their own clean-reel bonus. Slipping off the hook (or letting it go, or running out of time) only loses your own share; if nobody lands theirs it is lost.
   One fight at a time per party (a second boss is a solo fight). The fight is settled once in one transaction and each member collects their payout from their Fishing page, like a party tree.
+
+## Sell all, accomplishments, shipments (latest)
+
+- **Sell all** button on every skill page sells that skill's rewards in one click. It asks first unless the player turns off the `confirm_sell_all` setting (on by default). It can keep what your next upgrade still needs.
+- **Bits come mainly from selling.** Daily interest and some accomplishments still pay bits, but big accomplishments (quests, books, community goals, bosses) now pay much more *xp*. The double-tree jackpot pays foraging xp (`double_xp`) instead of a million bits.
+- **Shipments** (`configs/shipments.toml`, `services/shipments.py`): tasks you fill with materials from several skills, then ship for bits (1.3x their sell value) and xp in the skills involved. Each player has 3 crates: two themed on a skill (a few of its materials plus others) and one mixed. Shipping replaces the crate in the same slot. A weekly *community* shipment is filled by everyone; once full, everyone who gave at least 2% of it claims 1.5x what they gave plus xp. State lives in the community store (`shipments:{uid}`, `shipment_community`), so there are no migrations.
+- **Settings audit** and **combat redesign** are still open (see HANDOFF).

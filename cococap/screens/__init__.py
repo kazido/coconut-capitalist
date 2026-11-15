@@ -33,6 +33,7 @@ from .reactor import ReactorScreen
 from .rank import RankScreen
 from .settings import SettingsScreen
 from .sellall import SellAllScreen
+from .shipments import ShipmentsScreen
 from .shop import ShopScreen
 from .skills import SkillsScreen
 from .stats import StatsScreen
@@ -54,6 +55,7 @@ SCREENS: dict[str, type[Screen]] = {
         BestiaryScreen,
         ToolsScreen,
         SellAllScreen,
+        ShipmentsScreen,
         MasteryScreen,
         CheckInScreen,
         SkillsScreen,
