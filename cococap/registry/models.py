@@ -1126,7 +1126,10 @@ class PersonalShipments(_Data):
 
 
 class CommunityShipments(_Data):
-    value: int = Field(ge=1)
+    value_per_player: int = Field(ge=1)
+    value_per_level: int = Field(ge=0)
+    active_days: int = Field(ge=1)
+    min_players: int = Field(ge=1)
     kinds: int = Field(ge=2)
     min_share: float = Field(ge=0, le=1)
     bits_factor: float = Field(gt=0)

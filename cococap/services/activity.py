@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from sqlalchemy import delete, select, update
 
 from cococap.db import get_database
-from cococap.db.tables import PartyMemberRow, PartyRow, UserRow
+from cococap.db.tables import PartyMemberRow, PartyRow, SkillRow, UserRow
 from cococap.registry import Registry, get_registry
 
 TOUCH_EVERY = 60.0  # seconds: pressing buttons all day writes to the database once a minute at most
@@ -93,3 +93,19 @@ async def sweep(now: float | None = None, registry: Registry | None = None) -> l
                 await session.execute(update(PartyRow).where(PartyRow.party_id == party_id).values(owner_id=new_owner))
             kicked += [Kicked(u, party_id, not left, new_owner if u == owner else None) for u in sorted(gone)]
     return kicked
+
+
+async def recent_players(skills: tuple[str, ...], days: float, now: float | None = None) -> tuple[int, float]:
+    """(how many players pressed something in the last `days`, their average level across `skills`). Used to size the weekly community shipment."""
+    from cococap.user import User
+
+    now = time.time() if now is None else now
+    async with get_database().session() as session:
+        ids = (await session.execute(select(UserRow.discord_id).where(UserRow.last_active >= now - days * 86400))).scalars().all()
+        if not ids:
+            return 0, 0.0
+        xps = (await session.execute(select(SkillRow.user_id, SkillRow.xp).where(SkillRow.user_id.in_(ids), SkillRow.skill.in_(skills)))).all()
+    levels = {uid: len(skills) for uid in ids}  # (a skill you have not started counts as level 1)
+    for uid, xp in xps:
+        levels[uid] += User.xp_to_level(xp) - 1
+    return len(ids), sum(levels.values()) / len(ids) / len(skills)

@@ -244,3 +244,50 @@ async def test_the_page_pays_a_finished_community_shipment_on_a_page_of_its_own(
     await sh.donate(users[0], NOW)
     nav, _ = await hub("shipments", user_id=1)
     assert nav.screen.id == "result" and "community shipment is out" in all_text(nav).lower() and "bits" in all_text(nav)
+
+
+# ---- the community goal is sized by who is playing -------------------------------------------------------------------------------------------
+async def test_the_goal_grows_with_the_number_of_recently_active_players_and_their_levels_and_ignores_idle_ones(db):
+    from tests.conftest import set_columns
+
+    users = [await User.get(i) for i in range(1, 7)]
+    for user in users[:2]:
+        await set_columns(user, last_active=NOW - 86400)  # active
+    for user in users[2:]:
+        await set_columns(user, last_active=NOW - 30 * 86400)  # idle for a month
+    view = await sh.community_now(users[0], NOW)
+    assert view.players == C.min_players  # (only 2 are active: the floor applies)
+    for user in users[2:5]:
+        await set_columns(user, last_active=NOW - 100)
+    later = await sh.community_now(users[0], NOW + 14 * 86400)  # a new week counts the crowd again... and these are idle by then
+    assert later.players == C.min_players
+    assert sh.community_target(10, 1, REG) > sh.community_target(5, 1, REG) > sh.community_target(1, 1, REG) == sh.community_target(C.min_players, 1, REG)
+    assert sh.community_target(5, 40, REG) > sh.community_target(5, 1, REG)
+
+
+async def test_five_active_players_set_the_goal_and_it_stays_fixed_for_the_week(db):
+    from tests.conftest import set_columns
+
+    users = [await User.get(i) for i in range(1, 6)]
+    for user in users:
+        await set_columns(user, last_active=NOW - 3600)
+    first = await sh.community_now(users[0], NOW)
+    assert first.players == 5 and first.value == sh.community_target(5, 1, REG)
+    assert 0.5 * first.value <= sh.worth(first.need, REG) <= 1.6 * first.value
+    for extra in range(6, 12):
+        await set_columns(await User.get(extra), last_active=NOW)
+    assert (await sh.community_now(users[1], NOW + 86400)).need == first.need  # more players joining mid-week change nothing
+
+
+async def test_higher_level_players_are_asked_for_more(db):
+    from cococap.services import activity
+    from tests.conftest import set_columns
+
+    user = await User.get(1)
+    await set_columns(user, last_active=NOW)
+    low = await activity.recent_players(sh.SKILLS, 7, NOW)
+    for skill in sh.SKILLS:
+        await user.add_xp(skill, 50_000)
+    high = await activity.recent_players(sh.SKILLS, 7, NOW)
+    assert low == (1, 1.0) and high[0] == 1 and high[1] > 5
+    assert await activity.recent_players(sh.SKILLS, 7, NOW + 30 * 86400) == (0, 0.0)

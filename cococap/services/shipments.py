@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 
 from cococap.errors import GameRuleError
 from cococap.registry import Item, Registry, get_registry
-from cococap.services import community
+from cococap.services import activity, community
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -226,7 +226,7 @@ async def ship(user: User, index: int, registry: Registry | None = None) -> Ship
 
 # ---- the community shipment ------------------------------------------------------------------------------------------
 COMMUNITY_KEY = "shipment_community"
-COMMUNITY_DEFAULT = {"week": -1, "need": {}, "have": {}, "given": {}, "gave": {}, "done": False, "pending": {}}
+COMMUNITY_DEFAULT = {"players": 0, "value": 0, "week": -1, "need": {}, "have": {}, "given": {}, "gave": {}, "done": False, "pending": {}}
 WEEK = 7 * 86400
 
 
@@ -235,14 +235,22 @@ def week_of(now: float) -> int:
     return int((now // 86400 + 3) // 7)  # day 0 (1970-01-01) was a Thursday
 
 
-def make_community(week: int, registry: Registry) -> dict[str, int]:
+def community_target(players: int, level: float, registry: Registry) -> int:
+    """The bits' worth the server must put in this week: each recently active player (at least `min_players`) is asked for a share that grows with their average level."""
+    c = registry.shipments.community
+    return round(max(players, c.min_players) * (c.value_per_player + c.value_per_level * level))
+
+
+def make_community(week: int, registry: Registry, value: int | None = None, level: float = 100) -> dict[str, int]:
     c = registry.shipments.community
     rng = random.Random(f"community-shipment:{week}")
     need: dict[str, int] = {}
-    per_kind = c.value / c.kinds
+    per_kind = (value if value is not None else community_target(c.min_players, level, registry)) / c.kinds
+    floor = round(per_kind / COMMUNITY_MAX_QUANTITY)
     for n in range(c.kinds):
         skill = SKILLS[n % len(SKILLS)]
-        options = [i for i in pool(skill, 100, registry, round(per_kind * 3), round(per_kind / COMMUNITY_MAX_QUANTITY)) if i.id not in need]
+        options = [i for i in pool(skill, max(1, round(level)), registry, round(per_kind * 3), floor) if i.id not in need]
+        options = options or [i for i in pool(skill, 100, registry, round(per_kind * 3), floor) if i.id not in need]  # (a young server may have nothing common enough in a skill: then anything goes)
         item = rng.choice(options)
         need[item.id] = max(1, round(per_kind / item.sell_price))
     return need
@@ -256,6 +264,8 @@ class CommunityView:
     done: bool
     yours: int  # the worth of what you have given
     closes_at: float
+    players: int = 0  # how many active players this week's goal was sized for
+    value: int = 0  # the bits' worth it asks for
 
     @property
     def fraction(self) -> float:
@@ -263,24 +273,37 @@ class CommunityView:
         return sum(min(self.have.get(i, 0), q) for i, q in self.need.items()) / total if total else 0.0
 
 
-def _roll(data: dict, now: float, reg: Registry) -> None:
+def _roll(data: dict, now: float, reg: Registry, crowd: tuple[int, float]) -> None:
+    """Start a new week's shipment when the week has changed. `crowd` is (recently active players, their average level), counted when the week starts."""
     week = week_of(now)
     if data["week"] != week:
         pending = data["pending"]
+        players, level = crowd
+        level = max(1.0, level)
+        value = community_target(players, level, reg)
         data.clear()
-        data.update({**COMMUNITY_DEFAULT, "pending": pending, "week": week, "need": make_community(week, reg)})
+        data.update({**COMMUNITY_DEFAULT, "pending": pending, "week": week, "players": max(players, reg.shipments.community.min_players), "value": value,
+                     "need": make_community(week, reg, value, level)})
 
 
 def _community_view(data: dict, user_id: int, now: float) -> CommunityView:
-    return CommunityView(data["week"], dict(data["need"]), dict(data["have"]), data["done"], data["given"].get(str(user_id), 0), (week_of(now) + 1) * WEEK - 3 * 86400)
+    return CommunityView(data["week"], dict(data["need"]), dict(data["have"]), data["done"], data["given"].get(str(user_id), 0), (week_of(now) + 1) * WEEK - 3 * 86400, data.get("players", 0), data.get("value", 0))
+
+
+async def _crowd(now: float, reg: Registry) -> tuple[int, float]:
+    """(recently active players, their average level), counted only when this week's shipment has not started yet."""
+    if (await community.read(COMMUNITY_KEY, COMMUNITY_DEFAULT))["week"] == week_of(now):
+        return 0, 0.0
+    return await activity.recent_players(SKILLS, reg.shipments.community.active_days, now)
 
 
 async def community_now(user: User, now: float | None = None, registry: Registry | None = None) -> CommunityView:
     reg = registry or get_registry()
     now = time.time() if now is None else now
+    crowd = await _crowd(now, reg)
 
     def look(data: dict) -> CommunityView:
-        _roll(data, now, reg)
+        _roll(data, now, reg, crowd)
         return _community_view(data, user.id, now)
 
     return await community.update(COMMUNITY_KEY, COMMUNITY_DEFAULT, look)
@@ -292,10 +315,11 @@ async def donate(user: User, now: float | None = None, registry: Registry | None
     now = time.time() if now is None else now
     c = reg.shipments.community
     owned = await user.items()
+    crowd = await _crowd(now, reg)
     gave: dict[str, int] = {}
 
     def give(data: dict) -> None:
-        _roll(data, now, reg)
+        _roll(data, now, reg, crowd)
         if data["done"]:
             raise ShipmentError("This week's shipment is already full. A new one starts on Monday.")
         for item_id, need in data["need"].items():

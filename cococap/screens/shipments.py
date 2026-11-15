@@ -58,7 +58,7 @@ class ShipmentsScreen(Screen):
                 lines.append(f"{'✅' if have >= need else '▫️'} {reg.item(item_id).display}  **{have:,}/{need:,}**")
             body.append(text(f"### 🌍 Community shipment\n{bar(view.fraction, 12)}  **{view.fraction:.0%}**" + (" ✅ full!" if view.done else f"  ·  new one <t:{int(view.closes_at)}:R>")
                              + "\n" + "\n".join(lines)
-                             + f"\n-# You have given **{bits(view.yours)}** bits' worth. Finishing pays everyone who gave at least {c.min_share:.0%} {c.bits_factor:.1f}x what they gave, and {c.xp:,} xp."))
+                             + f"\n-# Sized for **{view.players}** active player(s): **{bits(view.value)}** bits' worth in all. You have given **{bits(view.yours)}** bits' worth. Finishing pays everyone who gave at least {c.min_share:.0%} {c.bits_factor:.1f}x what they gave, and {c.xp:,} xp."))
             body.append(row(button("Give what it needs", emoji="🎁", style=discord.ButtonStyle.primary, disabled=view.done, on_click=self._donate)))
         return Page("Shipments", body, accent=0xB8860B)
 
