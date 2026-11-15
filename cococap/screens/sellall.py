@@ -9,13 +9,20 @@ SKILL_EMOJI = {"mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishi
 SHOWN = 8
 
 
-async def upgrade_needs(user) -> dict[str, int]:
-    """The materials your tools' next upgrades ask for (the most any one of them needs of each item)."""
-    needs: dict[str, int] = {}
+async def upgrade_needs_by_tool(user) -> dict[str, tuple[int, list[str]]]:
+    """What the next upgrade of EVERY tool you own asks for (both roads at a fork): item -> (how many, the tools that want it).
+    The amount is the most any ONE upgrade needs, not the total: you do the upgrades one at a time, so one pile can serve them all."""
+    needs: dict[str, tuple[int, list[str]]] = {}
     for offer in await upgrades.offers(user):
         for item_id, quantity in offer.cost.items.items():
-            needs[item_id] = max(needs.get(item_id, 0), quantity)
+            have, tools = needs.get(item_id, (0, []))
+            needs[item_id] = (max(have, quantity), [*tools, offer.target.name])
     return needs
+
+
+async def upgrade_needs(user) -> dict[str, int]:
+    """Just the amounts (what Sell all holds back)."""
+    return {item_id: quantity for item_id, (quantity, _) in (await upgrade_needs_by_tool(user)).items()}
 
 
 async def start_sell_all(screen: Screen, interaction: discord.Interaction, skill: str) -> None:
@@ -54,16 +61,25 @@ class SellAllScreen(Screen):
         top = sorted(everything.items(), key=lambda kv: -reg.item(kv[0]).sell_price * kv[1])[:SHOWN]
         lines = "\n".join(f"{reg.item(i).display} ×{q:,}  ·  {bits(reg.item(i).sell_price * q)}" for i, q in top)
         more = len(everything) - len(top)
+        by_tool = await upgrade_needs_by_tool(self.user)
         reserved = {i: min(q, needs[i]) for i, q in everything.items() if i in needs}
-        warn = ("\n-# ⚠️ Your next upgrades need " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in reserved.items()) + ". "
-                "**Sell, keep upgrade materials** holds those back.") if reserved else ""
+        warn = ""
+        if reserved:
+            parts = [f"{reg.item(i).name}: you have {everything[i]:,}, an upgrade needs {needs[i]:,}" + (f" ({', '.join(dict.fromkeys(by_tool[i][1]))})" if i in by_tool else "")
+                     for i in reserved]
+            warn = "\n-# 🔨 Upgrade materials in this pile (any tool you own, either road at a fork):\n-# " + "\n-# ".join(parts)
+        keeping = self.user.settings.keep_upgrade_materials
+        if keeping or not reserved:  # (with nothing to hold back there is only one way to sell)
+            first = button("Sell everything" if not reserved else f"Sell, keep upgrade materials ({bits(keep_worth)})", emoji="💰", style=discord.ButtonStyle.danger,
+                           disabled=bool(reserved) and not kept, on_click=self._sell(keeping))
+            second = button(f"Sell everything ({bits(worth)})", emoji="⚠️", on_click=self._sell(False)) if reserved else None
+        else:
+            first = button(f"Sell everything ({bits(worth)})", emoji="💰", style=discord.ButtonStyle.danger, on_click=self._sell(False))
+            second = button(f"Sell, keep upgrade materials ({bits(keep_worth)})", emoji="🔨", disabled=not kept, on_click=self._sell(True))
         body = [*self.note_block(),
                 text(f"### {SKILL_EMOJI.get(self.skill, '💰')} Sell everything from {self.skill.title()}?\n{lines}" + (f"\n-# …and {more} more kinds" if more > 0 else "")
                      + f"\n**{sum(everything.values()):,}** items for **{bits(worth)}** bits{warn}"),
-                row(button("Sell, keep upgrade materials" if self.user.settings.keep_upgrade_materials else "Sell everything", emoji="💰", style=discord.ButtonStyle.danger, on_click=self._sell(self.user.settings.keep_upgrade_materials)),
-                    button(f"Sell, keep upgrade materials ({bits(keep_worth)})" if reserved else "Sell, keep upgrade materials", emoji="🔨",
-                           disabled=not reserved or not kept, on_click=self._sell(True)),
-                    button("Cancel", on_click=self._cancel))]
+                row(*[b for b in (first, second) if b], button("Cancel", on_click=self._cancel))]
         return Page("Sell all", body, accent=0xD4A017)
 
     def _sell(self, keep_for_upgrades: bool):

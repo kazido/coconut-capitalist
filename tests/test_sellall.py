@@ -106,7 +106,7 @@ async def test_the_confirm_page_offers_to_keep_what_your_next_upgrade_needs(db):
     nav, inter = await hub("mining")
     await click(nav, inter, "Sell all")
     text = all_text(nav)
-    assert "next upgrades need" in text and all(f"{q:,} {REG.item(i).name}" in text for i, q in need.items())
+    assert "an upgrade needs" in text and all(f"an upgrade needs {q:,}" in text for i, q in need.items())
     keep = next(b for b in buttons(nav) if b.label.startswith("Sell, keep upgrade materials"))
     assert not keep.disabled
     await keep.callback(inter)
