@@ -99,3 +99,15 @@ def test_rank_gap_rejected(data):
     edit(data / "ranks.toml", "[3]\n", "[30]\n")
     with pytest.raises(RegistryError, match="ranks must be numbered"):
         load_registry(data)
+
+
+def test_a_local_config_file_is_laid_over_the_shared_one(tmp_path, monkeypatch):
+    from cococap.registry import loader
+
+    (tmp_path / "x.toml").write_text('a = 1\n[t]\nb = 2\nc = 3\nl = [1, 2]\n')
+    (tmp_path / "local").mkdir()
+    (tmp_path / "local" / "x.toml").write_text('a = 9\n[t]\nc = 30\nl = [7]\n')
+    monkeypatch.delenv("COCOCAP_NO_LOCAL_CONFIG", raising=False)
+    assert loader._read(tmp_path, "x") == {"a": 9, "t": {"b": 2, "c": 30, "l": [7]}}  # tables merge, lists are replaced
+    monkeypatch.setenv("COCOCAP_NO_LOCAL_CONFIG", "1")
+    assert loader._read(tmp_path, "x")["a"] == 1  # (tests and CI ignore it)

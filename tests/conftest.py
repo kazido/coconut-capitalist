@@ -1,3 +1,7 @@
+import os
+
+os.environ["COCOCAP_NO_LOCAL_CONFIG"] = "1"  # the tests run on the shared numbers, never a personal configs/local/ overlay
+
 import pytest
 import pytest_asyncio
 from sqlalchemy import update

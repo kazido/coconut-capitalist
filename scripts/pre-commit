@@ -1,0 +1,4 @@
+#!/bin/sh
+# Optional git hook: lint before every commit (fast; tests are NOT run here).
+# Install:  cp scripts/pre-commit "$(git rev-parse --git-path hooks)/pre-commit" && chmod +x "$(git rev-parse --git-path hooks)/pre-commit"
+exec .venv/bin/ruff check . -q

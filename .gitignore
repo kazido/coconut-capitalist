@@ -140,3 +140,6 @@ database/examples
 logs
 data/
 *.db
+
+# Your own balance tuning (laid over configs/*.toml when the bot runs; see CLAUDE.md)
+configs/local/

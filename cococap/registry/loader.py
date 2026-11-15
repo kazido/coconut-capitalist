@@ -1,5 +1,6 @@
 """Load and cross-validate the game data in ``configs/*.toml``."""
 
+import os
 import tomllib
 from collections.abc import Iterable
 from functools import lru_cache
@@ -24,11 +25,26 @@ class UnknownEnchant(KeyError):
     pass
 
 
+def _merge(base: dict, over: dict) -> dict:
+    """`over` laid on top of `base`: tables merge key by key, anything else (numbers, lists) is replaced."""
+    out = dict(base)
+    for key, value in over.items():
+        out[key] = _merge(out[key], value) if isinstance(value, dict) and isinstance(out.get(key), dict) else value
+    return out
+
+
 def _read(config_dir: Path, name: str) -> dict:
+    """A data file. Your own tuning can live in ``configs/local/<name>.toml`` (git-ignored): it is laid over the shared file when the bot
+    runs, so you never have uncommitted edits in the shared ones. Tests ignore it (they set COCOCAP_NO_LOCAL_CONFIG)."""
     path = config_dir / f"{name}.toml"
     try:
         with path.open("rb") as f:
-            return tomllib.load(f)
+            data = tomllib.load(f)
+        local = config_dir / "local" / f"{name}.toml"
+        if local.is_file() and not os.environ.get("COCOCAP_NO_LOCAL_CONFIG"):
+            with local.open("rb") as f:
+                data = _merge(data, tomllib.load(f))
+        return data
     except FileNotFoundError:
         raise RegistryError(f"missing data file: {path}") from None
     except tomllib.TOMLDecodeError as e:

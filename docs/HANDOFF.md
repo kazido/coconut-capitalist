@@ -8,7 +8,7 @@ Keep this file current: update the "Open work" list at the end of every session.
 
 - Repo `kazido/coconut-capitalist`. Work happens in the worktree `/Users/ellalbrys/Coding/coconut-capitalist/.claude/worktrees/discord-bot-audit-modernize-4dd6c5`
   on branch `claude/discord-bot-audit-modernize-4dd6c5` (NOT pushed; never push or merge without being asked).
-- Python 3.12 in `.venv`. Tests: `perl -e 'alarm 300; exec @ARGV' .venv/bin/python -m pytest -q` (about 25 s, ~1125 tests). Lint: `uvx ruff@0.8.6 check .`.
+- Python 3.12 in `.venv`. **Read `CLAUDE.md` first** (rules, architecture, checklists). Tests: `.venv/bin/python -m pytest -q [file]` (full suite ~55 s, ~1580 tests, all green). Lint: `.venv/bin/ruff check .`.
 - discord.py 2.7 Components V2 hub (`cococap/ui/nav.py`: `Navigator`, `Screen`, `Page`, `Result`). Game rules live in `cococap/services/*`
   (no Discord objects), data in `configs/*.toml` (validated by `cococap/registry/models.py`). SQLite + Alembic (migrations 0001-0004).
 - The live-ish database is `data/cococap.db` (gitignored; 4 players: bry, Ahna, zennor, one more). Backups in `data/backups/`.
@@ -21,9 +21,7 @@ Keep this file current: update the "Open work" list at the end of every session.
   of every skill eventually.
 - Test everything (mutation-check the important rules: break the code on purpose and see a test fail). Update tests, never delete
   them without a replacement. Use Python string replace for scripted edits (BSD `sed -i` silently fails).
-- The user edits configs by hand and sometimes leaves them uncommitted (`configs/economy.toml`: idle limit 0.1h, starting
-  luckbucks 0, weekly 25; `configs/mining.toml`: an extra CAUTION warning). Do NOT revert or commit those; tests pin the economy
-  values in `tests/conftest.py` so tuning never breaks them.
+- The user edits configs by hand; commit those edits when asked and make tests read numbers from the registry. Tests pin a few economy values in `tests/conftest.py`.
 - **Secrets**: the user once shared a MongoDB login. It was rejected ("bad auth") and is NOT stored anywhere. Never write
   credentials into files, docs or commits. The old-player migration (copy only rank + tokens; give pet owners one basic pet; leave
   bits and everything else fresh; restore bry's and zennor's old rank, both were Weathered = rank 6) is waiting on a working login.
@@ -52,7 +50,9 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
   4th: axe = Lumberjack/Forager, can = Sprinkler/Alchemist), mastery trees for mining/fishing/foraging/farming with a tuned capstone per branch, the fishing radar, Home
   layout (Trade and Party on page 1). See DESIGN.md sections of the same names.
 - Numbers still to tune by play: axe/can road stats, shipment sizes, radar costs, capstones for fishing/foraging/farming are estimates (mining's are simulated).
-- The user's uncommitted local config edits (`configs/economy|farming|foraging|mining.toml`) are theirs: preserve them (7 farming/hub tests fail only because of them).
+- The user's config edits are now COMMITTED (balance numbers in `configs/economy|farming|foraging|mining.toml`). Personal, unshared tuning goes in the git-ignored `configs/local/<name>.toml` overlay (see CLAUDE.md). The full suite is green.
+- Workflow decisions: do not run the full suite after every change (only on request or a reported break); use plan mode for big features; project skills in `.claude/skills/` (add-item, balance-check, finish-feature); optional `scripts/pre-commit` runs ruff.
+- Dead code removed (exploration prototype, empty cogs, unused models/helpers). Wedges now leave a chop bonus, the burger is a pet feast, rare drops show banners (`cococap/ui/flair.py`), every item/enchant has an emoji, Sell all keeps upgrade materials by default.
 
 ## Open work (in rough priority)
 
