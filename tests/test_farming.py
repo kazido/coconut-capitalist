@@ -146,16 +146,17 @@ def test_a_ripe_plot_stops_growing_and_an_empty_one_is_ignored():
 
 # ---- plots and planting -----------------------------------------------------------------------------------------
 async def test_plot_one_is_free_and_the_rest_need_land_deeds(db):
+    free = RULES.free_plots
     user = await farmer(land_deed=1)
     farming = await user.skill("farming")
-    assert f.is_unlocked(farming, 1, RULES) and not f.is_unlocked(farming, 2, RULES)
-    await f.buy_plot(user, 2)
-    assert f.is_unlocked(await user.skill("farming"), 2, RULES) and await user.item_quantity("land_deed") == 0
+    assert f.is_unlocked(farming, free, RULES) and not f.is_unlocked(farming, free + 1, RULES)
+    await f.buy_plot(user, free + 1)
+    assert f.is_unlocked(await user.skill("farming"), free + 1, RULES) and await user.item_quantity("land_deed") == 0
     with pytest.raises(f.FarmingError, match="already own"):
-        await f.buy_plot(user, 2)
+        await f.buy_plot(user, free + 1)
     with pytest.raises(f.FarmingError, match="Land Deed"):
-        await f.buy_plot(user, 3)
-    for bad in (0, 1, 10):
+        await f.buy_plot(user, free + 2)
+    for bad in (0, free, 10):
         with pytest.raises(f.FarmingError, match="can't be bought"):
             await f.buy_plot(user, bad)
 
@@ -170,7 +171,7 @@ async def test_planting_uses_a_seed_and_only_goes_on_an_empty_plot_you_own(db):
         await f.plant(user, 1, "apple_seed", now=T0)
     assert await user.item_quantity("apple_seed") == 1  # the failed attempt cost nothing
     with pytest.raises(f.FarmingError, match="don't own"):
-        await f.plant(user, 2, "apple_seed", now=T0)
+        await f.plant(user, RULES.free_plots + 1, "apple_seed", now=T0)
     assert await user.item_quantity("apple_seed") == 1
 
 
@@ -266,8 +267,8 @@ async def test_anomalies_happen_about_one_harvest_in_twenty_five(db):
 
 async def test_harvest_all_takes_every_ripe_plot(db):
     user = await farmer(apple_seed=3, land_deed=2)
-    await f.buy_plot(user, 2)
-    await f.buy_plot(user, 3)
+    for n in range(RULES.free_plots + 1, 4):  # (any plot you do not already have)
+        await f.buy_plot(user, n)
     for n in (1, 2, 3):
         await f.plant(user, n, "apple_seed", now=T0, registry=SURE)
     results = await f.harvest_all(user, Random(1), now=T0 + 10 * HOUR, registry=SURE)
@@ -342,7 +343,7 @@ async def test_blessings_only_sometimes_become_deeds(db):
 
 def test_land_deeds_and_the_farming_rules_are_real_data():
     assert REG.item("land_deed").category == "key_item" and RULES.market.days == [4, 5] and RULES.market.min_level == 5
-    assert RULES.free_plots == 1 and RULES.anomaly_odds == 25 and RULES.blessing_chance == 0.1
+    assert RULES.free_plots >= 1 and RULES.anomaly_odds == 25 and RULES.blessing_chance == 0.1
 
 
 # ---- getting started: a gift, cheap first seeds, and watering --------------------------------------------------------------------

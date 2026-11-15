@@ -978,7 +978,7 @@ async def test_farm_opens_from_skills_and_shows_the_grid(db):
     text = all_text(nav)
     assert "Rain" in text and "Blessings" in text and "Nothing is growing" in text
     labels = [b.label for b in buttons(nav)]
-    assert "1 Plant" in labels and labels.count("Buy plot") == 8  # plot 1 is free, the other eight are locked
+    assert "1 Plant" in labels and labels.count("Buy plot") == 9 - get_registry().farming.free_plots  # the free plots are yours, the rest are locked
 
 
 async def test_planting_from_the_farm_uses_the_selected_seed(db):
@@ -1020,14 +1020,15 @@ async def test_harvest_all_and_plant_all(db):
     await ripen(user, 1)
     nav, inter = await hub("farm")
     await click(nav, inter, "Buy plot")
-    assert "bought plot 2" in all_text(nav)
+    free = get_registry().farming.free_plots
+    assert f"bought plot {free + 1}" in all_text(nav)
     await user.add_item("lemon_seed", 5)
     nav, inter = await hub("farm")
     await click(nav, inter, "Harvest all")
     assert "Harvested" in all_text(nav)
     await click(nav, inter, "Back to the farm")
     await click(nav, inter, "Plant all")
-    assert await user.item_quantity("lemon_seed") == 3  # two empty plots took one seed each
+    assert await user.item_quantity("lemon_seed") == 5 - (free + 1)  # every empty plot took one seed
     assert find_button(nav, "Plant all").disabled  # nothing left to plant into
 
 
@@ -1038,7 +1039,7 @@ async def test_buying_a_plot_needs_a_land_deed(db):
     await user.add_item("land_deed", 1)
     nav, inter = await hub("farm")
     await click(nav, inter, "Buy plot")
-    assert await user.item_quantity("land_deed") == 0 and labels_count(nav, "Buy plot") == 7
+    assert await user.item_quantity("land_deed") == 0 and labels_count(nav, "Buy plot") == 8 - get_registry().farming.free_plots
 
 
 def labels_count(nav, label):
