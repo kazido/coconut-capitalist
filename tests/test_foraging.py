@@ -1075,3 +1075,19 @@ def test_one_chopper_alone_on_the_community_tree_is_paid_for_at_most_half_of_it(
     assert alone.bits == half.bits  # the same pay for all of it as for half of it (bits are worked out from the share, so they match exactly)
     assert sum(alone.drops.values()) == pytest.approx(sum(half.drops.values()), rel=0.35)  # (drops are dice: about the same)
     assert alone.damage == 1_000_000  # the damage (and xp) still counts in full
+
+
+async def test_a_new_tree_clears_the_streak_before_the_panel_is_drawn(db, monkeypatch):
+    from tests.test_hub import freeze_time, hub, with_axe
+
+    freeze_time(monkeypatch)
+    await with_axe()
+    nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
+    text_now = lambda: " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))  # noqa: E731
+    nav.screen.spot.on_tree(id(nav.screen.tree))
+    nav.screen.spot.streak = 2
+    await nav.screen.refresh(inter)
+    assert "🔥" in text_now()  # the same tree: the streak shows
+    nav.screen.tree = f.Tree(1, 10_000, 10_000)  # a new tree
+    await nav.screen.refresh(inter)
+    assert "🔥" not in text_now() and nav.screen.spot.streak == 0

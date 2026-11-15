@@ -333,6 +333,7 @@ class TreeScreen(Screen):
             return Page("Tree", [text("Pick a zone on the Foraging page and chop a tree.")], accent=0x4C8C4A)
         stats = await foraging.axe_stats(self.user)
         power = foraging.swing_power(stats, tree.zone, rules)
+        self.spot.on_tree(id(tree))  # (a new tree starts the right-style streak over before the panel draws it)
         body = [*self.note_block()]
         body.append(text(f"{'🌲🌲 **Double tree!**  ' if tree.double else ''}**Zone {tree.zone}**\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
                          f"\n{await spot_panel(self, power)}" + (f"\n🏷️ Marked: **+{tree.bonus:.0%}** drops when it falls" if tree.bonus else "") + (
@@ -417,6 +418,7 @@ class GroveScreen(Screen):
             status = f"✅ max: you are paid for {rules.community.max_share:.0%} of the tree"
         stats = await equipped_stats(self.user, "foraging")
         power = foraging.swing_power(stats, view.zone, rules, community=True) if stats else 1
+        self.spot.on_tree(("shared", view.closes_at))
         body += [
             text(f"**Zone {view.zone}**  ·  falls over <t:{int(view.closes_at)}:R>\n"
                  f"{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp\n"
@@ -486,6 +488,7 @@ class PartyGroveScreen(Screen):
         status = "✅ you qualify for drops" if view.share >= need else f"keep going: **{need:.0%}** of the tree qualifies you for drops"
         stats = await equipped_stats(self.user, "foraging")
         power = foraging.swing_power(stats, view.zone, rules, community=True) if stats else 1
+        self.spot.on_tree(("shared", view.closes_at))
         team = []
         for uid, damage in sorted(view.chops.items(), key=lambda kv: -kv[1]):
             team.append(f"{await self.nav.name_of(uid)}{' (you)' if uid == self.user.id else ''}: **{damage:,}** hp ({damage / view.max_hp:.0%})")
