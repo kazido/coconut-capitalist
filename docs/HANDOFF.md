@@ -44,6 +44,16 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 - Pet food xp 200 / 1,000 / 5,000 by tier; a pet has ONE fixed skill (`skill` in pets.toml, emoji after its name; 🌐 global = Dog, Koala,
   Phoenix): its own skill's food x3, a global pet x2 from any food.
 
+## Latest state (read this before the list below)
+
+- **One branch only**: all work is on `claude/discord-bot-audit-modernize-4dd6c5` (this worktree; the bot runs from here). Never touch master or make other worktrees. The branch is ahead of GitHub; push only when asked.
+- Done since the list below was written: shipments by skill (basic at level 10, hard at 30; community off), trading (shared window, both Accept), settings (keep upgrade
+  materials, confirm upgrades, fishing estimate), combat PAUSED (button disabled, `/fight` says so; code and tests kept), tool lines (3 plain upgrades then the split at the
+  4th: axe = Lumberjack/Forager, can = Sprinkler/Alchemist), mastery trees for mining/fishing/foraging/farming with a tuned capstone per branch, the fishing radar, Home
+  layout (Trade and Party on page 1). See DESIGN.md sections of the same names.
+- Numbers still to tune by play: axe/can road stats, shipment sizes, radar costs, capstones for fishing/foraging/farming are estimates (mining's are simulated).
+- The user's uncommitted local config edits (`configs/economy|farming|foraging|mining.toml`) are theirs: preserve them (7 farming/hub tests fail only because of them).
+
 ## Open work (in rough priority)
 
 1. DONE this session: tool levels checked (balance table), pet skills fixed + emoji, rank prices + random tokens (35%/active hour),
