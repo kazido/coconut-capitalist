@@ -60,7 +60,7 @@ class Bot(BotBase):
         try:
             await super().load_extension(name, package=package)
         except commands.NoEntryPointError:
-            # Helper modules that live under exts/ (e.g. exploration.nodes) have no setup().
+            # Helper modules that live under exts/ (helpers under exts/) have no setup().
             log.info("%s has no setup(); treating it as a helper module, not an extension", name)
 
     async def close(self) -> None:

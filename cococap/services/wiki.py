@@ -29,10 +29,6 @@ def _n(value: int) -> str:
     return f"{value:,}"
 
 
-def _rarity(item: Item) -> str:
-    return Rarities.from_value(item.rarity).rarity_name
-
-
 def _materials(items: dict[str, int], reg: Registry) -> str:
     return ", ".join(f"{q:,} {reg.item(i).name}" for i, q in items.items())
 

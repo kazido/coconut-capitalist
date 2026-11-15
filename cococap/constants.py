@@ -38,12 +38,7 @@ GUILD_ID = int(os.getenv("GUILD_ID", "856915776345866240"))
 # Extensions that still depend on the pre-migration SQLite/peewee item database (`Master`,
 # `cococap.item_models`, `get_items_from_db`) or on removed helpers. They are skipped at startup
 # instead of failing noisily; remove an entry once its module has been ported. See docs/AUDIT.md.
-DISABLED_EXTENSIONS = frozenset(
-    {
-        "cococap.exts.exploration.mining",
-        "cococap.exts.gambling.snail_racing",  # empty stub: setup() calls add_cog() with no cog
-    }
-)
+DISABLED_EXTENSIONS: frozenset[str] = frozenset()  # extensions skipped at startup (none right now)
 
 # Discord ID of the bot's owner/admin (receives reports, may use the debug commands).
 OWNER_ID = int(os.getenv("OWNER_ID", "326903703422500866"))
@@ -62,10 +57,6 @@ class GamblingChannels(Enum):
     NIGHTMARE = 961045401803317299
     HEAVEN = 962171274073899038
     THERAPY = 962171351794327562
-
-
-class ModerationChannels(Enum):
-    DATABASE_LOGS = 858606781093511248
 
 
 class Rarities(Enum):
@@ -87,28 +78,6 @@ class Rarities(Enum):
     @classmethod
     def from_value(cls, value: int):
         return cls(value)
-
-
-class Categories(Enum):
-    FARMING = ("🌽", "Farming", "0x2f919e")
-    FORAGING = ("🌳", "Foraging", "0x2f9e47")
-    FISHING = ("🐟", "Fishing", "0x2f3a9e")
-    MINING = ("⛏️", "Mining", "0x9e492f")
-    COMBAT = ("⚔️", "Combat", "0x9e2f2f")
-    SHEPHERDING = ("🐑", "Shepherding", "0x5f2f9e")
-    GENERAL = ("📦", "General", "0x8b9a9e")
-
-    def __new__(cls, emoji, name, color):
-        obj = object.__new__(cls)
-        obj._value_ = name.lower()
-        obj.emoji = emoji
-        obj.display_name = name
-        obj.color = color
-        return obj
-
-    @classmethod
-    def from_name(cls, name: str):
-        return cls(name.lower())
 
 
 IMAGES_REPO = "https://raw.githubusercontent.com/kazido/images/main"
@@ -203,64 +172,6 @@ class Emojis(Enum):
     STATUS_ONLINE = ":white_check_mark:"
     STATUS_OFFLINE = ":x:"
     TRASHCAN = ":wastebasket:"
-
-
-class AlphabetEmojis(Enum):
-    LETTER_A = ":regional_indicator_a:"
-    LETTER_B = ":regional_indicator_b:"
-    LETTER_C = ":regional_indicator_c:"
-    LETTER_D = ":regional_indicator_d:"
-    LETTER_E = ":regional_indicator_e:"
-    LETTER_F = ":regional_indicator_f:"
-    LETTER_G = ":regional_indicator_g:"
-    LETTER_H = ":regional_indicator_h:"
-    LETTER_I = ":regional_indicator_i:"
-    LETTER_J = ":regional_indicator_j:"
-    LETTER_K = ":regional_indicator_k:"
-    LETTER_L = ":regional_indicator_l:"
-    LETTER_M = ":regional_indicator_m:"
-    LETTER_N = ":regional_indicator_n:"
-    LETTER_O = ":regional_indicator_o:"
-    LETTER_P = ":regional_indicator_p:"
-    LETTER_Q = ":regional_indicator_q:"
-    LETTER_R = ":regional_indicator_r:"
-    LETTER_S = ":regional_indicator_s:"
-    LETTER_T = ":regional_indicator_t:"
-    LETTER_U = ":regional_indicator_u:"
-    LETTER_V = ":regional_indicator_v:"
-    LETTER_W = ":regional_indicator_w:"
-    LETTER_X = ":regional_indicator_x:"
-    LETTER_Y = ":regional_indicator_y:"
-    LETTER_Z = ":regional_indicator_z:"
-
-
-class AlphabetUnicode(Enum):
-    LETTER_A = "🇦"
-    LETTER_B = "🇧"
-    LETTER_C = "🇨"
-    LETTER_D = "🇩"
-    LETTER_E = "🇪"
-    LETTER_F = "🇫"
-    LETTER_G = "🇬"
-    LETTER_H = "🇭"
-    LETTER_I = "🇮"
-    LETTER_J = "🇯"
-    LETTER_K = "🇰"
-    LETTER_L = "🇱"
-    LETTER_M = "🇲"
-    LETTER_N = "🇳"
-    LETTER_O = "🇴"
-    LETTER_P = "🇵"
-    LETTER_Q = "🇶"
-    LETTER_R = "🇷"
-    LETTER_S = "🇸"
-    LETTER_T = "🇹"
-    LETTER_U = "🇺"
-    LETTER_V = "🇻"
-    LETTER_W = "🇼"
-    LETTER_X = "🇽"
-    LETTER_Y = "🇾"
-    LETTER_Z = "🇿"
 
 
 NUMBER_EMOJIS = {

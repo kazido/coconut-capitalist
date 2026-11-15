@@ -45,10 +45,6 @@ class Cooldowns(Enum):
     WEEKLY = 167
 
 
-class UserNotFound(Exception):
-    pass
-
-
 class InsufficientFunds(Exception):
     pass
 

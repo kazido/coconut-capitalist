@@ -62,6 +62,5 @@ ignore = [
 "cococap/exts/skills/combat.py" = ["F821"]
 "cococap/exts/skills/foraging.py" = ["F821"]
 "cococap/exts/economy/pets.py" = ["F821"]
-"cococap/exts/exploration/mining.py" = ["F821"]
 # Vendored pydis paginator: its `timeout` parameter mirrors discord.py's API.
 "utils/pagination.py" = ["ASYNC109"]

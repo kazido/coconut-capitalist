@@ -7,6 +7,8 @@ from cococap.user import User
 from utils.custom_embeds import CustomEmbed, SuccessEmbed
 from enum import Enum
 
+_THIS_FILE = os.path.abspath(__file__)
+
 ADMIN_ID = constants.OWNER_ID
 
 
@@ -127,7 +129,7 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
             description=f"**Pong!** {round(self.bot.latency * 1000)}ms",
             color=discord.Color.purple(),
         )
-        embed.set_footer(text=f"Ran from {os.path.abspath(__file__)}")
+        embed.set_footer(text=f"Ran from {_THIS_FILE}")
         await ctx.send(embed=embed)
 
     @commands.command(name="Reset")

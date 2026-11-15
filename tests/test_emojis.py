@@ -62,7 +62,7 @@ def test_every_uploaded_emoji_is_used_somewhere():
         p.read_text()
         for folder in ("cococap", "configs")
         for p in (root / folder).rglob("*")
-        if p.suffix in (".py", ".toml") and p.name != "emojis.py" and "exploration" not in p.parts
+        if p.suffix in (".py", ".toml") and p.name != "emojis.py"
     )
     unused = [n for n in emojis.KNOWN if not re.search(rf"(?<![\w]){n}(?![\w])", source)]
     assert not unused, f"emojis nobody uses: {unused}"

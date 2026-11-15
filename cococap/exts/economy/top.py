@@ -77,20 +77,6 @@ async def leaderboard_view(category: TopCategories, caller_id: int) -> tuple[str
     return board, None, None
 
 
-async def build_leaderboard_embed(interaction: Interaction, category: TopCategories):
-    board, circulation, footer = await leaderboard_view(category, interaction.user.id)
-    embed = discord.Embed(
-        title=f"{category.emoji} {category.display_name} Leaderboard",
-        color=discord.Color.from_str(category.color),
-        description=board,
-    )
-    if circulation:
-        embed.add_field(name="Current Circulation", value=circulation, inline=False)
-    if footer:
-        embed.set_footer(text=footer)
-    return embed
-
-
 class LeaderboardCog(commands.Cog):
     @app_commands.command(name="top", description="See the top 10 players in a category!")
     @app_commands.describe(category="the leaderboard category to view")

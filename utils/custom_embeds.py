@@ -77,32 +77,6 @@ class SuccessEmbed(CustomEmbed):
         )
 
 
-class FailureEmbed(CustomEmbed):
-    def __init__(
-        self,
-        *,
-        color=discord.Color.red(),
-        title=random.choice(FAILURE_REPLIES),
-        type="rich",
-        url=None,
-        desc=None,
-        timestamp=None,
-        interaction=None,
-        activity=None,
-    ):
-
-        super().__init__(
-            color=color,
-            title=title,
-            type=type,
-            url=url,
-            desc=desc,
-            timestamp=timestamp,
-            interaction=interaction,
-            activity=activity,
-        )
-
-
 class ErrorEmbed(CustomEmbed):
     def __init__(
         self,
