@@ -191,5 +191,9 @@ async def xp_multiplier(user_id: int, registry: Registry | None = None, skill: s
 
     reg = registry or get_registry()
     user = await User.get(user_id)
+    from cococap.services.equipment import equipped_stats  # (equipment needs the user, so import it here)
+
     pet = await pets.xp_bonus(user, skill, reg)
-    return (1 + await xp_bonus(user_id, reg)) * (1 + pet) * (1 + reg.rank(user.rank).xp_bonus)
+    tool = await equipped_stats(user, skill, reg) if skill in ("mining", "foraging", "fishing", "farming", "combat") else None
+    scholar = tool.stats.get("scholar", 0.0) if tool else 0.0  # a Scholar enchant on the tool you use for this skill
+    return (1 + await xp_bonus(user_id, reg)) * (1 + pet) * (1 + reg.rank(user.rank).xp_bonus) * (1 + scholar)

@@ -27,6 +27,7 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.foraging import Foraging
 from cococap.registry import Registry, get_registry
 from cococap.registry.models import ForagingRules, Grain, Wedge
+from cococap.services import scrolls
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
@@ -388,6 +389,8 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     axe = await equipped_stats(user, "foraging", reg)
     final_cut = axe.stats.get("final_cut", 0.0) if axe else 0.0  # Final Cut (Mastery): a tree you fell yourself pays more
     drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus + final_cut), rng), rng, reg)
+    if scroll := scrolls.roll("foraging", rng, reg):  # (a rare scroll, one chance per tree whatever its size)
+        drops[scroll] += 1
     if tree.double:  # a Re-leaf double tree also drops its haul of materials
         drops.update(rules.releaf.double_items)
     bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules) * (1 + tree.bonus + final_cut))

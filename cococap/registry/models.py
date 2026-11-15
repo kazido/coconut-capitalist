@@ -1167,6 +1167,19 @@ class CommunityShipments(_Data):
     xp: int = Field(ge=0)
 
 
+class ScrollSource(_Data):
+    """Where one skill's scrolls come from: a 1-in-`odds` chance per roll (a cell dug, a tree felled, a growth cycle harvested), then one of `pool`."""
+
+    odds: int = Field(ge=2)
+    pool: list[str] = Field(min_length=1)
+
+
+class ScrollRules(_Data):
+    mining: ScrollSource
+    foraging: ScrollSource
+    farming: ScrollSource
+
+
 class ShipmentRules(_Data):
     personal: PersonalShipments
     community: CommunityShipments

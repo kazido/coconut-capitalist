@@ -24,7 +24,7 @@ from cococap.registry.loader import BOMB_ITEM
 from cococap.registry.models import MiningRules, Milestone, RiskLabel
 from cococap.services.equipment import equipped_stats
 from cococap.services.loot import roll_table
-from cococap.services import pets
+from cococap.services import pets, scrolls
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -297,6 +297,8 @@ class MineRun:
             if cells[col]:
                 quantity = cells[col][1] * (3 if self.gold_rush and self.cells_mined % self.gold_rush == 0 else 1)  # Gold Rush: every Nth cell pays triple
                 found[cells[col][0]] += quantity
+            if scroll := scrolls.roll("mining", self.rng, self.registry):  # a rare scroll: one chance per cell dug
+                found[scroll] += 1
             if self.geode and self.rng.random() < self.geode:  # Geode Cracker: a geode with a reactor gem inside
                 found[self.rng.choice(self.rules.reactor.core_gems)] += 1
             hardness += self.hardness(cells[col])

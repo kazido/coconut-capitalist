@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
+from .models import ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -83,6 +83,7 @@ class Registry:
         mastery: MasteryRules | None = None,
         tools: ToolRules | None = None,
         shipments: ShipmentRules | None = None,
+        scrolls: ScrollRules | None = None,
     ):
         self.items: dict[str, Item] = {i.id: i for i in items}
         self.pets: dict[str, Pet] = {p.id: p for p in pets}
@@ -99,6 +100,7 @@ class Registry:
         self.mastery = mastery
         self.tools = tools
         self.shipments = shipments
+        self.scrolls = scrolls
         self.drop_tables: dict[str, DropTable] = {t.id: t for t in drop_tables or []}
         self._validate()
 
@@ -165,6 +167,10 @@ class Registry:
                 crop = self.items.get(item.seed.grows_into)
                 if crop is None or crop.crop is None:
                     problems.append(f"{item.id}: seed.grows_into '{item.seed.grows_into}' is not a crop")
+        if self.scrolls is not None:
+            for skill in ("mining", "foraging", "farming"):
+                problems += [f"scrolls.toml [{skill}]: '{i}' is not a scroll item" for i in getattr(self.scrolls, skill).pool
+                             if i not in self.items or self.items[i].category != "scroll"]
         if self.mining is not None:
             problems += self._validate_mining(self.mining)
         if self.fishing is not None:
@@ -301,7 +307,8 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     mastery = _build(MasteryRules, "mastery", [("mastery", _read(config_dir, "mastery"))])[0]
     tools = _build(ToolRules, "tools", [("tools", _read(config_dir, "tools"))])[0]
     shipments = _build(ShipmentRules, "shipments", [("shipments", _read(config_dir, "shipments"))])[0]
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools, shipments)
+    scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools, shipments, scrolls)
 
 
 @lru_cache(maxsize=1)

@@ -1362,21 +1362,15 @@ tuna = 25
 [scroll_keen]
 name = "Scroll of Keenness"
 description = "A scroll that sharpens any pickaxe, axe or rod."
-wiki = "Use it from your inventory (Enchant) to put Keen on a fitting tool. One use."
+wiki = "Use it from your inventory (Enchant) to put Keen on any tool. One use."
 emoji = "📜"
 rarity = 4
-skill = "foraging"
 category = "scroll"
 price = 0
 sell_price = 400000  # TODO(balance)
 
 [scroll_keen.scroll]
 enchant = "keen"
-
-[scroll_keen.drop]
-rate = 3500  # TODO(balance): 1 in 700 per drop roll
-min = 1
-max = 1
 
 [scroll_lure]
 name = "Scroll of the Lure"
@@ -1420,11 +1414,6 @@ sell_price = 400000  # TODO(balance)
 [scroll_sharp_eye.scroll]
 enchant = "sharp_eye"
 
-[scroll_sharp_eye.drop]
-rate = 4500  # TODO(balance): 1 in 900 per drop roll
-min = 1
-max = 1
-
 [scroll_seasoned]
 name = "Scroll of Seasoning"
 description = "Spots wear out more slowly under your axe."
@@ -1438,11 +1427,6 @@ sell_price = 400000  # TODO(balance)
 
 [scroll_seasoned.scroll]
 enchant = "seasoned"
-
-[scroll_seasoned.drop]
-rate = 4500  # TODO(balance): 1 in 900 per drop roll
-min = 1
-max = 1
 
 [scroll_double_strike]
 name = "Scroll of the Double Strike"
@@ -1458,11 +1442,6 @@ sell_price = 1200000  # TODO(balance)
 [scroll_double_strike.scroll]
 enchant = "double_strike"
 
-[scroll_double_strike.drop]
-rate = 6000  # TODO(balance): 1 in 1200 per drop roll
-min = 1
-max = 1
-
 [scroll_iron_frame]
 name = "Scroll of the Iron Frame"
 description = "Braces a pickaxe against the creaking mine."
@@ -1476,11 +1455,6 @@ sell_price = 400000  # TODO(balance)
 
 [scroll_iron_frame.scroll]
 enchant = "iron_frame"
-
-[scroll_iron_frame.drop]
-rate = 6000  # TODO(balance): found deep in the mines
-min = 1
-max = 1
 
 [balance_gemstone]
 name = "Balance"
@@ -3344,3 +3318,113 @@ skill = "fishing"
 category = "material"
 price = 3000  # TODO(balance): a real cost: low radar levels barely pay for it, the top ones do
 sell_price = 400
+
+[scroll_scholar]
+name = "Scroll of the Scholar"
+description = "Whatever you do with the tool you put this on teaches you more."
+wiki = "Use it from your inventory (Enchant) to put Scholar on any tool. One use."
+emoji = "📜"
+rarity = 4
+category = "scroll"
+price = 0
+sell_price = 400000  # TODO(balance)
+
+[scroll_scholar.scroll]
+enchant = "scholar"
+
+[scroll_appraiser]
+name = "Scroll of the Appraiser"
+description = "An eye for what the harvest is worth."
+wiki = "Use it from your inventory (Enchant) to put Appraiser on any tool. One use."
+emoji = "📜"
+rarity = 4
+category = "scroll"
+price = 0
+sell_price = 400000  # TODO(balance)
+
+[scroll_appraiser.scroll]
+enchant = "appraiser"
+
+[scroll_veinfinder]
+name = "Scroll of the Veinfinder"
+description = "Rich lodes seem to find your pick."
+wiki = "Use it from your inventory (Enchant) to put Veinfinder on a pickaxe. One use."
+emoji = "📜"
+rarity = 4
+skill = "mining"
+category = "scroll"
+price = 0
+sell_price = 400000  # TODO(balance)
+
+[scroll_veinfinder.scroll]
+enchant = "veinfinder"
+
+[scroll_bounty]
+name = "Scroll of Bounty"
+description = "Every cell gives a little more."
+wiki = "Use it from your inventory (Enchant) to put Bounty on a pickaxe. One use."
+emoji = "📜"
+rarity = 4
+skill = "mining"
+category = "scroll"
+price = 0
+sell_price = 400000  # TODO(balance)
+
+[scroll_bounty.scroll]
+enchant = "bounty"
+
+[scroll_deepcall]
+name = "Scroll of the Deepcall"
+description = "Something old answers your line."
+wiki = "Use it from your inventory (Enchant) to put Deepcall on a rod. One use."
+emoji = "📜"
+rarity = 4
+skill = "fishing"
+category = "scroll"
+price = 0
+sell_price = 400000  # TODO(balance)
+
+[scroll_deepcall.scroll]
+enchant = "deepcall"
+
+[scroll_fertile]
+name = "Scroll of the Fertile Soil"
+description = "Bigger harvests from the same plots."
+wiki = "Use it from your inventory (Enchant) to put Fertile Soil on a watering can. One use."
+emoji = "📜"
+rarity = 4
+skill = "farming"
+category = "scroll"
+price = 0
+sell_price = 400000  # TODO(balance)
+
+[scroll_fertile.scroll]
+enchant = "fertile"
+
+[scroll_seedkeeper]
+name = "Scroll of the Seedkeeper"
+description = "More plants go to seed."
+wiki = "Use it from your inventory (Enchant) to put Seedkeeper on a watering can. One use."
+emoji = "📜"
+rarity = 4
+skill = "farming"
+category = "scroll"
+price = 0
+sell_price = 400000  # TODO(balance)
+
+[scroll_seedkeeper.scroll]
+enchant = "seedkeeper"
+
+[scroll_gleaner]
+name = "Scroll of the Gleaner"
+description = "Nothing in the field goes to waste."
+wiki = "Use it from your inventory (Enchant) to put Gleaner on a watering can. One use."
+emoji = "📜"
+rarity = 4
+skill = "farming"
+category = "scroll"
+price = 0
+sell_price = 400000  # TODO(balance)
+
+[scroll_gleaner.scroll]
+enchant = "gleaner"

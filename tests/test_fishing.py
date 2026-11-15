@@ -2062,7 +2062,7 @@ def test_the_three_fishing_capstones_are_about_equally_strong():
     from random import Random as R
 
     rng = R(4)
-    price = lambda i: REG.item(i).sell_price  # noqa: E731
+    price = lambda i: 0 if REG.item(i).category == "scroll" else REG.item(i).sell_price  # noqa: E731  (scrolls are for using, not selling: leave them out of the comparison)
     water = f.water_by_id(REG, "deep_sea")
     per_cast = sum(f.roll_fish(rng, REG, water, f.rod_luck(30, REG.fishing)).sell_price for _ in range(4000)) / 4000 * (1 + REG.fishing.rod.extra_fish_per_power * 27)
     node = lambda nid: REG.mastery.node(nid).effects[0].amount  # noqa: E731

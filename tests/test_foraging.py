@@ -934,7 +934,7 @@ def test_flair_marks_rare_finds_and_not_the_everyday_ones():
     from cococap.ui import flair
 
     assert flair.level(REG.item("copper_ore")) == 0 and flair.level(REG.item("gold_ore")) == 0 and flair.level(REG.item("golden_sap")) == 0
-    assert flair.level(REG.item("scroll_keen")) == 2  # 1 in 700
+    assert flair.level(REG.item("scroll_keen")) == 2  # scrolls are always a big moment
     assert flair.level(REG.item("iron_wedge")) == 1 and flair.level(REG.item("burger")) == 1
     assert flair.level(REG.item("gilded_wedge")) == 2 and flair.level(REG.item("spirit_of_the_forest")) == 2
     assert flair.banner({"copper_ore": 5}) == ""

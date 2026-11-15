@@ -62,6 +62,10 @@ def item_attributes(item: Item, for_shop: bool = False) -> str:
     if item.scroll and (enchant := reg.enchants.get(item.scroll.enchant)):
         add(f"**Enchant - {enchant.name}**: {enchant.description}")
         add(f"**Goes on**: *{', '.join(enchant.applies_to)}*  ·  **Max level**: *{enchant.max_level}*")
+        from cococap.services import scrolls
+
+        if found := scrolls.scroll_skills(item.id, reg):
+            add(f"**Found while**: *{', '.join(found)}* (a rare find, about one scroll per few hours of play in each)")
     if item.tool:
         add(f"**Power**: *{item.tool.power:,}*", shop=True)
         if item.tool.requirement:

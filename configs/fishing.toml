@@ -120,16 +120,6 @@ min = 1
 max = 1
 chance = 0.01
 [[treasure.loot]]
-item = "scroll_lure"
-min = 1
-max = 1
-chance = 0.02
-[[treasure.loot]]
-item = "scroll_steady_line"
-min = 1
-max = 1
-chance = 0.01
-[[treasure.loot]]
 item = "golden_roe"
 min = 1
 max = 2
@@ -139,6 +129,36 @@ item = "familiar_orb"
 min = 1
 max = 1
 chance = 0.03
+[[treasure.loot]]
+item = "scroll_lure"
+min = 1
+max = 1
+chance = 0.05
+[[treasure.loot]]
+item = "scroll_steady_line"
+min = 1
+max = 1
+chance = 0.03
+[[treasure.loot]]
+item = "scroll_deepcall"
+min = 1
+max = 1
+chance = 0.03
+[[treasure.loot]]
+item = "scroll_keen"
+min = 1
+max = 1
+chance = 0.02
+[[treasure.loot]]
+item = "scroll_scholar"
+min = 1
+max = 1
+chance = 0.02
+[[treasure.loot]]
+item = "scroll_appraiser"
+min = 1
+max = 1
+chance = 0.02
 [[treasure.loot]]
 item = "spirit_of_the_sea"
 min = 1
@@ -276,21 +296,6 @@ item = "leviathan_pup"
 min = 1
 max = 1
 chance = 0.03
-[[boss.loot]]
-item = "scroll_lure"
-min = 1
-max = 1
-chance = 0.04
-[[boss.loot]]
-item = "scroll_steady_line"
-min = 1
-max = 1
-chance = 0.02
-[[boss.loot]]
-item = "scroll_keen"
-min = 1
-max = 1
-chance = 0.0125
 
 # Waters. You fish where you like among the waters your fishing level has opened; each has its own fish (`fish = N` is
 # 1 in N, rarest rolled first, and the commonest is the catch-all) and deeper water takes longer to bite. Listed
@@ -377,6 +382,36 @@ item = "familiar_orb"
 min = 1
 max = 1
 chance = 0.08
+[[boss.loot]]
+item = "scroll_lure"
+min = 1
+max = 1
+chance = 0.07
+[[boss.loot]]
+item = "scroll_steady_line"
+min = 1
+max = 1
+chance = 0.04
+[[boss.loot]]
+item = "scroll_deepcall"
+min = 1
+max = 1
+chance = 0.04
+[[boss.loot]]
+item = "scroll_keen"
+min = 1
+max = 1
+chance = 0.03
+[[boss.loot]]
+item = "scroll_scholar"
+min = 1
+max = 1
+chance = 0.02
+[[boss.loot]]
+item = "scroll_appraiser"
+min = 1
+max = 1
+chance = 0.02
 
 # Crab pots: an AFK extra. Craft a pot, put it in a water you have opened, load it with bait and it catches rare fish
 # (`min_rarity` and up) while you are away, one per interval, using one bait each, until it is full or out of bait. The

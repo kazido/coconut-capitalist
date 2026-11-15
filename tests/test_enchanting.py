@@ -4,7 +4,7 @@ import pytest
 
 from cococap.registry import get_registry
 from cococap.screens import fish as fish_screen
-from cococap.services import enchanting, equipment
+from cococap.services import enchanting, equipment, scrolls
 from cococap.services import fishing as f
 from cococap.services import foraging as forage
 from cococap.services.equipment import equip, effective_stats
@@ -29,10 +29,8 @@ def test_every_enchant_has_a_scroll_somewhere_it_can_be_found():
     assert scrolled == set(REG.enchants) - {"soloist"}  # soloist has its own story
     for item in REG.items.values():
         if item.scroll:
-            assert item.category == "scroll" and item.sell_price == 0
-            loot_rows = [r.item for r in (*REG.fishing.treasure.loot, *REG.fishing.boss.loot)]
-            found_in_play = item.drop is not None or item.id in loot_rows
-            assert found_in_play, f"nothing drops {item.id}"
+            assert item.category == "scroll" and item.sell_price > 0
+            assert scrolls.scroll_skills(item.id, REG), f"nothing drops {item.id}"
 
 
 def test_every_kind_of_tool_with_an_upgrade_chain_can_be_enchanted():
@@ -121,13 +119,33 @@ async def test_iron_frame_slows_the_mines_pressure(db):
 
 
 # ---- finding scrolls ------------------------------------------------------------------------------------------------------
-def test_scrolls_drop_from_chopping_and_mining_and_fishing_bosses_and_chests():
-    foraging_drops = {i.id for i in forage.drop_pool(REG)}
-    assert {"scroll_keen", "scroll_sharp_eye"} <= foraging_drops
-    deep = REG.mining.depth_tables[-1]
-    assert "scroll_iron_frame" in deep
-    assert {r.item for r in REG.fishing.boss.loot} >= {"scroll_lure", "scroll_steady_line", "scroll_keen"}
-    assert {r.item for r in REG.fishing.treasure.loot} >= {"scroll_lure", "scroll_steady_line"}
+def test_every_skill_has_three_scrolls_of_its_own_and_shares_the_same_three_global_ones():
+    own = {"mining": {"scroll_iron_frame", "scroll_veinfinder", "scroll_bounty"}, "fishing": {"scroll_lure", "scroll_steady_line", "scroll_deepcall"},
+           "foraging": {"scroll_sharp_eye", "scroll_seasoned", "scroll_double_strike"}, "farming": {"scroll_fertile", "scroll_seedkeeper", "scroll_gleaner"}}
+    shared = {"scroll_keen", "scroll_scholar", "scroll_appraiser"}
+    for skill, mine in own.items():
+        found = {i.id for i in REG.items.values() if i.category == "scroll" and skill in scrolls.scroll_skills(i.id, REG)}
+        assert found == mine | shared, skill  # the same number (and the same global ones) in every skill
+        assert all(REG.item(i).skill == skill for i in mine)
+    for i in shared:  # a global scroll fits every kind of tool
+        assert REG.item(i).skill is None and set(REG.enchants[REG.item(i).scroll.enchant].applies_to) >= {"pickaxe", "axe", "rod", "can"}
+
+
+def test_scrolls_are_rare_about_one_every_few_hours_in_each_skill():
+    # per hour of play: mining ~720 cells, foraging ~45 private trees, farming ~9 growth cycles (nine plots), fishing ~2 bosses and a chest now and then
+    per_hour = {"mining": 720 / REG.scrolls.mining.odds, "foraging": 45 / REG.scrolls.foraging.odds, "farming": 9 / REG.scrolls.farming.odds}
+    boss = sum(r.chance for r in REG.fishing.boss.loot if r.item.startswith("scroll_"))
+    per_hour["fishing"] = 1.5 * boss  # (bosses are hooked about 1 in 80 casts and not every one is landed)
+    for skill, rate in per_hour.items():
+        assert 1 / 6 <= rate <= 1 / 2, f"{skill}: a scroll every {1 / rate:.1f} hours"
+
+
+def test_the_scroll_roll_drops_at_its_odds_from_the_skills_own_pool():
+    rng = Random(1)
+    hits = [scrolls.roll("foraging", rng, REG) for _ in range(30_000)]
+    got = [h for h in hits if h]
+    assert len(got) == pytest.approx(30_000 / REG.scrolls.foraging.odds, rel=0.25)
+    assert set(got) <= set(REG.scrolls.foraging.pool) and len(set(got)) == 6
 
 
 # ---- the screen -----------------------------------------------------------------------------------------------------------
@@ -181,3 +199,17 @@ async def test_if_the_enchant_fails_the_scroll_is_given_back(db, monkeypatch):
     with pytest.raises(RuntimeError):
         await enchanting.apply_scroll(user, "scroll_lure", rod.id, REG)
     assert await user.item_quantity("scroll_lure") == 1 and (await user.instance(rod.id)).enchants == {}
+
+
+async def test_the_scholar_scroll_adds_xp_and_the_appraiser_scroll_adds_to_what_the_skills_items_sell_for(db):
+    from cococap.services import shop
+    from cococap.services.party import xp_multiplier
+
+    user, pick = await with_tool("rookiepickaxe", "mining", scrolls={"scroll_scholar": 2, "scroll_appraiser": 2})
+    xp_before, sale_before = await xp_multiplier(user.id, REG, "mining"), await shop.haggle(user, REG.item("copper_ore"), REG)
+    for scroll in ("scroll_scholar", "scroll_scholar", "scroll_appraiser", "scroll_appraiser"):
+        await enchanting.apply_scroll(user, scroll, pick.id, REG)
+    assert await xp_multiplier(user.id, REG, "mining") == pytest.approx(xp_before * 1.10)  # +5% a level, two levels
+    assert await shop.haggle(user, REG.item("copper_ore"), REG) == pytest.approx(sale_before + 0.08)
+    assert await shop.haggle(user, REG.item("apple"), REG) == 0  # (it only helps the tool's own skill)
+    assert await xp_multiplier(user.id, REG, "foraging") == pytest.approx(xp_before)  # (and its xp)

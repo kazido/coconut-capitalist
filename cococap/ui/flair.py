@@ -20,6 +20,8 @@ def level(item: Item) -> int:
     """0 = nothing special, 1 = a rare find, 2 = a super rare find."""
     if item.category in NO_FLAIR or item.rarity < 4:
         return 0
+    if item.category == "scroll":  # scrolls are rare by design (see scrolls.toml): always a big moment
+        return 2
     odds = item.drop.rate if item.drop else None
     if odds is not None and odds < RARE_ODDS:  # something that drops all the time is not a surprise
         return 0

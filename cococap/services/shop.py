@@ -78,11 +78,13 @@ async def _equip_first_tool(user: User, item, made: list[ItemInstance], reg: Reg
 
 
 async def haggle(user: User, item, registry: Registry | None = None) -> float:
-    """A Merchant's Haggler (Mastery): farm goods fetch this much more (0.08 = +8%)."""
-    if item.skill != "farming":
+    """What your gear adds to a sale (0.08 = +8%): the Appraiser enchant on the tool of the item's skill, and for farm goods a Merchant's Haggler (Mastery)."""
+    if item.skill not in ("mining", "foraging", "fishing", "farming", "combat"):
         return 0.0
-    can = await equipped_stats(user, "farming", registry)
-    return can.stats.get("haggler", 0.0) if can else 0.0
+    tool = await equipped_stats(user, item.skill, registry)
+    if tool is None:
+        return 0.0
+    return tool.stats.get("appraise", 0.0) + (tool.stats.get("haggler", 0.0) if item.skill == "farming" else 0.0)
 
 
 async def sell(user: User, item_id: str, quantity: int = 1, registry: Registry | None = None) -> int:

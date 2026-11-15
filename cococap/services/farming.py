@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from cococap.errors import GameRuleError
 from cococap.models.skills.farming import Farming, Plot
 from cococap.registry import Registry, get_registry
-from cococap.services import pets
+from cococap.services import pets, scrolls
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
@@ -433,6 +433,8 @@ async def harvest(
         await user.update_skill("farming", restore)  # the crop never arrived: the plot is still ripe
         raise
     extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0)
+    if scroll := scrolls.roll("farming", rng, reg, reg.item(taken["seed"]).seed.cycles):  # a rare scroll: one chance per growth cycle of what you harvest
+        extras[scroll] += 1
     if can and rng.random() < can.stats.get("seed_back", 0.0):  # a good can lets a plant go to seed: the seed comes back
         extras[taken["seed"]] += 1
     for item_id, quantity in extras.items():

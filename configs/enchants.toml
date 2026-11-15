@@ -16,8 +16,8 @@ flag = "soloist"
 [keen]
 name = "Keen"
 emoji = "🗡️"
-description = "A sharper, stronger tool: +1 power per level."
-applies_to = ["pickaxe", "axe", "rod"]
+description = "A sharper, stronger tool: +1 power per level. Fits every tool."
+applies_to = ["pickaxe", "axe", "rod", "can", "sword"]
 max_level = 3
 
 [[keen.effects]]
@@ -96,3 +96,99 @@ max_level = 3
 type = "stat_add"
 stat = "double_chop"
 amount = 0.08
+
+[scholar]
+name = "Scholar"
+emoji = "🎓"
+description = "Whatever you do with this tool teaches you more: +5% xp per level in its skill. Fits every tool."
+applies_to = ["pickaxe", "axe", "rod", "can", "sword"]
+max_level = 3
+
+[[scholar.effects]]
+type = "stat_add"
+stat = "scholar"
+amount = 0.05
+
+[appraiser]
+name = "Appraiser"
+emoji = "⚖️"
+description = "An eye for what things are worth: +4% bits when you sell items of this tool's skill, per level. Fits every tool."
+applies_to = ["pickaxe", "axe", "rod", "can", "sword"]
+max_level = 3
+
+[[appraiser.effects]]
+type = "stat_add"
+stat = "appraise"
+amount = 0.04
+
+[veinfinder]
+name = "Veinfinder"
+emoji = "🔦"
+description = "You read the rock better: +3% chance per level that a cell is a rich lode."
+applies_to = ["pickaxe"]
+max_level = 3
+
+[[veinfinder.effects]]
+type = "stat_add"
+stat = "rich_chance"
+amount = 0.03
+
+[bounty]
+name = "Bounty"
+emoji = "🧺"
+description = "Every cell gives a little more: +6% ore per level."
+applies_to = ["pickaxe"]
+max_level = 3
+
+[[bounty.effects]]
+type = "stat_add"
+stat = "ore_yield"
+amount = 0.06
+
+[deepcall]
+name = "Deepcall"
+emoji = "🌊"
+description = "Something old answers the line: +10% odds of the rare fish per level."
+applies_to = ["rod"]
+max_level = 3
+
+[[deepcall.effects]]
+type = "stat_add"
+stat = "rare_luck"
+amount = 0.10
+
+[fertile]
+name = "Fertile"
+emoji = "🌻"
+description = "Rich water, rich soil: +6% bigger harvests per level."
+applies_to = ["can"]
+max_level = 3
+
+[[fertile.effects]]
+type = "stat_add"
+stat = "crop_yield"
+amount = 0.06
+
+[seedkeeper]
+name = "Seedkeeper"
+emoji = "🫘"
+description = "More plants go to seed: +4% chance per level that a harvest gives its seed back."
+applies_to = ["can"]
+max_level = 3
+
+[[seedkeeper.effects]]
+type = "stat_add"
+stat = "seed_back"
+amount = 0.04
+
+[gleaner]
+name = "Gleaner"
+emoji = "🧵"
+description = "Nothing in the field goes to waste: +12% more farming drops per level."
+applies_to = ["can"]
+max_level = 3
+
+[[gleaner.effects]]
+type = "stat_add"
+stat = "drop_luck"
+amount = 0.12
