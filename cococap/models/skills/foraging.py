@@ -6,6 +6,7 @@ class Stats(BaseModel):
     trees_chopped: int = 0
     double_trees_chopped: int = 0
     releaf_donations: int = 0
+    chops: int = 0  # every chop you have made (Windfall counts them)
 
 
 class Foraging(Skill):

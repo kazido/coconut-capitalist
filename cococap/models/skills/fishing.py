@@ -70,3 +70,4 @@ class Fishing(Skill):
     quest_book: QuestBook = Field(default_factory=QuestBook)
     skiff: Skiff = Field(default_factory=Skiff)
     stats: Stats = Field(default_factory=Stats)
+    streak: int = 0  # clean reels in a row (the Angler's Hot Streak)

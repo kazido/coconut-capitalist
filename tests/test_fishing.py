@@ -1995,3 +1995,82 @@ async def test_the_wait_estimate_can_be_turned_off_in_settings(db):
     await user.set_setting("fishing_estimate", False)
     nav, _ = await hub("fish")
     assert "bites in" not in all_text(nav) and "Rod **" in all_text(nav)
+
+
+# ---- Mastery capstones: Hot Streak, Salvage, Chum Slick ------------------------------------------------------------------------------------------
+async def landed(user, rod_template="starter_rod", slips_used=0, seed=1):
+    from random import Random as R
+
+    stats = await f.rod_stats(user)
+    cast = f.cast_line(stats, R(seed), 1_000_000.0, REG, water=f.water_by_id(REG, "pond"))
+    cast.progress, cast.hooked, cast.slips_left = len(cast.pattern), True, cast.slips_start - slips_used
+    return cast, await f.land(user, cast, REG, now=1_000_000.0, rng=R(seed))
+
+
+async def test_hot_streak_pays_more_for_every_clean_reel_in_a_row_and_a_slip_or_escape_ends_it(db):
+    user = await User.get(1)
+    await equip(user, "fishing", (await user.give_instance("starter_rod")).id)
+    await user.update_skill("fishing", lambda s: s.mastery.append("hot_streak"))
+    paid = []
+    for n in range(7):
+        cast, catch = await landed(user, seed=n)
+        paid.append(catch.streak_bits / max(1, cast.fish.sell_price * (1 + cast.extra_fish)))
+    assert paid[0] == 0 and abs(paid[1] - 0.08) < 0.01 and abs(paid[5] - 0.4) < 0.01 and abs(paid[6] - 0.4) < 0.01  # (up to five in a row)
+    cast, catch = await landed(user, slips_used=1, seed=9)  # a slip: this catch still rides the streak, then it starts over
+    assert catch.streak_bits > 0 and (await user.skill("fishing")).streak == 0
+    _, catch = await landed(user, seed=10)
+    assert catch.streak_bits == 0
+    await landed(user, seed=11)
+    await f.lose_streak(user)  # a fish gets away
+    assert (await user.skill("fishing")).streak == 0
+
+
+async def test_without_the_capstone_nothing_is_paid_for_a_streak(db):
+    user = await User.get(1)
+    await equip(user, "fishing", (await user.give_instance("starter_rod")).id)
+    for n in range(4):
+        _, catch = await landed(user, seed=n)
+        assert catch.streak_bits == 0
+
+
+async def test_salvage_brings_up_a_chest_haul_every_nth_fish_and_chum_slick_makes_a_boss_pay_twice(db):
+    from random import Random as R
+
+    user = await User.get(1)
+    await equip(user, "fishing", (await user.give_instance("starter_rod")).id)
+    await user.update_skill("fishing", lambda s: s.mastery.extend(["salvage", "chum_slick"]))
+    every = int(REG.mastery.node("salvage").effects[0].amount)
+    hauls = []
+    for n in range(every * 2):
+        _, catch = await landed(user, seed=n)
+        hauls.append("coral_shard" in catch.extras and catch.extras["coral_shard"] >= 2)  # (the chest loot always has coral)
+    assert hauls.count(True) >= 2
+    cast = f.cast_line(await f.rod_stats(user), R(3), 1_000_000.0, REG, water=f.water_by_id(REG, "pond"))
+    f.make_boss(cast, REG.fishing.boss.bosses[0].name, REG.fishing, R(3))
+    cast.progress, cast.hooked = len(cast.pattern), True
+    plain = await User.get(2)
+    await equip(plain, "fishing", (await plain.give_instance("starter_rod")).id)
+    cast2 = f.cast_line(await f.rod_stats(plain), R(3), 1_000_000.0, REG, water=f.water_by_id(REG, "pond"))
+    f.make_boss(cast2, REG.fishing.boss.bosses[0].name, REG.fishing, R(3))
+    cast2.progress, cast2.hooked = len(cast2.pattern), True
+    doubled, normal = await f.defeat_boss(user, cast, R(5), REG), await f.defeat_boss(plain, cast2, R(5), REG)
+    assert doubled.bits > 1.4 * normal.bits
+
+
+def test_the_three_fishing_capstones_are_about_equally_strong():
+    """Each adds about a fifth to a deep-sea cast's worth (estimated: the streak at an 85% clean-reel rate, the chest haul spread over its interval, a boss's worth over its odds)."""
+    from random import Random as R
+
+    rng = R(4)
+    price = lambda i: REG.item(i).sell_price  # noqa: E731
+    water = f.water_by_id(REG, "deep_sea")
+    per_cast = sum(f.roll_fish(rng, REG, water, f.rod_luck(30, REG.fishing)).sell_price for _ in range(4000)) / 4000 * (1 + REG.fishing.rod.extra_fish_per_power * 27)
+    node = lambda nid: REG.mastery.node(nid).effects[0].amount  # noqa: E731
+    p = 0.85
+    streak = node("hot_streak") * sum(p**k for k in range(1, f.HOT_STREAK_MAX + 1))
+    salvage = sum(sum(price(i) * q for i, q in f.salvage_loot(rng, REG).items()) for _ in range(8000)) / 8000 / node("salvage") / per_cast
+    boss = sum((lambda r: r[0] + sum(price(i) * q for i, q in r[1].items()))(f.roll_boss_reward(REG, rng)) for _ in range(4000)) / 4000
+    chum = boss * node("chum_slick") / REG.fishing.boss.odds / per_cast
+    gains = {"hot_streak": streak, "salvage": salvage, "chum": chum}
+    assert all(0.1 <= g <= 0.4 for g in gains.values()), gains
+    assert max(gains.values()) - min(gains.values()) <= 0.15, gains

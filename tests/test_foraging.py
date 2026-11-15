@@ -834,3 +834,61 @@ async def test_a_lumberjacks_axe_carries_double_chop_that_the_swing_already_uses
     spot = f.Spot.pick(RULES, Random(1))
     swing = spot.swing(40, RULES, type("Always", (Random,), {"random": lambda self: 0.0})(), 0.0, None, 0.0, stats["double_chop"])
     assert swing.doubled
+
+
+# ---- Mastery capstones: Final Cut, Windfall, Clean Cut ----------------------------------------------------------------------------------------------
+async def felled(user, hp=400, seed=1):
+    tree = f.Tree(3, hp, hp)
+    tree.chop(hp)
+    return await f.fell_private(user, tree, Random(seed))
+
+
+async def test_final_cut_makes_a_tree_you_fell_pay_more_bits_and_drops(db):
+    plain, cutter = await player(1), await player(2)
+    await cutter.update_skill("foraging", lambda s: s.mastery.append("final_cut"))
+    cut = REG.mastery.node("final_cut").effects[0].amount
+    a, b = await felled(plain, seed=3), await felled(cutter, seed=3)
+    assert abs(b.bits - a.bits * (1 + cut)) <= 1
+    assert sum(b.drops.values()) >= sum(a.drops.values())
+
+
+async def test_windfall_pays_a_full_roll_of_drops_on_every_nth_chop_and_only_with_the_capstone(db):
+    user = await player(1)
+    every = int(REG.mastery.node("windfall").effects[0].amount)
+    paid = []
+    for n in range(every * 3):
+        paid.append(sum((await f.windfall(user, every, Random(n))).values()) > 0 or False)
+    assert (await user.skill("foraging")).stats.chops == every * 3
+    assert sum(1 for i, hit in enumerate(paid) if hit) <= 3 and not any(paid[i] for i in range(len(paid)) if (i + 1) % every)
+    assert not await f.windfall(user, 0, Random(1)) and (await user.skill("foraging")).stats.chops == every * 3  # (no capstone: nothing counted)
+
+
+def test_clean_cut_hits_harder_only_in_the_grains_own_style():
+    cut = REG.mastery.node("clean_cut").effects[0].amount
+    spot = f.Spot.pick(RULES, Random(5))
+    right, wrong = spot.stance(RULES), next(s for s in f.STANCES if s != spot.stance(RULES))
+
+    def hit(stance, clean):
+        s = f.Spot(spot.name, spot.quality, spot.grain, 0.0, "", False)
+        return s.swing(40, RULES, type("Never", (Random,), {"random": lambda self: 0.99})(), 0.0, stance, 0.0, 0.0, clean).damage
+
+    assert hit(right, cut) >= round(1.15 * hit(right, 0.0)) and hit(wrong, cut) == hit(wrong, 0.0)
+
+
+def test_the_three_foraging_capstones_are_about_equally_strong():
+    """Each adds about a fifth to a chop's worth (estimated against a zone-3 chopper: the roll of drops every Nth chop, the harder right chops, the tree bonus on private trees only)."""
+    from cococap.services import loot
+
+    price = lambda i: REG.item(i).sell_price  # noqa: E731
+    rng = Random(1)
+    mean_q = {i.id: sum(loot.skewed_roll(rng, i.drop.min, i.drop.max) for _ in range(3000)) / 3000 for i in f.drop_pool(REG)}
+    per_roll = sum(price(i.id) * mean_q[i.id] / i.drop.rate for i in f.drop_pool(REG))
+    zone, power = 3, 28
+    swing_rng, spot = Random(9), f.Spot.pick(RULES, Random(9))
+    dealt = sum(spot.swing(power, RULES, swing_rng, 0.0, spot.stance(RULES)).damage for _ in range(3000)) / 3000  # (always the right style, wear and rotation included)
+    pay_per_hp = RULES.bits_per_hp * f.zone_reward_factor(zone, RULES) + per_roll * f.expected_rolls(1, RULES, zone)
+    pay_per_click = pay_per_hp * dealt
+    node = lambda nid: REG.mastery.node(nid).effects[0].amount  # noqa: E731
+    gains = {"windfall": per_roll / node("windfall") / pay_per_click, "clean_cut": node("clean_cut"), "final_cut": node("final_cut") * 0.7}  # (about 70% of chopping is private trees)
+    assert all(0.1 <= g <= 0.4 for g in gains.values()), gains
+    assert max(gains.values()) - min(gains.values()) <= 0.15, gains

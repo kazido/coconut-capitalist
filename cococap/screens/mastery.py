@@ -6,7 +6,7 @@ from cococap.services.mastery import MasteryError
 from cococap.ui import Page, Screen
 from cococap.ui.components import bits, button, row, sep, text
 
-SKILL_EMOJI = {"mining": "⛏️", "fishing": "🎣"}
+SKILL_EMOJI = {"mining": "⛏️", "fishing": "🎣", "farming": "🌽", "foraging": "🌳"}
 
 
 class MasteryScreen(Screen):
@@ -16,7 +16,7 @@ class MasteryScreen(Screen):
     label = "Mastery"
     emoji = "🌟"
     description = "Spend mastery points on how you play a skill"
-    links = ("mining", "fish")
+    links = ("mining", "fish", "farm", "forage")
 
     def __init__(self, nav):
         super().__init__(nav)

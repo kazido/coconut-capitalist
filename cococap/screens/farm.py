@@ -20,7 +20,7 @@ class FarmScreen(Screen):
     label = "Farm"
     emoji = "🌾"
     description = "Plant seeds, wait for the rain, harvest"
-    links = ("market", "sellall")
+    links = ("market", "sellall", "mastery")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -83,6 +83,7 @@ class FarmScreen(Screen):
             body.append(row(button("Prev", emoji="◀️", disabled=self.page == 0, on_click=self._turn(-1)),
                             button(f"Page {self.page + 1}/{pages}", disabled=True),
                             button("Next", emoji="▶️", disabled=self.page >= pages - 1, on_click=self._turn(1))))
+        body.append(row(button("Mastery", emoji="🌟", on_click=self._mastery)))
         return Page("Farm", body, accent=0x6AA84F)
 
     def _plot_lines(self, views, reg, heading: str | None = None) -> str:
@@ -136,6 +137,8 @@ class FarmScreen(Screen):
         extras = sum((h.extras for h in harvests), Counter())
         if extras:
             lines.append("🧵 Also found: " + ", ".join(f"{q:,} {reg.item(i).display}" for i, q in extras.items()))
+        if again := [h.plot for h in harvests if h.replanted]:
+            lines.append("🌲 **Evergreen!** Plot " + ", ".join(str(n) for n in again) + " replanted itself.")
         if any(h.anomaly for h in harvests):
             lines.append("✨ **An agricultural anomaly!** Marvelous! Your work and daily are ready again.")
         self.result = Result("Harvest!", lines, emoji="🧺", accent=0x2F919E, back_label="Back to the farm")
@@ -181,6 +184,9 @@ class FarmScreen(Screen):
 
     async def _sell_all(self, interaction: discord.Interaction) -> None:
         await start_sell_all(self, interaction, "farming")
+
+    async def _mastery(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "mastery", skill="farming")
 
     async def _market(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "market")

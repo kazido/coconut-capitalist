@@ -33,7 +33,9 @@ def test_each_branch_has_a_trade_off_or_a_different_stat_so_branches_differ():
 
 
 def test_mastery_stats_are_ones_the_game_reads():
-    known = {"danger_reduction", "ore_yield", "braces", "rich_chance", "vault_gem", "bite_speed", "slips", "treasure_luck", "rare_luck", "boss_luck"}
+    known = {"danger_reduction", "ore_yield", "braces", "rich_chance", "vault_gem", "bite_speed", "slips", "treasure_luck", "rare_luck", "boss_luck",
+             "lifeline", "gold_rush", "geode", "hot_streak", "salvage", "chum",  # (the capstones: each has its own test in its skill's file)
+             "crop_yield", "drop_luck", "seed_back", "evergreen", "heirloom", "haggler", "good_chop", "double_chop", "wear_slow", "shake", "windfall", "final_cut", "clean_cut"}
     used = {e.stat for t in RULES.trees for b in t.branches for n in b.nodes for e in n.effects}
     assert used <= known
 
@@ -214,3 +216,22 @@ def test_rich_lode_and_vault_gem_bonuses_really_change_what_a_mine_makes():
         return found
 
     assert vault_gems(2.0) > 2 * vault_gems(0)
+
+
+def test_every_skill_with_a_tool_has_a_tree_of_three_branches_each_ending_in_a_capstone_worth_four_points():
+    assert {t.skill for t in RULES.trees} == {"mining", "fishing", "farming", "foraging"}  # (combat is paused)
+    for tree in RULES.trees:
+        assert len(tree.branches) == 3
+        for branch in tree.branches:
+            assert len(branch.nodes) == 5 and branch.nodes[-1].description.startswith("CAPSTONE") and branch.nodes[-1].cost == 4 and branch.nodes[-1].level == 50
+            assert not any(n.description.startswith("CAPSTONE") for n in branch.nodes[:-1])
+            assert [n.level for n in branch.nodes] == sorted(n.level for n in branch.nodes)
+
+
+async def test_farming_and_foraging_pages_link_to_their_mastery_and_it_opens(db):
+    from cococap.services.equipment import equip as _equip  # noqa: F401
+
+    for screen, skill in (("farm", "farming"), ("forage", "foraging")):
+        nav, inter = await hub(screen)
+        await click(nav, inter, "Mastery")
+        assert nav.screen.id == "mastery" and nav.screen.skill == skill and f"{skill.title()} Mastery" in all_text(nav)

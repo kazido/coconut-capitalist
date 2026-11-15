@@ -127,7 +127,7 @@ class Spot:
         return max(1, round(power * self.strength(rules) * (sp.amount if sp and sp.effect == "damage" else 1)))
 
     def swing(self, power: int, rules: ForagingRules, rng: random.Random, good_bonus: float = 0.0,
-              stance: str | None = None, wear_slow: float = 0.0, double_chance: float = 0.0) -> Swing:
+              stance: str | None = None, wear_slow: float = 0.0, double_chance: float = 0.0, clean_cut: float = 0.0) -> Swing:
         """One chop. In the grain's style it hits fully, in another style it glances off (`wrong_stance_factor`). It also wears the spot,
         and when that is used up you are on a new one. ``good_bonus`` is extra good-chop chance (Sharp Eye), ``wear_slow`` how much slower the
         spot wears (Seasoned) and ``double_chance`` the chance of a double chop (Double Strike). On a special spot a RIGHT chop also fires its
@@ -147,6 +147,8 @@ class Spot:
                 effort *= sp.amount
             elif self.private:
                 mark = sp.amount
+        if correct and clean_cut:  # Clean Cut (Mastery): a chop in the grain's own style hits harder
+            quality *= 1 + clean_cut
         damage = max(1, round(power * quality * hits))
         self.wear += c.wear_per_chop * c.grain(self.grain).wear * (sp.wear if sp else 1.0) * max(MIN_WEAR_FACTOR, 1 - wear_slow)
         ended = self.wear >= 1
@@ -325,6 +327,26 @@ async def shake(user: User, chance: float, rng: random.Random, registry: Registr
     return drops
 
 
+async def windfall(user: User, every: int, rng: random.Random, registry: Registry | None = None) -> Counter:
+    """Windfall (Mastery): every `every`th chop you make shakes loose a full roll of drops, paid at once. Counts your chops."""
+    if every <= 0:
+        return Counter()
+    hit: list[bool] = []
+
+    def count(skill: Foraging) -> None:
+        skill.stats.chops += 1
+        if skill.stats.chops % every == 0:
+            hit.append(True)
+
+    await user.update_skill("foraging", count)
+    if not hit:
+        return Counter()
+    drops = roll_drops(1, rng, registry or get_registry())
+    for item_id, quantity in drops.items():
+        await user.add_item(item_id, quantity)
+    return drops
+
+
 async def axe_stats(user: User, registry: Registry | None = None) -> EffectiveStats:
     stats = await equipped_stats(user, "foraging", registry)
     if stats is None:
@@ -341,10 +363,12 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     if tree.collected:
         raise ForagingError("You already collected this tree.")
     tree.collected = True
-    drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus), rng), rng, reg)
+    axe = await equipped_stats(user, "foraging", reg)
+    final_cut = axe.stats.get("final_cut", 0.0) if axe else 0.0  # Final Cut (Mastery): a tree you fell yourself pays more
+    drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus + final_cut), rng), rng, reg)
     if tree.double:  # a Re-leaf double tree also drops its haul of materials
         drops.update(rules.releaf.double_items)
-    bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules) * (1 + tree.bonus))
+    bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules) * (1 + tree.bonus + final_cut))
     xp = round(tree.effort * rules.xp_per_swing * await xp_multiplier(user.id, reg, "foraging"))
     await _pay(user, drops, bits, xp, trees=1)
     jackpot = None

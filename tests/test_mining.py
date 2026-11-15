@@ -1115,3 +1115,68 @@ def test_the_roads_chain_climbs_the_abilities_and_the_numbers_in_the_text_match_
     for p, mm in zip(prospectors, multis, strict=True):
         tool = REG.item(p).tool
         assert tool.ability == "multi_mine" and tool.ability_name == "Multi-Mine" and f"{mm:.0%}" in tool.ability_description
+
+
+# ---- Mastery capstones -----------------------------------------------------------------------------------------------------------------------------
+def test_lifeline_gives_a_brace_every_nth_row_and_gold_rush_triples_every_nth_cell_and_geodes_hold_gems():
+    run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0), lifeline=4, braces=1)
+    run.rng = Rig(0.99)
+    for _ in range(8):
+        run.danger = 0
+        run.dig()
+    assert run.braces == 1 + 2  # (rows 4 and 8)
+    plain = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0), braces=1)
+    plain.rng = Rig(0.99)
+    for _ in range(8):
+        plain.danger = 0
+        plain.dig()
+    assert plain.braces == 1
+    # gold rush: the 3rd cell is tripled; a plain run is not
+    for gold, expected in ((3, 3), (0, 1)):
+        run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0), gold_rush=gold)
+        run.rng = Rig(0.99)
+        for depth in range(3):
+            force_row(run, [COPPER, COPPER, COPPER, COPPER, COPPER], depth=depth)
+            run.danger = 0
+            run.dig()
+        assert run.haul["copper_ore"] == 2 + expected, gold  # (two single cells, then the third one)
+    # geodes: always a gem with the roll forced, never without the stat
+    run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0), geode=1.0)
+    run.rng = Rig(0.0)
+    force_row(run, [COPPER] * 5)
+    run.danger = 0
+    run.dig()
+    assert any(run.haul[g] for g in RULES.reactor.core_gems)
+
+
+def test_the_three_mining_capstones_are_about_equally_strong():
+    """Each capstone is tuned (config) to add about a fifth to a run's value for the same digging; none is the obvious choice."""
+    from random import Random as R
+
+    price = lambda i: REG.item(i).sell_price  # noqa: E731
+    d = RULES.descent
+
+    def average(**kw):
+        total = 0
+        for seed in range(1200):
+            run = m.MineRun(RULES, REG, R(seed), cursors=[2], braces=d.braces_base + 1, yield_factor=1 + d.power_yield_bonus * 12, **kw)
+            while not run.finished:
+                if run.risk >= 0.07:
+                    if run.braces and run.danger > 10:
+                        run.brace()
+                        continue
+                    run.leave()
+                    break
+                if run.signs(run.depth)[run.cursors[0]] == "hole":
+                    run.move(1)
+                run.dig()
+            total += sum(price(i) * q for i, q in run.haul.items())
+        return total / 1200
+
+    base = average()
+    gains = {}
+    for node_id, stat in (("lifeline", "lifeline"), ("gold_rush", "gold_rush"), ("geode_cracker", "geode")):
+        amount = next(e.amount for e in REG.mastery.node(node_id).effects if e.stat == stat)
+        gains[node_id] = average(**{stat: int(amount) if stat != "geode" else amount}) / base - 1
+    assert all(0.1 <= g <= 0.4 for g in gains.values()), gains
+    assert max(gains.values()) - min(gains.values()) <= 0.15, gains

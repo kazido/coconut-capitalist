@@ -725,3 +725,65 @@ async def test_a_sprinkler_can_sometimes_grows_a_second_cycle_and_an_alchemist_c
             amounts.append((await f.harvest(user, 1, Random(i), T0, SURE)).amount)
         sizes[user.id] = amounts
     assert max(sizes[3]) >= 2 * min(sizes[3]) and sum(sizes[3]) > 1.3 * sum(sizes[1])
+
+
+# ---- Mastery capstones: Evergreen, Heirloom, Haggler -----------------------------------------------------------------------------------------------
+async def ripe(user, seed="lemon_seed", plot=1):
+    await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
+    await user.add_item(seed, 1)
+    await f.plant(user, plot, seed, now=T0, registry=SURE)
+    await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
+
+
+async def test_evergreen_replants_a_harvest_for_free_and_a_plain_can_never_does(db):
+    plain, green = await User.get(1), await User.get(2)
+    await with_can(plain)
+    await with_can(green)
+    await green.update_skill("farming", lambda m: m.mastery.append("evergreen"))
+    await ripe(plain)
+    await ripe(green)
+    assert (await f.harvest(plain, 1, Random(1), T0, SURE)).replanted is False
+    assert (await plain.skill("farming")).farm.plot_1.crop_id is None
+    sure = type("Low", (Random,), {"random": lambda self: 0.0})(1)  # every roll succeeds
+    h = await f.harvest(green, 1, sure, T0, SURE)
+    plot = (await green.skill("farming")).farm.plot_1
+    assert h.replanted and plot.crop_id == "lemon_seed" and plot.cycle == 0 and not plot.can_harvest and await green.item_quantity("lemon_seed") == 0
+
+
+async def test_heirloom_makes_some_harvests_bigger(db):
+    plain, rich = await User.get(1), await User.get(2)
+    for user in (plain, rich):
+        await with_can(user)
+    await rich.update_skill("farming", lambda m: m.mastery.append("heirloom"))
+    sizes = {}
+    for user in (plain, rich):
+        amounts = []
+        for i in range(150):
+            await ripe(user)
+            amounts.append((await f.harvest(user, 1, Random(i), T0, SURE)).amount)
+        sizes[user.id] = sum(amounts)
+    assert 1.1 < sizes[2] / sizes[1] < 1.3  # (30% of harvests, 60% bigger: about +18%)
+
+
+async def test_haggler_makes_farm_goods_sell_for_more_and_only_farm_goods(db):
+    from cococap.services import shop
+
+    plain, merchant = await User.get(1), await User.get(2)
+    for user in (plain, merchant):
+        await with_can(user)
+        await user.add_item("apple", 100)
+        await user.add_item("copper_ore", 100)
+    await merchant.update_skill("farming", lambda m: m.mastery.append("haggler"))
+    cut = REG.mastery.node("haggler").effects[0].amount
+    base, more = await shop.sell(plain, "apple", 100), await shop.sell(merchant, "apple", 100)
+    assert more == round(base * (1 + cut)) and base > 0
+    assert await shop.sell(plain, "copper_ore", 100) == await shop.sell(merchant, "copper_ore", 100)
+
+
+def test_the_three_farming_capstones_are_about_equally_strong():
+    """Farming is about the harvest's worth, so each capstone is a fraction of it: Haggler adds its price bump, Heirloom its chance x its size, and Evergreen its chance
+    x about a third (the time and seed a replanted plot saves). They are tuned to land within a few points of each other."""
+    node = lambda nid: REG.mastery.node(nid).effects[0].amount  # noqa: E731
+    gains = {"haggler": node("haggler"), "heirloom": node("heirloom") * 0.6, "evergreen": node("evergreen") * 0.3}
+    assert all(0.1 <= g <= 0.25 for g in gains.values()), gains
+    assert max(gains.values()) - min(gains.values()) <= 0.08, gains

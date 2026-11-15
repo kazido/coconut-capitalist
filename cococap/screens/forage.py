@@ -139,12 +139,13 @@ async def swing_at(screen: Screen, power: int, stance: str) -> tuple[foraging.Sw
     grain, name = screen.spot.grain, screen.spot.name
     pet = await pets.bonuses(screen.user)
     swing = screen.spot.swing(power, rules, screen.rng, stats.stats.get("good_chop", 0.0) + pet.get("good_chop", 0.0), stance,
-                              stats.stats.get("wear_slow", 0.0), stats.stats.get("double_chop", 0.0))
+                              stats.stats.get("wear_slow", 0.0), stats.stats.get("double_chop", 0.0), stats.stats.get("clean_cut", 0.0))
     note = swing_note(swing, stance)
     if swing.correct is not None and await foraging.note_style(screen.user, grain, stance, swing.correct):
         note += (f"  📖 Learned: the **{name}** grain likes **{foraging.STANCES[stance][0]}**!" if swing.correct
                  else f"  ✖️ {foraging.STANCES[stance][0]} crossed off the **{name}** grain in your notes")
-    if shaken := await foraging.shake(screen.user, stats.stats.get("shake", 0.0), screen.rng):
+    shaken = await foraging.shake(screen.user, stats.stats.get("shake", 0.0), screen.rng) + await foraging.windfall(screen.user, int(stats.stats.get("windfall", 0)), screen.rng)
+    if shaken:
         note += "  🍃 Shook loose " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in shaken.items()) + "!"
     if swing.ended:
         note += f"\n🪵 The spot wore out. New spot: **{screen.spot.title(rules)}** grain"
@@ -166,7 +167,7 @@ class ForageScreen(Screen):
     label = "Foraging"
     emoji = TREE
     description = "Chop trees alone or join the community tree"
-    links = ("tree", "grove", "partygrove", "sellall")
+    links = ("tree", "grove", "partygrove", "sellall", "mastery")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -238,6 +239,7 @@ class ForageScreen(Screen):
         body.append(row(button("Chop a tree", emoji="🪓", style=discord.ButtonStyle.primary, disabled=stats is None,
                                on_click=self._chop),
                         button("Grain notes", emoji="📖", on_click=self._notes),
+                        button("Mastery", emoji="🌟", on_click=self._mastery),
                         button("Sell all", emoji="💰", on_click=self._sell_all)))
         return Page("Foraging", body, accent=0x4C8C4A)
 
@@ -266,6 +268,9 @@ class ForageScreen(Screen):
 
     async def _sell_all(self, interaction: discord.Interaction) -> None:
         await start_sell_all(self, interaction, "foraging")
+
+    async def _mastery(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "mastery", skill="foraging")
 
     async def _start_party(self, interaction: discord.Interaction) -> None:
         party = await Party.for_user(self.user.id)

@@ -96,6 +96,7 @@ class FishScreen(Screen):
             if cast.timed_out:
                 self.missed = cast  # kept for a moment: a click made in time may still be on its way
             self.cast, cast = None, None  # nobody picked up the line in time
+            await fishing.lose_streak(self.user)
             self.result = self._lost("🌊 Too slow!", ["It bit, but nobody pulled up the line in time. The fish got away."])
         if self.flash is not None and now() >= self.flash[1]:
             self.flash = None  # the numbers have faded
@@ -247,6 +248,8 @@ class FishScreen(Screen):
         lines = [f"**{rarity.rarity_name}**  ·  📏 **{catch.size:g} cm**  ·  worth **{bits(catch.fish.sell_price)}** bits  ·  **+{catch.xp:,}** xp"]
         if catch.slack_bits:
             lines.append(f"🧵 **Clean reel!** {catch.slack_left} slack unused: **+{bits(catch.slack_bits)}** bits")
+        if catch.streak_bits:
+            lines.append(f"🔥 **Hot streak!** **+{bits(catch.streak_bits)}** bits for your clean reels in a row")
         if catch.server_record:
             lines.append(f"🏆 **NEW SERVER RECORD!** +{bits(catch.record_bits)} bits"
                          + (f" (you beat {catch.record_holder})" if catch.record_holder else ""))
@@ -341,6 +344,7 @@ class FishScreen(Screen):
         except fishing.FishingError as error:
             if cast.escaped:
                 self.cast = None
+                await fishing.lose_streak(self.user)
             return await self.refresh(interaction, str(error))
         note = None
         if cast.boss and cast.hooked and cast.party_fight is None:  # a boss on the line: if you are in a party, the rest of it can join the fight
@@ -389,6 +393,7 @@ class FishScreen(Screen):
                 return await self.refresh(interaction)
             if result == "escaped":
                 self.cast = None
+                await fishing.lose_streak(self.user)
                 if cast.party_fight is not None:
                     await party_boss.report(self.user, "failed", 0, now())
                 what = cast.boss or f"The {cast.fish.display}"

@@ -257,6 +257,7 @@ class Cast:
     auto_steps: int = 0  # the Angler's Auto-Reel: this many of the first plain arrows are pressed for you when you pull up the line
     bycatch: float = 0.0  # the Treasure Hunter's Bycatch: the chance a catch brings a second, different fish
     water: object = None  # the water it was cast in (bycatch comes from there)
+    slips_start: int = 0  # the forgiven wrong arrows this cast began with (so a clean reel, using none, can be told)
     party_fight: int | None = None  # the number of the party boss fight this reel belongs to (everyone in it reels their own set of arrows)
 
     @property
@@ -382,6 +383,7 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
         truth=truth,
         decoys=decoys,
         slips_left=slips_allowed(stats.power, rules, stats.stats.get("slips", 0)),
+        slips_start=slips_allowed(stats.power, rules, stats.stats.get("slips", 0)),
         grace=rules.bite.grace,
         echo_window=rules.reel.echo_window,
         size=roll_size(fish, rng),
@@ -427,6 +429,24 @@ async def rod_stats(user: User, registry: Registry | None = None) -> EffectiveSt
     if stats is None:
         raise FishingError("You need a rod. Buy a Starter Rod in the shop (it's equipped for you).")
     return stats
+
+
+HOT_STREAK_MAX = 5  # clean reels in a row that count
+
+
+async def lose_streak(user: User) -> None:
+    """A fish got away: the streak starts over."""
+    if (await user.skill("fishing")).streak:
+        await user.update_skill("fishing", lambda skill: setattr(skill, "streak", 0))
+
+
+def salvage_loot(rng: random.Random, registry: Registry) -> Counter:
+    """One roll of the treasure chest's loot table (no bits, no lock to pick): what Salvage brings up."""
+    found: Counter = Counter()
+    for row in registry.fishing.treasure.loot:
+        if rng.random() < row.chance:
+            found[row.item] += rng.randint(row.min, row.max)
+    return found
 
 
 # ---- quests -----------------------------------------------------------------------------------------------
@@ -524,6 +544,7 @@ class Catch:
     slack_left: int = 0  # forgiven wrong arrows you did not need
     slack_bits: int = 0  # ...and what they paid
     bycatch: Item | None = None  # a second, different fish the Treasure Hunter's rod brought up
+    streak_bits: int = 0  # what the Angler's Hot Streak added (clean reels in a row)
 
 
 def catch_extras(rng: random.Random, registry: Registry) -> Counter:
@@ -570,9 +591,19 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     counts_for_community: list[bool] = []
     dice = rng or random.Random()
 
+    mastery_stats = await equipped_stats(user, "fishing", reg)
+    salvage_every = int(mastery_stats.stats.get("salvage", 0)) if mastery_stats else 0
+    salvaged: list[bool] = []
+    before: list[int] = []
+    hot_streak = mastery_stats.stats.get("hot_streak", 0.0) if mastery_stats else 0.0
+
     def grant(skill) -> None:
         skill.xp += xp
         skill.stats.fish_caught += 1
+        before.append(min(HOT_STREAK_MAX, skill.streak))  # (the streak this catch rides on)
+        skill.streak = skill.streak + 1 if cast.slips_left >= cast.slips_start else 0  # (a clean reel keeps the Hot Streak going; any slip ends it)
+        if salvage_every and skill.stats.fish_caught % salvage_every == 0:
+            salvaged.append(True)
         skill.stats.caught[cast.fish.id] = skill.stats.caught.get(cast.fish.id, 0) + 1 + cast.extra_fish
         if bycatch is not None:
             skill.stats.caught[bycatch.id] = skill.stats.caught.get(bycatch.id, 0) + 1
@@ -605,6 +636,11 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
         skill.stats.quests_completed += len(finished)
 
     await user.update_skill("fishing", grant)
+    if salvaged:  # Salvage: every Nth fish also brings up a chest's loot
+        haul = salvage_loot(rng or random.Random(), reg)
+        for item_id, quantity in haul.items():
+            await user.add_item(item_id, quantity)
+        extras = extras + haul
     if counts_for_community:
         from cococap.services import fishing_community  # (it builds on this module)
 
@@ -619,10 +655,11 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
             record_bits = round(cast.fish.sell_price * rules.records.server_bits_multiplier)
             await user.add_bits(record_bits)
     slack_bits = slack_bonus(cast.fish.sell_price * (1 + cast.extra_fish), cast.slips_left, rules)
-    if slack_bits:
-        await user.add_bits(slack_bits)
+    streak_bits = round(cast.fish.sell_price * (1 + cast.extra_fish) * hot_streak * before[0]) if hot_streak and before else 0  # Hot Streak: clean reels in a row pay more
+    if slack_bits + streak_bits:
+        await user.add_bits(slack_bits + streak_bits)
     return Catch(cast.fish, xp, tuple(finished), quest_bits, extras, seen[0] if seen else None,
-                 tuple(cast.reveals), cast.extra_fish, cast.size, bool(best), server_record, record_bits, holder, cast.slips_left, slack_bits, bycatch)
+                 tuple(cast.reveals), cast.extra_fish, cast.size, bool(best), server_record, record_bits, holder, cast.slips_left, slack_bits, bycatch, streak_bits)
 
 
 RECORDS_KEY = "fishing_records"
@@ -915,6 +952,10 @@ async def defeat_boss(user: User, cast: Cast, rng: random.Random | None = None, 
         raise FishingError("You already collected that.")
     cast.settled = True
     bits, items = roll_boss_reward(reg, rng)
+    rod = await equipped_stats(user, "fishing", reg)
+    if rod and rod.stats.get("chum", 0.0) > 0:  # Chum Slick: the boss pays again
+        more_bits, more_items = roll_boss_reward(reg, rng)
+        bits, items = bits + round(more_bits * rod.stats["chum"]), items + Counter({i: round(q * rod.stats["chum"]) for i, q in more_items.items()})
     xp = round(b.xp * await xp_multiplier(user.id, reg, "fishing"))
 
     def win(skill) -> None:

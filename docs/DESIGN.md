@@ -842,3 +842,14 @@ so the choice is also a choice of what you go out and collect.
 ## Tool lines: three plain upgrades, then the split
 
 Every tool line now has the same shape: **three plain upgrades, and the 4th upgrade is the split** into two roads that keep climbing. The pickaxe and rod got one new plain tier each (Steel Pickaxe, Sturdy Rod) so the split stays at the 4th upgrade without moving anyone's existing tools. The **axe** splits into **Lumberjack** (the old line; `timber`: chops land twice, via `double_chop`) and **Forager** (new; `shake`: a chop sometimes shakes loose a drop, paid on the spot). The **can** splits into **Sprinkler** (the old line; `sprinkle`: a watered plot sometimes grows a second cycle) and **Alchemist** (new; `transmute`: some harvests come up double). Each road has its own numbers (`configs/tools.toml [axe.paths.*]`, `[can.paths.*]`) and asks for different materials. TODO(balance): the road numbers still need a simulation pass, like the capstones.
+
+## Mastery for every skill, with capstones
+
+Mining, fishing, farming and foraging (not combat: it is paused) each have a tree of three branches, five nodes each. The last node of every branch (level 50, 4 points) is a **capstone** that changes how you play, tuned so the three in a skill are worth about the same (each adds roughly a fifth to that skill's income; guard tests in `test_mining.py`, `test_fishing.py`, `test_foraging.py`, `test_farming.py`). Mining is simulated with the real mine; the others are estimated from the config (see each test's docstring).
+
+- Mining: **Lifeline** (a brace back every 15th row), **Gold Rush** (every 7th cell pays triple), **Geode Cracker** (2% of cells hold a reactor gem).
+- Fishing: **Hot Streak** (each clean reel in a row makes your next catch pay 8% more, up to 5), **Salvage** (every 13th fish also brings a chest haul), **Chum Slick** (a boss you beat pays twice).
+- Foraging: **Final Cut** (a tree you fell yourself pays 25% more), **Windfall** (every 10th chop shakes loose a roll of drops), **Clean Cut** (right-style chops hit 20% harder).
+- Farming: **Evergreen** (half of harvests replant free), **Heirloom** (30% of harvests are 60% bigger), **Haggler** (farm goods sell for 15% more).
+
+Players who had taken an old level-50 node get those points back (unknown nodes are ignored).

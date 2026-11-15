@@ -129,6 +129,9 @@ class MineRun:
         vault_gem_bonus: float = 0.0,
         auto_bomb_every: int = 0,
         multi_mine: float = 0.0,
+        lifeline: int = 0,
+        gold_rush: int = 0,
+        geode: float = 0.0,
     ):
         self.rules, self.registry, self.rng = rules, registry, rng
         self.cursors = list(cursors)
@@ -136,6 +139,8 @@ class MineRun:
         self.braces, self.bombs, self.magnet = braces, bombs, magnet
         self.rich_bonus, self.vault_gem_bonus = rich_bonus, vault_gem_bonus  # Mastery: more rich lodes, more vault gems
         self.auto_bomb_every, self.multi_mine = auto_bomb_every, multi_mine  # pickaxe abilities (0: none)
+        self.lifeline, self.gold_rush, self.geode = lifeline, gold_rush, geode  # Mastery capstones (0: none): a brace back every N rows, every Nth cell pays triple, geodes with gems
+        self.cells_mined = 0
         self.auto_counter = 0  # rows dug since the last Auto-Bomb
         self.bombs_used = 0
         self.xp_awarded = 0
@@ -288,8 +293,12 @@ class MineRun:
             elif kinds[col] == "cache":
                 caches += 1
                 self.braces += d.cache_braces
+            self.cells_mined += 1
             if cells[col]:
-                found[cells[col][0]] += cells[col][1]
+                quantity = cells[col][1] * (3 if self.gold_rush and self.cells_mined % self.gold_rush == 0 else 1)  # Gold Rush: every Nth cell pays triple
+                found[cells[col][0]] += quantity
+            if self.geode and self.rng.random() < self.geode:  # Geode Cracker: a geode with a reactor gem inside
+                found[self.rng.choice(self.rules.reactor.core_gems)] += 1
             hardness += self.hardness(cells[col])
         self.haul.update(found)
         self.lodes += len(columns)
@@ -302,6 +311,8 @@ class MineRun:
         gain = pressure * self.growth_factor
         self.danger = min(100.0, max(0.0, self.danger + gain - vents * d.vent_relief))
         self.depth += 1
+        if self.lifeline and self.depth % self.lifeline == 0:  # Lifeline: a brace comes back every Nth row
+            self.braces += 1
         self.passed = next((m for m in d.milestones if m.row == self.depth), None)  # (the row you just finished, if it is a landmark)
         self.passed_haul = Counter()
         if self.passed is not None:
@@ -511,6 +522,9 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         vault_gem_bonus=tool.stats.get("vault_gem", 0.0),
         auto_bomb_every=int(tool.stats.get("auto_bomb", 0)),
         multi_mine=tool.stats.get("multi_mine", 0.0),
+        lifeline=int(tool.stats.get("lifeline", 0)),
+        gold_rush=int(tool.stats.get("gold_rush", 0)),
+        geode=tool.stats.get("geode", 0.0),
     )
 
 

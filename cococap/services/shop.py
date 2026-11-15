@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
-from cococap.services.equipment import EquipmentError, equip, skill_for_tool
+from cococap.services.equipment import EquipmentError, equip, equipped_stats, skill_for_tool
 from cococap.user import InsufficientFunds, User
 
 MAX_PER_PURCHASE = 1000
@@ -77,6 +77,14 @@ async def _equip_first_tool(user: User, item, made: list[ItemInstance], reg: Reg
         pass  # e.g. the level requirement isn't met yet: they can equip it later from the inventory
 
 
+async def haggle(user: User, item, registry: Registry | None = None) -> float:
+    """A Merchant's Haggler (Mastery): farm goods fetch this much more (0.08 = +8%)."""
+    if item.skill != "farming":
+        return 0.0
+    can = await equipped_stats(user, "farming", registry)
+    return can.stats.get("haggler", 0.0) if can else 0.0
+
+
 async def sell(user: User, item_id: str, quantity: int = 1, registry: Registry | None = None) -> int:
     """Sell stackable items for bits. Returns the bits received."""
     reg = registry or get_registry()
@@ -89,7 +97,7 @@ async def sell(user: User, item_id: str, quantity: int = 1, registry: Registry |
         await user.remove_item(item.id, quantity)
     except ValueError:
         raise ShopError(f"You don't have {quantity:,} {item.name}.") from None
-    earned = item.sell_price * quantity
+    earned = round(item.sell_price * quantity * (1 + await haggle(user, item, reg)))
     try:
         await user.add_bits(earned)
     except Exception:

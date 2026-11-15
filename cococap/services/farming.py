@@ -368,6 +368,7 @@ class Harvest:
     xp: int
     anomaly: bool
     extras: Counter = field(default_factory=Counter)  # leftovers from the harvest (plant fiber...)
+    replanted: bool = False  # Evergreen: the plot is growing the same crop again
 
 
 def drop_rolls(cycles: int, rules, rng: random.Random, luck: float = 0.0) -> int:
@@ -400,6 +401,8 @@ async def harvest(
     can = await equipped_stats(user, "farming", reg)  # (a can with better stats gives bigger harvests and more drops; no can: no bonus)
     crop_yield = pet.get("crop_yield", 0.0) + (can.stats.get("crop_yield", 0.0) if can else 0.0)
     transmute = can.stats.get("transmute", 0.0) if can else 0.0  # (an Alchemist can: some harvests come up double)
+    evergreen = can.stats.get("evergreen", 0.0) if can else 0.0  # (Mastery: a harvest sometimes replants itself, free)
+    heirloom = can.stats.get("heirloom", 0.0) if can else 0.0  # (Mastery: some harvests come up 60% bigger)
 
     def pick(m: Farming) -> None:
         apply_rain(m, user.id, now, reg, pet.get("grow_chance", 0.0))
@@ -408,9 +411,14 @@ async def harvest(
             raise FarmingError("Nothing is ready to harvest on that plot.")
         crop = reg.item(reg.item(plot.crop_id).seed.grows_into)
         taken.update(seed=plot.crop_id, crop=crop.id,
-                     amount=max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield) * (2 if rng.random() < transmute else 1))),
+                     amount=max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield) * (2 if rng.random() < transmute else 1) * (1.6 if heirloom and rng.random() < heirloom else 1))),
                      xp=round(reg.item(plot.crop_id).seed.cycles * rules.xp_per_cycle * party_bonus))
-        plot.crop_id, plot.cycle, plot.can_harvest = None, 0, False  # the plot is empty from this moment: once only
+        replant = bool(evergreen) and rng.random() < evergreen
+        taken["replanted"] = replant
+        if replant:  # Evergreen: the same crop is growing again, no seed spent
+            plot.cycle, plot.can_harvest, plot.since = 0, False, hour_of(now)
+        else:
+            plot.crop_id, plot.cycle, plot.can_harvest = None, 0, False  # the plot is empty from this moment: once only
         m.xp += taken["xp"]
         m.stats.crops_grown += taken["amount"]
 
@@ -432,7 +440,7 @@ async def harvest(
     anomaly = rng.randint(1, rules.anomaly_odds) == 1
     if anomaly:
         await user.refresh_cooldowns(Cooldowns.WORK, Cooldowns.DAILY)
-    return Harvest(number, taken["crop"], taken["amount"], taken["xp"], anomaly, extras)
+    return Harvest(number, taken["crop"], taken["amount"], taken["xp"], anomaly, extras, taken.get("replanted", False))
 
 
 async def harvest_all(
@@ -455,6 +463,12 @@ def market_price(item_id: str, quantity: int, registry: Registry) -> int:
     return int(registry.item(item_id).sell_price * quantity * (1 + registry.farming.market.price_bonus))
 
 
+async def shop_haggle(user: User, item, reg: Registry) -> float:
+    from cococap.services import shop  # (shop imports equipment, which this module also uses: import late to stay clear of a cycle)
+
+    return await shop.haggle(user, item, reg)
+
+
 async def sell_crops(user: User, now: float | None = None, registry: Registry | None = None) -> tuple[int, Counter[str]]:
     """Sell every crop you carry at the market price. Returns (bits earned, what was sold)."""
     reg, now = registry or get_registry(), now if now is not None else time.time()
@@ -469,7 +483,7 @@ async def sell_crops(user: User, now: float | None = None, registry: Registry | 
             await user.remove_item(item_id, quantity)
         except ValueError:
             continue  # sold or used elsewhere in the meantime
-        pay = market_price(item_id, quantity, reg)
+        pay = round(market_price(item_id, quantity, reg) * (1 + await shop_haggle(user, item, reg)))
         try:
             await user.add_bits(pay)
         except Exception:

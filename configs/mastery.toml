@@ -1,6 +1,6 @@
 # Mastery: a small tree per skill. You earn one point every `points_every_levels` skill levels and spend them on nodes. Each branch is a
 # line of nodes (each needs the one before it and a skill level), and the branches are DIFFERENT ways to play, with trade-offs, so you
-# cannot have everything (a full branch costs 9 points; level 100 earns 20). Nothing here touches xp. Respec costs bits.
+# cannot have everything (a full branch costs 10 points, ending in a CAPSTONE that changes how you play; level 100 earns 20). Nothing here touches xp. Respec costs bits.
 # `effects` use the same stat names as tools and enchants (see services/equipment.py).  TODO(balance): all numbers
 
 points_every_levels = 5
@@ -48,12 +48,12 @@ cost = 2
 effects = [{ stat = "braces", amount = 1 }, { stat = "danger_reduction", amount = 0.05 }]
 
 [[trees.branches.nodes]]
-id = "unshakeable"
-name = "Unshakeable"
-description = "Tunnels creak 10% less."
+id = "lifeline"
+name = "Lifeline"
+description = "CAPSTONE: every 15th row you dig, a brace comes back. Dig deep, never run dry."
 level = 50
-cost = 3
-effects = [{ stat = "danger_reduction", amount = 0.1 }]
+cost = 4
+effects = [{ stat = "lifeline", amount = 15 }]
 
 [[trees.branches]]
 id = "greedy"
@@ -94,12 +94,12 @@ cost = 2
 effects = [{ stat = "rich_chance", amount = 0.06 }]
 
 [[trees.branches.nodes]]
-id = "dragons_hoard"
-name = "Dragon's Hoard"
-description = "+35% ore, but 8% more creaking."
+id = "gold_rush"
+name = "Gold Rush"
+description = "CAPSTONE: every 7th cell you mine pays triple ore, with no extra creaking."
 level = 50
-cost = 3
-effects = [{ stat = "ore_yield", amount = 0.35 }, { stat = "danger_reduction", amount = -0.08 }]
+cost = 4
+effects = [{ stat = "gold_rush", amount = 7 }]
 
 [[trees.branches]]
 id = "gem"
@@ -140,12 +140,12 @@ cost = 2
 effects = [{ stat = "rich_chance", amount = 0.03 }, { stat = "vault_gem", amount = 0.5 }]
 
 [[trees.branches.nodes]]
-id = "gem_lord"
-name = "Gem Lord"
-description = "+200% chance of a reactor gem in the vault."
+id = "geode_cracker"
+name = "Geode Cracker"
+description = "CAPSTONE: every cell has a 2% chance to be a geode with a reactor gem inside."
 level = 50
-cost = 3
-effects = [{ stat = "vault_gem", amount = 2.0 }]
+cost = 4
+effects = [{ stat = "geode", amount = 0.02 }]
 
 [[trees]]
 skill = "fishing"
@@ -189,12 +189,12 @@ cost = 2
 effects = [{ stat = "slips", amount = 1 }, { stat = "bite_speed", amount = 0.05 }]
 
 [[trees.branches.nodes]]
-id = "master_angler"
-name = "Master Angler"
-description = "Bites come 20% sooner."
+id = "hot_streak"
+name = "Hot Streak"
+description = "CAPSTONE: every clean reel in a row makes your next catch pay 8% more (up to 5 in a row). A slip, or a fish that gets away, starts you over."
 level = 50
-cost = 3
-effects = [{ stat = "bite_speed", amount = 0.2 }]
+cost = 4
+effects = [{ stat = "hot_streak", amount = 0.08 }]
 
 [[trees.branches]]
 id = "treasure"
@@ -235,12 +235,12 @@ cost = 2
 effects = [{ stat = "rare_luck", amount = 0.2 }]
 
 [[trees.branches.nodes]]
-id = "pirates_luck"
-name = "Pirate's Luck"
-description = "+100% chest chance and +20% rare fish."
+id = "salvage"
+name = "Salvage"
+description = "CAPSTONE: every 13th fish you land also brings up a treasure haul (the chest loot table), no lock to pick."
 level = 50
-cost = 3
-effects = [{ stat = "treasure_luck", amount = 1.0 }, { stat = "rare_luck", amount = 0.2 }]
+cost = 4
+effects = [{ stat = "salvage", amount = 13 }]
 
 [[trees.branches]]
 id = "trophy"
@@ -281,9 +281,291 @@ cost = 2
 effects = [{ stat = "slips", amount = 1 }]
 
 [[trees.branches.nodes]]
-id = "leviathan_caller"
-name = "Leviathan Caller"
-description = "+100% boss chance and +20% rare fish, but 10% slower bites."
+id = "chum_slick"
+name = "Chum Slick"
+description = "CAPSTONE: a boss you beat pays twice (bits and loot)."
 level = 50
-cost = 3
-effects = [{ stat = "boss_luck", amount = 1.0 }, { stat = "rare_luck", amount = 0.2 }, { stat = "bite_speed", amount = -0.1 }]
+cost = 4
+effects = [{ stat = "chum", amount = 1.0 }]
+
+[[trees]]
+skill = "farming"
+
+[[trees.branches]]
+id = "green_thumb"
+name = "Green Thumb"
+emoji = "🌱"
+description = "Plots that tend themselves: seeds come back and a harvest can replant itself."
+
+[[trees.branches.nodes]]
+id = "seed_saver"
+name = "Seed Saver"
+description = "+8% chance a harvest gives its seed back."
+level = 5
+cost = 1
+effects = [{ stat = "seed_back", amount = 0.08 }]
+
+[[trees.branches.nodes]]
+id = "rich_soil"
+name = "Rich Soil"
+description = "+6% bigger harvests."
+level = 10
+cost = 1
+effects = [{ stat = "crop_yield", amount = 0.06 }]
+
+[[trees.branches.nodes]]
+id = "deep_roots"
+name = "Deep Roots"
+description = "+12% chance a harvest gives its seed back."
+level = 20
+cost = 2
+effects = [{ stat = "seed_back", amount = 0.12 }]
+
+[[trees.branches.nodes]]
+id = "fertile_ground"
+name = "Fertile Ground"
+description = "+10% bigger harvests and +5% seed chance."
+level = 35
+cost = 2
+effects = [{ stat = "crop_yield", amount = 0.1 }, { stat = "seed_back", amount = 0.05 }]
+
+[[trees.branches.nodes]]
+id = "evergreen"
+name = "Evergreen"
+description = "CAPSTONE: half of your harvests replant themselves, free and instantly."
+level = 50
+cost = 4
+effects = [{ stat = "evergreen", amount = 0.5 }]
+
+[[trees.branches]]
+id = "collector"
+name = "Collector"
+emoji = "🧺"
+description = "Bigger finds from every harvest: more drops, and heirloom crops."
+
+[[trees.branches.nodes]]
+id = "sharp_eyes"
+name = "Sharp Eyes"
+description = "+15% more farming drops."
+level = 5
+cost = 1
+effects = [{ stat = "drop_luck", amount = 0.15 }]
+
+[[trees.branches.nodes]]
+id = "tidy_rows"
+name = "Tidy Rows"
+description = "+4% bigger harvests."
+level = 10
+cost = 1
+effects = [{ stat = "crop_yield", amount = 0.04 }]
+
+[[trees.branches.nodes]]
+id = "keen_forager"
+name = "Keen Forager"
+description = "+25% more farming drops."
+level = 20
+cost = 2
+effects = [{ stat = "drop_luck", amount = 0.25 }]
+
+[[trees.branches.nodes]]
+id = "green_fingers"
+name = "Green Fingers"
+description = "+35% more drops and +5% bigger harvests."
+level = 35
+cost = 2
+effects = [{ stat = "drop_luck", amount = 0.35 }, { stat = "crop_yield", amount = 0.05 }]
+
+[[trees.branches.nodes]]
+id = "heirloom"
+name = "Heirloom"
+description = "CAPSTONE: 30% of your harvests are heirloom crops: 60% bigger."
+level = 50
+cost = 4
+effects = [{ stat = "heirloom", amount = 0.3 }]
+
+[[trees.branches]]
+id = "merchant"
+name = "Merchant"
+emoji = "💰"
+description = "Turn the crop into bits: farm goods fetch more at the shop."
+
+[[trees.branches.nodes]]
+id = "fair_price"
+name = "Fair Price"
+description = "Farm goods sell for 2% more."
+level = 5
+cost = 1
+effects = [{ stat = "haggler", amount = 0.02 }]
+
+[[trees.branches.nodes]]
+id = "bumper_crop"
+name = "Bumper Crop"
+description = "+8% bigger harvests."
+level = 10
+cost = 1
+effects = [{ stat = "crop_yield", amount = 0.08 }]
+
+[[trees.branches.nodes]]
+id = "good_name"
+name = "A Good Name"
+description = "Farm goods sell for 3% more."
+level = 20
+cost = 2
+effects = [{ stat = "haggler", amount = 0.03 }]
+
+[[trees.branches.nodes]]
+id = "bulk_deal"
+name = "Bulk Deal"
+description = "+10% bigger harvests and 2% better prices."
+level = 35
+cost = 2
+effects = [{ stat = "crop_yield", amount = 0.1 }, { stat = "haggler", amount = 0.02 }]
+
+[[trees.branches.nodes]]
+id = "haggler"
+name = "Haggler"
+description = "CAPSTONE: farm goods sell for 15% more, always."
+level = 50
+cost = 4
+effects = [{ stat = "haggler", amount = 0.15 }]
+
+[[trees]]
+skill = "foraging"
+
+[[trees.branches]]
+id = "lumberjack"
+name = "Lumberjack"
+emoji = "🪓"
+description = "Heavy swings and big trees: the felling chop is the payday."
+
+[[trees.branches.nodes]]
+id = "strong_arms"
+name = "Strong Arms"
+description = "+4% chance of a good chop."
+level = 5
+cost = 1
+effects = [{ stat = "good_chop", amount = 0.04 }]
+
+[[trees.branches.nodes]]
+id = "deep_cut"
+name = "Deep Cut"
+description = "Chops land twice 4% of the time."
+level = 10
+cost = 1
+effects = [{ stat = "double_chop", amount = 0.04 }]
+
+[[trees.branches.nodes]]
+id = "heavy_hands"
+name = "Heavy Hands"
+description = "+6% chance of a good chop."
+level = 20
+cost = 2
+effects = [{ stat = "good_chop", amount = 0.06 }]
+
+[[trees.branches.nodes]]
+id = "axe_rhythm"
+name = "Axe Rhythm"
+description = "Chops land twice 6% more often."
+level = 35
+cost = 2
+effects = [{ stat = "double_chop", amount = 0.06 }]
+
+[[trees.branches.nodes]]
+id = "final_cut"
+name = "Final Cut"
+description = "CAPSTONE: a tree you fell yourself pays 25% more (bits and drops)."
+level = 50
+cost = 4
+effects = [{ stat = "final_cut", amount = 0.25 }]
+
+[[trees.branches]]
+id = "naturalist"
+name = "Naturalist"
+emoji = "🍃"
+description = "The forest gives more when you look: drops from every swing."
+
+[[trees.branches.nodes]]
+id = "bird_watching"
+name = "Bird Watching"
+description = "Each chop has a 3% chance to shake loose a drop."
+level = 5
+cost = 1
+effects = [{ stat = "shake", amount = 0.03 }]
+
+[[trees.branches.nodes]]
+id = "good_boots"
+name = "Good Boots"
+description = "Spots wear 8% slower."
+level = 10
+cost = 1
+effects = [{ stat = "wear_slow", amount = 0.08 }]
+
+[[trees.branches.nodes]]
+id = "keen_nose"
+name = "Keen Nose"
+description = "Each chop has a 5% chance to shake loose a drop."
+level = 20
+cost = 2
+effects = [{ stat = "shake", amount = 0.05 }]
+
+[[trees.branches.nodes]]
+id = "bark_reader"
+name = "Bark Reader"
+description = "Spots wear 12% slower and +3% shaken drops."
+level = 35
+cost = 2
+effects = [{ stat = "wear_slow", amount = 0.12 }, { stat = "shake", amount = 0.03 }]
+
+[[trees.branches.nodes]]
+id = "windfall"
+name = "Windfall"
+description = "CAPSTONE: every 10th chop shakes loose a full roll of drops, guaranteed."
+level = 50
+cost = 4
+effects = [{ stat = "windfall", amount = 10 }]
+
+[[trees.branches]]
+id = "grain_reader"
+name = "Grain Reader"
+emoji = "🔎"
+description = "Learn the wood: right chops keep the spot fresh."
+
+[[trees.branches.nodes]]
+id = "first_notes"
+name = "First Notes"
+description = "Spots wear 6% slower."
+level = 5
+cost = 1
+effects = [{ stat = "wear_slow", amount = 0.06 }]
+
+[[trees.branches.nodes]]
+id = "steady_swing"
+name = "Steady Swing"
+description = "+3% chance of a good chop."
+level = 10
+cost = 1
+effects = [{ stat = "good_chop", amount = 0.03 }]
+
+[[trees.branches.nodes]]
+id = "clean_lines"
+name = "Clean Lines"
+description = "Spots wear 10% slower."
+level = 20
+cost = 2
+effects = [{ stat = "wear_slow", amount = 0.1 }]
+
+[[trees.branches.nodes]]
+id = "master_of_grain"
+name = "Master of Grain"
+description = "+5% good chops and 8% slower wear."
+level = 35
+cost = 2
+effects = [{ stat = "good_chop", amount = 0.05 }, { stat = "wear_slow", amount = 0.08 }]
+
+[[trees.branches.nodes]]
+id = "clean_cut"
+name = "Clean Cut"
+description = "CAPSTONE: a chop in the grain's own style hits 20% harder."
+level = 50
+cost = 4
+effects = [{ stat = "clean_cut", amount = 0.2 }]
