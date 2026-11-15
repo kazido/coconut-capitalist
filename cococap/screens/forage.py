@@ -32,7 +32,7 @@ def reward_text(reward: foraging.Reward) -> str:
     if reward.jackpot:
         kind, amount = reward.jackpot
         line += ("\n🌲🌲 **DOUBLE TREE!** A **Spirit of the Forest** drops: your pet will love it." if kind == "spirit"
-                 else f"\n🌲🌲 **DOUBLE TREE!** A jackpot of **+{bits(amount)}** bits!")
+                 else f"\n🌲🌲 **DOUBLE TREE!** A jackpot of **+{amount:,}** foraging xp!")
     return line
 
 

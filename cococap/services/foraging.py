@@ -299,7 +299,7 @@ class Reward:
     felled: bool = True  # False: the tree fell over unfinished (a consolation prize)
     window: int | None = None  # the community tree it came from
     party: bool = False  # ...or it came from a party tree
-    jackpot: tuple[str, int] | None = None  # a double tree's prize: ("bits", n) or ("spirit", 1)
+    jackpot: tuple[str, int] | None = None  # a double tree's prize: ("xp", n) or ("spirit", 1)
 
 
 async def _pay(user: User, drops: Counter, bits: int, xp: int, trees: int) -> None:
@@ -338,13 +338,13 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     xp = round(tree.effort * rules.xp_per_swing * await xp_multiplier(user.id, reg, "foraging"))
     await _pay(user, drops, bits, xp, trees=1)
     jackpot = None
-    if tree.double:  # a Re-leaf double tree: either a pile of bits or (1 in 100) a Spirit of the Forest
+    if tree.double:  # a Re-leaf double tree: either a lot of xp or (1 in 100) a Spirit of the Forest
         r = rules.releaf
-        jackpot = ("spirit", 1) if rng.random() < r.double_spirit_chance else ("bits", r.double_bits)
+        jackpot = ("spirit", 1) if rng.random() < r.double_spirit_chance else ("xp", round(r.double_xp * await xp_multiplier(user.id, reg, "foraging")))
         if jackpot[0] == "spirit":
             await user.add_item(r.spirit_item, 1)
         else:
-            await user.add_bits(r.double_bits)
+            await user.add_xp("foraging", jackpot[1])
 
         def done(skill: Foraging) -> None:
             skill.double_ready = False

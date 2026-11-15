@@ -1978,3 +1978,12 @@ async def test_bycatch_is_never_a_second_helping_of_the_same_fish(db, monkeypatc
         cast.press(arrow, T0 + 11)
     caught = await f.land(user, cast, REG, rng=Random(3))
     assert caught.bycatch is None and await user.item_quantity("cod") == 1  # (it gives up rather than hand you the same fish again)
+
+
+def test_big_accomplishments_pay_well_in_xp():
+    """Quests, books, community goals and bosses are accomplishments: they pay in xp (still bits too), enough to matter next to an hour of play (about 8,000 xp)."""
+    assert RULES.boss.xp >= 2000
+    assert RULES.book.completion_xp >= 2000 and RULES.community.book.completion_xp >= 4000
+    assert all(goal.xp >= 1500 for goal in RULES.community.monthly)
+    assert RULES.quests.xp_per_rarity >= 60
+    assert RULES.boss.bits_max > 0 and RULES.book.completion_bits > 0  # (and they still pay bits too: bits are not being removed)

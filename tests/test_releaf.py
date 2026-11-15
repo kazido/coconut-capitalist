@@ -114,11 +114,13 @@ async def test_the_next_tree_is_double_and_paying_it_clears_the_flag_and_pays_th
     double = await releaf.new_tree(user, 1, Random(5), REG)
     assert double.double and double.max_hp == round(plain.max_hp * R.double_hp) and double.hp == double.max_hp and not plain.double
     double.chop(double.max_hp)
-    before = user.purse
+    xp_before, bits_before = (await user.skill("foraging")).xp, user.purse
     reward = await f.fell_private(user, double, Random(1), REG)
     await user.refresh()
-    assert reward.jackpot == ("bits", R.double_bits) and user.purse >= before + R.double_bits + reward.bits
+    assert reward.jackpot[0] == "xp" and reward.jackpot[1] >= R.double_xp  # a big accomplishment pays in xp, not a million bits
+    assert user.purse - bits_before == reward.bits  # (no jackpot bits: only the tree's own pay)
     skill = await user.skill("foraging")
+    assert skill.xp - xp_before >= R.double_xp + reward.xp
     assert not skill.double_ready and skill.stats.double_trees_chopped == 1
     after = await releaf.new_tree(user, 1, Random(5), REG)
     assert not after.double  # one double tree per full meter

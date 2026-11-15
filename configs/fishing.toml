@@ -38,7 +38,7 @@ echo_window = 2                  # a second press of the arrow you JUST pressed 
 # bits = the fish's sell price x N x the multiplier, xp = rarity x N x xp_per_rarity.
 [quests]
 min_level = 3
-xp_per_rarity = 20
+xp_per_rarity = 60
 daily_bits_multiplier = 1.5
 weekly_bits_multiplier = 3.0
 
@@ -82,7 +82,7 @@ need_step_by_rarity = [4, 2, 0.5, 0.25]
 bits_per_sell = 0.5              # turning a fish in pays +50% of what it would sell for (so it beats selling it)
 xp_per_rarity = 15
 completion_bits = 50000          # finishing a book pays this x the book's level...
-completion_xp = 400              # ...and this much xp x its level
+completion_xp = 2000             # ...and this much xp x its level (a big accomplishment pays in xp; it was 400)
 
 # Treasure. Now and then a catch brings a hallucination: four numbers flash on screen for a few seconds. While it lasts
 # (`armed_minutes`), a cast can bring up a treasure chest instead of a fish, and the numbers unlock it. Forget them and
@@ -155,7 +155,7 @@ max_level = 10
 donor_bits_per_sell = 1.0         # a donated fish pays +100% of its sell price (these fish are rare: you give them up)
 donor_xp_per_rarity = 40
 completion_bits = 300000          # everyone eligible is paid this x the book's level when it is finished...
-completion_xp = 1000              # ...plus this much xp x the level
+completion_xp = 4000              # ...plus this much xp x the level (it was 1,000)
 [community.book.need_base]        # per fish at level 1, by rarity
 5 = 3
 6 = 2
@@ -169,19 +169,19 @@ completion_xp = 1000              # ...plus this much xp x the level
 kind = "any"
 count = 1500
 bits = 150000
-xp = 500
+xp = 1500
 [[community.monthly]]
 kind = "rarity"                   # fish of this rarity or better
 rarity = 3
 count = 150
 bits = 250000
-xp = 800
+xp = 2400
 [[community.monthly]]
 kind = "fish"                     # one specific fish (picked each month from this rarity)
 rarity = 4
 count = 15
 bits = 400000
-xp = 1200
+xp = 3600
 
 # Record fish. Every catch has its own size (most are small, a few are giants). You keep your biggest of each fish,
 # and the server keeps the biggest ever caught: beat them and you are paid.
@@ -199,7 +199,7 @@ wild_mysteries = 3               # a "wild" boss hides three arrows behind coin-
 
 bits_min = 80000
 bits_max = 200000
-xp = 400
+xp = 2500                         # a boss is a big accomplishment: it pays in xp (it was 400)
 
 # Each boss has its own twist (or two), so no two fights feel the same. They show before you start reeling.
 [boss.party]                      # a boss hooked by someone in a party of two or more opens a PARTY FIGHT: the others can join from their Fishing page

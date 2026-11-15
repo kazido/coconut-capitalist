@@ -164,7 +164,7 @@ daily_limit = 3                   # donations per UTC day
 meter_per_rarity = 5              # a donation fills the meter by (the rarest item donated's rarity) x this: a rarity 5 item = 25
 meter_goal = 50                   # when the meter is full, your NEXT tree is a double tree
 double_hp = 2.0                   # a double tree has this many times the hp...
-double_bits = 1000000             # ...and pays this many bits (the wiki says 10,000,000: scaled down to this economy)  TODO(balance)
+double_xp = 6000                  # ...and pays this much foraging xp (about 50 minutes of chopping; it paid 1,000,000 bits before)  TODO(balance)
 double_spirit_chance = 0.01       # ...or, 1 time in 100, a Spirit of the Forest instead
 spirit_item = "spirit_of_the_forest"
 double_items = { hardwood = 25, feather = 60, fine_bark = 8, maple_leaf = 4 }   # a double tree also drops this haul: about a third of an axe upgrade's materials

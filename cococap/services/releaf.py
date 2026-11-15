@@ -2,7 +2,7 @@
 
 When you finish a tree (from foraging level 10) you may donate everything it dropped. The **rarest** item you give fills your
 Re-leaf meter (its rarity x 5: an Aged Feather, rarity 5, is worth 25). You can donate three times a day. When the meter is
-full your **next tree is a double tree**: twice the hp, and a jackpot of bits or (1 in 100) a Spirit of the Forest when it falls.
+full your **next tree is a double tree**: twice the hp, and a jackpot of foraging xp or (1 in 100) a Spirit of the Forest when it falls.
 """
 
 import random

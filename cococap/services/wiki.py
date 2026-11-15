@@ -108,7 +108,7 @@ def _foraging(reg: Registry) -> list[str]:
         "and 🏷️ **Rich Seam** marks a tree of your own for more bits and drops when it falls. Better wedges make them likelier. An axe with **Double Strike** sometimes chops twice.",
         f"**Re-leaf** (level {f.releaf.min_level}): after felling a tree you can **donate its drops** ({f.releaf.daily_limit} a day). The rarest item "
         f"fills the meter by its rarity x{f.releaf.meter_per_rarity}; at **{f.releaf.meter_goal}** your next tree is a **double tree** with double the hp "
-        f"and a jackpot: {f.releaf.double_bits:,} bits, or a 1 in {round(1 / f.releaf.double_spirit_chance)} chance of a Spirit of the Forest.",
+        f"and a jackpot: {f.releaf.double_xp:,} foraging xp, or a 1 in {round(1 / f.releaf.double_spirit_chance)} chance of a Spirit of the Forest.",
         f"**The community tree.** One grows every hour and stands for {c.open_minutes} minutes. Everyone's chops add up; "
         f"chop at least {c.min_share:.0%} of it to be paid, and a bigger crowd earns a bonus. Rewards arrive in your own panel, even if you were offline.",
     ]
