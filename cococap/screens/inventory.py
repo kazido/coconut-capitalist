@@ -12,7 +12,7 @@ class InventoryScreen(Screen):
     label = "Inventory"
     emoji = "🎒"
     description = "Your items"
-    links = ("tools", "shop")
+    links = ("tools", "shop", "trade")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -33,7 +33,8 @@ class InventoryScreen(Screen):
                 )
             )
         body += [sep(), row(button("Sell", emoji="💰", style=discord.ButtonStyle.success, disabled=not lines, on_click=self._sell),
-                            button("Tools", emoji="🧰", on_click=self._tools))]
+                            button("Tools", emoji="🧰", on_click=self._tools),
+                            button("Trade", emoji="🎁", on_click=self._trade))]
         return Page("Inventory", body, accent=0x99B0A2)
 
     def _turn(self, step: int):
@@ -48,3 +49,6 @@ class InventoryScreen(Screen):
 
     async def _tools(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "tools")
+
+    async def _trade(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "trade")

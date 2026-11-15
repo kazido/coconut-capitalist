@@ -10,7 +10,7 @@ from cococap.user import Cooldowns
 # The big things to do, as full sections; the everyday shortcuts sit in one row; the rest is on "More".
 FEATURED = ["skills", "shipments", "minigames"]
 SHORTCUTS = ["checkin", "inventory", "shop", "pets"]
-MORE_LINKS = ["wiki", "bestiary", "profile", "rank", "top", "stats", "settings"]
+MORE_LINKS = ["trade", "wiki", "bestiary", "profile", "rank", "top", "stats", "settings"]
 PARTY_NAMES_SHOWN = 4
 
 

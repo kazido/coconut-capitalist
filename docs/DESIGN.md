@@ -828,3 +828,8 @@ so the choice is also a choice of what you go out and collect.
 - **Shipments cooldown**: deliberately none. Materials are the limit and shipping only pays a modest premium over selling.
 
 - **Shipments page**: one shipment per page, swapped with a "Pick a shipment" dropdown (your crates, then the community one). It has its own section on Home between Skills and Minigames (no longer on the Skills page).
+
+## Easier shipments and gifting
+
+- **Shipments are easier.** Personal crates ask for about 40% of the old materials (`value_base` 60,000, `value_per_level` 6,000) and pay more xp per bit. The weekly **community** goal is sized when the week starts: players active in the last `active_days` (floor `min_players`) times (`value_per_player` + `value_per_level` x their average skill level). It is stored with the week (`players`, `value`) so it never moves mid-week, and the page says who it was sized for. Pool rarity follows the average level.
+- **Gifts** (`services/trade.py`, `screens/trade.py`, `/trade`, buttons on Inventory and More): you build a gift of items and/or bits for one player; it waits 5 minutes for them to Accept or Decline, and the sender can take it back. Nothing is asked in return. Rules: human players only, not yourself, bits at least 100, ordinary stackable items only (no tools or gear), one waiting gift per recipient. Accepting removes the offer first, takes the sender's things (giving them back if any are gone), then credits the receiver, so it is all or nothing and pressing Accept twice pays once. Offers live in memory. `/pay` is unchanged.

@@ -110,3 +110,63 @@ async def test_a_gift_of_only_bits_works(db):
     await trade.accept(b, NOW + 1)
     await b.refresh()
     assert b.purse == before + 1000
+
+
+# ---- the Trade page ------------------------------------------------------------------------------------------------------------------------
+from tests.test_hub import all_text, buttons, find_button, hub, select_named  # noqa: E402
+
+
+class Member:
+    def __init__(self, id, bot=False):
+        self.id, self.bot = id, bot
+
+
+async def test_the_trade_page_is_reachable_from_inventory_more_and_the_command_exists(db):
+    nav, inter = await hub("inventory")
+    await find_button(nav, "Trade").callback(inter)
+    assert nav.screen.id == "trade"
+    nav, _ = await hub("more")
+    assert "Trade" in all_text(nav)
+
+
+async def test_building_and_sending_a_gift_from_the_page_and_accepting_it_on_the_other_side(db):
+    a, b = await pair(db)
+    nav, inter = await hub("trade")
+    screen = nav.screen
+    assert find_button(nav, "Send").disabled
+    await screen._pick_player(inter, Member(2))
+    screen.items["copper_ore"] = 3  # (the quantity pop-up is a Discord modal; the draft it fills is set directly)
+    screen.bits = 500
+    await screen.refresh(inter)
+    assert not find_button(nav, "Send").disabled and "copper" in all_text(nav).lower()
+    await find_button(nav, "Send").callback(inter)
+    assert trade.pending_for(2) is not None and "Waiting for" in all_text(nav) and not screen.items
+    nav2, inter2 = await hub("trade", user_id=2)
+    assert "A gift from" in all_text(nav2)
+    await find_button(nav2, "Accept").callback(inter2)
+    assert await b.item_quantity("copper_ore") == 3 and trade.pending_for(2) is None and "received a gift" in all_text(nav2)
+
+
+async def test_the_page_refuses_bots_and_yourself_and_can_decline_and_take_back(db):
+    a, b = await pair(db)
+    nav, inter = await hub("trade")
+    await nav.screen._pick_player(inter, Member(9, bot=True))
+    assert nav.screen.to is None
+    await nav.screen._pick_player(inter, Member(1))
+    assert nav.screen.to is None
+    await trade.offer(a, 2, {"copper_ore": 1}, 0)
+    nav, inter = await hub("trade")
+    await find_button(nav, "Take back").callback(inter)
+    assert trade.pending_for(2) is None
+    await trade.offer(a, 2, {"copper_ore": 1}, 0)
+    nav2, inter2 = await hub("trade", user_id=2)
+    await find_button(nav2, "Decline").callback(inter2)
+    assert trade.pending_for(2) is None and await a.item_quantity("copper_ore") == 10
+
+
+async def test_the_item_dropdown_lists_ordinary_stacks_but_never_tools(db):
+    a, _ = await pair(db)
+    await a.give_instance("rookiepickaxe")
+    nav, _ = await hub("trade")
+    values = {o.value for o in select_named(nav, "Add an item").options}
+    assert "copper_ore" in values and "rookiepickaxe" not in values

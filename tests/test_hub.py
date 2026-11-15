@@ -882,7 +882,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("wiki", "bestiary", "profile", "rank", "top", "stats", "settings")):
+    for index, expected in enumerate(("trade", "wiki", "bestiary", "profile", "rank", "top", "stats", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)

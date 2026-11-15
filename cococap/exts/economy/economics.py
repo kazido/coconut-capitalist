@@ -107,6 +107,11 @@ class EconomyCog(BaseCog, name="Economy"):
         """Pay someone else some bits, if you're feeling nice!"""
         await process_payment(interaction=interaction, recipient=recipient, amount=amount)
 
+    @app_commands.command(name="trade", description="Send items and bits to another player.")
+    async def trade(self, interaction: Interaction):
+        """Open the Trade page: build a gift, and they accept it."""
+        await open_screen(interaction, "trade")
+
 
 async def setup(bot):
     # Necessary for the bot.py file to auto load cogs
