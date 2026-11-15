@@ -6,7 +6,7 @@ from cococap.ui.components import button, row, section, xp_bar
 from cococap.user import User
 
 # skill -> the screen that plays it
-SKILL_SCREENS = {"mining": "mining", "farming": "farm", "foraging": "forage", "fishing": "fish", "combat": "fight"}
+SKILL_SCREENS: dict[str, str | None] = {"mining": "mining", "farming": "farm", "foraging": "forage", "fishing": "fish", "combat": None}  # combat is paused while it is redesigned (the fight screen still exists)
 
 
 class SkillsScreen(Screen):
@@ -14,7 +14,7 @@ class SkillsScreen(Screen):
     label = "Skills"
     emoji = "📈"
     description = "Mining, farming, foraging, fishing and combat"
-    links = ("mining", "farm", "forage", "fish", "fight", "shipments")
+    links = ("mining", "farm", "forage", "fish", "shipments")
 
     async def build(self) -> Page:
         body = [*self.note_block()]
@@ -26,7 +26,7 @@ class SkillsScreen(Screen):
             accessory = (
                 button("Open", style=discord.ButtonStyle.primary, on_click=self._opener(screen_id))
                 if screen_id
-                else button("Soon", disabled=True)
+                else button("Paused", disabled=True)
             )
             body.append(section(line, accessory=accessory))
         body.append(row(button("Shipments", emoji="📦", on_click=self._opener("shipments"))))

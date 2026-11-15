@@ -5,7 +5,7 @@ from cococap.services import tool_effects, upgrades
 from cococap.services.equipment import effective_stats
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
-from cococap.ui.components import button, needs_text, row, section, sep, text
+from cococap.ui.components import button, needs_text, row, section, select, sep, text
 
 
 # what a tool's extra stats say in words: stat -> (label, how to show the amount)
@@ -44,6 +44,7 @@ class UpgradeScreen(Screen):
     def __init__(self, nav):
         super().__init__(nav)
         self.page = 0  # which tool is showing
+        self.road: dict[int, str] = {}  # tool id -> the path showing, for a tool at a fork
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -67,7 +68,14 @@ class UpgradeScreen(Screen):
                          + (f"  ·  {first.current.tool.path} path" if first.current.tool.path else "")
                          + f"\n-# {tool_effects.HOW[first.current.tool.kind]}"
                          + (f"\n-# ✨ {first.current.tool.ability_name}: {first.current.tool.ability_description}" if first.current.tool.ability_name else "")))
-        for offer in mine:
+        shown = mine
+        if len(mine) > 1:  # a fork in the road: one page per path, swapped with a dropdown
+            chosen = self.road.get(first.instance.id, mine[0].path)
+            shown = [o for o in mine if o.path == chosen] or mine[:1]
+            body.append(row(select("Pick a path...", [
+                discord.SelectOption(label=f"{(o.target.tool.path or o.path).title()} path", description=o.target.name, value=o.path, default=o is shown[0])
+                for o in mine], self._road(first.instance.id))))
+        for offer in shown:
             cost, target = offer.cost, offer.target.tool
             road = f"  ·  **{target.path} path**" if target.path and offer.current.tool.fork else ""
             now = effective_stats(offer.instance).power
@@ -83,7 +91,7 @@ class UpgradeScreen(Screen):
                 "Upgrade", style=discord.ButtonStyle.success, disabled=not offer.affordable,
                 on_click=self._upgrade(offer.instance.id, offer.path))))
         if first.current.tool.fork:
-            body.append(text("-# ⚠️ A fork in the road: the road you take is the one your tool climbs from now on."))
+            body.append(text("-# ⚠️ A fork in the road: the path you take is the one your tool climbs from now on."))
         body.append(sep())
         if len(tools) > 1:
             body.append(row(button("Prev", emoji="◀️", disabled=self.page == 0, on_click=self._turn(-1)),
@@ -98,6 +106,13 @@ class UpgradeScreen(Screen):
             await self.refresh(interaction)
 
         return go
+
+    def _road(self, instance_id: int):
+        async def pick(interaction: discord.Interaction, values: list[str]) -> None:
+            self.road[instance_id] = values[0]
+            await self.refresh(interaction)
+
+        return pick
 
     def _upgrade(self, instance_id: int, path: str = "up"):
         async def go(interaction: discord.Interaction) -> None:

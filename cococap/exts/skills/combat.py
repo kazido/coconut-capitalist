@@ -1,7 +1,6 @@
 from discord import Interaction, app_commands
 from discord.ext import commands
 
-from cococap.screens import open_screen
 
 
 class CombatCog(commands.Cog, name="Combat"):
@@ -9,7 +8,7 @@ class CombatCog(commands.Cog, name="Combat"):
 
     @app_commands.command(name="fight", description="Fight monsters in turn-based combat.")
     async def fight(self, interaction: Interaction):
-        await open_screen(interaction, "fight")
+        await interaction.response.send_message("⚔️ Combat is paused while it gets a rework. Check back soon!", ephemeral=True)
 
 
 async def setup(bot):

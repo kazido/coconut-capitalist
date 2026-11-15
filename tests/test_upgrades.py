@@ -359,20 +359,41 @@ async def test_a_tool_with_no_fork_has_no_fork_offer(db):
         await upgrades.upgrade(user, inst.id, path="fork")
 
 
-async def test_the_upgrade_screen_shows_both_roads_with_what_each_does(db):
+async def test_a_fork_shows_one_path_at_a_time_and_a_dropdown_swaps_between_them(db):
+    from tests.test_hub import choose, select_named
+
     user, inst = await forked_pickaxe()
     nav, inter = await hub("upgrade")
+    menu = select_named(nav, "Pick a path")
+    assert [o.label for o in menu.options] == ["Warden path", "Prospector path"] and sum(o.default for o in menu.options) == 1
     text = all_text(nav)
-    assert "Warden path" in text and "Prospector path" in text and "fork in the road" in text
-    assert "Auto-Bomb" in text and "Multi-Mine" in text  # each road's ability is announced
-    assert "Ore per lode: ×2.50 → **×4.44**" in text and "Ore per lode: ×2.50 → **×4.00**" in text  # the Prospector digs more ore per lode, the Warden is safer
-    assert "Tin Ore" in text and "Obsidian" in text  # ...and each asks for its own materials
-    assert "Pressure builds: 2% slower → **0% slower**" in text and "Rich lode chance: +0.4% → **+1.8%**" in text  # the Prospector's own numbers...
-    assert "Pressure builds: 2% slower → **6% slower**" in text and "Rich lode chance: +0.4% → **+0.0%**" in text  # ...are not the Warden's
     ups = [b for b in buttons(nav) if b.label == "Upgrade"]
-    assert len(ups) == 2 and not any(b.disabled for b in ups)
-    await ups[1].callback(inter)
+    assert len(ups) == 1  # one path on the page
+    first = text
+    await choose(nav, inter, menu, menu.options[1].value)
+    text = all_text(nav)
+    assert text != first and "Prospector" in text
+    ups = [b for b in buttons(nav) if b.label == "Upgrade"]
+    assert len(ups) == 1 and not ups[0].disabled
+    await ups[0].callback(inter)
     assert (await user.instance(inst.id)).template_id == "prospector_pickaxe" and "Prospector's Pickaxe" in all_text(nav)
+
+
+async def test_each_path_page_has_its_own_ability_materials_and_numbers(db):
+    from tests.test_hub import choose, select_named
+
+    await forked_pickaxe()
+    nav, inter = await hub("upgrade")
+    seen = {}
+    for option in select_named(nav, "Pick a path").options:
+        menu = select_named(nav, "Pick a path")
+        await choose(nav, inter, menu, option.value)
+        seen[option.label] = all_text(nav)
+    warden, prospector = seen["Warden path"], seen["Prospector path"]
+    assert "Auto-Bomb" in warden and "Multi-Mine" not in warden and "Multi-Mine" in prospector and "Auto-Bomb" not in prospector.split("✨ New ability")[1]
+    assert "Ore per lode: ×2.50 → **×4.00**" in warden and "Ore per lode: ×2.50 → **×4.44**" in prospector
+    assert "Pressure builds: 2% slower → **6% slower**" in warden and "Pressure builds: 2% slower → **0% slower**" in prospector
+    assert ("Obsidian" in warden) != ("Obsidian" in prospector) and ("Tin Ore" in warden) != ("Tin Ore" in prospector) and "fork in the road" in warden
 
 
 def test_describe_stats_reads_negative_numbers_as_the_opposite():
@@ -425,12 +446,15 @@ async def test_a_page_has_that_tools_costs_and_upgrading_it_keeps_you_on_it(db):
     assert "became a **Thornwhip Axe**" in all_text(nav) and "Thornwhip Axe" in tool_page_title(nav)  # still on the axe's page, now the next step
 
 
-async def test_a_forked_tool_shows_both_roads_on_its_one_page_and_a_single_tool_has_no_page_buttons(db):
+async def test_a_single_tool_has_no_page_buttons_and_only_a_fork_has_a_dropdown(db):
+    from tests.test_hub import selects
+
     user, inst = await forked_pickaxe()
     nav, _ = await hub("upgrade")
-    text = all_text(nav)
-    assert "Warden path" in text and "Prospector path" in text and len([b for b in buttons(nav) if b.label == "Upgrade"]) == 2
-    assert not any(b.label in ("Prev", "Next") for b in buttons(nav))  # (one tool: nothing to page through)
+    assert not any(b.label in ("Prev", "Next") for b in buttons(nav)) and len(selects(nav)) == 1  # (one tool: nothing to page through)
+    await user.give_instance("starter_axe")
+    nav, _ = await hub("upgrade")
+    assert any(b.label == "Prev" for b in buttons(nav))
 
 
 async def test_the_upgrade_page_number_cannot_run_off_the_end(db):
