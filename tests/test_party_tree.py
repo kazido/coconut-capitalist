@@ -304,3 +304,47 @@ async def test_a_party_chop_that_overshoots_only_counts_the_part_that_was_needed
     reward = (await pt.claim(users[0], T0 + 10, REG))[0]
     expected_effort = (tree.max_hp - 10) / (tree.max_hp - 10) + 100.0 * 10 / 1000
     assert reward.xp == round(round(expected_effort * RULES.xp_per_swing) * (1 + REG.economy.party_xp_bonus_by_size[0]))
+
+
+# ---- a teammate fells the tree while your panel is old ----------------------------------------------------------------------------------------
+async def stale_panel():
+    """Two players; player 2 is looking at the standing tree when player 1 fells it (after player 2 did their share)."""
+    users = await team(2)
+    tree = await pt.start(users[0], 1, T0, REG)
+    mine, mine_inter = await hub("partygrove", user_id=2)
+    assert "hp" in all_text(mine)
+    await pt.chop(users[1], tree.max_hp // 2, T0 + 2, REG)
+    await pt.chop(users[0], tree.max_hp, T0 + 3, REG)  # a teammate fells it: your panel is now out of date
+    return users, mine, mine_inter
+
+
+async def test_chopping_a_tree_a_teammate_already_felled_shows_your_rewards_instead_of_an_error(db, clock):
+    users, mine, mine_inter = await stale_panel()
+    before = (await User.get(2)).purse
+    mine_inter.response.send_message.reset_mock()
+    await chop(mine, mine_inter)  # you press a chop button on the old panel
+    assert mine.screen.id == "result" and "TIMBER" in all_text(mine)  # your rewards, on a page of their own
+    mine_inter.response.send_message.assert_not_called()  # not an ephemeral "no party tree" error
+    assert (await User.get(2)).purse > before and await pt.claim(users[1], T0 + 10, REG) == []  # paid, and only once
+
+
+async def test_a_result_that_never_reached_you_is_shown_on_your_next_click(db, clock):
+    users, mine, mine_inter = await stale_panel()
+    before = (await User.get(2)).purse
+    # the self-refresh builds the result page (and pays you), but the message can no longer be edited...
+    await mine._render()
+    assert mine.screen.id == "result" and mine._unsent is not None and (await User.get(2)).purse > before
+    mine.screen = mine.screen.origin  # (the player's panel is still the old one: the edit failed)
+    # ...so your next click still shows what you were paid
+    await mine.refresh(mine_inter)
+    assert mine.screen.id == "result" and "TIMBER" in all_text(mine)
+    assert mine._unsent is None  # delivered: nothing left to repeat
+    await mine.refresh(mine_inter)
+    assert mine.screen.id != "result" or "TIMBER" not in all_text(mine) or mine._unsent is None
+    assert users
+
+
+async def test_leaving_a_felled_tree_still_shows_what_you_are_owed(db, clock):
+    users, mine, mine_inter = await stale_panel()
+    await click(mine, mine_inter, "Leave")
+    assert mine.screen.id == "result" and "TIMBER" in all_text(mine)  # (the Leave button takes you to the foraging page, which collects and shows it)

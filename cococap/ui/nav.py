@@ -141,6 +141,9 @@ class Navigator(ui.LayoutView):
         self._names: dict[int, str] = {}
         self._lock = asyncio.Lock()  # one redraw at a time (a click and the self-refresh must not interleave)
         self._ticker: asyncio.Task | None = None
+        # The last result page that was built but may never have reached the player (a self-refresh whose edit failed because the message was too
+        # old, say). It stays here until an edit succeeds, and the next click shows it first, so what you were paid is never paid without being seen.
+        self._unsent: Result | None = None
 
     async def name_of(self, user_id: int) -> str:
         """A player's display name, without mentioning (pinging) them."""
@@ -165,6 +168,7 @@ class Navigator(ui.LayoutView):
         self.client = interaction.client
         await self._enter(screen_id, push=True, **state)
         await interaction.response.send_message(view=self)
+        self._unsent = None
         self.message = await interaction.original_response()
         self._restart_ticker()
 
@@ -174,12 +178,14 @@ class Navigator(ui.LayoutView):
         by editing the message directly instead of leaving the player staring at a stale one."""
         try:
             await interaction.response.edit_message(view=self)
+            self._unsent = None
         except (discord.NotFound, discord.InteractionResponded) as error:
             log.warning("interaction response failed (%s); editing the message directly", error)
             if self.message is None:
                 raise
             try:
                 await self.message.edit(view=self)
+                self._unsent = None
             except discord.HTTPException:
                 raise error from None
 
@@ -200,6 +206,7 @@ class Navigator(ui.LayoutView):
         async with self._lock:
             await self._render()
             await interaction.edit_original_response(view=self)
+            self._unsent = None
 
     # ---- self-refresh -------------------------------------------------------------------------------
     async def stop_ticker(self) -> None:
@@ -232,10 +239,12 @@ class Navigator(ui.LayoutView):
                         self._ticker = None
                         self._restart_ticker()
                         await asyncio.wait_for(self.message.edit(view=self), TICK_EDIT_TIMEOUT)
+                        self._unsent = None
                         return
                     try:
                         # (a slow edit, e.g. waiting out a rate limit, must not hold up the next click)
                         await asyncio.wait_for(self.message.edit(view=self), TICK_EDIT_TIMEOUT)
+                        self._unsent = None
                     except asyncio.TimeoutError:
                         log.warning("self-refresh of %s was too slow; skipping this one", screen.id)
                     if not screen.refresh_every:
@@ -265,8 +274,11 @@ class Navigator(ui.LayoutView):
         screen = self.screen
         await self.user.refresh()  # every render shows current data
         page = await screen.build()
+        if screen.result is None and self._unsent is not None and not isinstance(screen, ResultScreen):
+            screen.result = self._unsent  # a result the player never got to see (its message could not be edited): show it now
         if screen.result is not None:  # a win or a loss: show what happened on a page of its own first
             result, screen.result = screen.result, None
+            self._unsent = result
             screen = self.screen = ResultScreen(self, result, screen)
             page = await screen.build()
         self._swap_items()

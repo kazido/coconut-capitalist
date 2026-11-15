@@ -414,7 +414,10 @@ class GroveScreen(Screen):
         view = await foraging.community_tree(self.user)
         zone = view.zone if view else 1
         swing, note = await swing_at(self, foraging.swing_power(stats, zone, rules, community=True), stance)
-        result = await foraging.chop_community(self.user, swing.damage, effort=swing.effort)
+        try:
+            result = await foraging.chop_community(self.user, swing.damage, effort=swing.effort)
+        except foraging.ForagingError:  # the tree is already down (or fell over): redraw, which collects what you are owed and shows it
+            return await self.refresh(interaction)
         await self.refresh(interaction, "🌳 **You felled it!**" if result.felled_now else note)
 
     async def _notes(self, interaction: discord.Interaction) -> None:
@@ -481,7 +484,10 @@ class PartyGroveScreen(Screen):
         view = await party_tree.view(self.user)
         zone = view.zone if view else 1
         swing, note = await swing_at(self, foraging.swing_power(stats, zone, rules, community=True), stance)
-        result = await party_tree.chop(self.user, swing.damage, effort=swing.effort)
+        try:
+            result = await party_tree.chop(self.user, swing.damage, effort=swing.effort)
+        except party_tree.PartyTreeError:  # a teammate felled it (or it fell over) while your panel was old: redraw, which collects and shows your rewards
+            return await self.refresh(interaction)
         await self.refresh(interaction, "🌳 **You felled it!**" if result.felled_now else note)
 
     async def _notes(self, interaction: discord.Interaction) -> None:
