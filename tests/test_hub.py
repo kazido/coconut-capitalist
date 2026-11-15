@@ -189,9 +189,12 @@ async def test_rank_screen_at_max_rank(db):
     assert "max rank" in all_text(nav) and not any(b.label == "Rank up" for b in buttons(nav))
 
 
-async def test_settings_page_says_there_is_nothing_to_change_yet(db):
-    nav, _ = await hub("settings")
-    assert "nothing to change" in all_text(nav)
+async def test_settings_page_lists_each_setting_with_a_toggle_that_saves(db):
+    nav, inter = await hub("settings")
+    assert "Confirm Sell all" in all_text(nav)
+    on = next(b for b in buttons(nav) if b.label == "ON")
+    await on.callback(inter)
+    assert (await User.get(1)).settings.confirm_sell_all is False and next(b for b in buttons(nav) if b.label == "OFF")
 
 
 async def test_profile_and_home_show_balances_and_levels(db):

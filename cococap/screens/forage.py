@@ -5,6 +5,7 @@ from collections import Counter
 import discord
 
 from cococap.registry import get_registry
+from cococap.screens.sellall import start_sell_all
 from cococap.services import foraging, party_tree, pets, releaf
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import Party, xp_bonus
@@ -163,7 +164,7 @@ class ForageScreen(Screen):
     label = "Foraging"
     emoji = TREE
     description = "Chop trees alone or join the community tree"
-    links = ("tree", "grove", "partygrove")
+    links = ("tree", "grove", "partygrove", "sellall")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -234,7 +235,8 @@ class ForageScreen(Screen):
             )))
         body.append(row(button("Chop a tree", emoji="🪓", style=discord.ButtonStyle.primary, disabled=stats is None,
                                on_click=self._chop),
-                        button("Grain notes", emoji="📖", on_click=self._notes)))
+                        button("Grain notes", emoji="📖", on_click=self._notes),
+                        button("Sell all", emoji="💰", on_click=self._sell_all)))
         return Page("Foraging", body, accent=0x4C8C4A)
 
     async def _party_section(self, stats) -> list:
@@ -259,6 +261,9 @@ class ForageScreen(Screen):
     async def _notes(self, interaction: discord.Interaction) -> None:
         self.result = await notes_result(self.user)
         await self.refresh(interaction)
+
+    async def _sell_all(self, interaction: discord.Interaction) -> None:
+        await start_sell_all(self, interaction, "foraging")
 
     async def _start_party(self, interaction: discord.Interaction) -> None:
         party = await Party.for_user(self.user.id)

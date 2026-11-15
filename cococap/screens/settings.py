@@ -4,7 +4,9 @@ from cococap.ui import Page, Screen
 from cococap.ui.components import button, section, text
 
 # key -> (name, what it does)
-SETTINGS: dict[str, tuple[str, str]] = {}  # nothing to set yet
+SETTINGS: dict[str, tuple[str, str]] = {
+    "confirm_sell_all": ("Confirm Sell all", "Ask before a skill's Sell all button sells everything it has gathered (turn off to sell with one press)."),
+}
 
 
 class SettingsScreen(Screen):

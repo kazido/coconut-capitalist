@@ -6,6 +6,7 @@ import discord
 
 from cococap.constants import Rarities
 from cococap.registry import get_registry
+from cococap.screens.sellall import start_sell_all
 from cococap.services import fishing, fishing_community, party_boss, pets, pots
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
@@ -73,7 +74,7 @@ class FishScreen(Screen):
     label = "Fishing"
     emoji = ROD
     description = "Cast a line and reel in fish"
-    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords", "fishnotes", "fishpots", "mastery")
+    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords", "fishnotes", "fishpots", "mastery", "sellall")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -169,7 +170,8 @@ class FishScreen(Screen):
             body.append(row(button("Records", emoji="📏", on_click=self._records),
                             button("Field notes", emoji="🔍", on_click=self._notes),
                             button("Crab pots", emoji="🦀", disabled=level < reg.fishing.pots.min_level, on_click=self._pots),
-                            button("Mastery", emoji="🌟", on_click=self._mastery)))
+                            button("Mastery", emoji="🌟", on_click=self._mastery),
+                            button("Sell all", emoji="💰", on_click=self._sell_all)))
             return Page("Fishing", body, accent=ACCENT)
 
         status = cast.status(now())
@@ -447,6 +449,9 @@ class FishScreen(Screen):
 
     async def _mastery(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "mastery", skill="fishing")
+
+    async def _sell_all(self, interaction: discord.Interaction) -> None:
+        await start_sell_all(self, interaction, "fishing")
 
     async def _sell(self, interaction: discord.Interaction) -> None:
         total = await fishing.sell_all(self.user)

@@ -97,3 +97,31 @@ async def sell(user: User, item_id: str, quantity: int = 1, registry: Registry |
         raise
     await user.inc_stat("items_sold", quantity)
     return earned
+
+
+def sellable_for_skill(owned: dict[str, int], skill: str, registry: Registry | None = None, keep: dict[str, int] | None = None) -> dict[str, int]:
+    """What a skill's Sell all would sell: every sellable stack of that skill's items you hold, less what you asked to `keep` (item -> how many)."""
+    reg = registry or get_registry()
+    found: dict[str, int] = {}
+    for item_id, quantity in owned.items():
+        item = reg.find_item(item_id)
+        if item is None or item.skill != skill or not item.sellable or item.is_instance or item.sell_price <= 0:
+            continue
+        spare = quantity - (keep or {}).get(item_id, 0)
+        if spare > 0:
+            found[item_id] = spare
+    return found
+
+
+async def sell_all_for_skill(user: User, skill: str, registry: Registry | None = None, keep: dict[str, int] | None = None) -> tuple[int, dict[str, int]]:
+    """Sell everything `sellable_for_skill` finds. Returns (bits earned, what was sold)."""
+    reg = registry or get_registry()
+    sold: dict[str, int] = {}
+    earned = 0
+    for item_id, quantity in sellable_for_skill(await user.items(), skill, reg, keep).items():
+        try:
+            earned += await sell(user, item_id, quantity, reg)
+            sold[item_id] = quantity
+        except ShopError:
+            continue  # (used or sold somewhere else a moment ago)
+    return earned, sold
