@@ -224,7 +224,7 @@ def test_every_kind_of_tool_has_an_upgrade_chain_and_the_best_tools_end_it():
 
 def test_a_fork_offers_two_roads_of_the_same_power_and_bits_but_different_abilities_stats_and_materials():
     forks = [t for t in REG.items.values() if t.tool and t.tool.fork]
-    assert {t.tool.kind for t in forks} == {"pickaxe", "rod"}  # the pilot
+    assert {t.tool.kind for t in forks} == {"pickaxe", "rod", "axe", "can"}  # every skill with a tool line splits (at the 4th upgrade)
     for tool in forks:
         up, fork = tool.tool.upgrade, tool.tool.fork
         a, b = REG.item(up.to), REG.item(fork.to)
@@ -233,8 +233,13 @@ def test_a_fork_offers_two_roads_of_the_same_power_and_bits_but_different_abilit
             assert a.tool.path and b.tool.path and a.tool.path != b.tool.path
             assert a.tool.ability and b.tool.ability and a.tool.ability != b.tool.ability  # a different ability on each road
             assert set(a.tool.stats) != set(b.tool.stats)  # different in kind, not just in size
-            mats = lambda cost, kind=tool.tool.kind: {i for i in cost.items if (REG.item(i).skill == "mining" if kind == "pickaxe" else REG.item(i).category == "fish")}  # noqa: E731
-            assert mats(up) and mats(fork) and not mats(up) & mats(fork), (up.to, fork.to)  # each road asks for its own materials
+            kind = tool.tool.kind
+            mats = lambda cost, kind=kind: {i for i in cost.items if (REG.item(i).category == "fish" if kind == "rod" else REG.item(i).skill == TOOL_SKILL[kind])}  # noqa: E731
+            assert mats(up) and mats(fork), (up.to, fork.to)
+            if kind in ("pickaxe", "rod"):
+                assert not mats(up) & mats(fork), (up.to, fork.to)  # each road asks for its own materials
+            else:  # (a skill with few materials shares some, but the two roads never ask for the same set)
+                assert mats(up) != mats(fork), (up.to, fork.to)
             if not (a.tool.upgrade and b.tool.upgrade):
                 break
             up, fork = a.tool.upgrade, b.tool.upgrade
@@ -488,3 +493,39 @@ async def test_upgrades_are_one_press_by_default(db):
     nav, inter = await hub("upgrade")
     await [b for b in buttons(nav) if b.label == "Upgrade"][0].callback(inter)
     assert (await user.instance(inst.id)).template_id != inst.template_id
+
+
+# ---- every tool line: three plain upgrades, and the fourth upgrade is the split ---------------------------------------------------------------
+def test_every_line_takes_three_plain_upgrades_and_the_fourth_is_the_split():
+    for kind, start in (("pickaxe", "rookiepickaxe"), ("axe", "starter_axe"), ("rod", "starter_rod"), ("can", "tin_can")):
+        tool, plain = REG.item(start), 0
+        while not tool.tool.fork:
+            assert tool.tool.path is None, (kind, tool.id)  # no road before the split
+            tool = REG.item(tool.tool.upgrade.to)
+            plain += 1
+        assert plain == 3, (kind, tool.id)  # three plain upgrades got us here: the next one (either way) is the split
+        a, b = REG.item(tool.tool.upgrade.to), REG.item(tool.tool.fork.to)
+        assert a.tool.path and b.tool.path and a.tool.path != b.tool.path and a.tool.power == b.tool.power, kind
+
+
+def test_each_line_gets_longer_with_every_split_road_going_at_least_three_more_steps():
+    for start in ("rookiepickaxe", "starter_axe", "starter_rod", "tin_can"):
+        for first_road in (lambda t: t.tool.upgrade.to, lambda t: t.tool.fork.to):
+            tool = REG.item(start)
+            while not tool.tool.fork:
+                tool = REG.item(tool.tool.upgrade.to)
+            tool, steps = REG.item(first_road(tool)), 0
+            while tool.tool.upgrade:
+                tool, steps = REG.item(tool.tool.upgrade.to), steps + 1
+            assert steps >= 2, (start, tool.id)  # (a road of at least three tools)
+
+
+def test_the_four_roads_all_differ_in_their_own_numbers_and_the_axe_and_can_roads_lean_opposite_ways():
+    from cococap.services import tool_effects as te
+
+    lj, fg = te.power_stats("axe", 40, REG, "Lumberjack"), te.power_stats("axe", 40, REG, "Forager")
+    assert lj["good_chop"] > fg["good_chop"] and lj["wear_slow"] < fg["wear_slow"]
+    sp, al = te.power_stats("can", 9, REG, "Sprinkler"), te.power_stats("can", 9, REG, "Alchemist")
+    assert al["crop_yield"] > sp["crop_yield"] and sp["drop_luck"] > al["drop_luck"]
+    for tool_id in ("elderwood_axe", "canopy_axe", "moonwell_can", "athanor_can"):
+        assert REG.item(tool_id).tool.ability and REG.item(tool_id).tool.stats  # each road has its own ability

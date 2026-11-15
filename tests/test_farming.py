@@ -693,3 +693,35 @@ async def test_a_page_number_beyond_the_last_page_falls_back_to_the_last_one(db,
     nav.screen.page = 7  # (say a plot count shrank, or a stale click)
     await nav.screen.nav.refresh(inter)
     assert "Page 2/2" in [b.label for b in buttons_of(nav)] and nav.screen.page == 1
+
+
+async def test_a_sprinkler_can_sometimes_grows_a_second_cycle_and_an_alchemist_can_sometimes_doubles_a_harvest(db):
+    plain, sprinkler, alchemist = [await User.get(i) for i in (1, 2, 3)]
+    await with_can(plain, "moonwell_can")
+    await with_can(sprinkler, "moonwell_can")
+    await with_can(alchemist, "athanor_can")
+    # the Sprinkler: with the roll forced to succeed, a watered plot grows two cycles; with `sprinkle` removed it grows one
+    sprinkle = sprinkler_can_stat = (await f.can_stats(sprinkler)).stats["sprinkle"]
+    assert sprinkle > 0 and (await f.can_stats(alchemist)).stats["transmute"] > 0 and "sprinkle" not in (await f.can_stats(alchemist)).stats
+    for user in (sprinkler,):
+        await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
+        await user.add_item("lemon_seed", 1)
+        await f.plant(user, 1, "lemon_seed", now=T0, registry=SURE)
+    cycles = set()
+    for hour in range(40):
+        await sprinkler.update_skill("farming", lambda m: (setattr(m.farm.plot_1, "cycle", 0), setattr(m.farm.plot_1, "watered", -1), setattr(m.farm.plot_1, "can_harvest", False)))
+        await f.water(sprinkler, T0 + hour * HOUR, registry_with(grow_chance=0.0, blessing_chance=0.0))  # (no rain: only the can grows it)
+        cycles.add((await sprinkler.skill("farming")).farm.plot_1.cycle)
+    assert cycles == {1, 2} and sprinkler_can_stat
+    # the Alchemist: some of 120 harvests come up double (a plain can never does)
+    sizes = {}
+    for user in (plain, alchemist):
+        amounts = []
+        for i in range(120):
+            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
+            await user.add_item("lemon_seed", 1)
+            await f.plant(user, 1, "lemon_seed", now=T0, registry=SURE)
+            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
+            amounts.append((await f.harvest(user, 1, Random(i), T0, SURE)).amount)
+        sizes[user.id] = amounts
+    assert max(sizes[3]) >= 2 * min(sizes[3]) and sum(sizes[3]) > 1.3 * sum(sizes[1])

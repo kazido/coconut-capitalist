@@ -892,10 +892,10 @@ def test_going_deeper_is_a_real_choice_not_always_the_right_one():
 
 def test_one_vault_is_a_part_of_the_next_pickaxe_not_the_whole_of_it():
     """The reward for reaching the bottom should not pay for a pickaxe upgrade on its own: the ores it holds are a fraction of what Masterwork asks."""
-    ask = REG.item("reinforced_pickaxe").tool.upgrade.items
+    ask = REG.item("steel_pickaxe").tool.upgrade.items  # (the step into Masterwork)
     for ore, quantity in D.vault_ore.items():
         assert quantity <= ask[ore], ore  # never more than the whole ask of any ore...
-    shares = [D.vault_ore[ore] / ask[ore] for ore in ask]
+    shares = [D.vault_ore[ore] / ask[ore] for ore in ask if ore in D.vault_ore]
     assert min(shares) <= 0.35 and max(shares) < 1  # ...and well under half of at least one of them: it takes several trips
 
 

@@ -23,10 +23,30 @@ braces = 0.0
 good_chop = 0.002           # +this chance of a good chop (power 54: +10%)
 wear_slow = 0.005           # the spot you chop wears out this much slower (power 54: 25%)
 
+# The two roads of the axe. The Lumberjack lands more good chops and double chops (the Timber ability: its tools carry `double_chop`); the Forager's spots last longer and its
+# chops shake loose drops (the Shake the Branches ability: `shake`). TODO(balance)
+[axe.paths.Lumberjack]
+good_chop = 1.6
+wear_slow = 0.6
+[axe.paths.Forager]
+good_chop = 0.5
+wear_slow = 1.6
+
 [can]
 crop_yield = 0.04           # bigger harvests (power 9: +24%)
 drop_luck = 0.08            # more farming drops (power 9: +48%)
 seed_back = 0.03            # the chance a harvest gives its seed back (power 9: 18%)
+
+# The two roads of the can. The Sprinkler keeps the drops and seeds coming and waters better (`sprinkle`: watered plots are likelier to grow); the Alchemist grows bigger
+# harvests and sometimes doubles one (`transmute`). TODO(balance)
+[can.paths.Sprinkler]
+crop_yield = 0.7
+drop_luck = 1.4
+seed_back = 1.4
+[can.paths.Alchemist]
+crop_yield = 1.5
+drop_luck = 0.6
+seed_back = 0.6
 
 [sword]
 hp = 3                      # extra max hp in a fight

@@ -37,9 +37,12 @@ def power_stats(kind: str, power: int, registry: Registry | None = None, path: s
         return {"danger_reduction": r.pickaxe.danger_reduction * above * wd, "rich_chance": r.pickaxe.rich_chance * above * wr,
                 "braces": float(int(above * wb) // r.pickaxe.braces_every)}
     if kind == "axe":
-        return {"good_chop": r.axe.good_chop * above, "wear_slow": r.axe.wear_slow * above}
+        w = r.axe.paths.get(path or "", {})
+        return {"good_chop": r.axe.good_chop * above * w.get("good_chop", 1.0), "wear_slow": r.axe.wear_slow * above * w.get("wear_slow", 1.0)}
     if kind == "can":
-        return {"crop_yield": r.can.crop_yield * above, "drop_luck": r.can.drop_luck * above, "seed_back": min(1.0, r.can.seed_back * above)}
+        w = r.can.paths.get(path or "", {})
+        return {"crop_yield": r.can.crop_yield * above * w.get("crop_yield", 1.0), "drop_luck": r.can.drop_luck * above * w.get("drop_luck", 1.0),
+                "seed_back": min(1.0, r.can.seed_back * above * w.get("seed_back", 1.0))}
     return {}
 
 

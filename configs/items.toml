@@ -979,14 +979,14 @@ power = 8  # TODO(balance): grows with rarity
 requirement = 0
 
 [reinforced_rod.tool.upgrade]
-to = "masterwork_rod"
-bits = 2000000  # TODO(balance)
+to = "sturdy_rod"
+bits = 600000
 
-[reinforced_rod.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-salmon = 15
-trout = 20
-pufferfish = 3
-coral_shard = 20
+[reinforced_rod.tool.upgrade.items]
+salmon = 8
+trout = 10
+pufferfish = 1
+coral_shard = 8
 
 [masterwork_rod]
 name = "Masterwork Rod"
@@ -1143,6 +1143,16 @@ fine_bark = 40
 hardwood = 100
 gold_ore = 30
 
+[bastards_broadaxe.tool.fork]
+to = "gatherers_axe"
+bits = 4000000
+
+[bastards_broadaxe.tool.fork.items]
+dewdrop = 30
+maple_leaf = 18
+feather = 120
+gold_ore = 30
+
 
 [masterwork_axe]
 name = "Masterwork Axe"
@@ -1157,6 +1167,11 @@ sell_price = 0
 kind = "axe"
 power = 18  # TODO(balance): grows with rarity
 requirement = 0
+path = "Lumberjack"
+ability = "timber"
+ability_name = "Timber"
+ability_description = "6% of your chops land twice."
+stats = { double_chop = 0.06 }
 
 [masterwork_axe.tool.upgrade]
 to = "sovereign_hatchet"
@@ -1210,6 +1225,11 @@ sell_price = 0
 kind = "axe"
 power = 28  # TODO(balance): grows with rarity
 requirement = 0
+path = "Lumberjack"
+ability = "timber"
+ability_name = "Timber"
+ability_description = "10% of your chops land twice."
+stats = { double_chop = 0.1 }
 
 [sovereign_hatchet.tool.upgrade]
 to = "wilted_axe"
@@ -1282,6 +1302,11 @@ sell_price = 0
 kind = "axe"
 power = 40
 requirement = 0
+path = "Lumberjack"
+ability = "timber"
+ability_name = "Timber"
+ability_description = "14% of your chops land twice."
+stats = { double_chop = 0.14 }
 
 [wilted_axe.tool.upgrade]
 to = "elderwood_axe"
@@ -1617,13 +1642,13 @@ power = 5  # +25% ore per point above 3 (mining.toml): x1.5
 requirement = 0
 
 [reinforced_pickaxe.tool.upgrade]
-to = "masterwork_pickaxe"
-bits = 500000  # TODO(balance)
+to = "steel_pickaxe"
+bits = 200000
 
-[reinforced_pickaxe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-iron_ore = 300
-gold_ore = 60
-copper_ore = 400
+[reinforced_pickaxe.tool.upgrade.items]
+copper_ore = 160
+iron_ore = 120
+gold_ore = 25
 
 [masterwork_pickaxe]
 name = "Masterwork Pickaxe"
@@ -2188,6 +2213,11 @@ sell_price = 0
 kind = "axe"
 power = 54
 requirement = 0
+path = "Lumberjack"
+ability = "timber"
+ability_name = "Timber"
+ability_description = "18% of your chops land twice."
+stats = { double_chop = 0.18 }
 
 
 [rotation_wedge]
@@ -2724,6 +2754,15 @@ dewdrop = 100
 beeswax = 20
 hardwood = 50
 
+[silver_can.tool.fork]
+to = "cauldron_can"
+bits = 4000000
+
+[silver_can.tool.fork.items]
+compost = 400
+plant_fiber = 260
+hardwood = 50
+
 [gold_can]
 name = "Gold Watering Can"
 description = "Whatever it waters comes up richer."
@@ -2739,6 +2778,11 @@ sell_price = 0
 kind = "can"
 power = 7  # plots it waters an hour
 requirement = 0
+path = "Sprinkler"
+ability = "sprinkle"
+ability_name = "Sprinkler"
+ability_description = "Watered plots are 8% likelier to grow each hour."
+stats = { sprinkle = 0.08 }
 
 [gold_can.tool.upgrade]
 to = "crystal_can"
@@ -2764,6 +2808,11 @@ sell_price = 0
 kind = "can"
 power = 8  # plots it waters an hour
 requirement = 0
+path = "Sprinkler"
+ability = "sprinkle"
+ability_name = "Sprinkler"
+ability_description = "Watered plots are 12% likelier to grow each hour."
+stats = { sprinkle = 0.12 }
 
 [crystal_can.tool.upgrade]
 to = "moonwell_can"
@@ -2790,6 +2839,11 @@ sell_price = 0
 kind = "can"
 power = 9  # plots it waters an hour
 requirement = 0
+path = "Sprinkler"
+ability = "sprinkle"
+ability_name = "Sprinkler"
+ability_description = "Watered plots are 16% likelier to grow each hour."
+stats = { sprinkle = 0.16 }
 
 [coal]
 name = "Coal"
@@ -2950,3 +3004,241 @@ sell_price = 65000  # TODO(balance): tuned so mining pays what it did
 rate = 900
 min = 1
 max = 1
+
+[steel_pickaxe]
+name = "Steel Pickaxe"
+description = "Quenched steel: it bites deeper and shrugs off the dust."
+rarity = 4
+skill = "mining"
+category = "tool"
+price = 0
+sell_price = 0
+
+[steel_pickaxe.tool]
+kind = "pickaxe"
+power = 7
+requirement = 0
+
+[steel_pickaxe.tool.upgrade]
+to = "masterwork_pickaxe"
+bits = 500000
+
+[steel_pickaxe.tool.upgrade.items]
+iron_ore = 300
+gold_ore = 60
+copper_ore = 400
+hardwood = 12
+
+[sturdy_rod]
+name = "Sturdy Rod"
+description = "A longer, stiffer rod with a smooth drag. Bites come sooner and fewer fish get away."
+rarity = 4
+skill = "fishing"
+category = "tool"
+price = 0
+sell_price = 0
+
+[sturdy_rod.tool]
+kind = "rod"
+power = 12
+requirement = 0
+
+[sturdy_rod.tool.upgrade]
+to = "masterwork_rod"
+bits = 2000000
+
+[sturdy_rod.tool.upgrade.items]
+salmon = 15
+trout = 20
+pufferfish = 3
+coral_shard = 20
+gold_ore = 10
+
+[gatherers_axe]
+name = "Gatherer's Axe"
+description = "Light and quick: it shakes loose what the branches hold."
+rarity = 5
+skill = "foraging"
+category = "tool"
+price = 0
+sell_price = 0
+
+[gatherers_axe.tool]
+kind = "axe"
+power = 18
+requirement = 0
+path = "Forager"
+ability = "shake"
+ability_name = "Shake the Branches"
+ability_description = "Each chop has a 10% chance to shake loose a drop."
+stats = { shake = 0.1 }
+
+[gatherers_axe.tool.upgrade]
+to = "foragers_hatchet"
+bits = 20000000
+
+[gatherers_axe.tool.upgrade.items]
+beeswax = 15
+maple_leaf = 55
+feather = 240
+gold_ore = 80
+coral_shard = 15
+
+[foragers_hatchet]
+name = "Forager's Hatchet"
+description = "A hatchet for those who walk the trees, not fell them."
+rarity = 6
+skill = "foraging"
+category = "tool"
+price = 0
+sell_price = 0
+
+[foragers_hatchet.tool]
+kind = "axe"
+power = 28
+requirement = 0
+path = "Forager"
+ability = "shake"
+ability_name = "Shake the Branches"
+ability_description = "Each chop has a 16% chance to shake loose a drop."
+stats = { shake = 0.16 }
+
+[foragers_hatchet.tool.upgrade]
+to = "mosswood_axe"
+bits = 100000000
+
+[foragers_hatchet.tool.upgrade.items]
+living_vine = 5
+maple_leaf = 134
+feather = 480
+gold_ore = 200
+tuna = 10
+
+[mosswood_axe]
+name = "Mosswood Axe"
+description = "Moss-wrapped and sure: the branches give up their fruit."
+rarity = 7
+skill = "foraging"
+category = "tool"
+price = 0
+sell_price = 0
+
+[mosswood_axe.tool]
+kind = "axe"
+power = 40
+requirement = 0
+path = "Forager"
+ability = "shake"
+ability_name = "Shake the Branches"
+ability_description = "Each chop has a 22% chance to shake loose a drop."
+stats = { shake = 0.22 }
+
+[mosswood_axe.tool.upgrade]
+to = "canopy_axe"
+bits = 500000000
+
+[mosswood_axe.tool.upgrade.items]
+maple_leaf = 326
+feather = 1880
+gold_ore = 450
+plant_fiber = 250
+tuna = 25
+
+[canopy_axe]
+name = "Canopy Axe"
+description = "Cut from the canopy itself. Everything up there falls to you."
+rarity = 7
+skill = "foraging"
+category = "tool"
+price = 0
+sell_price = 0
+
+[canopy_axe.tool]
+kind = "axe"
+power = 54
+requirement = 0
+path = "Forager"
+ability = "shake"
+ability_name = "Shake the Branches"
+ability_description = "Each chop has a 28% chance to shake loose a drop."
+stats = { shake = 0.28 }
+
+[cauldron_can]
+name = "Alembic Can"
+description = "Whatever it waters might turn out to be worth more."
+wiki = "Waters 7 plots an hour: each always grows a cycle."
+emoji = "🧪"
+rarity = 6
+skill = "farming"
+category = "tool"
+price = 0
+sell_price = 0
+
+[cauldron_can.tool]
+kind = "can"
+power = 7
+requirement = 0
+path = "Alchemist"
+ability = "transmute"
+ability_name = "Transmute"
+ability_description = "10% of harvests come up double."
+stats = { transmute = 0.1 }
+
+[cauldron_can.tool.upgrade]
+to = "retort_can"
+bits = 20000000
+
+[cauldron_can.tool.upgrade.items]
+plant_fiber = 600
+compost = 800
+coral_shard = 40
+
+[retort_can]
+name = "Retort Can"
+description = "A copper still on a spout. Harvests sometimes come up double."
+wiki = "Waters 8 plots an hour: each always grows a cycle."
+emoji = "🧪"
+rarity = 7
+skill = "farming"
+category = "tool"
+price = 0
+sell_price = 0
+
+[retort_can.tool]
+kind = "can"
+power = 8
+requirement = 0
+path = "Alchemist"
+ability = "transmute"
+ability_name = "Transmute"
+ability_description = "15% of harvests come up double."
+stats = { transmute = 0.15 }
+
+[retort_can.tool.upgrade]
+to = "athanor_can"
+bits = 100000000
+
+[retort_can.tool.upgrade.items]
+plant_fiber = 3260
+gold_ore = 30
+
+[athanor_can]
+name = "Athanor Can"
+description = "The alchemist's furnace, tipped over your field."
+wiki = "Waters 9 plots an hour: each always grows a cycle."
+emoji = "🧪"
+rarity = 7
+skill = "farming"
+category = "tool"
+price = 0
+sell_price = 0
+
+[athanor_can.tool]
+kind = "can"
+power = 9
+requirement = 0
+path = "Alchemist"
+ability = "transmute"
+ability_name = "Transmute"
+ability_description = "20% of harvests come up double."
+stats = { transmute = 0.2 }

@@ -1087,12 +1087,14 @@ class PickaxePower(_Data):
 class AxePower(_Data):
     good_chop: float = Field(ge=0)
     wear_slow: float = Field(ge=0)
+    paths: dict[str, dict[str, float]] = Field(default_factory=dict)  # by road name (Lumberjack, Forager): a factor on each stat above (missing = 1)
 
 
 class CanPower(_Data):
     crop_yield: float = Field(ge=0)
     drop_luck: float = Field(ge=0)
     seed_back: float = Field(ge=0, le=1)
+    paths: dict[str, dict[str, float]] = Field(default_factory=dict)  # by road name (Sprinkler, Alchemist): a factor on each stat above (missing = 1)
 
 
 class SwordPower(_Data):

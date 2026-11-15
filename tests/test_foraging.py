@@ -811,3 +811,26 @@ def test_the_axe_materials_come_in_a_couple_of_hours_not_a_working_week():
 
     hours = max(q / (per_roll(REG.item(i)) * rolls_per_hour) for i, q in need.items())
     assert hours < 3.5, hours  # (it was over six)
+
+
+# ---- the axe roads: Timber (double chops) and Shake the Branches ---------------------------------------------------------------------------------
+async def test_a_foragers_axe_shakes_loose_drops_and_a_plain_axe_never_does(db):
+    user = await player(1, "canopy_axe")
+    shake = (await f.axe_stats(user)).stats["shake"]
+    assert shake > 0
+    always = type("Always", (Random,), {"random": lambda self: 0.0})()
+    got = await f.shake(user, shake, always, REG)
+    assert sum(got.values()) > 0
+    for item_id, quantity in got.items():
+        assert await user.item_quantity(item_id) >= quantity
+    never = type("Never", (Random,), {"random": lambda self: 0.99})()
+    assert not await f.shake(user, shake, never, REG) and not await f.shake(user, 0.0, always, REG)
+
+
+async def test_a_lumberjacks_axe_carries_double_chop_that_the_swing_already_uses(db):
+    user = await player(1, "elderwood_axe")
+    stats = (await f.axe_stats(user)).stats
+    assert stats["double_chop"] > 0 and "shake" not in stats
+    spot = f.Spot.pick(RULES, Random(1))
+    swing = spot.swing(40, RULES, type("Always", (Random,), {"random": lambda self: 0.0})(), 0.0, None, 0.0, stats["double_chop"])
+    assert swing.doubled

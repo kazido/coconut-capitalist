@@ -276,6 +276,7 @@ async def water(user: User, now: float | None = None, registry: Registry | None 
     hour = hour_of(now)
     pet = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
     chance = min(1.0, reg.farming.water_chance + pet)
+    sprinkle = can.stats.get("sprinkle", 0.0)  # (a Sprinkler can: a watered plot sometimes grows a second cycle)
     outcome: dict = {"watered": 0, "grew": 0, "matured": [], "thirsty": 0}
 
     def pour(m: Farming) -> None:
@@ -294,6 +295,8 @@ async def water(user: User, now: float | None = None, registry: Registry | None 
             if _waters(user.id, number, hour, chance):
                 plot.cycle += 1
                 outcome["grew"] += 1
+                if sprinkle and _waters(user.id, number, -hour - 1, sprinkle):
+                    plot.cycle += 1
                 if plot.cycle >= reg.item(plot.crop_id).seed.cycles:
                     plot.can_harvest = True
                     outcome["matured"].append(number)
@@ -396,6 +399,7 @@ async def harvest(
     pet = await pets.bonuses(user, reg)
     can = await equipped_stats(user, "farming", reg)  # (a can with better stats gives bigger harvests and more drops; no can: no bonus)
     crop_yield = pet.get("crop_yield", 0.0) + (can.stats.get("crop_yield", 0.0) if can else 0.0)
+    transmute = can.stats.get("transmute", 0.0) if can else 0.0  # (an Alchemist can: some harvests come up double)
 
     def pick(m: Farming) -> None:
         apply_rain(m, user.id, now, reg, pet.get("grow_chance", 0.0))
@@ -404,7 +408,7 @@ async def harvest(
             raise FarmingError("Nothing is ready to harvest on that plot.")
         crop = reg.item(reg.item(plot.crop_id).seed.grows_into)
         taken.update(seed=plot.crop_id, crop=crop.id,
-                     amount=max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield))),
+                     amount=max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield) * (2 if rng.random() < transmute else 1))),
                      xp=round(reg.item(plot.crop_id).seed.cycles * rules.xp_per_cycle * party_bonus))
         plot.crop_id, plot.cycle, plot.can_harvest = None, 0, False  # the plot is empty from this moment: once only
         m.xp += taken["xp"]

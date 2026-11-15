@@ -144,6 +144,8 @@ async def swing_at(screen: Screen, power: int, stance: str) -> tuple[foraging.Sw
     if swing.correct is not None and await foraging.note_style(screen.user, grain, stance, swing.correct):
         note += (f"  📖 Learned: the **{name}** grain likes **{foraging.STANCES[stance][0]}**!" if swing.correct
                  else f"  ✖️ {foraging.STANCES[stance][0]} crossed off the **{name}** grain in your notes")
+    if shaken := await foraging.shake(screen.user, stats.stats.get("shake", 0.0), screen.rng):
+        note += "  🍃 Shook loose " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in shaken.items()) + "!"
     if swing.ended:
         note += f"\n🪵 The spot wore out. New spot: **{screen.spot.title(rules)}** grain"
     return swing, note
