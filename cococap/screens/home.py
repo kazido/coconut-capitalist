@@ -7,8 +7,8 @@ from cococap.ui import Page, Screen
 from cococap.ui.components import bits, button, row, section, sep, text
 from cococap.user import Cooldowns
 
-# The two big things to do, as full sections; the everyday shortcuts sit in one row; the rest is on "More".
-FEATURED = ["skills", "minigames"]
+# The big things to do, as full sections; the everyday shortcuts sit in one row; the rest is on "More".
+FEATURED = ["skills", "shipments", "minigames"]
 SHORTCUTS = ["checkin", "inventory", "shop", "pets"]
 MORE_LINKS = ["wiki", "bestiary", "profile", "rank", "top", "stats", "settings"]
 PARTY_NAMES_SHOWN = 4

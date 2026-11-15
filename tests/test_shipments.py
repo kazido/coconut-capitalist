@@ -8,7 +8,7 @@ import pytest
 from cococap.registry import get_registry
 from cococap.services import shipments as sh
 from cococap.user import User
-from tests.test_hub import all_text, buttons, click, find_button, hub
+from tests.test_hub import all_text, buttons, choose, click, find_button, hub, select_named
 
 REG = get_registry()
 P = REG.shipments.personal
@@ -187,13 +187,28 @@ async def test_someone_who_barely_helped_is_not_paid_and_a_new_week_starts_a_new
 
 
 # ---- the screen --------------------------------------------------------------------------------------------------------------------------------
-async def test_the_shipments_page_shows_your_crates_and_the_community_one_and_is_reachable_from_skills(db):
-    nav, inter = await hub("skills")
-    await click(nav, inter, "Shipments")
-    assert nav.screen.id == "shipments"
+async def test_shipments_sit_on_the_home_page_between_skills_and_minigames_and_open_one_at_a_time(db):
+    nav, inter = await hub("home")
     text = all_text(nav)
-    assert "shipment" in text.lower() and "Community shipment" in text and text.count("Ships for") == P.slots
-    assert len([b for b in buttons(nav) if b.label in ("Fill", "Ship")]) == 2 * P.slots and find_button(nav, "Give what it needs")
+    assert text.index("Skills") < text.index("Shipments") < text.index("Minigames")
+    nav, inter = await hub("shipments")
+    assert find_button(nav, "Home") and "shipment" in all_text(nav).lower()
+    assert all_text(nav).count("Ships for") == 1 and "Community shipment" not in all_text(nav).split("Pick a shipment")[-1]
+    assert len([b for b in buttons(nav) if b.label in ("Fill", "Ship")]) == 2
+
+
+async def test_the_dropdown_lists_every_crate_and_the_community_one_and_each_has_its_own_page(db):
+    nav, inter = await hub("shipments")
+    menu = select_named(nav, "Pick a shipment")
+    assert len(menu.options) == P.slots + 1 and menu.options[-1].label == "Community shipment"
+    seen = set()
+    for option in menu.options:
+        await choose(nav, inter, select_named(nav, "Pick a shipment"), option.value)
+        seen.add(all_text(nav))
+    assert len(seen) == len(menu.options)
+    assert find_button(nav, "Give what it needs")  # (the last page is the community one)
+    first = all_text(nav)
+    assert "Community shipment" in first and "Ships for" not in first
 
 
 async def test_filling_and_shipping_from_the_page(db):

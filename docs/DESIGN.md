@@ -826,3 +826,5 @@ so the choice is also a choice of what you go out and collect.
 - **Settings** (Settings page, all saved per player): `confirm_sell_all` (on), `keep_upgrade_materials` (off: Sell all always holds back what your next upgrades need), `confirm_upgrades` (off: upgrades take a second "Sure?" press), `fishing_estimate` (on). A test keeps the page's list equal to the `Settings` model.
 - **Upgrade paths**: a tool at a fork shows one path at a time, swapped with a "Pick a path" dropdown; tools are still one per page.
 - **Shipments cooldown**: deliberately none. Materials are the limit and shipping only pays a modest premium over selling.
+
+- **Shipments page**: one shipment per page, swapped with a "Pick a shipment" dropdown (your crates, then the community one). It has its own section on Home between Skills and Minigames (no longer on the Skills page).
