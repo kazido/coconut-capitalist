@@ -9,8 +9,9 @@ from cococap.user import Cooldowns
 
 # The big things to do, as full sections; the everyday shortcuts sit in one row; the rest is on "More".
 FEATURED = ["skills", "shipments", "minigames"]
-SHORTCUTS = ["checkin", "inventory", "shop", "pets"]
-MORE_LINKS = ["trade", "wiki", "bestiary", "profile", "rank", "top", "stats", "settings"]
+SHORTCUTS = ["checkin", "inventory", "shop", "trade"]  # the everyday row...
+SECOND_ROW = ["party", "pets"]  # ...and the row under it (then More)
+MORE_LINKS = ["profile", "rank", "top", "stats", "bestiary", "wiki", "settings"]
 PARTY_NAMES_SHOWN = 4
 
 
@@ -42,27 +43,26 @@ class HomeScreen(Screen):
     label = "Home"
     emoji = "🥥"
     description = "Where everything starts"
-    links = (*FEATURED, *SHORTCUTS, "party", "more")
+    links = (*FEATURED, *SHORTCUTS, *SECOND_ROW, "more")
 
     async def party_summary(self) -> str:
         party = await Party.for_user(self.user.id)
         if party is None:
-            return "### 👥 Party\nNot in a party yet."
+            return "👥 **Party:** not in a party yet."
         shown = [
             f"{await self.nav.name_of(member_id)}{' 👑' if party.is_owner(member_id) else ''}"
             for member_id in party.members[:PARTY_NAMES_SHOWN]
         ]
         extra = party.member_count() - len(shown)
-        return f"### 👥 Party\n{', '.join(shown)}" + (f" +{extra} more" if extra > 0 else "")
+        return f"👥 **Party:** {', '.join(shown)}" + (f" +{extra} more" if extra > 0 else "")
 
     async def build(self) -> Page:
         rank = get_registry().rank(self.user.rank)
         ready = anything_ready(self.user)
         body = [
             *self.note_block(),
-            text(f"**{self.nav.owner.display_name}**  ·  {rank.emoji} {rank.display_name}\n{balance_line(self.user)}\n{check_in_line(self.user)}"),
+            text(f"**{self.nav.owner.display_name}**  ·  {rank.emoji} {rank.display_name}\n{balance_line(self.user)}\n{check_in_line(self.user)}\n{await self.party_summary()}"),
             sep(),
-            section(await self.party_summary(), accessory=button("Open", on_click=_opener(self, "party"))),
         ]
         for screen_id in FEATURED:
             target = self.nav.screens[screen_id]
@@ -77,8 +77,10 @@ class HomeScreen(Screen):
             shortcuts.append(button(target.label, emoji=target.emoji,
                                     style=discord.ButtonStyle.success if lit else discord.ButtonStyle.secondary,
                                     on_click=_opener(self, screen_id)))
-        shortcuts.append(button("More", emoji="➡️", on_click=_opener(self, "more")))
         body.append(row(*shortcuts))
+        second = [button(self.nav.screens[i].label, emoji=self.nav.screens[i].emoji, on_click=_opener(self, i)) for i in SECOND_ROW]
+        second.append(button("More", emoji="➡️", on_click=_opener(self, "more")))
+        body.append(row(*second))
         return Page("Coconut Capitalist", body, accent=0xE6B34A)
 
 
@@ -88,7 +90,7 @@ class MoreScreen(Screen):
     id = "more"
     label = "More"
     emoji = "➡️"
-    description = "Profile, rank, leaderboard, stats and settings"
+    description = "Profile, rank, leaderboard, stats, bestiary, wiki and settings"
     links = tuple(MORE_LINKS)
 
     async def build(self) -> Page:

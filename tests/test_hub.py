@@ -103,8 +103,8 @@ async def test_home_buttons_open_screens_and_back_returns(db):
     nav, inter = await hub("home")
     assert find_button(nav, "Home").disabled and find_button(nav, "Back").disabled
     sections = [c for c in nav.walk_children() if isinstance(c, ui.Section) and isinstance(c.accessory, ui.Button)]
-    assert len(sections) == 4  # party, skills, shipments, minigames
-    await sections[1].accessory.callback(inter)
+    assert len(sections) == 3  # skills, shipments, minigames
+    await sections[0].accessory.callback(inter)
     assert nav.screen.id != "home" and not find_button(nav, "Back").disabled
     await click(nav, inter, "Back")
     assert nav.screen.id == "home"
@@ -443,7 +443,7 @@ async def test_home_links_really_open_the_declared_screens(db):
         nav, inter = await hub(parent)
         openers = [c.accessory for c in nav.walk_children() if isinstance(c, ui.Section) and isinstance(c.accessory, ui.Button)
                    and not c.accessory.disabled and c.accessory.label == "Open"]
-        quick = [b for b in buttons(nav) if b.emoji and b.label in ("Check-in", "Inventory", "Shop", "More")]
+        quick = [b for b in buttons(nav) if b.emoji and b.label in ("Check-in", "Inventory", "Shop", "Trade", "Party", "Pets", "More")]
         opened = set()
         for opener in openers + quick:
             nav.stack, nav.screen = ["home"], None
@@ -871,7 +871,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
         assert kept in text
     for moved in ("Leaderboard", "Rank", "Stats", "Settings", "Profile"):
         assert moved not in text, moved
-    assert {b.label for b in buttons(nav)} >= {"Check-in", "Inventory", "Shop", "More"}
+    assert {b.label for b in buttons(nav)} >= {"Check-in", "Inventory", "Shop", "Trade", "Party", "Pets", "More"}
     assert len(text.splitlines()) <= 12
     await click(nav, inter, "More")
     assert nav.screen.id == "more"
@@ -882,7 +882,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("trade", "wiki", "bestiary", "profile", "rank", "top", "stats", "settings")):
+    for index, expected in enumerate(("profile", "rank", "top", "stats", "bestiary", "wiki", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)
@@ -898,7 +898,7 @@ async def test_home_shows_your_party_with_names_and_a_crown(db):
     from cococap.services.party import Party
 
     nav, _ = await hub("home")
-    assert "Not in a party" in all_text(nav)
+    assert "not in a party" in all_text(nav)
     party = await Party.create(1)
     for uid in (2, 3, 4, 5, 6):
         await party.add_member(uid)
