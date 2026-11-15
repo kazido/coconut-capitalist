@@ -154,3 +154,7 @@ from_risk = 0.08
 name = "Critical"
 emoji = "🔴"
 from_risk = 0.16
+[[descent.warnings]]
+name = "CAUTION"
+emoji = "⚠️"
+from_risk = 0.50

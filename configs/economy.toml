@@ -12,9 +12,9 @@ token_drop_chance = 0.35
 party_xp_bonus_by_size = [0.10, 0.25, 0.50]
 # Parties only help while their members play: someone who has not pressed any button or command for this many hours is
 # taken out of their party (the party goes to its most recently active member if it was theirs).
-party_idle_hours = 24
-starting_luckbucks = 100
-weekly_luckbucks = 100
+party_idle_hours = 0.1
+starting_luckbucks = 0
+weekly_luckbucks = 25
 
 [minigames]
 daily_cap = 300                    # max luckbucks per player per day from ALL minigames combined

@@ -4,7 +4,7 @@
 # items.toml). Growth is worked out from the clock when you look at your farm, so rain keeps falling while the
 # bot is offline and no background job is needed.
 
-free_plots = 1                    # plot 1 is yours from the start; plots 2-9 each cost one land deed
+free_plots = 3                    # plot 1 is yours from the start; plots 2-9 each cost one land deed
 grow_chance = 0.5                 # per rain, per growing plot
 blessing_chance = 0.1             # per rain in which any of your crops grew: a rain god's blessing (wiki: 1/10)
 water_chance = 1.0                # WATER your plots (a button, once an hour per plot): each ALWAYS grows a cycle, on top of the rain. How many plots your can waters an hour is its power
