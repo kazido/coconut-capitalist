@@ -16,6 +16,14 @@ class Skiff(BaseModel):
     level: int = 1
 
 
+class Radar(BaseModel):
+    """The fishing radar: its level (0 = you have none), whether it is switched on, and the fish it chases."""
+
+    level: int = 0
+    on: bool = False
+    targets: list[str] = Field(default_factory=list)
+
+
 class QuestBook(BaseModel):
     level: int = 1
     common_donated: bool = False
@@ -69,5 +77,6 @@ class Fishing(Skill):
     weekly: QuestProgress = Field(default_factory=QuestProgress)
     quest_book: QuestBook = Field(default_factory=QuestBook)
     skiff: Skiff = Field(default_factory=Skiff)
+    radar: Radar = Field(default_factory=Radar)
     stats: Stats = Field(default_factory=Stats)
     streak: int = 0  # clean reels in a row (the Angler's Hot Streak)

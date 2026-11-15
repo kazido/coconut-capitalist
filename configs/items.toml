@@ -3242,3 +3242,14 @@ ability = "transmute"
 ability_name = "Transmute"
 ability_description = "20% of harvests come up double."
 stats = { transmute = 0.2 }
+
+[radar_battery]
+name = "Radar Battery"
+description = "One cast's worth of power for your radar."
+wiki = "Every cast with the radar on, while one of its targets lives in the water you fish, uses one battery. Buy them in the shop."
+emoji = "🔋"
+rarity = 2
+skill = "fishing"
+category = "material"
+price = 3000  # TODO(balance): a real cost: low radar levels barely pay for it, the top ones do
+sell_price = 400

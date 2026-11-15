@@ -435,3 +435,36 @@ plant_fiber = 250
 coral_shard = 150
 swordfish = 5
 marlin = 1
+
+# The radar: a gadget (not a rod) that makes the fish you pick likelier. Pick targets on the Radar page, keep it ON, and every cast uses one battery (only when a
+# target lives in the water you are fishing). The multiplier is on that fish's own odds ("1 in 120" becomes "1 in 40" at 3x). Opens at fishing level `unlock_level`;
+# each level costs bits and fish from the waters it helps in.  TODO(balance): all numbers
+[radar]
+unlock_level = 25
+battery = "radar_battery"
+
+[[radar.levels]]
+multiplier = 1.4
+slots = 1
+bits = 2000000
+items = { tuna = 150, swordfish = 20, coral_shard = 100 }
+[[radar.levels]]
+multiplier = 1.8
+slots = 1
+bits = 10000000
+items = { swordfish = 80, moray_eel = 40, coral_shard = 200 }
+[[radar.levels]]
+multiplier = 2.3
+slots = 2
+bits = 40000000
+items = { giant_squid = 6, marlin = 6, pike = 60, coral_shard = 400 }
+[[radar.levels]]
+multiplier = 2.8
+slots = 2
+bits = 150000000
+items = { abyssal_angler = 4, giant_squid = 15, marlin = 15, coral_shard = 600 }
+[[radar.levels]]
+multiplier = 3.3
+slots = 3
+bits = 600000000
+items = { leviathan_pup = 1, abyssal_angler = 10, oarfish = 6, coral_shard = 900 }

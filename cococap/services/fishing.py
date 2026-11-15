@@ -22,7 +22,7 @@ from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop, roll_table
 from cococap.services import pets
 from cococap.services.party import xp_multiplier
-from cococap.user import User
+from cococap.user import InsufficientFunds, User
 
 LEFT, RIGHT = "◄", "►"  # (not ◀ ▶: Discord draws those as blue emoji in some places and as plain text in others)
 REEL, MYSTERY = "🌀", "❓"  # a step that wants the Reel button; an arrow hidden until you press it
@@ -66,15 +66,18 @@ def quest_pool(registry: Registry) -> list[Item]:
 
 
 def roll_fish(rng: random.Random, registry: Registry | None = None, water: WaterRules | None = None,
-              rare_luck: float = 0.0) -> Item:
+              rare_luck: float = 0.0, chase: dict[str, float] | None = None) -> Item:
     """What bites: from one water's fish (rarest first, the commonest as the catch-all), or from every fish.
-    ``rare_luck`` (a pet's bonus) makes the rare fish (rarity 4 and up) that much more likely."""
+    ``rare_luck`` (a pet's bonus) makes the rare fish (rarity 4 and up) that much more likely. ``chase`` (the radar) makes the named fish
+    that many times likelier (their odds are divided by the factor)."""
     reg = registry or get_registry()
     if water is not None:
         odds = sorted(water.fish.items(), key=lambda kv: -kv[1])
         for fish_id, rate in odds:
             if reg.item(fish_id).rarity >= 4:
                 rate = max(1, round(rate / (1 + rare_luck)))
+            if chase and fish_id in chase:
+                rate = max(1, round(rate / chase[fish_id]))
             if rng.randint(1, rate) == 1:
                 return reg.item(fish_id)
         return reg.item(odds[-1][0])
@@ -363,14 +366,15 @@ def roll_size(fish: Item, rng: random.Random) -> float:
 
 
 def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = None, registry: Registry | None = None,
-              *, armed: bool = False, water: WaterRules | None = None, pet: dict[str, float] | None = None) -> Cast:
+              *, armed: bool = False, water: WaterRules | None = None, pet: dict[str, float] | None = None, chase: dict[str, float] | None = None) -> Cast:
     """Put the line in the water: pick the fish, the bite time and the arrows. While a hallucination lasts
     (``armed``), the catch may turn out to be a treasure chest instead."""
     reg = registry or get_registry()
     rules = reg.fishing
     now = time.time() if now is None else now
     pet = pet or {}
-    fish = roll_fish(rng, reg, water, pet.get("rare_luck", 0.0) + stats.stats.get("rare_luck", 0.0) + rod_luck(stats.power, rules))
+    luck = pet.get("rare_luck", 0.0) + stats.stats.get("rare_luck", 0.0) + rod_luck(stats.power, rules)
+    fish = roll_fish(rng, reg, water, luck, chase) if chase else roll_fish(rng, reg, water, luck)
     bite_at = now + wait_seconds(stats.power, rules, rng, stats.stats.get("bite_speed", 0.0) + pet.get("bite_speed", 0.0)) * (
         water.wait_multiplier if water else 1.0)
     pattern, truth = build_reel(fish, rules, rng)
@@ -447,6 +451,109 @@ def salvage_loot(rng: random.Random, registry: Registry) -> Counter:
         if rng.random() < row.chance:
             found[row.item] += rng.randint(row.min, row.max)
     return found
+
+
+# ---- the radar --------------------------------------------------------------------------------------------
+@dataclass(frozen=True)
+class RadarView:
+    level: int
+    on: bool
+    targets: tuple[str, ...]
+    multiplier: float  # 1.0 with no radar
+    slots: int
+    batteries: int
+    unlocked: bool
+    next_cost: object = None  # the RadarLevel you could buy next, or None at the top
+
+
+def radar_chances(water: WaterRules, targets, multiplier: float, registry: Registry, rare_luck: float = 0.0) -> dict[str, float]:
+    """The real chance of each target on one cast in `water` with the radar (the rest of the water as it is)."""
+    chase = {t: multiplier for t in targets if t in water.fish}
+    odds = sorted(water.fish.items(), key=lambda kv: -kv[1])
+    chances, left = {}, 1.0
+    for index, (fish_id, rate) in enumerate(odds):
+        if registry.item(fish_id).rarity >= 4:
+            rate = max(1, round(rate / (1 + rare_luck)))
+        if fish_id in chase:
+            rate = max(1, round(rate / chase[fish_id]))
+        p = left if index == len(odds) - 1 else left / rate
+        chances[fish_id] = p
+        left -= p
+    return {t: chances[t] for t in chase}
+
+
+async def radar(user: User, registry: Registry | None = None) -> RadarView:
+    reg = registry or get_registry()
+    rules = reg.fishing.radar
+    skill = await user.skill("fishing")
+    level = max(0, min(skill.radar.level, len(rules.levels)))
+    tier = rules.levels[level - 1] if level else None
+    batteries = await user.item_quantity(rules.battery)
+    unlocked = User.xp_to_level(skill.xp) >= rules.unlock_level
+    return RadarView(level, skill.radar.on and level > 0, tuple(skill.radar.targets[: tier.slots if tier else 0]), tier.multiplier if tier else 1.0,
+                     tier.slots if tier else 0, batteries, unlocked, rules.levels[level] if level < len(rules.levels) else None)
+
+
+async def upgrade_radar(user: User, registry: Registry | None = None) -> int:
+    """Buy the next radar level (bits and fish, all or nothing). Returns the new level."""
+    reg = registry or get_registry()
+    view = await radar(user, reg)
+    if not view.unlocked:
+        raise FishingError(f"The radar opens at fishing level {reg.fishing.radar.unlock_level}.")
+    cost = view.next_cost
+    if cost is None:
+        raise FishingError("Your radar is already the best there is.")
+    taken: dict[str, int] = {}
+    paid = 0
+    try:
+        if cost.bits:
+            await user.remove_bits(cost.bits)
+            paid = cost.bits
+        for item_id, quantity in cost.items.items():
+            await user.remove_item(item_id, quantity)
+            taken[item_id] = quantity
+    except (InsufficientFunds, ValueError):
+        if paid:
+            await user.add_bits(paid)
+        for item_id, quantity in taken.items():
+            await user.add_item(item_id, quantity)
+        raise FishingError("You do not have everything it needs.") from None
+    await user.update_skill("fishing", lambda skill: setattr(skill.radar, "level", view.level + 1))
+    return view.level + 1
+
+
+async def set_radar(user: User, *, on: bool | None = None, targets: list[str] | None = None, registry: Registry | None = None) -> None:
+    """Switch the radar on or off, and/or choose what it chases (up to your slots; fish that exist and can be caught)."""
+    reg = registry or get_registry()
+    view = await radar(user, reg)
+    if not view.level:
+        raise FishingError("You have no radar yet.")
+    if targets is not None:
+        known = {f for w in reg.fishing.waters for f in w.fish}
+        chosen = list(dict.fromkeys(t for t in targets if t in known))[: view.slots]
+
+        def pick(skill) -> None:
+            skill.radar.targets = chosen
+
+        await user.update_skill("fishing", pick)
+    if on is not None:
+        await user.update_skill("fishing", lambda skill: setattr(skill.radar, "on", on))
+
+
+async def use_radar(user: User, water: WaterRules, registry: Registry | None = None) -> dict[str, float]:
+    """Called when you cast: if the radar is on and one of its targets lives in this water, use a battery and return {fish: multiplier}. Otherwise nothing."""
+    reg = registry or get_registry()
+    view = await radar(user, reg)
+    if not (view.on and view.unlocked):
+        return {}
+    chase = {t: view.multiplier for t in view.targets if t in water.fish}
+    if not chase:
+        return {}
+    try:
+        await user.remove_item(reg.fishing.radar.battery, 1)
+    except ValueError:
+        return {}  # out of batteries: it just does not help
+    return chase
 
 
 # ---- quests -----------------------------------------------------------------------------------------------

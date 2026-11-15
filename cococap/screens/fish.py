@@ -74,7 +74,7 @@ class FishScreen(Screen):
     label = "Fishing"
     emoji = ROD
     description = "Cast a line and reel in fish"
-    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords", "fishnotes", "fishpots", "mastery", "sellall")
+    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords", "fishnotes", "fishpots", "mastery", "sellall", "radar")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -174,6 +174,7 @@ class FishScreen(Screen):
                             button("Crab pots", emoji="🦀", disabled=level < reg.fishing.pots.min_level, on_click=self._pots),
                             button("Mastery", emoji="🌟", on_click=self._mastery),
                             button("Sell all", emoji="💰", on_click=self._sell_all)))
+            body.append(row(button("Radar", emoji="📡", disabled=level < reg.fishing.radar.unlock_level, on_click=self._radar)))
             return Page("Fishing", body, accent=ACCENT)
 
         status = cast.status(now())
@@ -289,7 +290,7 @@ class FishScreen(Screen):
         water = fishing.require_water(level, self.water or fishing.unlocked_waters(level, get_registry().fishing)[-1].id,
                                       get_registry().fishing)
         self.missed = None
-        self.cast = fishing.cast_line(stats, self.rng, now(), armed=armed, water=water, pet=await pets.bonuses(self.user))
+        self.cast = fishing.cast_line(stats, self.rng, now(), armed=armed, water=water, pet=await pets.bonuses(self.user), chase=await fishing.use_radar(self.user, water))
         await self.refresh(interaction)
 
     async def _pick_water(self, interaction: discord.Interaction, values: list[str]) -> None:
@@ -452,6 +453,9 @@ class FishScreen(Screen):
 
     async def _pots(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishpots")
+
+    async def _radar(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "radar")
 
     async def _mastery(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "mastery", skill="fishing")

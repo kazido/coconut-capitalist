@@ -853,3 +853,7 @@ Mining, fishing, farming and foraging (not combat: it is paused) each have a tre
 - Farming: **Evergreen** (half of harvests replant free), **Heirloom** (30% of harvests are 60% bigger), **Haggler** (farm goods sell for 15% more).
 
 Players who had taken an old level-50 node get those points back (unknown nodes are ignored).
+
+## The fishing radar
+
+A gadget (an upgrade level on your fishing skill, like the mining reactor, not a rod) that opens at fishing level 25. On the Radar page you pick the fish to chase (slots grow with its level), switch it on, and every cast in a water where a target lives uses one **Radar Battery** (3,000 bits in the shop). Chased fish are 1.4x to 3.3x likelier (their own odds are divided by the factor). Five levels cost bits and fish from the deeper waters. Balance: at level 1-2 it barely pays for the batteries (it is for chasing a quest, book or community fish); at level 3+ chasing the expensive deep-sea fish adds about a quarter to two-thirds to a cast's worth.

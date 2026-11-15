@@ -924,6 +924,21 @@ class RodRules(_Data):
     extra_fish_per_power: float = Field(ge=0)  # ...and adds this to the number of EXTRA fish a catch brings (1.2 = one, and a 20% chance of two)
 
 
+class RadarLevel(_Data):
+    """One step of the radar: how much likelier your chosen fish are, how many you can chase at once, and what the upgrade into it costs."""
+
+    multiplier: float = Field(gt=1)
+    slots: int = Field(ge=1)
+    bits: int = Field(ge=0)
+    items: dict[str, int] = Field(default_factory=dict)
+
+
+class RadarRules(_Data):
+    unlock_level: int = Field(ge=1)  # fishing level that opens the radar
+    battery: str  # the item one cast with the radar on uses up
+    levels: list[RadarLevel] = Field(min_length=1)  # level 1 first; owning level N gives levels[N - 1]
+
+
 class FishingRules(_Data):
     xp_per_catch: int = Field(ge=0)  # xp for landing a fish when the water does not set its own: one catch pays the same whatever the fish or the rod
     xp_per_rarity: int = Field(ge=0)
@@ -938,6 +953,7 @@ class FishingRules(_Data):
     boss: BossRules
     waters: list[WaterRules] = Field(min_length=1)
     pots: PotRules
+    radar: RadarRules
 
 
 class MinigamePayout(_Data):
