@@ -93,6 +93,8 @@ class Spot:
     private: bool = True  # a tree of your own (marks only work there)
     boost: float = 0.0  # a wedge's lasting bonus: every chop hits (and pays xp) this much harder...
     boost_chops: int = 0  # ...for this many more chops (it follows you when a worn spot moves you on)
+    streak: int = 0  # right-style chops in a row on this tree (a small, capped damage bonus; a wrong style or a new tree resets it)
+    streak_tree: object = None  # which tree the streak belongs to (a different one starts it over)
 
     @classmethod
     def pick(cls, rules: ForagingRules, rng: random.Random, bias: float = 0.0, exclude: str | None = None,
@@ -107,6 +109,11 @@ class Spot:
             kinds = [sp for sp in c.specials if private or not sp.private_only]
             special = rng.choices(kinds, weights=[sp.weight for sp in kinds])[0].id
         return cls(g.name, g.multiplier, g.id, 0.0, special, private)
+
+    def on_tree(self, tree_key: object) -> None:
+        """Tell the spot which tree you are chopping: starting a different one starts the streak over."""
+        if self.streak_tree != tree_key:
+            self.streak, self.streak_tree = 0, tree_key
 
     def stance(self, rules: ForagingRules) -> str:
         return rules.chopping.grain(self.grain).stance
@@ -142,6 +149,11 @@ class Spot:
             quality *= 1 + self.boost
             self.boost_chops -= 1
         hits, effort, fired, mark = 2.0 if doubled else 1.0, quality, "", 0.0  # (the effort is what pays xp: a double chop is still one swing)
+        hits *= 1 + c.streak_bonus * min(self.streak, c.streak_max)  # (the streak adds damage only, never xp)
+        if correct is True:
+            self.streak += 1
+        elif correct is False:
+            self.streak = 0
         sp = self.kind(rules)
         if sp and correct is not False:  # (a chop with no style at all counts as right)
             fired = sp.effect

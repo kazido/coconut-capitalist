@@ -74,11 +74,16 @@ async def spot_panel(screen, power: int) -> str:
     likes is NOT shown: it is in your Grain notes, so you have to remember it."""
     reg = get_registry()
     spot = screen.spot
-    quality = f" ({spot.quality - 1:+.0%})" if spot.quality != 1 else ""
+    strength = spot.strength(reg.foraging) - 1  # the grain's pull on your damage, less what the wear has taken (so it matches the swing below)
+    quality = f" ({strength:+.0%})" if round(strength, 2) else ""
     left = max(0.0, 1 - spot.wear)
+    wear = "Fresh" if spot.wear < 1 / 3 else "Worn" if spot.wear < 2 / 3 else "Nearly gone"
     wedges = sum(q for _, q in await foraging.wedges(screen.user))
-    return (f"🪵 **{spot.title(reg.foraging)}** {quality}  \nWear: {bar(left, 6)} {left:.0%}   🪓 **{spot.preview(power, reg.foraging)}** per swing"
-            + (f"   ·   🔩 {wedges} wedge(s)" if wedges else "")
+    rules = reg.foraging.chopping
+    streak = (f"\n🔥 Right-style streak **{spot.streak}**: **+{rules.streak_bonus * min(spot.streak, rules.streak_max):.0%}** damage"
+              + (" (the most)" if spot.streak >= rules.streak_max else "")) if spot.streak and rules.streak_max else ""
+    return (f"🪵 **{spot.title(reg.foraging)}** grain{quality}  \n{bar(left, 6)} **{wear}**   🪓 **{spot.preview(power, reg.foraging)}** per swing"
+            + (f"   ·   🔩 {wedges} wedge(s)" if wedges else "") + streak
             + (f"\n🪚 Wedge bonus: **{spot.boost:+.0%}** for **{spot.boost_chops}** more chops" if spot.boost_chops else ""))
 
 
@@ -136,13 +141,14 @@ async def wedge_row(screen: Screen):
     return row(*(button(f"{reg.item(w.item).name} ×{q}", emoji="🔩", on_click=use(w.item)) for w, q in held))
 
 
-async def swing_at(screen: Screen, power: int, stance: str) -> tuple[foraging.Swing, str]:
+async def swing_at(screen: Screen, power: int, stance: str, tree_key: object) -> tuple[foraging.Swing, str]:
     """Swing in a style on this screen's spot. Writes down what you found out about the grain (the right style is remembered, a wrong
     one is crossed off) and wears the spot. Returns the swing and what to tell the player about it."""
     reg = get_registry()
     rules = reg.foraging
     stats = await foraging.axe_stats(screen.user)
     grain, name = screen.spot.grain, screen.spot.name
+    screen.spot.on_tree(tree_key)  # (a new tree starts the right-style streak over)
     pet = await pets.bonuses(screen.user)
     swing = screen.spot.swing(power, rules, screen.rng, stats.stats.get("good_chop", 0.0) + pet.get("good_chop", 0.0), stance,
                               stats.stats.get("wear_slow", 0.0), stats.stats.get("double_chop", 0.0), stats.stats.get("clean_cut", 0.0))
@@ -348,7 +354,7 @@ class TreeScreen(Screen):
             return await self.refresh(interaction)
         reg = get_registry()
         stats = await foraging.axe_stats(self.user)
-        swing, note = await swing_at(self, foraging.swing_power(stats, tree.zone, reg.foraging), stance)
+        swing, note = await swing_at(self, foraging.swing_power(stats, tree.zone, reg.foraging), stance, id(tree))
         applied = tree.chop(swing.damage, swing.effort)
         if swing.mark:
             tree.bonus = min(reg.foraging.chopping.mark_cap, tree.bonus + swing.mark)
@@ -431,7 +437,7 @@ class GroveScreen(Screen):
         rules = get_registry().foraging
         view = await foraging.community_tree(self.user)
         zone = view.zone if view else 1
-        swing, note = await swing_at(self, foraging.swing_power(stats, zone, rules, community=True), stance)
+        swing, note = await swing_at(self, foraging.swing_power(stats, zone, rules, community=True), stance, ("shared", view.closes_at if view else 0))
         try:
             result = await foraging.chop_community(self.user, swing.damage, effort=swing.effort)
         except foraging.ForagingError:  # the tree is already down (or fell over): redraw, which collects what you are owed and shows it
@@ -501,7 +507,7 @@ class PartyGroveScreen(Screen):
         rules = get_registry().foraging
         view = await party_tree.view(self.user)
         zone = view.zone if view else 1
-        swing, note = await swing_at(self, foraging.swing_power(stats, zone, rules, community=True), stance)
+        swing, note = await swing_at(self, foraging.swing_power(stats, zone, rules, community=True), stance, ("shared", view.closes_at if view else 0))
         try:
             result = await party_tree.chop(self.user, swing.damage, effort=swing.effort)
         except party_tree.PartyTreeError:  # a teammate felled it (or it fell over) while your panel was old: redraw, which collects and shows your rewards

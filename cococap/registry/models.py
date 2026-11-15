@@ -651,6 +651,8 @@ class ChoppingRules(_Data):
     wear_per_chop: float = Field(gt=0)  # a chop on a grain of wear 1 wears the spot out by this much (of a whole 1.0)
     wear_penalty: float = Field(ge=0, lt=1)  # a spot about to wear out chops at (1 - this) of its strength
     special_chance: float = Field(ge=0, le=1)  # the chance a new spot is a special one
+    streak_bonus: float = Field(ge=0, default=0.0)  # damage added per right-style chop in a row on the same tree...
+    streak_max: int = Field(ge=0, default=0)  # ...up to this many (so the most it can add is streak_bonus x streak_max)
     mark_cap: float = Field(ge=0)  # the most extra reward (+0.5 = +50%) marks can put on one tree
     grains: list[Grain] = Field(min_length=2)
     specials: list[Special] = Field(min_length=1)

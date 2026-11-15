@@ -375,8 +375,8 @@ def test_spots_differ_and_a_new_spot_is_a_random_new_grain():
 
 def test_the_grain_changes_the_damage_you_deal():
     damage = {g.name: f.Spot(g.name, g.multiplier, g.id).preview(100, RULES) for g in CH.grains}
-    assert damage["Knotty"] < damage["Twisted"] < damage["Plain"] == 100 < damage["Clean grain"] < damage["Burl"]
-    swing = f.Spot("Clean grain", 1.3).swing(100, RULES, Random(1))
+    assert damage["Knotty"] < damage["Twisted"] < damage["Plain"] == 100 < damage["Clean"] < damage["Burl"]
+    swing = f.Spot("Clean", 1.3).swing(100, RULES, Random(1))
     assert swing.damage == (round(100 * 1.3 * (1 + CH.good_chop_bonus)) if swing.good else 130)
 
 
@@ -693,7 +693,7 @@ async def test_the_panel_shows_the_spot_and_its_wear_but_never_the_style(db, mon
     nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
     text_now = lambda: " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))  # noqa: E731
     page = text_now()
-    assert "Plain" in page and "100%" in page and "per swing" in page
+    assert "Plain" in page and "grain" in page and "Fresh" in page and "100%" not in page and "per swing" in page
     assert "likes" not in page and not any(name in page for name, _ in f.STANCES.values())  # the style is only in your notes
     wrong_label = f.STANCES[wrong(nav.screen.spot)][0]
     await click(nav, inter, wrong_label)
@@ -973,3 +973,43 @@ def test_chopping_itself_pays_no_bits_in_the_shipped_data():
     from cococap.registry import load_registry
 
     assert load_registry().foraging.bits_per_hp == 0  # what the game ships: drops and xp are the pay, bits come from selling
+
+
+# ---- the right-style streak and the panel's wear words ---------------------------------------------------------------------------
+def _damage(spot, stance=None, power=1000):
+    class Calm(Random):
+        def random(self):
+            return 0.99  # no good chops, no doubles
+
+    return spot.swing(power, RULES, Calm(1), 0.0, stance)
+
+
+def test_right_style_chops_in_a_row_add_a_small_capped_bonus_and_a_wrong_one_resets_it():
+    ch = RULES.chopping
+    spot = f.Spot()  # plain: likes the sidecut ("s")
+    first = _damage(spot, "s")
+    assert spot.streak == 1
+    spot.wear = 0  # keep the spot fresh so only the streak differs
+    second = _damage(spot, "s")
+    assert second.damage == pytest.approx(first.damage * (1 + ch.streak_bonus), abs=1)
+    for _ in range(ch.streak_max + 15):
+        spot.wear = 0
+        top = _damage(spot, "s")
+    assert top.damage == pytest.approx(first.damage * (1 + ch.streak_bonus * ch.streak_max), abs=1)  # it stops growing
+    assert top.effort == pytest.approx(first.effort)  # damage only: the xp is the same
+    spot.wear = 0
+    _damage(spot, "o")  # the wrong style
+    assert spot.streak == 0
+    spot.streak = 4
+    _damage(spot, None)  # no style at all: neither counts nor resets
+    assert spot.streak == 4
+    spot.on_tree("another tree")
+    assert spot.streak == 0
+    spot.streak = 3
+    spot.on_tree("another tree")
+    assert spot.streak == 3  # (the same tree keeps it)
+
+
+def test_the_streak_cap_is_small_enough_for_shared_trees():
+    ch = RULES.chopping
+    assert 0 < ch.streak_bonus * ch.streak_max <= 0.15  # a skilled chopper out-damages a careless one by a bit, never by a lot

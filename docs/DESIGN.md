@@ -195,7 +195,7 @@ over, and each member collects theirs from their own panel. They pay a little be
 
 ### Grains, one chop style each, spot wear and rotation wedges (decided; replaced the 8-step patterns)
 
-Every spot has a **grain** (Plain, Knotty, Clean grain, Twisted, Split, Burl) and every grain likes **one chop style**: Overhead,
+Every spot has a **grain** (Plain, Knotty, Clean, Twisted, Split, Burl) and every grain likes **one chop style**: Overhead,
 Sidecut or Undercut (`configs/foraging.toml` `[[chopping.grains]]`, each stance liked by two grains). One grain = one style, so it is
 a thing you learn once and remember, not a pattern you re-read every spot.
 - **Right style = full strength; any other glances off** at `wrong_stance_factor` (half) of the damage and xp.
@@ -874,3 +874,8 @@ A gadget (an upgrade level on your fishing skill, like the mining reactor, not a
 - **Scrolls are rare**: foraging 1-in-3,500 to 1-in-6,000 per drop roll, mining 1-in-6,000 (moved ahead of the gemstones in the depth tables so the list stays rarest-first), fishing chest/boss chances quartered, combat weights cut. They sell for 400,000+.
 - **Chopping pays no bits** (`bits_per_hp = 0`): foraging pays xp and drops (sell them). It was only about 5% of foraging pay, so no other number changed. The bit-sharing rules still exist and are tested with the value turned on.
 - **Back goes up one level.** The nav stack is the path down from Home; opening a screen that is already on it cuts the path back to that screen instead of stacking a second copy, so Back is never an "undo".
+
+## Chopping panel and the right-style streak
+
+- The spot panel shows `Grain (±%) ▰▰▰ Fresh|Worn|Nearly gone  🪓 N per swing`: the percent is the grain's pull LESS the wear, so it falls with the spot and matches the swing number; wear is only the bar and a word. The word "grain" follows the grain's name again (the grain "Clean grain" is now just "Clean").
+- **Right-style streak** (`[chopping] streak_bonus = 0.01`, `streak_max = 10`): every chop in the grain's right style in a row adds +1% damage to the next ones on the same tree, up to +10%. A wrong style resets it; a chop with no style leaves it alone; a new tree starts it over (the key is the tree: private `id(tree)`, shared trees their closing time). Damage only, never xp, and the cap is the same on private, party and community trees, so on shared trees a careful chopper takes a slightly bigger share, never a lot (a test pins the cap at 15% or less).
