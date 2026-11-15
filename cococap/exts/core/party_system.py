@@ -14,7 +14,7 @@ from cococap.services.party import (  # noqa: F401  (re-exported: tests and othe
     PartyNotFound,
     UserNotInParty,
 )
-from cococap.ui.party_invite import PartyInviteView, send_invite  # noqa: F401
+from cococap.services import party_invites
 from utils.custom_embeds import SuccessEmbed, CustomEmbed
 
 
@@ -141,7 +141,8 @@ class PartySystemCog(commands.GroupCog, name="party"):
         party: Party = interaction.extras.get("party")
 
         party.check_invite(interaction.user.id, member.id, is_bot=member.bot)
-        await send_invite(interaction, party, member)
+        party_invites.offer(party, interaction.user.id, member.id)  # no message in the channel: it shows on their Party page for a minute
+        await interaction.response.send_message(f"📨 Invited **{member.display_name}**. It shows on their Party page for a minute.", ephemeral=True)
 
     @app_commands.check(in_party)
     async def kick(self, interaction: Interaction, member_to_kick: discord.Member):

@@ -100,20 +100,22 @@ async def test_a_stale_page_button_cannot_join_after_the_invite_expired(db):
     assert await Party.for_user(1) is None and "expired" in all_text(nav)
 
 
-async def test_sending_an_invite_registers_it_and_a_second_one_is_refused_while_it_waits(db):
+async def test_a_second_invite_is_refused_while_one_waits_and_nothing_is_posted_in_the_chat(db):
     from types import SimpleNamespace
-    from unittest.mock import AsyncMock, MagicMock
-
-    from cococap.ui.party_invite import send_invite
 
     party = await Party.create(1)
-    interaction = MagicMock()
-    interaction.user = SimpleNamespace(id=1, mention="<@1>")
-    interaction.response.send_message = AsyncMock()
-    interaction.original_response = AsyncMock()
-    member = SimpleNamespace(id=2, mention="<@2>")
-    await send_invite(interaction, party, member)
-    assert invites.pending_for(2).inviter_id == 1 and invites.pending_for(2).party_id == party.party_id
+    nav, inter = await hub("party")
+    invite = next(c for c in nav.walk_children() if hasattr(c, "_values") and c.__class__.__name__ == "UserSelect")
+    invite._values = [SimpleNamespace(id=2, bot=False)]
+    inter.response.send_message.reset_mock()
+    await invite.callback(inter)
+    assert invites.pending_for(2).party_id == party.party_id
+    inter.response.send_message.assert_not_called()
     with pytest.raises(CustomError, match="already has an invite"):
-        await send_invite(interaction, party, member)
-    assert interaction.response.send_message.await_count == 1  # the second one never went out
+        await invite.callback(inter)
+
+
+def test_the_old_chat_invite_message_is_gone():
+    import importlib.util
+
+    assert importlib.util.find_spec("cococap.ui.party_invite") is None

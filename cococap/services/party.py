@@ -1,5 +1,5 @@
 """Parties: who is in one, and the rules for creating, leaving and inviting. No Discord views here
-(see ``cococap.ui.party_invite``); the /party commands and the /play Party screen both call this."""
+(see ``cococap.services.party_invites``: invites are shown on the Party page, never posted in the chat); the /party commands and the /play Party screen both call this."""
 
 import random
 

@@ -933,29 +933,26 @@ async def test_party_members_can_leave_but_a_leader_with_a_team_must_disband(db)
         await (await Party.for_user(2)).leave(2)
 
 
-async def test_inviting_uses_the_party_rules(db, monkeypatch):
+async def test_inviting_uses_the_party_rules_and_posts_nothing_in_the_chat(db):
+    from cococap.errors import CustomError
+    from cococap.services import party_invites
     from cococap.services.party import Party
 
-    sent = []
-
-    async def fake_send(interaction, party, member):
-        sent.append(member.id)
-
-    monkeypatch.setattr("cococap.screens.party.send_invite", fake_send)
     await Party.create(1)
     nav, inter = await hub("party")
     invite = next(c for c in nav.walk_children() if isinstance(c, ui.UserSelect))
     friend = SimpleNamespace(id=9, bot=False)
     invite._values = [friend]
+    inter.response.send_message.reset_mock()
     await invite.callback(inter)
-    assert sent == [9]
-    from cococap.errors import CustomError
-
+    assert party_invites.pending_for(9) is not None and party_invites.pending_for(9).inviter_id == 1
+    inter.response.send_message.assert_not_called()  # no Join/Decline message in the channel: it is on their Party page
+    assert "Invited" in all_text(nav)
     for bad, message in ((SimpleNamespace(id=1, bot=False), "already here"), (SimpleNamespace(id=7, bot=True), "Bots")):
         invite._values = [bad]
         with pytest.raises(CustomError, match=message):
             await invite.callback(inter)
-    assert sent == [9]
+    assert party_invites.pending_for(7) is None and party_invites.pending_for(1) is None
 
 
 # ---- farming -------------------------------------------------------------------------------------------------------

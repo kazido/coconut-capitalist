@@ -5,7 +5,6 @@ from cococap.services import party_invites
 from cococap.services.party import Party
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text, user_select
-from cococap.ui.party_invite import send_invite
 
 
 class PartyScreen(Screen):
@@ -75,7 +74,8 @@ class PartyScreen(Screen):
         if party is None:
             return await self.refresh(interaction, "You are not in a party any more.")
         party.check_invite(self.user.id, member.id, is_bot=member.bot)
-        await send_invite(interaction, party, member)  # a separate message the invited player answers
+        party_invites.offer(party, self.user.id, member.id)  # nothing is posted in the chat: they see it on their own Party page
+        await self.refresh(interaction, f"📨 Invited **{await self.nav.name_of(member.id)}**. It shows on their Party page for a minute.")
 
     async def _disband(self, interaction: discord.Interaction) -> None:
         party = await Party.for_user(self.user.id)
