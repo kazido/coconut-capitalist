@@ -1465,10 +1465,10 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 45000  # TODO(balance): flattened (was 100,000); see DESIGN.md 'Sell prices'
+sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
 
 [balance_gemstone.drop]
-rate = 1500
+rate = 12000
 min = 1
 max = 1
 
@@ -1497,10 +1497,10 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 45000  # TODO(balance): flattened (was 100,000); see DESIGN.md 'Sell prices'
+sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
 
 [peace_gemstone.drop]
-rate = 1500
+rate = 12000
 min = 1
 max = 1
 
@@ -1513,10 +1513,10 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 45000  # TODO(balance): flattened (was 100,000); see DESIGN.md 'Sell prices'
+sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
 
 [rage_gemstone.drop]
-rate = 1500
+rate = 12000
 min = 1
 max = 1
 
@@ -1529,10 +1529,10 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 45000  # TODO(balance): flattened (was 100,000); see DESIGN.md 'Sell prices'
+sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
 
 [sanity_gemstone.drop]
-rate = 1500
+rate = 12000
 min = 1
 max = 1
 

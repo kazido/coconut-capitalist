@@ -60,14 +60,31 @@ def wyrmhole_odds(placed_gems: int, rules: MiningRules) -> int:
     return max(w.min_odds, w.odds - w.gem_bonus * placed_gems)
 
 
-def pending_lodes(mining: Mining, rules: MiningRules, now: float) -> int:
-    """Auto-mined lodes waiting in the reactor: `level` lodes per interval, capped."""
+def pending_lodes(mining: Mining, rules: MiningRules, now: float, speed: float = 0.0, extra_hours: float = 0.0) -> int:
+    """Auto-mined lodes waiting in the reactor: `level` lodes per interval (`speed` more with the Reactor Engineer's Overclock), capped at the stockpile hours
+    (`extra_hours` more with Deep Reserve)."""
     last = mining.reactor.last_auto_mine
     if last <= 0:
         return 0
     intervals = int((now - last) // rules.reactor.automine_seconds)
-    cap = rules.reactor.automine_cap_hours * 3600 // rules.reactor.automine_seconds
-    return min(intervals, cap) * mining.reactor.level
+    cap = int((rules.reactor.automine_cap_hours + extra_hours) * 3600 // rules.reactor.automine_seconds)
+    return round(min(intervals, cap) * mining.reactor.level * (1 + speed))
+
+
+# Who is in a mine right now (user id -> (the run, when it began)): the magnet can't be fed while you are down there. A run that is over, settled or very old does not count.
+_LIVE_RUNS: dict[int, tuple["MineRun", float]] = {}
+LIVE_RUN_SECONDS = 900
+
+
+def in_a_mine(user_id: int, now: float | None = None) -> bool:
+    entry = _LIVE_RUNS.get(user_id)
+    if entry is None:
+        return False
+    run, began = entry
+    if run.settled or run.finished or (now if now is not None else time.time()) - began > LIVE_RUN_SECONDS:
+        _LIVE_RUNS.pop(user_id, None)
+        return False
+    return True
 
 
 # ---- the descent ------------------------------------------------------------------------------
@@ -85,6 +102,8 @@ class DigResult:
     multi: tuple[int, ...] = ()  # extra columns the Prospector's Multi-Mine dug beside yours
     milestone: Milestone | None = None  # the landmark row this dig finished, if any (already applied)
     milestone_haul: Counter[str] = field(default_factory=Counter)  # the ore it gave
+    lifeline: bool = False  # the Lifeline capstone held the tunnel on this dig (a collapse would have ended the mine)
+    lifeline_lost: Counter[str] = field(default_factory=Counter)  # what saving you cost
 
 
 @dataclass
@@ -124,6 +143,10 @@ class MineRun:
         braces: int = 1,
         bombs: int = 0,
         magnet: bool = False,
+        magnet_points: float | None = None,
+        magnet_drain: float = 0.0,
+        geode_gems: list[str] | None = None,
+        lifeline_ready: bool = True,
         wyrmhole_odds_value: int | None = None,
         rich_bonus: float = 0.0,
         vault_gem_bonus: float = 0.0,
@@ -137,9 +160,13 @@ class MineRun:
         self.cursors = list(cursors)
         self.growth_factor, self.yield_factor = growth_factor, yield_factor
         self.braces, self.bombs, self.magnet = braces, bombs, magnet
+        # The magnet is a fuel meter: `magnet_points` is what it holds (None: no limit, as in a plain test run) and each marked row costs `magnet_drain` of it.
+        self.magnet_points, self.magnet_drain, self.magnet_used = magnet_points, magnet_drain, 0.0
+        self.geode_gems = geode_gems or list(rules.reactor.core_gems)  # the gems a geode can hold (the ones you have not placed in the reactor yet, while any are missing)
+        self.lifeline_ready, self.lifeline_fired = lifeline_ready, False
         self.rich_bonus, self.vault_gem_bonus = rich_bonus, vault_gem_bonus  # Mastery: more rich lodes, more vault gems
         self.auto_bomb_every, self.multi_mine = auto_bomb_every, multi_mine  # pickaxe abilities (0: none)
-        self.lifeline, self.gold_rush, self.geode = lifeline, gold_rush, geode  # Mastery capstones (0: none): a brace back every N rows, every Nth cell pays triple, geodes with gems
+        self.lifeline, self.gold_rush, self.geode = lifeline, gold_rush, geode  # Mastery capstones (0: none): a second chance from a collapse, every Nth cell pays triple, geodes with gems
         self.cells_mined = 0
         self.auto_counter = 0  # rows dug since the last Auto-Bomb
         self.bombs_used = 0
@@ -238,9 +265,23 @@ class MineRun:
         self.row(self.depth)
         return self._holes[self.depth]
 
-    def best_columns(self) -> frozenset[int]:
-        """With a charged magnet: the column(s) of the next row worth the most."""
+    @property
+    def magnet_active(self) -> bool:
+        """Is the magnet marking this row? It needs to be on and to hold enough meter for one more row."""
         if not self.magnet:
+            return False
+        return self.magnet_points is None or self.magnet_points - self.magnet_used >= self.magnet_drain
+
+    @property
+    def magnet_rows_left(self) -> int | None:
+        """How many more rows the magnet can mark (None: it is off, or has no limit)."""
+        if not self.magnet or self.magnet_points is None or self.magnet_drain <= 0:
+            return None
+        return int((self.magnet_points - self.magnet_used) // self.magnet_drain)
+
+    def best_columns(self) -> frozenset[int]:
+        """With a magnet that has fuel left: the column(s) of the next row worth the most."""
+        if not self.magnet_active:
             return frozenset()
         cells, holes = self.row(self.depth), self._holes[self.depth]
         worth = [0 if (col in holes or not cell) else self.registry.item(cell[0]).sell_price * cell[1] for col, cell in enumerate(cells)]
@@ -300,7 +341,7 @@ class MineRun:
             if scroll := scrolls.roll("mining", self.rng, self.registry):  # a rare scroll: one chance per cell dug
                 found[scroll] += 1
             if self.geode and self.rng.random() < self.geode:  # Geode Cracker: a geode with a reactor gem inside
-                found[self.rng.choice(self.rules.reactor.core_gems)] += 1
+                found[self.rng.choice(self.geode_gems)] += 1
             hardness += self.hardness(cells[col])
         self.haul.update(found)
         self.lodes += len(columns)
@@ -313,8 +354,6 @@ class MineRun:
         gain = pressure * self.growth_factor
         self.danger = min(100.0, max(0.0, self.danger + gain - vents * d.vent_relief))
         self.depth += 1
-        if self.lifeline and self.depth % self.lifeline == 0:  # Lifeline: a brace comes back every Nth row
-            self.braces += 1
         self.passed = next((m for m in d.milestones if m.row == self.depth), None)  # (the row you just finished, if it is a landmark)
         self.passed_haul = Counter()
         if self.passed is not None:
@@ -338,6 +377,19 @@ class MineRun:
         """Rows until the Auto-Bomb goes off (this one counts: 1 means the next dig), or None without the ability."""
         return max(1, self.auto_bomb_every - self.auto_counter) if self.auto_bomb_every else None
 
+    def _lose(self, share: float) -> Counter[str]:
+        """Take `share` of the haul you have not banked (a checkpoint's ore is safe). Returns what was lost."""
+        lost: Counter[str] = Counter()
+        for item_id, quantity in list(self.haul.items()):
+            safe = min(quantity, self.safe[item_id])
+            keep = safe + int((quantity - safe) * (1 - share))
+            lost[item_id] = quantity - keep
+            if keep:
+                self.haul[item_id] = keep
+            else:
+                del self.haul[item_id]
+        return +lost
+
     def dig(self) -> DigResult:
         self._require_live()
         d = self.rules.descent
@@ -347,20 +399,19 @@ class MineRun:
             return DigResult(Counter(), wyrmhole=True)
         if self.auto_bomb_every and self.auto_counter + 1 >= self.auto_bomb_every:  # the Warden's charge goes off: this row is blown, free
             return self._blow(auto=True)
+        if self.magnet_active:  # the magnet marked this row, so it burns some of its meter
+            self.magnet_used += self.magnet_drain
         self.last_risk, self.last_pressure = self.risk, self.danger  # kept for the log when something goes wrong
+        saved: Counter[str] | None = None
         if self.rng.random() < self.risk:
-            lost: Counter[str] = Counter()
-            for item_id, quantity in list(self.haul.items()):
-                safe = min(quantity, self.safe[item_id])  # (what a checkpoint saved cannot be lost)
-                risked = quantity - safe
-                keep = safe + int(risked * (1 - d.collapse_loss))
-                lost[item_id] = quantity - keep
-                if keep:
-                    self.haul[item_id] = keep
-                else:
-                    del self.haul[item_id]
-            self.outcome = "collapse"
-            return DigResult(Counter(), collapsed=True, lost=+lost)
+            if self.lifeline and self.lifeline_ready and not self.lifeline_fired:
+                # Lifeline (Mastery capstone): the reactor holds the tunnel. You lose a little of what you carry, the pressure drops, and the dig goes on.
+                self.lifeline_fired = True
+                saved = self._lose(d.lifeline_loss)
+                self.danger = min(self.danger, d.lifeline_pressure)
+            else:
+                self.outcome = "collapse"
+                return DigResult(Counter(), collapsed=True, lost=self._lose(d.collapse_loss))
         columns = sorted(set(self.cursors))
         extra: list[int] = []
         if self.multi_mine and self.rng.random() < self.multi_mine:  # the Prospector's Multi-Mine: the pick bites the rock beside you too
@@ -371,7 +422,8 @@ class MineRun:
         found, vents, caches, hardness = self._mine(sorted(columns + extra))
         self.auto_counter += 1
         vault = self._descend(d.creak + hardness, vents)
-        return DigResult(found, vented=vents, caches=caches, vault=vault, multi=tuple(extra), milestone=self.passed, milestone_haul=self.passed_haul)
+        return DigResult(found, vented=vents, caches=caches, vault=vault, multi=tuple(extra), milestone=self.passed, milestone_haul=self.passed_haul,
+                         lifeline=saved is not None, lifeline_lost=saved or Counter())
 
     def bomb(self) -> DigResult:
         """Blow the whole row (except wyrmholes): every cell, one flat pressure hit, no collapse check."""
@@ -501,15 +553,15 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
     tool = await equipped_stats(user, "mining", reg)
     if tool is None:
         raise MiningError("You need a pickaxe. Buy a Rookie Pickaxe in the shop (it's equipped for you).")
-    mining, _ = await _mining_state(user)
-    magnet = mining.magnet_meter >= rules.magnet.capacity
-    if magnet:
-        await user.update_skill("mining", lambda m: setattr(m, "magnet_meter", 0))
+    mining, level = await _mining_state(user)
+    drain = rules.magnet.drain_per_row * (1 - min(0.9, tool.stats.get("magnet_save", 0.0)))
+    magnet = mining.magnet_on and level >= rules.magnet.level and mining.magnet_meter >= max(1.0, drain)  # (the magnet is a fuel meter: it keeps what it did not use)
     pet = await pets.bonuses(user, reg)
     power = tool.power
-    reduction = d.reactor_reduction * (mining.reactor.level - 1) + tool.stats.get("danger_reduction", 0) + pet.get("danger_reduction", 0)
+    reduction = (d.reactor_reduction + tool.stats.get("reactor_cool", 0.0)) * (mining.reactor.level - 1) + tool.stats.get("danger_reduction", 0) + pet.get("danger_reduction", 0)
     bombs = min(await user.item_quantity(BOMB_ITEM), d.bombs_per_run)
-    return MineRun(
+    missing = [g for g, core in zip(rules.reactor.core_gems, (mining.reactor.core_1, mining.reactor.core_2, mining.reactor.core_3, mining.reactor.core_4), strict=True) if not core.gem_id]
+    run = MineRun(
         rules,
         reg,
         rng,
@@ -519,6 +571,10 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         yield_factor=(1 + d.power_yield_bonus * max(0, power - d.power_base)) * (1 + pet.get("ore_yield", 0.0) + tool.stats.get("ore_yield", 0.0)),
         braces=d.braces_base + (mining.reactor.level - 1) // d.braces_per_reactor_levels + int(tool.stats.get("braces", 0)),
         magnet=magnet,
+        magnet_points=mining.magnet_meter if magnet else None,
+        magnet_drain=drain,
+        geode_gems=missing or None,
+        lifeline_ready=mining.lifeline_wait <= 0,
         wyrmhole_odds_value=wyrmhole_odds(gems_placed(mining), rules),
         rich_bonus=tool.stats.get("rich_chance", 0.0),
         vault_gem_bonus=tool.stats.get("vault_gem", 0.0),
@@ -528,6 +584,8 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         gold_rush=int(tool.stats.get("gold_rush", 0)),
         geode=tool.stats.get("geode", 0.0),
     )
+    _LIVE_RUNS[user.id] = (run, time.time())
+    return run
 
 
 async def use_bomb(user: User, run: MineRun) -> DigResult:
@@ -574,8 +632,15 @@ async def settle_run(user: User, run: MineRun, registry: Registry | None = None)
     def record(m: Mining) -> None:
         m.xp += xp
         m.stats.lodes_mined += run.lodes
+        if run.magnet_used:  # the magnet burned fuel: take it off the meter (never below zero), whatever was fed since
+            m.magnet_meter = max(0, m.magnet_meter - int(round(run.magnet_used)))
+        if run.lifeline_fired:  # the reactor used up its second chance: it needs a few mines to recharge
+            m.lifeline_wait = rules.descent.lifeline_runs - 1
+        elif m.lifeline_wait > 0:
+            m.lifeline_wait -= 1
 
     await user.update_skill("mining", record)
+    _LIVE_RUNS.pop(user.id, None)
     return summary
 
 
@@ -610,6 +675,12 @@ async def claim_scarab_reward(user: User, rng: random.Random, registry: Registry
 
 
 # ---- the reactor ------------------------------------------------------------------------------
+async def _auto_bonus(user: User, registry: Registry | None) -> tuple[float, float]:
+    """(more lodes, more stockpile hours) from the Reactor Engineer branch of the mastery tree."""
+    tool = await equipped_stats(user, "mining", registry)
+    return (tool.stats.get("auto_speed", 0.0), tool.stats.get("auto_hours", 0.0)) if tool else (0.0, 0.0)
+
+
 async def reactor_status(user: User, now: float | None = None, registry: Registry | None = None):
     """Everything the reactor screen shows, as plain data."""
     rules = (registry or get_registry()).mining
@@ -621,7 +692,7 @@ async def reactor_status(user: User, now: float | None = None, registry: Registr
     return {
         "mining": mining,
         "level": level,
-        "pending_lodes": pending_lodes(mining, rules, now or time.time()),
+        "pending_lodes": pending_lodes(mining, rules, now or time.time(), *await _auto_bonus(user, registry)),
         "prestige_unlocked": prestige_unlocked(mining, rules),
         "columns_dug": columns_dug(mining.reactor.level, rules),
         "gem_slots_open": level >= rules.reactor.gem_slot_level,
@@ -677,20 +748,21 @@ async def prestige(user: User, registry: Registry | None = None) -> int:
 
 
 async def claim_lodes(
-    user: User, rng: random.Random, now: float | None = None, registry: Registry | None = None
+    user: User, rng: random.Random, now: float | None = None, registry: Registry | None = None, fed_out: Counter[str] | None = None
 ) -> tuple[int, Counter[str]]:
     """Collect the auto-mined lodes. Returns (lodes, loot). Safe to call concurrently: the clock is
-    reset inside one transaction, so a second claim sees nothing waiting."""
+    reset inside one transaction, so a second claim sees nothing waiting. Ore that went into the magnet (Auto-feed) is added to `fed_out` if you pass one."""
     reg = registry or get_registry()
     rules = reg.mining
     now = now or time.time()
     claimed = {"lodes": 0, "depth": 0}
+    bonus = await _auto_bonus(user, reg)
 
     def take(m: Mining) -> None:
         if m.reactor.last_auto_mine <= 0:
             m.reactor.last_auto_mine = now
             return
-        claimed["lodes"] = pending_lodes(m, rules, now)
+        claimed["lodes"] = pending_lodes(m, rules, now, *bonus)
         claimed["depth"] = min(m.reactor.level - 1, len(rules.depth_tables) - 1)
         if claimed["lodes"]:
             m.reactor.last_auto_mine = now
@@ -703,9 +775,38 @@ async def claim_lodes(
         result = roll_table(table, reg, rng)
         if result:
             loot[result[0]] += result[1]
-    for item_id, quantity in loot.items():
+    fed = await _feed_from_loot(user, loot, reg)  # (with the setting on, copper, iron and gold top the magnet up first)
+    if fed_out is not None:
+        fed_out.update(fed)
+    for item_id, quantity in (loot - fed).items():
         await user.add_item(item_id, quantity)
     return claimed["lodes"], loot
+
+
+async def _feed_from_loot(user: User, loot: Counter[str], reg: Registry) -> Counter[str]:
+    """Put as much of `loot`'s copper, iron and gold into the magnet as fits, if the player has Auto-feed on and is not in a mine. Returns the ore used."""
+    magnet = reg.mining.magnet
+    mining, level = await _mining_state(user)
+    if not mining.magnet_auto_feed or level < magnet.level or in_a_mine(user.id):
+        return Counter()
+    fed: Counter[str] = Counter()
+    room = magnet.capacity - mining.magnet_meter
+    for ore, value in sorted(magnet.values.items(), key=lambda kv: -kv[1]):  # (the dearest ore first, so the meter fills with the least ore)
+        take = min(loot.get(ore, 0), room // value)
+        if take > 0:
+            fed[ore] = take
+            room -= take * value
+    points = sum(magnet.values[ore] * q for ore, q in fed.items())
+    if points:
+        await user.update_skill("mining", lambda m: setattr(m, "magnet_meter", min(magnet.capacity, m.magnet_meter + points)))
+    return fed
+
+
+async def set_magnet_option(user: User, option: str, value: bool) -> None:
+    """Turn the magnet itself (`magnet_on`) or the auto-miner feeding it (`magnet_auto_feed`) on or off."""
+    if option not in ("magnet_on", "magnet_auto_feed"):
+        raise MiningError("Unknown setting.")
+    await user.update_skill("mining", lambda m: setattr(m, option, bool(value)))
 
 
 # ---- the magnet -------------------------------------------------------------------------------
@@ -722,6 +823,8 @@ async def deposit_ore(
     mining, level = await _mining_state(user)
     if level < rules.magnet.level:
         raise MiningError(f"The magnet unlocks at mining level {rules.magnet.level}.")
+    if in_a_mine(user.id):
+        raise MiningError("You can't feed the magnet while you are in a mine.")
     remaining = rules.magnet.capacity - mining.magnet_meter
     if remaining <= 0:
         raise MiningError("The magnet is already full.")

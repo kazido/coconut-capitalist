@@ -34,7 +34,7 @@ def test_each_branch_has_a_trade_off_or_a_different_stat_so_branches_differ():
 
 def test_mastery_stats_are_ones_the_game_reads():
     known = {"danger_reduction", "ore_yield", "braces", "rich_chance", "vault_gem", "bite_speed", "slips", "treasure_luck", "rare_luck", "boss_luck",
-             "lifeline", "gold_rush", "geode", "hot_streak", "salvage", "chum",  # (the capstones: each has its own test in its skill's file)
+             "lifeline", "gold_rush", "geode", "hot_streak", "salvage", "chum", "reactor_cool", "auto_speed", "auto_hours", "magnet_save",  # (the capstones: each has its own test in its skill's file)
              "crop_yield", "drop_luck", "seed_back", "evergreen", "heirloom", "haggler", "good_chop", "double_chop", "wear_slow", "shake", "windfall", "final_cut", "clean_cut"}
     used = {e.stat for t in RULES.trees for b in t.branches for n in b.nodes for e in n.effects}
     assert used <= known
@@ -43,8 +43,8 @@ def test_mastery_stats_are_ones_the_game_reads():
 def test_the_arithmetic_of_points():
     assert [mastery.points_earned(lv, REG) for lv in (1, 4, 5, 9, 10, 100)] == [0, 0, 1, 1, 2, 20]
     assert mastery.stats([]) == {}
-    safe = mastery.stats(["steady_hands", "spare_braces"])
-    assert safe == {"danger_reduction": 0.05, "braces": 1}
+    engineer = mastery.stats(["coolant_loop", "overclock"])
+    assert engineer == {"reactor_cool": 0.004, "auto_speed": 0.25}
     assert mastery.stats(["pay_dirt", "motherlode"])["danger_reduction"] == pytest.approx(-0.08)  # trade-offs add up
     assert mastery.stats(["not_a_node"]) == {}
 
@@ -53,37 +53,37 @@ def test_the_arithmetic_of_points():
 async def test_a_node_needs_its_level_and_a_free_point_and_the_one_before_it(db):
     user = await User.get(1)
     with pytest.raises(MasteryError, match="level 5"):
-        await mastery.buy(user, "mining", "steady_hands")
+        await mastery.buy(user, "mining", "coolant_loop")
     await level_up(user, "mining", 5)
     with pytest.raises(MasteryError, match="Take the node before"):
-        await mastery.buy(user, "mining", "spare_braces")
-    node = await mastery.buy(user, "mining", "steady_hands")
-    assert node.name == "Steady Hands" and (await user.skill("mining")).mastery == ["steady_hands"]
+        await mastery.buy(user, "mining", "overclock")
+    node = await mastery.buy(user, "mining", "coolant_loop")
+    assert node.name == "Coolant Loop" and (await user.skill("mining")).mastery == ["coolant_loop"]
     with pytest.raises(MasteryError, match="already"):
-        await mastery.buy(user, "mining", "steady_hands")
+        await mastery.buy(user, "mining", "coolant_loop")
     with pytest.raises(MasteryError, match="level 10"):
-        await mastery.buy(user, "mining", "spare_braces")  # (level is not enough yet)
+        await mastery.buy(user, "mining", "overclock")  # (level is not enough yet)
     with pytest.raises(MasteryError, match="no such node"):
         await mastery.buy(user, "mining", "nope")
     with pytest.raises(MasteryError, match="no Mastery tree"):
-        await mastery.buy(user, "combat", "steady_hands")
+        await mastery.buy(user, "combat", "coolant_loop")
 
 
 async def test_you_cannot_spend_more_points_than_you_have(db):
     user = await User.get(1)
     await level_up(user, "mining", 10)  # 2 points
-    await mastery.buy(user, "mining", "steady_hands")  # 1
+    await mastery.buy(user, "mining", "coolant_loop")  # 1
     await mastery.buy(user, "mining", "pay_dirt")  # 1 (a second branch)
     with pytest.raises(MasteryError, match="needs 1 points"):
         await mastery.buy(user, "mining", "rich_veins")
     owned, level, free = await mastery.status(user, "mining")
-    assert (owned, level, free) == (["steady_hands", "pay_dirt"], 10, 0)
+    assert (owned, level, free) == (["coolant_loop", "pay_dirt"], 10, 0)
 
 
 async def test_each_skill_has_its_own_tree_and_points(db):
     user = await User.get(1)
     await level_up(user, "mining", 5)
-    await mastery.buy(user, "mining", "steady_hands")
+    await mastery.buy(user, "mining", "coolant_loop")
     assert (await mastery.status(user, "fishing"))[2] == 0 and (await user.skill("fishing")).mastery == []
     with pytest.raises(MasteryError):
         await mastery.buy(user, "fishing", "quick_bite")  # no fishing level yet
@@ -94,8 +94,8 @@ async def test_a_respec_clears_the_tree_for_bits_and_gives_the_points_back(db):
     await level_up(user, "mining", 10)
     with pytest.raises(MasteryError, match="nothing"):
         await mastery.respec(user, "mining")
-    await mastery.buy(user, "mining", "steady_hands")
-    await mastery.buy(user, "mining", "spare_braces")
+    await mastery.buy(user, "mining", "coolant_loop")
+    await mastery.buy(user, "mining", "overclock")
     with pytest.raises(MasteryError, match="costs"):
         await mastery.respec(user, "mining")  # no bits
     await user.refresh()
@@ -111,12 +111,12 @@ async def test_owned_nodes_change_the_tool_stats_the_game_reads(db):
     user = await User.get(1)
     pick = await user.give_instance("rookiepickaxe")
     await equip(user, "mining", pick.id)
-    assert (await equipped_stats(user, "mining")).stats.get("danger_reduction", 0) == 0
+    assert (await equipped_stats(user, "mining")).stats.get("auto_speed", 0) == 0
     await level_up(user, "mining", 10)
-    await mastery.buy(user, "mining", "steady_hands")
-    await mastery.buy(user, "mining", "spare_braces")
+    await mastery.buy(user, "mining", "coolant_loop")
+    await mastery.buy(user, "mining", "overclock")
     stats = await equipped_stats(user, "mining")
-    assert stats.stats["danger_reduction"] == pytest.approx(0.05) and stats.stats["braces"] == 1 and stats.power == REG.item("rookiepickaxe").tool.power
+    assert stats.stats["reactor_cool"] == pytest.approx(0.004) and stats.stats["auto_speed"] == pytest.approx(0.25) and stats.power == REG.item("rookiepickaxe").tool.power
 
 
 async def test_mastery_changes_how_a_mine_run_starts(db):
@@ -138,11 +138,17 @@ async def test_mastery_changes_how_a_mine_run_starts(db):
     safe_user = await User.get(2)
     spick = await safe_user.give_instance("rookiepickaxe")
     await equip(safe_user, "mining", spick.id)
-    await level_up(safe_user, "mining", 10)
-    await mastery.buy(safe_user, "mining", "steady_hands")
-    await mastery.buy(safe_user, "mining", "spare_braces")
+    await level_up(safe_user, "mining", 20)
+    await safe_user.update_skill("mining", lambda m: setattr(m.reactor, "level", 6))
+    for node in ("coolant_loop", "overclock", "efficient_magnet"):
+        await mastery.buy(safe_user, "mining", node)
     careful = await mining.start_run(safe_user, Random(1))
-    assert careful.growth_factor < plain.growth_factor and careful.braces == plain.braces + 1
+    plain_reactor = await User.get(3)
+    ppick = await plain_reactor.give_instance("rookiepickaxe")
+    await equip(plain_reactor, "mining", ppick.id)
+    await plain_reactor.update_skill("mining", lambda m: setattr(m.reactor, "level", 6))
+    same_reactor = await mining.start_run(plain_reactor, Random(1))
+    assert careful.growth_factor == pytest.approx(same_reactor.growth_factor - 0.004 * 5) and careful.braces == same_reactor.braces + 1  # (Coolant Loop and Efficient Magnet)
 
 
 async def test_fishing_mastery_changes_bites_boss_odds_and_luck(db):
@@ -170,9 +176,9 @@ async def test_the_mastery_screen_shows_branches_and_takes_a_node(db):
     await level_up(user, "mining", 5)
     nav, inter = await hub("mastery", skill="mining")
     text = all_text(nav)
-    assert "Safe Digger" in text and "Greedy Digger" in text and "Gem Hunter" in text and "**1** point(s)" in text
-    await click(nav, inter, "Safe Digger: Steady Hands")
-    assert (await user.skill("mining")).mastery == ["steady_hands"] and "You took" in all_text(nav)
+    assert "Reactor Engineer" in text and "Greedy Digger" in text and "Gem Hunter" in text and "**1** point(s)" in text
+    await click(nav, inter, "Reactor Engineer: Coolant Loop")
+    assert (await user.skill("mining")).mastery == ["coolant_loop"] and "You took" in all_text(nav)
     await click(nav, inter, "Fishing")
     assert "Fishing Mastery" in all_text(nav) and "Angler" in all_text(nav)
     assert not [b for b in buttons(nav) if b.label.startswith("Angler") and not b.disabled]  # no fishing points yet
@@ -181,12 +187,12 @@ async def test_the_mastery_screen_shows_branches_and_takes_a_node(db):
 async def test_the_mastery_screen_respec_button_and_the_skill_pages_link_to_it(db):
     user = await User.get(1)
     await level_up(user, "mining", 5)
-    await mastery.buy(user, "mining", "steady_hands")
+    await mastery.buy(user, "mining", "coolant_loop")
     nav, inter = await hub("mastery", skill="mining")
     respec = next(b for b in buttons(nav) if b.label.startswith("Respec"))
     assert not respec.disabled
     await click(nav, inter, respec.label)
-    assert "bits" in all_text(nav) and (await user.skill("mining")).mastery == ["steady_hands"]  # (no bits: nothing happened)
+    assert "bits" in all_text(nav) and (await user.skill("mining")).mastery == ["coolant_loop"]  # (no bits: nothing happened)
     for screen, skill in (("mining", "mining"), ("fish", "fishing")):
         nav, inter = await hub(screen)
         await click(nav, inter, "Mastery")

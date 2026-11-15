@@ -36,11 +36,14 @@ automine_cap_hours = 24            # lodes stop piling up after this long
 
 [magnet]
 level = 5                          # mining level needed
-capacity = 1000                    # TODO(balance): not in the wiki
-[magnet.values]                    # TODO(balance): meter points per deposited ore
+capacity = 1000                    # the meter holds this many points
+drain_per_row = 4                  # while it is on, every row you dig uses this many (a mine is about 20 rows, so a full meter is about 12 mines)
+# Meter points per ore, set so a point costs about the same in bits whatever you feed (50 bits a point at today's prices): a full meter is about 50,000 bits of ore
+# (1,000 copper, 167 iron or 26 gold), and following the marker is worth several times what its rows cost.  TODO(balance)
+[magnet.values]
 copper_ore = 1
-iron_ore = 10
-gold_ore = 100
+iron_ore = 6
+gold_ore = 38
 
 [scarab]                           # a subterranean scarab can turn up after ANY mine (a safe exit, the vault, a collapse or a wyrmhole), holding a scrambled scroll
 chance = 12                        # 1 in 12 mines (it was 1 in 51, and only after a safe exit)
@@ -75,6 +78,9 @@ rows_per_tier = 6                  # tier = row // rows_per_tier: rows 0-5 use t
 creak = 2.0                        # pressure every dig adds before the ore's own hardness
 default_hardness = 6
 empty_hardness = 2                 # digging an empty cell
+lifeline_pressure = 30             # Mastery capstone Lifeline: when it saves you the reactor drops the mine to this much pressure...
+lifeline_loss = 0.25               # ...it costs this share of what you carry (a collapse takes collapse_loss)...
+lifeline_runs = 8                  # ...and it needs this many mines to recharge (the one it saved counts as the first)
 reactor_reduction = 0.02           # each reactor level above 1 slows pressure gains by 2%...
 max_reduction = 0.5                # ...up to 50%
 brace_amount = 15                  # pressure removed by one brace (a brace skips the dig)

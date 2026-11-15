@@ -26,3 +26,6 @@ class Mining(Skill):
     reactor: Reactor = Field(default_factory=Reactor)
     stats: Stats = Field(default_factory=Stats)
     magnet_meter: int = 0
+    magnet_on: bool = True  # the magnet marks rows (and spends meter) while this is on
+    magnet_auto_feed: bool = False  # the auto-miner's copper, iron and gold fill the magnet first
+    lifeline_wait: int = 0  # mines left before the Lifeline capstone is ready again (0: ready)

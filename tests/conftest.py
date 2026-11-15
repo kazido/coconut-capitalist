@@ -45,6 +45,16 @@ def _no_leftover_invites():
 
 
 @pytest.fixture(autouse=True)
+def _no_leftover_mines():
+    """Who is in a mine lives in memory (the magnet cannot be fed down there): never let one test's run block the next."""
+    from cococap.services import mining
+
+    mining._LIVE_RUNS.clear()
+    yield
+    mining._LIVE_RUNS.clear()
+
+
+@pytest.fixture(autouse=True)
 def _free_pickaxe(request, monkeypatch):
     """Mining needs a pickaxe. Most mining tests are about the mine itself, so they get a power-1 pickaxe for free,
     unless the player really has one equipped. Mark a test ``bare_hands`` to see the real no-pickaxe behaviour."""

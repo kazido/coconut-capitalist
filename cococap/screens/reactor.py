@@ -1,4 +1,5 @@
 import random
+from collections import Counter
 
 import discord
 
@@ -6,7 +7,8 @@ from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import mining
 from cococap.ui import Page, Screen
-from cococap.ui.components import bar, button, duration, row, sep, text
+from cococap.services.equipment import equipped_stats
+from cococap.ui.components import bar, button, duration, row, select, sep, text
 
 
 class ReactorScreen(Screen):
@@ -16,10 +18,15 @@ class ReactorScreen(Screen):
     description = "Gems, auto-miner, prestige and the magnet"
     links = ("mining",)
 
+    def __init__(self, nav):
+        super().__init__(nav)
+        self.ore: str | None = None  # the ore picked to feed the magnet
+
     async def build(self) -> Page:
         reg = get_registry()
         rules, d = reg.mining, reg.mining.descent
         status = await mining.reactor_status(self.user)
+        self._owned = await self.user.items()
         skill, level = status["mining"], status["level"]
         reactor = skill.reactor
         cores = (reactor.core_1, reactor.core_2, reactor.core_3, reactor.core_4)
@@ -45,9 +52,11 @@ class ReactorScreen(Screen):
             f"Wyrmholes: 1 in **{odds:,}** per cell"
         )
 
+        tool = await equipped_stats(self.user, "mining")
+        speed, extra_hours = (tool.stats.get("auto_speed", 0.0), tool.stats.get("auto_hours", 0.0)) if tool else (0.0, 0.0)
         auto = (
-            f"{emojis.get('autominer', '⚙️')} **Auto-miner**: {reactor.level} lode(s) every "
-            f"{duration(rules.reactor.automine_seconds)}, stored for up to {rules.reactor.automine_cap_hours}h.\n"
+            f"{emojis.get('autominer', '⚙️')} **Auto-miner**: {round(reactor.level * (1 + speed))} lode(s) every "
+            f"{duration(rules.reactor.automine_seconds)}, stored for up to {rules.reactor.automine_cap_hours + extra_hours:g}h.\n"
             f"**{status['pending_lodes']:,}** lodes waiting to be claimed."
         )
         if reactor.level >= rules.reactor.max_prestige:
@@ -64,22 +73,26 @@ class ReactorScreen(Screen):
             sep(),
             text(auto + "\n" + prestige),
         ]
-        if level >= rules.magnet.level:
-            body.append(text(f"**Magnet**  {bar(skill.magnet_meter / rules.magnet.capacity)}  {skill.magnet_meter:,}/{rules.magnet.capacity:,}\n"
-                             "-# A full magnet marks the richest cell of the next row on your next run."))
         body.append(row(
             button("Claim lodes", style=discord.ButtonStyle.success, disabled=status["pending_lodes"] == 0, on_click=self._claim),
             button("Insert gems", on_click=self._insert, disabled=not status["gem_slots_open"]),
             button("Prestige", on_click=self._prestige, disabled=not status["prestige_unlocked"]),
-            button("Feed magnet", on_click=self._feed, disabled=level < rules.magnet.level),
         ))
+        if tool and tool.stats.get("lifeline"):
+            wait = skill.lifeline_wait
+            body.append(text("🛟 **Lifeline**: " + ("ready: the reactor will hold the tunnel once when a dig would collapse it." if wait <= 0
+                                                    else f"recharging: ready again after **{wait}** more mine(s).")))
+        if level >= rules.magnet.level:
+            body += [sep(), *self._magnet_parts(reg, skill, tool)]
         return Page("Reactor", body, accent=0x4FC3F7)
 
     async def _claim(self, interaction: discord.Interaction) -> None:
-        lodes, loot = await mining.claim_lodes(self.user, random.Random())
+        fed: Counter[str] = Counter()
+        lodes, loot = await mining.claim_lodes(self.user, random.Random(), fed_out=fed)
         reg = get_registry()
         found = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in loot.items()) or "nothing"
-        await self.refresh(interaction, f"Claimed {lodes:,} lodes: {found}.")
+        into = f" {sum(reg.mining.magnet.values[i] * q for i, q in fed.items()):,} meter went into the magnet ({', '.join(f'{q:,} {reg.item(i).name}' for i, q in fed.items())})." if fed else ""
+        await self.refresh(interaction, f"Claimed {lodes:,} lodes: {found}.{into}")
 
     async def _insert(self, interaction: discord.Interaction) -> None:
         reg, placed, problem = get_registry(), [], None
@@ -97,15 +110,63 @@ class ReactorScreen(Screen):
         level = await mining.prestige(self.user)
         await self.refresh(interaction, f"Your reactor is now level {level}!")
 
-    async def _feed(self, interaction: discord.Interaction) -> None:
-        owned, used = await self.user.items(), 0
-        for ore in get_registry().mining.magnet.values:
-            if owned.get(ore):
-                try:
-                    _, took = await mining.deposit_ore(self.user, ore, owned[ore])
-                    used += took
-                except mining.MiningError:
-                    if used == 0:
-                        raise
-                    break
-        await self.refresh(interaction, f"Fed the magnet {used:,} ore.")
+    def _magnet_parts(self, reg, skill, tool) -> list:
+        """The magnet: how full it is (in rows it can still mark), what to feed it with and exactly what that does, and its two switches."""
+        magnet = reg.mining.magnet
+        save = min(0.9, tool.stats.get("magnet_save", 0.0)) if tool else 0.0
+        drain = magnet.drain_per_row * (1 - save)
+        rows = int(skill.magnet_meter // drain) if drain else 0
+        meter = skill.magnet_meter
+        parts = [text(f"**Magnet**  {bar(meter / magnet.capacity)}  {meter:,}/{magnet.capacity:,}  ·  about **{rows}** rows\n"
+                      f"-# While it is on it marks the richest column of every row you dig and uses **{drain:g}** meter a row. What is left stays for your next mine. "
+                      "It can only be fed outside a mine.")]
+        owned = self._owned
+        options = [discord.SelectOption(label=reg.item(ore).name, value=ore, emoji=reg.item(ore).emoji or None, default=ore == self.ore,
+                                        description=f"you have {owned.get(ore, 0):,}  ·  +{value} meter each")
+                   for ore, value in magnet.values.items()]
+        parts.append(row(select("Feed the magnet with...", options, self._pick_ore)))
+        if self.ore:
+            value, have = magnet.values[self.ore], owned.get(self.ore, 0)
+            room = magnet.capacity - meter
+            fits = -(-room // value) if room > 0 else 0  # (ore it takes to fill it, rounded up)
+            name = reg.item(self.ore).name
+
+            def feed(count: int):
+                async def go(interaction: discord.Interaction) -> None:
+                    await self._feed(interaction, count)
+
+                return go
+
+            fill = min(have, fits)
+            preview = (f"-# **{name}**: you have {have:,}. A full meter needs **{fits:,}** more. " if fits else "-# The meter is full. ")
+            if fill:
+                after = min(magnet.capacity, meter + value * fill)
+                preview += f"Fill takes **{fill:,}** (+{after - meter:,} meter: {meter:,} → {after:,})."
+            parts.append(text(preview))
+            parts.append(row(*(button(f"Feed {n}", on_click=feed(n), disabled=have < 1 or fits < 1 or n > min(have, fits)) for n in (1, 10, 100)),
+                              button(f"Fill ({fill:,})", style=discord.ButtonStyle.success, on_click=feed(fill), disabled=fill < 1)))
+        parts.append(row(
+            button(f"Magnet: {'on' if skill.magnet_on else 'off'}", emoji="✨", style=discord.ButtonStyle.primary if skill.magnet_on else discord.ButtonStyle.secondary,
+                   on_click=self._toggle("magnet_on", skill.magnet_on)),
+            button(f"Auto-miner feeds it: {'on' if skill.magnet_auto_feed else 'off'}", emoji=emojis.get("autominer", "⚙️"),
+                   style=discord.ButtonStyle.primary if skill.magnet_auto_feed else discord.ButtonStyle.secondary,
+                   on_click=self._toggle("magnet_auto_feed", skill.magnet_auto_feed)),
+        ))
+        return parts
+
+    async def _pick_ore(self, interaction: discord.Interaction, values: list[str]) -> None:
+        self.ore = values[0]
+        await self.refresh(interaction)
+
+    async def _feed(self, interaction: discord.Interaction, count: int) -> None:
+        reg = get_registry()
+        meter, used = await mining.deposit_ore(self.user, self.ore, count)
+        value = reg.mining.magnet.values[self.ore]
+        await self.refresh(interaction, f"Fed the magnet **{used:,} {reg.item(self.ore).name}** (+{used * value:,} meter, now {meter:,}/{reg.mining.magnet.capacity:,}).")
+
+    def _toggle(self, option: str, current: bool):
+        async def go(interaction: discord.Interaction) -> None:
+            await mining.set_magnet_option(self.user, option, not current)
+            await self.refresh(interaction)
+
+        return go

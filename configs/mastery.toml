@@ -10,50 +10,50 @@ respec_bits = 100000
 skill = "mining"
 
 [[trees.branches]]
-id = "safe"
-name = "Safe Digger"
-emoji = "⛑️"
-description = "Slower pressure and more braces: you go deeper and leave with what you dug."
+id = "reactor"
+name = "Reactor Engineer"
+emoji = "⚙️"
+description = "Make the reactor work for you: it cools the tunnels, mines while you are away, feeds the magnet, and holds the mine up when it would fall."
 
 [[trees.branches.nodes]]
-id = "steady_hands"
-name = "Steady Hands"
-description = "Tunnels creak 5% less."
+id = "coolant_loop"
+name = "Coolant Loop"
+description = "Every reactor level cools the tunnel a little more: +0.4% less pressure per level."
 level = 5
 cost = 1
-effects = [{ stat = "danger_reduction", amount = 0.05 }]
+effects = [{ stat = "reactor_cool", amount = 0.004 }]
 
 [[trees.branches.nodes]]
-id = "spare_braces"
-name = "Spare Braces"
-description = "Start every dig with one more brace."
+id = "overclock"
+name = "Overclock"
+description = "The auto-miner digs 25% more lodes."
 level = 10
 cost = 1
-effects = [{ stat = "braces", amount = 1 }]
+effects = [{ stat = "auto_speed", amount = 0.25 }]
 
 [[trees.branches.nodes]]
-id = "shored_tunnels"
-name = "Shored Tunnels"
-description = "Tunnels creak 8% less."
+id = "efficient_magnet"
+name = "Efficient Magnet"
+description = "The magnet burns 30% less meter per row, and you start every dig with one more brace."
 level = 20
 cost = 2
-effects = [{ stat = "danger_reduction", amount = 0.08 }]
+effects = [{ stat = "magnet_save", amount = 0.3 }, { stat = "braces", amount = 1 }]
 
 [[trees.branches.nodes]]
-id = "deep_nerves"
-name = "Deep Nerves"
-description = "One more brace and 5% less creaking."
+id = "deep_reserve"
+name = "Deep Reserve"
+description = "The auto-miner stores 24 more hours of lodes and digs another 25% more."
 level = 35
 cost = 2
-effects = [{ stat = "braces", amount = 1 }, { stat = "danger_reduction", amount = 0.05 }]
+effects = [{ stat = "auto_hours", amount = 24 }, { stat = "auto_speed", amount = 0.25 }]
 
 [[trees.branches.nodes]]
 id = "lifeline"
 name = "Lifeline"
-description = "CAPSTONE: every 15th row you dig, a brace comes back. Dig deep, never run dry."
+description = "CAPSTONE: when a dig would collapse the mine, the reactor holds it once. You lose a little of what you carry, the pressure drops and you keep digging. It recharges after a few mines."
 level = 50
 cost = 4
-effects = [{ stat = "lifeline", amount = 15 }]
+effects = [{ stat = "lifeline", amount = 1 }]
 
 [[trees.branches]]
 id = "greedy"
@@ -142,10 +142,10 @@ effects = [{ stat = "rich_chance", amount = 0.03 }, { stat = "vault_gem", amount
 [[trees.branches.nodes]]
 id = "geode_cracker"
 name = "Geode Cracker"
-description = "CAPSTONE: every cell has a 2% chance to be a geode with a reactor gem inside."
+description = "CAPSTONE: about 1 cell in 1,400 is a geode with a reactor gem inside (one you have not placed yet)."
 level = 50
 cost = 4
-effects = [{ stat = "geode", amount = 0.02 }]
+effects = [{ stat = "geode", amount = 0.0007 }]
 
 [[trees]]
 skill = "fishing"

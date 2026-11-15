@@ -103,19 +103,56 @@ async def player(level=1, **items):
 
 
 async def test_magnet_deposits(db):
+    gold, iron = RULES.magnet.values["gold_ore"], RULES.magnet.values["iron_ore"]
     user = await player(level=5, gold_ore=3, iron_ore=2, apple=1)
-    assert await m.deposit_ore(user, "gold_ore", 3) == (300, 3)
-    assert await m.deposit_ore(user, "iron_ore", 2) == (320, 2)
+    assert await m.deposit_ore(user, "gold_ore", 3) == (3 * gold, 3)
+    assert await m.deposit_ore(user, "iron_ore", 2) == (3 * gold + 2 * iron, 2)
     with pytest.raises(m.MiningError, match="only takes"):
         await m.deposit_ore(user, "apple", 1)
     with pytest.raises(m.MiningError, match="don't have"):
         await m.deposit_ore(user, "gold_ore", 1)
-    await user.add_item("gold_ore", 50)
-    meter, used = await m.deposit_ore(user, "gold_ore", 50)
-    assert meter == RULES.magnet.capacity and used == 7  # only the ore that fits is taken
-    assert await user.item_quantity("gold_ore") == 43
+    await user.add_item("gold_ore", 100)
+    meter, used = await m.deposit_ore(user, "gold_ore", 100)
+    room = RULES.magnet.capacity - (3 * gold + 2 * iron)
+    assert meter == RULES.magnet.capacity and used == -(-room // gold)  # only the ore that fits is taken
+    assert await user.item_quantity("gold_ore") == 100 - used
     with pytest.raises(m.MiningError, match="full"):
         await m.deposit_ore(user, "gold_ore", 1)
+
+
+async def test_the_magnet_cannot_be_fed_while_you_are_in_a_mine(db):
+    user = await player(level=5, gold_ore=3, copper_ore=3)
+    run = await m.start_run(user, Random(1))
+    assert m.in_a_mine(user.id)
+    with pytest.raises(m.MiningError, match="in a mine"):
+        await m.deposit_ore(user, "gold_ore", 1)
+    assert await user.item_quantity("gold_ore") == 3  # nothing was taken
+    run.leave()
+    await m.settle_run(user, run)
+    assert not m.in_a_mine(user.id)
+    assert (await m.deposit_ore(user, "copper_ore", 3))[1] == 3
+
+
+async def test_the_auto_miner_feeds_the_magnet_first_when_you_ask_it_to_and_never_overfills(db):
+    from collections import Counter
+
+    user = await player(level=5)
+    loot = Counter({"gold_ore": 10, "iron_ore": 5, "copper_ore": 7, "coal": 4})
+    assert await m._feed_from_loot(user, loot, REG) == Counter()  # (off by default)
+    await m.set_magnet_option(user, "magnet_auto_feed", True)
+    fed = await m._feed_from_loot(user, loot, REG)
+    v = RULES.magnet.values
+    assert fed == Counter({"gold_ore": 10, "iron_ore": 5, "copper_ore": 7}) and "coal" not in fed
+    assert (await user.skill("mining")).magnet_meter == 10 * v["gold_ore"] + 5 * v["iron_ore"] + 7 * v["copper_ore"]
+    await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", RULES.magnet.capacity - 50))
+    fed = await m._feed_from_loot(user, Counter({"gold_ore": 100}), REG)
+    assert fed["gold_ore"] == 50 // v["gold_ore"] and (await user.skill("mining")).magnet_meter <= RULES.magnet.capacity  # only what fits
+    await m.set_magnet_option(user, "magnet_auto_feed", True)
+    await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", 0))
+    run = await m.start_run(user, Random(1))  # in a mine: no feeding
+    assert await m._feed_from_loot(user, Counter({"gold_ore": 5}), REG) == Counter()
+    run.leave()
+    await m.settle_run(user, run)
 
 
 async def test_magnet_requires_level(db):
@@ -688,12 +725,34 @@ async def test_a_better_pickaxe_means_bigger_piles_in_a_real_run(db):
     assert run.yield_factor == pytest.approx(1 + D.power_yield_bonus * 4)
 
 
-async def test_a_full_magnet_is_spent_when_a_run_starts(db):
-    user = await player()
-    await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", RULES.magnet.capacity))
-    assert (await m.start_run(user, Random(1))).magnet
-    assert (await user.skill("mining")).magnet_meter == 0
-    assert not (await m.start_run(user, Random(1))).magnet
+async def test_the_magnet_keeps_its_meter_between_runs_and_settling_takes_off_only_what_the_run_used(db):
+    user = await player(level=5)
+    drain = RULES.magnet.drain_per_row
+    await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", 100))
+    run = await m.start_run(user, Random(1))
+    assert run.magnet and run.magnet_points == 100 and run.magnet_drain == drain
+    assert (await user.skill("mining")).magnet_meter == 100  # starting a mine does not spend it
+    run.magnet_used = drain * 3
+    run.leave()
+    await m.settle_run(user, run)
+    assert (await user.skill("mining")).magnet_meter == 100 - 3 * round(drain)
+    await user.update_skill("mining", lambda s: setattr(s, "magnet_on", False))
+    assert not (await m.start_run(user, Random(1))).magnet  # switched off: it neither marks nor burns
+    await user.update_skill("mining", lambda s: (setattr(s, "magnet_on", True), setattr(s, "magnet_meter", 1)))
+    assert not (await m.start_run(user, Random(1))).magnet  # not enough for even one row
+
+
+def test_the_magnet_burns_fuel_a_row_and_stops_marking_when_it_runs_dry():
+    run = make_run(magnet=True, magnet_points=10, magnet_drain=4, rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0))
+    run.rng = Rig(0.99)
+    for expected_left in (2, 1, 0):
+        force_row(run, [None, COPPER, GOLD, None, None])
+        assert run.magnet_rows_left == expected_left
+        assert (run.best_columns() == frozenset({2})) == (expected_left > 0)  # no fuel, no mark
+        run.danger = 0
+        run.dig()
+    assert run.magnet_used == 8  # (the third row had no fuel to burn)
+    assert make_run(magnet=False).magnet_rows_left is None
 
 
 async def test_settling_banks_loot_xp_and_stats_exactly_once(db):
@@ -1118,50 +1177,95 @@ def test_the_roads_chain_climbs_the_abilities_and_the_numbers_in_the_text_match_
 
 
 # ---- Mastery capstones -----------------------------------------------------------------------------------------------------------------------------
-def test_lifeline_gives_a_brace_every_nth_row_and_gold_rush_triples_every_nth_cell_and_geodes_hold_gems():
-    run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0), lifeline=4, braces=1)
-    run.rng = Rig(0.99)
-    for _ in range(8):
-        run.danger = 0
-        run.dig()
-    assert run.braces == 1 + 2  # (rows 4 and 8)
-    plain = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0), braces=1)
-    plain.rng = Rig(0.99)
-    for _ in range(8):
-        plain.danger = 0
-        plain.dig()
-    assert plain.braces == 1
-    # gold rush: the 3rd cell is tripled; a plain run is not
-    for gold, expected in ((3, 3), (0, 1)):
-        run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0), gold_rush=gold)
+def test_lifeline_holds_the_mine_once_when_a_dig_would_collapse_it_and_only_if_ready():
+    quiet = rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0)
+    run = make_run(rules=quiet, lifeline=1)
+    run.haul.update({"copper_ore": 100})
+    run.rng = Rig(0.0)  # every collapse roll comes up
+    run.danger = 90
+    first = run.dig()
+    assert first.lifeline and not first.collapsed and run.outcome is None and run.lifeline_fired
+    assert first.lifeline_lost["copper_ore"] == int(100 * D.lifeline_loss) and run.haul["copper_ore"] >= 100 - int(100 * D.lifeline_loss)
+    assert run.danger <= D.lifeline_pressure + D.creak + 20  # the reactor dropped the pressure before the dig added its own
+    run.danger = 90
+    assert run.dig().collapsed and run.outcome == "collapse"  # only once
+    recharging = make_run(rules=quiet, lifeline=1, lifeline_ready=False)
+    recharging.rng, recharging.danger = Rig(0.0), 90
+    assert recharging.dig().collapsed  # not ready: a normal collapse
+    plain = make_run(rules=quiet)
+    plain.rng, plain.danger = Rig(0.0), 90
+    assert plain.dig().collapsed  # no capstone: a normal collapse
+
+
+async def test_lifeline_needs_a_few_mines_to_recharge(db):
+    user = await player()
+    run = m.MineRun(RULES, REG, Random(1), cursors=[2], lifeline=1)
+    run.lifeline_fired, run.outcome = True, "left"
+    await m.settle_run(user, run)
+    assert (await user.skill("mining")).lifeline_wait == D.lifeline_runs - 1
+    for left in range(D.lifeline_runs - 2, -1, -1):  # each mine after it counts one down
+        nxt = m.MineRun(RULES, REG, Random(1), cursors=[2], lifeline=1, lifeline_ready=False)
+        nxt.outcome = "left"
+        await m.settle_run(user, nxt)
+        assert (await user.skill("mining")).lifeline_wait == left
+    ready = await m.start_run(user, Random(1))
+    assert ready.lifeline_ready
+
+
+def test_gold_rush_triples_every_nth_cell_and_geodes_hold_a_gem_you_have_not_placed_yet():
+    quiet = rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0)
+    for gold, expected in ((3, 3), (0, 1)):  # gold rush: the 3rd cell is tripled; a plain run is not
+        run = make_run(rules=quiet, gold_rush=gold)
         run.rng = Rig(0.99)
         for depth in range(3):
             force_row(run, [COPPER, COPPER, COPPER, COPPER, COPPER], depth=depth)
             run.danger = 0
             run.dig()
         assert run.haul["copper_ore"] == 2 + expected, gold  # (two single cells, then the third one)
-    # geodes: always a gem with the roll forced, never without the stat
-    run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0), geode=1.0)
+    run = make_run(rules=quiet, geode=1.0, geode_gems=["rage_gemstone"])  # geodes: always a gem with the roll forced, and only one you are missing
     run.rng = Rig(0.0)
     force_row(run, [COPPER] * 5)
     run.danger = 0
     run.dig()
-    assert any(run.haul[g] for g in RULES.reactor.core_gems)
+    assert run.haul["rage_gemstone"] == 1 and not run.haul["sanity_gemstone"]
+    plain = make_run(rules=quiet, geode=0.0)
+    plain.rng = Rig(0.99)
+    force_row(plain, [COPPER] * 5)
+    plain.danger = 0
+    plain.dig()
+    assert not any(plain.haul[g] for g in RULES.reactor.core_gems)
 
 
-def test_the_three_mining_capstones_are_about_equally_strong():
-    """Each capstone is tuned (config) to add about a fifth to a run's value for the same digging; none is the obvious choice."""
+def test_the_auto_miner_bonuses_and_the_reactor_engineers_cooling_reach_the_numbers():
+    from cococap.models.skills.mining import Mining
+
+    mining = Mining()
+    mining.reactor.level, mining.reactor.last_auto_mine = 4, 1000.0
+    t = 1000.0 + 3 * RULES.reactor.automine_seconds
+    assert m.pending_lodes(mining, RULES, t) == 3 * 4
+    assert m.pending_lodes(mining, RULES, t, speed=0.25) == round(3 * 4 * 1.25)
+    long_ago = 1000.0 + 1000 * 3600
+    cap = RULES.reactor.automine_cap_hours * 3600 // RULES.reactor.automine_seconds
+    assert m.pending_lodes(mining, RULES, long_ago) == cap * 4
+    assert m.pending_lodes(mining, RULES, long_ago, extra_hours=24) == int((RULES.reactor.automine_cap_hours + 24) * 3600 // RULES.reactor.automine_seconds) * 4
+
+
+def test_the_three_mining_capstones_are_about_equally_strong_at_low_and_high_power():
+    """Each capstone adds roughly a fifth to a run's value for the same digging (Lifeline is worked out with its recharge), at BOTH ends of the pickaxe's power, so a gem
+    that is worth the same bits whatever your pick cannot be the obvious choice early or late."""
     from random import Random as R
 
     price = lambda i: REG.item(i).sell_price  # noqa: E731
     d = RULES.descent
 
-    def average(**kw):
-        total = 0
-        for seed in range(1200):
-            run = m.MineRun(RULES, REG, R(seed), cursors=[2], braces=d.braces_base + 1, yield_factor=1 + d.power_yield_bonus * 12, **kw)
+    def average(power, runs=1200, lifeline_runs=None, **kw):
+        total, wait = 0, 0
+        for seed in range(runs):
+            run = m.MineRun(RULES, REG, R(seed), cursors=[2], braces=d.braces_base + 1, yield_factor=1 + d.power_yield_bonus * (power - 3),
+                            lifeline_ready=wait <= 0, **kw)
             while not run.finished:
-                if run.risk >= 0.07:
+                limit = 0.12 if (run.lifeline and run.lifeline_ready and not run.lifeline_fired) else 0.07  # (with a second chance in hand you push a little further)
+                if run.risk >= limit:
                     if run.braces and run.danger > 10:
                         run.brace()
                         continue
@@ -1170,13 +1274,18 @@ def test_the_three_mining_capstones_are_about_equally_strong():
                 if run.signs(run.depth)[run.cursors[0]] == "hole":
                     run.move(1)
                 run.dig()
+            if lifeline_runs:
+                wait = lifeline_runs - 1 if run.lifeline_fired else max(0, wait - 1)
             total += sum(price(i) * q for i, q in run.haul.items())
-        return total / 1200
+        return total / runs
 
-    base = average()
-    gains = {}
-    for node_id, stat in (("lifeline", "lifeline"), ("gold_rush", "gold_rush"), ("geode_cracker", "geode")):
-        amount = next(e.amount for e in REG.mastery.node(node_id).effects if e.stat == stat)
-        gains[node_id] = average(**{stat: int(amount) if stat != "geode" else amount}) / base - 1
-    assert all(0.1 <= g <= 0.4 for g in gains.values()), gains
-    assert max(gains.values()) - min(gains.values()) <= 0.15, gains
+    amount = lambda node_id, stat: next(e.amount for e in REG.mastery.node(node_id).effects if e.stat == stat)  # noqa: E731
+    for power in (3, 12):
+        base = average(power)
+        gains = {
+            "lifeline": average(power, lifeline_runs=d.lifeline_runs, lifeline=1) / base - 1,
+            "gold_rush": average(power, gold_rush=int(amount("gold_rush", "gold_rush"))) / base - 1,
+            "geode_cracker": average(power, geode=amount("geode_cracker", "geode")) / base - 1,
+        }
+        assert all(0.08 <= g <= 0.4 for g in gains.values()), (power, gains)
+        assert max(gains.values()) - min(gains.values()) <= 0.15, (power, gains)

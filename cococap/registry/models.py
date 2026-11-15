@@ -436,6 +436,7 @@ class ReactorRules(_Data):
 class MagnetRules(_Data):
     level: int = Field(ge=1)
     capacity: int = Field(ge=1)
+    drain_per_row: float = Field(default=0.0, ge=0)  # meter points one dug row uses while the magnet marks it
     values: dict[str, int]
 
 
@@ -487,6 +488,9 @@ class DescentRules(_Data):
     empty_hardness: float = Field(ge=0)
     hardness: dict[str, float]  # item id -> pressure added when that ore is dug
     reactor_reduction: float = Field(ge=0)
+    lifeline_pressure: float = Field(default=30.0, ge=0, le=100)  # Mastery capstone Lifeline: the pressure the reactor drops the mine to when it saves you
+    lifeline_loss: float = Field(default=0.25, ge=0, le=1)  # ...the share of your unbanked haul that costs (a collapse takes `collapse_loss`)
+    lifeline_runs: int = Field(default=4, ge=1)  # ...and how many mines the reactor needs to recharge afterwards (the one that saved you counts as the first)
     max_reduction: float = Field(ge=0, le=0.95)
     brace_amount: float = Field(ge=0)
     braces_base: int = Field(ge=0)

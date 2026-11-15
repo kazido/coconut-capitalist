@@ -125,7 +125,7 @@ HELP = (
     f"Read the rock: {SOFT} **soft** (little pressure, mostly copper)  ·  {FIRM} **firm** (iron)  ·  {HARD} **hard** (a lot of pressure, the top ore).\n"
     "Inside it hides ore, nothing, a **vent** that cools the tunnel, or a **cache** with a brace.\n"
     "cell_upgraded: a **rich lode**, a mystery with better loot  ·  wyrmhole: a way out, if you dig it\n"
-    f"{BOMB} **bomb**: clears a whole row  ·  {MAGNET} a charged magnet marks the richest cell"
+    f"{BOMB} **bomb**: clears a whole row  ·  {MAGNET} the magnet marks the richest column while it has fuel"
 )
 
 
@@ -164,7 +164,9 @@ class MineScreen(Screen):
         body = [
             *self.note_block(),
             text(f"**Row {run.depth + 1} of {run.floor}**  ·  {next_landmark(run)}     {warning.emoji} **{risk_text(run.risk)}** collapse risk"
-                 + (f"\n💣 Auto-Bomb: **{'this dig!' if run.auto_bomb_in == 1 else f'in {run.auto_bomb_in} rows'}**" if run.auto_bomb_every else "")),
+                 + (f"\n💣 Auto-Bomb: **{'this dig!' if run.auto_bomb_in == 1 else f'in {run.auto_bomb_in} rows'}**" if run.auto_bomb_every else "")
+                 + (f"\n{MAGNET} Magnet: **{run.magnet_rows_left}** rows of fuel" if run.magnet_rows_left is not None else "")
+                 + (("\n🛟 Lifeline: **used**" if run.lifeline_fired else "\n🛟 Lifeline: **ready**" if run.lifeline_ready else "\n🛟 Lifeline: recharging (not this mine)") if run.lifeline else "")),
             text(render_shaft(run)),
             text(carrying(run.haul)),
         ]
@@ -241,6 +243,9 @@ class MineScreen(Screen):
             note = "The tunnel gave way!" + (f" You lost {lost}." if lost else "")
         else:
             note = auto + multi + ("💥 BOOM! " if result.bombed and not result.auto_bombed else "") + (f"Found {found}." if found else ("" if result.wyrmhole else "Nothing here."))
+            if result.lifeline:
+                lost_text = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.lifeline_lost.items())
+                note = "🛟 **Lifeline!** The reactor held the tunnel when it would have collapsed" + (f" (it cost you {lost_text})" if lost_text else "") + ". " + note
             if fanfare := flair.banner(result.found):
                 note += "\n" + fanfare + "\n"
             if result.vented:
