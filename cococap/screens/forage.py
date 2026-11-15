@@ -9,6 +9,7 @@ from cococap.screens.sellall import start_sell_all
 from cococap.services import foraging, party_tree, pets, releaf
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import Party, xp_bonus
+from cococap.ui import flair
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bar, bits, button, row, sep, select, text, xp_bar
 from cococap.user import User
@@ -30,6 +31,8 @@ def reward_text(reward: foraging.Reward) -> str:
     what = "🌳 **TIMBER!**" if reward.felled else "🍂 The tree fell over before it was finished."
     where = " (party tree)" if reward.party else " (community tree)" if reward.window is not None else ""
     line = f"{what}{where}  **+{bits(reward.bits)}** bits  ·  {items_text(reward.drops)}  ·  +{reward.xp:,} xp"
+    if fanfare := flair.banner(reward.drops):
+        line += "\n" + fanfare
     if reward.jackpot:
         kind, amount = reward.jackpot
         line += ("\n🌲🌲 **DOUBLE TREE!** A **Spirit of the Forest** drops: your pet will love it." if kind == "spirit"
@@ -73,8 +76,9 @@ async def spot_panel(screen, power: int) -> str:
     quality = f" ({spot.quality - 1:+.0%})" if spot.quality != 1 else ""
     left = max(0.0, 1 - spot.wear)
     wedges = sum(q for _, q in await foraging.wedges(screen.user))
-    return (f"🪵 **{spot.title(reg.foraging)}** grain{quality}   🪚 spot {bar(left, 6)} {left:.0%}   🪓 **{spot.preview(power, reg.foraging)}** a chop"
-            + (f"   ·   🔩 {wedges} wedge(s)" if wedges else ""))
+    return (f"🪵 **{spot.title(reg.foraging)}** {quality}  \nWear: {bar(left, 6)} {left:.0%}   🪓 **{spot.preview(power, reg.foraging)}** per swing"
+            + (f"   ·   🔩 {wedges} wedge(s)" if wedges else "")
+            + (f"\n🪚 Wedge bonus: **{spot.boost:+.0%}** for **{spot.boost_chops}** more chops" if spot.boost_chops else ""))
 
 
 async def notes_result(user) -> Result:
@@ -123,7 +127,8 @@ async def wedge_row(screen: Screen):
     def use(item_id: str):
         async def go(interaction: discord.Interaction) -> None:
             await foraging.spend_wedge(screen.user, screen.spot, item_id, screen.rng)
-            await screen.refresh(interaction, f"🪚 You drive a wedge in: new spot, **{screen.spot.title(reg.foraging)}** grain.")
+            note = f" Your next **{screen.spot.boost_chops}** chops hit **{screen.spot.boost:+.0%}** harder." if screen.spot.boost_chops else ""
+            await screen.refresh(interaction, f"🪚 You drive a wedge in: new spot, **{screen.spot.title(reg.foraging)}** grain.{note}")
 
         return go
 

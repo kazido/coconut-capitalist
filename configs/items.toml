@@ -4,6 +4,7 @@
 
 [spirit_of_the_sword]
 name = "Spirit of the Sword"
+emoji = "🗡️"
 description = "Fused with the essence of the battlefield."
 wiki = "Give it to your active pet for a bonus in combat xp."
 rarity = 5
@@ -19,6 +20,7 @@ max = 1
 
 [dreamnail]
 name = "Dreamnail"
+emoji = "🪡"
 description = "Shaped in a faraway grounds, with stories of an infected Kingdom sealed inside."
 rarity = 5
 skill = "combat"
@@ -49,6 +51,7 @@ plant_fiber = 300
 
 [largebranch]
 name = "Large Branch"
+emoji = "🌿"
 description = "A sturdy branch from a sturdy tree."
 rarity = 1
 skill = "combat"
@@ -73,6 +76,7 @@ bass = 5
 
 [rustedbroadsword]
 name = "Rusted Broadsword"
+emoji = "🗡️"
 description = "A warrior's most trusted possession, now in the hands of another."
 rarity = 2
 skill = "combat"
@@ -103,6 +107,7 @@ lemon = 20
 
 [shiningsilver]
 name = "Shining Silver"
+emoji = "🥈"
 description = "A beautiful expression of forgery, which gleams in the sun."
 rarity = 6
 skill = "combat"
@@ -120,6 +125,7 @@ ability_description = "Attacks heal allies for 50% of their max health."
 
 [ambrosia]
 name = "Olympian Ambrosia"
+emoji = "🍯"
 description = "Only a lucky few will find the lifeblood of Olympus."
 rarity = 6
 skill = "farming"
@@ -135,6 +141,7 @@ pet_xp = 500000
 
 [apple]
 name = "Apple"
+emoji = "🍎"
 description = "Good ol' apple."
 rarity = 1
 skill = "farming"
@@ -150,6 +157,7 @@ pet_xp = 5
 
 [coconut]
 name = "Coconut"
+emoji = "🥥"
 description = "Name of the game, right?"
 rarity = 4
 skill = "farming"
@@ -165,6 +173,7 @@ pet_xp = 10000
 
 [dusty_dandelion]
 name = "Dusty Dandelion"
+emoji = "🌼"
 description = "A beautiful bloom from a quiet tomb."
 rarity = 3
 skill = "farming"
@@ -180,6 +189,7 @@ pet_xp = 250
 
 [hot_pepper]
 name = "Hot Pepper"
+emoji = "🌶️"
 description = "The spiciest of them all."
 rarity = 3
 skill = "farming"
@@ -195,6 +205,7 @@ pet_xp = 1450
 
 [lemon]
 name = "Lemon"
+emoji = "🍋"
 description = "Something about life... dumb quote anyway."
 rarity = 2
 skill = "farming"
@@ -210,6 +221,7 @@ pet_xp = 175
 
 [wilted_rose]
 name = "Wilted Rose"
+emoji = "🥀"
 description = "It droops in hopelessness..."
 rarity = 5
 skill = "farming"
@@ -257,6 +269,7 @@ sell_price = 0
 
 [spirit_of_the_fields]
 name = "Spirit of the Fields"
+emoji = "👻"
 description = "Fused with the essence of the soil."
 wiki = "Give it to your active pet for a bonus in farming xp."
 rarity = 5
@@ -272,6 +285,7 @@ max = 1
 
 [ambrosia_seed]
 name = "Ambrosia Seed"
+emoji = "🌱"
 description = "???"
 rarity = 6
 skill = "farming"
@@ -290,6 +304,7 @@ cycles = 777
 
 [apple_seed]
 name = "Apple Seed"
+emoji = "🌱"
 description = "Grows into some apples. Wait, shouldn't it grow into a tree?"
 rarity = 1
 skill = "farming"
@@ -303,6 +318,7 @@ cycles = 1  # TODO(balance): not in the old data; placeholder
 
 [coconut_seed]
 name = "Coconut Seed"
+emoji = "🌱"
 description = "Grows into the alpha crop, the coconut."
 rarity = 4
 skill = "farming"
@@ -335,6 +351,7 @@ cycles = 1
 
 [hot_pepper_seed]
 name = "Hot Pepper Seed"
+emoji = "🌱"
 description = "Plant for a spicy ingredient."
 rarity = 3
 skill = "farming"
@@ -348,6 +365,7 @@ cycles = 20
 
 [lemon_seed]
 name = "Lemon Seed"
+emoji = "🌱"
 description = "Grows into some lemons."
 rarity = 2
 skill = "farming"
@@ -361,6 +379,7 @@ cycles = 4  # not in the old data. 4 cycles keeps lemons (140k a harvest) near 3
 
 [wilted_rose_seed]
 name = "Corrupted Seed"
+emoji = "🌱"
 description = "Doomed to fail in a garden of life."
 rarity = 5
 skill = "farming"
@@ -943,6 +962,7 @@ max = 2
 
 [starter_rod]
 name = "Starter Rod"
+emoji = "🎣"
 description = "A bent stick and some string. Everybody starts somewhere."
 rarity = 1
 skill = "fishing"
@@ -966,6 +986,7 @@ bass = 8
 
 [reinforced_rod]
 name = "Reinforced Rod"
+emoji = "🎣"
 description = "Fibreglass and a proper reel. Fish bite sooner and slip away less."
 rarity = 3
 skill = "fishing"
@@ -990,6 +1011,7 @@ coral_shard = 8
 
 [masterwork_rod]
 name = "Masterwork Rod"
+emoji = "🎣"
 description = "Hand-balanced by someone who really loved fishing."
 rarity = 5
 skill = "fishing"
@@ -1032,6 +1054,7 @@ max = 1
 
 [aged_feather]
 name = "Aged Feather"
+emoji = "🪶"
 description = "A strong feather, capable of enduring high speeds."
 rarity = 5
 skill = "foraging"
@@ -1046,12 +1069,18 @@ max = 1
 
 [burger]
 name = "Burger"
-description = "A burger."
+description = "A burger, somehow still warm. Every pet will fight you for it."
+wiki = "A rare find while chopping. Feed it to a pet from the Pets page: it is worth five times Golden Sap in pet xp (25,000), and more again to a foraging pet. Not sellable."
+emoji = "🍔"
 rarity = 4
 skill = "foraging"
-category = "material"
+category = "pet_food"
 price = 0
-sell_price = 1
+sell_price = 0
+
+[burger.pet_food]
+tier = 3
+xp_mult = 5
 
 [burger.drop]
 rate = 200
@@ -1075,6 +1104,7 @@ max = 5
 
 [fine_bark]
 name = "Fine Bark"
+emoji = "🪵"
 description = "Few trees will shed such a quality bark."
 rarity = 3
 skill = "foraging"
@@ -1120,6 +1150,7 @@ max = 1
 
 [bastards_broadaxe]
 name = "Bastards Broadaxe"
+emoji = "🪓"
 description = "Fabled heirloom of the Burger Bastard."
 rarity = 4
 skill = "foraging"
@@ -1156,6 +1187,7 @@ gold_ore = 30
 
 [masterwork_axe]
 name = "Masterwork Axe"
+emoji = "🪓"
 description = "Unleash your woodcutting potential with the Masterwork Axe, the pinnacle of craftsmanship."
 rarity = 5
 skill = "foraging"
@@ -1189,6 +1221,7 @@ coral_shard = 15
 
 [reinforced_axe]
 name = "Reinforced Axe"
+emoji = "🪓"
 description = "Slightly higher chopping power than your average axe."
 rarity = 3
 skill = "foraging"
@@ -1214,6 +1247,7 @@ iron_ore = 40
 
 [sovereign_hatchet]
 name = "Sovereign Hatchet"
+emoji = "🪓"
 description = "Imbued with the spirit of a true woodsman."
 rarity = 6
 skill = "foraging"
@@ -1246,6 +1280,7 @@ tuna = 10
 
 [starter_axe]
 name = "Starter Axe"
+emoji = "🪓"
 description = "A basic axe, meant for novice lumberjacks."
 rarity = 1
 skill = "foraging"
@@ -1268,6 +1303,7 @@ hardwood = 6
 
 [thornwhip_axe]
 name = "Thornwhip Axe"
+emoji = "🪓"
 description = "An enhanced version of the starter axe."
 rarity = 2
 skill = "foraging"
@@ -1291,6 +1327,7 @@ fine_bark = 5
 
 [wilted_axe]
 name = "Wilted Axe"
+emoji = "🪓"
 description = "Amidst ancient groves, the wilted axe struggles to bloom. A lumberjack's companion, whispering dreams. Hewn from history, it reigns amidst forests and streams."
 rarity = 7
 skill = "foraging"
@@ -1607,6 +1644,7 @@ max = 1
 
 [rookiepickaxe]
 name = "Rookie Pickaxe"
+emoji = "⛏️"
 description = "They hand this one out to the new recruits. Guess that's you."
 rarity = 1
 skill = "mining"
@@ -1629,6 +1667,7 @@ iron_ore = 40
 
 [reinforced_pickaxe]
 name = "Reinforced Pickaxe"
+emoji = "⛏️"
 description = "A sturdier head and a better grip. Piles come out bigger."
 rarity = 3
 skill = "mining"
@@ -1652,6 +1691,7 @@ gold_ore = 25
 
 [masterwork_pickaxe]
 name = "Masterwork Pickaxe"
+emoji = "⛏️"
 description = "Forged by someone who has seen the bottom of the mines."
 rarity = 5
 skill = "mining"
@@ -1697,6 +1737,7 @@ max = 7
 # ---- more crops (balance: each crop pays roughly 20-30k bits an hour per watered plot, the seed already paid for) ------------------------
 [blueberry]
 name = "Blueberry"
+emoji = "🫐"
 description = "Small, round, and gone before you reach the kitchen."
 rarity = 2
 skill = "farming"
@@ -1712,6 +1753,7 @@ pet_xp = 200
 
 [blueberry_seed]
 name = "Blueberry Seed"
+emoji = "🌱"
 description = "Twelve patient rains from a handful of berries."
 rarity = 2
 skill = "farming"
@@ -1725,6 +1767,7 @@ cycles = 12
 
 [watermelon]
 name = "Watermelon"
+emoji = "🍉"
 description = "Thumps like a drum. Probably ripe."
 rarity = 3
 skill = "farming"
@@ -1740,6 +1783,7 @@ pet_xp = 2000
 
 [watermelon_seed]
 name = "Watermelon Seed"
+emoji = "🌱"
 description = "A long, hot summer in a seed (forty rains)."
 rarity = 3
 skill = "farming"
@@ -1753,6 +1797,7 @@ cycles = 40
 
 [starfruit]
 name = "Starfruit"
+emoji = "⭐"
 description = "It really is shaped like a star."
 rarity = 4
 skill = "farming"
@@ -1768,6 +1813,7 @@ pet_xp = 7500
 
 [starfruit_seed]
 name = "Starfruit Seed"
+emoji = "🌱"
 description = "Slow, and worth it."
 rarity = 4
 skill = "farming"
@@ -1785,6 +1831,7 @@ cycles = 80
 # roughly 3-5k base pet xp an hour in each skill (python -m scripts.balance prints it).
 [acorn_mix]
 name = "Acorn Mix"
+emoji = "🌰"
 description = "A crunchy bag of forest snacks. Pets go nuts for it."
 rarity = 2
 skill = "foraging"
@@ -1798,6 +1845,7 @@ max = 1
 
 [honeycomb]
 name = "Honeycomb"
+emoji = "🍯"
 description = "Sticky, golden and a little bit magic."
 rarity = 4
 skill = "foraging"
@@ -1811,6 +1859,7 @@ max = 1
 
 [golden_sap]
 name = "Golden Sap"
+emoji = "🟡"
 description = "From the oldest tree in the forest. Pets would do anything for it."
 rarity = 5
 skill = "foraging"
@@ -1824,6 +1873,7 @@ max = 1
 
 [stone_biscuit]
 name = "Stone Biscuit"
+emoji = "🍪"
 description = "Baked hard, like everything down in the mine."
 rarity = 2
 skill = "mining"
@@ -1837,6 +1887,7 @@ max = 1
 
 [crystal_chew]
 name = "Crystal Chew"
+emoji = "💎"
 description = "Rock candy, the mine's way."
 rarity = 4
 skill = "mining"
@@ -1850,6 +1901,7 @@ max = 1
 
 [geode_feast]
 name = "Geode Feast"
+emoji = "🍱"
 description = "Cracked open, it is full of treats."
 rarity = 5
 skill = "mining"
@@ -1863,6 +1915,7 @@ max = 1
 
 [fish_flakes]
 name = "Fish Flakes"
+emoji = "🐟"
 description = "Dried and crumbled. Smells like a good day."
 rarity = 2
 skill = "fishing"
@@ -1876,6 +1929,7 @@ max = 1
 
 [dried_squid]
 name = "Dried Squid"
+emoji = "🦑"
 description = "Chewy, salty, and gone in a minute."
 rarity = 4
 skill = "fishing"
@@ -1889,6 +1943,7 @@ max = 1
 
 [sea_feast]
 name = "Sea Feast"
+emoji = "🦞"
 description = "A whole platter from the deep. Fit for a pet king."
 rarity = 5
 skill = "fishing"
@@ -1907,6 +1962,7 @@ max = 1
 
 [ironbound_pickaxe]
 name = "Ironbound Pickaxe"
+emoji = "⛏️"
 description = "Banded in black iron. It does not so much dig as insist."
 rarity = 4
 skill = "mining"
@@ -1939,6 +1995,7 @@ coral_shard = 50
 
 [crystal_pickaxe]
 name = "Crystal Pickaxe"
+emoji = "⛏️"
 description = "The head is a single cut gem. It hums when ore is near."
 rarity = 5
 skill = "mining"
@@ -1971,6 +2028,7 @@ tuna = 8
 
 [deepdelver_pickaxe]
 name = "Deepdelver's Pick"
+emoji = "⛏️"
 description = "Carried down further than any map goes."
 rarity = 6
 skill = "mining"
@@ -2003,6 +2061,7 @@ sturgeon = 2
 
 [mythril_pickaxe]
 name = "Mythril Pickaxe"
+emoji = "⛏️"
 description = "Light as a feather, hard as a promise."
 rarity = 6
 skill = "mining"
@@ -2034,6 +2093,7 @@ marlin = 5
 
 [worldsplitter_pickaxe]
 name = "Worldsplitter"
+emoji = "⛏️"
 description = "They say the mine groans when it is carried in."
 rarity = 7
 skill = "mining"
@@ -2054,6 +2114,7 @@ stats = { auto_bomb = 14 }
 
 [tidecaller_rod]
 name = "Tidecaller Rod"
+emoji = "🎣"
 description = "Fish come when it calls. Some even bring friends."
 rarity = 5
 skill = "fishing"
@@ -2086,6 +2147,7 @@ iron_ore = 60
 
 [moonlit_rod]
 name = "Moonlit Rod"
+emoji = "🎣"
 description = "Strung with silver line that glows after dark."
 rarity = 6
 skill = "fishing"
@@ -2118,6 +2180,7 @@ gold_ore = 100
 
 [leviathan_rod]
 name = "Leviathan Rod"
+emoji = "🎣"
 description = "Built to hold something far too big for a pond."
 rarity = 6
 skill = "fishing"
@@ -2150,6 +2213,7 @@ gold_ore = 200
 
 [abyssal_rod]
 name = "Abyssal Rod"
+emoji = "🎣"
 description = "Cold to the touch. The line never seems to reach the bottom."
 rarity = 7
 skill = "fishing"
@@ -2182,6 +2246,7 @@ gold_ore = 400
 
 [poseidon_rod]
 name = "Poseidon's Rod"
+emoji = "🔱"
 description = "The sea gives up its best without being asked twice."
 rarity = 7
 skill = "fishing"
@@ -2202,6 +2267,7 @@ stats = { auto_reel = 3, bite_speed = 0.15, slips = 1 }
 
 [elderwood_axe]
 name = "Elderwood Greataxe"
+emoji = "🪓"
 description = "Cut from the oldest tree in the forest, which did not mind."
 rarity = 7
 skill = "foraging"
@@ -2238,8 +2304,8 @@ max = 1
 
 [iron_wedge]
 name = "Iron Wedge"
-description = "A better wedge: the new spot is more often a good one."
-wiki = "Like a Rotation Wedge, but the grain leans toward the good ones and special spots are about 4x likelier. One use."
+description = "A better wedge: a good new spot, and your next 40 chops hit 20% harder."
+wiki = "Like a Rotation Wedge, but the grain leans toward the good ones and special spots are about 4x likelier. It also leaves a bonus: your next 40 chops hit and pay xp 20% harder, wherever the spot moves. One use."
 emoji = "🪚"
 rarity = 4
 skill = "foraging"
@@ -2254,8 +2320,8 @@ max = 1
 
 [gilded_wedge]
 name = "Gilded Wedge"
-description = "The finest wedge there is: it almost never lands you on a poor spot."
-wiki = "Like a Rotation Wedge, but the grain is very likely a good one and special spots are about 10x likelier. One use."
+description = "The finest wedge there is: a top spot, and your next 120 chops hit 50% harder."
+wiki = "Like a Rotation Wedge, but the grain is very likely a good one and special spots are about 10x likelier. It also leaves a bonus: your next 120 chops hit and pay xp 50% harder, wherever the spot moves. One use."
 emoji = "🪚"
 rarity = 6
 skill = "foraging"
@@ -2280,6 +2346,7 @@ coral_shard = 20
 
 [prospector_pickaxe]
 name = "Prospector's Pickaxe"
+emoji = "⛏️"
 description = "Light, quick and greedy: it finds more ore, and brings the roof down sooner."
 rarity = 4
 skill = "mining"
@@ -2310,6 +2377,7 @@ coral_shard = 50
 
 [geode_pickaxe]
 name = "Geode Pickaxe"
+emoji = "⛏️"
 description = "Cracks rock to find the sparkle inside. Richer ore, a creakier tunnel."
 rarity = 5
 skill = "mining"
@@ -2340,6 +2408,7 @@ tuna = 8
 
 [seekers_pickaxe]
 name = "Seeker's Pickaxe"
+emoji = "⛏️"
 description = "It seems to know where the good stuff is hiding."
 rarity = 6
 skill = "mining"
@@ -2370,6 +2439,7 @@ sturgeon = 2
 
 [veinhunter_pickaxe]
 name = "Vein-Hunter's Pickaxe"
+emoji = "⛏️"
 description = "A hunter's tool. It takes more from every lode, and the mine knows it."
 rarity = 6
 skill = "mining"
@@ -2400,6 +2470,7 @@ marlin = 5
 
 [motherlode_pickaxe]
 name = "Motherlode Pickaxe"
+emoji = "⛏️"
 description = "Everything in the mountain wants to be found by this pick."
 rarity = 7
 skill = "mining"
@@ -2432,6 +2503,7 @@ hardwood = 30
 
 [lantern_rod]
 name = "Lantern Rod"
+emoji = "🏮"
 description = "A glowing lure draws strange things up from the deep. Slower bites, better finds."
 rarity = 5
 skill = "fishing"
@@ -2463,6 +2535,7 @@ iron_ore = 60
 
 [siren_rod]
 name = "Siren Rod"
+emoji = "🧜"
 description = "It hums a tune only the rare fish answer to."
 rarity = 6
 skill = "fishing"
@@ -2494,6 +2567,7 @@ gold_ore = 100
 
 [trident_rod]
 name = "Trident Rod"
+emoji = "🔱"
 description = "Three prongs, three chances at something unusual."
 rarity = 6
 skill = "fishing"
@@ -2525,6 +2599,7 @@ gold_ore = 200
 
 [kraken_rod]
 name = "Kraken Rod"
+emoji = "🐙"
 description = "Whatever lives down there, this rod calls it."
 rarity = 7
 skill = "fishing"
@@ -2556,6 +2631,7 @@ gold_ore = 400
 
 [trophy_rod]
 name = "Trophy Rod"
+emoji = "🏆"
 description = "Hung with trophies, and it earns every one."
 rarity = 7
 skill = "fishing"
@@ -3007,6 +3083,7 @@ max = 1
 
 [steel_pickaxe]
 name = "Steel Pickaxe"
+emoji = "⛏️"
 description = "Quenched steel: it bites deeper and shrugs off the dust."
 rarity = 4
 skill = "mining"
@@ -3031,6 +3108,7 @@ hardwood = 12
 
 [sturdy_rod]
 name = "Sturdy Rod"
+emoji = "🎣"
 description = "A longer, stiffer rod with a smooth drag. Bites come sooner and fewer fish get away."
 rarity = 4
 skill = "fishing"
@@ -3056,6 +3134,7 @@ gold_ore = 10
 
 [gatherers_axe]
 name = "Gatherer's Axe"
+emoji = "🪓"
 description = "Light and quick: it shakes loose what the branches hold."
 rarity = 5
 skill = "foraging"
@@ -3086,6 +3165,7 @@ coral_shard = 15
 
 [foragers_hatchet]
 name = "Forager's Hatchet"
+emoji = "🪓"
 description = "A hatchet for those who walk the trees, not fell them."
 rarity = 6
 skill = "foraging"
@@ -3116,6 +3196,7 @@ tuna = 10
 
 [mosswood_axe]
 name = "Mosswood Axe"
+emoji = "🪓"
 description = "Moss-wrapped and sure: the branches give up their fruit."
 rarity = 7
 skill = "foraging"
@@ -3146,6 +3227,7 @@ tuna = 25
 
 [canopy_axe]
 name = "Canopy Axe"
+emoji = "🪓"
 description = "Cut from the canopy itself. Everything up there falls to you."
 rarity = 7
 skill = "foraging"

@@ -129,10 +129,14 @@ special_mult = 1.5
 item = "iron_wedge"
 bias = 4
 special_mult = 4
+boost = 0.2
+boost_chops = 40
 [[rotate.wedges]]
 item = "gilded_wedge"
 bias = 12
 special_mult = 10
+boost = 0.5
+boost_chops = 120
 
 [community]                       # the tree everyone can join: one per hour, standing for `open_minutes`
 open_minutes = 30

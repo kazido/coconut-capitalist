@@ -59,6 +59,9 @@ def item_attributes(item: Item, for_shop: bool = False) -> str:
     if item.seed:
         add(f"**Growth Time**: ~*{item.seed.cycles:,}* cycles", shop=True)
         add(f"**Grows Into**: *{reg.item(item.seed.grows_into).name}*", shop=True)
+    if item.scroll and (enchant := reg.enchants.get(item.scroll.enchant)):
+        add(f"**Enchant - {enchant.name}**: {enchant.description}")
+        add(f"**Goes on**: *{', '.join(enchant.applies_to)}*  ·  **Max level**: *{enchant.max_level}*")
     if item.tool:
         add(f"**Power**: *{item.tool.power:,}*", shop=True)
         if item.tool.requirement:

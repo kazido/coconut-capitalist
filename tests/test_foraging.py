@@ -684,7 +684,7 @@ async def test_the_panel_shows_the_spot_and_its_wear_but_never_the_style(db, mon
     nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
     text_now = lambda: " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))  # noqa: E731
     page = text_now()
-    assert "Plain" in page and "100%" in page and "a chop" in page
+    assert "Plain" in page and "100%" in page and "per swing" in page
     assert "likes" not in page and not any(name in page for name, _ in f.STANCES.values())  # the style is only in your notes
     wrong_label = f.STANCES[wrong(nav.screen.spot)][0]
     await click(nav, inter, wrong_label)
@@ -742,7 +742,7 @@ async def test_a_heartwood_spot_on_screen_shows_itself_and_hits_the_tree_hard_an
     nav.screen.spot = f.Spot("Plain", 1.0, "plain", special="heartwood")
     await nav._render()
     text_now = lambda: " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))  # noqa: E731
-    assert "Heartwood" in text_now() and f"**{round(power * CH.special('heartwood').amount)}** a chop" in text_now()
+    assert "Heartwood" in text_now() and f"**{round(power * CH.special('heartwood').amount)}** per swing" in text_now()
     await chop(nav, inter)
     assert nav.screen.tree.hp == 100_000 - round(power * CH.special("heartwood").amount) and "Heartwood: a huge hit" in text_now()
     nav.screen.spot = f.Spot("Plain", 1.0, "plain", special="rich_seam")
@@ -892,3 +892,57 @@ def test_the_three_foraging_capstones_are_about_equally_strong():
     gains = {"windfall": per_roll / node("windfall") / pay_per_click, "clean_cut": node("clean_cut"), "final_cut": node("final_cut") * 0.7}  # (about 70% of chopping is private trees)
     assert all(0.1 <= g <= 0.4 for g in gains.values()), gains
     assert max(gains.values()) - min(gains.values()) <= 0.15, gains
+
+
+# ---- wedges leave a lasting bonus; flair, burger, emoji -------------------------------------------------------------------------------
+async def test_a_good_wedge_leaves_a_lasting_chop_bonus_that_follows_the_spot(db):
+    user = await player(1)
+    spot = f.Spot()
+    await user.add_item("rotation_wedge", 1)
+    await user.add_item("gilded_wedge", 1)
+    await f.spend_wedge(user, spot, "rotation_wedge", Random(1))
+    assert spot.boost_chops == 0  # the plain wedge only moves you
+    await f.spend_wedge(user, spot, "gilded_wedge", Random(1))
+    wedge = next(w for w in RULES.rotate.wedges if w.item == "gilded_wedge")
+    assert (spot.boost, spot.boost_chops) == (wedge.boost, wedge.boost_chops) and wedge.boost >= 0.4 and wedge.boost_chops >= 100
+
+    class NoGood(Random):
+        def random(self):
+            return 0.99
+
+    base, boosted = f.Spot(), f.Spot(boost=wedge.boost, boost_chops=3)
+    for s in (base, boosted):
+        s.quality, s.grain = 1.0, "plain"
+    plain = base.swing(100, RULES, NoGood(1), 0.0, None)
+    big = boosted.swing(100, RULES, NoGood(1), 0.0, None)
+    assert big.damage == round(plain.damage * (1 + wedge.boost)) and big.effort > plain.effort and boosted.boost_chops == 2
+    boosted.wear = 1 - 1e-9  # a worn-out spot moves you on, and the bonus goes with you
+    boosted.swing(100, RULES, NoGood(1), 0.0, None)
+    assert boosted.boost_chops == 1 and boosted.wear == 0
+
+
+def test_flair_marks_rare_finds_and_not_the_everyday_ones():
+    from cococap.ui import flair
+
+    assert flair.level(REG.item("copper_ore")) == 0 and flair.level(REG.item("gold_ore")) == 0 and flair.level(REG.item("golden_sap")) == 0
+    assert flair.level(REG.item("scroll_keen")) == 2  # 1 in 700
+    assert flair.level(REG.item("iron_wedge")) == 1 and flair.level(REG.item("burger")) == 1
+    assert flair.level(REG.item("gilded_wedge")) == 2 and flair.level(REG.item("spirit_of_the_forest")) == 2
+    assert flair.banner({"copper_ore": 5}) == ""
+    assert "Rare drop" in flair.banner({"iron_wedge": 1}) and "SUPER RARE" in flair.banner({"iron_wedge": 1, "gilded_wedge": 1}).split("\n")[0]
+
+
+def test_the_burger_is_a_pet_feast_worth_five_golden_saps():
+    from cococap.services import pets
+
+    burger = REG.item("burger")
+    assert burger.category == "pet_food" and pets.food_xp(burger, REG) == 5 * pets.food_xp(REG.item("golden_sap"), REG)
+
+
+def test_every_item_and_enchant_has_an_emoji_and_scrolls_say_what_they_do():
+    from utils.items.items import item_attributes
+
+    assert [i.id for i in REG.items.values() if not i.emoji_raw] == []
+    assert all(e.emoji for e in REG.enchants.values())
+    text = item_attributes(REG.item("scroll_keen"))
+    assert REG.enchants["keen"].description in text and "Max level" in text

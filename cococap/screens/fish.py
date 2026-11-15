@@ -10,6 +10,7 @@ from cococap.screens.sellall import start_sell_all
 from cococap.services import fishing, fishing_community, party_boss, pets, pots
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
+from cococap.ui import flair
 from cococap.ui import Page, PromptModal, Result, Screen
 from cococap.ui.components import bar, bits, button, needs_text, row, select, sep, text, xp_bar
 from cococap.user import User
@@ -263,6 +264,8 @@ class FishScreen(Screen):
             lines.append(f"🎣 Your rod hauled in **{catch.extra_fish}** more: **{catch.extra_fish + 1}** {catch.fish.display} in all!")
         if catch.extras:
             lines.append("🪸 Also washed up: " + ", ".join(f"{q:,} {reg.item(i).display}" for i, q in catch.extras.items()))
+            if fanfare := flair.banner(catch.extras):
+                lines.append(fanfare)
         for q in catch.finished:
             lines.append(f"📜 **Quest complete:** {q.text}  ·  +{bits(q.bits)} bits, +{q.xp} xp")
         if catch.hallucination:
@@ -310,6 +313,8 @@ class FishScreen(Screen):
             loot = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in p.items.items()) or "nothing"
             team = f"  ·  👥 team bonus **+{p.bonus:.0%}** ({p.teammates} teammate(s) landed theirs)" if p.teammates else ""
             lines += [f"💀 **{p.boss}** is beaten!  **+{bits(p.bits)}** bits  ·  **+{p.xp:,}** xp{team}", f"🎁 Loot: {loot}"]
+            if fanfare := flair.banner(p.items):
+                lines.append(fanfare)
             if p.slack_bits:
                 lines.append(f"🧵 Clean reel bonus included: **+{bits(p.slack_bits)}** bits")
         self.result = Result("The party beat the boss!", lines, emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
@@ -382,7 +387,8 @@ class FishScreen(Screen):
                 reg = get_registry()
                 loot = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in won.items.items()) or "nothing"
                 slack = f"\n🧵 Clean reel: **{won.slack_left}** slack unused  ·  **+{bits(won.slack_bits)}** bits" if won.slack_bits else ""
-                self.result = Result(f"You beat {won.name}!", [f"**+{bits(won.bits)}** bits  ·  **+{won.xp:,}** xp{slack}", f"🎁 Loot: {loot}"],
+                self.result = Result(f"You beat {won.name}!", [f"**+{bits(won.bits)}** bits  ·  **+{won.xp:,}** xp{slack}", f"🎁 Loot: {loot}",
+                                                              *filter(None, [flair.banner(won.items)])],
                                      emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
                 return await self.refresh(interaction)
             if result == "landed":
@@ -424,7 +430,8 @@ class FishScreen(Screen):
             if result.opened:
                 self.cast = None
                 loot = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in result.items.items())
-                self.result = Result("The lock clicks open!", [f"**+{bits(result.bits)}** bits  ·  **+{result.xp}** xp", f"🎁 Inside: {loot}"],
+                self.result = Result("The lock clicks open!", [f"**+{bits(result.bits)}** bits  ·  **+{result.xp}** xp", f"🎁 Inside: {loot}",
+                                                                  *filter(None, [flair.banner(result.items)])],
                                      emoji="🧰", accent=0xF1C40F, again=self._cast, again_label="Cast again")
                 return await self.refresh(modal_interaction)
             if result.sunk:

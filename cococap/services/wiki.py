@@ -214,7 +214,7 @@ def _enchants(reg: Registry) -> list[str]:
     lines = []
     for e in reg.enchants.values():
         scroll = next((i for i in reg.items.values() if i.scroll and i.scroll.enchant == e.id), None)
-        lines.append(f"**{e.name}** (max {e.max_level}, {'/'.join(e.applies_to)}): {e.description}"
+        lines.append(f"{e.emoji} **{e.name}** (max {e.max_level}, {'/'.join(e.applies_to)}): {e.description}"
                      + (f"  ·  {scroll.display}" if scroll else ""))
     return ["**Enchants** are put on a tool with a one-use **scroll** (Inventory → Enchant). Scrolls turn up in play: chopping, deep mining, "
             "treasure chests and boss loot.", "\n".join(lines)]

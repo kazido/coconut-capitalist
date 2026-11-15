@@ -91,6 +91,8 @@ class Spot:
     wear: float = 0.0  # 0 fresh .. 1 worn out
     special: str = ""  # a special spot's id, or ""
     private: bool = True  # a tree of your own (marks only work there)
+    boost: float = 0.0  # a wedge's lasting bonus: every chop hits (and pays xp) this much harder...
+    boost_chops: int = 0  # ...for this many more chops (it follows you when a worn spot moves you on)
 
     @classmethod
     def pick(cls, rules: ForagingRules, rng: random.Random, bias: float = 0.0, exclude: str | None = None,
@@ -137,6 +139,9 @@ class Spot:
         doubled = rng.random() < double_chance
         correct = None if stance is None else stance == self.stance(rules)
         quality = self.strength(rules) * (c.wrong_stance_factor if correct is False else 1.0) * (1 + c.good_chop_bonus if good else 1)
+        if self.boost_chops > 0:  # a wedge's bonus: harder hits, and the xp goes up with them
+            quality *= 1 + self.boost
+            self.boost_chops -= 1
         hits, effort, fired, mark = 2.0 if doubled else 1.0, quality, "", 0.0  # (the effort is what pays xp: a double chop is still one swing)
         sp = self.kind(rules)
         if sp and correct is not False:  # (a chop with no style at all counts as right)
@@ -186,6 +191,8 @@ async def spend_wedge(user: User, spot: Spot, item_id: str, rng: random.Random, 
     except ValueError:
         raise ForagingError(f"You have no {reg.item(item_id).name}.") from None
     spot.rotate(reg.foraging, rng, wedge.bias, wedge.special_mult)
+    if wedge.boost_chops:  # a better wedge also leaves a lasting bonus (a new one replaces the old, it does not stack)
+        spot.boost, spot.boost_chops = wedge.boost, wedge.boost_chops
 
 
 # ---- grain notes: which style each grain likes, as you have found out -----------------------------------------------

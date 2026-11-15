@@ -8,6 +8,7 @@ from cococap.registry import get_registry
 from cococap.screens.sellall import start_sell_all
 from cococap.services import farming
 from cococap.services.equipment import equipped_stats
+from cococap.ui import flair
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import button, row, sep, select, text, xp_bar
 from cococap.user import User
@@ -137,6 +138,8 @@ class FarmScreen(Screen):
         extras = sum((h.extras for h in harvests), Counter())
         if extras:
             lines.append("🧵 Also found: " + ", ".join(f"{q:,} {reg.item(i).display}" for i, q in extras.items()))
+            if fanfare := flair.banner(extras):
+                lines.append(fanfare)
         if again := [h.plot for h in harvests if h.replanted]:
             lines.append("🌲 **Evergreen!** Plot " + ", ".join(str(n) for n in again) + " replanted itself.")
         if any(h.anomaly for h in harvests):

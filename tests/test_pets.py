@@ -449,6 +449,7 @@ async def test_the_pet_house_lets_you_aim_and_shows_your_chances(db):
 
 
 # ---- skill food and pet skills --------------------------------------------------------------------------------------------------------
+FEASTS = {"burger"}  # rare finds worth a multiple of a tier's pet xp (not one of a skill's three everyday foods)
 FOODS = {"foraging": ("acorn_mix", "honeycomb", "golden_sap"), "mining": ("stone_biscuit", "crystal_chew", "geode_feast"),
          "fishing": ("fish_flakes", "dried_squid", "sea_feast")}
 
@@ -459,7 +460,7 @@ def test_every_food_skill_has_three_tiers_that_are_worth_more_and_drop_less_ofte
         assert [i.pet_food.tier for i in items] == [1, 2, 3] and all(i.skill == skill and i.category == "pet_food" for i in items)
         assert [i.drop.rate for i in items] == sorted(i.drop.rate for i in items) and len({i.drop.rate for i in items}) == 3
         assert [pets.food_xp(i, REG) for i in items] == list(REG.economy.pets.food_xp) and all(i.sell_price == 0 for i in items)
-    assert {i.id for i in REG.items.values() if i.category == "pet_food"} == {f for ids in FOODS.values() for f in ids}
+    assert {i.id for i in REG.items.values() if i.category == "pet_food"} == {f for ids in FOODS.values() for f in ids} | FEASTS
 
 
 def test_every_pet_has_one_fixed_skill_that_matches_what_it_does():
@@ -517,7 +518,7 @@ async def test_skills_turn_up_their_own_food_at_about_the_intended_rates(db):
         for item_id in ids:
             rate = REG.item(item_id).drop.rate
             assert got[item_id] == pytest.approx(rolls / rate, rel=0.35), item_id
-        assert set(got) <= set(ids)  # a skill only drops its own food
+        assert set(got) <= set(ids) | FEASTS  # a skill only drops its own food (and the rare feast)
     assert await pets.roll_food("combat", 5, rng, REG) == {}  # (no combat food yet)
 
 

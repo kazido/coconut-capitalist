@@ -36,7 +36,7 @@ class EnchantScreen(Screen):
                 scroll = reg.item(self.scroll_id)
                 enchant = reg.enchant(scroll.scroll.enchant)
                 tools = [i for i in await self.user.instances() if enchanting.problem(scroll, i, reg) is None]
-                body.append(text(f"**{enchant.name}**: {enchant.description}"
+                body.append(text(f"{enchant.emoji} **{enchant.name}**: {enchant.description}"
                                  f" (up to level {enchant.max_level})"))
                 if tools:
                     body.append(row(select("Put it on...", [

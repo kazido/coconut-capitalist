@@ -1383,7 +1383,7 @@ async def test_the_community_tree_has_the_same_spot_and_wear(db, monkeypatch):
     user = await with_axe(template="reinforced_axe")
     power = get_registry().item("reinforced_axe").tool.power
     nav, inter = await hub("grove")
-    assert "grain" in all_text(nav) and "a chop" in all_text(nav)
+    assert "Wear" in all_text(nav) and "per swing" in all_text(nav)
     await chop(nav, inter, zone=3)
     nav.screen.spot.wear = 0.9
     await chop(nav, inter, zone=3)

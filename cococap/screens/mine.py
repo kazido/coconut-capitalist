@@ -7,6 +7,7 @@ import discord
 from cococap.constants import PROJECT_ROOT
 from cococap.registry import get_registry
 from cococap.services import mining
+from cococap.ui import flair
 from cococap.ui import Page, PromptModal, Screen
 from cococap.ui.components import bar, button, row, sep, text
 
@@ -45,6 +46,8 @@ def loot_lines(loot: Counter) -> str:
     for item_id, quantity in loot.items():
         item = reg.item(item_id)
         lines.append(f"{item_emoji(item_id)} +{quantity:,} " + (f"**{item.name}**" if item.rarity >= 5 else item.name))
+    if fanfare := flair.banner(loot):
+        lines.append(fanfare)
     return "\n".join(lines)
 
 
@@ -238,6 +241,8 @@ class MineScreen(Screen):
             note = "The tunnel gave way!" + (f" You lost {lost}." if lost else "")
         else:
             note = auto + multi + ("💥 BOOM! " if result.bombed and not result.auto_bombed else "") + (f"Found {found}." if found else ("" if result.wyrmhole else "Nothing here."))
+            if fanfare := flair.banner(result.found):
+                note += "\n" + fanfare + "\n"
             if result.vented:
                 note += " The vent hisses; the tunnel cools."
             if result.caches:

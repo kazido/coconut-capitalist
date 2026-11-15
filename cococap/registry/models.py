@@ -112,6 +112,7 @@ class PetFood(_Data):
     """Food a skill drops for pets. Its tier sets how much pet xp it is worth (economy.toml [pets] food_xp)."""
 
     tier: int = Field(ge=1, le=3)
+    xp_mult: float = Field(ge=1, default=1.0)  # a feast: worth this many times its tier's pet xp
 
 
 class Bait(_Data):
@@ -405,6 +406,7 @@ class Effect(_Data):
 class Enchant(_Data):
     id: str
     name: str
+    emoji: str = "📜"
     description: str = ""
     applies_to: list[ToolKind] = Field(min_length=1)
     max_level: int = Field(default=1, ge=1)
@@ -632,6 +634,8 @@ class Wedge(_Data):
     item: str  # the item's id (it must exist in items.toml)
     bias: float = Field(ge=0)  # a new grain's weight is its weight x multiplier ** bias: 0 is a plain random pick
     special_mult: float = Field(ge=0, default=1.0)  # x the chance that the new spot is a special one
+    boost: float = Field(ge=0, default=0.0)  # a lasting bonus: every chop hits (and pays xp) this much harder...
+    boost_chops: int = Field(ge=0, default=0)  # ...for this many chops, wherever the spot moves
 
 
 class RotateRules(_Data):

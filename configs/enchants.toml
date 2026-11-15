@@ -4,6 +4,7 @@
 
 [soloist]
 name = "Soloist"
+emoji = "🧍"
 description = "Heavy trees (zone 7 and up) are no harder for you to chop alone: no half-power penalty."
 applies_to = ["axe"]
 max_level = 1
@@ -14,6 +15,7 @@ flag = "soloist"
 
 [keen]
 name = "Keen"
+emoji = "🗡️"
 description = "A sharper, stronger tool: +1 power per level."
 applies_to = ["pickaxe", "axe", "rod"]
 max_level = 3
@@ -25,6 +27,7 @@ amount = 1
 
 [lure]
 name = "Lure"
+emoji = "🪝"
 description = "Fish find your hook sooner: 10% shorter waits per level."
 applies_to = ["rod"]
 max_level = 3
@@ -36,6 +39,7 @@ amount = 0.10
 
 [steady_line]
 name = "Steady Line"
+emoji = "🧵"
 description = "Forgives one more wrong arrow per level while reeling."
 applies_to = ["rod"]
 max_level = 2
@@ -47,6 +51,7 @@ amount = 1
 
 [sharp_eye]
 name = "Sharp Eye"
+emoji = "👁️"
 description = "You see where the wood is weakest: +5% good chop chance per level."
 applies_to = ["axe"]
 max_level = 3
@@ -58,6 +63,7 @@ amount = 0.05
 
 [iron_frame]
 name = "Iron Frame"
+emoji = "🛡️"
 description = "A braced pickaxe slows the mine's creaking: 3% less pressure per level."
 applies_to = ["pickaxe"]
 max_level = 3
@@ -69,6 +75,7 @@ amount = 0.03
 
 [seasoned]
 name = "Seasoned"
+emoji = "🌰"
 description = "A well-seasoned handle: the spot you chop wears out 15% slower per level."
 applies_to = ["axe"]
 max_level = 3
@@ -80,6 +87,7 @@ amount = 0.15
 
 [double_strike]
 name = "Double Strike"
+emoji = "⚡"
 description = "Your axe sometimes bites twice: 8% chance per level that a chop hits twice as hard (it is still one swing, so it pays the same xp)."
 applies_to = ["axe"]
 max_level = 3

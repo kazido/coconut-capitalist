@@ -61,7 +61,7 @@ def food_xp(item: Item, registry: Registry | None = None) -> int:
     """What one of this food is worth before any bonus (crops: their own pet xp)."""
     reg = registry or get_registry()
     if item.pet_food:
-        return reg.economy.pets.food_xp[item.pet_food.tier - 1]
+        return round(reg.economy.pets.food_xp[item.pet_food.tier - 1] * item.pet_food.xp_mult)
     return crop_pet_xp(item)
 
 

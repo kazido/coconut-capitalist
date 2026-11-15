@@ -857,3 +857,12 @@ Players who had taken an old level-50 node get those points back (unknown nodes 
 ## The fishing radar
 
 A gadget (an upgrade level on your fishing skill, like the mining reactor, not a rod) that opens at fishing level 25. On the Radar page you pick the fish to chase (slots grow with its level), switch it on, and every cast in a water where a target lives uses one **Radar Battery** (3,000 bits in the shop). Chased fish are 1.4x to 3.3x likelier (their own odds are divided by the factor). Five levels cost bits and fish from the deeper waters. Balance: at level 1-2 it barely pays for the batteries (it is for chasing a quest, book or community fish); at level 3+ chasing the expensive deep-sea fish adds about a quarter to two-thirds to a cast's worth.
+
+
+## Wedges, the burger, rare-drop fanfare, emoji
+
+- **Wedges leave a lasting bonus.** A plain Rotation Wedge only moves you. Iron: also +20% damage and xp for 40 chops; Gilded: +50% for 120 chops (`boost`, `boost_chops` in `configs/foraging.toml [[rotate.wedges]]`). The bonus lives on the `Spot`, follows you when a worn spot moves you on, and a new wedge replaces it (no stacking).
+- **Burger** is now a pet feast (`pet_food.xp_mult = 5` on a tier-3 food: 25,000 pet xp, x3 to a foraging pet). Not sellable.
+- **Scroll wiki pages** show the enchant they apply (its description, what it goes on, max level).
+- **Rare-drop fanfare** (`cococap/ui/flair.py`): level 1 (rarity 4+, odds 1-in-100 or rarer) is a highlighted line; level 2 (rarity 5+ or 1-in-700+) is a big banner. Everyday finds, fish and crops never get one. Wired into chopping, digging, banked mining loot, fishing extras/boss loot/chests and farming extras.
+- **Emoji:** every item and enchant now has a placeholder emoji (a test fails if one has none), ready to be swapped for custom ones.
