@@ -78,12 +78,12 @@ text = "+{v:.0%} xp in every skill"
 name = "Bee"
 skill = "farming"
 emoji = "🐝"
-rarity = 3
-description = "A tireless pollinator. Harvests come in bigger."
+rarity = 2
+description = "A tireless pollinator. Now and then a plot gives a whole second harvest."
 [[bee.bonuses]]
-stat = "crop_yield"
-value = 0.2
-text = "+{v:.0%} crops per harvest"
+stat = "extra_harvest"
+value = 0.1
+text = "{v:.0%} chance a harvested plot gives a free extra harvest"
 
 [eagle]
 name = "Eagle"

@@ -153,3 +153,40 @@ async def test_the_fox_pet_hands_its_chance_to_the_game_and_scales_with_strength
     star3 = await with_pet("fox", user_id=3, stars=3)
     assert (await pets.bonuses(user, REG))["rare_reroll"] == pytest.approx(value("fox"))
     assert (await pets.bonuses(young, REG))["rare_reroll"] < value("fox") < (await pets.bonuses(star3, REG))["rare_reroll"]
+
+
+# ---- Bee ----------------------------------------------------------------------------------------------------------
+async def _harvests(user, plots: int, seed: int) -> int:
+    from random import Random
+
+    from cococap.services import farming
+
+    rng, total = Random(seed), 0
+    for _ in range(plots):
+        await user.add_item("apple_seed", 1)
+        await farming.plant(user, 1, "apple_seed", now=0)
+        await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
+        total += (await farming.harvest(user, 1, rng, now=0)).amount
+    return total
+
+
+async def test_a_bee_gives_free_extra_harvests_and_more_often_with_strength(db):
+    plain = await _harvests(await User.get(1), 300, 1)
+    young = await _harvests(await with_pet("bee", user_id=2, xp=0), 300, 1)
+    bee = await _harvests(await with_pet("bee", user_id=3), 300, 1)
+    star3 = await _harvests(await with_pet("bee", user_id=4, stars=3), 300, 1)
+    assert plain < young < bee < star3
+    assert bee / plain == pytest.approx(1 + value("bee"), abs=0.06)  # about one plot in ten gives a second harvest
+
+
+async def test_a_bee_always_giving_an_extra_harvest_doubles_the_crop(db, monkeypatch):
+    from cococap.services import farming
+
+    monkeypatch.setattr(farming.pets, "bonuses", lambda user, reg=None: _constant({"extra_harvest": 1.0}))
+    twice = await _harvests(await User.get(1), 50, 3)
+    monkeypatch.undo()
+    assert twice > await _harvests(await User.get(2), 50, 3) * 1.6
+
+
+async def _constant(value_):
+    return value_

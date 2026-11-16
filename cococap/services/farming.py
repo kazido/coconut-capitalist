@@ -396,7 +396,8 @@ async def harvest(
     party_bonus = await xp_multiplier(user.id, reg, "farming")
     pet = await pets.bonuses(user, reg)
     can = await equipped_stats(user, "farming", reg)  # (a can with better stats gives bigger harvests and more drops; no can: no bonus)
-    crop_yield = pet.get("crop_yield", 0.0) + (can.stats.get("crop_yield", 0.0) if can else 0.0)
+    crop_yield = can.stats.get("crop_yield", 0.0) if can else 0.0
+    extra_harvest = pet.get("extra_harvest", 0.0)  # (a Bee: each harvested plot has this chance of a whole second harvest of the same crop, free)
     transmute = can.stats.get("transmute", 0.0) if can else 0.0  # (an Alchemist can: some harvests come up double)
     evergreen = can.stats.get("evergreen", 0.0) if can else 0.0  # (Mastery: a harvest sometimes replants itself, free)
     heirloom = can.stats.get("heirloom", 0.0) if can else 0.0  # (Mastery: some harvests come up 60% bigger)
@@ -407,8 +408,10 @@ async def harvest(
         if not (plot.crop_id and plot.can_harvest):
             raise FarmingError("Nothing is ready to harvest on that plot.")
         crop = reg.item(reg.item(plot.crop_id).seed.grows_into)
-        taken.update(seed=plot.crop_id, crop=crop.id,
-                     amount=max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield) * (2 if rng.random() < transmute else 1) * (1.6 if heirloom and rng.random() < heirloom else 1))),
+        amount = max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield) * (2 if rng.random() < transmute else 1) * (1.6 if heirloom and rng.random() < heirloom else 1)))
+        if extra_harvest and rng.random() < extra_harvest:
+            amount += max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield)))
+        taken.update(seed=plot.crop_id, crop=crop.id, amount=amount,
                      xp=round(reg.item(plot.crop_id).seed.cycles * rules.xp_per_cycle * party_bonus))
         replant = bool(evergreen) and rng.random() < evergreen
         taken["replanted"] = replant

@@ -29,7 +29,7 @@ KNOWN_STATS = frozenset({
     "bite_speed", "rare_luck", "treasure_luck", "pot_speed", "pot_luck",  # fishing and crab pots
     "danger_reduction", "ore_yield", "dig_shave",  # mining (the Mole's dig_shave takes this share off the pressure every dug row adds)
     "good_chop",  # foraging
-    "grow_chance", "crop_yield",  # farming
+    "grow_chance", "extra_harvest",  # farming (the Bee's extra_harvest: the chance a harvested plot gives a whole second harvest)
     "rare_reroll",  # every skill's rare drops (rarity 4 and up): the chance of a free second roll when the first one is not rare (Fox)
     "xp_all",  # every skill's xp
     "xp_fishing", "xp_mining", "xp_foraging", "xp_farming", "xp_combat",  # one skill's xp (a Spirit gives one of these too)
@@ -38,7 +38,7 @@ KNOWN_STATS = frozenset({
 
 _STAT_SKILL = {
     "bite_speed": "fishing", "rare_luck": "fishing", "treasure_luck": "fishing", "pot_speed": "fishing", "pot_luck": "fishing",
-    "danger_reduction": "mining", "ore_yield": "mining", "dig_shave": "mining", "good_chop": "foraging", "grow_chance": "farming", "crop_yield": "farming",
+    "danger_reduction": "mining", "ore_yield": "mining", "dig_shave": "mining", "good_chop": "foraging", "grow_chance": "farming", "extra_harvest": "farming",
 }
 
 

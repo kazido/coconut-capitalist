@@ -49,7 +49,7 @@ def test_pets_cover_every_part_of_the_game():
     stats = {b.stat for p in REG.pets.values() for b in p.bonuses}
     assert {"bite_speed", "rare_luck", "pot_speed", "pot_luck"} <= stats  # fishing and crab pots
     assert {"danger_reduction", "ore_yield"} <= stats  # mining
-    assert {"good_chop"} <= stats and {"grow_chance", "crop_yield"} <= stats  # foraging, farming
+    assert {"good_chop"} <= stats and {"grow_chance", "extra_harvest"} <= stats  # foraging, farming
     assert {"work_bonus", "xp_all"} <= stats  # the economy
 
 
@@ -288,16 +288,7 @@ async def test_the_frog_makes_crops_grow_more_often_and_the_bee_makes_harvests_b
         return total
 
     assert grown(0.3) > grown(0.0)
-    bee = await with_pet("bee", user_id=2)
-    await bee.add_item("apple_seed", 1)
-    await farming.plant(bee, 1, "apple_seed", now=0)
-    await bee.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
-    amount = (await farming.harvest(bee, 1, Random(1), now=0)).amount
-    plain = await User.get(3)
-    await plain.add_item("apple_seed", 1)
-    await farming.plant(plain, 1, "apple_seed", now=0)
-    await plain.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
-    assert amount >= (await farming.harvest(plain, 1, Random(1), now=0)).amount and user
+    assert user
 
 
 # ---- the Pet House -----------------------------------------------------------------------------------------------------------------------
