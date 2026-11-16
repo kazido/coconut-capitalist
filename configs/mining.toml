@@ -87,6 +87,27 @@ copper_ore = 1000
 iron_ore = 300
 gold_ore = 100
 
+# ---- Small wyrmholes: now and then a mine has one (decided when the mine starts, shown on the mine page). It is a 3-wide hole `rows` deep: on each row you
+# pick ONE of 3 hidden nodes, and everything you pick is banked. Each row pays from its own pool (item = quantity; the 3 hidden nodes are drawn from it), better
+# than a normal row, and a little better each row. `gem_chance` = the chance THAT row hides a reactor core gem in one of its 3 nodes (you find it only if you
+# pick that node, so a third of these): about 1 in 200 holes gives one (a gem sells for 400,000; a normal cell finds one 1 in 12,000). `last_row_bonus` is added when
+# you finish the last row. Simulated in DESIGN.md "Small wyrmholes": about +15-30% of a normal mine's value, in 1 mine in 100, so a treat and not an income.  TODO(balance)
+[mini_wyrmhole]
+odds = 100                         # 1 in N mines
+columns = 3
+gem_chance = [0.001, 0.002, 0.003, 0.004, 0.0045]
+last_row_bonus = { gold_ore = 1 }
+[[mini_wyrmhole.rows]]
+pool = { copper_ore = 24, iron_ore = 4, tin_ore = 6 }
+[[mini_wyrmhole.rows]]
+pool = { iron_ore = 6, tin_ore = 9, silver_ore = 2 }
+[[mini_wyrmhole.rows]]
+pool = { iron_ore = 8, silver_ore = 2, obsidian = 1, amber = 2 }
+[[mini_wyrmhole.rows]]
+pool = { silver_ore = 3, amber = 2, obsidian = 1, gold_ore = 1 }
+[[mini_wyrmhole.rows]]
+pool = { gold_ore = 2, amber = 2, silver_ore = 2, obsidian = 2 }
+
 [reactor]
 gem_slot_level = 10                # mining level needed to place gems
 max_prestige = 25

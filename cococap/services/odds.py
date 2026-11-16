@@ -90,6 +90,23 @@ def mining(reg: Registry | None = None, depth: int | None = None) -> Lookup:
     return lookup
 
 
+def mini_wyrmhole(reg: Registry | None = None) -> Lookup:
+    """A small wyrmhole: a core gem is 1 in (the chance any row hides it in the node you pick) per hole; an ore is 1 in the size of the best row pool that holds it, per pick."""
+    reg = reg or get_registry()
+    mini = reg.mining.mini_wyrmhole
+
+    def lookup(item_id: str) -> Odds | None:
+        if item_id in reg.mining.reactor.core_gems:
+            miss = 1.0
+            for g in mini.gem_chance:
+                miss *= 1 - g / mini.columns / len(reg.mining.reactor.core_gems)  # (the gem is one of the cores, picked by chance)
+            return Odds(1 / (1 - miss), "small wyrmholes") if miss < 1 else None
+        best = max((1 / len(r.pool) for r in mini.rows if item_id in r.pool), default=0.0)  # the node you pick is a draw from the row's pool
+        return Odds(1 / best, "picks") if best > 0 else None
+
+    return lookup
+
+
 def _treasure(item_id: str, loot, per: str) -> Odds | None:
     chance = max((e.chance for e in loot if e.item == item_id), default=0.0)
     return Odds(1 / chance, per) if chance > 0 else None
@@ -113,6 +130,6 @@ def fishing_catch(reg: Registry | None = None) -> Lookup:
 
 
 def for_source(name: str, reg: Registry | None = None, **kw) -> Lookup:
-    """`name` is one of foraging, farming, mining, fishing_chest, fishing_boss, fishing_catch."""
+    """`name` is one of foraging, farming, mining, fishing_chest, fishing_boss, fishing_catch, mini_wyrmhole."""
     return {"foraging": foraging, "farming": farming, "mining": mining, "fishing_chest": fishing_chest,
-            "fishing_boss": fishing_boss, "fishing_catch": fishing_catch}[name](reg, **kw)
+            "fishing_boss": fishing_boss, "fishing_catch": fishing_catch, "mini_wyrmhole": mini_wyrmhole}[name](reg, **kw)

@@ -431,6 +431,36 @@ class WyrmholeRules(_Data):
     pool: dict[str, int]
 
 
+class MiniWyrmholeRow(_Data):
+    pool: dict[str, int] = Field(min_length=1)  # item = quantity; the row's 3 nodes are drawn from it
+
+    @model_validator(mode="after")
+    def _quantities(self):
+        if any(q < 1 for q in self.pool.values()):
+            raise ValueError("mini_wyrmhole row pools need quantities of at least 1")
+        return self
+
+
+class MiniWyrmholeRules(_Data):
+    odds: int = Field(ge=2)  # 1 in N mines has one
+    columns: int = Field(ge=2)  # nodes per row
+    rows: list[MiniWyrmholeRow] = Field(min_length=1)
+    gem_chance: list[float]  # per row: the chance the row hides a core gem in one node
+    last_row_bonus: dict[str, int] = Field(default_factory=dict)
+
+    @model_validator(mode="after")
+    def _sane(self):
+        if len(self.gem_chance) != len(self.rows):
+            raise ValueError("mini_wyrmhole: gem_chance needs one number per row")
+        if any(not 0 <= g <= 0.05 for g in self.gem_chance):
+            raise ValueError("mini_wyrmhole: each gem_chance must be between 0 and 0.05")
+        if sum(self.gem_chance) / self.columns > 0.02:
+            raise ValueError("mini_wyrmhole: a core gem would turn up in more than 1 hole in 50 (core gems are rare)")
+        if any(q < 1 for q in self.last_row_bonus.values()):
+            raise ValueError("mini_wyrmhole: last_row_bonus quantities must be at least 1")
+        return self
+
+
 class ReactorRules(_Data):
     gem_slot_level: int = Field(ge=1)
     max_prestige: int = Field(ge=1)
@@ -573,6 +603,7 @@ class MiningRules(_Data):
     depth_tables: list[list[str]] = Field(min_length=1)
     mine_types: list[MineType] = Field(min_length=1)
     wyrmhole: WyrmholeRules
+    mini_wyrmhole: MiniWyrmholeRules
     reactor: ReactorRules
     magnet: MagnetRules
     scarab: ScarabRules

@@ -162,9 +162,11 @@ class MineRun:
         geode: float = 0.0,
         rare_reroll: float = 0.0,
         mine_type: MineType | None = None,
+        mini_wyrmhole: bool = False,
     ):
         self.rules, self.registry, self.rng = rules, registry, rng
         self.mine_type = mine_type or rules.mine_type("standard")  # the kind of mine (effects: ore boost, yield, rich lodes; pressure and xp are applied by start/settle)
+        self.mini_wyrmhole = mini_wyrmhole  # this mine has a small wyrmhole (decided when it starts): you can enter it any time before the run ends
         self.cursors = list(cursors)
         self.growth_factor, self.yield_factor = growth_factor, yield_factor
         self.braces, self.bombs, self.magnet = braces, bombs, magnet
@@ -496,6 +498,13 @@ class MineRun:
         self._require_live()
         self.outcome = "left"
 
+    def enter_mini_wyrmhole(self) -> None:
+        """Slip into this mine's small wyrmhole: the dig phase ends and the haul is yours (like the big wyrmhole; `settle_run` banks it)."""
+        self._require_live()
+        if not self.mini_wyrmhole:
+            raise MiningError("There is no small wyrmhole in this mine.")
+        self.outcome = "mini_wyrmhole"
+
 
 @dataclass(frozen=True)
 class RunSummary:
@@ -509,31 +518,78 @@ class RunSummary:
 # ---- the wyrmhole -----------------------------------------------------------------------------
 @dataclass
 class WyrmholeSession:
-    """A single row of nodes; you get to dig exactly one. Exactly one hides an implosion gem."""
+    """Rows of hidden nodes; on each row you dig exactly one. The big wyrmhole is a single row (one of its nodes hides an implosion gem); a small
+    wyrmhole is `small=True`: 3 nodes wide and several rows, one pick per row, and everything you picked (plus `bonus`, on finishing) is banked at the end."""
 
-    nodes: list[tuple[str, int]]
+    rows: list[list[tuple[str, int]]]
     cursor: int
-    revealed: tuple[str, int] | None = None
+    picks: list[tuple[str, int]] = field(default_factory=list)
+    columns_picked: list[int] = field(default_factory=list)  # which node you dug on each finished row
+    small: bool = False
+    bonus: Counter[str] = field(default_factory=Counter)  # added to the loot when the last row is dug
+    banked: bool = False
+
+    @property
+    def row(self) -> int:
+        """The row you are about to dig (the last one once it is finished)."""
+        return min(len(self.picks), len(self.rows) - 1)
+
+    @property
+    def nodes(self) -> list[tuple[str, int]]:
+        return self.rows[self.row]
+
+    @property
+    def width(self) -> int:
+        return len(self.rows[0])
+
+    @property
+    def revealed(self) -> tuple[str, int] | None:
+        return self.picks[-1] if self.picks else None
 
     def move(self, step: int) -> None:
-        self.cursor = (self.cursor + step) % len(self.nodes)
+        self.cursor = (self.cursor + step) % self.width
 
     def dig(self) -> tuple[str, int]:
-        if self.revealed is not None:
+        if self.finished:
             raise MiningError("You already dug in this wyrmhole.")
-        self.revealed = self.nodes[self.cursor]
-        return self.revealed
+        pick = self.nodes[self.cursor]
+        self.picks.append(pick)
+        self.columns_picked.append(self.cursor)
+        if not self.finished:
+            self.cursor = self.width // 2  # the next row starts in the middle again
+        return pick
 
     @property
     def finished(self) -> bool:
-        return self.revealed is not None
+        return len(self.picks) >= len(self.rows)
+
+    def loot(self) -> Counter[str]:
+        """Everything the picks give so far (the last-row bonus joins in once the last row is dug)."""
+        total: Counter[str] = Counter()
+        for item_id, quantity in self.picks:
+            total[item_id] += quantity
+        if self.finished:
+            total.update(self.bonus)
+        return total
 
 
 def generate_wyrmhole(rules: MiningRules, rng: random.Random) -> WyrmholeSession:
     pool = rules.wyrmhole.pool
     nodes = [(item, pool[item]) for item in (rng.choice(list(pool)) for _ in range(rules.columns))]
     nodes[rng.randrange(rules.columns)] = (rules.wyrmhole.implosion_item, 1)
-    return WyrmholeSession(nodes=nodes, cursor=rules.columns // 2)
+    return WyrmholeSession(rows=[nodes], cursor=rules.columns // 2)
+
+
+def generate_mini_wyrmhole(rules: MiningRules, rng: random.Random) -> WyrmholeSession:
+    """A small wyrmhole: each row's nodes are drawn from that row's pool, and now and then a row hides a reactor core gem in one node."""
+    mini = rules.mini_wyrmhole
+    rows: list[list[tuple[str, int]]] = []
+    for row, gem_chance in zip(mini.rows, mini.gem_chance, strict=True):
+        nodes = [(item, row.pool[item]) for item in (rng.choice(list(row.pool)) for _ in range(mini.columns))]
+        if rng.random() < gem_chance:
+            nodes[rng.randrange(mini.columns)] = (rng.choice(rules.reactor.core_gems), 1)
+        rows.append(nodes)
+    return WyrmholeSession(rows=rows, cursor=mini.columns // 2, small=True, bonus=Counter(mini.last_row_bonus))
 
 
 # ---- the scarab -------------------------------------------------------------------------------
@@ -584,12 +640,20 @@ async def _mining_state(user: User) -> tuple[Mining, int]:
     return mining, User.xp_to_level(mining.xp)
 
 
-async def start_run(user: User, rng: random.Random, registry: Registry | None = None, *, mine_type: MineType | str | None = None) -> MineRun:
+def roll_mini_wyrmhole(rules: MiningRules, rng: random.Random) -> bool:
+    """Does this mine have a small wyrmhole? 1 in `mini_wyrmhole.odds`."""
+    return rng.randint(1, rules.mini_wyrmhole.odds) == 1
+
+
+async def start_run(user: User, rng: random.Random, registry: Registry | None = None, *, mine_type: MineType | str | None = None,
+                    mini_wyrmhole: bool | None = None) -> MineRun:
     """Begin a mine. A full magnet is spent here; the pickaxe, reactor and gems shape the run. The kind of mine is rolled by weight
-    (`mine_type` forces one, for tests) and shown on the mine page before you dig."""
+    (`mine_type` forces one, for tests) and shown on the mine page before you dig. One mine in `mini_wyrmhole.odds` has a small wyrmhole
+    (`mini_wyrmhole=` forces it either way, for tests)."""
     reg = registry or get_registry()
     rules = reg.mining
     kind = rules.mine_type(mine_type) if isinstance(mine_type, str) else mine_type or roll_mine_type(rules, rng)
+    has_mini = roll_mini_wyrmhole(rules, rng) if mini_wyrmhole is None else mini_wyrmhole
     d = rules.descent
     tool = await equipped_stats(user, "mining", reg)
     if tool is None:
@@ -626,6 +690,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         geode=tool.stats.get("geode", 0.0),
         rare_reroll=pet.get("rare_reroll", 0.0),
         mine_type=kind,
+        mini_wyrmhole=has_mini,
     )
     _LIVE_RUNS[user.id] = (run, time.time())
     return run
@@ -694,15 +759,23 @@ async def abandon_run(user: User, run: MineRun, registry: Registry | None = None
     await settle_run(user, run, registry)
 
 
-async def enter_wyrmhole(user: User, rng: random.Random, registry: Registry | None = None) -> WyrmholeSession:
-    return generate_wyrmhole((registry or get_registry()).mining, rng)
+async def enter_wyrmhole(user: User, rng: random.Random, registry: Registry | None = None, *, small: bool = False) -> WyrmholeSession:
+    rules = (registry or get_registry()).mining
+    return generate_mini_wyrmhole(rules, rng) if small else generate_wyrmhole(rules, rng)
 
 
 async def finish_wyrmhole(user: User, session: WyrmholeSession) -> tuple[str, int]:
-    item_id, quantity = session.dig()
-    await user.add_item(item_id, quantity)
-    await user.update_skill("mining", lambda m: setattr(m.stats, "lodes_mined", m.stats.lodes_mined + 1))
-    return item_id, quantity
+    """Bank a wyrmhole (once): rows you have not dug yet are dug where the cursor is, then every pick (and the last-row bonus) goes in the pack.
+    Returns the last pick."""
+    while not session.finished:  # walking away still takes your pick(s)
+        session.dig()
+    if not session.banked:
+        session.banked = True
+        for item_id, quantity in session.loot().items():
+            await user.add_item(item_id, quantity)
+        picks = len(session.picks)
+        await user.update_skill("mining", lambda m: setattr(m.stats, "lodes_mined", m.stats.lodes_mined + picks))
+    return session.revealed
 
 
 async def claim_scarab_reward(user: User, rng: random.Random, registry: Registry | None = None) -> ScarabWin:

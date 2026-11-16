@@ -69,6 +69,9 @@ def _mining(reg: Registry) -> list[str]:
         "mines lodes for you while you are away.",
         "**Kinds of mine.** Every mine you enter is rolled: most are **Standard**, but now and then you get one with a twist, shown at the top of the mine before you dig. "
         + "; ".join(f"{t.emoji} **{t.name}** ({t.description.rstrip('.').lower()})" for t in m.mine_types[1:]) + ".",
+        f"**Small wyrmholes.** Rarely (1 mine in {m.mini_wyrmhole.odds}) a mine has a **small wyrmhole**: the mine page says so, and you can slip in at any time (what you carry is banked first). "
+        f"It is {m.mini_wyrmhole.columns} nodes wide and {len(m.mini_wyrmhole.rows)} rows deep: pick **one** node on each row, deeper rows pay better ore, and everything you pick is yours. "
+        "Very rarely one node hides a reactor core gem. The big wyrmholes (hidden in the rock, with the implosion gem) are as before.",
     ]
 
 
