@@ -863,15 +863,30 @@ async def test_final_cut_makes_a_tree_you_fell_pay_more_bits_and_drops(db):
     assert sum(b.drops.values()) >= sum(a.drops.values())
 
 
-async def test_windfall_pays_a_full_roll_of_drops_on_every_nth_chop_and_only_with_the_capstone(db):
+async def test_windfall_pays_a_full_roll_on_every_nth_clean_grain_not_on_chops_and_only_with_the_capstone(db):
     user = await player(1)
     every = int(REG.mastery.node("windfall").effects[0].amount)
+    for n in range(20):  # chops that finish no clean grain pay nothing and count nothing
+        assert not await f.windfall(user, every, Random(n), grain_done=False)
+    assert (await user.skill("foraging")).stats.grains == 0
     paid = []
     for n in range(every * 3):
-        paid.append(sum((await f.windfall(user, every, Random(n))).values()) > 0 or False)
-    assert (await user.skill("foraging")).stats.chops == every * 3
-    assert sum(1 for i, hit in enumerate(paid) if hit) <= 3 and not any(paid[i] for i in range(len(paid)) if (i + 1) % every)
-    assert not await f.windfall(user, 0, Random(1)) and (await user.skill("foraging")).stats.chops == every * 3  # (no capstone: nothing counted)
+        paid.append(sum((await f.windfall(user, every, Random(n), grain_done=True)).values()) > 0)
+    assert (await user.skill("foraging")).stats.grains == every * 3
+    assert not any(paid[i] for i in range(len(paid)) if (i + 1) % every)
+    assert not await f.windfall(user, 0, Random(1), grain_done=True) and (await user.skill("foraging")).stats.grains == every * 3  # (no capstone: nothing counted)
+
+
+def test_a_swing_reports_a_clean_grain_only_when_every_chop_on_it_was_in_the_right_style():
+    def finish(wrong_at):
+        spot, r = f.Spot.pick(RULES, Random(2)), Random(3)
+        right = spot.stance(RULES)
+        wrong = next(s for s in f.STANCES if s != right)
+        for i in range(500):
+            swing = spot.swing(40, RULES, r, 0.0, wrong if i == wrong_at else right)
+            if swing.ended:
+                return swing.clean_grain
+    assert finish(None) is True and finish(0) is False
 
 
 def test_clean_cut_hits_harder_only_in_the_grains_own_style():
@@ -887,7 +902,7 @@ def test_clean_cut_hits_harder_only_in_the_grains_own_style():
 
 
 def test_the_three_foraging_capstones_are_about_equally_strong():
-    """Each adds about a fifth to a chop's worth (estimated against a zone-3 chopper: the roll of drops every Nth chop, the harder right chops, the tree bonus on private trees only)."""
+    """Each adds about a fifth to a chop's worth (estimated against a zone-3 chopper: the roll of drops every Nth clean grain (about 10 chops each), the harder right chops, the tree bonus on private trees only)."""
     from cococap.services import loot
 
     price = lambda i: REG.item(i).sell_price  # noqa: E731
@@ -896,11 +911,13 @@ def test_the_three_foraging_capstones_are_about_equally_strong():
     per_roll = sum(price(i.id) * mean_q[i.id] / i.drop.rate for i in f.drop_pool(REG))
     zone, power = 3, 28
     swing_rng, spot = Random(9), f.Spot.pick(RULES, Random(9))
-    dealt = sum(spot.swing(power, RULES, swing_rng, 0.0, spot.stance(RULES)).damage for _ in range(3000)) / 3000  # (always the right style, wear and rotation included)
+    swings = [spot.swing(power, RULES, swing_rng, 0.0, spot.stance(RULES)) for _ in range(6000)]  # (always the right style, wear and rotation included)
+    dealt = sum(s.damage for s in swings) / len(swings)
+    chops_per_grain = len(swings) / sum(s.ended for s in swings)
     pay_per_hp = RULES.bits_per_hp * f.zone_reward_factor(zone, RULES) + per_roll * f.expected_rolls(1, RULES, zone)
     pay_per_click = pay_per_hp * dealt
     node = lambda nid: REG.mastery.node(nid).effects[0].amount  # noqa: E731
-    gains = {"windfall": per_roll / node("windfall") / pay_per_click, "clean_cut": node("clean_cut"), "final_cut": node("final_cut") * 0.7}  # (about 70% of chopping is private trees)
+    gains = {"windfall": per_roll / node("windfall") / (pay_per_click * chops_per_grain), "clean_cut": node("clean_cut"), "final_cut": node("final_cut") * 0.7}  # (about 70% of chopping is private trees)
     assert all(0.1 <= g <= 0.4 for g in gains.values()), gains
     assert max(gains.values()) - min(gains.values()) <= 0.15, gains
 

@@ -519,10 +519,10 @@ effects = [{ stat = "wear_slow", amount = 0.12 }, { stat = "shake", amount = 0.0
 [[trees.branches.nodes]]
 id = "windfall"
 name = "Windfall"
-description = "CAPSTONE: every 10th chop shakes loose a full roll of drops, guaranteed."
+description = "CAPSTONE: every grain you finish clean (every chop in its style) shakes loose a full roll of drops, guaranteed."
 level = 50
 cost = 4
-effects = [{ stat = "windfall", amount = 10 }]
+effects = [{ stat = "windfall", amount = 1 }]  # every Nth clean grain; TODO(balance): N=1 is about +19% for a zone-3 chopper (scratch sim: ~10 chops a grain)
 
 [[trees.branches]]
 id = "grain_reader"

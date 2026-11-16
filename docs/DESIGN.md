@@ -849,7 +849,7 @@ Mining, fishing, farming and foraging (not combat: it is paused) each have a tre
 
 - Mining: **Lifeline** (a brace back every 15th row), **Gold Rush** (every 7th cell pays triple), **Geode Cracker** (2% of cells hold a reactor gem).
 - Fishing: **Hot Streak** (each clean reel in a row makes your next catch pay 8% more, up to 5), **Salvage** (every 13th fish also brings a chest haul), **Chum Slick** (a boss you beat pays twice).
-- Foraging: **Final Cut** (a tree you fell yourself pays 25% more), **Windfall** (every 10th chop shakes loose a roll of drops), **Clean Cut** (right-style chops hit 20% harder).
+- Foraging: **Final Cut** (a tree you fell yourself pays 25% more), **Windfall** (every grain you finish clean, every chop in its own style, shakes loose a roll of drops; it counts grains, not chops), **Clean Cut** (right-style chops hit 20% harder).
 - Farming: **Evergreen** (half of harvests replant free), **Heirloom** (30% of harvests are 60% bigger), **Haggler** (farm goods sell for 15% more).
 
 Players who had taken an old level-50 node get those points back (unknown nodes are ignored).

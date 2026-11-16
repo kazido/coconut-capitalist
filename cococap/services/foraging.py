@@ -77,6 +77,7 @@ class Swing:
     doubled: bool = False  # a double chop (the enchant): it hit twice
     special: str = ""  # the special spot's effect that fired on this chop ("damage", "xp" or "mark"), if any
     mark: float = 0.0  # reward this chop added to the tree (a Rich Seam)
+    clean_grain: bool = False  # this chop finished a grain with every chop on it in the right style (Windfall pays on these)
     effort: float = 1.0  # how good the chop was, whatever axe made it (grain x wear x style x a good chop's bonus): this is what pays xp
 
 
@@ -169,10 +170,11 @@ class Spot:
         damage = max(1, round(power * quality * hits))
         self.wear += self.wear_per_chop(rules, wear_slow)
         ended = self.wear >= 1
+        clean_grain = ended and self.clean
         if ended:  # the grain is finished: done right all the way through, the streak grows; one wrong chop and it starts over
             self.streak = min(c.streak_max, self.streak + 1) if self.clean else 0
             self.rotate(rules, rng)
-        return Swing(damage, good, correct, ended, doubled, fired, mark, effort)
+        return Swing(damage, good, correct, ended, doubled, fired, mark, clean_grain, effort)
 
     def wear_per_chop(self, rules: ForagingRules, wear_slow: float = 0.0) -> float:
         """How much one chop wears this spot. Seasoning keeps a spot lasting, but it is a trade: it slows a plain or good grain and speeds a BAD one (wear above
@@ -361,15 +363,16 @@ async def shake(user: User, chance: float, rng: random.Random, registry: Registr
     return Counter({item.id: 1})
 
 
-async def windfall(user: User, every: int, rng: random.Random, registry: Registry | None = None) -> Counter:
-    """Windfall (Mastery): every `every`th chop you make shakes loose a full roll of drops, paid at once. Counts your chops."""
-    if every <= 0:
+async def windfall(user: User, every: int, rng: random.Random, registry: Registry | None = None, *, grain_done: bool = False) -> Counter:
+    """Windfall (Mastery): every `every`th grain you finish clean (every chop on it in the grain's own style; `Swing.clean_grain`, passed as
+    `grain_done`) shakes loose a full roll of drops, paid at once. Counts clean grains, not chops. Returns what fell."""
+    if every <= 0 or not grain_done:
         return Counter()
     hit: list[bool] = []
 
     def count(skill: Foraging) -> None:
-        skill.stats.chops += 1
-        if skill.stats.chops % every == 0:
+        skill.stats.grains += 1
+        if skill.stats.grains % every == 0:
             hit.append(True)
 
     await user.update_skill("foraging", count)
