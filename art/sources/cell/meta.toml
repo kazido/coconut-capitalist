@@ -1,0 +1,4 @@
+source = "cell.webp"
+framed = true
+canvas = 16
+ms = [0]

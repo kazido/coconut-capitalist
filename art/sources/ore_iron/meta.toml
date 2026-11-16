@@ -1,0 +1,4 @@
+source = "ore_iron.webp"
+framed = true
+canvas = 16
+ms = [0]

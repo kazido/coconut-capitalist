@@ -1,0 +1,4 @@
+source = "seed_weathered.webp"
+framed = true
+canvas = 16
+ms = [0]

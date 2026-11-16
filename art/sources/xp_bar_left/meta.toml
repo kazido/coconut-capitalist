@@ -1,0 +1,4 @@
+source = "xp_bar_left.webp"
+framed = false
+canvas = 16
+ms = [0]
