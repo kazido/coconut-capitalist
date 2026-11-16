@@ -1041,3 +1041,63 @@ Value check (`scratchpad/mini_base.py`, `mini_sim.py`; the baseline is a player 
 Rows pay on average 1,300 / 2,100 / 2,550 / 2,800 / 3,500 bits (gem EV included), last-row bonus 1,900. A core gem turns up in 1 hole in 200 (EV about 2,000 of the 14,200;
 a normal mine rolls a gem 1 in 12,000 per cell). At 1 mine in 100 this adds about 0.2% to a player's mining income: a nice surprise, not an income source.  TODO(balance)
 The hole's quantities do not scale with the pickaxe (like the big hole), so it is a bigger treat early than late; add a `power` factor if that feels wrong.
+
+## Where does an effect belong?
+
+Problem: the same stat lives in many places today (`bite_speed` is a rod stat, the Lure enchant, two Angler nodes and the Cat), so a new effect has no obvious home. One rule, by **who decides and how long it lasts**:
+
+- **Mastery = how YOU play.** A skill-wide choice bought with points (and the level-50 capstones). It works with every tool of that skill and is respeccable. Best nodes are trade-offs or change a mechanic; a plain "+x%" node is the weakest kind.
+- **Enchant = what a scroll adds to ONE tool.** Tool-bound, levelled, swappable with the tool. It is that tool's stats, nothing broader (never xp or selling).
+- **Tool ability / fork = what the tool IS.** A fixed identity of a tool or upgrade road (Timber, Bycatch, Auto-Reel, Multi-Mine, Sprinkler). It is the reason to pick that road; scrolls and Mastery may tune its numbers but never replace it.
+- **Pet buff = a small passive that is NOT a strategy.** xp, luck, selling, shipments, pot/AFK utility. A pet is never the only source of a mechanic, and never "forgives a mistake" or changes how a run is played (no safety, no extra chops).
+
+Stats are the shared currency (`equipped_stats` adds tool + enchants + Mastery; pets are read separately), so one engine reads one stat whatever gave it. The rule decides who is ALLOWED to give it.
+
+### The existing stats by current home (from the configs)
+
+| Stat | Tool stat / power | Ability | Enchant | Mastery | Pet |
+|---|---|---|---|---|---|
+| power | base | | Keen | | |
+| bite_speed | rod power, rod roads | Bycatch (-) , Auto-Reel | Lure | Quick Bite, Lively Water, Patient Hands, Big Game (-), Boss Bait (-) | Cat |
+| slips (forgiven arrows) | rod power | Auto-Reel | Steady Line | Forgiving Line, Patient Hands, Trophy Hands | |
+| rare_luck | rod power, Treasure road | Bycatch | Deepcall | Lucky Cast, Rare Lure, Keen Eye | Eagle |
+| treasure_luck | rod power, Treasure road | Bycatch | | Shiny Eye, Chest Sense | Dragon |
+| boss_luck / hot_streak / salvage / chum | | | | Trophy and Angler/Treasure branches | |
+| auto_reel, bycatch | | rod roads | | | |
+| danger_reduction | pickaxe power, Warden | | Iron Frame | Pay Dirt (-), Motherlode (-), Tidy Digger | Turtle |
+| ore_yield | pickaxe power, Prospector | Multi-Mine | Bounty | Pay Dirt, Motherlode, Tidy Digger | Turtle |
+| rich_chance | pickaxe power, Prospector | | Veinfinder | Rich Veins, Vein Sense, Crystal Veins | |
+| braces, auto_bomb, multi_mine | Warden / roads | Auto-Bomb, Multi-Mine | | Efficient Magnet (braces) | |
+| reactor_cool, auto_speed, auto_hours, magnet_save, vault_gem, geode, lifeline, gold_rush | | | | Mining tree (reactor/gem) | |
+| dig_shave | | | | | Mole |
+| good_chop | axe power, Lumberjack | | Sharp Eye | foraging nodes | Monkey |
+| wear_slow | axe power | | Seasoned | foraging nodes | |
+| double_chop | | Timber | Double Strike | foraging nodes | |
+| shake | | Shake the Branches | | foraging nodes | |
+| soloist (flag) | | | Soloist | | |
+| final_cut, windfall, clean_cut | | | | foraging capstones | |
+| crop_yield, drop_luck, seed_back | can power, can roads | | Fertile, Gleaner, Seedkeeper | farming nodes | |
+| sprinkle, transmute | | Sprinkler, Alchemist | | | |
+| evergreen, heirloom, haggler | | | | farming capstones/nodes | |
+| grow_chance, extra_harvest | | | | | Frog, Bee |
+| scholar (+xp) | | | Scholar | | xp_* (many), xp_all |
+| appraise / sell_bonus | | | Appraiser | Haggler (farm goods) | Magpie |
+| work_bonus, payout_bonus, pot_speed, pot_luck, rare_reroll | | | | | Dog, Raven, Python, Crab, Fox |
+
+### In the wrong place by the rule (listed only; nothing moved)
+
+1. **Pets that change how you play**: Turtle (`danger_reduction`, `ore_yield`) and Mole (`dig_shave`) make the mine safer or cheaper, which is "forgives a mistake"; Monkey (`good_chop`), Frog (`grow_chance`) and Bee (`extra_harvest`) are mechanics, not passives. Cat's `bite_speed` is borderline (a small speed-up). Candidates to turn into xp/luck/sell/utility buffs.
+2. **Soloist** (enchant flag) is a play-style choice ("chop alone"); it belongs in Mastery.
+3. **Scholar** (xp) and **Appraiser** (selling) are enchants, but xp and selling are the pet lane (and Appraiser/Magpie/Haggler stack three ways on one sale). They are tool-agnostic ("fits every tool"), which is the sign.
+4. **Double Strike** (enchant) is the Timber ability again (`double_chop`), and foraging Mastery has it as a node: one effect in three homes, so the Lumberjack road is not special.
+5. **Plain "+x%" Mastery nodes** (Quick Bite, Lively Water, Pay Dirt-style, Rich Veins, Rich Soil...) are enchant-shaped: the same stat a scroll gives. Fine as filler between capstones, but new Mastery nodes should be trade-offs or new mechanics.
+6. **Rod roads and tools with `bite_speed` negative** (Bycatch, Big Game, Boss Bait) are correct trade-offs; no change.
+
+### When adding a new effect, ask
+
+1. Does it change HOW a run is played, for every tool of the skill, and can the player reasonably choose against it? **Mastery** (capstone if it is a whole mechanic).
+2. Is it a number that belongs to one tool and should travel with it, found as a scroll? **Enchant** (rod-only, levelled, small per level).
+3. Is it the reason this tool or road exists, fixed by the template? **Ability / fork** (with its stats on the tool).
+4. Is it xp, luck, sell price or AFK utility, small, and fine to ignore? **Pet buff**. If it forgives a mistake or is the only way to get a mechanic, it is not a pet buff.
+5. Can the same effect already be reached from another home? Then give the new one a different SHAPE (a different number type, a trade-off), not the same stat again.
+6. Does the engine read it as one stat through `equipped_stats`? Add the stat once, to the known-stat lists (tests in `test_mastery.py`, `test_enchanting.py`), never a special case per source.
