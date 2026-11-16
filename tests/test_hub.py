@@ -1677,8 +1677,9 @@ def _nav_labels(nav):
 async def test_a_private_tree_hides_home_and_back_but_a_plain_page_shows_them(db):
     nav, inter = await hub("forage")
     assert {"Home", "Back"} <= _nav_labels(nav)  # no leave button here, so the controller is shown
-    nav, inter = await hub("tree")
-    assert nav.screen.locked and "Leave" in _nav_labels(nav) and not {"Home", "Back"} & _nav_labels(nav)
+    await with_axe()
+    await click(nav, inter, "Chop a tree")
+    assert nav.screen.id == "tree" and nav.screen.locked and "Leave" in _nav_labels(nav) and not {"Home", "Back"} & _nav_labels(nav)
     await click(nav, inter, "Leave")
     assert nav.screen.id == "forage" and {"Home", "Back"} <= _nav_labels(nav)
 

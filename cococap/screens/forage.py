@@ -326,6 +326,14 @@ class TreeScreen(Screen):
         self.rng = new_rng()
         self.spot = foraging.Spot.pick(get_registry().foraging, self.rng)
 
+    @property
+    def locked(self) -> bool:
+        return True  # the page has its own Leave button (nothing is half-done: chops are paid as they land)
+
+    @property
+    def hides_nav(self) -> bool:
+        return True
+
     async def build(self) -> Page:
         rules = get_registry().foraging
         tree = self.tree
@@ -398,6 +406,14 @@ class GroveScreen(Screen):
         self.refresh_every = get_registry().foraging.community.refresh_seconds
         self.rng = new_rng()
         self.spot = foraging.Spot.pick(get_registry().foraging, self.rng, private=False)
+
+    @property
+    def locked(self) -> bool:
+        return True  # the page has its own Leave button (nothing is half-done: chops are paid as they land)
+
+    @property
+    def hides_nav(self) -> bool:
+        return True
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -472,6 +488,14 @@ class PartyGroveScreen(Screen):
         self.refresh_every = get_registry().foraging.party_tree.refresh_seconds
         self.rng = new_rng()
         self.spot = foraging.Spot.pick(get_registry().foraging, self.rng, private=False)
+
+    @property
+    def locked(self) -> bool:
+        return True  # the page has its own Leave button (nothing is half-done: chops are paid as they land)
+
+    @property
+    def hides_nav(self) -> bool:
+        return True
 
     async def build(self) -> Page:
         reg = get_registry()

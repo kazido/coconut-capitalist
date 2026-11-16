@@ -149,6 +149,10 @@ class MineScreen(Screen):
     def locked(self) -> bool:
         return self.run is not None and not self.run.finished
 
+    @property
+    def hides_nav(self) -> bool:
+        return self.locked  # "Leave & bank" is the way out while a run is live
+
     async def on_abandon(self) -> None:
         if self.run is not None and not self.run.finished:
             await mining.abandon_run(self.user, self.run)

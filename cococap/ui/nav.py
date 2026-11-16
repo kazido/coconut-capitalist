@@ -102,6 +102,12 @@ class Screen:
         """True while leaving would abandon something (a live game): Home/Back are disabled."""
         return False
 
+    @property
+    def hides_nav(self) -> bool:
+        """True while the page has its own leave button (a tree, a line in the water, a live mine): the Home/Back row is
+        left off entirely instead of shown disabled. It should only be True while ``locked`` is."""
+        return False
+
     async def on_abandon(self) -> None:
         """Called if the hub times out while this screen is showing (settle any live game)."""
 
@@ -287,14 +293,14 @@ class Navigator(ui.LayoutView):
             screen = self.screen = ResultScreen(self, result, screen)
             page = await screen.build()
         self._swap_items()
+        controls = [] if getattr(screen, "hides_nav", False) else [self._controls()]
         header = f"## {screen.emoji} {page.title}".strip()
         self.add_item(
             ui.Container(
                 text(header),
                 sep(),
                 *page.body,
-                sep(),
-                self._controls(),
+                *([sep(), *controls] if controls else []),
                 accent_colour=discord.Colour(page.accent),
             )
         )

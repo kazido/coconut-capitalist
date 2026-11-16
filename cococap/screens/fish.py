@@ -87,6 +87,20 @@ class FishScreen(Screen):
         self.rng = new_rng()
 
     @property
+    def locked(self) -> bool:
+        return self.cast is not None  # a line in the water has its own Cancel / Let it go
+
+    @property
+    def hides_nav(self) -> bool:
+        return self.cast is not None
+
+    async def on_abandon(self) -> None:
+        """The hub timed out with a line in the water: cancel it the way "Let it go" does (a party boss cast reports failed)."""
+        cast, self.cast = self.cast, None
+        if cast is not None and cast.party_fight is not None:
+            await party_boss.report(self.user, "failed", 0, now())
+
+    @property
     def refresh_every(self) -> float | None:  # redraw by itself while a line is in the water or numbers are flashing, or a party fight is open
         return REFRESH if self.cast is not None or self.flash is not None or self.watching else None
 
