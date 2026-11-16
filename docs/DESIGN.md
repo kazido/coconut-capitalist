@@ -1157,3 +1157,25 @@ The art overhaul ships hundreds of emoji as the bot's *application emoji* (owned
   plan for the files in `art/out/` (`<name>.png` static, `.webp`/`.gif` animated; at most 256 KB each); add `--yes` to upload only the missing
   names. Flags: `--only PREFIX`, `--replace NAME` (delete + recreate after new art), `--limit N`, `--pause SECONDS`. It waits out rate limits
   and is safe to rerun. Then restart the bot (emoji are fetched at startup). Planning logic: `plan_upload` (tests/test_upload_plan.py).
+
+## Emoji art pipeline (`art/`)
+
+**The 16-grid rule.** All art is a 16x16 grid. Every emoji is exported at 64x64 (each art pixel becomes a 4x4 block, nearest-neighbour, never smoothed). Never draw at another size and scale it down.
+
+**Cell and rarity.** ITEMS sit in the owner's stone "cell" frame (`FRAME` in `art/palette.py`, the owner's own drawing). The cell's border is recoloured per rarity from `art/palette.toml`: highlight = colour mixed 35% with white, light = the colour itself, base = 18% black, shadow = 40% black; the inside fill (`#2b2d31`) and the transparent corners never change. The 7 rarity colours live in `palette.toml` AND in `cococap/constants.py` `Rarities` (a test keeps them equal; change both). A framed sprite is drawn on top of the cell and may overlap the border.
+
+**Free vs framed.** `framed` = items (the cell is added by the build; sprites are stored WITHOUT the cell). `free` = pets, UI, species icons, wisps: no cell, and `outline = true` adds a one-pixel outline in plum `#2e1c2c` (the one outline colour for all frameless art; framed items have no outline, like the owner's art). Item art style: small (about 10px) sprite centred in the cell, 5-6 shades with the hue shifting (shadows cool, lights warm), one white specular pixel.
+
+**Sources** (all become `Sprite`s in `art/sprite.py`, category = where it came from):
+- `art/sprites/<category>.toml`: hand-drawn. `[name]` with `palette = {letter = "#hex"}`, `rows` (16 strings of 16 chars, `.` = transparent), optional `kind = "framed"|"free"` (default: framed when `rarity` is set), `rarity = 1-7`, `outline`. Animation: `[[name.frames]]` entries each with `rows` and `ms`.
+- `art/wisps.toml`: generated wisps (`art/wisp.py`): `shape`, `base`, optional `inverted` (dark body, bright rim, white eyes) and `rarity`. Shading, eyes and plum outline are automatic. A new silhouette is one entry in `SHAPES` (rows of `#`/`.`, at most 12x12).
+- `art/sources/<name>/frame_NN.png` + `meta.toml` (`ms = [..]`, `framed`, optional `rarity`): the owner's own emoji, extracted by `art/extract.py`, stored cell-stripped; `framed = true` means the build puts them back in a cell.
+- `art/mappings/raven.toml`: `item_id = [row, col]` (optional third number = rarity) into the Raven Fantasy Icons sheet `Full Spritesheet/16x16.png` (16 icons across). The pack's location is in git-ignored `art/local.toml` (`raven_dir = "<path to 'Free - Raven Fantasy Icons'>"`); without it those sprites are simply skipped.
+
+**Licences.** Third-party packs (Raven, joi3, ...) are for local use only; their licence forbids redistributing them. NEVER commit a third-party image or its sheet: only the mapping file (numbers) goes in git. `art/local.toml` and `art/out/` are git-ignored, and `tests/test_art.py` fails if anything under `art/` mentions raven/joi3 in a path or the ignores are missing.
+
+**Adding a sprite.** Pick the file (`items.toml`, a new `<category>.toml`, or `wisps.toml`), add the entry, and name it exactly like the item/entity id (`[a-z0-9_]{2,32}`, which is also Discord's emoji name rule, unique across ALL files). Build, look at the sheet, commit the TOML.
+
+**Building.** `.venv/bin/python -m art.build [--only NAME] [--sheets]` (needs the `art` extra: Pillow). Static sprites become `art/out/<name>.png` (64x64 RGBA), animated ones `art/out/<name>.webp` (lossless, via `img2webp -d <ms>`, Pillow as fallback). `--sheets` writes labelled contact sheets to `art/out/sheets/<category>.png`. The build is deterministic. Uploading `art/out` to Discord is `scripts/upload_emojis.py` (see "Custom emoji at runtime").
+
+**Not built yet:** star pips (rating stars on an emoji) are paused.
