@@ -237,6 +237,7 @@ class FishScreen(Screen):
                  + (", and ❓ is hidden: it follows this fish's own pattern. Check your field notes!"
                     if fishing.MYSTERY in cast.pattern else ".")),
             row(*reel_buttons(cast, self.rng, self._press, discord.ButtonStyle.primary), button("Let it go", on_click=self._cancel)),
+            row(button("Field notes", emoji="🔍", on_click=self._reel_notes)),
         ]
         return Page("Fishing", body, accent=int(colour.color, 16))
 
@@ -478,6 +479,13 @@ class FishScreen(Screen):
         await interaction.response.send_modal(PromptModal("Unlock the chest", f"The {length} numbers", submitted,
                                                           placeholder="e.g. 4815", max_length=length + 4))
 
+    async def _reel_notes(self, interaction: discord.Interaction) -> None:
+        """Field notes on a page of their own while you reel (like the foraging Grain notes). The cast stays as it is: nothing in a
+        reel is timed once the line is up, so Back to reeling carries on at the same step."""
+        intro, lines = await notes_content(self.user)
+        self.result = Result("Field notes", [intro, lines], emoji="🔍", accent=0x2980B9, back_label="Back to reeling")
+        await self.refresh(interaction)
+
     async def _quests(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishquests")
 
@@ -713,8 +721,31 @@ class FishRecordsScreen(Screen):
         await self.go(interaction, "fishnotes")
 
 
+async def notes_content(user) -> tuple[str, str]:
+    """(the intro, the lines) of the field notes, for the page and for the pop-up while reeling. A pattern shows only when it is confirmed."""
+    reg = get_registry()
+    skill = await user.skill("fishing")
+    lines, unknown = [], []
+    for fish in sorted((i for i in fishing.fish_pool(reg) if i.rarity >= reg.fishing.reel.mystery_from_rarity),
+                       key=lambda i: (i.rarity, i.name)):
+        entries = skill.notes.get(fish.id, [])
+        if entries:
+            verdict = fishing.notes_verdict(entries)
+            lines.append(f"{fish.display}: {verdict or f'**{len(entries)}** ❓ seen, no pattern confirmed yet'}")
+        elif fish.id in skill.records:
+            lines.append(f"{fish.display}: no ❓ revealed yet. Press the ❓ (or lose at one) to find out what it was.")
+        else:
+            unknown.append(fish.rarity)
+    if unknown:
+        lines.append(unknown_summary(unknown, "not caught yet"))
+    intro = ("Rare fish hide arrows behind a ❓. Each fish has its own rule for it: always ◄, always ►, the same as the arrow "
+             "before it, or the opposite (a few are pure luck). Every ❓ you see is counted here, and a rule is only written down once "
+             f"**{fishing.MIN_NOTES_FOR_VERDICT}** of them agree on it.")
+    return intro, "\n".join(lines)
+
+
 class FishNotesScreen(Screen):
-    """What each ❓ turned out to be, fish by fish, and what it adds up to."""
+    """What each ❓ turned out to be, fish by fish: only the patterns that are confirmed."""
 
     id = "fishnotes"
     label = "Field notes"
@@ -723,25 +754,8 @@ class FishNotesScreen(Screen):
     links = ("fish",)
 
     async def build(self) -> Page:
-        reg = get_registry()
-        skill = await self.user.skill("fishing")
-        lines, unknown = [], []
-        for fish in sorted((i for i in fishing.fish_pool(reg) if i.rarity >= reg.fishing.reel.mystery_from_rarity),
-                           key=lambda i: (i.rarity, i.name)):
-            entries = skill.notes.get(fish.id, [])
-            if entries:
-                verdict = fishing.notes_verdict(entries)
-                lines.append(f"{fish.display}: {fishing.read_notes(entries)}" + (f"\n-# → {verdict}" if verdict else
-                             f"\n-# → {fishing.MIN_NOTES_FOR_VERDICT - len(entries)} more ❓ and I can say what it follows"))
-            elif fish.id in skill.records:
-                lines.append(f"{fish.display}: no ❓ revealed yet. Press the ❓ (or lose at one) to find out what it was.")
-            else:
-                unknown.append(fish.rarity)
-        if unknown:
-            lines.append(unknown_summary(unknown, "not caught yet"))
-        intro = ("Rare fish hide arrows behind a ❓. Each fish has its own rule for it: always ◄, always ►, the same as the arrow "
-                 "before it, or the opposite (a few are pure luck). Every ❓ you see is written here.")
-        return Page("Field notes", [*self.note_block(), text("### 🔍 Field notes\n-# " + intro + "\n" + "\n".join(lines)),
+        intro, lines = await notes_content(self.user)
+        return Page("Field notes", [*self.note_block(), text("### 🔍 Field notes\n-# " + intro + "\n" + lines),
                     row(button("Back to fishing", emoji=ROD, on_click=self._back))], accent=0x2980B9)
 
     async def _back(self, interaction: discord.Interaction) -> None:

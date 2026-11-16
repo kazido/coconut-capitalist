@@ -428,8 +428,10 @@ A reel is no longer just ◄ ► repeated. Uncommon fish and up make you **stop 
 runs of arrows, about once per four arrows, in a different place every time. **Super rare fish and up hide some arrows
 behind a ❓** (one at rarity 4, up to four at 7). The ❓ is secretly an arrow that follows *that fish's own tell*, set in
 the data: always ◄, always ►, the same as the arrow before it, or the opposite. Press the ❓ and you find out what it was
-even if you guess wrong, and it is written in your **field notes** (on the Records page) as "after ◄ → ►", so you can work
-the pattern out over a few catches (a test proves every learnable tell can be worked out from a handful). Some fish are
+even if you guess wrong, and it is counted in your **field notes** (on the Records page). The notes only state a pattern once it is CONFIRMED
+(`MIN_NOTES_FOR_VERDICT` notes, exactly one rule fits); a fish whose notes contradict every rule is shown as "pure luck" with no pattern, and
+anything unclear shows just a count. The notes also open as a page while reeling (button on the reel page; Back to reeling carries on at the
+same step, since nothing in a reel is timed once the line is up). A test proves every learnable tell can be worked out from a handful of catches. Some fish are
 pure coin flips (`random`): those can't be learned and hide at most two ❓, so they are luck as well as skill. Slips from
 your rod still forgive wrong guesses. Bosses have breaks but no ❓.
 

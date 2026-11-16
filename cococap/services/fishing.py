@@ -206,29 +206,22 @@ async def note_tells(user: User, cast: "Cast") -> None:
         await user.update_skill("fishing", lambda skill: _remember(skill, cast))
 
 
-def read_notes(notes: list[str]) -> str:
-    """Field notes as a short line: "after ◄ it was ► (twice), after ► it was ►"."""
-    from collections import Counter as _Counter
-
-    seen = _Counter(notes)
-    return ", ".join(f"after {pair[0]} → {pair[2]}" + (f" ×{n}" if n > 1 else "") for pair, n in seen.items())
-
-
 _RULES = {"left": ("always ◄", lambda before: LEFT), "right": ("always ►", lambda before: RIGHT),
           "same": ("the same arrow as the one before it", lambda before: before),
           "opposite": ("the opposite of the arrow before it", lambda before: _other(before))}
-MIN_NOTES_FOR_VERDICT = 3
+MIN_NOTES_FOR_VERDICT = 6  # a pure-luck fish fits a given rule by chance 1 time in 2**6: this many notes before a rule counts as CONFIRMED
 
 
 def notes_verdict(entries: list[str]) -> str | None:
-    """What your field notes add up to: the one rule that explains every ❓ you have seen, if there is one. None until you have
-    seen a few; "luck" when no rule fits (some fish are pure coin flips)."""
-    if len(entries) < MIN_NOTES_FOR_VERDICT:
-        return None
+    """What your field notes add up to. A pattern is only ever stated once it is CONFIRMED: at least ``MIN_NOTES_FOR_VERDICT`` notes and exactly
+    one rule explains every one of them. "luck" as soon as the notes contradict every rule (a rule-following fish never does that), with no
+    pattern shown. None while it is still unclear (too few notes, or two rules still fit)."""
     fits = [text for text, rule in _RULES.values() if all(rule(e[0]) == e[2] for e in entries)]
-    if len(fits) == 1:
-        return f"looks like **{fits[0]}**"
-    return "no rule fits: this one may be pure luck" if not fits else "not sure yet, catch more"
+    if entries and not fits:
+        return "pure luck: no pattern to find"
+    if len(entries) >= MIN_NOTES_FOR_VERDICT and len(fits) == 1:
+        return f"confirmed: **{fits[0]}**"
+    return None
 
 
 @dataclass

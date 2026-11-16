@@ -261,6 +261,11 @@ def steady_dice(monkeypatch):
     monkeypatch.setattr(fish_screen, "new_rng", lambda: NoLuck(1))  # (tests that want luck set their own)
 
 
+async def reel_in_rest(nav, inter, cast):
+    for step in list(cast.truth or cast.pattern)[cast.progress:]:
+        await click(nav, inter, {f.LEFT: "Left", f.RIGHT: "Right", f.REEL: "Reel"}[step])
+
+
 async def reel_in(nav, inter, cast):
     """Press every step the reel asks for (arrows, and Reel for a 🌀), seeing through any ❓."""
     for step in list(cast.truth or cast.pattern):
@@ -1501,10 +1506,6 @@ async def test_a_fish_that_got_away_still_teaches_you_and_the_notes_stay_short(d
     assert len((await user.skill("fishing")).notes["moray_eel"]) == f.NOTES_KEPT
 
 
-def test_field_notes_read_clearly():
-    assert f.read_notes([f"{f.LEFT}>{f.RIGHT}", f"{f.LEFT}>{f.RIGHT}", f"{f.RIGHT}>{f.RIGHT}"]) == "after ◄ → ► ×2, after ► → ►"
-
-
 async def test_the_screen_has_a_reel_button_shows_breaks_and_mysteries_and_the_result_says_what_the_mystery_was(db, clock, monkeypatch):
     monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("moray_eel"))
     user, nav, inter = await open_fishing()
@@ -1521,7 +1522,7 @@ async def test_the_screen_has_a_reel_button_shows_breaks_and_mysteries_and_the_r
     assert (await user.skill("fishing")).notes["moray_eel"]
     nav2, inter2 = await hub("fish")
     await click(nav2, inter2, "Field notes")  # a button on the fishing page itself
-    assert nav2.screen.id == "fishnotes" and "Moray Eel: after" in all_text(nav2)
+    assert nav2.screen.id == "fishnotes" and "Moray Eel" in all_text(nav2) and "after ◄" not in all_text(nav2)  # (nothing is confirmed from one ❓)
 
 
 async def test_losing_at_a_mystery_still_shows_it_on_the_result_page(db, clock, monkeypatch):
@@ -1719,14 +1720,21 @@ async def test_a_shuffle_boss_moves_the_buttons_around_and_a_normal_fish_never_d
 
 
 # ---- the field notes page -----------------------------------------------------------------------------------------------------------------
-def test_the_notes_add_up_to_a_rule_once_you_have_seen_enough():
-    assert f.notes_verdict(["◄>►", "►>►"]) is None  # too few to say
-    assert "always ►" in f.notes_verdict(["◄>►", "►>►", "◄>►"])
-    assert "always ◄" in f.notes_verdict(["◄>◄", "►>◄", "◄>◄"])
-    assert "same arrow" in f.notes_verdict(["◄>◄", "►>►", "◄>◄"])
-    assert "opposite" in f.notes_verdict(["◄>►", "►>◄", "◄>►"])
-    assert "luck" in f.notes_verdict(["◄>►", "◄>◄", "►>►", "►>◄"])  # no rule explains it
-    assert "not sure" in f.notes_verdict(["◄>►", "◄>►", "◄>►"])  # "always ►" and "the opposite" both fit
+def test_a_pattern_is_only_written_down_once_it_is_confirmed_and_luck_never_shows_one():
+    need = f.MIN_NOTES_FOR_VERDICT
+
+    def many(entry, n=need):
+        return [entry] * n
+
+    assert f.notes_verdict(many("◄>►", need - 1)) is None  # too few to say anything
+    assert "always ►" in f.notes_verdict(["◄>►", "►>►"] * (need // 2))
+    assert "always ◄" in f.notes_verdict(["◄>◄", "►>◄"] * (need // 2))
+    assert "same arrow" in f.notes_verdict(["◄>◄", "►>►"] * (need // 2))
+    assert "opposite" in f.notes_verdict(["◄>►", "►>◄"] * (need // 2))
+    assert f.notes_verdict(many("◄>►")) is None  # "always ►" and "the opposite" both still fit: not confirmed
+    luck = f.notes_verdict(["◄>►", "◄>◄", "►>►", "►>◄"])  # no rule explains it
+    assert "luck" in luck and "◄" not in luck and "►" not in luck  # (and the pattern is not shown)
+    assert "luck" in f.notes_verdict(["◄>►", "◄>◄"])  # contradictions need no minimum
 
 
 async def test_the_field_notes_page_is_a_button_on_the_fishing_page_even_with_nothing_in_it_yet(db):
@@ -1747,10 +1755,32 @@ async def test_the_page_shows_what_a_caught_fish_has_taught_you_and_what_it_adds
     fish = next(i for i in f.fish_pool(REG) if i.rarity >= RL.mystery_from_rarity and i.reel and i.reel.tell == "opposite")
     await user.update_skill("fishing", lambda s: (s.records.update({fish.id: 30.0}), s.notes.update({fish.id: ["◄>►", "►>◄"]})))
     nav, _ = await hub("fishnotes")
-    assert fish.name in all_text(nav) and "after ◄ → ►" in all_text(nav) and "1 more" in all_text(nav)
-    await user.update_skill("fishing", lambda s: s.notes[fish.id].append("◄>►"))
+    assert fish.name in all_text(nav) and "**2** ❓ seen" in all_text(nav) and "opposite of the arrow before it" not in all_text(nav)
+    await user.update_skill("fishing", lambda s: s.notes[fish.id].extend(["◄>►", "►>◄"] * f.MIN_NOTES_FOR_VERDICT))
     nav, _ = await hub("fishnotes")
-    assert "opposite of the arrow before it" in all_text(nav)
+    assert "confirmed" in all_text(nav) and "opposite of the arrow before it" in all_text(nav)
+    await user.update_skill("fishing", lambda s: s.notes[fish.id].append("◄>◄"))  # a contradiction: it was luck all along
+    nav, _ = await hub("fishnotes")
+    assert "pure luck" in all_text(nav) and "opposite of the arrow before it" not in all_text(nav)
+
+
+async def test_the_field_notes_open_while_reeling_and_the_reel_carries_on_where_it_was(db, clock, monkeypatch):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("moray_eel"))
+    user, nav, inter = await open_fishing()
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    await click(nav, inter, {f.LEFT: "Left", f.RIGHT: "Right", f.REEL: "Reel"}[cast.wanted(cast.progress)])
+    step = cast.progress
+    clock[0] += 600  # a long read: nothing in a reel is timed
+    await click(nav, inter, "Field notes")
+    assert nav.screen.id == "result" and "Field notes" in all_text(nav) and nav.screen.locked
+    await click(nav, inter, "Back to reeling")
+    assert nav.screen.id == "fish" and nav.screen.cast is cast and cast.progress == step and not cast.escaped
+    await reel_in_rest(nav, inter, cast)
+    assert nav.screen.id == "result" and "You caught" in all_text(nav)
 
 
 # ---- a better rod is a noticeably faster rod ----------------------------------------------------------------------------------------------------
