@@ -1867,3 +1867,17 @@ async def test_the_mine_page_shows_the_kind_of_mine_and_mine_again_rolls_a_new_o
 async def test_the_mining_page_mentions_that_mines_come_in_kinds(db):
     nav, _ = await hub("mining")
     assert "Gold Vein" in all_text(nav)
+
+
+async def test_the_community_tree_lists_only_the_top_three_choppers(db, monkeypatch):
+    freeze_time(monkeypatch)
+    users = [await with_axe(i) for i in range(1, 6)]
+    for i, user in enumerate(users):  # player 1 chops least, player 5 most
+        await foraging_service.chop_community(user, 10 * (i + 1), OPEN_HOUR)
+    nav, _ = await hub("grove", user_id=1)
+    text_ = all_text(nav)
+    assert "**5** chopper" in text_ and text_.count("🥇") == 1 and text_.count("🥈") == 1 and text_.count("🥉") == 1
+    assert "**50** hp" in text_ and "**40** hp" in text_ and "**30** hp" in text_
+    assert "**20** hp" not in text_.split("You:")[0]  # (4th and 5th place are not listed)
+    tree = await foraging_service.community_tree(users[0], OPEN_HOUR)
+    assert [uid for uid, _ in tree.top] == [5, 4, 3]

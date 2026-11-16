@@ -498,6 +498,9 @@ async def recent_crowd(session, window: int, rules: ForagingRules) -> list[int]:
     return [User.xp_to_level(xp) for (xp,) in rows]
 
 
+TOP_CHOPPERS = 3  # the community tree page lists only this many names, so it never grows with the crowd
+
+
 @dataclass(frozen=True)
 class CommunityView:
     window: int
@@ -510,6 +513,7 @@ class CommunityView:
     choppers: int
     yours: int  # hp you have chopped off it
     species: str = ""  # the tree's species id
+    top: tuple[tuple[int, int], ...] = ()  # the biggest choppers as (user_id, hp), best first (at most TOP_CHOPPERS)
 
     @property
     def standing(self) -> bool:
@@ -550,8 +554,12 @@ async def _view(session, row: CommunityTreeRow, user_id: int, rules: ForagingRul
     yours = await session.scalar(
         select(TreeChopRow.damage).where(TreeChopRow.window == row.window, TreeChopRow.user_id == user_id)
     )
+    best = (await session.execute(
+        select(TreeChopRow.user_id, TreeChopRow.damage).where(TreeChopRow.window == row.window)
+        .order_by(TreeChopRow.damage.desc(), TreeChopRow.user_id).limit(TOP_CHOPPERS))).all()
     return CommunityView(row.window, row.zone, row.max_hp, row.hp, row.status, row.opens_at, row.closes_at,
-                         choppers or 0, yours or 0, community_species(row.window, row.zone, rules))
+                         choppers or 0, yours or 0, community_species(row.window, row.zone, rules),
+                         tuple((uid, dmg) for uid, dmg in best))
 
 
 async def community_tree(user: User, now: float | None = None, registry: Registry | None = None) -> CommunityView | None:

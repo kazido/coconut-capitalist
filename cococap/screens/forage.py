@@ -425,10 +425,13 @@ class GroveScreen(Screen):
         stats = await equipped_stats(self.user, "foraging")
         power = foraging.swing_power(stats, view.zone, rules, community=True) if stats else 1
         self.spot.on_tree(("shared", view.closes_at))
+        medals = ("🥇", "🥈", "🥉")
+        top = [f"{medals[i]} {await self.nav.name_of(uid)}{' (you)' if uid == self.user.id else ''}: **{damage:,}** hp ({damage / view.max_hp:.0%})"
+               for i, (uid, damage) in enumerate(view.top)]
         body += [
             text(f"**Zone {view.zone}**{TreeScreen._species_line(view.species)}  ·  falls over <t:{int(view.closes_at)}:R>\n"
                  f"{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp\n"
-                 f"**{view.choppers}** chopper(s)"),
+                 f"**{view.choppers}** chopper(s)" + ("\n" + "\n".join(top) if top else "")),
             text(f"You: **{view.yours:,}** hp  ·  **{view.share:.1%}** of the tree\n"
                  f"{await spot_panel(self, power)}\n-# {status}"),
             row(*stance_buttons(self._chop)),
