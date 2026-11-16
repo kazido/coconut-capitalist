@@ -26,9 +26,20 @@ class PartyEmbed(SuccessEmbed):
         super().__init__(desc=desc, interaction=interaction, activity="partying")
 
 
+async def load_party(interaction: Interaction) -> Party | None:
+    """The clicker's party, loaded once per interaction and kept in `interaction.extras`.
+
+    The cog's `interaction_check` only runs for the cog's slash commands, NOT for the right-click (context menu) commands, which are
+    registered on the bot's tree. So the checks below load the party themselves instead of trusting that something did it before.
+    """
+    if "party" not in interaction.extras:
+        interaction.extras["party"] = await Party.for_user(interaction.user.id)
+    return interaction.extras["party"]
+
+
 # Custom check to make sure the user is in a party
 async def in_party(interaction: Interaction):
-    party: Party = interaction.extras.get("party")
+    party = await load_party(interaction)
     if not party:
         raise PartyNotFound("You are not currently in a party.")
     return True  # There is a party associated with the interaction
@@ -36,7 +47,7 @@ async def in_party(interaction: Interaction):
 
 # Custom check to make sure the user is NOT in a party
 async def not_in_party(interaction: Interaction):
-    party: Party = interaction.extras.get("party")
+    party = await load_party(interaction)
     if party:
         raise AlreadyInParty("You are already in a party.")
     return True  # There is a party associated with the interaction
@@ -44,7 +55,7 @@ async def not_in_party(interaction: Interaction):
 
 # Custom check to make sure the user owns the party
 async def is_owner(interaction: Interaction):
-    party: Party = interaction.extras.get("party")
+    party = await load_party(interaction)
 
     if party is None or not party.is_owner(interaction.user.id):
         raise NotPartyOwner("You are not the party owner.")
@@ -76,7 +87,7 @@ class PartySystemCog(commands.GroupCog, name="party"):
         user = await User.get(interaction.user.id)
         interaction.extras.update(user=user)
         interaction.extras.update(party=await Party.for_user(user.id))
-        return super().interaction_check(interaction)
+        return await super().interaction_check(interaction)
 
     # Lists the members of a player's party
     @app_commands.command(name="list", description="See who is in your party")

@@ -166,3 +166,29 @@ async def test_farming_xp_is_boosted_in_a_party(db):
     party = await Party.create(2)
     await party.add_member(3)
     assert await harvest_xp(2) == round(plain * 1.10)
+
+
+async def test_a_party_leader_can_invite_from_the_right_click_menu(db):
+    """The right-click commands are on the bot's tree, so the cog's interaction_check never ran for them and they
+    claimed the leader was not in a party. The checks now load the party themselves."""
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock, MagicMock
+
+    from cococap.exts.core.party_system import PartySystemCog
+    from cococap.services import party_invites
+
+    party = await Party.create(1)
+    cog = PartySystemCog(MagicMock())
+    inter = SimpleNamespace(user=SimpleNamespace(id=1), extras={}, response=SimpleNamespace(send_message=AsyncMock()))
+    target = SimpleNamespace(id=2, bot=False, display_name="Friend")
+    assert await cog.invite_ctx._check_can_run(inter)  # (this raised PartyNotFound before)
+    await cog.invite_ctx.callback(inter, target)
+    inter.response.send_message.assert_awaited_once()
+    assert party_invites.pending_for(2)
+
+    outsider = SimpleNamespace(user=SimpleNamespace(id=9), extras={}, response=SimpleNamespace(send_message=AsyncMock()))
+    from cococap.exts.core.party_system import PartyNotFound
+
+    with pytest.raises(PartyNotFound):
+        await cog.invite_ctx._check_can_run(outsider)
+    assert party.is_owner(1)
