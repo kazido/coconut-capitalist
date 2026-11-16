@@ -1101,3 +1101,11 @@ Stats are the shared currency (`equipped_stats` adds tool + enchants + Mastery; 
 4. Is it xp, luck, sell price or AFK utility, small, and fine to ignore? **Pet buff**. If it forgives a mistake or is the only way to get a mechanic, it is not a pet buff.
 5. Can the same effect already be reached from another home? Then give the new one a different SHAPE (a different number type, a trade-off), not the same stat again.
 6. Does the engine read it as one stat through `equipped_stats`? Add the stat once, to the known-stat lists (tests in `test_mastery.py`, `test_enchanting.py`), never a special case per source.
+
+## Double Hook (fishing): the first effect built with the "where does it belong" rule
+
+One stat, `double_hook`, two sources by the rule above: the **Double Hook rod enchant** (rod-only, 4% a level, 3 levels = 12%; scroll from chests and bosses) and the **Double Hook Mastery node** (Angler branch, level 20, 2 points; it replaced Lively Water's +15% bite speed and keeps +5% bite speed, so the branch stays about as strong). No tool ability and no pet: it is neither a tool's identity nor a passive.
+
+After a plain landing (never a boss, party fight or chest, and never after a Quick cast) `fishing.roll_double_hook(stats, rng, rules)` may offer a **Quick cast** on the result page for `[double_hook] window_seconds` (4, live countdown through `Result.live` and an action button). Taking it calls `fishing.quick_cast`: the same rod and water, a plain fish (`cast_line(plain=True)`), already biting, so it is hooked, reeled and landed like any cast and pays xp, quests and records unchanged. It uses no radar battery. Ignoring or missing the offer costs nothing (Hot Streak is untouched).
+
+Value: an offer is a free extra cast and cannot chain, so the chance IS the extra fish per cast: enchant at max 12% and the node 10% (both together 22%, below `cap` 0.25); the guard test in `tests/test_fishing.py` keeps each source within 8-15%. A Quick cast has no wait, so per minute it is worth a little more than per cast. TODO(balance). The Quick cast's hook window is the normal bite window (6 s); `window_seconds` is only how long the offer is open.

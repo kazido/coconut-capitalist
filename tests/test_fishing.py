@@ -2069,3 +2069,145 @@ def test_the_three_fishing_capstones_are_about_equally_strong():
     gains = {"hot_streak": streak, "salvage": salvage, "chum": chum}
     assert all(0.1 <= g <= 0.4 for g in gains.values()), gains
     assert max(gains.values()) - min(gains.values()) <= 0.15, gains
+
+
+# ---- Double Hook: a free Quick cast after a plain landing ---------------------------------------------------------------------------------------
+DH = RULES.double_hook
+
+
+class Always(NoLuck):
+    """No 1-in-N chance hits (no boss, no hallucination), but every plain 0..1 roll comes up lucky: a Double Hook offer always lands."""
+
+    def random(self):
+        return 0.0
+
+
+def hook_rod(chance):
+    return EffectiveStats(power=3, requirement=0, stats={"power": 3.0, "double_hook": chance})
+
+
+def test_double_hook_config_is_sane_and_does_nothing_by_itself():
+    assert DH.base_chance == 0 and DH.window_seconds > 0 and 0 < DH.cap <= 1
+
+
+def test_the_roll_respects_the_stat():
+    assert f.roll_double_hook(None, Always(1), RULES) is None  # no rod stats
+    assert f.roll_double_hook(rod(), Always(1), RULES) is None  # no stat, no chance (even on a perfect roll)
+    assert f.roll_double_hook(hook_rod(0.1), Always(1), RULES) == DH.window_seconds
+    rng = Random(7)
+    hits = sum(f.roll_double_hook(hook_rod(0.1), rng, RULES) is not None for _ in range(20_000))
+    assert hits / 20_000 == pytest.approx(0.1, abs=0.01)
+    rng = Random(7)
+    capped = sum(f.roll_double_hook(hook_rod(5.0), rng, RULES) is not None for _ in range(20_000))
+    assert capped / 20_000 == pytest.approx(DH.cap, abs=0.01)  # however it stacks, never above the cap
+
+
+async def test_the_enchant_and_the_mastery_node_both_reach_the_rod_stat(db):
+    user = await player()
+    rod_item = await user.equipped_instance("fishing")
+    await user.set_enchant_level(rod_item.id, "double_hook", 3)
+    enchant = REG.enchants["double_hook"]
+    assert enchant.applies_to == ["rod"] and enchant.max_level == 3
+    assert (await f.rod_stats(user)).stats["double_hook"] == pytest.approx(3 * enchant.effects[0].amount)
+    await user.update_skill("fishing", lambda s: s.mastery.append("double_hook"))
+    node = REG.mastery.node("double_hook")
+    assert (await f.rod_stats(user)).stats["double_hook"] == pytest.approx(3 * enchant.effects[0].amount + node.effects[0].amount)
+
+
+def test_double_hook_is_worth_about_a_tenth_more_fish_per_cast_from_each_source():
+    """An offer is a free extra cast (never chained), so the chance IS the extra fish per cast: each source should add roughly 8-15%."""
+    enchant = REG.enchants["double_hook"]
+    from_enchant = enchant.effects[0].amount * enchant.max_level
+    from_node = next(e.amount for e in REG.mastery.node("double_hook").effects if e.stat == "double_hook")
+    assert 0.08 <= from_enchant <= 0.15 and 0.08 <= from_node <= 0.15, (from_enchant, from_node)
+    assert from_enchant + from_node <= DH.cap  # even both together are not clipped
+
+
+async def hook_screen(db, clock, monkeypatch, *, enchant=3, mastery=()):
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    user = await player()
+    if enchant:
+        await user.set_enchant_level((await user.equipped_instance("fishing")).id, "double_hook", enchant)
+    if mastery:
+        await user.update_skill("fishing", lambda s: s.mastery.extend(mastery))
+    nav, inter = await hub("fish")
+    nav.screen.rng = Always(1)
+    return user, nav, inter
+
+
+async def land_one(nav, inter, clock):
+    await click(nav, inter, "Cast")
+    clock[0] = nav.screen.cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    await reel_in(nav, inter, nav.screen.cast)
+
+
+async def test_a_landing_can_offer_a_quick_cast_and_taking_it_pays_a_second_catch_that_cannot_chain(db, clock, monkeypatch):
+    clock[0] = T0
+    user, nav, inter = await hook_screen(db, clock, monkeypatch)
+    await land_one(nav, inter, clock)
+    assert nav.screen.id == "result" and "Quick cast" in all_text(nav) and find_button(nav, "Quick cast!")
+    assert nav.screen.refresh_every  # the countdown ticks
+    await click(nav, inter, "Quick cast!")
+    cast = nav.screen.cast
+    assert nav.screen.id == "fish" and cast.quick and cast.bite_at == clock[0] and cast.water is not None
+    assert cast.status(clock[0]) == "bite"  # already biting: no wait
+    await click(nav, inter, "Pull up the line")
+    await reel_in(nav, inter, cast)
+    assert nav.screen.id == "result" and "You caught a" in all_text(nav)
+    assert "Quick cast" not in all_text(nav)  # a Quick cast never offers another
+    assert await user.item_quantity("cod") >= 2
+
+
+async def test_without_the_stat_nothing_is_offered(db, clock, monkeypatch):
+    clock[0] = T0
+    _, nav, inter = await hook_screen(db, clock, monkeypatch, enchant=0)
+    await land_one(nav, inter, clock)
+    assert nav.screen.id == "result" and "Quick cast" not in all_text(nav)
+
+
+async def test_the_mastery_node_offers_too(db, clock, monkeypatch):
+    clock[0] = T0
+    _, nav, inter = await hook_screen(db, clock, monkeypatch, enchant=0, mastery=["double_hook"])
+    await land_one(nav, inter, clock)
+    assert find_button(nav, "Quick cast!")
+
+
+async def test_ignoring_or_missing_the_offer_costs_nothing_and_keeps_hot_streak(db, clock, monkeypatch):
+    clock[0] = T0
+    user, nav, inter = await hook_screen(db, clock, monkeypatch, mastery=["hot_streak"])
+    await land_one(nav, inter, clock)
+    assert (await user.skill("fishing")).streak == 1
+    await click(nav, inter, "Continue")  # ignored
+    assert nav.screen.id == "fish" and nav.screen.cast is None and (await user.skill("fishing")).streak == 1
+    await land_one(nav, inter, clock)
+    clock[0] += DH.window_seconds + RULES.bite.grace + 5  # too late
+    await click(nav, inter, "Quick cast!")
+    assert nav.screen.id == "fish" and nav.screen.cast is None and (await user.skill("fishing")).streak == 2
+    assert "passed" in all_text(nav)
+
+
+async def test_a_boss_landing_never_offers_a_quick_cast(db, clock, monkeypatch):
+    clock[0] = T0
+    user, nav, inter = await hook_screen(db, clock, monkeypatch)
+    await click(nav, inter, "Cast")
+    cast = nav.screen.cast
+    f.make_boss(cast, REG.fishing.boss.bosses[0].name, RULES, Random(3))
+    clock[0] = cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    await reel_in(nav, inter, cast)
+    assert nav.screen.id == "result" and "Quick cast" not in all_text(nav) and nav.screen.origin.offer is None
+
+
+async def test_a_quick_cast_is_always_a_plain_fish_in_the_same_water(db):
+    user = await player()
+    stats = await f.rod_stats(user)
+    water = f.water_by_id(REG, "pond")
+    class Boss(Random):
+        def randint(self, a, b):
+            return a  # every 1-in-N chance hits
+    cast = f.quick_cast(stats, Boss(1), T0, water, REG)
+    assert not cast.boss and not cast.chest and cast.quick and cast.water is water
+    assert cast.bite_at == T0 and cast.expires_at == T0 + RULES.bite.window

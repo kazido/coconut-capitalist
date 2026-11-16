@@ -145,6 +145,11 @@ min = 1
 max = 1
 chance = 0.03
 [[treasure.loot]]
+item = "scroll_double_hook"
+min = 1
+max = 1
+chance = 0.02
+[[treasure.loot]]
 item = "scroll_keen"
 min = 1
 max = 1
@@ -398,6 +403,11 @@ min = 1
 max = 1
 chance = 0.04
 [[boss.loot]]
+item = "scroll_double_hook"
+min = 1
+max = 1
+chance = 0.03
+[[boss.loot]]
 item = "scroll_keen"
 min = 1
 max = 1
@@ -470,6 +480,16 @@ plant_fiber = 250
 coral_shard = 150
 swordfish = 5
 marlin = 1
+
+# Double Hook: after you LAND a fish (a plain catch: never a boss, a party fight or a chest, and never after a Quick cast itself) a second line may already be biting.
+# The chance is the `double_hook` stat (the Double Hook rod enchant, 4% a level, and the Double Hook Mastery node, 10%); `base_chance` is added to it for everyone.
+# You get `window_seconds` to press "Quick cast!" on the result page; ignoring it costs nothing. It is a free cast in the same water with the bite already there
+# (no wait, no radar battery, never a chest or boss), and pays like any catch. Each offer is worth about one more fish per cast, so a stat of 0.12 is about +12% fish.
+# TODO(balance)
+[double_hook]
+base_chance = 0.0
+window_seconds = 4
+cap = 0.25                        # the offer chance never goes above this, however it stacks
 
 # The radar: a gadget (not a rod) that makes the fish you pick likelier. Pick targets on the Radar page, keep it ON, and every cast uses one battery (only when a
 # target lives in the water you are fishing). The multiplier is on that fish's own odds ("1 in 120" becomes "1 in 40" at 3x). Opens at fishing level `unlock_level`;

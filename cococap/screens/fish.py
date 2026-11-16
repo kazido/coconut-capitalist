@@ -84,6 +84,7 @@ class FishScreen(Screen):
         self.cast: fishing.Cast | None = None
         self.flash: tuple[str, float] | None = None  # (the hallucination's numbers, when they fade)
         self.water: str | None = None  # where you are fishing (None = the best water you have opened)
+        self.offer: tuple[float, object] | None = None  # a Double Hook's Quick cast on the result page: (when the offer ends, the water)
         self.missed: fishing.Cast | None = None  # a fish written off as too slow, which a late-arriving click can still save
         self.watching = False  # your party has a boss fight open: the page redraws by itself so it shows up and ends
         self.rng = new_rng()
@@ -280,23 +281,35 @@ class FishScreen(Screen):
             lines.append(f"🎣 Your rod hauled in **{catch.extra_fish}** more: **{catch.extra_fish + 1}** {catch.fish.display} in all!")
         for q in catch.finished:
             lines.append(f"📜 **Quest complete:** {q.text}  ·  +{bits(q.bits)} bits, +{q.xp} xp")
-        if catch.hallucination:
-            faded = []
+        faded = []
 
+        def flash_live() -> tuple[list[str], bool]:
+            if self.flash is not None and now() < self.flash[1]:
+                digits = "   ".join(self.flash[0])
+                return ["### 🌀 The waves of the ocean… the heat of the sun… sirens in the distance, singing…\n"
+                        f"# {digits}\n-# Remember them! They fade in a few seconds."], True
+            if self.flash is not None:
+                self.flash = None
+                faded.append(True)
+            return (["🌫️ The numbers slip away… hold on to what you remember."], False) if faded else ([], False)
+
+        def offer_live() -> tuple[list[str], bool]:
+            if self.offer is not None and now() < self.offer[0]:
+                return [f"### ⚡ Quick cast! A second line is already biting.\n-# {max(1, round(self.offer[0] - now()))}s left to take it. Ignoring it costs nothing."], True
+            return [], False
+
+        actions = [("Quick cast!", "⚡", self._quick_cast)] if self.offer is not None else []
+        if catch.hallucination and self.offer is not None:
             def live() -> tuple[list[str], bool]:
-                if self.flash is not None and now() < self.flash[1]:
-                    digits = "   ".join(self.flash[0])
-                    return ["### 🌀 The waves of the ocean… the heat of the sun… sirens in the distance, singing…\n"
-                            f"# {digits}\n-# Remember them! They fade in a few seconds."], True
-                if self.flash is not None:
-                    self.flash = None
-                    faded.append(True)
-                return (["🌫️ The numbers slip away… hold on to what you remember."], False) if faded else ([], False)
+                (a, ticking_a), (b, ticking_b) = flash_live(), offer_live()
+                return a + b, ticking_a or ticking_b
+        elif catch.hallucination:
+            live = flash_live
         else:
-            live = None
+            live = offer_live if self.offer is not None else None
         return rewards_result(f"You caught a {catch.fish.display}!", items=Counter({catch.fish.id: 1 + catch.extra_fish}) + Counter(catch.extras), xp=catch.xp,
                               notes=lines[1:], headline=lines[:1], odds=odds.fishing_catch(), emoji="🎣", accent=int(rarity.color, 16),
-                              again=self._cast, again_label="Cast again", live=live)
+                              again=self._cast, again_label="Cast again", live=live, actions=actions)
 
     # ---- handlers --------------------------------------------------------------------------------
     async def _cast(self, interaction: discord.Interaction) -> None:
@@ -305,9 +318,20 @@ class FishScreen(Screen):
         level = User.xp_to_level((await self.user.skill("fishing")).xp)
         water = fishing.require_water(level, self.water or fishing.unlocked_waters(level, get_registry().fishing)[-1].id,
                                       get_registry().fishing)
-        self.missed = None
+        self.missed, self.offer = None, None
         self.cast = fishing.cast_line(stats, self.rng, now(), armed=armed, water=water, pet=await pets.bonuses(self.user), chase=await fishing.use_radar(self.user, water))
         await self.refresh(interaction)
+
+    async def _quick_cast(self, interaction: discord.Interaction) -> None:
+        """Take a Double Hook's offer: a free second line in the same water, already biting. Too late (or none) costs nothing."""
+        offer, self.offer = self.offer, None
+        rules = get_registry().fishing
+        if offer is None or clicked_at(interaction) > offer[0] + rules.bite.grace:
+            return await self.refresh(interaction, "⚡ The quick cast has passed.")
+        stats = await fishing.rod_stats(self.user)
+        self.missed = None
+        self.cast = fishing.quick_cast(stats, self.rng, now(), offer[1], get_registry(), await pets.bonuses(self.user))
+        await self.refresh(interaction, "⚡ A second line is biting! Pull it up.")
 
     async def _pick_water(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.water = values[0]
@@ -404,6 +428,9 @@ class FishScreen(Screen):
                 catch = await fishing.land(self.user, cast, now=now(), rng=self.rng)
                 if catch.hallucination:
                     self.flash = (catch.hallucination, now() + get_registry().fishing.treasure.flash_seconds)
+                self.offer = None
+                if not cast.quick and (window := fishing.roll_double_hook(await fishing.rod_stats(self.user), self.rng, get_registry().fishing)):
+                    self.offer = (now() + window, cast.water)  # Double Hook: a free Quick cast, only after a plain landing and never after another Quick cast
                 self.result = self._catch_result(catch)
                 return await self.refresh(interaction)
             if result == "escaped":

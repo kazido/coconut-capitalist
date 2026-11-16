@@ -182,3 +182,8 @@ async def test_looking_up_a_fish_says_where_it_is_caught_not_a_raw_drop_rate(db)
     nav.screen.skill, nav.screen.item = "foraging", "acorn_mix"
     await nav.screen.nav.refresh(inter)
     assert "Drop Rate" in all_text(nav) and "Pet xp" in all_text(nav)  # other things still show their drop rate
+
+
+def test_the_fishing_page_explains_double_hook():
+    page = all_blocks("fishing")
+    assert "Double Hook" in page and "Quick cast" in page and f"{REG.fishing.double_hook.window_seconds:g} seconds" in page

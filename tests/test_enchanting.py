@@ -119,8 +119,8 @@ async def test_iron_frame_slows_the_mines_pressure(db):
 
 
 # ---- finding scrolls ------------------------------------------------------------------------------------------------------
-def test_every_skill_has_three_scrolls_of_its_own_and_shares_the_same_three_global_ones():
-    own = {"mining": {"scroll_iron_frame", "scroll_veinfinder", "scroll_bounty"}, "fishing": {"scroll_lure", "scroll_steady_line", "scroll_deepcall"},
+def test_every_skill_has_its_own_scrolls_and_shares_the_same_three_global_ones():  # (three each; fishing has a fourth, Double Hook)
+    own = {"mining": {"scroll_iron_frame", "scroll_veinfinder", "scroll_bounty"}, "fishing": {"scroll_lure", "scroll_steady_line", "scroll_deepcall", "scroll_double_hook"},
            "foraging": {"scroll_sharp_eye", "scroll_seasoned", "scroll_double_strike"}, "farming": {"scroll_fertile", "scroll_seedkeeper", "scroll_gleaner"}}
     shared = {"scroll_keen", "scroll_scholar", "scroll_appraiser"}
     for skill, mine in own.items():

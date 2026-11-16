@@ -3407,6 +3407,20 @@ sell_price = 400000  # TODO(balance)
 [scroll_deepcall.scroll]
 enchant = "deepcall"
 
+[scroll_double_hook]
+name = "Scroll of the Double Hook"
+description = "A second line, already biting."
+wiki = "Use it from your inventory (Enchant) to put Double Hook on a rod. One use."
+emoji = "📜"
+rarity = 4
+skill = "fishing"
+category = "scroll"
+price = 0
+sell_price = 400000  # TODO(balance)
+
+[scroll_double_hook.scroll]
+enchant = "double_hook"
+
 [scroll_fertile]
 name = "Scroll of the Fertile Soil"
 description = "Bigger harvests from the same plots."

@@ -1087,6 +1087,14 @@ class RadarRules(_Data):
     levels: list[RadarLevel] = Field(min_length=1)  # level 1 first; owning level N gives levels[N - 1]
 
 
+class DoubleHookRules(_Data):
+    """Double Hook: after a plain landing, a free "Quick cast" may be offered (the chance comes from the ``double_hook`` stat)."""
+
+    base_chance: float = Field(ge=0, le=1)  # added to everyone's stat (0 = only the enchant and the Mastery node)
+    window_seconds: float = Field(gt=0)  # how long the offer stays on the result page
+    cap: float = Field(gt=0, le=1)  # the chance never goes above this
+
+
 class FishingRules(_Data):
     xp_per_catch: int = Field(ge=0)  # xp for landing a fish when the water does not set its own: one catch pays the same whatever the fish or the rod
     xp_per_rarity: int = Field(ge=0)
@@ -1102,6 +1110,7 @@ class FishingRules(_Data):
     waters: list[WaterRules] = Field(min_length=1)
     pots: PotRules
     radar: RadarRules
+    double_hook: DoubleHookRules
 
 
 class MinigamePayout(_Data):

@@ -49,6 +49,18 @@ type = "stat_add"
 stat = "slips"
 amount = 1
 
+[double_hook]
+name = "Double Hook"
+emoji = "⚡"
+description = "After you land a fish, a 4% chance per level that a second line is already biting: a free Quick cast in the same water (you have a few seconds to take it; ignoring it costs nothing)."
+applies_to = ["rod"]
+max_level = 3
+
+[[double_hook.effects]]
+type = "stat_add"
+stat = "double_hook"
+amount = 0.04
+
 [sharp_eye]
 name = "Sharp Eye"
 emoji = "👁️"

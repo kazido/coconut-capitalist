@@ -173,12 +173,12 @@ cost = 1
 effects = [{ stat = "slips", amount = 1 }]
 
 [[trees.branches.nodes]]
-id = "lively_water"
-name = "Lively Water"
-description = "Bites come 15% sooner."
+id = "double_hook"
+name = "Double Hook"
+description = "10% of the fish you land offer a free Quick cast, a second line already biting (a few seconds to take it; ignoring it costs nothing), and bites come 5% sooner."
 level = 20
 cost = 2
-effects = [{ stat = "bite_speed", amount = 0.15 }]
+effects = [{ stat = "double_hook", amount = 0.10 }, { stat = "bite_speed", amount = 0.05 }]
 
 [[trees.branches.nodes]]
 id = "patient_hands"

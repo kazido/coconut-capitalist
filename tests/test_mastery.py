@@ -34,7 +34,7 @@ def test_each_branch_has_a_trade_off_or_a_different_stat_so_branches_differ():
 
 def test_mastery_stats_are_ones_the_game_reads():
     known = {"danger_reduction", "ore_yield", "braces", "rich_chance", "vault_gem", "bite_speed", "slips", "treasure_luck", "rare_luck", "boss_luck",
-             "lifeline", "gold_rush", "geode", "hot_streak", "salvage", "chum", "reactor_cool", "auto_speed", "auto_hours", "magnet_save",  # (the capstones: each has its own test in its skill's file)
+             "double_hook", "lifeline", "gold_rush", "geode", "hot_streak", "salvage", "chum", "reactor_cool", "auto_speed", "auto_hours", "magnet_save",  # (the capstones: each has its own test in its skill's file)
              "crop_yield", "drop_luck", "seed_back", "evergreen", "heirloom", "haggler", "good_chop", "double_chop", "wear_slow", "shake", "windfall", "final_cut", "clean_cut"}
     used = {e.stat for t in RULES.trees for b in t.branches for n in b.nodes for e in n.effects}
     assert used <= known

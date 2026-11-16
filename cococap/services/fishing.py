@@ -262,6 +262,7 @@ class Cast:
     water: object = None  # the water it was cast in (bycatch comes from there)
     slips_start: int = 0  # the forgiven wrong arrows this cast began with (so a clean reel, using none, can be told)
     party_fight: int | None = None  # the number of the party boss fight this reel belongs to (everyone in it reels their own set of arrows)
+    quick: bool = False  # a Double Hook "Quick cast": it can never offer another one
 
     @property
     def deadline(self) -> float:
@@ -366,9 +367,10 @@ def roll_size(fish: Item, rng: random.Random) -> float:
 
 
 def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = None, registry: Registry | None = None,
-              *, armed: bool = False, water: WaterRules | None = None, pet: dict[str, float] | None = None, chase: dict[str, float] | None = None) -> Cast:
+              *, armed: bool = False, water: WaterRules | None = None, pet: dict[str, float] | None = None, chase: dict[str, float] | None = None,
+              plain: bool = False) -> Cast:
     """Put the line in the water: pick the fish, the bite time and the arrows. While a hallucination lasts
-    (``armed``), the catch may turn out to be a treasure chest instead."""
+    (``armed``), the catch may turn out to be a treasure chest instead. ``plain`` makes it a fish for certain (no chest, no boss)."""
     reg = registry or get_registry()
     rules = reg.fishing
     now = time.time() if now is None else now
@@ -400,10 +402,31 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
         bycatch=stats.stats.get("bycatch", 0.0),
         water=water,
     )
-    if armed and rng.randint(1, max(1, round(rules.treasure.chest_odds / (1 + pet.get("treasure_luck", 0.0) + stats.stats.get("treasure_luck", 0.0))))) == 1:
+    if plain:
+        pass
+    elif armed and rng.randint(1, max(1, round(rules.treasure.chest_odds / (1 + pet.get("treasure_luck", 0.0) + stats.stats.get("treasure_luck", 0.0))))) == 1:
         cast.chest, cast.attempts_left = True, rules.treasure.attempts
     elif rng.randint(1, max(1, round(rules.boss.odds / (1 + stats.stats.get("boss_luck", 0.0))))) == 1:
         make_boss(cast, rng.choice(rules.boss.bosses).name, rules, rng)
+    return cast
+
+
+def roll_double_hook(stats: EffectiveStats | None, rng: random.Random, rules: FishingRules) -> float | None:
+    """Double Hook: after a plain landing, does a second line already bite? Returns how many seconds the "Quick cast" offer lasts, or None.
+    The chance is the ``double_hook`` stat (rod enchant + Mastery) plus the config's base, capped; with no stat and no base it is never offered."""
+    chance = min(rules.double_hook.cap, rules.double_hook.base_chance + (stats.stats.get("double_hook", 0.0) if stats else 0.0))
+    if chance <= 0 or rng.random() >= chance:
+        return None
+    return rules.double_hook.window_seconds
+
+
+def quick_cast(stats: EffectiveStats, rng: random.Random, now: float, water: WaterRules | None, registry: Registry | None = None,
+               pet: dict[str, float] | None = None) -> Cast:
+    """The Quick cast a Double Hook offered: your same rod in the same water, already biting (``bite_at`` is now), a plain fish (never a chest or a boss),
+    and it can't offer another. From here it is an ordinary cast: hook it, reel it, land it."""
+    reg = registry or get_registry()
+    cast = cast_line(stats, rng, now, reg, water=water, pet=pet, plain=True)
+    cast.bite_at, cast.expires_at, cast.quick = now, now + reg.fishing.bite.window, True
     return cast
 
 
