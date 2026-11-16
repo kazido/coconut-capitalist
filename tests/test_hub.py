@@ -103,7 +103,7 @@ async def test_home_buttons_open_screens_and_back_returns(db):
     nav, inter = await hub("home")
     assert find_button(nav, "Home").disabled and find_button(nav, "Back").disabled
     sections = [c for c in nav.walk_children() if isinstance(c, ui.Section) and isinstance(c.accessory, ui.Button)]
-    assert len(sections) == 3  # skills, shipments, minigames
+    assert len(sections) == 2  # skills, shipments
     await sections[0].accessory.callback(inter)
     assert nav.screen.id != "home" and not find_button(nav, "Back").disabled
     await click(nav, inter, "Back")
@@ -256,22 +256,18 @@ async def test_shop_buy_opens_a_modal_and_buying_works(db):
     assert "Bought 2" in all_text(nav)
 
 
-async def test_buying_a_tool_is_one_click_with_no_how_many_popup(db):
-    from cococap.registry import get_registry
+async def test_the_shop_lists_no_tools_and_the_tools_page_claims_the_free_starters(db):
+    from cococap.constants import STARTER_TOOLS
 
     reg = get_registry()
     await set_columns(await User.get(1), purse=10_000_000)
     nav, inter = await hub("shop")
-    await click(nav, inter, emoji="⛏️")
-    shown = all_text(nav)
-    assert reg.item("rookiepickaxe").name in shown
-    buy = next(b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success and not b.disabled)
-    inter.response.send_modal.reset_mock()
-    await buy.callback(inter)
-    inter.response.send_modal.assert_not_called()  # nothing to ask: you can only own one
+    assert not any(reg.item(t).name in all_text(nav) for t in STARTER_TOOLS)
+    nav, inter = await hub("tools")
+    await click(nav, inter, "Claim free starter tools")
     user = await User.get(1)
-    assert len(await user.instances()) == 1 and "Bought" in all_text(nav) and "equipped" in all_text(nav)
-    assert "Owned" in all_text(nav) and "Upgrade tool" in {b.label for b in buttons(nav)}  # a second one is no longer offered: it upgrades instead
+    assert sorted(i.template_id for i in await user.instances()) == sorted(STARTER_TOOLS) and "You got" in all_text(nav)
+    assert "Claim free starter tools" not in {b.label for b in buttons(nav)}  # nothing left to claim
 
 
 async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
@@ -279,13 +275,13 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
         return [b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success]
 
     nav, inter = await hub("shop")
-    # a brand-new player can only afford the very cheapest things (a starter seed for 500), not the tools or the rest
+    # a brand-new player can only afford the very cheapest things (a starter seed for 500), not the rest
     cheap = [b for b in item_buy_buttons(nav) if not b.disabled]
     assert item_buy_buttons(nav) and len(cheap) < len(item_buy_buttons(nav))
     await set_columns(await User.get(1), purse=200_000)
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")
-    buy = [b for b in item_buy_buttons(nav) if not b.disabled][1]  # (the first is the can: a tool, bought in one click)
+    buy = [b for b in item_buy_buttons(nav) if not b.disabled][0]
     await buy.callback(inter)
     modal = await submit(inter, "lots")
     with pytest.raises(CustomError):
@@ -458,7 +454,7 @@ async def test_home_links_really_open_the_declared_screens(db):
         nav, inter = await hub(parent)
         openers = [c.accessory for c in nav.walk_children() if isinstance(c, ui.Section) and isinstance(c.accessory, ui.Button)
                    and not c.accessory.disabled and c.accessory.label == "Open"]
-        quick = [b for b in buttons(nav) if b.emoji and b.label in ("Check-in", "Inventory", "Shop", "Trade", "Party", "Pets", "More")]
+        quick = [b for b in buttons(nav) if b.emoji and b.label in ("Check-in", "Inventory", "Shop", "Trade", "Party", "Pets", "More", "Profile", "Ranks", "Leaderboards")]
         opened = set()
         for opener in openers + quick:
             nav.stack, nav.screen = ["home"], None
@@ -484,12 +480,12 @@ async def test_shop_has_a_section_per_skill_and_filters(db):
     for emoji, skill in (("🌽", "farming"), ("🌳", "foraging"), ("⛏️", "mining")):
         await click(nav, inter, emoji=emoji)
         shown = all_text(nav)
-        expected = sorted((i for i in reg.shop_items() if i.skill == skill), key=lambda i: (not i.tool, i.price, i.name))  # (the shop's own order: tools first)
+        expected = sorted((i for i in reg.shop_items() if i.skill == skill), key=lambda i: (i.price, i.name))
         assert expected and all(i.name in shown for i in expected[:4]), skill
         others = [i for i in reg.shop_items() if i.skill != skill]
         assert not any(f"### {i.name}" in shown for i in others), skill
     await click(nav, inter, "All")
-    assert "Tin Watering Can" in all_text(nav) and "### Apple Seed" not in all_text(nav)  # tools lead: seeds are on a later page
+    assert "Tin Watering Can" not in all_text(nav)
 
 
 # ---- the in-window casino --------------------------------------------------------------------------
@@ -882,22 +878,22 @@ async def test_reaching_the_floor_shows_the_vault_and_banks_it(db):
 async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
     nav, inter = await hub("home")
     text = all_text(nav)
-    for kept in ("Skills", "Minigames", "Party"):
-        assert kept in text
-    for moved in ("Leaderboard", "Rank", "Stats", "Settings", "Profile"):
+    assert "Skills" in text
+    for moved in ("Minigames", "Stats", "Settings"):
         assert moved not in text, moved
-    assert {b.label for b in buttons(nav)} >= {"Check-in", "Inventory", "Shop", "Trade", "Party", "Pets", "More"}
+    assert "Party" not in text.split("Skills")[0]  # (no party line unless the player is in a party)
+    assert {b.label for b in buttons(nav)} >= {"Check-in", "Inventory", "Shop", "Trade", "Party", "Pets", "More", "Profile", "Ranks", "Leaderboards"}
     assert len(text.splitlines()) <= 12
     await click(nav, inter, "More")
     assert nav.screen.id == "more"
     text = all_text(nav)
-    assert all(name in text for name in ("Profile", "Rank", "Leaderboard", "Stats", "Settings"))
+    assert all(name in text for name in ("Minigames", "Stats", "Settings"))
     await click(nav, inter, "Back")
     assert nav.screen.id == "home"
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("profile", "rank", "top", "stats", "bestiary", "wiki", "settings")):
+    for index, expected in enumerate(("minigames", "stats", "bestiary", "wiki", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)
@@ -913,7 +909,7 @@ async def test_home_shows_your_party_with_names_and_a_crown(db):
     from cococap.services.party import Party
 
     nav, _ = await hub("home")
-    assert "not in a party" in all_text(nav)
+    assert "Party:" not in all_text(nav)
     party = await Party.create(1)
     for uid in (2, 3, 4, 5, 6):
         await party.add_member(uid)
@@ -928,7 +924,7 @@ async def test_party_screen_creates_lists_and_disbands(db):
     from cococap.services.party import Party
 
     nav, inter = await hub("party")
-    assert "not in a party" in all_text(nav)
+    assert "Party:" not in all_text(nav)
     await click(nav, inter, "Create party")
     assert (await Party.for_user(1)).is_owner(1) and "Party #" in all_text(nav) and "(you)" in all_text(nav)
     assert [c for c in nav.walk_children() if isinstance(c, ui.UserSelect)]  # the leader can invite
@@ -1713,3 +1709,4 @@ async def test_a_line_in_the_water_hides_home_and_back_and_a_timeout_cancels_it(
     assert screen.cast is None and reported and reported[0][1] == "failed" and not screen.locked
     await screen.on_abandon()  # a second time does nothing
     assert len(reported) == 1
+

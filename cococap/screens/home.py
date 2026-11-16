@@ -7,11 +7,12 @@ from cococap.ui import Page, Screen
 from cococap.ui.components import bits, button, row, section, sep, text
 from cococap.user import Cooldowns
 
-# The big things to do, as full sections; the everyday shortcuts sit in one row; the rest is on "More".
-FEATURED = ["skills", "shipments", "minigames"]
-SHORTCUTS = ["checkin", "inventory", "shop", "trade"]  # the everyday row...
-SECOND_ROW = ["party", "pets"]  # ...and the row under it (then More)
-MORE_LINKS = ["profile", "rank", "top", "stats", "bestiary", "wiki", "settings"]
+# The big things to do, as full sections; Shop/Inventory/Pets and the check-in and trade shortcuts sit in one row; Profile, Ranks,
+# Leaderboards and Party in the row under it (then More, which also holds the Minigames).
+FEATURED = ["skills", "shipments"]
+SHORTCUTS = ["shop", "inventory", "pets", "checkin", "trade"]
+SECOND_ROW = ["profile", "rank", "top", "party"]
+MORE_LINKS = ["minigames", "stats", "bestiary", "wiki", "settings"]
 PARTY_NAMES_SHOWN = 4
 
 
@@ -45,10 +46,11 @@ class HomeScreen(Screen):
     description = "Where everything starts"
     links = (*FEATURED, *SHORTCUTS, *SECOND_ROW, "more")
 
-    async def party_summary(self) -> str:
+    async def party_summary(self) -> str | None:
+        """The party line, only for a player who is in a party."""
         party = await Party.for_user(self.user.id)
         if party is None:
-            return "👥 **Party:** not in a party yet."
+            return None
         shown = [
             f"{await self.nav.name_of(member_id)}{' 👑' if party.is_owner(member_id) else ''}"
             for member_id in party.members[:PARTY_NAMES_SHOWN]
@@ -59,11 +61,10 @@ class HomeScreen(Screen):
     async def build(self) -> Page:
         rank = get_registry().rank(self.user.rank)
         ready = anything_ready(self.user)
-        body = [
-            *self.note_block(),
-            text(f"**{self.nav.owner.display_name}**  ·  {rank.emoji} {rank.display_name}\n{balance_line(self.user)}\n{check_in_line(self.user)}\n{await self.party_summary()}"),
-            sep(),
-        ]
+        lines = [f"**{self.nav.owner.display_name}**  ·  {rank.emoji} {rank.display_name}", balance_line(self.user), check_in_line(self.user)]
+        if (party_line := await self.party_summary()) is not None:
+            lines.append(party_line)
+        body = [*self.note_block(), text("\n".join(lines)), sep()]
         for screen_id in FEATURED:
             target = self.nav.screens[screen_id]
             body.append(section(
@@ -90,7 +91,7 @@ class MoreScreen(Screen):
     id = "more"
     label = "More"
     emoji = "➡️"
-    description = "Profile, rank, leaderboard, stats, bestiary, wiki and settings"
+    description = "Minigames, stats, bestiary, wiki and settings"
     links = tuple(MORE_LINKS)
 
     async def build(self) -> Page:
