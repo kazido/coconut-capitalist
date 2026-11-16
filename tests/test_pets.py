@@ -364,7 +364,8 @@ async def test_the_pet_house_switches_pets_feeds_crops_and_hands_over_spirits(db
 
 async def test_the_home_page_links_to_the_pet_house(db):
     nav, inter = await hub("home")
-    await click(nav, inter, "Pets")
+    pets_section = next(c for c in nav.walk_children() if isinstance(c, ui.Section) and "Pets" in " ".join(getattr(t, "content", "") for t in c.children))
+    await pets_section.accessory.callback(inter)
     assert nav.screen.id == "pets"
     assert asyncio and buttons and set_columns
 

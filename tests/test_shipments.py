@@ -218,10 +218,10 @@ async def test_someone_who_barely_helped_is_not_paid_and_a_new_week_starts_a_new
 
 
 # ---- the screen --------------------------------------------------------------------------------------------------------------------------------
-async def test_shipments_sit_on_the_home_page_between_skills_and_minigames_and_say_when_they_unlock(db):
+async def test_shipments_sit_on_the_home_page_between_skills_and_shop_and_say_when_they_unlock(db):
     nav, inter = await hub("home")
     text = all_text(nav)
-    assert text.index("Skills") < text.index("Shipments") < text.index("Minigames")
+    assert text.index("Skills") < text.index("Shipments") < text.index("Shop")
     nav, inter = await hub("shipments")
     assert f"level **{BASIC.unlock_level}**" in all_text(nav) and not [b for b in buttons(nav) if b.label in ("Fill", "Ship")]
 
