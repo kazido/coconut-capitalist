@@ -1,0 +1,33 @@
+scroll_appraiser = [19, 0]  # WEAK: blank tablet, all scrolls are generic glyphs
+scroll_bounty = [19, 1]
+scroll_deepcall = {cell = [19, 2], hue = 200}
+scroll_double_hook = [19, 3]
+scroll_double_strike = [19, 4]
+scroll_fertile = {cell = [19, 5], hue = 90}
+scroll_gleaner = [19, 6]
+scroll_iron_frame = {cell = [19, 7], sat = 0.3}
+scroll_keen = [18, 8]
+scroll_lure = [18, 9]
+scroll_scholar = [18, 10]
+scroll_seasoned = [18, 11]
+scroll_seedkeeper = [18, 12]
+scroll_sharp_eye = [18, 13]
+scroll_steady_line = [18, 14]
+scroll_veinfinder = [18, 15]
+familiar_orb = [24, 0]
+greater_orb = [24, 1]
+lesser_orb = [23, 14]
+graveyard_key = [4, 9]
+land_deed = [6, 9]
+acorn_mix = [29, 4]
+burger = [31, 14]  # WEAK: reads as a sandwich
+crystal_chew = [10, 8]  # WEAK: gem stands in for rock candy
+dried_squid = [21, 5]
+fish_flakes = [26, 10]  # WEAK: generic flakes
+geode_feast = [29, 12]
+golden_sap = {cell = [7, 9], hue = 85, val = 1.1}
+honeycomb = [33, 7]  # WEAK: honey jar
+sea_feast = [32, 14]
+stone_biscuit = {cell = [32, 4], sat = 0.2, val = 0.75}  # WEAK: grey cookie
+spirit_of_the_fields = [69, 8]
+spirit_of_the_sword = [69, 12]
