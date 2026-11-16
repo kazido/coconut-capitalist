@@ -167,8 +167,8 @@ class Item(_Data):
 
     @property
     def emoji(self) -> str | None:
-        """The item's emoji, looked up by name among the bot's application emojis (see `cococap.emojis`)."""
-        return emojis.resolve(self.emoji_raw)
+        """The bot's emoji named `<item id>` if uploaded, else the data file's (tokens resolve by name; see `cococap.emojis`)."""
+        return emojis.for_id("item", self.id, emojis.resolve(self.emoji_raw))
 
     @property
     def is_instance(self) -> bool:
@@ -201,12 +201,17 @@ class Pet(_Data):
     id: str
     name: str
     skill: Literal["global", "mining", "farming", "foraging", "fishing", "combat"] = "global"  # the one skill it looks after
-    emoji: str | None = None
+    emoji_raw: str | None = Field(default=None, alias="emoji")
     rarity: int = Field(default=1, ge=1, le=5)
     description: str = ""
     bonuses: list[PetBonus] = Field(default_factory=list)
 
     _id = field_validator("id")(check_id)
+
+    @property
+    def emoji(self) -> str | None:
+        """The bot's emoji named `pet_<id>` if uploaded, else the one in the data file (see `cococap.emojis`)."""
+        return emojis.for_id("pet", self.id, self.emoji_raw)
 
 
 EffectKind = Literal[
@@ -373,11 +378,16 @@ class Rank(_Data):
     rank_id: int = Field(ge=0)
     display_name: str
     description: str = ""
-    emoji: str
+    emoji_raw: str = Field(alias="emoji")
     color: str = Field(pattern=r"^[0-9a-fA-F]{6}$")  # hex without '#'
     token_price: int = Field(ge=0)
     wage: int = Field(ge=0)
     xp_bonus: float = Field(default=0.0, ge=0, le=1)  # a global bonus to every skill's xp, for as long as you hold the rank
+
+    @property
+    def emoji(self) -> str:
+        """The bot's emoji named `rank_<id>` if uploaded, else the one in the data file (see `cococap.emojis`)."""
+        return emojis.for_id("rank", self.rank_id, self.emoji_raw)
 
 
 class Effect(_Data):
@@ -406,13 +416,18 @@ class Effect(_Data):
 class Enchant(_Data):
     id: str
     name: str
-    emoji: str = "📜"
+    emoji_raw: str = Field(default="📜", alias="emoji")
     description: str = ""
     applies_to: list[ToolKind] = Field(min_length=1)
     max_level: int = Field(default=1, ge=1)
     effects: list[Effect] = Field(min_length=1)
 
     _id = field_validator("id")(check_id)
+
+    @property
+    def emoji(self) -> str:
+        """The bot's emoji named `enchant_<id>` if uploaded, else the one in the data file (see `cococap.emojis`)."""
+        return emojis.for_id("enchant", self.id, self.emoji_raw)
 
 
 class WyrmholeRules(_Data):
@@ -573,7 +588,7 @@ class MineType(_Data):
 
     id: str
     name: str
-    emoji: str
+    emoji_raw: str = Field(alias="emoji")
     weight: float = Field(gt=0)  # how often it is rolled, relative to the other types
     description: str
     pressure_mult: float = Field(default=1.0, ge=0.25, le=2.0)  # x the pressure every dig adds (0.8: calmer)
@@ -588,6 +603,11 @@ class MineType(_Data):
         if any(not 1.0 <= m <= 5.0 for m in (*self.ore_boost.values(), *self.ore_yield.values())):
             raise ValueError(f"mine type '{self.id}': an ore_boost / ore_yield must be between 1 and 5")
         return self
+
+    @property
+    def emoji(self) -> str:
+        """The bot's emoji named `mine_<id>` if uploaded, else the one in the data file (see `cococap.emojis`)."""
+        return emojis.for_id("mine", self.id, self.emoji_raw)
 
 
 class MiningRules(_Data):
@@ -803,7 +823,7 @@ class Species(_Data):
 
     id: str
     name: str
-    emoji: str
+    emoji_raw: str = Field(alias="emoji")
     zone_min: int = Field(ge=1)
     zone_max: int = Field(ge=1)
     weight: float = Field(gt=0)  # how common it is among the species of a zone
@@ -819,6 +839,11 @@ class Species(_Data):
 
     def grows_in(self, zone: int) -> bool:
         return self.zone_min <= zone <= self.zone_max
+
+    @property
+    def emoji(self) -> str:
+        """The bot's emoji named `species_<id>` if uploaded, else the one in the data file (see `cococap.emojis`)."""
+        return emojis.for_id("species", self.id, self.emoji_raw)
 
 
 class ForagingRules(_Data):
@@ -1031,12 +1056,17 @@ class WaterRules(_Data):
 
     id: str
     name: str
-    emoji: str = "🌊"
+    emoji_raw: str = Field(default="🌊", alias="emoji")
     description: str = ""
     min_level: int = Field(ge=1)
     wait_multiplier: float = Field(gt=0)  # deeper water takes longer to bite
     xp: int = Field(ge=0)  # xp for every fish landed here: deeper waters pay more, a better rod never does
     fish: dict[str, int] = Field(min_length=1)
+
+    @property
+    def emoji(self) -> str:
+        """The bot's emoji named `water_<id>` if uploaded, else the one in the data file (see `cococap.emojis`)."""
+        return emojis.for_id("water", self.id, self.emoji_raw)
 
 
 class PotLevel(_Data):

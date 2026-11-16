@@ -8,6 +8,24 @@ server). At startup ``refresh(bot)`` fetches them, so data files and code only n
 * ``resolve("<a:gemstone_rage:123>")`` -> the same emoji looked up by name (so a wrong/old id in a data
   file still works); text without custom emojis is returned unchanged.
 
+* ``for_id("item", "iron_ore", "⛏️")`` -> the application emoji named by the thing's id, else the fallback.
+  This is how hundreds of emoji work without a single token in the data: upload ``iron_ore`` and every
+  screen that shows that item switches to it. Naming convention (kind -> emoji name):
+
+  ===========  ================  ===========================
+  item         ``<item_id>``     ``iron_ore``, ``scroll_lure``
+  pet          ``pet_<id>``      ``pet_ember``
+  species      ``species_<id>``  ``species_birch``
+  enchant      ``enchant_<id>``  ``enchant_lure``
+  mine type    ``mine_<id>``     ``mine_crystal``
+  water        ``water_<id>``    ``water_lake``
+  rank         ``rank_<id>``     ``rank_3``
+  ui icon      ``ui_<name>``     ``ui_releaf``
+  ===========  ================  ===========================
+
+  Custom emoji render in text, headings, button ``emoji=`` and select option emoji, but NOT in code
+  blocks or button / select labels (Discord shows the raw ``<:name:id>`` there).
+
 Before ``refresh`` runs (tests, offline tools) nothing is known and every lookup falls back.
 """
 
@@ -18,13 +36,32 @@ log = getLogger(__name__)
 
 # The bot's uploaded emojis. Startup warns about any of these that are missing, and a test fails if one
 # stops being used anywhere (so no artwork silently goes to waste).
-KNOWN = (
+LEGACY = (
     "autominer", "cell", "cell_empty", "cell_upgraded", "wyrmhole", "seed_weathered",
     "gemstone_balance", "gemstone_implosion", "gemstone_oreo", "gemstone_peace", "gemstone_rage", "gemstone_sanity",
     "ore_copper", "ore_gold", "ore_iron",
     "spirit_of_the_forest", "spirit_of_the_mines", "spirit_of_the_sea",
     "xp_bar_empty", "xp_bar_full", "xp_bar_left", "xp_bar_right",
 )
+
+# The owner's first emojis were named differently from the items they show. Name in Discord -> item id.
+# (They still resolve through ``<:name:id>`` tokens; an emoji named exactly by the item id wins over them.)
+ALIASES = {
+    "gemstone_balance": "balance_gemstone", "gemstone_implosion": "implosion_gemstone",
+    "gemstone_oreo": "oreo_gemstone", "gemstone_peace": "peace_gemstone",
+    "gemstone_rage": "rage_gemstone", "gemstone_sanity": "sanity_gemstone",
+    "ore_copper": "copper_ore", "ore_gold": "gold_ore", "ore_iron": "iron_ore",
+    "seed_weathered": "dusty_dandelion_seed",
+    "spirit_of_the_forest": "spirit_of_the_forest", "spirit_of_the_mines": "spirit_of_the_mines",
+    "spirit_of_the_sea": "spirit_of_the_sea",
+}
+_ITEM_ALIAS = {item: name for name, item in ALIASES.items()}
+
+# Every custom-emoji name the bot's own code or data may mention.
+KNOWN = LEGACY
+
+KINDS = ("item", "pet", "species", "enchant", "mine", "water", "rank", "ui")
+NAME_RE = re.compile(r"^[a-z0-9_]{2,32}$")  # Discord's rule for application emoji names
 
 _TOKEN = re.compile(r"<a?:(\w+):\d+>")
 _by_name: dict[str, str] = {}
@@ -44,14 +81,40 @@ async def refresh(bot) -> None:
         log.exception("Could not fetch application emojis; using fallbacks")
         return
     log.info("Loaded %d application emojis: %s", len(_by_name), ", ".join(sorted(_by_name)))
-    if missing := [n for n in KNOWN if n not in _by_name]:
+    if missing := [n for n in LEGACY if n not in _by_name]:
         log.warning("Application emojis the bot expects but could not find: %s", ", ".join(missing))
-    if extra := sorted(set(_by_name) - set(KNOWN)):
-        log.info("Application emojis the bot does not use yet: %s", ", ".join(extra))
+    if extra := sorted(set(_by_name) - set(LEGACY)):
+        log.info("Application emojis beyond the original set (found by id name): %d", len(extra))
 
 
 def get(name: str, fallback: str = "") -> str:
     return _by_name.get(name, fallback)
+
+
+def name_for(kind: str, id) -> str:
+    """The application-emoji name for a thing: items use their bare id, everything else ``<kind>_<id>``."""
+    return str(id) if kind == "item" else f"{kind}_{id}"
+
+
+def for_id(kind: str, id, fallback=""):
+    """The loaded application emoji named for this thing (see the table above), else `fallback`.
+
+    `fallback` is returned untouched, so it may also be ``None`` or a ``<:name:id>`` token (resolve it
+    first if it should be swapped by name).
+    """
+    if kind not in KINDS:
+        raise ValueError(f"unknown emoji kind {kind!r}; use one of {KINDS}")
+    name = name_for(kind, id)
+    if name in _by_name:
+        return _by_name[name]
+    if kind == "item" and (old := _ITEM_ALIAS.get(name)) in _by_name:
+        return _by_name[old]
+    return fallback
+
+
+def ui(name: str, fallback: str = "") -> str:
+    """A UI icon: the application emoji ``ui_<name>``, else `fallback`."""
+    return for_id("ui", name, fallback)
 
 
 def resolve(text: str | None) -> str | None:
