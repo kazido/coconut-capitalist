@@ -42,7 +42,6 @@ daily_limit = 500                  # luckbucks per player per day
 
 [pets]
 max_level = 100
-xp_scale = 300                     # level 2 at 300 xp, 10 at 24,300, 20 at 108,300, 50 at 720,300, 100 at 2,940,300
 max_stars = 5
 star_bonus = 0.25                  # +25% bonus per extra star
 level_floor = 0.1                  # a fresh pet does a tenth of its bonus; a level 100 one does all of it (so a pet grows about 10x as strong)
@@ -58,9 +57,31 @@ maxed_xp = 2000
 target_boost = 8.0                 # a pet you are hunting is this many times likelier from an orb...
 pity_boost = 1.0                   # ...and +1 more for every orb that missed it (reset when you get it)
 max_boost = 40.0                   # ...up to this many times
-[pets.orb_weights]                 # what an orb can turn out to be
+[pets.xp_scale]                    # a pet's level = 1 + sqrt(xp / its rarity's scale): common pets level quickest, rare ones slowest. TODO(balance)
+# Rarity 3 (300): level 2 at 300 xp, 10 at 24,300, 20 at 108,300, 50 at 720,300, 100 at 2,940,300. Rarity 1 needs half of that, rarity 5 double.
+1 = 150
+2 = 200
+3 = 300
+4 = 450
+5 = 600
+# What each kind of orb can turn out to be: one table per orb item (an item in items.toml whose id ends `_orb`), keyed by pet rarity.
+# Each rarity's weight is shared among its species. The standard Familiar Orb is the baseline; the Lesser one is cheap and mostly
+# gives common pets, the Greater one costs 10x and mostly gives rare ones. TODO(balance)
+[pets.orbs.lesser_orb]
+1 = 55
+2 = 35
+3 = 9
+4 = 1
+5 = 0
+[pets.orbs.familiar_orb]
 1 = 40
 2 = 30
 3 = 20
 4 = 8
 5 = 2
+[pets.orbs.greater_orb]
+1 = 0
+2 = 5
+3 = 20
+4 = 50
+5 = 25

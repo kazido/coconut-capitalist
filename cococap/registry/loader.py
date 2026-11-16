@@ -222,6 +222,15 @@ class Registry:
                 problems.append(f"enemies.toml [{enemy.id}]: unknown drop table '{enemy.drops}'")
         if self.combat is not None:
             problems += _validate_combat(self, self.combat)
+        orb_ids = {i for i in self.items if i.endswith("_orb")}
+        if set(self.economy.pets.orbs) != orb_ids:
+            problems.append(f"economy.toml [pets.orbs] must have one odds table per orb item (ids ending _orb): {sorted(orb_ids)}")
+        for orb_id, weights in self.economy.pets.orbs.items():
+            if sum(weights.values()) <= 0 or any(w < 0 for w in weights.values()) or any(not 1 <= r <= 5 for r in weights):
+                problems.append(f"economy.toml [pets.orbs.{orb_id}]: weights must be >= 0, add up to something, and be for rarities 1-5")
+        for pet in self.pets.values():
+            if pet.rarity not in self.economy.pets.xp_scale:
+                problems.append(f"economy.toml [pets.xp_scale] has no scale for rarity {pet.rarity} ({pet.id})")
         expected = list(range(len(self.ranks)))
         if sorted(self.ranks) != expected:
             problems.append(f"ranks must be numbered 0..{len(self.ranks) - 1} without gaps")

@@ -22,7 +22,7 @@ RULES = REG.economy.pets
 async def with_pet(pet_id, user_id=1, stars=1, xp=None, active=True):
     """A player who owns this pet, at the top level unless told otherwise (so bonuses are the full configured values)."""
     user = await User.get(user_id)
-    top = pets.level_xp(RULES.max_level, REG) if xp is None else xp
+    top = pets.level_xp(RULES.max_level, REG.pets[pet_id].rarity, REG) if xp is None else xp
 
     def give(house):
         house.pets[pet_id] = OwnedPet(stars=stars, xp=top)
@@ -41,7 +41,7 @@ def rod(power=3):
 def test_every_pet_has_a_bonus_and_every_bonus_is_something_the_game_uses():
     used = {b.stat for p in REG.pets.values() for b in p.bonuses}
     assert used <= pets.KNOWN_STATS, used - pets.KNOWN_STATS
-    assert all(p.bonuses and p.rarity in RULES.orb_weights for p in REG.pets.values())
+    assert all(p.bonuses and p.rarity in RULES.xp_scale and all(p.rarity in table for table in RULES.orbs.values()) for p in REG.pets.values())
     assert pets.KNOWN_STATS <= used, pets.KNOWN_STATS - used  # ...and every kind of bonus has a pet that gives it
 
 
@@ -55,15 +55,16 @@ def test_pets_cover_every_part_of_the_game():
 
 # ---- strength, levels and stars --------------------------------------------------------------------------------------------
 def test_levels_come_from_xp_and_stop_at_the_cap():
-    assert pets.pet_level(0, REG) == 1 and pets.pet_level(RULES.xp_scale, REG) == 2
-    assert pets.pet_level(pets.level_xp(5, REG), REG) == 5 and pets.pet_level(10**12, REG) == RULES.max_level == 100
-    assert pets.level_xp(2, REG) == RULES.xp_scale and pets.pet_level(pets.level_xp(7, REG), REG) == 7
+    for rarity, scale in RULES.xp_scale.items():
+        assert pets.pet_level(0, rarity, REG) == 1 and pets.pet_level(scale, rarity, REG) == 2
+        assert pets.pet_level(pets.level_xp(5, rarity, REG), rarity, REG) == 5 and pets.pet_level(10**12, rarity, REG) == RULES.max_level == 100
+        assert pets.level_xp(2, rarity, REG) == scale and pets.pet_level(pets.level_xp(7, rarity, REG), rarity, REG) == 7
 
 
 def test_stars_and_levels_make_a_pet_stronger_up_to_the_full_bonus():
-    fresh = pets.strength(OwnedPet(), REG)
-    top = pets.strength(OwnedPet(xp=pets.level_xp(RULES.max_level, REG)), REG)
-    five = pets.strength(OwnedPet(stars=5, xp=pets.level_xp(RULES.max_level, REG)), REG)
+    fresh = pets.strength(OwnedPet(), 3, REG)
+    top = pets.strength(OwnedPet(xp=pets.level_xp(RULES.max_level, 3, REG)), 3, REG)
+    five = pets.strength(OwnedPet(stars=5, xp=pets.level_xp(RULES.max_level, 3, REG)), 3, REG)
     assert fresh < top < five
     assert top == pytest.approx(1.0) and fresh == pytest.approx(RULES.level_floor + (1 - RULES.level_floor) / RULES.max_level)
     assert five == pytest.approx(1 + 4 * RULES.star_bonus)
@@ -88,9 +89,10 @@ def test_orbs_give_common_pets_often_and_rare_ones_rarely():
     for _ in range(8000):
         pet = pets.roll_pet(rng, REG)
         seen[pet.rarity] = seen.get(pet.rarity, 0) + 1
-    assert set(seen) == set(RULES.orb_weights) and seen[1] > seen[2] > seen[3] > seen[4] > seen[5] > 0
+    weights = RULES.orbs[pets.ORB]
+    assert set(seen) == set(weights) and seen[1] > seen[2] > seen[3] > seen[4] > seen[5] > 0
     total = sum(seen.values())
-    assert seen[5] / total == pytest.approx(RULES.orb_weights[5] / sum(RULES.orb_weights.values()), abs=0.01)
+    assert seen[5] / total == pytest.approx(weights[5] / sum(weights.values()), abs=0.01)
 
 
 async def test_opening_an_orb_spends_it_gives_a_pet_and_the_first_one_starts_working(db):
@@ -107,7 +109,7 @@ async def test_opening_an_orb_spends_it_gives_a_pet_and_the_first_one_starts_wor
 
 async def test_a_duplicate_adds_a_star_and_a_maxed_one_gives_xp_instead(db, monkeypatch):
     user = await User.get(1)
-    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0: REG.pets["dog"])
+    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0, orb=pets.ORB: REG.pets["dog"])
     await user.add_item(pets.ORB, 8)
     stars = [(await pets.open_orb(user, Random(1), REG)).stars for _ in range(RULES.max_stars)]
     assert stars == [1, 2, 3, 4, 5]
@@ -144,7 +146,7 @@ async def test_feeding_crops_levels_the_active_pet_up(db):
     user = await with_pet("frog", xp=0)  # a farming pet: crops are its own skill's food
     await user.add_item("hot_pepper", 3)  # 1,450 pet xp each, x3 for a farming pet
     fed = await pets.feed(user, "hot_pepper", 2, REG)
-    assert fed.xp == 2 * 1450 * 3 and fed.level_before == 1 and fed.level_after == pets.pet_level(8700, REG) > 1
+    assert fed.xp == 2 * 1450 * 3 and fed.level_before == 1 and fed.level_after == pets.pet_level(8700, REG.pets["frog"].rarity, REG) > 1
     assert user.pethouse.pets["frog"].xp == 8700 and await user.item_quantity("hot_pepper") == 1
 
 
@@ -317,7 +319,8 @@ async def test_orbs_are_bought_on_the_orbs_page_for_the_configured_price(db):
     nav, inter = await hub("orbs")
     await click(nav, inter, f"Buy a {orb.name} ({orb.price:,} bits)")
     assert await (await User.get(1)).item_quantity(pets.ORB) == 1 and "Bought 1" in all_text(nav)
-    await click(nav, inter, "Buy several")
+    several = [b for b in buttons(nav) if b.label == "Buy several"]
+    await several[orb_items(REG).index(orb)].callback(inter)  # (each orb has its own)
     modal = await submit(inter, "3")
     await modal.on_submit(inter)
     user = await User.get(1)
@@ -326,7 +329,7 @@ async def test_orbs_are_bought_on_the_orbs_page_for_the_configured_price(db):
 
 
 async def test_opening_an_orb_from_the_orbs_page_shows_a_result_page(db, monkeypatch):
-    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0: REG.pets["cat"])
+    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0, orb=pets.ORB: REG.pets["cat"])
     user = await User.get(1)
     await user.add_item(pets.ORB, 2)
     nav, inter = await hub("orbs")
@@ -423,12 +426,12 @@ async def test_misses_pile_up_a_hit_resets_them_and_a_maxed_target_is_dropped(db
     await user.add_item(pets.ORB, 12)
     await pets.set_target(user, "dragon", REG)
     seen = []
-    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0: (seen.append((target, misses)) or REG.pets["dog"]))
+    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0, orb=pets.ORB: (seen.append((target, misses)) or REG.pets["dog"]))
     for _ in range(3):
         got = await pets.open_orb(user, Random(1), REG)
         assert not got.target_hit
     assert seen == [("dragon", 0), ("dragon", 1), ("dragon", 2)] and user.pethouse.misses == 3
-    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0: REG.pets["dragon"])
+    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0, orb=pets.ORB: REG.pets["dragon"])
     hit = await pets.open_orb(user, Random(1), REG)
     assert hit.target_hit and user.pethouse.misses == 0 and user.pethouse.target == "dragon" and user.pethouse.pets["dragon"].stars == 1
     for _ in range(RULES.max_stars - 1):
@@ -607,15 +610,15 @@ async def test_the_orbs_and_pet_pages_link_to_each_other(db):
 
 # ---- pets level as you play, and a much wider range of strength -----------------------------------------------------------------------
 def test_a_pet_grows_about_ten_times_stronger_from_a_new_one_to_a_five_star_level_100():
-    fresh = pets.strength(OwnedPet(), REG)
-    top = pets.strength(OwnedPet(stars=RULES.max_stars, xp=pets.level_xp(RULES.max_level, REG)), REG)
+    fresh = pets.strength(OwnedPet(), 3, REG)
+    top = pets.strength(OwnedPet(stars=RULES.max_stars, xp=pets.level_xp(RULES.max_level, 3, REG)), 3, REG)
     assert RULES.max_level == 100 and top / fresh > 15  # 3-5% at level 20 used to be the whole range
     assert fresh == pytest.approx(RULES.level_floor + (1 - RULES.level_floor) / RULES.max_level)
 
 
 def test_a_koala_is_worth_real_xp_at_the_top():
     koala = REG.pets["koala"]
-    best = pets.effects(koala, OwnedPet(stars=RULES.max_stars, xp=pets.level_xp(RULES.max_level, REG)), REG)["xp_all"]
+    best = pets.effects(koala, OwnedPet(stars=RULES.max_stars, xp=pets.level_xp(RULES.max_level, koala.rarity, REG)), REG)["xp_all"]
     assert best >= 0.15  # a five-star level-100 Koala: 20%
     newborn = pets.effects(koala, OwnedPet(), REG)["xp_all"]
     assert newborn < 0.02
@@ -672,3 +675,111 @@ async def test_play_xp_includes_the_real_skill_xp_you_were_paid_for_a_catch(db):
     caught = await f.land(user, cast, REG)
     await user.refresh()
     assert user.pethouse.pets["otter"].xp == round(caught.xp * RULES.play_xp_share) > 0
+
+
+# ---- orb tiers -----------------------------------------------------------------------------------------------------------------------
+def test_every_orb_has_odds_a_price_and_the_cheaper_ones_give_commoner_pets():
+    kinds = pets.orb_ids(REG)
+    assert pets.ORB in kinds and len(kinds) >= 3 and set(kinds) == set(RULES.orbs)
+    prices = [REG.item(i).price for i in kinds]
+    assert prices == sorted(prices) and len(set(prices)) == len(prices)
+
+    def average_rarity(orb):
+        return sum(c * REG.pets[pid].rarity for pid, c in pets.orb_odds(REG, orb=orb).items())
+
+    averages = [average_rarity(i) for i in kinds]
+    assert averages == sorted(averages) and averages[0] < averages[-1]
+    for orb in kinds:
+        assert sum(pets.orb_odds(REG, orb=orb).values()) == pytest.approx(1.0)
+
+
+def test_the_cheapest_orb_leans_on_rarity_1_and_2_and_the_priciest_on_4_and_5():
+    cheap, dear = pets.orb_ids(REG)[0], pets.orb_ids(REG)[-1]
+
+    def share(orb, rarities):
+        return sum(c for pid, c in pets.orb_odds(REG, orb=orb).items() if REG.pets[pid].rarity in rarities)
+
+    assert share(cheap, {1, 2}) > 0.5 and share(dear, {4, 5}) > 0.5
+    assert share(cheap, {4, 5}) < share(pets.ORB, {4, 5}) < share(dear, {4, 5})
+
+
+async def test_each_kind_of_orb_is_spent_when_opened_and_rolls_from_its_own_table(db, monkeypatch):
+    seen = []
+    real = pets.roll_pet
+    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0, orb=pets.ORB: (seen.append(orb), real(rng, reg, target, misses, orb))[1])
+    user = await User.get(1)
+    for orb in pets.orb_ids(REG):
+        with pytest.raises(pets.PetError, match=REG.item(orb).name):
+            await pets.open_orb(user, Random(1), REG, orb=orb)
+        await user.add_item(orb, 1)
+        await pets.open_orb(user, Random(1), REG, orb=orb)
+        assert await user.item_quantity(orb) == 0
+    assert seen == pets.orb_ids(REG)
+    with pytest.raises(pets.PetError):
+        await pets.open_orb(user, Random(1), REG, orb="land_deed")
+
+
+async def test_the_orbs_page_lets_you_buy_and_open_every_kind(db, monkeypatch):
+    monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0, orb=pets.ORB: REG.pets["cat"])
+    user = await User.get(1)
+    for orb in pets.orb_ids(REG):
+        await user.add_item(orb, 1)
+    nav, inter = await hub("orbs")
+    for orb in pets.orb_ids(REG):
+        item = REG.item(orb)
+        find_button(nav, f"Buy a {item.name} ({item.price:,} bits)")
+        await click(nav, inter, f"Open a {item.name} (1)")
+        assert nav.screen.id == "result"
+        await click(nav, inter, "Back to the orbs")
+        assert find_button(nav, f"Open a {item.name} (0)").disabled
+
+
+# ---- levels depend on rarity, and nobody loses a level when that was introduced ---------------------------------------------------------------
+def test_common_pets_level_quickest_and_rare_ones_slowest():
+    scales = [RULES.xp_scale[r] for r in sorted(RULES.xp_scale)]
+    assert scales == sorted(scales) and scales[0] < scales[-1] and set(RULES.xp_scale) == {p.rarity for p in REG.pets.values()} | set(RULES.xp_scale)
+    assert pets.level_xp(10, 1, REG) < pets.level_xp(10, 5, REG)
+    assert pets.pet_level(5000, 1, REG) > pets.pet_level(5000, 5, REG)
+
+
+def test_moving_old_xp_onto_the_rarity_curves_never_changes_any_pets_level():
+    from cococap.models.pethouse import CURVE_VERSION, Pethouse
+
+    for pet in REG.pets.values():
+        xps = [0, 1, 299, 300, 301, 1199, 1200, 24299, 24300, 24301, 720299, 720300, 2940299, 2940300, 5_000_000, 10**9]
+        old_levels = {xp: min(RULES.max_level, 1 + int((xp / pets.LEGACY_XP_SCALE) ** 0.5)) for xp in xps}
+        house = Pethouse.model_validate({"pets": {pet.id: {"xp": 5}}})
+        assert house.curve_version == 0  # (saved before the field existed)
+        for xp in xps:
+            house = Pethouse.model_validate({"pets": {pet.id: {"xp": xp, "stars": 2}}})
+            assert pets.upgrade_curve(house, REG) and house.curve_version == CURVE_VERSION
+            assert pets.pet_level(house.pets[pet.id].xp, pet.rarity, REG) == old_levels[xp], (pet.id, xp)
+            assert house.pets[pet.id].stars == 2
+            assert not pets.upgrade_curve(house, REG)  # (only once)
+
+
+def test_a_fresh_or_current_house_is_left_alone():
+    from cococap.models.pethouse import Pethouse
+
+    assert Pethouse().curve_version and not pets.upgrade_curve(Pethouse(), REG)
+    current = Pethouse.model_validate({"pets": {"dog": {"xp": 1234}}, "curve_version": 1})
+    assert not pets.upgrade_curve(current, REG) and current.pets["dog"].xp == 1234
+
+
+async def test_a_stored_old_house_keeps_every_level_when_the_player_is_loaded_and_saved(db):
+    from cococap.db import get_database
+    from cococap.db.tables import UserRow
+
+    old_xp = {"dog": 24300, "dragon": 24300, "cat": 108300}  # levels 10, 10 and 20 on the old curve
+    async with get_database().session() as session:
+        (await session.get(UserRow, (await User.get(1)).id)).pethouse = {
+            "active": "dragon", "pets": {k: {"xp": v, "stars": 1} for k, v in old_xp.items()}}
+    user = await User.get(1)
+    for pet_id, xp in old_xp.items():
+        assert pets.pet_level(user.pethouse.pets[pet_id].xp, REG.pets[pet_id].rarity, REG) == 1 + int((xp / 300) ** 0.5)
+    await pets.set_active(user, "cat", REG)  # a save writes the rescaled xp back, once
+    again = await User.get(1)
+    assert again.pethouse.curve_version == 1
+    for pet_id, xp in old_xp.items():
+        assert pets.pet_level(again.pethouse.pets[pet_id].xp, REG.pets[pet_id].rarity, REG) == 1 + int((xp / 300) ** 0.5)
+    assert again.pethouse.pets["dog"].xp < old_xp["dog"] < again.pethouse.pets["dragon"].xp  # common sooner, legendary later

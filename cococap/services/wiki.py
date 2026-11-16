@@ -222,6 +222,14 @@ def _pets(reg: Registry) -> list[str]:
     from cococap.services import pets as pet_service
 
     odds = pet_service.orb_odds(reg)
+    kinds = pet_service.orb_ids(reg)
+    orb_lines = []
+    for orb_id in kinds:
+        orb = reg.item(orb_id)
+        chances = pet_service.orb_odds(reg, orb=orb_id)
+        by_rarity = {r: sum(c for pid, c in chances.items() if reg.pets[pid].rarity == r) for r in sorted(rules.xp_scale)}
+        orb_lines.append(f"{orb.emoji} **{orb.name}** ({orb.price:,} bits): " + ", ".join(
+            f"{Rarities.from_value(r).rarity_name} {c:.0%}" for r, c in by_rarity.items() if c > 0))
     lines = []
     for pet in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)):
         bonus = ", ".join(b.text.format(v=b.value) for b in pet.bonuses)
@@ -237,6 +245,10 @@ def _pets(reg: Registry) -> list[str]:
         f"Food of **a pet's own skill is worth x{rules.matched_food_multiplier:g}** to it, a 🌐 global pet gets **x{rules.global_food_multiplier:g}** from any food, "
         "and food of another skill is worth the plain amount. Look at a pet on the Pets page to feed it or make it active. "
         "A pet's numbers are shown at its current level (a fresh pet gives about half) with the max level in brackets.",
+        "**Orbs** come in three kinds, bought on the Familiar Orbs page. A cheaper orb mostly gives common pets, a pricier one mostly rare ones "
+        "(chance of each rarity; the percentages beside each pet below are for the standard orb):\n" + "\n".join(orb_lines),
+        "**Levels.** Common pets level up quickest and rare pets slowest: a level costs xp of "
+        + ", ".join(f"{Rarities.from_value(r).rarity_name} x{s / rules.xp_scale[3]:.2g}" for r, s in sorted(rules.xp_scale.items())) + " (relative to a rarity-3 pet).",
         "**All pets** (bonuses at max level, one star)\n" + "\n".join(lines),
     ]
 

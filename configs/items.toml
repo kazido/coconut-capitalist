@@ -246,6 +246,16 @@ category = "key_item"
 price = 0
 sell_price = 5000  # TODO(balance)
 
+[lesser_orb]
+name = "Lesser Familiar Orb"
+description = "A dull little orb. Something small is curled up inside."
+wiki = "Open it from the Pet House for a random pet, mostly a common one. A pet you already have gets another star."
+emoji = "🔹"
+rarity = 3
+category = "key_item"
+price = 150000  # TODO(balance): a tenth of the standard orb
+sell_price = 75000  # TODO(balance)
+
 [familiar_orb]
 name = "Familiar Orb"
 description = "A swirling orb. Something is curled up inside, waiting."
@@ -255,6 +265,16 @@ rarity = 4
 category = "key_item"
 price = 1500000  # TODO(balance): also found in drops, chests and boss loot
 sell_price = 750000  # TODO(balance)
+
+[greater_orb]
+name = "Greater Familiar Orb"
+description = "A blazing orb. Something rare is stirring inside."
+wiki = "Open it from the Pet House for a random pet, usually a rare one. A pet you already have gets another star."
+emoji = "🌌"
+rarity = 5
+category = "key_item"
+price = 15000000  # TODO(balance): ten times the standard orb
+sell_price = 7500000  # TODO(balance)
 
 [land_deed]
 name = "Land Deed"

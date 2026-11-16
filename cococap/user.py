@@ -78,8 +78,17 @@ class Snapshot:
             daily_cooldown=row.daily_cooldown,
             weekly_cooldown=row.weekly_cooldown,
             settings=Settings.model_validate(row.settings or {}),
-            pethouse=Pethouse.model_validate(row.pethouse or {}),
+            pethouse=_load_pethouse(row.pethouse),
         )
+
+
+def _load_pethouse(raw: dict | None) -> Pethouse:
+    """Read a stored pet house, moving old xp onto the current level curve (a no-op once it is there)."""
+    from cococap.services.pets import upgrade_curve
+
+    house = Pethouse.model_validate(raw or {})
+    upgrade_curve(house)
+    return house
 
 
 class User:
@@ -524,7 +533,7 @@ class User:
         """Read-modify-write the pet house inside one transaction (so two clicks can't both win)."""
         async with get_database().session() as session:
             row = await session.get(UserRow, self.id)
-            house = Pethouse.model_validate(row.pethouse or {})
+            house = _load_pethouse(row.pethouse)
             result = change(house)
             row.pethouse = house.model_dump()
         await self.refresh()

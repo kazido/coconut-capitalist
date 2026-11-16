@@ -233,7 +233,7 @@ async def test_pets_and_bait_change_how_fast_and_how_rare(db):
 async def test_a_python_pet_really_speeds_the_pot_up_when_collecting(db):
     user = await loaded_pot(n=6)
     step = step_of((await user.skill("fishing")).pots[0])
-    await user.update_pethouse(lambda h: (h.pets.update({"python": __import__("cococap.models.pethouse", fromlist=["x"]).OwnedPet(xp=pets.level_xp(REG.economy.pets.max_level, REG))}),
+    await user.update_pethouse(lambda h: (h.pets.update({"python": __import__("cococap.models.pethouse", fromlist=["x"]).OwnedPet(xp=pets.level_xp(REG.economy.pets.max_level, REG.pets["python"].rarity, REG))}),
                                           setattr(h, "active", "python")))
     haul = await pots.collect(user, 0, T0 + 2.5 * step, REG)
     assert haul.catches > 2  # (without the pet, 2.5 intervals is only two catches)

@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+CURVE_VERSION = 1  # 0: one xp curve for every pet; 1: a curve per rarity (services/pets.py rescales version 0 so no pet loses a level)
 
 
 class OwnedPet(BaseModel):
@@ -12,6 +14,14 @@ class Pethouse(BaseModel):
     pets: dict[str, OwnedPet] = Field(default_factory=dict)  # species id -> your one pet of that kind
     target: str | None = None  # the pet you are hunting: orbs are likelier to give it
     misses: int = 0  # orbs opened since that missed it (makes the next one likelier)
+    curve_version: int = CURVE_VERSION  # which xp curve the stored xp is on (see CURVE_VERSION)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _unversioned_house_is_on_the_first_curve(cls, data):
+        if isinstance(data, dict) and "curve_version" not in data and data.get("pets"):
+            return {**data, "curve_version": 0}  # saved before the field existed: it holds xp on the old curve
+        return data
 
     @field_validator("active", mode="before")
     @classmethod

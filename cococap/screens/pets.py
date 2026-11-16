@@ -54,8 +54,8 @@ class PetScreen(Screen):
         focus = self.focus_id(house)
         pet = reg.pets[focus]
         mine = house.pets[focus]
-        level = pets.pet_level(mine.xp, reg)
-        low, high = pets.level_xp(level, reg), pets.level_xp(level + 1, reg)
+        level = pets.pet_level(mine.xp, pet.rarity, reg)
+        low, high = pets.level_xp(level, pet.rarity, reg), pets.level_xp(level + 1, pet.rarity, reg)
         bar = xp_bar((mine.xp - low) / (high - low) if level < rules.max_level and high > low else 1.0)
         body.append(text(
             f"### {pet.emoji} {pet.name}  {stars_text(mine.stars)}  ·  Lv {level}" + ("  ·  ✅ active" if focus == house.active else "")
@@ -67,7 +67,7 @@ class PetScreen(Screen):
         body.append(text(found))
         body.append(row(select("Look at a pet...", [
             discord.SelectOption(label=reg.pets[i].name, value=i, emoji=reg.pets[i].emoji, default=i == focus,
-                                 description=f"Lv {pets.pet_level(p.xp, reg)}  ·  {skill_line(reg.pets[i])}" + ("  ·  active" if i == house.active else ""))
+                                 description=f"Lv {pets.pet_level(p.xp, reg.pets[i].rarity, reg)}  ·  {skill_line(reg.pets[i])}" + ("  ·  active" if i == house.active else ""))
             for i, p in sorted(house.pets.items())][:25], self._switch)))
         body.append(row(button("Make active", emoji="✅", disabled=focus == house.active, on_click=self._make_active), orbs_button))
 
@@ -134,9 +134,9 @@ class PetScreen(Screen):
 
 
 def orb_items(reg=None):
-    """Every orb the shop sells (an item whose id is `familiar_orb` or ends in `_orb`, with a price), cheapest first. Add an orb tier in items.toml and it shows up here."""
+    """Every orb the shop sells (an item whose id ends in `_orb`, with a price), cheapest first. Add an orb in items.toml (and its odds in economy.toml) and it shows up here."""
     reg = reg or get_registry()
-    return sorted((i for i in reg.shop_items() if i.id == pets.ORB or i.id.endswith("_orb")), key=lambda i: (i.price, i.name))
+    return sorted((i for i in reg.shop_items() if i.id.endswith("_orb")), key=lambda i: (i.price, i.name))
 
 
 class OrbScreen(Screen):
@@ -152,10 +152,12 @@ class OrbScreen(Screen):
         reg = get_registry()
         rules = reg.economy.pets
         house = self.user.pethouse
-        orbs = (await self.user.items()).get(pets.ORB, 0)
+        owned = await self.user.items()
+        kinds = pets.orb_ids(reg)
+        have = "  ·  ".join(f"{reg.item(i).emoji} {reg.item(i).name} **{owned.get(i, 0):,}**" for i in kinds)
         body = [*self.note_block(),
-                text(f"### 🔮 Familiar Orbs  ·  you have **{orbs:,}**\nAn orb hatches a random pet (a pet you own gains a star). "
-                     "Find them fishing, or buy them here.")]
+                text(f"### 🔮 Familiar Orbs\n{have}\nAn orb hatches a random pet (a pet you own gains a star). The Lesser orb is cheap and mostly "
+                     "gives common pets, the Greater one mostly rare ones. Find orbs fishing, or buy them here.")]
         if house.target in reg.pets:
             target = reg.pets[house.target]
             chance = pets.orb_odds(reg, house.target, house.misses)[house.target]
@@ -174,9 +176,11 @@ class OrbScreen(Screen):
             body.append(row(
                 button(f"Buy a {orb.name} ({orb.price:,} bits)", emoji=orb.emoji, style=discord.ButtonStyle.success, disabled=self.user.purse < orb.price, on_click=self._buy(orb.id, 1)),
                 button("Buy several", emoji="🛒", on_click=self._buy(orb.id, None))))
-        body.append(row(
-            button(f"Open a Familiar Orb ({orbs})", emoji="🔮", style=discord.ButtonStyle.primary, disabled=orbs < 1, on_click=self._open_orb),
-            button("Your pets", emoji="🐾", on_click=self._to_pets)))
+        for orb_id in kinds:
+            orb = reg.item(orb_id)
+            body.append(row(button(f"Open a {orb.name} ({owned.get(orb_id, 0)})", emoji=orb.emoji, style=discord.ButtonStyle.primary,
+                                   disabled=owned.get(orb_id, 0) < 1, on_click=self._open_orb(orb_id))))
+        body.append(row(button("Your pets", emoji="🐾", on_click=self._to_pets)))
         return Page("Familiar Orbs", body, accent=0x27AE60)
 
     def _buy(self, item_id: str, quantity: int | None):
@@ -206,9 +210,16 @@ class OrbScreen(Screen):
         pet = await pets.set_target(self.user, None if values[0] == "none" else values[0])
         await self.refresh(interaction, f"🎯 Orbs now favour {pet.emoji} **{pet.name}**." if pet else "🎯 You are not hunting anything now.")
 
-    async def _open_orb(self, interaction: discord.Interaction) -> None:
-        got = await pets.open_orb(self.user, random.Random())
+    def _open_orb(self, orb_id: str):
+        async def go(interaction: discord.Interaction) -> None:
+            await self._hatch(interaction, orb_id)
+
+        return go
+
+    async def _hatch(self, interaction: discord.Interaction, orb_id: str) -> None:
+        got = await pets.open_orb(self.user, random.Random(), orb=orb_id)
         reg = get_registry()
+        orb = reg.item(orb_id)
         pet = got.pet
         mine = self.user.pethouse.pets[pet.id]  # (open_orb has refreshed the player)
         lines = [f"### {pet.emoji} {pet.name}  {stars_text(got.stars)}" + ("  🎯 **Target hit!**" if got.target_hit else ""),
@@ -216,6 +227,6 @@ class OrbScreen(Screen):
                  "**A new friend!**" if got.is_new else (f"Another {pet.name}! It now has **{got.stars}** stars." if not got.maxed
                                                         else f"You already have a five-star {pet.name}: it gains {reg.economy.pets.maxed_xp:,} xp instead."),
                  "\n".join(f"▸ {line}" for line in pets.describe(pet, mine, reg)), skill_line(pet)]
-        self.result = Result("The orb hatches!", lines, emoji="🔮", accent=0x27AE60, again=self._open_orb, again_label="Another orb",
+        self.result = Result("The orb hatches!", lines, emoji=orb.emoji, accent=0x27AE60, again=self._open_orb(orb_id), again_label="Another orb",
                              back_label="Back to the orbs")
         await self.refresh(interaction)

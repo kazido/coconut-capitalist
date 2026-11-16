@@ -12,11 +12,12 @@ import random
 from dataclasses import dataclass
 
 from cococap.errors import GameRuleError
-from cococap.models.pethouse import OwnedPet, Pethouse
+from cococap.models.pethouse import CURVE_VERSION, OwnedPet, Pethouse
 from cococap.registry import Item, Pet, Registry, get_registry
 from cococap.user import User
 
-ORB = "familiar_orb"
+ORB = "familiar_orb"  # the standard orb; others are the items whose id ends `_orb`, each with its own odds table in economy.toml [pets.orbs]
+LEGACY_XP_SCALE = 300  # the one xp scale every pet had before levels depended on rarity (curve version 0); history, not balance
 
 # Every stat the rest of the game looks up (a test checks that pets cover all of them and use no others).
 KNOWN_STATS = frozenset({
@@ -78,27 +79,49 @@ def food_multiplier(pet: Pet, item: Item, registry: Registry | None = None) -> f
     return rules.matched_food_multiplier if skill == food_skill(item) else 1.0
 
 
-def pet_level(xp: int, registry: Registry | None = None) -> int:
+def pet_level(xp: int, rarity: int, registry: Registry | None = None) -> int:
     rules = (registry or get_registry()).economy.pets
-    return min(rules.max_level, 1 + int(math.sqrt(max(0, xp) / rules.xp_scale)))
+    return min(rules.max_level, 1 + int(math.sqrt(max(0, xp) / rules.xp_scale[rarity])))
 
 
-def level_xp(level: int, registry: Registry | None = None) -> int:
-    """The xp a pet needs to be this level."""
-    return (level - 1) ** 2 * (registry or get_registry()).economy.pets.xp_scale
+def level_xp(level: int, rarity: int, registry: Registry | None = None) -> int:
+    """The xp a pet of this rarity needs to be this level."""
+    return (level - 1) ** 2 * (registry or get_registry()).economy.pets.xp_scale[rarity]
 
 
-def strength(owned: OwnedPet, registry: Registry | None = None) -> float:
+def strength(owned: OwnedPet, rarity: int, registry: Registry | None = None) -> float:
     """How much of its full bonus a pet gives right now: more with stars and with level."""
     rules = (registry or get_registry()).economy.pets
-    level = pet_level(owned.xp, registry)
+    level = pet_level(owned.xp, rarity, registry)
     return (1 + rules.star_bonus * (owned.stars - 1)) * (rules.level_floor + (1 - rules.level_floor) * level / rules.max_level)
+
+
+def upgrade_curve(house: Pethouse, registry: Registry | None = None) -> bool:
+    """Move a pet house saved on an older xp curve onto the current one, so that every pet keeps exactly the level it had.
+    (Version 0 used one scale for every species; a rarity's scale changed that. Returns whether anything was rescaled.)"""
+    if house.curve_version >= CURVE_VERSION:
+        return False
+    reg = registry or get_registry()
+    rules = reg.economy.pets
+    for pet_id, owned in house.pets.items():
+        pet = reg.pets.get(pet_id)
+        if pet is None:
+            continue
+        old_level = min(rules.max_level, 1 + int(math.sqrt(max(0, owned.xp) / LEGACY_XP_SCALE)))
+        xp = math.ceil(owned.xp * rules.xp_scale[pet.rarity] / LEGACY_XP_SCALE)
+        while xp > 0 and pet_level(xp, pet.rarity, reg) > old_level:
+            xp -= 1
+        while pet_level(xp, pet.rarity, reg) < old_level:
+            xp += 1
+        owned.xp = xp
+    house.curve_version = CURVE_VERSION
+    return True
 
 
 def effects(pet: Pet, owned: OwnedPet, registry: Registry | None = None) -> dict[str, float]:
     """What this pet is worth right now: {stat: amount} (a Spirit adds xp in its skill)."""
     reg = registry or get_registry()
-    scale = strength(owned, reg)
+    scale = strength(owned, pet.rarity, reg)
     found: dict[str, float] = {}
     for bonus in pet.bonuses:
         found[bonus.stat] = found.get(bonus.stat, 0.0) + bonus.value * scale
@@ -110,7 +133,7 @@ def effects(pet: Pet, owned: OwnedPet, registry: Registry | None = None) -> dict
 def describe(pet: Pet, owned: OwnedPet, registry: Registry | None = None) -> list[str]:
     """The pet's bonuses as the player reads them, at its current strength."""
     reg = registry or get_registry()
-    scale = strength(owned, reg)
+    scale = strength(owned, pet.rarity, reg)
     top = (1 + reg.economy.pets.star_bonus * (owned.stars - 1))  # what it gives at the top level, with the stars it has
     lines = [bonus.text.format(v=bonus.value * scale) + (f" (max level: {bonus.value * top:.0%})" if scale < top - 1e-9 else "")
              for bonus in pet.bonuses]
@@ -176,10 +199,15 @@ def target_boost(misses: int, registry: Registry) -> float:
     return min(rules.max_boost, rules.target_boost + rules.pity_boost * max(0, misses))
 
 
-def orb_odds(registry: Registry, target: str | None = None, misses: int = 0) -> dict[str, float]:
-    """The chance of each pet from one orb (they add up to 1). Each rarity has a weight shared among its species, and a
-    targeted pet's share is boosted."""
-    weights = registry.economy.pets.orb_weights
+def orb_ids(registry: Registry) -> list[str]:
+    """Every kind of orb (cheapest first): the items whose id ends `_orb`. Each has an odds table in economy.toml [pets.orbs]."""
+    return sorted((i for i in registry.items if i.endswith("_orb")), key=lambda i: (registry.items[i].price, i))
+
+
+def orb_odds(registry: Registry, target: str | None = None, misses: int = 0, orb: str = ORB) -> dict[str, float]:
+    """The chance of each pet from one orb (they add up to 1). Each rarity has a weight (per orb kind) shared among its species,
+    and a targeted pet's share is boosted."""
+    weights = registry.economy.pets.orbs[orb]
     pets_ = sorted(registry.pets.values(), key=lambda p: p.id)
     per_rarity = {r: sum(1 for p in pets_ if p.rarity == r) for r in weights}
     raw = {p.id: weights.get(p.rarity, 0) / max(1, per_rarity.get(p.rarity, 1)) for p in pets_}
@@ -189,24 +217,26 @@ def orb_odds(registry: Registry, target: str | None = None, misses: int = 0) -> 
     return {pet_id: w / total for pet_id, w in raw.items()}
 
 
-def roll_pet(rng: random.Random, registry: Registry, target: str | None = None, misses: int = 0) -> Pet:
-    odds = orb_odds(registry, target, misses)
+def roll_pet(rng: random.Random, registry: Registry, target: str | None = None, misses: int = 0, orb: str = ORB) -> Pet:
+    odds = orb_odds(registry, target, misses, orb)
     ids = sorted(odds)
     return registry.pets[rng.choices(ids, weights=[odds[i] for i in ids])[0]]
 
 
-async def open_orb(user: User, rng: random.Random, registry: Registry | None = None) -> OrbResult:
-    """Spend a Familiar Orb: a random pet, or another star for one you have."""
+async def open_orb(user: User, rng: random.Random, registry: Registry | None = None, orb: str = ORB) -> OrbResult:
+    """Spend an orb (the standard Familiar Orb unless you name another kind): a random pet, or another star for one you have."""
     reg = registry or get_registry()
     rules = reg.economy.pets
+    if orb not in rules.orbs:
+        raise PetError("That isn't an orb.")
+    name = reg.item(orb).name
     try:
-        await user.remove_item(ORB, 1)
+        await user.remove_item(orb, 1)
     except ValueError:
-        raise PetError("You don't have a Familiar Orb.") from None
+        raise PetError(f"You don't have a {name}.") from None
     house_now = user.pethouse
-    pet = roll_pet(rng, reg, house_now.target, house_now.misses)
+    pet = roll_pet(rng, reg, house_now.target, house_now.misses, orb)
     outcome: dict = {}
-
     def add(house: Pethouse) -> None:
         if house.target:  # hunting a pet: a miss makes the next orb likelier, a hit resets it
             hit = pet.id == house.target
@@ -230,7 +260,7 @@ async def open_orb(user: User, rng: random.Random, registry: Registry | None = N
     try:
         await user.update_pethouse(add)
     except Exception:
-        await user.add_item(ORB, 1)  # the pet never arrived: the orb isn't wasted
+        await user.add_item(orb, 1)  # the pet never arrived: the orb isn't wasted
         raise
     return OrbResult(pet, outcome["new"], outcome["stars"], outcome["maxed"], bool(outcome.get("target_hit")))
 
@@ -320,9 +350,9 @@ async def feed(user: User, food_id: str, quantity: int, registry: Registry | Non
             return
         boost = food_multiplier(reg.pets[target], food, reg)
         gained = round(worth * quantity * boost)
-        outcome.update(before=pet_level(owned.xp, reg), boost=boost, gained=gained)
+        outcome.update(before=pet_level(owned.xp, reg.pets[target].rarity, reg), boost=boost, gained=gained)
         owned.xp += gained
-        outcome["after"] = pet_level(owned.xp, reg)
+        outcome["after"] = pet_level(owned.xp, reg.pets[target].rarity, reg)
 
     await user.update_pethouse(eat)
     if not outcome:  # the pet vanished in the meantime

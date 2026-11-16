@@ -1004,7 +1004,7 @@ class ExchangeRules(_Data):
 
 class PetRules(_Data):
     max_level: int = Field(ge=1)
-    xp_scale: int = Field(ge=1)  # a pet's level = 1 + sqrt(xp / this), up to max_level
+    xp_scale: dict[int, int]  # by pet rarity: a pet's level = 1 + sqrt(xp / its rarity's scale), up to max_level (common pets level quickest)
     max_stars: int = Field(ge=1)
     star_bonus: float = Field(ge=0)  # each star after the first makes every bonus this much bigger
     level_floor: float = Field(gt=0, le=1)  # a level-1 pet gives this share of its bonus; max level gives all of it
@@ -1018,7 +1018,7 @@ class PetRules(_Data):
     target_boost: float = Field(ge=1)  # a targeted pet is this many times likelier from an orb...
     pity_boost: float = Field(ge=0)  # ...plus this much more for every orb that missed it
     max_boost: float = Field(ge=1)  # ...but never more than this many times
-    orb_weights: dict[int, float]  # chance weight of each rarity when you open a Familiar Orb
+    orbs: dict[str, dict[int, float]]  # orb item id -> chance weight of each pet rarity when you open that orb
 
 
 class EconomyRules(_Data):
