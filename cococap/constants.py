@@ -63,6 +63,12 @@ class GamblingChannels(Enum):
 STARTER_TOOLS = ("rookiepickaxe", "starter_axe", "starter_rod", "tin_can")
 
 
+# How an item's rarity (1-7) shows in text, since Discord components have no coloured text: a coloured square per rarity, and from
+# RARITY_WORD_FROM up the rarity's name too (so "🟧 Super Rare"). Common finds stay quiet: just the square.
+RARITY_MARKERS = {1: "🟩", 2: "🟦", 3: "🟪", 4: "🟧", 5: "🟥", 6: "🟨", 7: "⬛"}
+RARITY_WORD_FROM = 4
+
+
 class Rarities(Enum):
     COMMON = (1, "Common", "0x99F7A7")
     UNCOMMON = (2, "Uncommon", "0x63EFFF")

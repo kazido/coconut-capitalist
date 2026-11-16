@@ -78,3 +78,29 @@ async def test_inventory_lists_tools_with_enchants_and_equipped_mark(db):
     assert any("Starter Axe" in l and "✅" in l and "#" not in l for l in lines)
     assert len(instance_lines([a, b], set(), "soloist")) == 1  # filter matches enchant names
     assert instance_lines([a, b], set(), "nothing") == []
+
+
+def test_every_rarity_has_a_marker_and_the_word_shows_from_the_configured_rarity():
+    from cococap.constants import RARITY_MARKERS, RARITY_WORD_FROM, Rarities
+
+    reg = get_registry()
+    assert set(RARITY_MARKERS) == {r.value for r in Rarities} and len(set(RARITY_MARKERS.values())) == len(RARITY_MARKERS)
+    for item in reg.items.values():
+        tag = item.rarity_tag
+        assert tag.startswith(RARITY_MARKERS[item.rarity])
+        assert (Rarities.from_value(item.rarity).rarity_name in tag) == (item.rarity >= RARITY_WORD_FROM), item.id
+
+
+async def test_rarity_shows_in_the_inventory_and_the_shop(db):
+    from tests.conftest import set_columns
+    from tests.test_hub import all_text, hub
+
+    reg = get_registry()
+    orb = reg.item("familiar_orb")
+    assert any(orb.rarity_tag in line for line in inventory_lines({"familiar_orb": 2}))
+    user = await User.get(1)
+    await set_columns(user, purse=10**9)
+    nav, _ = await hub("shop")
+    headings = [line for line in all_text(nav).split("\n") if line.startswith("### ")]
+    shown = reg.shop_items()
+    assert any(f"### {i.display}  {i.rarity_tag}" in all_text(nav) for i in shown)

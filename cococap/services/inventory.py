@@ -27,7 +27,7 @@ def inventory_lines(items: dict[str, int], filter: str | None = None) -> list[st
             needle in field for field in (item.name.lower(), item.id, item.skill or "", item.category)
         ):
             continue
-        rows.append((item.name.lower(), f"{item.emoji or '▫️'} {quantity:,} {item.name}"))
+        rows.append((item.name.lower(), f"{item.emoji or '▫️'} {quantity:,} {item.name}  {item.rarity_tag}"))
     return [line for _, line in sorted(rows)]
 
 
