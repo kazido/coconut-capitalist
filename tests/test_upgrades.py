@@ -171,32 +171,6 @@ async def test_the_upgrade_screen_with_nothing_to_upgrade(db):
     assert "Nothing to upgrade" in all_text(nav)
 
 
-async def test_the_shop_no_longer_lists_tools_you_have(db):
-    user = await User.get(1)
-    await set_columns(user, purse=10**6)
-    await user.give_instance("starter_axe")
-    nav, inter = await hub("shop")
-    nav.screen.category = "foraging"
-    await nav.screen.nav.refresh(inter)
-    assert "Starter Axe" not in all_text(nav)
-    assert not [b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success and "axe" in (b.custom_id or "")]
-    upgrade = next(b for b in buttons(nav) if b.label == "Upgrade tool")  # the axe's button is now a way to its upgrades
-    await upgrade.callback(inter)
-    assert nav.screen.id == "upgrade"
-
-
-async def test_the_shop_lists_tools_before_everything_else_in_each_section(db):
-    reg = get_registry()
-    nav, inter = await hub("shop")
-    headings = lambda: [line[4:] for line in all_text(nav).split("\n") if line.startswith("### ")]  # noqa: E731
-    is_tool = lambda heading: any(i.tool and i.display == heading for i in reg.shop_items())  # noqa: E731
-    for category in (None, "farming", "mining"):
-        nav.screen.category, nav.screen.page = category, 0
-        await nav.screen.nav.refresh(inter)
-        kinds = [is_tool(h) for h in headings()]
-        assert kinds and kinds == sorted(kinds, reverse=True), (category, headings())  # every tool comes before every non-tool
-
-
 # ---- every tool upgrades, with a bit of everything -------------------------------------------------------------------
 def tools_by_kind():
     kinds = {}

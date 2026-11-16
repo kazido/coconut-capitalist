@@ -226,12 +226,9 @@ async def test_claiming_your_starter_tools_equips_them(db):
         assert await user.equipped_instance(skill) is not None
 
 
-async def test_a_brand_new_player_can_afford_a_starter_tool_with_their_first_work_wage(db):
-    user = await User.get(1)
-    wage = REG.rank(user.rank).wage
-    for item_id in ("starter_rod", "starter_axe", "rookiepickaxe"):
-        assert REG.item(item_id).buyable
-        assert user.purse + wage >= REG.item(item_id).price, item_id
+async def test_starter_tools_are_free_not_for_sale(db):
+    for item_id in ("starter_rod", "starter_axe", "rookiepickaxe", "tin_can"):
+        assert not REG.item(item_id).buyable
 
 
 @pytest.mark.bare_hands
