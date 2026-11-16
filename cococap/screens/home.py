@@ -7,12 +7,11 @@ from cococap.ui import Page, Screen
 from cococap.ui.components import bits, button, row, section, sep, text
 from cococap.user import Cooldowns
 
-# The big things to do, as full sections; Shop/Inventory/Pets and the check-in and trade shortcuts sit in one row; Profile, Ranks,
-# Leaderboards and Party in the row under it (then More, which also holds the Minigames).
-FEATURED = ["skills", "shipments"]
-SHORTCUTS = ["shop", "inventory", "pets", "checkin", "trade"]
+# The main things to do, each its own section with an Open button; one row of smaller things at the bottom (then More, which also
+# holds Trade and the Minigames).
+FEATURED = ["skills", "shipments", "shop", "inventory", "pets", "checkin"]
 SECOND_ROW = ["profile", "rank", "top", "party"]
-MORE_LINKS = ["minigames", "stats", "bestiary", "wiki", "settings"]
+MORE_LINKS = ["trade", "minigames", "stats", "bestiary", "wiki", "settings"]
 PARTY_NAMES_SHOWN = 4
 
 
@@ -44,7 +43,7 @@ class HomeScreen(Screen):
     label = "Home"
     emoji = "🥥"
     description = "Where everything starts"
-    links = (*FEATURED, *SHORTCUTS, *SECOND_ROW, "more")
+    links = (*FEATURED, *SECOND_ROW, "more")
 
     async def party_summary(self) -> str | None:
         """The party line, only for a player who is in a party."""
@@ -83,18 +82,11 @@ class HomeScreen(Screen):
         body += await self.invite_sections()
         for screen_id in FEATURED:
             target = self.nav.screens[screen_id]
+            lit = screen_id == "checkin" and ready
             body.append(section(
                 f"### {target.emoji} {target.label}\n{target.description}",
-                accessory=button("Open", style=discord.ButtonStyle.primary, on_click=_opener(self, screen_id)),
+                accessory=button("Open", style=discord.ButtonStyle.success if lit else discord.ButtonStyle.primary, on_click=_opener(self, screen_id)),
             ))
-        shortcuts = []
-        for screen_id in SHORTCUTS:
-            target = self.nav.screens[screen_id]
-            lit = screen_id == "checkin" and ready
-            shortcuts.append(button(target.label, emoji=target.emoji,
-                                    style=discord.ButtonStyle.success if lit else discord.ButtonStyle.secondary,
-                                    on_click=_opener(self, screen_id)))
-        body.append(row(*shortcuts))
         second = [button(self.nav.screens[i].label, emoji=self.nav.screens[i].emoji, on_click=_opener(self, i)) for i in SECOND_ROW]
         second.append(button("More", emoji="➡️", on_click=_opener(self, "more")))
         body.append(row(*second))
@@ -107,7 +99,7 @@ class MoreScreen(Screen):
     id = "more"
     label = "More"
     emoji = "➡️"
-    description = "Minigames, stats, bestiary, wiki and settings"
+    description = "Trade, minigames, stats, bestiary, wiki and settings"
     links = tuple(MORE_LINKS)
 
     async def build(self) -> Page:

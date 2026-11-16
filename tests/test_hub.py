@@ -46,6 +46,12 @@ def buttons(nav):
     return [c for c in nav.walk_children() if isinstance(c, ui.Button)]
 
 
+def check_in_open_button(nav):
+    """The Open button of the Check-in section on Home."""
+    sections = [c for c in nav.walk_children() if isinstance(c, ui.Section) and "Check-in" in " ".join(getattr(t, "content", "") for t in c.children)]
+    return sections[0].accessory
+
+
 def find_button(nav, label=None, emoji=None):
     for b in buttons(nav):
         if (label is None or b.label == label) and (emoji is None or (b.emoji and str(b.emoji) == emoji)):
@@ -109,7 +115,7 @@ async def test_home_buttons_open_screens_and_back_returns(db):
     nav, inter = await hub("home")
     assert find_button(nav, "Home").disabled and find_button(nav, "Back").disabled
     sections = [c for c in nav.walk_children() if isinstance(c, ui.Section) and isinstance(c.accessory, ui.Button)]
-    assert len(sections) == 2  # skills, shipments
+    assert len(sections) == 6  # skills, shipments, shop, inventory, pets, check-in
     await sections[0].accessory.callback(inter)
     assert nav.screen.id != "home" and not find_button(nav, "Back").disabled
     await click(nav, inter, "Back")
@@ -891,21 +897,22 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
     nav, inter = await hub("home")
     text = all_text(nav)
     assert "Skills" in text
-    for moved in ("Minigames", "Stats", "Settings"):
+    for moved in ("Minigames", "Stats", "Settings", "Trade"):
         assert moved not in text, moved
     assert "Party" not in text.split("Skills")[0]  # (no party line unless the player is in a party)
-    assert {b.label for b in buttons(nav)} >= {"Check-in", "Inventory", "Shop", "Trade", "Party", "Pets", "More", "Profile", "Ranks", "Leaderboards"}
-    assert len(text.splitlines()) <= 12
+    assert all(name in text for name in ("Check-in", "Inventory", "Shop", "Pets"))  # the main things are sections, one Open button each
+    assert {b.label for b in buttons(nav)} >= {"Party", "More", "Profile", "Ranks", "Leaderboards"}  # one row of smaller things at the bottom
+    assert len(text.splitlines()) <= 18  # (six main sections: a title and a line each)
     await click(nav, inter, "More")
     assert nav.screen.id == "more"
     text = all_text(nav)
-    assert all(name in text for name in ("Minigames", "Stats", "Settings"))
+    assert all(name in text for name in ("Trade", "Minigames", "Stats", "Settings"))
     await click(nav, inter, "Back")
     assert nav.screen.id == "home"
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("minigames", "stats", "bestiary", "wiki", "settings")):
+    for index, expected in enumerate(("trade", "minigames", "stats", "bestiary", "wiki", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)
@@ -914,7 +921,7 @@ async def test_each_more_page_entry_opens_its_screen(db):
 
 async def test_check_in_lights_up_when_something_is_ready(db):
     nav, _ = await hub("home")
-    assert find_button(nav, "Check-in").style == discord.ButtonStyle.success  # a fresh player can work/daily
+    assert check_in_open_button(nav).style == discord.ButtonStyle.success  # a fresh player can work/daily
 
 
 async def test_home_shows_your_party_with_names_and_a_crown(db):
@@ -1365,7 +1372,7 @@ async def test_home_only_says_whether_check_in_is_ready_and_the_timers_live_on_t
     await click(nav, inter, "Claim")  # weekly
     home, _ = await hub("home")
     assert "⏳ Check-in not ready yet" in all_text(home) and "Work" not in all_text(home)
-    assert find_button(home, "Check-in").style == discord.ButtonStyle.secondary  # no longer lit
+    assert check_in_open_button(home).style == discord.ButtonStyle.primary  # no longer lit
     assert [b for b in buttons(nav) if b.label and b.label.endswith(("h", "m")) and b.disabled]  # timers: on the page
 
 
