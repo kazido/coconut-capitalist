@@ -110,6 +110,12 @@ def render_shaft(run: mining.MineRun) -> str:
     return "\n".join(lines)
 
 
+def type_line(run: mining.MineRun) -> str:
+    """The kind of mine this is: just its name for a Standard mine, the name and what it does for any other."""
+    t = run.mine_type
+    return f"{t.emoji} **{t.name}**" + ("" if t.id == "standard" else f"  ·  {t.description}")
+
+
 def risk_text(risk: float) -> str:
     """The collapse chance for the next dig. "0%" only ever means exactly zero."""
     if risk <= 0:
@@ -169,6 +175,7 @@ class MineScreen(Screen):
         warning = run.warning
         body = [
             *self.note_block(),
+            text(type_line(run)),
             text(f"**Row {run.depth + 1} of {run.floor}**  ·  {next_landmark(run)}     {warning.emoji} **{risk_text(run.risk)}** collapse risk"
                  + (f"\n💣 Auto-Bomb: **{'this dig!' if run.auto_bomb_in == 1 else f'in {run.auto_bomb_in} rows'}**" if run.auto_bomb_every else "")
                  + (f"\n{MAGNET} Magnet: **{run.magnet_rows_left}** rows of fuel" if run.magnet_rows_left is not None else "")

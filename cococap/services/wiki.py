@@ -67,6 +67,8 @@ def _mining(reg: Registry) -> list[str]:
         f"{', '.join(f'{v} for a {reg.item(k).name}' for k, v in m.magnet.values.items())}) and every row you dig with it on marks the richest column and burns {m.magnet.drain_per_row:g}. "
         "What is left stays for the next mine, and you can only feed it outside a mine. **Gems** are rare; with mining level {m.reactor.gem_slot_level} you can set them in the **reactor**, which also "
         "mines lodes for you while you are away.",
+        "**Kinds of mine.** Every mine you enter is rolled: most are **Standard**, but now and then you get one with a twist, shown at the top of the mine before you dig. "
+        + "; ".join(f"{t.emoji} **{t.name}** ({t.description.rstrip('.').lower()})" for t in m.mine_types[1:]) + ".",
     ]
 
 

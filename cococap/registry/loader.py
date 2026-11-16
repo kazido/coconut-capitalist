@@ -293,6 +293,12 @@ def _validate_mining_items(reg: "Registry", rules: MiningRules) -> list[str]:
                     f"before more common items (list rarest first)"
                 )
             previous_rate = item.drop.rate
+    in_tables = {i for table in rules.depth_tables for i in table}
+    for t in rules.mine_types:
+        for item_id in (*t.ore_boost, *t.ore_yield):
+            need(item_id, f"mine type '{t.id}' ore_boost/ore_yield")
+            if item_id in reg.items and item_id not in in_tables:
+                problems.append(f"mining.toml mine type '{t.id}': '{item_id}' is in no depth table, so boosting it would do nothing")
     for item_id in (*rules.wyrmhole.pool, rules.wyrmhole.implosion_item, *rules.reactor.core_gems,
                     *rules.magnet.values, *(i for prize in rules.scarab.prizes for i in prize.items), BOMB_ITEM,
                     *rules.descent.hardness, *rules.descent.vault_ore):

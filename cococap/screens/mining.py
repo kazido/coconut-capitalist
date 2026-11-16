@@ -44,6 +44,7 @@ class MiningScreen(Screen):
                  "⛏️ You need a pickaxe. Buy a **Rookie Pickaxe** in the shop and it equips itself."),
             sep(),
             text("\n".join(lines)),
+            text("-# Every mine is a different kind: " + ", ".join(f"{t.emoji} {t.name}" for t in rules.mine_types[1:]) + " turn up now and then. The kind shows once you are in."),
             row(
                 button("Enter the mines", emoji="⛏️", style=discord.ButtonStyle.primary, disabled=tool is None,
                        on_click=self._enter),

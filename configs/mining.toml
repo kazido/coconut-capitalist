@@ -14,6 +14,67 @@ depth_tables = [
   ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "spirit_of_the_mines", "emerald", "sapphire", "dusty_dandelion_seed", "garnet", "amber", "platinum_ore", "silver_ore", "obsidian", "gold_ore", "clay", "iron_ore", "tin_ore", "coal", "copper_ore"],
 ]
 
+# ---- Mine types: every time you head down the game rolls one by weight and shows it before you dig. Standard is the plain mine (no effects).
+# Weights are relative (they add up to 100 here, so a weight is a percent). Effects: pressure_mult (x pressure per dig), xp_mult (x the run's xp),
+# yield_mult (x the quantity of every cell), rich_chance_add (added to the chance a cell is a rich lode), ore_boost (item = x its drop chance; the
+# other ores stay possible, but a harder ore also adds pressure so keep it mild), ore_yield (item = x the quantity of that item, the vault's too). Numbers are simulated in DESIGN.md "Mine types": each ore type is worth ~+10-25% of its ore, each effect type ~+8-15%.  TODO(balance)
+[[mine_types]]
+id = "standard"
+name = "Standard"
+emoji = "⛏️"
+weight = 75
+description = "A plain shaft."
+
+[[mine_types]]
+id = "copper_seam"
+name = "Copper Seam"
+emoji = "🟤"
+weight = 6
+description = "Copper comes out in fatter heaps (+20%), the vault's too."
+ore_yield = { copper_ore = 1.2 }
+
+[[mine_types]]
+id = "iron_vein"
+name = "Iron Vein"
+emoji = "🔩"
+weight = 6
+description = "Iron shows more often and in bigger lumps (+15%), the vault's too."
+ore_boost = { iron_ore = 1.1 }
+ore_yield = { iron_ore = 1.15 }
+
+[[mine_types]]
+id = "gold_vein"
+name = "Gold Vein"
+emoji = "🟡"
+weight = 5
+description = "Gold glints in the walls: +25% gold, the vault's too."
+ore_yield = { gold_ore = 1.25 }
+
+[[mine_types]]
+id = "quiet_shaft"
+name = "Quiet Shaft"
+emoji = "🤫"
+weight = 3
+description = "The rock barely creaks: pressure builds more slowly."
+pressure_mult = 0.93
+
+[[mine_types]]
+id = "scholars_cavern"
+name = "Scholar's Cavern"
+emoji = "📚"
+weight = 2.5
+description = "Old carvings on every wall: double mining xp."
+xp_mult = 2.0
+
+[[mine_types]]
+id = "deep_pocket"
+name = "Deep Pocket"
+emoji = "💎"
+weight = 2.5
+description = "Fat lodes: more rich cells, and a little more of everything."
+rich_chance_add = 0.12
+yield_mult = 1.05
+
 [wyrmhole]
 odds = 25000                       # 1-in-N per cell below `min_row`
 gem_bonus = 5000                   # N shrinks by this for every gem placed in the reactor

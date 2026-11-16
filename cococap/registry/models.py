@@ -545,15 +545,55 @@ class DescentRules(_Data):
         return self
 
 
+class MineType(_Data):
+    """One kind of mine you can roll when you head down (shown before you dig). Every effect is a plain number; 1.0 / 0 / {} changes nothing."""
+
+    id: str
+    name: str
+    emoji: str
+    weight: float = Field(gt=0)  # how often it is rolled, relative to the other types
+    description: str
+    pressure_mult: float = Field(default=1.0, ge=0.25, le=2.0)  # x the pressure every dig adds (0.8: calmer)
+    xp_mult: float = Field(default=1.0, ge=0.5, le=3.0)  # x the mining xp the run pays
+    yield_mult: float = Field(default=1.0, ge=0.5, le=3.0)  # x the quantity of every cell
+    rich_chance_add: float = Field(default=0.0, ge=0, le=0.5)  # added to every cell's chance of being a rich lode
+    ore_boost: dict[str, float] = Field(default_factory=dict)  # item -> x its drop chance (other ores stay possible; more of a hard ore also means more pressure)
+    ore_yield: dict[str, float] = Field(default_factory=dict)  # item -> x the quantity of that item (no extra pressure)
+
+    @model_validator(mode="after")
+    def _boosts_are_sane(self):
+        if any(not 1.0 <= m <= 5.0 for m in (*self.ore_boost.values(), *self.ore_yield.values())):
+            raise ValueError(f"mine type '{self.id}': an ore_boost / ore_yield must be between 1 and 5")
+        return self
+
+
 class MiningRules(_Data):
     columns: int = Field(ge=1)
     xp_per_column: int = Field(ge=0)
     depth_tables: list[list[str]] = Field(min_length=1)
+    mine_types: list[MineType] = Field(min_length=1)
     wyrmhole: WyrmholeRules
     reactor: ReactorRules
     magnet: MagnetRules
     scarab: ScarabRules
     descent: DescentRules
+
+    @model_validator(mode="after")
+    def _mine_types_are_sane(self):
+        ids = [t.id for t in self.mine_types]
+        if len(set(ids)) != len(ids):
+            raise ValueError("mining.toml: mine type ids must be unique")
+        if "standard" not in ids:
+            raise ValueError("mining.toml: there must be a 'standard' mine type")
+        standard = self.mine_type("standard")
+        if (standard.pressure_mult, standard.xp_mult, standard.yield_mult, standard.rich_chance_add, standard.ore_boost, standard.ore_yield) != (1.0, 1.0, 1.0, 0.0, {}, {}):
+            raise ValueError("mining.toml: the 'standard' mine type must change nothing")
+        if standard.weight * 2 <= sum(t.weight for t in self.mine_types):
+            raise ValueError("mining.toml: the 'standard' mine type must be at least half of all mines")
+        return self
+
+    def mine_type(self, type_id: str) -> MineType:
+        return next(t for t in self.mine_types if t.id == type_id)
 
 
 class MarketRules(_Data):

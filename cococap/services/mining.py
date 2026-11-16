@@ -21,9 +21,9 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.mining import Mining
 from cococap.registry import Registry, get_registry
 from cococap.registry.loader import BOMB_ITEM
-from cococap.registry.models import MiningRules, Milestone, RiskLabel
+from cococap.registry.models import MiningRules, MineType, Milestone, RiskLabel
 from cococap.services.equipment import equipped_stats
-from cococap.services.loot import roll_table
+from cococap.services.loot import roll_table, skewed_roll
 from cococap.services import pets, scrolls
 from cococap.services.party import xp_multiplier
 from cococap.user import User
@@ -114,6 +114,11 @@ class DugRow:
     kinds: list[str] = field(default_factory=list)  # the row's signs as it looked from above
 
 
+def roll_mine_type(rules: MiningRules, rng: random.Random) -> MineType:
+    """Pick the kind of mine you are about to enter, by weight (Standard is by far the commonest)."""
+    return rng.choices(rules.mine_types, weights=[t.weight for t in rules.mine_types])[0]
+
+
 # What a cell looks like from above. "ore" is a plain cell: it shows its ore (or that it is empty).
 SIGNS = ("ore", "rich", "vent", "cache", "hole")
 
@@ -156,8 +161,10 @@ class MineRun:
         gold_rush: int = 0,
         geode: float = 0.0,
         rare_reroll: float = 0.0,
+        mine_type: MineType | None = None,
     ):
         self.rules, self.registry, self.rng = rules, registry, rng
+        self.mine_type = mine_type or rules.mine_type("standard")  # the kind of mine (effects: ore boost, yield, rich lodes; pressure and xp are applied by start/settle)
         self.cursors = list(cursors)
         self.growth_factor, self.yield_factor = growth_factor, yield_factor
         self.braces, self.bombs, self.magnet = braces, bombs, magnet
@@ -165,7 +172,7 @@ class MineRun:
         self.magnet_points, self.magnet_drain, self.magnet_used = magnet_points, magnet_drain, 0.0
         self.geode_gems = geode_gems or list(rules.reactor.core_gems)  # the gems a geode can hold (the ones you have not placed in the reactor yet, while any are missing)
         self.lifeline_ready, self.lifeline_fired = lifeline_ready, False
-        self.rich_bonus, self.vault_gem_bonus = rich_bonus, vault_gem_bonus  # Mastery: more rich lodes, more vault gems
+        self.rich_bonus, self.vault_gem_bonus = rich_bonus + self.mine_type.rich_chance_add, vault_gem_bonus  # Mastery: more rich lodes, more vault gems
         self.auto_bomb_every, self.multi_mine = auto_bomb_every, multi_mine  # pickaxe abilities (0: none)
         self.lifeline, self.gold_rush, self.geode = lifeline, gold_rush, geode  # Mastery capstones (0: none): a second chance from a collapse, every Nth cell pays triple, geodes with gems
         self.rare_reroll = rare_reroll  # a Fox: a cell that rolled nothing rare has this chance of one free second roll
@@ -198,7 +205,30 @@ class MineRun:
         return min(depth // self.rules.descent.rows_per_tier, len(self.rules.depth_tables) - 1)
 
     def _quantity_factor(self, depth: int) -> float:
-        return self.yield_factor * (1 + self.rules.descent.depth_bonus_per_row * depth)
+        return self.yield_factor * self.mine_type.yield_mult * (1 + self.rules.descent.depth_bonus_per_row * depth)
+
+    def _quantity(self, item_id: str, base: float, depth: int) -> int:
+        """How many of an item a cell holds: the roll, the pickaxe and mine type, depth, and a mine type's bonus on that very ore."""
+        quantity = base * self._quantity_factor(depth)
+        if item_id not in self.mine_type.ore_yield:
+            return max(1, round(quantity))
+        quantity *= self.mine_type.ore_yield[item_id]  # (rounded at random, so a bonus on a small number of ore still pays: 1.4 is 1 or 2, never always 1)
+        whole = int(quantity)
+        return max(1, whole + (self.rng.random() < quantity - whole))
+
+    def _roll(self, table: list[str]) -> tuple[str, int] | None:
+        """Roll a depth table (rarest first). An ore-focused mine multiplies that ore's drop chance; every other ore stays possible."""
+        boost = self.mine_type.ore_boost
+        if not boost:
+            return roll_table(table, self.registry, self.rng)
+        for item_id in table:
+            item = self.registry.item(item_id)
+            if item_id not in boost:
+                if self.rng.randint(1, item.drop.rate) == 1:
+                    return item_id, skewed_roll(self.rng, item.drop.min, item.drop.max)
+            elif self.rng.random() < min(1.0, boost[item_id] / item.drop.rate):
+                return item_id, skewed_roll(self.rng, item.drop.min, item.drop.max)
+        return None
 
     def row(self, depth: int) -> list[Cell]:
         """The cells of row `depth` (rolled the first time they're needed, then fixed)."""
@@ -206,11 +236,11 @@ class MineRun:
             table = self.rules.depth_tables[self.tier(depth)]
             cells: list[Cell] = []
             for _ in range(self.rules.columns):
-                rolled = roll_table(table, self.registry, self.rng)
+                rolled = self._roll(table)
                 if self.rare_reroll and (not rolled or self.registry.item(rolled[0]).rarity < pets.RARE_FROM) and self.rng.random() < self.rare_reroll:
-                    again = roll_table(table, self.registry, self.rng)
+                    again = self._roll(table)
                     rolled = again if again and self.registry.item(again[0]).rarity >= pets.RARE_FROM else rolled
-                cells.append((rolled[0], max(1, round(rolled[1] * self._quantity_factor(depth)))) if rolled else None)
+                cells.append((rolled[0], self._quantity(rolled[0], rolled[1], depth)) if rolled else None)
             self._rows[depth] = cells
             self._holes[depth] = {
                 col
@@ -225,13 +255,13 @@ class MineRun:
         d = self.rules.descent
         table = self.rules.depth_tables[min(self.tier(depth) + 1, len(self.rules.depth_tables) - 1)]
         for _ in range(12):
-            rolled = roll_table(table, self.registry, self.rng)
+            rolled = self._roll(table)
             if rolled:
                 break
         else:  # (astronomically rare) fall back to the commonest item of the tier
             item = self.registry.item(table[-1])
             rolled = (item.id, item.drop.min if item.drop else 1)
-        return rolled[0], max(1, round(rolled[1] * d.rich_multiplier * self._quantity_factor(depth)))
+        return rolled[0], self._quantity(rolled[0], rolled[1] * d.rich_multiplier, depth)
 
     def _roll_kinds(self, depth: int) -> list[str]:
         d = self.rules.descent
@@ -353,6 +383,10 @@ class MineRun:
         self.history.append(DugRow(self.depth, list(cells), tuple(columns), self.signs(self.depth)))
         return found, vents, caches, hardness
 
+    def _vault_ore(self) -> dict[str, int]:
+        """The vault's ore, with an ore-focused mine's bonus on its own ore (a Copper Seam's vault holds more copper too)."""
+        return {ore: round(q * self.mine_type.ore_yield.get(ore, 1.0)) for ore, q in self.rules.descent.vault_ore.items()}
+
     def _descend(self, pressure: float, vents: int) -> Counter[str]:
         """Apply the pressure change, move down a row and, at the bottom, open the vault."""
         d = self.rules.descent
@@ -365,13 +399,13 @@ class MineRun:
             self.danger = max(0.0, self.danger - self.passed.relief)
             self.braces += self.passed.braces
             if self.passed.vault_share:  # (a checkpoint with no taste of the vault gives no ore at all)
-                self.passed_haul = Counter({ore: max(1, round(q * self.passed.vault_share)) for ore, q in d.vault_ore.items()})
+                self.passed_haul = Counter({ore: max(1, round(q * self.passed.vault_share)) for ore, q in self._vault_ore().items()})
             self.haul.update(self.passed_haul)
             self.safe = Counter(self.haul)  # a checkpoint: everything you hold is kept from here on
         if self.depth < d.floor:
             return Counter()
         self.outcome = "floor"
-        vault: Counter[str] = Counter(d.vault_ore)
+        vault: Counter[str] = Counter(self._vault_ore())
         if self.rng.random() < d.vault_gem_chance * (1 + self.vault_gem_bonus):
             vault[self.rng.choice(self.rules.reactor.core_gems)] += 1
         self.haul.update(vault)
@@ -550,10 +584,12 @@ async def _mining_state(user: User) -> tuple[Mining, int]:
     return mining, User.xp_to_level(mining.xp)
 
 
-async def start_run(user: User, rng: random.Random, registry: Registry | None = None) -> MineRun:
-    """Begin a mine. A full magnet is spent here; the pickaxe, reactor and gems shape the run."""
+async def start_run(user: User, rng: random.Random, registry: Registry | None = None, *, mine_type: MineType | str | None = None) -> MineRun:
+    """Begin a mine. A full magnet is spent here; the pickaxe, reactor and gems shape the run. The kind of mine is rolled by weight
+    (`mine_type` forces one, for tests) and shown on the mine page before you dig."""
     reg = registry or get_registry()
     rules = reg.mining
+    kind = rules.mine_type(mine_type) if isinstance(mine_type, str) else mine_type or roll_mine_type(rules, rng)
     d = rules.descent
     tool = await equipped_stats(user, "mining", reg)
     if tool is None:
@@ -572,7 +608,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         rng,
         cursors=_start_cursors(columns_dug(mining.reactor.level, rules), rules.columns),
         bombs=bombs,
-        growth_factor=(1 - min(d.max_reduction, reduction)) * (1 - min(0.5, pet.get("dig_shave", 0.0))),  # (a Mole shaves every dug row's pressure on top)
+        growth_factor=(1 - min(d.max_reduction, reduction)) * (1 - min(0.5, pet.get("dig_shave", 0.0))) * kind.pressure_mult,  # (a Mole shaves every dug row's pressure on top; a Quiet Shaft creaks less, after the cap)
         yield_factor=(1 + d.power_yield_bonus * max(0, power - d.power_base)) * (1 + pet.get("ore_yield", 0.0) + tool.stats.get("ore_yield", 0.0)),
         braces=d.braces_base + (mining.reactor.level - 1) // d.braces_per_reactor_levels + int(tool.stats.get("braces", 0)),
         magnet=magnet,
@@ -589,6 +625,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         gold_rush=int(tool.stats.get("gold_rush", 0)),
         geode=tool.stats.get("geode", 0.0),
         rare_reroll=pet.get("rare_reroll", 0.0),
+        mine_type=kind,
     )
     _LIVE_RUNS[user.id] = (run, time.time())
     return run
@@ -624,7 +661,7 @@ async def settle_run(user: User, run: MineRun, registry: Registry | None = None)
     if run.settled:
         return RunSummary(run.outcome, Counter(run.haul), run.xp_awarded, run.lodes, run.depth)
     run.settled = True
-    xp = round(rules.xp_per_column * run.lodes * await xp_multiplier(user.id, registry, "mining"))
+    xp = round(rules.xp_per_column * run.lodes * await xp_multiplier(user.id, registry, "mining") * run.mine_type.xp_mult)
     run.xp_awarded = xp
     summary = RunSummary(run.outcome, Counter(run.haul), xp, run.lodes, run.depth)
     log.info("mine over: %s at row %d/%d, pressure %.1f, risk on the last dig %.2f%%, %d lodes",
