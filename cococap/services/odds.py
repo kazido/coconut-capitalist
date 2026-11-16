@@ -49,9 +49,6 @@ def foraging(reg: Registry | None = None) -> Lookup:
     def lookup(item_id: str) -> Odds | None:
         if found := _scroll("foraging", item_id, reg) or species_odds(item_id, reg):
             return found
-        releaf = reg.foraging.releaf
-        if item_id == releaf.spirit_item and releaf.double_spirit_chance > 0:
-            return Odds(1 / releaf.double_spirit_chance, "double trees")
         return _own_drop(item_id, reg, "drop rolls")
 
     return lookup

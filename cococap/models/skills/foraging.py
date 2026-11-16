@@ -4,8 +4,8 @@ from .base import Skill
 
 class Stats(BaseModel):
     trees_chopped: int = 0
-    double_trees_chopped: int = 0
-    releaf_donations: int = 0
+    double_trees_chopped: int = 0  # legacy (double trees are gone)
+    releaf_donations: int = 0  # how many times you have given to the Releaf Foundation
     chops: int = 0  # every chop you have made
     grains: int = 0  # grains you have finished clean (Windfall counts them)
 
@@ -16,7 +16,9 @@ class Foraging(Skill):
     styles: dict[str, str] = Field(default_factory=dict)
     stats: Stats = Field(default_factory=Stats)
 
-    releaf_meter: int = 0  # When this reaches the goal, your next tree is a double tree
-    donations_made_today: int = 0  # Up to 3 donations per day
-    donation_day: int = -1  # the UTC day number donations_made_today counts
-    double_ready: bool = False  # your next tree is a double tree
+    # LEGACY (the old per-player Re-leaf and its double trees, now replaced by the server-wide Releaf Foundation): nothing reads these any more;
+    # they stay so saves written before the rebuild still load.
+    releaf_meter: int = 0
+    donations_made_today: int = 0
+    donation_day: int = -1
+    double_ready: bool = False

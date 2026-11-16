@@ -28,7 +28,7 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.foraging import Foraging
 from cococap.registry import Registry, get_registry
 from cococap.registry.models import ForagingRules, Grain, Species, Wedge
-from cococap.services import scrolls
+from cococap.services import releaf, scrolls
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services import pets
 from cococap.services.loot import roll_drop, skewed_roll
@@ -275,7 +275,6 @@ class Tree:
     max_hp: int
     hp: int
     collected: bool = False  # its reward has been paid
-    double: bool = False  # a Re-leaf double tree: twice the hp, and a jackpot when it falls
     effort: float = 0.0  # the quality of every chop made on it so far: its xp
     bonus: float = 0.0  # marked by Rich Seams: +this to its bits and drops when it falls (0.25 = +25%)
     species: str = ""  # the species id (set by the zone when it is rolled; "" = none, no signature drops)
@@ -338,22 +337,33 @@ def whole_rolls(expected: float, rng: random.Random) -> int:
     return whole + (1 if rng.random() < expected - whole else 0)
 
 
-def roll_drops(rolls: int, rng: random.Random, registry: Registry, rare_reroll: float = 0.0, species: str = "") -> Counter[str]:
+def _roll_boosted(item, rng: random.Random, boost: float) -> int | None:
+    """`roll_drop` with every chance multiplied by (1 + boost) (the Releaf Bloom). With no boost it is exactly `roll_drop`."""
+    if not boost:
+        return roll_drop(item, rng)
+    if item.drop is None or rng.random() >= min(1.0, (1 + boost) / item.drop.rate):
+        return None
+    return skewed_roll(rng, item.drop.min, item.drop.max)
+
+
+def roll_drops(rolls: int, rng: random.Random, registry: Registry, rare_reroll: float = 0.0, species: str = "", boost: float = 0.0) -> Counter[str]:
     """Roll the forest's drops `rolls` times. `rare_reroll` (a Fox): each rare item (rarity 4+) that misses has this chance of one free second roll.
-    `species` (a tree's species id): its signature drops are rolled on every roll too, on top of the normal pool."""
+    `species` (a tree's species id): its signature drops are rolled on every roll too, on top of the normal pool.
+    `boost` (a Releaf Bloom): every drop chance, signature ones too, is multiplied by 1 + boost (0.10 = +10%)."""
     pool, found = drop_pool(registry), Counter()
     signature = sp.drops if (sp := registry.foraging.species_of(species)) else []
     for _ in range(rolls):
         for d in signature:
-            hit = rng.random() < d.rate
+            chance = min(1.0, d.rate * (1 + boost))
+            hit = rng.random() < chance
             if not hit and rare_reroll and registry.item(d.item).rarity >= pets.RARE_FROM and rng.random() < rare_reroll:
-                hit = rng.random() < d.rate
+                hit = rng.random() < chance
             if hit:
                 found[d.item] += skewed_roll(rng, d.min, d.max)
         for item in pool:
-            quantity = roll_drop(item, rng)
+            quantity = _roll_boosted(item, rng, boost)
             if not quantity and rare_reroll and item.rarity >= pets.RARE_FROM and rng.random() < rare_reroll:
-                quantity = roll_drop(item, rng)
+                quantity = _roll_boosted(item, rng, boost)
             if quantity:
                 found[item.id] += quantity
     return found
@@ -367,7 +377,6 @@ class Reward:
     felled: bool = True  # False: the tree fell over unfinished (a consolation prize)
     window: int | None = None  # the community tree it came from
     party: bool = False  # ...or it came from a party tree
-    jackpot: tuple[str, int] | None = None  # a double tree's prize: ("xp", n) or ("spirit", 1)
 
 
 async def _pay(user: User, drops: Counter, bits: int, xp: int, trees: int) -> None:
@@ -410,7 +419,7 @@ async def windfall(user: User, every: int, rng: random.Random, registry: Registr
     if not hit:
         return Counter()
     reg = registry or get_registry()
-    drops = roll_drops(1, rng, reg, (await pets.bonuses(user, reg)).get("rare_reroll", 0.0), species)
+    drops = roll_drops(1, rng, reg, (await pets.bonuses(user, reg)).get("rare_reroll", 0.0), species, await releaf.drop_boost(reg))
     for item_id, quantity in drops.items():
         await user.add_item(item_id, quantity)
     return drops
@@ -435,29 +444,14 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     axe = await equipped_stats(user, "foraging", reg)
     final_cut = axe.stats.get("final_cut", 0.0) if axe else 0.0  # Final Cut (Mastery): a tree you fell yourself pays more
     fox = (await pets.bonuses(user, reg)).get("rare_reroll", 0.0)
-    drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus + final_cut), rng), rng, reg, fox, tree.species)
+    drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus + final_cut), rng), rng, reg, fox, tree.species,
+                       await releaf.drop_boost(reg))
     if scroll := scrolls.roll("foraging", rng, reg):  # (a rare scroll, one chance per tree whatever its size)
         drops[scroll] += 1
-    if tree.double:  # a Re-leaf double tree also drops its haul of materials
-        drops.update(rules.releaf.double_items)
     bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules) * (1 + tree.bonus + final_cut))
     xp = round(tree.effort * rules.xp_per_swing * await xp_multiplier(user.id, reg, "foraging"))
     await _pay(user, drops, bits, xp, trees=1)
-    jackpot = None
-    if tree.double:  # a Re-leaf double tree: either a lot of xp or (1 in 100) a Spirit of the Forest
-        r = rules.releaf
-        jackpot = ("spirit", 1) if rng.random() < r.double_spirit_chance else ("xp", round(r.double_xp * await xp_multiplier(user.id, reg, "foraging")))
-        if jackpot[0] == "spirit":
-            await user.add_item(r.spirit_item, 1)
-        else:
-            await user.add_xp("foraging", jackpot[1])
-
-        def done(skill: Foraging) -> None:
-            skill.double_ready = False
-            skill.stats.double_trees_chopped += 1
-
-        await user.update_skill("foraging", done)
-    return Reward(drops, bits, xp, jackpot=jackpot)
+    return Reward(drops, bits, xp)
 
 
 # ---- the community tree: the clock ---------------------------------------------------------------------------
@@ -624,7 +618,7 @@ def community_pool(choppers: int, rules: ForagingRules) -> float:
 
 def community_shares(
     max_hp: int, felled: bool, chops: dict[int, int], rules: ForagingRules, rng: random.Random, registry: Registry,
-    zone: int = 1, *, efforts: dict[int, float] | None = None, species: str = "",
+    zone: int = 1, *, efforts: dict[int, float] | None = None, species: str = "", boost: float = 0.0,
 ) -> dict[int, Share]:
     """Who gets what from a finished community tree. Pure. Drops and bits go by share of the tree's hp, out of a pool that grows with the number of choppers (only for
     those with at least ``min_share``); xp is for work done (the quality of each chop, in `efforts`), whatever the share."""
@@ -641,7 +635,7 @@ def community_shares(
             paid_share = min(damage / max_hp, c.max_share)
             pool = community_pool(len(qualifying), rules)
             rolls = whole_rolls(total_rolls * paid_share * (1 + bonus) * factor, rng)
-            drops = dict(roll_drops(rolls, rng, registry, species=species))
+            drops = dict(roll_drops(rolls, rng, registry, species=species, boost=boost))
             bits = round(paid_share * max_hp * rules.bits_per_hp * pay * pool * (1 + bonus) * factor)
         shares[user_id] = Share(damage, drops, bits, round((efforts or {}).get(user_id, 0.0) * rules.xp_per_swing))
     return shares
@@ -654,6 +648,7 @@ async def settle_due(now: float | None = None, rng: random.Random | None = None,
     rules, rng = reg.foraging, rng or random.Random()
     now = time.time() if now is None else now
     done = 0
+    blooms = await releaf.windows()  # (read before the transaction: the Bloom's drop bonus for a tree is on if a Bloom was up during its hour)
     async with get_database().session() as session:
         await session.execute(
             update(CommunityTreeRow)
@@ -669,7 +664,7 @@ async def settle_due(now: float | None = None, rng: random.Random | None = None,
             )).all()
             shares = community_shares(tree.max_hp, tree.status == "felled", {u: d for u, d, _ in rows if d > 0}, rules, rng, reg, tree.zone,
                                       efforts={u: e for u, d, e in rows if d > 0},
-                                      species=community_species(tree.window, tree.zone, rules))
+                                      species=community_species(tree.window, tree.zone, rules), boost=releaf.boost_between(blooms, *window_times(tree.window, rules), rules.releaf))
             for user_id, share in shares.items():
                 session.add(TreeRewardRow(window=tree.window, user_id=user_id, damage=share.damage,
                                           felled=tree.status == "felled", drops=share.drops, bits=share.bits,

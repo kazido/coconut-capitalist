@@ -16,6 +16,7 @@ from .flashcard import FlashcardScreen
 from .fish import FishBookScreen, FishCommunityScreen, FishPotsScreen, FishNotesScreen, FishQuestsScreen, FishRecordsScreen, FishScreen
 from .enchant import EnchantScreen
 from .forage import ForageScreen, GroveScreen, PartyGroveScreen, TreeScreen
+from .releaf import ReleafScreen
 from .sequence import SequenceScreen
 from .trivia import TriviaScreen
 from .unscramble import UnscrambleScreen
@@ -65,6 +66,7 @@ SCREENS: dict[str, type[Screen]] = {
         FarmScreen,
         FightScreen,
         ForageScreen,
+        ReleafScreen,
         FishScreen,
         FishQuestsScreen,
         FishBookScreen,

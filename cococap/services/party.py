@@ -187,7 +187,7 @@ async def xp_bonus(user_id: int, registry: Registry | None = None) -> float:
 async def xp_multiplier(user_id: int, registry: Registry | None = None, skill: str | None = None) -> float:
     """The skill-xp multiplier for `user_id`: the party's bonus (it grows with the party's size) and the active pet's
     bonus for `skill` (its all-skill one, plus a Spirit for that skill), and the bonus your rank gives to every skill."""
-    from cococap.services import pets  # (pets doesn't know about parties, so there is no cycle)
+    from cococap.services import pets, releaf  # (neither knows about parties, so there is no cycle)
 
     reg = registry or get_registry()
     user = await User.get(user_id)
@@ -196,4 +196,5 @@ async def xp_multiplier(user_id: int, registry: Registry | None = None, skill: s
     pet = await pets.xp_bonus(user, skill, reg)
     tool = await equipped_stats(user, skill, reg) if skill in ("mining", "foraging", "fishing", "farming", "combat") else None
     scholar = tool.stats.get("scholar", 0.0) if tool else 0.0  # a Scholar enchant on the tool you use for this skill
-    return (1 + await xp_bonus(user_id, reg)) * (1 + pet) * (1 + reg.rank(user.rank).xp_bonus) * (1 + scholar)
+    bloom = await releaf.xp_bonus(reg) if skill == "foraging" else 0.0  # the server-wide Releaf Bloom (foraging xp only)
+    return (1 + await xp_bonus(user_id, reg)) * (1 + pet) * (1 + reg.rank(user.rank).xp_bonus) * (1 + scholar) * (1 + bloom)

@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from cococap.errors import GameRuleError
 from cococap.registry import Registry, get_registry
 from cococap.registry.models import ForagingRules
-from cococap.services import community, foraging
+from cococap.services import community, foraging, releaf
 from cococap.services.party import Party, xp_multiplier
 from cococap.user import User
 
@@ -79,7 +79,7 @@ def _settle(state: dict, party_id: int, rules: ForagingRules, reg: Registry) -> 
         return
     efforts = {int(u): e for u, e in tree.get("efforts", {}).items()}
     shares = foraging.community_shares(tree["max_hp"], tree["status"] == "felled", chops, party_rules(rules), rng, reg, tree["zone"],
-                                       efforts=efforts, species=tree.get("species", ""))
+                                       efforts=efforts, species=tree.get("species", ""), boost=tree.get("bloom", 0.0))
     for user_id, share in shares.items():
         state["pending"].setdefault(str(user_id), []).append(
             {"number": tree["number"], "drops": dict(share.drops), "bits": share.bits, "xp": share.xp, "felled": tree["status"] == "felled"})
@@ -169,6 +169,7 @@ async def chop(user: User, damage: int, now: float | None = None, registry: Regi
     now = time.time() if now is None else now
     party = await _party_of(user)
     outcome: dict = {}
+    boost = await releaf.drop_boost(reg, now)  # a Bloom up while the party chops boosts the tree's drops (kept on the tree, as it may settle later)
 
     def swing(state: dict) -> PartyChop:
         _expire(state, party.party_id, now, rules, reg)
@@ -177,6 +178,7 @@ async def chop(user: User, damage: int, now: float | None = None, registry: Regi
             raise PartyTreeError("Your party has no tree standing. Start one!")
         applied = min(max(1, damage), tree["hp"])
         tree["hp"] -= applied
+        tree["bloom"] = max(tree.get("bloom", 0.0), boost)
         tree["chops"][str(user.id)] = tree["chops"].get(str(user.id), 0) + applied
         efforts = tree.setdefault("efforts", {})
         efforts[str(user.id)] = efforts.get(str(user.id), 0.0) + effort * applied / max(1, damage)

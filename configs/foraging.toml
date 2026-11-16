@@ -169,17 +169,16 @@ max_group_bonus = 0.5             # ...up to +50%
 expired_factor = 0.25
 refresh_seconds = 5
 
-[releaf]                          # donate a tree's drops to the Re-leaf foundation (the wiki)
-min_level = 10                    # foraging level
-daily_limit = 3                   # donations per UTC day
-meter_per_rarity = 5              # a donation fills the meter by (the rarest item donated's rarity) x this: a rarity 5 item = 25
-meter_goal = 50                   # when the meter is full, your NEXT tree is a double tree
-double_hp = 2.0                   # a double tree has this many times the hp...
-double_xp = 6000                  # ...and pays this much foraging xp (about 50 minutes of chopping; it paid 1,000,000 bits before)  TODO(balance)
-double_spirit_chance = 0.01       # ...or, 1 time in 100, a Spirit of the Forest instead
-spirit_item = "spirit_of_the_forest"
-double_items = { hardwood = 25, feather = 60, fine_bark = 8, maple_leaf = 4 }   # a double tree also drops this haul: about a third of an axe upgrade's materials
-growth_donations = 420            # donations needed to unlock growth mode (not built yet)
+[releaf]                          # the Releaf Foundation: the whole server gives rare drops to ONE shared meter; a full meter starts a temporary server-wide Bloom
+min_level = 10                    # foraging level to give
+min_rarity = 4                    # only items of this rarity or more can be given: it is a real loss, the item is gone
+points = { 4 = 1, 5 = 3, 6 = 8, 7 = 20 }   # meter points one item is worth, by rarity (cheap rarity-4 food is worth little, a rare feather a lot)  TODO(balance)
+meter_goal = 300                  # points that fill the meter and start a Bloom (about 7 hours of a normal server giving, see DESIGN.md)  TODO(balance)
+max_share = 0.25                  # one player can give at most this share of the goal per cycle: at least 4 people are needed
+bloom_hours = 3                   # a Bloom lasts this long, then the meter is empty and giving reopens
+bloom_xp = 0.10                   # during a Bloom everyone's foraging xp is +10%...  TODO(balance)
+bloom_drops = 0.10                # ...and every drop chance of a foraging tree is +10% (private, community and party trees alike)  TODO(balance)
+top_donors = 5                    # names shown on the donor list
 
 # Tree species: set by the zone when a tree is rolled (a species grows in zones zone_min..zone_max; `weight` = how common it is there).
 # Each species also drops its OWN signature items, on top of the normal pool: `rate` is the chance PER DROP ROLL (0..1), then min..max of them.
