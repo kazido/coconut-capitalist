@@ -1,7 +1,7 @@
 import discord
 
 from cococap.registry import get_registry
-from cococap.services import shop, upgrades
+from cococap.services import crafting, shop, upgrades
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bits, button, row, text
 
@@ -10,13 +10,17 @@ SHOWN = 8
 
 
 async def upgrade_needs_by_tool(user) -> dict[str, tuple[int, list[str]]]:
-    """What the next upgrade of EVERY tool you own asks for (both roads at a fork): item -> (how many, the tools that want it).
-    The amount is the most any ONE upgrade needs, not the total: you do the upgrades one at a time, so one pile can serve them all."""
+    """What the next upgrade of EVERY tool you own asks for (both roads at a fork), and what every Workbench recipe and a crab pot use:
+    item -> (how many, what wants it). The amount is the most any ONE upgrade or craft needs, not the total: you do them one at a time,
+    so one pile can serve them all."""
     needs: dict[str, tuple[int, list[str]]] = {}
     for offer in await upgrades.offers(user):
         for item_id, quantity in offer.cost.items.items():
             have, tools = needs.get(item_id, (0, []))
             needs[item_id] = (max(have, quantity), [*tools, offer.target.name])
+    for item_id, (quantity, uses) in crafting.needed_items().items():
+        have, tools = needs.get(item_id, (0, []))
+        needs[item_id] = (max(have, quantity), [*tools, *uses])
     return needs
 
 
@@ -65,9 +69,9 @@ class SellAllScreen(Screen):
         reserved = {i: min(q, needs[i]) for i, q in everything.items() if i in needs}
         warn = ""
         if reserved:
-            parts = [f"{reg.item(i).name}: you have {everything[i]:,}, an upgrade needs {needs[i]:,}" + (f" ({', '.join(dict.fromkeys(by_tool[i][1]))})" if i in by_tool else "")
+            parts = [f"{reg.item(i).name}: you have {everything[i]:,}, an upgrade or craft needs {needs[i]:,}" + (f" ({', '.join(dict.fromkeys(by_tool[i][1]))})" if i in by_tool else "")
                      for i in reserved]
-            warn = "\n-# 🔨 Upgrade materials in this pile (any tool you own, either road at a fork):\n-# " + "\n-# ".join(parts)
+            warn = "\n-# 🔨 Upgrade and crafting materials in this pile (any tool you own, either road at a fork, and the Workbench):\n-# " + "\n-# ".join(parts)
         keeping = self.user.settings.keep_upgrade_materials
         if keeping or not reserved:  # (with nothing to hold back there is only one way to sell)
             first = button("Sell everything" if not reserved else f"Sell, keep upgrade materials ({bits(keep_worth)})", emoji="💰", style=discord.ButtonStyle.danger,

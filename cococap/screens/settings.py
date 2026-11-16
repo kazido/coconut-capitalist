@@ -6,7 +6,7 @@ from cococap.ui.components import button, section, text
 # key -> (name, what it does)
 SETTINGS: dict[str, tuple[str, str]] = {
     "confirm_sell_all": ("Confirm Sell all", "Ask before a skill's Sell all button sells everything it has gathered (turn off to sell with one press)."),
-    "keep_upgrade_materials": ("Keep upgrade materials", "Sell all holds back the materials the next upgrade of any tool you own needs (the max one upgrade asks for, both roads at a fork), so you never sell something you were saving."),
+    "keep_upgrade_materials": ("Keep upgrade materials", "Sell all holds back the materials the next upgrade of any tool you own needs (the max one upgrade asks for, both roads at a fork), and what the Workbench recipes and a crab pot use, so you never sell something you were saving."),
     "confirm_upgrades": ("Confirm tool upgrades", "Upgrading a tool takes a second press, so a costly or one-way (fork) upgrade is never an accident."),
     "fishing_estimate": ("Fishing wait estimate", "Show how long your rod usually takes to get a bite on the Fishing page."),
 }

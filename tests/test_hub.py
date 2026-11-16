@@ -490,6 +490,8 @@ async def test_shop_has_a_section_per_skill_and_filters(db):
     nav, inter = await hub("shop")
     assert find_button(nav, "All")
     for emoji, skill in (("🌽", "farming"), ("🌳", "foraging"), ("⛏️", "mining")):
+        if not any(i.skill == skill for i in reg.shop_items()):
+            continue  # (a skill with nothing in the shop gets no section: mining's Scarab Bomb is crafted now)
         await click(nav, inter, emoji=emoji)
         shown = all_text(nav)
         expected = sorted((i for i in reg.shop_items() if i.skill == skill), key=lambda i: (i.price, i.name))

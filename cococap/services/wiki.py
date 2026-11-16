@@ -15,6 +15,7 @@ TOPICS: list[tuple[str, str, str]] = [  # (id, title, emoji)
     ("fish", "Fish", "🐟"),
     ("waters", "Waters", "🌊"),
     ("pots", "Crab pots and bait", "🦀"),
+    ("crafting", "Crafting: the Workbench", "🛠️"),
     ("tools", "Tools and upgrades: axes and cans", "🔨"),
     ("tools2", "Tools: rods", "🎣"),
     ("tools3", "Tools: pickaxes and swords", "⛏️"),
@@ -114,7 +115,7 @@ def _foraging(reg: Registry) -> list[str]:
         "The spot never tells you its style, so you have to remember it.",
         "**Spots wear out.** Every chop wears the spot, and a worn spot chops weaker. Good grains (Clean, Burl) wear slowly and bad ones (Knotty, Twisted) "
         "go quickly; when a spot is gone you move to a new random grain by yourself. An axe with **Seasoned** makes spots last longer. "
-        "Stuck on a bad grain? Use a **rotation wedge** (buy it in the shop or find it chopping) to move off at once: the Iron and Gilded wedges lean toward the good grains. A good chop hits extra hard.",
+        "Stuck on a bad grain? Use a **rotation wedge** (find it chopping or buy it in the shop) to move off at once: the Iron and Gilded wedges, made at the Workbench, lean toward the good grains. A good chop hits extra hard.",
         "**Special spots** are rare and wear out fast, but chopped in the right style they pay off: 💎 **Heartwood** hits the tree several times harder, ✨ **Golden Knot** pays double xp, "
         "and 🏷️ **Rich Seam** marks a tree of your own for more drops when it falls. Better wedges make them likelier. An axe with **Double Strike** sometimes chops twice.",
         f"**Releaf Foundation** (level {f.releaf.min_level}, a button on the foraging page): the whole server gives **rare** foraging drops (rarity {f.releaf.min_rarity} or more; the item is gone for good) "
@@ -286,8 +287,21 @@ def _items(reg: Registry) -> list[str]:
     return ["Pick a skill, then an item, to see its details."]
 
 
+def _crafting(reg: Registry) -> list[str]:
+    lines = []
+    for r in reg.recipes.values():
+        cost = _materials(r.inputs, reg) + (f" and {_n(r.bits)} bits" if r.bits else "")
+        lines.append(f"{r.emoji or ''} **{r.name}**: {cost}" + (f" ({r.skill} level {r.min_level})" if r.min_level else ""))
+    return [
+        "**The Workbench** (Inventory, then Workbench) makes things from materials you gathered, instead of buying them. Pick a recipe, see what you have against "
+        "what it needs, and craft one, ten or as many as you can. Everything is used up and the result given together: if anything is short, nothing is taken.",
+        "**Recipes.**\n" + "\n".join(lines),
+        "**Sell all keeps the inputs** of every recipe (and the crab pot's materials) while Keep upgrade materials is on in Settings.",
+    ]
+
+
 _PAGES = {"start": _start, "mining": _mining, "farming": _farming, "foraging": _foraging, "fishing": _fishing, "fish": _fish,
-          "waters": _waters, "pots": _pots, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "party": _party, "items": _items}
+          "waters": _waters, "pots": _pots, "crafting": _crafting, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "party": _party, "items": _items}
 
 SKILL_FILTERS = ["mining", "farming", "foraging", "fishing", "combat", "general"]
 

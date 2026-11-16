@@ -9,6 +9,7 @@ from .bestiary import BestiaryScreen
 from .blackjack import BlackjackScreen
 from .casino import CasinoScreen
 from .checkin import CheckInScreen
+from .craft import CraftScreen
 from .highlow import HighLowScreen
 from .farm import FarmScreen
 from .fight import FightScreen
@@ -92,6 +93,7 @@ SCREENS: dict[str, type[Screen]] = {
         HighLowScreen,
         BlackjackScreen,
         InventoryScreen,
+        CraftScreen,
         UpgradeScreen,
         WikiScreen,
         EnchantScreen,

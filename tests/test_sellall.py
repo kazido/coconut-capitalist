@@ -13,6 +13,8 @@ PRICE = lambda item_id: REG.item(item_id).sell_price  # noqa: E731
 
 
 async def stock(user):
+    """Some of everything. Sell All's keep-materials setting is off here: these tests are about selling (copper and iron ore are also Scarab Bomb inputs now)."""
+    await user.set_setting("keep_upgrade_materials", False)
     for item, qty in (("copper_ore", 10), ("iron_ore", 3), ("hardwood", 4), ("feather", 20), ("salmon", 2), ("coral_shard", 5)):
         await user.add_item(item, qty)
 
@@ -70,7 +72,7 @@ async def test_confirming_sells_everything_and_shows_what_it_paid(db):
     nav, inter = await hub("mining")
     await click(nav, inter, "Sell all")
     assert "10" in all_text(nav) and "Copper Ore" in all_text(nav)
-    await click(nav, inter, "Sell everything")
+    await next(b for b in buttons(nav) if (b.label or "").startswith("Sell everything")).callback(inter)
     assert nav.screen.id == "result" and "You sold" in all_text(nav)
     assert (await User.get(1)).purse == start + 10 * PRICE("copper_ore") + 3 * PRICE("iron_ore") and await user.item_quantity("copper_ore") == 0
 
@@ -106,12 +108,15 @@ async def test_the_confirm_page_offers_to_keep_what_your_next_upgrade_needs(db):
     nav, inter = await hub("mining")
     await click(nav, inter, "Sell all")
     text = all_text(nav)
-    assert "an upgrade needs" in text and all(f"an upgrade needs {q:,}" in text for i, q in need.items())
+    from cococap.services import crafting
+
+    held = {i: max(q, crafting.needed_items().get(i, (0, []))[0]) for i, q in need.items()}  # (the upgrade, or a recipe that uses the same ore)
+    assert "needs" in text and all(f"needs {q:,}" in text for q in held.values())
     keep = next(b for b in buttons(nav) if b.label.startswith("Sell, keep upgrade materials"))
     assert not keep.disabled
     await keep.callback(inter)
     for item, qty in need.items():
-        assert await user.item_quantity(item) == qty  # exactly what the upgrade needs was kept
+        assert await user.item_quantity(item) == min(qty + 7, held[item])  # exactly what the upgrade (or a recipe) needs was kept
     assert "kept" in all_text(nav)
 
 
