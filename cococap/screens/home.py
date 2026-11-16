@@ -2,7 +2,7 @@ import discord
 
 from cococap.registry import get_registry
 from cococap.services.party import Party
-from cococap.services import economy
+from cococap.services import economy, party_invites, trade
 from cococap.ui import Page, Screen
 from cococap.ui.components import bits, button, row, section, sep, text
 from cococap.user import Cooldowns
@@ -58,6 +58,21 @@ class HomeScreen(Screen):
         extra = party.member_count() - len(shown)
         return f"👥 **Party:** {', '.join(shown)}" + (f" +{extra} more" if extra > 0 else "")
 
+    async def invite_sections(self) -> list:
+        """A line and a button for a waiting party invite and for a waiting trade invite."""
+        out = []
+        if (invite := party_invites.pending_for(self.user.id)) is not None:
+            out.append(section(
+                f"### 👥 Party invite\n{await self.nav.name_of(invite.inviter_id)} invited you to their party.",
+                accessory=button("Accept", style=discord.ButtonStyle.success, on_click=_opener(self, "party")),
+            ))
+        if (offer := trade.invite_for(self.user.id)) is not None:
+            out.append(section(
+                f"### 🤝 Trade invite\n{await self.nav.name_of(offer.sender_id)} wants to trade with you.",
+                accessory=button("Open", style=discord.ButtonStyle.success, on_click=_opener(self, "trade")),
+            ))
+        return out
+
     async def build(self) -> Page:
         rank = get_registry().rank(self.user.rank)
         ready = anything_ready(self.user)
@@ -65,6 +80,7 @@ class HomeScreen(Screen):
         if (party_line := await self.party_summary()) is not None:
             lines.append(party_line)
         body = [*self.note_block(), text("\n".join(lines)), sep()]
+        body += await self.invite_sections()
         for screen_id in FEATURED:
             target = self.nav.screens[screen_id]
             body.append(section(

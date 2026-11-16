@@ -1710,3 +1710,25 @@ async def test_a_line_in_the_water_hides_home_and_back_and_a_timeout_cancels_it(
     await screen.on_abandon()  # a second time does nothing
     assert len(reported) == 1
 
+
+async def test_home_shows_pending_party_and_trade_invites(db):
+    import time
+
+    from cococap.services import party_invites, trade
+
+    nav, _ = await hub("home", user_id=61)
+    assert "Party invite" not in all_text(nav) and "Trade invite" not in all_text(nav)
+    party_invites._pending[61] = party_invites.Invite(1, 62, 61, time.time() + 60)
+    trade._invites[61] = trade.Invite(63, 61, time.time() + 60)
+    try:
+        nav, inter = await hub("home", user_id=61)
+        assert "Party invite" in all_text(nav) and "Trade invite" in all_text(nav)
+        accept = find_button(nav, "Accept")
+        await accept.callback(inter)
+        assert nav.screen.id == "party"
+        nav, inter = await hub("home", user_id=61)
+        await find_button(nav, "Open").callback(inter)
+        assert nav.screen.id == "trade"
+    finally:
+        party_invites.clear()
+        trade._invites.clear()
