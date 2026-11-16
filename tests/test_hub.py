@@ -669,6 +669,76 @@ async def test_a_wyrmhole_leads_to_a_one_pick_screen_and_banks_it(db):
     assert nav.screen.id == "mining"
 
 
+async def _mine_with_a_small_wyrmhole(carry=None):
+    nav, inter = await enter_mines()
+    run = nav.screen.run
+    run.mini_wyrmhole = True  # (the 1-in-100 roll is covered in test_mining)
+    if carry:
+        run.haul = Counter(carry)
+    await click(nav, inter, "Tips")  # redraw
+    return nav, inter, run
+
+
+async def test_a_mine_with_a_small_wyrmhole_says_so_and_a_plain_one_does_not(db):
+    nav, inter = await enter_mines()
+    nav.screen.run.mini_wyrmhole = False
+    await click(nav, inter, "Tips")
+    assert "small wyrmhole" not in all_text(nav) and not any(b.label == "Enter the small wyrmhole" for b in buttons(nav))
+    nav, inter, run = await _mine_with_a_small_wyrmhole()
+    assert "A small wyrmhole has opened in this mine!" in all_text(nav)
+    assert find_button(nav, "Enter the small wyrmhole")
+
+
+async def test_entering_the_small_wyrmhole_banks_the_pack_then_one_pick_per_row_banks_the_rest(db):
+    user = await User.get(1)
+    nav, inter, run = await _mine_with_a_small_wyrmhole(carry={"copper_ore": 7})
+    await click(nav, inter, "Enter the small wyrmhole")
+    assert run.outcome == "mini_wyrmhole" and await user.item_quantity("copper_ore") == 7  # banked first, like the big wyrmhole
+    await continue_through(nav, inter)
+    await find_button(nav, "Enter the small wyrmhole").callback(inter)
+    assert nav.screen.id == "wyrmhole" and nav.screen.locked
+    hole = nav.screen.hole
+    assert hole.small and "Row **1** of 5" in all_text(nav)
+    for r in range(5):
+        assert nav.screen.id == "wyrmhole" and hole.row == r and nav.screen.locked
+        await find_button(nav, "Dig").callback(inter)
+    assert nav.screen.id == "result" and hole.finished and hole.banked
+    for item_id, qty in hole.loot().items():
+        assert await user.item_quantity(item_id) >= qty
+    await continue_through(nav, inter, "Back to the mines")
+    assert nav.screen.id == "mining"
+
+
+async def test_walking_away_mid_small_wyrmhole_banks_the_rest(db):
+    user = await User.get(1)
+    nav, inter, run = await _mine_with_a_small_wyrmhole()
+    await click(nav, inter, "Enter the small wyrmhole")
+    await continue_through(nav, inter)
+    await find_button(nav, "Enter the small wyrmhole").callback(inter)
+    await find_button(nav, "Dig").callback(inter)
+    hole = nav.screen.hole
+    assert not hole.finished
+    await nav.screen.on_abandon()
+    assert hole.banked and len(hole.picks) == 5
+    for item_id, qty in hole.loot().items():
+        assert await user.item_quantity(item_id) >= qty
+
+
+async def test_a_core_gem_from_a_small_wyrmhole_gets_the_rare_drop_screen(db):
+    user = await User.get(1)
+    nav, inter, run = await _mine_with_a_small_wyrmhole()
+    await click(nav, inter, "Enter the small wyrmhole")
+    await continue_through(nav, inter)
+    await find_button(nav, "Enter the small wyrmhole").callback(inter)
+    nav.screen.hole.rows[4][1] = ("sanity_gemstone", 1)  # the middle node of the last row, where the cursor starts
+    for _ in range(5):
+        await find_button(nav, "Dig").callback(inter)
+    assert nav.screen.id == "result" and "Gold Ore" in all_text(nav)  # the plain finds first
+    await click(nav, inter, "Continue")
+    assert nav.screen.id == "result" and "Drop rate" in all_text(nav) and "small wyrmholes" in all_text(nav)  # then the gem's own page, with its odds
+    assert await user.item_quantity("sanity_gemstone") == 1
+
+
 async def test_scarab_answered_in_time_pays_out_and_late_or_wrong_does_not(db):
     import time
 

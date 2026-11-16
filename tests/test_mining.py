@@ -1421,3 +1421,129 @@ async def test_mine_types_keep_the_live_run_guard_and_settle_working(db):
     summary = await m.settle_run(user, run)
     assert not m.in_a_mine(user.id) and summary.lodes == run.lodes
     assert await m.settle_run(user, run) == summary  # settling twice is harmless
+
+
+# ---- small wyrmholes ------------------------------------------------------------------------------------
+MINI = RULES.mini_wyrmhole
+
+
+def test_a_small_wyrmhole_opens_in_about_one_mine_in_odds():
+    n = 40000
+    hits = sum(m.roll_mini_wyrmhole(RULES, Random(seed)) for seed in range(n))
+    expected = n / MINI.odds
+    assert 0.7 * expected < hits < 1.3 * expected  # (about 400 +- 90)
+
+
+async def test_start_run_rolls_it_with_the_rng_and_can_be_forced(db):
+    user = await player()
+    assert (await m.start_run(user, Random(1), mini_wyrmhole=True)).mini_wyrmhole
+    assert not (await m.start_run(user, Random(1), mini_wyrmhole=False)).mini_wyrmhole
+    seen = [(await m.start_run(user, Random(seed))).mini_wyrmhole for seed in range(1000)]
+    assert 0 < sum(seen) < 30 and not make_run().mini_wyrmhole  # (a mine without one by default)
+
+
+def test_a_small_wyrmhole_is_three_wide_and_five_rows_with_one_pick_per_row():
+    hole = m.generate_mini_wyrmhole(RULES, Random(3))
+    assert hole.small and len(hole.rows) == len(MINI.rows) == 5 and all(len(r) == MINI.columns == 3 for r in hole.rows)
+    for r, nodes in enumerate(hole.rows):
+        assert all(item in MINI.rows[r].pool or item in RULES.reactor.core_gems for item, _ in nodes)
+    for r in range(5):
+        assert not hole.finished and hole.row == r
+        hole.move(1)
+        assert hole.dig() == hole.rows[r][2]
+        assert hole.cursor == 1 or hole.finished  # the next row starts in the middle
+    assert hole.finished and len(hole.picks) == 5
+    with pytest.raises(m.MiningError):
+        hole.dig()
+
+
+def test_small_wyrmhole_rows_pay_more_than_normal_rows_and_better_each_row():
+    price = lambda i: REG.item(i).sell_price
+    n = 600
+    paid = [0.0] * 5
+    for seed in range(n):
+        hole = m.generate_mini_wyrmhole(RULES, Random(seed))
+        for r in range(5):
+            item, qty = hole.dig()
+            paid[r] += price(item) * qty if item not in RULES.reactor.core_gems else 0
+    paid = [p / n for p in paid]
+    assert paid == sorted(paid)  # each row is worth more than the one above
+    normal = 0.0  # a normal cell's average value at the base pickaxe power, over the first rows of a mine
+    for seed in range(n):
+        run = make_run(seed)
+        for depth in range(5):
+            normal += sum(price(c[0]) * c[1] for c in run.row(depth) if c) / RULES.columns / 5
+    normal /= n
+    assert min(paid) > normal  # even the top row of the hole beats a normal cell
+
+
+def test_a_core_gem_in_a_small_wyrmhole_is_rare_and_only_core_gems_from_the_reactor():
+    n = 20000
+    gems = Counter()
+    for seed in range(n):
+        for item, _ in m.generate_mini_wyrmhole(RULES, Random(seed)).rows[4]:
+            if item in RULES.reactor.core_gems:
+                gems[item] += 1
+    assert 0 < sum(gems.values()) < n * 0.01 and set(gems) <= set(RULES.reactor.core_gems)
+    assert sum(MINI.gem_chance) / MINI.columns <= 0.02  # at most about 1 hole in 50 hides one in a node you can pick
+
+
+def test_entering_a_small_wyrmhole_ends_the_mine_and_only_if_it_has_one():
+    run = make_run(mini_wyrmhole=True)
+    run.haul = Counter(copper_ore=4)
+    run.enter_mini_wyrmhole()
+    assert run.finished and run.outcome == "mini_wyrmhole" and run.haul == Counter(copper_ore=4)
+    with pytest.raises(m.MiningError):
+        run.dig()
+    with pytest.raises(m.MiningError):
+        make_run().enter_mini_wyrmhole()
+
+
+async def test_a_small_wyrmhole_banks_every_pick_and_the_last_row_bonus_once(db):
+    user = await player()
+    hole = m.generate_mini_wyrmhole(RULES, Random(5))
+    for _ in range(5):
+        hole.dig()
+    expected = hole.loot()
+    assert all(expected[i] >= q for i, q in MINI.last_row_bonus.items())
+    await m.finish_wyrmhole(user, hole)
+    await m.finish_wyrmhole(user, hole)  # (banking twice pays once)
+    for item_id, qty in expected.items():
+        assert await user.item_quantity(item_id) == qty
+    assert (await user.skill("mining")).stats.lodes_mined == 5
+
+
+async def test_walking_away_from_a_small_wyrmhole_still_banks_what_is_left(db):
+    user = await player()
+    hole = m.generate_mini_wyrmhole(RULES, Random(8))
+    hole.dig()  # one row dug, then the player leaves
+    await m.finish_wyrmhole(user, hole)
+    assert hole.finished and hole.banked and len(hole.picks) == 5
+    for item_id, qty in hole.loot().items():
+        assert await user.item_quantity(item_id) == qty
+
+
+async def test_the_big_wyrmhole_is_still_one_row_with_one_pick(db):
+    hole = await m.enter_wyrmhole(await player(), Random(2))
+    assert not hole.small and len(hole.rows) == 1 and len(hole.nodes) == RULES.columns
+
+
+def test_small_wyrmhole_odds_for_the_rare_drop_screen():
+    from cococap.services import odds
+
+    lookup = odds.for_source("mini_wyrmhole")
+    gem = lookup(RULES.reactor.core_gems[0])
+    assert gem and gem.one_in > 200 and "small wyrmholes" in gem.text()
+    assert lookup("gold_ore").one_in == 4 and lookup("sanity_gemstone") and lookup("clay") is None
+
+
+def test_small_wyrmhole_config_is_validated():
+    from cococap.registry.models import MiniWyrmholeRules
+
+    good = MINI.model_dump()
+    with pytest.raises(ValidationError):
+        MiniWyrmholeRules(**{**good, "gem_chance": [0.001]})  # one number per row
+    with pytest.raises(ValidationError):
+        MiniWyrmholeRules(**{**good, "gem_chance": [0.05] * 5})  # far too many gems
+    with pytest.raises(ValidationError):
+        MiniWyrmholeRules(**{**good, "odds": 1})

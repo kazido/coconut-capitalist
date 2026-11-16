@@ -1010,3 +1010,34 @@ its soft/firm/hard feel, same seeds as Standard): the focus ore's income per run
 So none is a trap (every type is at or above Standard) and none is a jackpot (the best is about +13% of a run, on 2.5-3% of mines).  TODO(balance): the xp price is a guess;
 double xp is the headline, raise `xp_mult` if it feels thin.
 The wyrmhole code is untouched: a later "small wyrmhole" mine should decide its kind in `start_run` next to the type roll.
+
+## Small wyrmholes
+
+The owner asked for a smaller kind of wyrmhole: a 3-wide mine with higher-tier rewards across 5 rows, special and not common. `[mini_wyrmhole]` in `configs/mining.toml`.
+
+- **When:** 1 in 100 mines (`odds`), rolled in `start_run` with the injected rng (`roll_mini_wyrmhole`; `start_run(mini_wyrmhole=True/False)` forces it) and kept on
+  `MineRun.mini_wyrmhole`. It is a property of the run, announced on the mine page ("🕳️ A small wyrmhole has opened in this mine!"). The big wyrmhole (1 in 25,000 per cell,
+  implosion gem, one pick) is untouched.
+- **Entering:** a button "Enter the small wyrmhole" is on the mine page from the first row. It calls `MineRun.enter_mini_wyrmhole()` (outcome `mini_wyrmhole`), which
+  ends the dig phase exactly like breaking into the big wyrmhole: `settle_run` banks what you carry (no collapse can touch it), the reward screen shows it, and then the
+  finished page offers "Enter the small wyrmhole". (Same as the big hole: if you leave that page without entering, the hole is gone.)
+- **The hole:** `generate_mini_wyrmhole` builds a `WyrmholeSession` (now rows of nodes; the big one is one row): 5 rows x 3 hidden nodes, each node drawn from that row's
+  `pool` (item = quantity, fixed like the big hole's), one pick per row with the same cursor/Dig screen (`screens/wyrmhole.py` is parameterised, `session.small`). Rows get
+  better down the hole. Each row has a `gem_chance` that one of its 3 nodes is a reactor core gem (random of the four); you find it only if you pick that node. Finishing
+  the last row adds `last_row_bonus` (1 gold ore). Everything is banked once at the end (`finish_wyrmhole`, idempotent): walking away or a timeout digs the remaining rows
+  at the cursor and banks them (the same rule as the big hole's single pick).
+- **Rare-drop screen:** `odds.mini_wyrmhole` (a gem is "1 in N small wyrmholes", an ore is 1 in the row pool size per pick).
+- **Validation:** gem_chance has one number per row, each at most 0.05, and the sum over columns at most 0.02 (a gem in at most 1 hole in 50); rows non-empty; items exist.
+
+Value check (`scratchpad/mini_base.py`, `mini_sim.py`; the baseline is a player who stops at 7% collapse risk and braces above 10 pressure, 4,000 mines per power; the hole is
+200,000 holes, a random node per row, ore and gem at sell price):
+
+| | power 3 | power 12 | power 30 |
+|---|---|---|---|
+| a normal mine (whole haul, sell price) | 36,000 | 70,100 | 139,200 |
+| a small wyrmhole | 14,200 | 14,200 | 14,200 |
+| as a share of a mine | +40% | +20% | +10% |
+
+Rows pay on average 1,300 / 2,100 / 2,550 / 2,800 / 3,500 bits (gem EV included), last-row bonus 1,900. A core gem turns up in 1 hole in 200 (EV about 2,000 of the 14,200;
+a normal mine rolls a gem 1 in 12,000 per cell). At 1 mine in 100 this adds about 0.2% to a player's mining income: a nice surprise, not an income source.  TODO(balance)
+The hole's quantities do not scale with the pickaxe (like the big hole), so it is a bigger treat early than late; add a `power` factor if that feels wrong.
