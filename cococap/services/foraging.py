@@ -30,6 +30,7 @@ from cococap.registry import Registry, get_registry
 from cococap.registry.models import ForagingRules, Grain, Wedge
 from cococap.services import scrolls
 from cococap.services.equipment import EffectiveStats, equipped_stats
+from cococap.services import pets
 from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
 from cococap.user import User
@@ -319,11 +320,15 @@ def whole_rolls(expected: float, rng: random.Random) -> int:
     return whole + (1 if rng.random() < expected - whole else 0)
 
 
-def roll_drops(rolls: int, rng: random.Random, registry: Registry) -> Counter[str]:
+def roll_drops(rolls: int, rng: random.Random, registry: Registry, rare_reroll: float = 0.0) -> Counter[str]:
+    """Roll the forest's drops `rolls` times. `rare_reroll` (a Fox): each rare item (rarity 4+) that misses has this chance of one free second roll."""
     pool, found = drop_pool(registry), Counter()
     for _ in range(rolls):
         for item in pool:
-            if quantity := roll_drop(item, rng):
+            quantity = roll_drop(item, rng)
+            if not quantity and rare_reroll and item.rarity >= pets.RARE_FROM and rng.random() < rare_reroll:
+                quantity = roll_drop(item, rng)
+            if quantity:
                 found[item.id] += quantity
     return found
 
@@ -378,7 +383,8 @@ async def windfall(user: User, every: int, rng: random.Random, registry: Registr
     await user.update_skill("foraging", count)
     if not hit:
         return Counter()
-    drops = roll_drops(1, rng, registry or get_registry())
+    reg = registry or get_registry()
+    drops = roll_drops(1, rng, reg, (await pets.bonuses(user, reg)).get("rare_reroll", 0.0))
     for item_id, quantity in drops.items():
         await user.add_item(item_id, quantity)
     return drops
@@ -402,7 +408,8 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     tree.collected = True
     axe = await equipped_stats(user, "foraging", reg)
     final_cut = axe.stats.get("final_cut", 0.0) if axe else 0.0  # Final Cut (Mastery): a tree you fell yourself pays more
-    drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus + final_cut), rng), rng, reg)
+    fox = (await pets.bonuses(user, reg)).get("rare_reroll", 0.0)
+    drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus + final_cut), rng), rng, reg, fox)
     if scroll := scrolls.roll("foraging", rng, reg):  # (a rare scroll, one chance per tree whatever its size)
         drops[scroll] += 1
     if tree.double:  # a Re-leaf double tree also drops its haul of materials

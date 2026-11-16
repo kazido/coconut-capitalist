@@ -155,6 +155,7 @@ class MineRun:
         lifeline: int = 0,
         gold_rush: int = 0,
         geode: float = 0.0,
+        rare_reroll: float = 0.0,
     ):
         self.rules, self.registry, self.rng = rules, registry, rng
         self.cursors = list(cursors)
@@ -167,6 +168,7 @@ class MineRun:
         self.rich_bonus, self.vault_gem_bonus = rich_bonus, vault_gem_bonus  # Mastery: more rich lodes, more vault gems
         self.auto_bomb_every, self.multi_mine = auto_bomb_every, multi_mine  # pickaxe abilities (0: none)
         self.lifeline, self.gold_rush, self.geode = lifeline, gold_rush, geode  # Mastery capstones (0: none): a second chance from a collapse, every Nth cell pays triple, geodes with gems
+        self.rare_reroll = rare_reroll  # a Fox: a cell that rolled nothing rare has this chance of one free second roll
         self.cells_mined = 0
         self.auto_counter = 0  # rows dug since the last Auto-Bomb
         self.bombs_used = 0
@@ -205,6 +207,9 @@ class MineRun:
             cells: list[Cell] = []
             for _ in range(self.rules.columns):
                 rolled = roll_table(table, self.registry, self.rng)
+                if self.rare_reroll and (not rolled or self.registry.item(rolled[0]).rarity < pets.RARE_FROM) and self.rng.random() < self.rare_reroll:
+                    again = roll_table(table, self.registry, self.rng)
+                    rolled = again if again and self.registry.item(again[0]).rarity >= pets.RARE_FROM else rolled
                 cells.append((rolled[0], max(1, round(rolled[1] * self._quantity_factor(depth)))) if rolled else None)
             self._rows[depth] = cells
             self._holes[depth] = {
@@ -583,6 +588,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         lifeline=int(tool.stats.get("lifeline", 0)),
         gold_rush=int(tool.stats.get("gold_rush", 0)),
         geode=tool.stats.get("geode", 0.0),
+        rare_reroll=pet.get("rare_reroll", 0.0),
     )
     _LIVE_RUNS[user.id] = (run, time.time())
     return run

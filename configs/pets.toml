@@ -262,3 +262,14 @@ description = "Loves anything that shines. Haggles you a better price for whatev
 stat = "sell_bonus"
 value = 0.06
 text = "+{v:.0%} bits from every sale"
+
+[fox]
+name = "Fox"
+skill = "global"
+emoji = "🦊"
+rarity = 4
+description = "Cunning, and always checks twice. A rare find that slips past sometimes gets a second look."
+[[fox.bonuses]]
+stat = "rare_reroll"
+value = 0.15
+text = "{v:.0%} chance of a free second roll for a rare drop"

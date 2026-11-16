@@ -83,3 +83,73 @@ async def test_a_mole_takes_pressure_off_every_row_and_more_with_strength(db):
 
 async def test_a_moles_shave_is_a_modest_slice_of_the_pressure():
     assert 0.05 <= value("mole") <= 0.10
+
+
+# ---- Fox ----------------------------------------------------------------------------------------------------------
+def test_a_fox_gives_rare_forest_drops_a_free_second_roll_and_more_with_strength():
+    from random import Random
+
+    from cococap.services import foraging
+
+    rares = {i.id for i in foraging.drop_pool(REG) if i.rarity >= pets.RARE_FROM}
+    assert rares  # (the forest has rare drops for the Fox to look after)
+
+    def found(chance: float, seed: int) -> int:
+        rng = Random(seed)
+        return sum(q for item, q in foraging.roll_drops(60_000, rng, REG, chance).items() if item in rares)
+
+    base, small, big = found(0.0, 1), found(value("fox") / 2, 1), found(value("fox"), 1)
+    assert base < small < big
+
+
+def test_a_fox_never_rerolls_common_forest_drops(monkeypatch):
+    from collections import Counter
+    from random import Random
+
+    from cococap.services import foraging
+
+    calls: Counter[str] = Counter()
+    real = foraging.roll_drop
+    monkeypatch.setattr(foraging, "roll_drop", lambda item, rng: calls.update([item.id]) or real(item, rng))
+    foraging.roll_drops(500, Random(5), REG, 1.0)  # (a Fox that always looks twice)
+    for item in foraging.drop_pool(REG):
+        assert calls[item.id] >= 500 and (calls[item.id] > 500 if item.rarity >= pets.RARE_FROM else calls[item.id] == 500), item.id
+
+
+def test_a_fox_makes_rare_fish_likelier():
+    from random import Random
+
+    from cococap.services import fishing as fishing_service
+    from cococap.services.equipment import EffectiveStats
+
+    water = REG.fishing.waters[2]
+    stats = EffectiveStats(power=3, requirement=0, stats={"power": 3.0})
+
+    def rare(chance: float) -> int:
+        rng = Random(7)
+        return sum(fishing_service.cast_line(stats, rng, 0.0, REG, water=water, pet={"rare_reroll": chance}).fish.rarity >= pets.RARE_FROM for _ in range(6000))
+
+    assert rare(0.0) < rare(value("fox") / 2) < rare(value("fox"))
+
+
+def test_a_fox_makes_rare_ore_likelier_in_the_mine():
+    from random import Random
+
+    from cococap.services import mining
+
+    def rare(chance: float) -> int:
+        total = 0
+        for seed in range(40):
+            run = mining.MineRun(REG.mining, REG, Random(seed), cursors=[2], rare_reroll=chance)
+            for depth in range(40, 60):
+                total += sum(1 for cell in run.row(depth) if cell and REG.item(cell[0]).rarity >= pets.RARE_FROM)
+        return total
+
+    assert rare(0.0) < rare(value("fox") / 2) < rare(value("fox"))
+
+
+async def test_the_fox_pet_hands_its_chance_to_the_game_and_scales_with_strength(db):
+    user, young = await with_pet("fox", user_id=1), await with_pet("fox", user_id=2, xp=0)
+    star3 = await with_pet("fox", user_id=3, stars=3)
+    assert (await pets.bonuses(user, REG))["rare_reroll"] == pytest.approx(value("fox"))
+    assert (await pets.bonuses(young, REG))["rare_reroll"] < value("fox") < (await pets.bonuses(star3, REG))["rare_reroll"]

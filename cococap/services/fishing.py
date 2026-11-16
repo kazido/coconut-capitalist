@@ -375,6 +375,9 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
     pet = pet or {}
     luck = pet.get("rare_luck", 0.0) + stats.stats.get("rare_luck", 0.0) + rod_luck(stats.power, rules)
     fish = roll_fish(rng, reg, water, luck, chase) if chase else roll_fish(rng, reg, water, luck)
+    if pet.get("rare_reroll") and fish.rarity < pets.RARE_FROM and rng.random() < pet["rare_reroll"]:  # a Fox: a free second cast of the dice, kept if it is rare
+        again = roll_fish(rng, reg, water, luck, chase) if chase else roll_fish(rng, reg, water, luck)
+        fish = again if again.rarity >= pets.RARE_FROM else fish
     bite_at = now + wait_seconds(stats.power, rules, rng, stats.stats.get("bite_speed", 0.0) + pet.get("bite_speed", 0.0)) * (
         water.wait_multiplier if water else 1.0)
     pattern, truth = build_reel(fish, rules, rng)

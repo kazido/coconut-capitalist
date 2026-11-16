@@ -20,6 +20,9 @@ ORB = "familiar_orb"  # the standard orb; others are the items whose id ends `_o
 LEGACY_XP_SCALE = 300  # the one xp scale every pet had before levels depended on rarity (curve version 0); history, not balance
 
 # Every stat the rest of the game looks up (a test checks that pets cover all of them and use no others).
+RARE_FROM = 4  # a "rare drop" for the Fox: an item of this rarity or more
+
+
 KNOWN_STATS = frozenset({
     "work_bonus",  # economy: the Work wage
     "sell_bonus",  # economy: every sale pays this much more (Magpie)
@@ -27,6 +30,7 @@ KNOWN_STATS = frozenset({
     "danger_reduction", "ore_yield", "dig_shave",  # mining (the Mole's dig_shave takes this share off the pressure every dug row adds)
     "good_chop",  # foraging
     "grow_chance", "crop_yield",  # farming
+    "rare_reroll",  # every skill's rare drops (rarity 4 and up): the chance of a free second roll when the first one is not rare (Fox)
     "xp_all",  # every skill's xp
     "xp_fishing", "xp_mining", "xp_foraging", "xp_farming", "xp_combat",  # one skill's xp (a Spirit gives one of these too)
 })
