@@ -345,6 +345,14 @@ class Navigator(ui.LayoutView):
                 await self.screen.on_abandon()
             except Exception:
                 log.exception("on_abandon failed for %s", self.screen.id)
+        if self.message is not None:
+            try:  # an expired menu is removed rather than left with dead buttons
+                await self.message.delete()
+                return
+            except (discord.NotFound, discord.Forbidden, discord.HTTPException):
+                pass
+            except Exception:
+                log.exception("could not delete the expired menu")
         for child in self.walk_children():
             if isinstance(child, (ui.Button, ui.Select)):
                 child.disabled = True

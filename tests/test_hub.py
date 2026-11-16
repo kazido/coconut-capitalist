@@ -127,9 +127,17 @@ async def test_strangers_cannot_use_someone_elses_hub(db):
     assert await nav.interaction_check(fake_interaction(1)) is True
 
 
-async def test_timeout_disables_the_controls(db):
+async def test_timeout_deletes_the_message(db):
     nav, _ = await hub("home")
-    nav.message = SimpleNamespace(edit=AsyncMock())
+    nav.message = SimpleNamespace(edit=AsyncMock(), delete=AsyncMock())
+    await nav.on_timeout()
+    nav.message.delete.assert_awaited()
+    nav.message.edit.assert_not_awaited()
+
+
+async def test_timeout_disables_the_controls_when_delete_fails(db):
+    nav, _ = await hub("home")
+    nav.message = SimpleNamespace(edit=AsyncMock(), delete=AsyncMock(side_effect=discord.Forbidden(MagicMock(status=403), "no")))
     await nav.on_timeout()
     assert all(b.disabled for b in buttons(nav)) and all(s.disabled for s in selects(nav))
     nav.message.edit.assert_awaited()
