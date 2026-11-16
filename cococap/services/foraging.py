@@ -153,9 +153,9 @@ class Spot:
             quality *= 1 + self.boost
             self.boost_chops -= 1
         hits, effort, fired, mark = 2.0 if doubled else 1.0, quality, "", 0.0  # (the effort is what pays xp: a double chop is still one swing)
+        if correct is False:  # a wrong-style chop breaks the streak at once, on this very swing (and this grain is no longer clean)
+            self.clean, self.streak = False, 0
         hits *= 1 + c.streak_bonus * min(self.streak, c.streak_max)  # (the streak adds damage only, never xp)
-        if correct is False:
-            self.clean = False
         sp = self.kind(rules)
         if sp and correct is not False:  # (a chop with no style at all counts as right)
             fired = sp.effect

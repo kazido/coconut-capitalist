@@ -1032,10 +1032,10 @@ def test_finishing_grains_with_every_chop_right_builds_a_small_capped_bonus_and_
     assert top.damage == pytest.approx(base.damage * (1 + ch.streak_bonus * ch.streak_max), abs=1) and top.effort == pytest.approx(base.effort)  # capped, damage only
     spot.grain, spot.quality, spot.wear, spot.clean = "plain", 1.0, 0.0, True
     _damage(spot, "o")  # one wrong-style chop spoils this grain...
-    assert spot.streak == ch.streak_max and not spot.clean  # ...but the streak stands until the grain is finished
+    assert spot.streak == 0 and not spot.clean  # ...and the streak is gone at once
     while not _damage(spot, "s").ended:
         pass
-    assert spot.streak == 0 and spot.clean  # the spoiled grain ended it; the next grain starts clean
+    assert spot.streak == 0 and spot.clean  # (the spoiled grain ended without building it; the next grain starts clean)
     spot.streak = 2
     _damage(spot, None)  # chopping with no style at all neither helps nor spoils
     assert spot.streak == 2 and spot.clean
@@ -1069,6 +1069,19 @@ def _damage_wear(spot, slow):
             return 0.99
 
     return spot.swing(100, RULES, Calm(1), 0.0, None, slow).ended
+
+
+def test_a_wrong_style_chop_resets_the_streak_to_zero_on_that_very_swing():
+    spot = f.Spot.pick(RULES, Random(4))
+    spot.streak = RULES.chopping.streak_max
+    right = spot.stance(RULES)
+    wrong = next(x for x in f.STANCES if x != right)
+    r = Random(1)
+    assert spot.swing(40, RULES, r, 0.0, right).correct and spot.streak == RULES.chopping.streak_max  # a right chop keeps it
+    swing = spot.swing(40, RULES, r, 0.0, wrong)
+    assert swing.correct is False and spot.streak == 0 and not swing.ended  # gone at once, not when the grain ends
+    spot.swing(40, RULES, r, 0.0, right)
+    assert spot.streak == 0  # and it stays 0 for the rest of the grain
 
 
 def test_the_streak_cap_is_small_enough_for_shared_trees():
