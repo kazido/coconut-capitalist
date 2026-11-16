@@ -1125,3 +1125,73 @@ async def test_a_new_tree_clears_the_streak_before_the_panel_is_drawn(db, monkey
     nav.screen.tree = f.Tree(1, 10_000, 10_000)  # a new tree
     await nav.screen.refresh(inter)
     assert "🔥" not in text_now() and nav.screen.spot.streak == 0
+
+
+# ---- tree species ----------------------------------------------------------------------------------------------------------------------
+def test_a_tree_only_rolls_a_species_of_its_own_zone():
+    rng = Random(3)
+    for zone in range(1, RULES.zones + 1):
+        allowed = {sp.id for sp in RULES.species_in(zone)}
+        seen = {f.roll_tree(zone, rng, RULES).species for _ in range(60)}
+        assert seen <= allowed and seen, zone
+    assert {f.roll_tree(1, rng, RULES).species for _ in range(100)} == {sp.id for sp in RULES.species_in(1)}  # and every one of them turns up
+
+
+def test_species_drops_come_at_the_configured_rate_on_top_of_the_normal_pool():
+    sp = RULES.species_of("oak")
+    common, rare = sp.drops
+    rolls = 20_000
+    got = f.roll_drops(rolls, Random(5), REG, species="oak")
+    for d in (common, rare):
+        mean = (d.min + d.max) / 2
+        assert got[d.item] > 0 and got[d.item] / rolls <= d.rate * d.max
+        assert got[d.item] / rolls >= d.rate * d.min * 0.8, d.item
+        assert got[d.item] / rolls <= d.rate * mean * 1.3 + 0.01, d.item
+    assert got["hardwood"] > 0  # the normal pool still drops
+    plain = f.roll_drops(2000, Random(5), REG)
+    assert not any(d.item in plain for sp in RULES.species for d in sp.drops)  # no species, no signature drops
+    other = f.roll_drops(2000, Random(5), REG, species="birch")
+    assert common.item not in other and other["birch_bark"] > 0  # only its own species' drops
+
+
+def test_signature_drops_are_not_in_the_global_pool_and_are_likelier_than_the_poolsrare_items():
+    pool = {i.id for i in f.drop_pool(REG)}
+    assert all(d.item not in pool for sp in RULES.species for d in sp.drops)
+    assert all(d.rate >= 1 / 200 for sp in RULES.species for d in sp.drops)
+
+
+async def test_a_private_tree_pays_its_species_drops(db):
+    user = await player(1)
+    tree = f.Tree(1, 1000, 0, species="oak")
+    reward = await f.fell_private(user, tree, Random(4), REG)
+    assert reward.drops["oak_gall"] > 0 and reward.drops["birch_bark"] == 0
+    assert await user.item_quantity("oak_gall") == reward.drops["oak_gall"]
+
+
+def test_the_community_species_is_the_same_for_everybody_and_fits_the_zone():
+    for window in range(WINDOW, WINDOW + 40):
+        for zone in (1, 8, 20):
+            first = f.community_species(window, zone, RULES)
+            assert first == f.community_species(window, zone, RULES)
+            assert RULES.species_of(first).grows_in(zone)
+    assert len({f.community_species(w, 10, RULES) for w in range(WINDOW, WINDOW + 60)}) > 1  # it varies by hour
+
+
+async def test_every_chopper_sees_the_community_trees_species_and_its_shares_are_deterministic(db):
+    a, b = await player(1), await player(2)
+    first, other = await f.community_tree(a, OPEN), await f.community_tree(b, OPEN + 5)
+    assert first.species == other.species == f.community_species(WINDOW, first.zone, RULES) != ""
+    chops = {1: 600, 2: 400}
+    same = [f.community_shares(1000, True, chops, RULES, Random(7), REG, first.zone, species=first.species) for _ in range(2)]
+    assert same[0] == same[1]
+    sig = {d.item for d in RULES.species_of(first.species).drops}
+    assert any(set(s.drops) & sig for s in f.community_shares(100_000, True, {1: 100_000}, RULES, Random(7), REG, first.zone, species=first.species).values())
+
+
+async def test_settling_a_community_tree_pays_its_species_drops(db):
+    a = await player(1)
+    view = await f.community_tree(a, OPEN)
+    await f.chop_community(a, view.max_hp, OPEN + 1)
+    await f.settle_due(OPEN + 2, Random(1))
+    paid = (await f.claim_rewards(a, OPEN + 3, Random(1)))[0]
+    assert paid.drops  # (its signature items come from the tree's own species: see the shares test above for the rates)

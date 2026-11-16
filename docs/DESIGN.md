@@ -943,3 +943,19 @@ worth roughly +15% x 0.4 = +6% there and little in the early game. Five stars mu
 
 The Mole and Bee already existed (mining xp, +20% crops); they were repurposed in place (same ids, so saved pets keep working). A pet's
 rarity sets its xp curve, so an owned Mole (2 -> 3) now levels slower and a Bee (3 -> 2) quicker than before.
+
+## Tree species
+
+Every tree has a **species**, set by its zone when the tree is rolled (`[[species]]` in `configs/foraging.toml`: id, name, emoji, `zone_min`..`zone_max`,
+`weight`, `drops`). Nine species cover zones 1-20 with bands that overlap a little (2-3 species grow in any zone): Birch 1-5, Oak 1-7, Willow 3-9, Pine 6-12,
+Chestnut 8-13, Cherry 10-15, Palm 13-18, Redwood 14-20, Emberwood 16-20. A species adds its own **signature drops** on top of the normal drop pool: each drop
+roll of the tree also rolls every signature drop at its `rate` (a chance 0..1 per roll, then `min`..`max` of them), so they are far likelier than the pool's
+rare items. Each species has one common and one rarer signature item (`configs/items.toml`, skill foraging, no `[drop]` block so they never join the global pool).
+- Who picks the species: private trees roll it in `roll_tree` (after the hp, so seeded hp rolls did not change); community trees derive it from the window and zone
+  only (`community_species`, seeded `community-tree:{window}:species:{zone}`, nothing stored), so every chopper and the settling see the same one; party trees roll
+  it when started and keep it in the party state (`species`).
+- Paths: `roll_drops(..., species=)` is used by `fell_private`, `windfall`, `community_shares` (community and party). The Fox's rare re-roll also applies to
+  signature drops of rarity 4+. `odds.py` quotes a signature drop as 1 in 1/rate drop rolls; the wiki lists species by zone band.
+- **Phase 5 (not built): set craft.** The intent is a special item crafted from ONE of each species' signature drop. Both signature items of every species
+  are plain stackable materials, so the set recipe can ask for either the common or the rare one (or both) of every species.
+- Numbers are guesses (`TODO(balance)`): common rate ~0.27-0.30 per roll, rare 0.5-2%; sell prices scale with the zone band.

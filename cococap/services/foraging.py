@@ -27,11 +27,11 @@ from cococap.db.tables import CommunityTreeRow, SkillRow, TreeChopRow, TreeRewar
 from cococap.errors import GameRuleError
 from cococap.models.skills.foraging import Foraging
 from cococap.registry import Registry, get_registry
-from cococap.registry.models import ForagingRules, Grain, Wedge
+from cococap.registry.models import ForagingRules, Grain, Species, Wedge
 from cococap.services import scrolls
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services import pets
-from cococap.services.loot import roll_drop
+from cococap.services.loot import roll_drop, skewed_roll
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -278,6 +278,7 @@ class Tree:
     double: bool = False  # a Re-leaf double tree: twice the hp, and a jackpot when it falls
     effort: float = 0.0  # the quality of every chop made on it so far: its xp
     bonus: float = 0.0  # marked by Rich Seams: +this to its bits and drops when it falls (0.25 = +25%)
+    species: str = ""  # the species id (set by the zone when it is rolled; "" = none, no signature drops)
 
     @property
     def felled(self) -> bool:
@@ -293,10 +294,27 @@ class Tree:
         return applied
 
 
-def roll_tree(zone: int, rng: random.Random, rules: ForagingRules) -> Tree:
+def roll_species(zone: int, rng: random.Random, rules: ForagingRules) -> Species | None:
+    """The species of a tree in `zone`: one of the species that grow there, by weight (None when the rules have no species)."""
+    kinds = rules.species_in(zone)
+    return rng.choices(kinds, weights=[sp.weight for sp in kinds])[0] if kinds else None
+
+
+def community_species(window: int, zone: int, rules: ForagingRules) -> str:
+    """The species of an hour's community tree: a pure function of the hour and its zone (seeded like the zone is), so everybody, and the
+    settling of its rewards, sees the same one."""
+    sp = roll_species(zone, random.Random(f"community-tree:{window}:species:{zone}"), rules)
+    return sp.id if sp else ""
+
+
+def roll_tree(zone: int, rng: random.Random, rules: ForagingRules, species: str | None = None) -> Tree:
+    """A new tree: its height and hp, then its species (rolled by the zone's weights after the hp, unless one is given)."""
     height = rng.choices(rules.heights, weights=[h.weight for h in rules.heights])[0]
     hp = max(1, round(rng.randint(height.min, height.max) * (1 + rules.zone_hp_growth * (zone - 1))))
-    return Tree(zone, hp, hp)
+    if species is None:
+        sp = roll_species(zone, rng, rules)
+        species = sp.id if sp else ""
+    return Tree(zone, hp, hp, species=species)
 
 
 # ---- what trees pay ---------------------------------------------------------------------------------------
@@ -320,10 +338,18 @@ def whole_rolls(expected: float, rng: random.Random) -> int:
     return whole + (1 if rng.random() < expected - whole else 0)
 
 
-def roll_drops(rolls: int, rng: random.Random, registry: Registry, rare_reroll: float = 0.0) -> Counter[str]:
-    """Roll the forest's drops `rolls` times. `rare_reroll` (a Fox): each rare item (rarity 4+) that misses has this chance of one free second roll."""
+def roll_drops(rolls: int, rng: random.Random, registry: Registry, rare_reroll: float = 0.0, species: str = "") -> Counter[str]:
+    """Roll the forest's drops `rolls` times. `rare_reroll` (a Fox): each rare item (rarity 4+) that misses has this chance of one free second roll.
+    `species` (a tree's species id): its signature drops are rolled on every roll too, on top of the normal pool."""
     pool, found = drop_pool(registry), Counter()
+    signature = sp.drops if (sp := registry.foraging.species_of(species)) else []
     for _ in range(rolls):
+        for d in signature:
+            hit = rng.random() < d.rate
+            if not hit and rare_reroll and registry.item(d.item).rarity >= pets.RARE_FROM and rng.random() < rare_reroll:
+                hit = rng.random() < d.rate
+            if hit:
+                found[d.item] += skewed_roll(rng, d.min, d.max)
         for item in pool:
             quantity = roll_drop(item, rng)
             if not quantity and rare_reroll and item.rarity >= pets.RARE_FROM and rng.random() < rare_reroll:
@@ -368,7 +394,7 @@ async def shake(user: User, chance: float, rng: random.Random, registry: Registr
     return Counter({item.id: 1})
 
 
-async def windfall(user: User, every: int, rng: random.Random, registry: Registry | None = None, *, grain_done: bool = False) -> Counter:
+async def windfall(user: User, every: int, rng: random.Random, registry: Registry | None = None, *, grain_done: bool = False, species: str = "") -> Counter:
     """Windfall (Mastery): every `every`th grain you finish clean (every chop on it in the grain's own style; `Swing.clean_grain`, passed as
     `grain_done`) shakes loose a full roll of drops, paid at once. Counts clean grains, not chops. Returns what fell."""
     if every <= 0 or not grain_done:
@@ -384,7 +410,7 @@ async def windfall(user: User, every: int, rng: random.Random, registry: Registr
     if not hit:
         return Counter()
     reg = registry or get_registry()
-    drops = roll_drops(1, rng, reg, (await pets.bonuses(user, reg)).get("rare_reroll", 0.0))
+    drops = roll_drops(1, rng, reg, (await pets.bonuses(user, reg)).get("rare_reroll", 0.0), species)
     for item_id, quantity in drops.items():
         await user.add_item(item_id, quantity)
     return drops
@@ -409,7 +435,7 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     axe = await equipped_stats(user, "foraging", reg)
     final_cut = axe.stats.get("final_cut", 0.0) if axe else 0.0  # Final Cut (Mastery): a tree you fell yourself pays more
     fox = (await pets.bonuses(user, reg)).get("rare_reroll", 0.0)
-    drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus + final_cut), rng), rng, reg, fox)
+    drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus + final_cut), rng), rng, reg, fox, tree.species)
     if scroll := scrolls.roll("foraging", rng, reg):  # (a rare scroll, one chance per tree whatever its size)
         drops[scroll] += 1
     if tree.double:  # a Re-leaf double tree also drops its haul of materials
@@ -489,6 +515,7 @@ class CommunityView:
     closes_at: float
     choppers: int
     yours: int  # hp you have chopped off it
+    species: str = ""  # the tree's species id
 
     @property
     def standing(self) -> bool:
@@ -524,13 +551,13 @@ async def _ensure(session, now: float, rules: ForagingRules) -> CommunityTreeRow
     return await session.get(CommunityTreeRow, window)
 
 
-async def _view(session, row: CommunityTreeRow, user_id: int) -> CommunityView:
+async def _view(session, row: CommunityTreeRow, user_id: int, rules: ForagingRules) -> CommunityView:
     choppers = await session.scalar(select(func.count()).select_from(TreeChopRow).where(TreeChopRow.window == row.window))
     yours = await session.scalar(
         select(TreeChopRow.damage).where(TreeChopRow.window == row.window, TreeChopRow.user_id == user_id)
     )
     return CommunityView(row.window, row.zone, row.max_hp, row.hp, row.status, row.opens_at, row.closes_at,
-                         choppers or 0, yours or 0)
+                         choppers or 0, yours or 0, community_species(row.window, row.zone, rules))
 
 
 async def community_tree(user: User, now: float | None = None, registry: Registry | None = None) -> CommunityView | None:
@@ -539,7 +566,7 @@ async def community_tree(user: User, now: float | None = None, registry: Registr
     now = time.time() if now is None else now
     async with get_database().session() as session:
         row = await _ensure(session, now, rules)
-        return await _view(session, row, user.id) if row else None
+        return await _view(session, row, user.id, rules) if row else None
 
 
 @dataclass(frozen=True)
@@ -573,7 +600,7 @@ async def chop_community(
                 set_={"damage": TreeChopRow.damage + applied, "effort": TreeChopRow.effort + earned},
             )
         )
-        view = await _view(session, row, user.id)
+        view = await _view(session, row, user.id, rules)
     return CommunityChop(applied, view, felled_now=view.status == "felled")
 
 
@@ -597,7 +624,7 @@ def community_pool(choppers: int, rules: ForagingRules) -> float:
 
 def community_shares(
     max_hp: int, felled: bool, chops: dict[int, int], rules: ForagingRules, rng: random.Random, registry: Registry,
-    zone: int = 1, *, efforts: dict[int, float] | None = None,
+    zone: int = 1, *, efforts: dict[int, float] | None = None, species: str = "",
 ) -> dict[int, Share]:
     """Who gets what from a finished community tree. Pure. Drops and bits go by share of the tree's hp, out of a pool that grows with the number of choppers (only for
     those with at least ``min_share``); xp is for work done (the quality of each chop, in `efforts`), whatever the share."""
@@ -614,7 +641,7 @@ def community_shares(
             paid_share = min(damage / max_hp, c.max_share)
             pool = community_pool(len(qualifying), rules)
             rolls = whole_rolls(total_rolls * paid_share * (1 + bonus) * factor, rng)
-            drops = dict(roll_drops(rolls, rng, registry))
+            drops = dict(roll_drops(rolls, rng, registry, species=species))
             bits = round(paid_share * max_hp * rules.bits_per_hp * pay * pool * (1 + bonus) * factor)
         shares[user_id] = Share(damage, drops, bits, round((efforts or {}).get(user_id, 0.0) * rules.xp_per_swing))
     return shares
@@ -641,7 +668,8 @@ async def settle_due(now: float | None = None, rng: random.Random | None = None,
                 select(TreeChopRow.user_id, TreeChopRow.damage, TreeChopRow.effort).where(TreeChopRow.window == tree.window)
             )).all()
             shares = community_shares(tree.max_hp, tree.status == "felled", {u: d for u, d, _ in rows if d > 0}, rules, rng, reg, tree.zone,
-                                      efforts={u: e for u, d, e in rows if d > 0})
+                                      efforts={u: e for u, d, e in rows if d > 0},
+                                      species=community_species(tree.window, tree.zone, rules))
             for user_id, share in shares.items():
                 session.add(TreeRewardRow(window=tree.window, user_id=user_id, damage=share.damage,
                                           felled=tree.status == "felled", drops=share.drops, bits=share.bits,

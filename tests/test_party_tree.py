@@ -357,3 +357,17 @@ async def test_leaving_a_felled_tree_still_shows_what_you_are_owed(db, clock):
     users, mine, mine_inter = await stale_panel()
     await click(mine, mine_inter, "Leave")
     assert mine.screen.id == "result" and "TIMBER" in all_text(mine)  # (the Leave button takes you to the foraging page, which collects and shows it)
+
+
+# ---- tree species ----------------------------------------------------------------------------------------------------------------------
+async def test_a_party_tree_has_a_species_of_its_zone_and_pays_its_signature_drops(db):
+    one, two = (await team(2))[:2]
+    tree = await pt.start(one, 1, T0, REG, Random(1))
+    assert tree.species and RULES.species_of(tree.species).grows_in(1)
+    assert (await pt.view(two, T0 + 1, REG)).species == tree.species  # the whole party sees the same one
+    shares = f.community_shares(1_000_000, True, {1: 500_000, 2: 500_000}, pt.party_rules(RULES), Random(2), REG, 1, species=tree.species)
+    sig = {d.item for d in RULES.species_of(tree.species).drops}
+    assert all(set(s.drops) & sig for s in shares.values())
+    await pt.chop(one, tree.max_hp, T0 + 2, REG)
+    rewards = await pt.claim(one, T0 + 3, REG)
+    assert rewards and rewards[0].party

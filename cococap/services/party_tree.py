@@ -52,6 +52,7 @@ class PartyTreeView:
     closes_at: float
     chops: dict[int, int]  # member id -> hp chopped
     yours: int
+    species: str = ""  # the tree's species id (rolled when it was started)
 
     @property
     def standing(self) -> bool:
@@ -78,7 +79,7 @@ def _settle(state: dict, party_id: int, rules: ForagingRules, reg: Registry) -> 
         return
     efforts = {int(u): e for u, e in tree.get("efforts", {}).items()}
     shares = foraging.community_shares(tree["max_hp"], tree["status"] == "felled", chops, party_rules(rules), rng, reg, tree["zone"],
-                                       efforts=efforts)
+                                       efforts=efforts, species=tree.get("species", ""))
     for user_id, share in shares.items():
         state["pending"].setdefault(str(user_id), []).append(
             {"number": tree["number"], "drops": dict(share.drops), "bits": share.bits, "xp": share.xp, "felled": tree["status"] == "felled"})
@@ -96,7 +97,7 @@ def _view(state: dict, user_id: int) -> PartyTreeView | None:
     if tree is None:
         return None
     chops = {int(u): d for u, d in tree["chops"].items()}
-    return PartyTreeView(tree["number"], tree["zone"], tree["max_hp"], tree["hp"], tree["status"], tree["closes"], chops, chops.get(user_id, 0))
+    return PartyTreeView(tree["number"], tree["zone"], tree["max_hp"], tree["hp"], tree["status"], tree["closes"], chops, chops.get(user_id, 0), tree.get("species", ""))
 
 
 async def _party_of(user: User) -> Party:
@@ -128,7 +129,7 @@ async def unlocked_zone(party: Party, registry: Registry | None = None) -> int:
     return foraging.unlocked_zones(min(levels), reg.foraging)[-1]
 
 
-async def start(user: User, zone: int, now: float | None = None, registry: Registry | None = None) -> PartyTreeView:
+async def start(user: User, zone: int, now: float | None = None, registry: Registry | None = None, rng: random.Random | None = None) -> PartyTreeView:
     """Start a party tree (any member can). One at a time per party."""
     reg = registry or get_registry()
     rules = reg.foraging
@@ -139,6 +140,7 @@ async def start(user: User, zone: int, now: float | None = None, registry: Regis
     if not 1 <= zone <= best:
         raise PartyTreeError(f"Your party can start trees up to zone {best} (the deepest everyone has unlocked).")
     hp = tree_hp(zone, party.member_count(), rules)
+    species = foraging.roll_species(zone, rng or random.Random(), rules)
 
     def begin(state: dict) -> None:
         _expire(state, party.party_id, now, rules, reg)
@@ -146,7 +148,7 @@ async def start(user: User, zone: int, now: float | None = None, registry: Regis
         if tree is not None and tree["status"] == "growing":
             raise PartyTreeError("Your party already has a tree standing.")
         number = (tree["number"] if tree else 0) + 1
-        state["current"] = {"number": number, "zone": zone, "max_hp": hp, "hp": hp, "status": "growing", "opens": now,
+        state["current"] = {"number": number, "zone": zone, "species": species.id if species else "", "max_hp": hp, "hp": hp, "status": "growing", "opens": now,
                             "closes": now + rules.party_tree.open_minutes * 60, "chops": {}, "efforts": {}, "settled": False}
 
     await community.update(_key(party.party_id), KEEP, begin)

@@ -128,6 +128,18 @@ def swing_note(swing: foraging.Swing, stance: str | None = None, applied: int | 
     return f"{'✅' if swing.correct else '❌ glanced off'} {icon}  ·  {dealt}{good}{extra}"
 
 
+def species_label(species_id: str) -> str:
+    """"🌳 Oak" for a species id, or "" (no species)."""
+    sp = get_registry().foraging.species_of(species_id)
+    return f"{sp.emoji} {sp.name}" if sp else ""
+
+
+def tree_title(base: str, species_id: str) -> str:
+    """The page title of a tree: "🌳 Oak Tree", "🌳 Oak Community Tree"..."""
+    label = species_label(species_id)
+    return f"{label} {base}" if label else base
+
+
 def stance_buttons(on_click) -> list[discord.ui.Button]:
     """The three styles. Which one is right depends on the grain you are on."""
     return [button(name, emoji=glyph, style=discord.ButtonStyle.primary, on_click=on_click(letter))
@@ -152,7 +164,7 @@ async def wedge_row(screen: Screen):
     return row(*(button(f"{reg.item(w.item).name} ×{q}", emoji="🔩", on_click=use(w.item)) for w, q in held))
 
 
-async def swing_at(screen: Screen, power: int, stance: str, tree_key: object) -> tuple[foraging.Swing, str]:
+async def swing_at(screen: Screen, power: int, stance: str, tree_key: object, species: str = "") -> tuple[foraging.Swing, str]:
     """Swing in a style on this screen's spot. Writes down what you found out about the grain (the right style is remembered, a wrong
     one is crossed off) and wears the spot. Returns the swing and what to tell the player about it."""
     reg = get_registry()
@@ -167,7 +179,7 @@ async def swing_at(screen: Screen, power: int, stance: str, tree_key: object) ->
     if swing.correct is not None and await foraging.note_style(screen.user, grain, stance, swing.correct):
         note += (f"  📖 Learned: the **{name}** grain likes **{foraging.STANCES[stance][0]}**!" if swing.correct
                  else f"  ✖️ {foraging.STANCES[stance][0]} crossed off the **{name}** grain in your notes")
-    shaken = await foraging.shake(screen.user, stats.stats.get("shake", 0.0), screen.rng) + await foraging.windfall(screen.user, int(stats.stats.get("windfall", 0)), screen.rng, grain_done=swing.clean_grain)
+    shaken = await foraging.shake(screen.user, stats.stats.get("shake", 0.0), screen.rng) + await foraging.windfall(screen.user, int(stats.stats.get("windfall", 0)), screen.rng, grain_done=swing.clean_grain, species=species)
     if shaken:
         note += "  🍃 Shook loose " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in shaken.items()) + "!"
     if swing.ended:
@@ -229,7 +241,7 @@ class ForageScreen(Screen):
         view = await foraging.community_tree(self.user)
         now = time.time()
         if view is not None and view.standing:
-            line = (f"### 🌲 Community tree (zone {view.zone})\n{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp  ·  "
+            line = (f"### 🌲 Community tree: {species_label(view.species) or 'zone ' + str(view.zone)}  ·  zone {view.zone}\n{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp  ·  "
                     f"**{view.choppers}** chopping  ·  falls over <t:{int(view.closes_at)}:R>")
             if view.yours:
                 line += f"\nYou have chopped **{view.share:.0%}** of it."
@@ -246,7 +258,8 @@ class ForageScreen(Screen):
         # a private tree
         body.append(sep())
         heavy = foraging.is_heavy(self.zone, rules) and not (stats and stats.has("soloist"))
-        private = f"### 🪵 A tree of your own\nZone **{self.zone}**" + (
+        here = ", ".join(f"{sp.emoji} {sp.name}" for sp in rules.species_in(self.zone))
+        private = f"### 🪵 A tree of your own\nZone **{self.zone}**" + (f"  ·  {here}" if here else "") + (
             "  ·  heavy: you swing at half power alone" if heavy else "")
         if len(zones) < rules.zones:
             private += f"\n-# Zone {zones[-1] + 1} needs level {foraging.zone_level(zones[-1] + 1, rules)}."
@@ -273,7 +286,7 @@ class ForageScreen(Screen):
         pt = await party_tree.view(self.user)
         bonus = get_registry().foraging.party_tree
         if pt is not None and pt.standing:
-            line = (f"### 👥 Party tree (zone {pt.zone})\n{bar(pt.fraction_left)}  **{pt.hp:,}**/{pt.max_hp:,} hp  ·  "
+            line = (f"### 👥 Party tree: {species_label(pt.species) or 'zone ' + str(pt.zone)}  ·  zone {pt.zone}\n{bar(pt.fraction_left)}  **{pt.hp:,}**/{pt.max_hp:,} hp  ·  "
                     f"**{len(pt.chops)}** chopping  ·  falls over <t:{int(pt.closes_at)}:R>")
             return [text(line), row(button("Join the party tree", emoji="👥", style=discord.ButtonStyle.success,
                                           disabled=stats is None, on_click=self._join_party))]
@@ -351,7 +364,7 @@ class TreeScreen(Screen):
         power = foraging.swing_power(stats, tree.zone, rules)
         self.spot.on_tree(id(tree))  # (a new tree starts the right-style streak over before the panel draws it)
         body = [*self.note_block()]
-        body.append(text(f"{'🌲🌲 **Double tree!**  ' if tree.double else ''}**Zone {tree.zone}**\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
+        body.append(text(f"{'🌲🌲 **Double tree!**  ' if tree.double else ''}**Zone {tree.zone}**{self._species_line(tree.species)}\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
                          f"\n{await spot_panel(self, power)}" + (f"\n🏷️ Marked: **+{tree.bonus:.0%}** drops when it falls" if tree.bonus else "") + (
                              f"\n-# Heavy tree: alone you swing at half your axe's {stats.power}. A Soloist axe fixes that."
                              if power < stats.power else "")))
@@ -359,7 +372,11 @@ class TreeScreen(Screen):
         body.append(row(button("Grain notes", emoji="📖", on_click=self._notes), button("Leave", on_click=self._stop)))
         if wedges := await wedge_row(self):
             body.append(wedges)
-        return Page("Tree", body, accent=0x4C8C4A)
+        return Page(tree_title("Tree", tree.species), body, accent=0x4C8C4A)
+
+    @staticmethod
+    def _species_line(species_id: str) -> str:
+        return f"  ·  {species_label(species_id)}" if species_label(species_id) else ""
 
     def _chop(self, stance: str):
         async def chop(interaction: discord.Interaction) -> None:
@@ -373,7 +390,7 @@ class TreeScreen(Screen):
             return await self.refresh(interaction)
         reg = get_registry()
         stats = await foraging.axe_stats(self.user)
-        swing, note = await swing_at(self, foraging.swing_power(stats, tree.zone, reg.foraging), stance, id(tree))
+        swing, note = await swing_at(self, foraging.swing_power(stats, tree.zone, reg.foraging), stance, id(tree), tree.species)
         applied = tree.chop(swing.damage, swing.effort)
         if swing.mark:
             tree.bonus = min(reg.foraging.chopping.mark_cap, tree.bonus + swing.mark)
@@ -443,7 +460,7 @@ class GroveScreen(Screen):
         power = foraging.swing_power(stats, view.zone, rules, community=True) if stats else 1
         self.spot.on_tree(("shared", view.closes_at))
         body += [
-            text(f"**Zone {view.zone}**  ·  falls over <t:{int(view.closes_at)}:R>\n"
+            text(f"**Zone {view.zone}**{TreeScreen._species_line(view.species)}  ·  falls over <t:{int(view.closes_at)}:R>\n"
                  f"{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp\n"
                  f"**{view.choppers}** chopper(s)"),
             text(f"You: **{view.yours:,}** hp  ·  **{view.share:.1%}** of the tree\n"
@@ -453,7 +470,7 @@ class GroveScreen(Screen):
         ]
         if wedges := await wedge_row(self):
             body.append(wedges)
-        return Page("Community Tree", body, accent=0x2E7D32)
+        return Page(tree_title("Community Tree", view.species), body, accent=0x2E7D32)
 
     def _chop(self, stance: str):
         async def chop(interaction: discord.Interaction) -> None:
@@ -466,7 +483,7 @@ class GroveScreen(Screen):
         rules = get_registry().foraging
         view = await foraging.community_tree(self.user)
         zone = view.zone if view else 1
-        swing, note = await swing_at(self, foraging.swing_power(stats, zone, rules, community=True), stance, ("shared", view.closes_at if view else 0))
+        swing, note = await swing_at(self, foraging.swing_power(stats, zone, rules, community=True), stance, ("shared", view.closes_at if view else 0), view.species if view else "")
         try:
             result = await foraging.chop_community(self.user, swing.damage, effort=swing.effort)
         except foraging.ForagingError:  # the tree is already down (or fell over): redraw, which collects what you are owed and shows it
@@ -524,7 +541,7 @@ class PartyGroveScreen(Screen):
         for uid, damage in sorted(view.chops.items(), key=lambda kv: -kv[1]):
             team.append(f"{await self.nav.name_of(uid)}{' (you)' if uid == self.user.id else ''}: **{damage:,}** hp ({damage / view.max_hp:.0%})")
         body += [
-            text(f"**Zone {view.zone}**  ·  falls over <t:{int(view.closes_at)}:R>\n"
+            text(f"**Zone {view.zone}**{TreeScreen._species_line(view.species)}  ·  falls over <t:{int(view.closes_at)}:R>\n"
                  f"{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp\n" + ("\n".join(team) if team else "Nobody has chopped yet.")),
             text(f"{await spot_panel(self, power)}\n-# {status}"),
             row(*stance_buttons(self._chop)),
@@ -532,7 +549,7 @@ class PartyGroveScreen(Screen):
         ]
         if wedges := await wedge_row(self):
             body.append(wedges)
-        return Page("Party Tree", body, accent=0x1F8A70)
+        return Page(tree_title("Party Tree", view.species), body, accent=0x1F8A70)
 
     def _chop(self, stance: str):
         async def chop(interaction: discord.Interaction) -> None:
@@ -545,7 +562,7 @@ class PartyGroveScreen(Screen):
         rules = get_registry().foraging
         view = await party_tree.view(self.user)
         zone = view.zone if view else 1
-        swing, note = await swing_at(self, foraging.swing_power(stats, zone, rules, community=True), stance, ("shared", view.closes_at if view else 0))
+        swing, note = await swing_at(self, foraging.swing_power(stats, zone, rules, community=True), stance, ("shared", view.closes_at if view else 0), view.species if view else "")
         try:
             result = await party_tree.chop(self.user, swing.damage, effort=swing.effort)
         except party_tree.PartyTreeError:  # a teammate felled it (or it fell over) while your panel was old: redraw, which collects and shows your rewards
