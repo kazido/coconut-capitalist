@@ -64,7 +64,7 @@ def test_a_cast_pays_about_what_it_should_at_starter_gear():
     rng = Random(2)
     n = 40_000
     worth = sum(f.roll_fish(rng, REG).sell_price for _ in range(n)) / n
-    assert 4_000 <= worth <= 6_500, worth
+    assert 4_000 <= worth <= 7_000, worth  # (a single 450,000-bit mega shark in the 40,000 draws moves this by ~11, so the top has some room)
     power = REG.item("starter_rod").tool.power
     seconds = sum(f.wait_seconds(power, RULES, rng) for _ in range(2000)) / 2000 + 1.5 * (RULES.reel.base_length + 2)
     assert 22 <= seconds <= 36, seconds  # a catch every ~25-30 seconds: about what mining and foraging pay per active minute
@@ -2309,3 +2309,15 @@ async def test_a_slow_self_refresh_is_never_cancelled_so_the_buttons_it_sent_sta
     assert await nav._push() is False  # ...a second one waits its turn instead of piling on...
     await asyncio.sleep(0.1)
     assert len(finished) == 1  # ...and the slow edit still went through
+
+
+# ---- Megaladegalodon (Ahna's mega shark) -------------------------------------------------------------------------------------------------
+def test_megaladegalodon_is_a_rare_deep_sea_fish_priced_between_its_neighbours():
+    shark = REG.item("megaladegalodon")
+    assert shark.name == "Megaladegalodon" and shark.rarity in (5, 6) and shark.category == "fish" and shark.emoji == "🦈"
+    assert "Ahna" in shark.description
+    deep = next(w for w in RULES.waters if w.id == "deep_sea")
+    assert "megaladegalodon" in deep.fish and shark in f.fish_pool(REG)
+    same_rarity = [i.sell_price for i in f.fish_pool(REG) if i.rarity == shark.rarity and i.id != shark.id]
+    assert min(same_rarity) / 4 < shark.sell_price <= max(same_rarity)
+    assert [w.id for w, _ in f.where_to_catch("megaladegalodon", REG)] == ["deep_sea"]

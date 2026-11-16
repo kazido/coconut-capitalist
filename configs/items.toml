@@ -508,6 +508,29 @@ max = 250
 [abyssal_angler.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "random"
 
+[megaladegalodon]
+name = "Megaladegalodon"
+description = "The one Ahna warned everyone about. Legend says it only bites when somebody says her name. It is very large, very polite, and (we are fairly sure) smiling."
+wiki = "A rarity 6 fish from the Deep Sea, requested by Ahna. Sell it, or turn it in to your collection book."
+emoji = "🦈"
+rarity = 6
+skill = "fishing"
+category = "fish"
+price = 0
+sell_price = 450000  # TODO(balance): between the Abyssal Angler (500k, same rarity) and the Marlin (100k); shown in the deep sea at 1 in 400
+
+[megaladegalodon.drop]
+rate = 12000  # 1 in 12000 per cast when no water is given (kept tiny so the no-water average stays inside the economy guard) (the waters' own `fish = N` is what is used in play: deep sea 1 in 400); rarest rolled first
+min = 1
+max = 1
+
+[megaladegalodon.size]  # cm: a mega shark
+min = 600
+max = 1800
+
+[megaladegalodon.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+tell = "same"
+
 [sturgeon]
 name = "Sturgeon"
 description = "An ancient armoured giant. Its eggs are worth a fortune."
