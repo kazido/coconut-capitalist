@@ -1,0 +1,56 @@
+# Colours shared by the emoji art pipeline (art/palette.py reads this file).
+
+# The owner's stone "cell" frame, as drawn (unrecoloured). Letters are the ones used in art/palette.py FRAME.
+[cell]
+highlight = "#959ba6"   # H
+light = "#6f7582"       # l
+base = "#606674"        # b
+shadow = "#4d515a"      # s
+fill = "#2b2d31"        # f, the inside of the cell (never recoloured)
+
+# The one outline colour for frameless art (pets, UI, species icons, wisps).
+[outline]
+color = "#2e1c2c"
+
+# How a rarity colour becomes the four border tones of the cell:
+#   highlight = mix with white, light = the colour itself, base = mix with black, shadow = mix with black.
+[border_mix]
+highlight = 0.35
+base = 0.18
+shadow = 0.40
+
+# Must match cococap/constants.py Rarities (tests/test_art.py checks it).
+[[rarity]]
+value = 1
+name = "Common"
+color = "#8E9AAF"
+
+[[rarity]]
+value = 2
+name = "Uncommon"
+color = "#4FCB6B"
+
+[[rarity]]
+value = 3
+name = "Rare"
+color = "#3D8BFF"
+
+[[rarity]]
+value = 4
+name = "Super Rare"
+color = "#A855F7"
+
+[[rarity]]
+value = 5
+name = "Legendary"
+color = "#FFB020"
+
+[[rarity]]
+value = 6
+name = "Premium"
+color = "#FF4D4D"
+
+[[rarity]]
+value = 7
+name = "Mythical"
+color = "#FF4FD8"

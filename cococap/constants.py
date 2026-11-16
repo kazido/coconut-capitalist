@@ -64,13 +64,13 @@ STARTER_TOOLS = ("rookiepickaxe", "starter_axe", "starter_rod", "tin_can")
 
 
 class Rarities(Enum):
-    COMMON = (1, "Common", "0x99F7A7")
-    UNCOMMON = (2, "Uncommon", "0x63EFFF")
-    RARE = (3, "Rare", "0x0C61CF")
-    SUPER_RARE = (4, "Super Rare", "0x6E3ADE")
-    LEGENDARY = (5, "Legendary", "0xE3AB3B")
-    PREMIUM = (6, "Premium", "0xFF3B3B")
-    MYTHICAL = (7, "Mythical", "0x9F34FF")
+    COMMON = (1, "Common", "0x8E9AAF")
+    UNCOMMON = (2, "Uncommon", "0x4FCB6B")
+    RARE = (3, "Rare", "0x3D8BFF")
+    SUPER_RARE = (4, "Super Rare", "0xA855F7")
+    LEGENDARY = (5, "Legendary", "0xFFB020")
+    PREMIUM = (6, "Premium", "0xFF4D4D")
+    MYTHICAL = (7, "Mythical", "0xFF4FD8")
 
     def __new__(cls, value, name, color):
         obj = object.__new__(cls)

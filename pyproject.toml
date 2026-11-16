@@ -25,6 +25,8 @@ dev = [
     "pytest-asyncio>=0.24",
     "ruff>=0.8",
 ]
+# Emoji art tooling (art/ build scripts, contact sheets); the bot itself does not need it.
+art = ["pillow>=10"]
 # One-off: scripts/import_mongo.py reads the old MongoDB (read-only).
 mongo-import = ["pymongo>=4"]
 # Needed only by modules that are currently disabled (see constants.DISABLED_EXTENSIONS).
