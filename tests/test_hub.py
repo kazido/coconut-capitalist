@@ -581,7 +581,7 @@ async def test_entering_the_mines_shows_the_meter_and_locks_navigation(db):
     assert "Row 1 of 30" in text and "**0%** collapse risk" in text
     assert find_button(nav, "Brace (1)") and find_button(nav, "Leave & bank")
     assert nav.screen.locked
-    assert find_button(nav, "Home").disabled and find_button(nav, "Back").disabled
+    assert not {"Home", "Back"} & {b.label for b in buttons(nav)}  # a live run hides Home/Back: Leave & bank is the way out
 
 
 async def test_digging_advances_depth_and_raises_danger(db):
@@ -1072,11 +1072,11 @@ async def test_market_is_locked_until_level_five_then_follows_the_calendar(db, m
     assert "Sold 10 crop(s)" in all_text(nav)
 
 
-async def test_market_is_closed_on_other_days(db, monkeypatch):
+async def test_market_is_closed_outside_its_hours(db, monkeypatch):
     user = await User.get(1)
     await user.add_xp("farming", User.level_to_xp(5) + 1)
     await user.add_item("apple", 3)
-    clock = SimpleNamespace(time=lambda: FRIDAY - 86400)  # Thursday
+    clock = SimpleNamespace(time=lambda: FRIDAY - 12 * 3600)  # midnight UTC, closed
     monkeypatch.setattr("cococap.screens.market.time", clock)
     monkeypatch.setattr("cococap.services.farming.time", clock)
     nav, _ = await hub("market")
@@ -1668,3 +1668,39 @@ def test_only_tools_cannot_be_sold():
     reg = get_registry()
     assert [i.id for i in reg.items.values() if not i.is_instance and not i.sellable] == []
     assert all(not i.sellable for i in reg.items.values() if i.is_instance)
+
+
+def _nav_labels(nav):
+    return {b.label for b in buttons(nav)}
+
+
+async def test_a_private_tree_hides_home_and_back_but_a_plain_page_shows_them(db):
+    nav, inter = await hub("forage")
+    assert {"Home", "Back"} <= _nav_labels(nav)  # no leave button here, so the controller is shown
+    nav, inter = await hub("tree")
+    assert nav.screen.locked and "Leave" in _nav_labels(nav) and not {"Home", "Back"} & _nav_labels(nav)
+    await click(nav, inter, "Leave")
+    assert nav.screen.id == "forage" and {"Home", "Back"} <= _nav_labels(nav)
+
+
+@pytest.mark.parametrize("screen_id", ["grove", "partygrove"])
+async def test_shared_tree_pages_hide_home_and_back(db, screen_id):
+    nav, inter = await hub(screen_id)
+    assert nav.screen.locked and not {"Home", "Back"} & _nav_labels(nav)
+    await nav.screen.on_abandon()  # nothing half-done to settle: must not raise
+
+
+async def test_a_line_in_the_water_hides_home_and_back_and_a_timeout_cancels_it(db, monkeypatch):
+    from cococap.services import fishing, party_boss
+
+    nav, inter = await hub("fish")
+    assert {"Home", "Back"} <= _nav_labels(nav)  # no line out: the controller is shown
+    screen = nav.screen
+    reported = []
+    monkeypatch.setattr(party_boss, "report", AsyncMock(side_effect=lambda *a: reported.append(a)))
+    screen.cast = SimpleNamespace(party_fight=3, status=lambda t: "waiting")
+    assert screen.locked and screen.hides_nav
+    await screen.on_abandon()
+    assert screen.cast is None and reported and reported[0][1] == "failed" and not screen.locked
+    await screen.on_abandon()  # a second time does nothing
+    assert len(reported) == 1

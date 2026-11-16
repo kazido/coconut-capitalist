@@ -19,6 +19,7 @@ apple_seed = 3
 
 [market]                          # the Farmer's Market
 min_level = 5
-days = [4, 5]                     # Friday and Saturday (0 = Monday), UTC
+open_hour = 12                    # opens every day at this hour, UTC (TODO(balance))
+open_hours = 4                    # and stays open this many hours (TODO(balance))
 price_bonus = 0.5                 # crops sell for +50% while it is open
 deed_chance = 0.1                 # each blessing you deposit has this chance to become a land deed (wiki: 1/10)

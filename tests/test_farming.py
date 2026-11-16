@@ -46,7 +46,9 @@ def at(year, month, day, hour=12):
     return datetime.datetime(year, month, day, hour, tzinfo=UTC).timestamp()
 
 
-FRIDAY, THURSDAY, SATURDAY, SUNDAY = at(2026, 11, 13), at(2026, 11, 12), at(2026, 11, 14), at(2026, 11, 15)
+FRIDAY, THURSDAY, SATURDAY, SUNDAY = at(2026, 11, 13), at(2026, 11, 12), at(2026, 11, 14), at(2026, 11, 15)  # all 12:00 UTC (open)
+OPEN_HOUR, OPEN_HOURS = REG.farming.market.open_hour, REG.farming.market.open_hours
+CLOSED = FRIDAY - 12 * 3600  # midnight UTC
 
 
 async def farmer(**items):
@@ -278,17 +280,20 @@ async def test_harvest_all_takes_every_ripe_plot(db):
 
 
 # ---- the Farmer's Market -----------------------------------------------------------------------------------------
-@pytest.mark.parametrize("when, is_open", [(THURSDAY, False), (FRIDAY, True), (SATURDAY, True), (SUNDAY, False)])
-def test_the_market_is_open_friday_and_saturday(when, is_open):
-    assert f.market_window(when, REG)[0] is is_open
+@pytest.mark.parametrize("day", [THURSDAY, FRIDAY, SATURDAY, SUNDAY])
+def test_the_market_is_open_every_day_for_a_few_hours(day):
+    start = day - 12 * 3600 + OPEN_HOUR * 3600  # that day's opening
+    assert f.market_window(start, REG)[0] is True
+    assert f.market_window(start + OPEN_HOURS * 3600 - 1, REG)[0] is True
+    assert f.market_window(start + OPEN_HOURS * 3600, REG)[0] is False
+    assert f.market_window(start - 1, REG)[0] is False
 
 
 def test_the_market_says_when_it_next_changes():
-    closes = f.market_window(FRIDAY, REG)[1]
-    assert closes == at(2026, 11, 15, 0)  # Sunday 00:00 UTC (Friday and Saturday are one opening)
-    opens = f.market_window(SUNDAY, REG)[1]
-    assert opens == at(2026, 11, 20, 0)  # next Friday
-    assert f.market_window(THURSDAY, REG)[1] == at(2026, 11, 13, 0)
+    start = FRIDAY - 12 * 3600 + OPEN_HOUR * 3600
+    assert f.market_window(start, REG)[1] == start + OPEN_HOURS * 3600  # closes
+    assert f.market_window(start + OPEN_HOURS * 3600, REG)[1] == start + 86400  # opens tomorrow
+    assert f.market_window(start - 1, REG)[1] == start  # opens today
 
 
 async def test_the_market_needs_level_five_and_an_open_day(db):
@@ -297,7 +302,7 @@ async def test_the_market_needs_level_five_and_an_open_day(db):
         await f.sell_crops(user, FRIDAY)
     await user.add_xp("farming", User.level_to_xp(5) + 1)
     with pytest.raises(f.FarmingError, match="closed"):
-        await f.sell_crops(user, THURSDAY)
+        await f.sell_crops(user, CLOSED)
     assert await user.item_quantity("apple") == 10  # nothing was taken
 
 
@@ -324,7 +329,7 @@ async def test_blessings_turn_into_land_deeds_at_the_market(db):
     await user.add_xp("farming", User.level_to_xp(5) + 1)
     await user.update_skill("farming", lambda m: setattr(m, "rain_god_blessings", 5))
     with pytest.raises(f.FarmingError, match="closed"):
-        await f.deposit_blessings(user, Random(1), THURSDAY)
+        await f.deposit_blessings(user, Random(1), CLOSED)
     lucky = registry_with(market={"deed_chance": 1.0})
     used, deeds = await f.deposit_blessings(user, Random(1), FRIDAY, lucky)
     assert (used, deeds) == (5, 5) and await user.item_quantity("land_deed") == 5
@@ -342,7 +347,7 @@ async def test_blessings_only_sometimes_become_deeds(db):
 
 
 def test_land_deeds_and_the_farming_rules_are_real_data():
-    assert REG.item("land_deed").category == "key_item" and RULES.market.days == [4, 5] and RULES.market.min_level == 5
+    assert REG.item("land_deed").category == "key_item" and RULES.market.min_level == 5
     assert RULES.free_plots >= 1 and RULES.anomaly_odds == 25 and RULES.blessing_chance == 0.1
 
 

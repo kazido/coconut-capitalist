@@ -135,7 +135,7 @@ may keep `<a:name:id>` strings; the name wins over the id. Missing emojis fall b
 Wiki rules, built as written: up to 9 plots (plot 1 free, the rest cost a **land deed**); seeds take `cycles` rains to
 grow; each hour it rains and every growing plot grows with `grow_chance`; a rain in which anything grew has a 1/10
 chance of a **rain god's blessing**; each harvest has a 1/25 chance of an **agricultural anomaly** (work and daily
-cooldowns refresh); the **Farmer's Market** (farming level 5, Fri/Sat UTC) pays +50% for crops and turns blessings into
+cooldowns refresh); the **Farmer's Market** (farming level 5, open daily for a few hours, UTC (`open_hour`, `open_hours`)) pays +50% for crops and turns blessings into
 land deeds at 1/10 each.
 
 **Rain is computed, not scheduled.** A farm catches up on missed rains whenever it is looked at or changed, and each

@@ -206,21 +206,18 @@ def _day(now: float) -> int:
     return int(now // DAY)
 
 
-def _weekday(day: int) -> int:
-    return datetime.datetime.fromtimestamp(day * DAY, datetime.UTC).weekday()
-
-
 def market_window(now: float, registry: Registry) -> tuple[bool, int]:
-    """(is it open, when does that change). Days are UTC; consecutive open days count as one opening."""
-    days = registry.farming.market.days
-    today = _day(now)
-    is_open = _weekday(today) in days
-    day = today
-    for _ in range(8):
-        day += 1
-        if (_weekday(day) in days) != is_open:
-            return is_open, day * DAY
-    return is_open, (today + 1) * DAY  # every day is a market day (or none): "changes" at midnight
+    """(is it open, when does that change). The market opens every day at `open_hour` UTC for `open_hours` hours."""
+    m = registry.farming.market
+    length = m.open_hours * 3600
+    start = (_day(now) - 1) * DAY + m.open_hour * 3600  # yesterday's opening (it may run past midnight)
+    for _ in range(3):
+        if start <= now < start + length:
+            return True, start + length
+        if now < start:
+            return False, start
+        start += DAY
+    return False, start
 
 
 # ---- operations on a player (these persist) ------------------------------------------------------------
@@ -458,7 +455,7 @@ async def _require_market(user: User, now: float, reg: Registry) -> None:
     if level_of(farming) < reg.farming.market.min_level:
         raise FarmingError(f"The Farmer's Market opens to farmers of level {reg.farming.market.min_level}.")
     if not market_window(now, reg)[0]:
-        raise FarmingError("The Farmer's Market is closed. It opens on Fridays and Saturdays.")
+        raise FarmingError("The Farmer's Market is closed. It opens every day for a few hours.")
 
 
 def market_price(item_id: str, quantity: int, registry: Registry) -> int:

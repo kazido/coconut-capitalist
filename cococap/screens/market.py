@@ -13,7 +13,7 @@ class MarketScreen(Screen):
     id = "market"
     label = "Farmer's Market"
     emoji = "🧺"
-    description = "Fridays and Saturdays: better crop prices, and blessings for land deeds"
+    description = "Open a few hours every day: better crop prices, and blessings for land deeds"
     links = ("farm",)
 
     async def build(self) -> Page:

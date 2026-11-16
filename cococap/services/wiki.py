@@ -82,7 +82,7 @@ def _farming(reg: Registry) -> list[str]:
         "give bigger harvests and more drops). A harvest also drops **materials** (Rich Compost, Morning Dewdrop, Beeswax, Living Vine, Golden Pollen, Plant Fiber): "
         "longer crops roll more often, and you spend them upgrading cans and a little in every other tool.",
         f"**Extras.** A rain in which something grew may bring a rain god's blessing. A harvest has a 1 in {f.anomaly_odds} chance of an "
-        f"anomaly that refreshes your Work and Daily. The **Farmer's Market** (farming level {f.market.min_level}, Fri and Sat) pays "
+        f"anomaly that refreshes your Work and Daily. The **Farmer's Market** (farming level {f.market.min_level}, open {f.market.open_hours}h a day from {f.market.open_hour}:00 UTC) pays "
         f"+{f.market.price_bonus:.0%} for crops.",
         "**Crops**\n" + "\n".join(lines),
     ]

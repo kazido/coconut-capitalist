@@ -550,19 +550,13 @@ class MiningRules(_Data):
 
 
 class MarketRules(_Data):
-    """The Farmer's Market: open on certain weekdays (0 = Monday), better prices, blessings for land deeds."""
+    """The Farmer's Market: open every day for a few hours (UTC), better prices, blessings for land deeds."""
 
     min_level: int = Field(ge=1)
-    days: list[int] = Field(min_length=1)
+    open_hour: int = Field(ge=0, le=23)  # UTC hour of day the market opens
+    open_hours: int = Field(ge=1, le=23)  # how many hours it stays open (may run past midnight)
     price_bonus: float = Field(ge=0)  # +50% -> 0.5
     deed_chance: float = Field(ge=0, le=1)  # per blessing deposited
-
-    @field_validator("days")
-    @classmethod
-    def _weekdays(cls, days: list[int]) -> list[int]:
-        if any(not 0 <= d <= 6 for d in days):
-            raise ValueError("market days are weekday numbers 0 (Monday) to 6 (Sunday)")
-        return days
 
 
 class FarmingRules(_Data):
