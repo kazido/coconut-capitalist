@@ -22,6 +22,7 @@ LEGACY_XP_SCALE = 300  # the one xp scale every pet had before levels depended o
 # Every stat the rest of the game looks up (a test checks that pets cover all of them and use no others).
 KNOWN_STATS = frozenset({
     "work_bonus",  # economy: the Work wage
+    "sell_bonus",  # economy: every sale pays this much more (Magpie)
     "bite_speed", "rare_luck", "treasure_luck", "pot_speed", "pot_luck",  # fishing and crab pots
     "danger_reduction", "ore_yield",  # mining
     "good_chop",  # foraging

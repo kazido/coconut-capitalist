@@ -6,6 +6,7 @@ from cococap.constants import STARTER_TOOLS
 from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
+from cococap.services import pets
 from cococap.services.equipment import EquipmentError, equip, equipped_stats, skill_for_tool
 from cococap.user import InsufficientFunds, User
 
@@ -97,13 +98,15 @@ async def _equip_first_tool(user: User, item, made: list[ItemInstance], reg: Reg
 
 
 async def haggle(user: User, item, registry: Registry | None = None) -> float:
-    """What your gear adds to a sale (0.08 = +8%): the Appraiser enchant on the tool of the item's skill, and for farm goods a Merchant's Haggler (Mastery)."""
+    """What your gear and pet add to a sale (0.08 = +8%): the Appraiser enchant on the tool of the item's skill, for farm goods a Merchant's
+    Haggler (Mastery), and an active Magpie's `sell_bonus` on anything. They add up."""
+    magpie = (await pets.bonuses(user, registry)).get("sell_bonus", 0.0)
     if item.skill not in ("mining", "foraging", "fishing", "farming", "combat"):
-        return 0.0
+        return magpie
     tool = await equipped_stats(user, item.skill, registry)
     if tool is None:
-        return 0.0
-    return tool.stats.get("appraise", 0.0) + (tool.stats.get("haggler", 0.0) if item.skill == "farming" else 0.0)
+        return magpie
+    return magpie + tool.stats.get("appraise", 0.0) + (tool.stats.get("haggler", 0.0) if item.skill == "farming" else 0.0)
 
 
 async def sell(user: User, item_id: str, quantity: int = 1, registry: Registry | None = None) -> int:

@@ -249,3 +249,16 @@ description = "Reborn with every lesson. Everything you learn burns a little bri
 stat = "xp_all"
 value = 0.2
 text = "+{v:.0%} xp in every skill"
+
+# The Magpie, Mole, Fox, Bee and Raven give small effects that are not xp and never forgive a mistake (so they stay worth having when you play well).
+# Each gives roughly the same modest gain at max level (5-7% more of what the part of the game it touches pays); see DESIGN.md "More pets".  TODO(balance)
+[magpie]
+name = "Magpie"
+skill = "global"
+emoji = "🦜"
+rarity = 3
+description = "Loves anything that shines. Haggles you a better price for whatever you sell."
+[[magpie.bonuses]]
+stat = "sell_bonus"
+value = 0.06
+text = "+{v:.0%} bits from every sale"
