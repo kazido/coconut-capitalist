@@ -68,7 +68,7 @@ class ShopScreen(Screen):
             else:
                 blurb = f"×{owned:,}  ·  {bits(item.sell_price)} each  ·  **{bits(item.sell_price * owned)}** for all"  # (the count is plain text, not in the bold heading)
                 accessory = button("Sell", style=discord.ButtonStyle.success, on_click=self._ask_quantity(item.id, "sell", owned))
-            body.append(section(f"### {item.display}  {item.rarity_tag}\n{blurb}", accessory=accessory))
+            body.append(section(f"### {item.display}{'  ' + item.rarity_tag if item.rarity_tag else ''}\n{blurb}", accessory=accessory))
         if pages > 1:
             body.append(
                 row(

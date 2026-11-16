@@ -190,11 +190,10 @@ class Item(_Data):
 
     @property
     def rarity_tag(self) -> str:
-        """A compact rarity marker for lists: a coloured square, plus the rarity's name from `RARITY_WORD_FROM` up (see constants.py)."""
-        from cococap.constants import RARITY_MARKERS, RARITY_WORD_FROM, Rarities
+        """The rarity's name from `RARITY_WORD_FROM` up (e.g. "Super Rare"), nothing below it (see constants.py)."""
+        from cococap.constants import RARITY_WORD_FROM, Rarities
 
-        marker = RARITY_MARKERS[self.rarity]
-        return f"{marker} {Rarities.from_value(self.rarity).rarity_name}" if self.rarity >= RARITY_WORD_FROM else marker
+        return Rarities.from_value(self.rarity).rarity_name if self.rarity >= RARITY_WORD_FROM else ""
 
 
 class PetBonus(_Data):

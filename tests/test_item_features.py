@@ -80,15 +80,16 @@ async def test_inventory_lists_tools_with_enchants_and_equipped_mark(db):
     assert instance_lines([a, b], set(), "nothing") == []
 
 
-def test_every_rarity_has_a_marker_and_the_word_shows_from_the_configured_rarity():
-    from cococap.constants import RARITY_MARKERS, RARITY_WORD_FROM, Rarities
+def test_every_rarity_has_a_colour_and_the_word_shows_from_the_configured_rarity():
+    from cococap.constants import RARITY_ANSI, RARITY_WORD_FROM, Rarities
 
     reg = get_registry()
-    assert set(RARITY_MARKERS) == {r.value for r in Rarities} and len(set(RARITY_MARKERS.values())) == len(RARITY_MARKERS)
+    assert set(RARITY_ANSI) == {r.value for r in Rarities} and len(set(RARITY_ANSI.values())) == len(RARITY_ANSI)
     for item in reg.items.values():
         tag = item.rarity_tag
-        assert tag.startswith(RARITY_MARKERS[item.rarity])
-        assert (Rarities.from_value(item.rarity).rarity_name in tag) == (item.rarity >= RARITY_WORD_FROM), item.id
+        assert (tag == Rarities.from_value(item.rarity).rarity_name) == (item.rarity >= RARITY_WORD_FROM), item.id
+        assert not tag or item.rarity >= RARITY_WORD_FROM
+        assert not any(ch in tag for ch in "🟩🟦🟪🟧🟥🟨⬛")  # (no coloured squares any more)
 
 
 async def test_rarity_shows_in_the_inventory_and_the_shop(db):
@@ -97,10 +98,19 @@ async def test_rarity_shows_in_the_inventory_and_the_shop(db):
 
     reg = get_registry()
     orb = reg.item("familiar_orb")
+    from cococap.constants import RARITY_ANSI
+
     assert any(orb.rarity_tag in line for line in inventory_lines({"familiar_orb": 2}))
+    assert all(f"\u001b[{RARITY_ANSI[orb.rarity]}m" in line for line in inventory_lines({"familiar_orb": 2}, ansi=True))
+    nav, _ = await hub("inventory")
+    assert "```ansi" not in all_text(nav)  # (nothing owned: no code block)
+    user = await User.get(1)
+    await user.add_item("familiar_orb", 2)
+    nav, _ = await hub("inventory")
+    assert "```ansi" in all_text(nav) and f"\u001b[{RARITY_ANSI[orb.rarity]}m" in all_text(nav)
     user = await User.get(1)
     await set_columns(user, purse=10**9)
     nav, _ = await hub("shop")
     headings = [line for line in all_text(nav).split("\n") if line.startswith("### ")]
     shown = reg.shop_items()
-    assert any(f"### {i.display}  {i.rarity_tag}" in all_text(nav) for i in shown)
+    assert any(f"### {i.display}  {i.rarity_tag}" in all_text(nav) for i in shown if i.rarity_tag)

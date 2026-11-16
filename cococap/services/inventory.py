@@ -1,12 +1,13 @@
 """Turn a player's inventory into display lines. Pure functions of data, no Discord."""
 
+from cococap.constants import RARITY_ANSI
 from cococap.models.instance import ItemInstance
 from cococap.registry import get_registry
 
 PER_PAGE = 15
 
 
-def inventory_lines(items: dict[str, int], filter: str | None = None) -> list[str]:
+def inventory_lines(items: dict[str, int], filter: str | None = None, ansi: bool = False) -> list[str]:
     """One display line per stack in `items` ({item_id: quantity}), sorted by item name.
 
     `filter` matches (case-insensitively) an item's name, id, skill or category. Ids missing from
@@ -27,7 +28,10 @@ def inventory_lines(items: dict[str, int], filter: str | None = None) -> list[st
             needle in field for field in (item.name.lower(), item.id, item.skill or "", item.category)
         ):
             continue
-        rows.append((item.name.lower(), f"{item.emoji or '▫️'} {quantity:,} {item.name}  {item.rarity_tag}"))
+        line = f"{item.emoji or '▫️'} {quantity:,} {item.name}" + (f"  {item.rarity_tag}" if item.rarity_tag else "")
+        if ansi:
+            line = f"\u001b[{RARITY_ANSI[item.rarity]}m{line}\u001b[0m"
+        rows.append((item.name.lower(), line))
     return [line for _, line in sorted(rows)]
 
 
