@@ -1719,7 +1719,7 @@ emoji = "💣"
 rarity = 4
 skill = "mining"
 category = "tool"
-price = 100000
+price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 90000
 
 [scarab_bomb.drop]
@@ -2313,7 +2313,7 @@ emoji = "🪚"
 rarity = 4
 skill = "foraging"
 category = "material"
-price = 8000  # TODO(balance)
+price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 4000  # TODO(balance)
 
 [iron_wedge.drop]
@@ -2329,7 +2329,7 @@ emoji = "🪚"
 rarity = 6
 skill = "foraging"
 category = "material"
-price = 50000  # TODO(balance)
+price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 25000  # TODO(balance)
 
 [gilded_wedge.drop]
@@ -3331,12 +3331,12 @@ stats = { transmute = 0.2 }
 [radar_battery]
 name = "Radar Battery"
 description = "One cast's worth of power for your radar."
-wiki = "Every cast with the radar on, while one of its targets lives in the water you fish, uses one battery. Buy them in the shop."
+wiki = "Every cast with the radar on, while one of its targets lives in the water you fish, uses one battery. Craft them at the Workbench (Inventory > Workbench) from coral shards and plant fiber."
 emoji = "🔋"
 rarity = 2
 skill = "fishing"
 category = "material"
-price = 3000  # TODO(balance): a real cost: low radar levels barely pay for it, the top ones do
+price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 400
 
 [scroll_scholar]

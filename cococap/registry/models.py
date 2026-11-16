@@ -1334,3 +1334,33 @@ class ScrollRules(_Data):
 class ShipmentRules(_Data):
     personal: PersonalShipments
     community: CommunityShipments
+
+
+class Recipe(_Data):
+    """One thing the Workbench makes (configs/recipes.toml): `inputs` and `bits` are used up, `quantity` of `output` is made.
+    `skill` + `min_level` (optional) ask for a level in a skill first."""
+
+    id: str
+    name: str
+    emoji: str | None = None
+    output: str
+    quantity: int = Field(default=1, ge=1)
+    inputs: dict[str, int] = Field(min_length=1)
+    bits: int = Field(default=0, ge=0)
+    skill: Skill | None = None
+    min_level: int = Field(default=0, ge=0)
+
+    _id = field_validator("id")(check_id)
+
+    @field_validator("inputs")
+    @classmethod
+    def _positive(cls, inputs: dict[str, int]) -> dict[str, int]:
+        if any(q < 1 for q in inputs.values()):
+            raise ValueError("every input quantity must be at least 1")
+        return inputs
+
+    @model_validator(mode="after")
+    def _level_needs_skill(self):
+        if self.min_level and not self.skill:
+            raise ValueError("min_level needs a skill")
+        return self

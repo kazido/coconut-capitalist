@@ -19,7 +19,7 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.fishing import Pot
 from cococap.registry import Item, Registry, get_registry
 from cococap.registry.models import FishingRules, PotLevel
-from cococap.services import pets
+from cococap.services import payment, pets
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -95,27 +95,7 @@ async def craft(user: User, now: float | None = None, registry: Registry | None 
 
 async def _pay(user: User, bits: int, items: dict[str, int], reg: Registry) -> None:
     """Take bits and materials together, or nothing: say what is missing."""
-    await user.refresh()
-    owned = await user.items()
-    lacking = ([f"{bits - user.purse:,} more bits"] if user.purse < bits else []) + [
-        f"{reg.item(i).name} {owned.get(i, 0):,}/{q:,}" for i, q in items.items() if owned.get(i, 0) < q]
-    if lacking:
-        raise PotError("You still need " + ", ".join(lacking) + ".")
-    taken: dict[str, int] = {}
-    paid = 0
-    try:
-        if bits:
-            await user.remove_bits(bits)
-            paid = bits
-        for item_id, quantity in items.items():
-            await user.remove_item(item_id, quantity)
-            taken[item_id] = quantity
-    except Exception:
-        if paid:
-            await user.add_bits(paid)
-        for item_id, quantity in taken.items():
-            await user.add_item(item_id, quantity)
-        raise PotError("You don't have everything it needs.") from None
+    await payment.pay(user, bits, items, reg, PotError)
 
 
 async def upgrade(user: User, index: int, registry: Registry | None = None) -> Pot:

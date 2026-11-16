@@ -28,12 +28,12 @@ async def with_radar(user, level=1, targets=("giant_squid",), on=True, batteries
 
 
 # ---- the data ------------------------------------------------------------------------------------------------------------------------
-def test_each_radar_level_is_stronger_and_costlier_and_the_battery_is_a_shop_item():
+def test_each_radar_level_is_stronger_and_costlier_and_the_battery_is_crafted():
     levels = R.levels
     assert [l.multiplier for l in levels] == sorted(l.multiplier for l in levels) and [l.slots for l in levels] == sorted(l.slots for l in levels)
     assert [l.bits for l in levels] == sorted(l.bits for l in levels) and levels[-1].multiplier <= 8 and levels[-1].slots <= 3
     battery = REG.item(R.battery)
-    assert battery.price > 0 and battery.skill == "fishing" and R.unlock_level > REG.fishing.waters[-1].min_level
+    assert battery.price == 0 and R.battery in REG.recipes and battery.skill == "fishing" and R.unlock_level > REG.fishing.waters[-1].min_level
     for level in levels:
         assert all(REG.find_item(i) for i in level.items)  # (every ask is a real item)
 

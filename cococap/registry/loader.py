@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Skill
+from .models import ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -84,6 +84,7 @@ class Registry:
         tools: ToolRules | None = None,
         shipments: ShipmentRules | None = None,
         scrolls: ScrollRules | None = None,
+        recipes: list[Recipe] | None = None,
     ):
         self.items: dict[str, Item] = {i.id: i for i in items}
         self.pets: dict[str, Pet] = {p.id: p for p in pets}
@@ -101,6 +102,7 @@ class Registry:
         self.tools = tools
         self.shipments = shipments
         self.scrolls = scrolls
+        self.recipes: dict[str, Recipe] = {r.id: r for r in recipes or []}
         self.drop_tables: dict[str, DropTable] = {t.id: t for t in drop_tables or []}
         self._validate()
 
@@ -132,7 +134,27 @@ class Registry:
     def next_rank(self, rank_id: int) -> Rank | None:
         return self.ranks.get(rank_id + 1)
 
+    def recipe(self, recipe_id: str) -> Recipe:
+        try:
+            return self.recipes[recipe_id]
+        except KeyError:
+            raise UnknownItem(recipe_id) from None
+
     # --- validation ----------------------------------------------------------------------
+    def _validate_recipes(self) -> list[str]:
+        problems = []
+        for r in self.recipes.values():
+            out = self.items.get(r.output)
+            if out is None:
+                problems.append(f"recipes.toml [{r.id}]: unknown output item '{r.output}'")
+            elif out.is_instance:
+                problems.append(f"recipes.toml [{r.id}]: output '{r.output}' is a tool (tools are not crafted here)")
+            problems += [f"recipes.toml [{r.id}]: unknown input item '{i}'" for i in r.inputs if i not in self.items]
+            problems += [f"recipes.toml [{r.id}]: input '{i}' is a tool" for i in r.inputs if i in self.items and self.items[i].is_instance]
+            if r.output in r.inputs:
+                problems.append(f"recipes.toml [{r.id}]: consumes its own output '{r.output}'")
+        return problems
+
     def _validate_mining(self, rules: MiningRules) -> list[str]:
         return _validate_mining_items(self, rules)
 
@@ -167,6 +189,7 @@ class Registry:
                 crop = self.items.get(item.seed.grows_into)
                 if crop is None or crop.crop is None:
                     problems.append(f"{item.id}: seed.grows_into '{item.seed.grows_into}' is not a crop")
+        problems += self._validate_recipes()
         if self.scrolls is not None:
             for skill in ("mining", "foraging", "farming"):
                 problems += [f"scrolls.toml [{skill}]: '{i}' is not a scroll item" for i in getattr(self.scrolls, skill).pool
@@ -328,7 +351,8 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     tools = _build(ToolRules, "tools", [("tools", _read(config_dir, "tools"))])[0]
     shipments = _build(ShipmentRules, "shipments", [("shipments", _read(config_dir, "shipments"))])[0]
     scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools, shipments, scrolls)
+    recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools, shipments, scrolls, recipes)
 
 
 @lru_cache(maxsize=1)

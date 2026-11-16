@@ -14,12 +14,15 @@ async def rich(purse=10_000_000):
     return user
 
 
+PRICE = get_registry().item("rotation_wedge").price
+
+
 async def test_buying_a_stackable_spends_bits_and_adds_items(db):
     user = await rich(1_000_000)
-    purchase = await buy(user, "scarab_bomb", 3)  # 100,000 each
-    assert purchase.total == 300_000 and purchase.instances == []
-    assert await user.items() == {"scarab_bomb": 3}
-    assert await user.get_bits() == 700_000
+    purchase = await buy(user, "rotation_wedge", 3)
+    assert purchase.total == 3 * PRICE and purchase.instances == []
+    assert await user.items() == {"rotation_wedge": 3}
+    assert await user.get_bits() == 1_000_000 - 3 * PRICE
 
 
 async def test_the_shop_sells_no_tools_and_starter_tools_are_free_once(db):
@@ -49,7 +52,7 @@ async def test_claiming_starters_skips_kinds_you_own_and_tools_you_already_had(d
     assert await claim_starter_tools(user) == []  # each is handed out once ever
 
 
-@pytest.mark.parametrize("item_id, qty", [("cod", 1), ("nope", 1), ("scarab_bomb", 0), ("scarab_bomb", 10**6)])
+@pytest.mark.parametrize("item_id, qty", [("cod", 1), ("nope", 1), ("rotation_wedge", 0), ("rotation_wedge", 10**6), ("scarab_bomb", 1)])
 async def test_invalid_purchases_rejected(db, item_id, qty):
     user = await rich()
     with pytest.raises(ShopError):
@@ -58,10 +61,10 @@ async def test_invalid_purchases_rejected(db, item_id, qty):
 
 
 async def test_concurrent_purchases_cannot_overspend(db):
-    user = await rich(250_000)
-    results = await asyncio.gather(*(buy(user, "scarab_bomb") for _ in range(5)), return_exceptions=True)
-    assert sum(not isinstance(r, Exception) for r in results) == 2  # 2 x 100,000 fits in 250,000
-    assert await user.get_bits() == 50_000 and await user.item_quantity("scarab_bomb") == 2
+    user = await rich(2 * PRICE + PRICE // 2)
+    results = await asyncio.gather(*(buy(user, "rotation_wedge") for _ in range(5)), return_exceptions=True)
+    assert sum(not isinstance(r, Exception) for r in results) == 2  # two fit, a third does not
+    assert await user.get_bits() == PRICE // 2 and await user.item_quantity("rotation_wedge") == 2
 
 
 async def test_selling(db):
@@ -100,3 +103,11 @@ def test_work_wages_climb_with_rank_and_the_early_ranks_still_give_a_start():
     wages = [get_registry().rank(r).wage for r in range(16)]
     assert wages == sorted(wages) and wages[0] == wages[1] == 2500
     assert wages[7] <= 120_000 and wages[15] <= 2_000_000  # (cut to 30%: skills, not the Work button, are where the bits come from)
+
+
+def test_crafted_items_are_not_sold_in_the_shop_any_more():
+    reg = get_registry()
+    for recipe in reg.recipes.values():
+        assert reg.item(recipe.output).price == 0 and reg.item(recipe.output) not in reg.shop_items()
+    assert {"radar_battery", "iron_wedge", "gilded_wedge", "scarab_bomb"} <= {r.output for r in reg.recipes.values()}
+    assert all(reg.item(i).sellable for i in ("radar_battery", "iron_wedge", "gilded_wedge", "scarab_bomb"))  # (they still sell)

@@ -644,8 +644,11 @@ def test_wedges_can_be_found_chopping_and_the_better_ones_are_rarer():
 def test_the_wedges_get_better_and_cost_more():
     wedges = RULES.rotate.wedges
     assert [w.bias for w in wedges] == sorted(w.bias for w in wedges) and wedges[0].bias == 0
-    prices = [REG.item(w.item).price for w in wedges]
-    assert prices == sorted(prices) and prices[0] > 0
+    assert REG.item(wedges[0].item).price > 0  # (the plain wedge is bought; the better ones are crafted at the Workbench, see test_crafting)
+    made = {r.output for r in REG.recipes.values()}
+    assert all(REG.item(w.item).price == 0 and w.item in made for w in wedges[1:])
+    sells = [REG.item(w.item).sell_price for w in wedges]
+    assert sells == sorted(sells)
 
 
 async def test_the_seasoned_enchant_slows_wear_on_the_axe(db):

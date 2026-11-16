@@ -1,0 +1,44 @@
+# The Workbench (screens/craft.py, services/crafting.py): things you MAKE from materials instead of buying them.
+# Each recipe uses up `inputs` (item = how many) and `bits` (a small workbench fee) and makes `quantity` of `output`.
+# `skill` + `min_level` (optional) ask for a level first. Outputs are plain stackable items (never tools).
+# Sell All keeps the inputs of every recipe while "Keep upgrade materials" is on (screens/sellall.py).
+# Balance: each used to be a shop item; the inputs' sell value sits a little under the old shop price, but how fast you find them matters
+# more (see DESIGN.md "Crafting").  TODO(balance): all numbers
+
+[radar_battery]
+name = "Radar Battery"
+emoji = "🔋"
+output = "radar_battery"
+quantity = 1
+# Was 3,000 bits in the shop. Coral shards wash up on 1 cast in 6 (about 26 an hour of fishing), plant fiber is a farming leftover, so this is
+# about 13 batteries per hour of fishing: well under the old price in sell value on purpose (a cast needs a battery, shards are slow).
+inputs = { coral_shard = 2, plant_fiber = 2 }
+
+[iron_wedge]
+name = "Iron Wedge"
+emoji = "🪚"
+output = "iron_wedge"
+quantity = 1
+bits = 500
+# Was 8,000 bits. Common drops of birch, oak and willow (their zones overlap in zones 3-5): ~25 of each per hour with a mid axe.
+inputs = { birch_bark = 2, oak_gall = 1, willow_switch = 1 }
+
+[gilded_wedge]
+name = "Gilded Wedge"
+emoji = "🪚"
+output = "gilded_wedge"
+quantity = 1
+bits = 2500
+skill = "foraging"
+min_level = 7                      # zone 3, where birch, oak and willow all grow
+# Was 50,000 bits. A SET of rare signature drops, one from each of three species (about 1 an hour each with a mid axe: a good session
+# or two). Their sell value is far above the old price (the rares are worth that much), so it is a craft for chopping, not for selling.
+inputs = { silver_catkin = 1, heart_acorn = 1, weeping_pearl = 1 }
+
+[scarab_bomb]
+name = "Scarab Bomb"
+emoji = "💣"
+output = "scarab_bomb"
+quantity = 1
+# Was 100,000 bits. Mined ore: gold ~48 an hour, iron ~180, copper ~720, so about 40 minutes of digging per bomb.
+inputs = { gold_ore = 30, iron_ore = 100, copper_ore = 200 }

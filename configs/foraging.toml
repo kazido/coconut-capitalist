@@ -120,9 +120,9 @@ weight = 0.25
 wear = 6.0
 private_only = true
 
-# Rotation wedges: consumables (bought in the shop) that move you off the spot you are on. A better wedge tilts the new grain toward
+# Rotation wedges: consumables (the Iron and Gilded wedges are crafted at the Workbench, see recipes.toml) that move you off the spot you are on. A better wedge tilts the new grain toward
 # the good ones (its chance is the grain's weight x its multiplier ** bias) and makes a special spot likelier (special_mult x the chance).
-# You can buy them in the shop or find them chopping (they are on the foraging drop table).
+# You can craft them (or buy the plain one) or find them chopping (they are on the foraging drop table).
 [rotate]
 [[rotate.wedges]]
 item = "rotation_wedge"
