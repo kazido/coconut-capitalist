@@ -550,7 +550,7 @@ def test_the_can_chain_is_a_chain_of_waters_that_ends_at_the_whole_farm():
         tool = REG.item(tool.tool.upgrade.to) if tool.tool.upgrade else None
     assert [t.tool.power for t in chain] == sorted({t.tool.power for t in chain}) and chain[0].tool.power == 3 and chain[-1].tool.power == f.PLOTS
     assert all(t.tool.kind == "can" and t.skill == "farming" for t in chain)
-    assert REG.item("tin_can").price > 0 and all(t.price == 0 for t in chain[1:])  # only the first is sold
+    assert all(t.price == 0 for t in chain)  # none is sold (the first is a free starter tool)
 
 
 async def test_a_better_can_brings_bigger_harvests_and_more_drops(db):
