@@ -829,9 +829,11 @@ async def test_a_foragers_axe_shakes_loose_drops_and_a_plain_axe_never_does(db):
     assert shake > 0
     always = type("Always", (Random,), {"random": lambda self: 0.0})()
     got = await f.shake(user, shake, always, REG)
-    assert sum(got.values()) > 0
+    assert sum(got.values()) == 1 and len(got) == 1  # exactly one item, never a bunch
     for item_id, quantity in got.items():
-        assert await user.item_quantity(item_id) >= quantity
+        assert await user.item_quantity(item_id) == quantity
+    for n in range(40):
+        assert sum((await f.shake(user, 1.0, Random(n), REG)).values()) == 1
     never = type("Never", (Random,), {"random": lambda self: 0.99})()
     assert not await f.shake(user, shake, never, REG) and not await f.shake(user, 0.0, always, REG)
 

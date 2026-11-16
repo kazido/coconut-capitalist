@@ -487,7 +487,7 @@ description = "The forest gives more when you look: drops from every swing."
 [[trees.branches.nodes]]
 id = "bird_watching"
 name = "Bird Watching"
-description = "Each chop has a 3% chance to shake loose a drop."
+description = "Each chop has a 3% chance to shake loose one extra item."
 level = 5
 cost = 1
 effects = [{ stat = "shake", amount = 0.03 }]
@@ -503,7 +503,7 @@ effects = [{ stat = "wear_slow", amount = 0.08 }]
 [[trees.branches.nodes]]
 id = "keen_nose"
 name = "Keen Nose"
-description = "Each chop has a 5% chance to shake loose a drop."
+description = "Each chop has a 5% chance to shake loose one extra item."
 level = 20
 cost = 2
 effects = [{ stat = "shake", amount = 0.05 }]

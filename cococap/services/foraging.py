@@ -351,13 +351,14 @@ async def _pay(user: User, drops: Counter, bits: int, xp: int, trees: int) -> No
 
 
 async def shake(user: User, chance: float, rng: random.Random, registry: Registry | None = None) -> Counter:
-    """A Forager's axe (`shake`): a chop has this chance to shake loose one roll of the forest's drops, paid at once. Returns what fell."""
+    """A Forager's axe (`shake`): a chop has this chance to shake loose exactly ONE extra item (one of the forest's drops, the commoner ones likelier),
+    paid at once. Returns what fell."""
     if chance <= 0 or rng.random() >= chance:
         return Counter()
-    drops = roll_drops(1, rng, registry or get_registry())
-    for item_id, quantity in drops.items():
-        await user.add_item(item_id, quantity)
-    return drops
+    pool = drop_pool(registry or get_registry())
+    item = rng.choices(pool, weights=[1 / i.drop.rate for i in pool])[0]
+    await user.add_item(item.id, 1)
+    return Counter({item.id: 1})
 
 
 async def windfall(user: User, every: int, rng: random.Random, registry: Registry | None = None) -> Counter:
