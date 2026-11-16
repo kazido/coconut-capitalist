@@ -598,6 +598,9 @@ class CommunityRules(_Data):
     group_bonus: float = Field(ge=0)
     max_group_bonus: float = Field(ge=0)
     max_share: float = Field(gt=0, le=1, default=1.0)  # one chopper is paid for at most this share of the tree, however much of it they chopped alone
+    pool_base: float = Field(gt=0, default=1.0)  # the share of the tree's worth paid out when ONE chopper did their share...
+    pool_per_chopper: float = Field(ge=0, default=0.0)  # ...plus this for the second chopper...
+    pool_decay: float = Field(ge=0, lt=1, default=0.0)  # ...and each further one adds this times what the one before did (diminishing returns)
     expired_factor: float = Field(ge=0, le=1)
     refresh_seconds: float = Field(gt=0)
 

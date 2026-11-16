@@ -281,24 +281,24 @@ def test_below_the_minimum_share_you_get_xp_but_no_drops_or_bits():
 def test_bits_follow_your_share_and_the_group_gets_a_bonus():
     solo = shares(True, {1: 1000})[1]
     pair = shares(True, {1: 500, 2: 500})
-    assert solo.bits == round(1000 * C.max_share * RULES.bits_per_hp)  # no group bonus alone, and a lone chopper is paid for at most max_share of the tree
+    assert solo.bits == round(1000 * RULES.bits_per_hp * f.community_pool(1, RULES))  # no group bonus alone, and a lone chopper is paid out of the smallest pool
     bonus = min(C.max_group_bonus, C.group_bonus)
-    assert pair[1].bits == round(500 * RULES.bits_per_hp * (1 + bonus)) and pair[1].bits == pair[2].bits
+    assert pair[1].bits == round(500 * RULES.bits_per_hp * f.community_pool(2, RULES) * (1 + bonus)) and pair[1].bits == pair[2].bits
     assert pair[1].bits + pair[2].bits > solo.bits  # working together pays more in total
 
 
 def test_the_group_bonus_is_capped():
     assert C.group_bonus * 19 > C.max_group_bonus  # twenty choppers would earn more than the cap...
     many = shares(True, {u: 50 for u in range(20)})  # ...each with exactly the 5% minimum
-    assert many[0].bits == round(50 * RULES.bits_per_hp * (1 + C.max_group_bonus))
+    assert many[0].bits == round(50 * RULES.bits_per_hp * f.community_pool(20, RULES) * (1 + C.max_group_bonus))
     few = shares(True, {u: 250 for u in range(4)})
-    assert few[0].bits == round(250 * RULES.bits_per_hp * (1 + 3 * C.group_bonus))  # below the cap: 5% per extra
+    assert few[0].bits == round(250 * RULES.bits_per_hp * f.community_pool(4, RULES) * (1 + 3 * C.group_bonus))  # below the cap: 5% per extra
 
 
 def test_a_tree_that_fell_over_pays_a_consolation_only():
     done = shares(True, {1: 600, 2: 400})
     unfinished = shares(False, {1: 300, 2: 200})
-    assert unfinished[1].bits == round(300 * RULES.bits_per_hp * C.expired_factor)
+    assert unfinished[1].bits == round(300 * RULES.bits_per_hp * f.community_pool(2, RULES) * C.expired_factor)
     assert unfinished[1].bits < done[1].bits
     assert unfinished[1].xp == round(30.0 * RULES.xp_per_swing)  # but your work still counts for xp
 
@@ -339,7 +339,7 @@ async def test_an_unfinished_tree_pays_a_consolation_when_it_falls_over(db):
     assert await f.claim_rewards(user, OPEN, Random(1)) == []  # still standing: nothing owed yet
     rewards = await f.claim_rewards(user, LATE, Random(1))
     assert len(rewards) == 1 and not rewards[0].felled
-    assert rewards[0].bits == round((tree.max_hp // 2) * RULES.bits_per_hp * f.zone_reward_factor(tree.zone, RULES) * C.expired_factor)
+    assert rewards[0].bits == round((tree.max_hp // 2) * RULES.bits_per_hp * f.zone_reward_factor(tree.zone, RULES) * f.community_pool(1, RULES) * C.expired_factor)
     assert (await user.skill("foraging")).stats.trees_chopped == 0  # nothing was felled
 
 
@@ -1076,24 +1076,26 @@ def test_the_streak_cap_is_small_enough_for_shared_trees():
     assert 0 < ch.streak_bonus * ch.streak_max <= 0.1501 and ch.streak_max <= 3  # a skilled chopper out-damages a careless one by a bit, never by a lot
 
 
-def test_one_chopper_alone_on_the_community_tree_is_paid_for_at_most_half_of_it():
+def test_the_community_pool_grows_with_the_number_of_choppers_with_diminishing_returns_and_party_trees_pay_all_of_it():
+    from cococap.services import party_tree as pt
+
     c = RULES.community
-    assert c.max_share == 0.5 and c.max_share < 1
+    pools = [f.community_pool(n, RULES) for n in (1, 2, 3, 5, 10, 40)]
+    assert pools[0] == c.pool_base < 1 and pools == sorted(pools) and pools[-1] <= c.pool_base + c.pool_per_chopper / (1 - c.pool_decay) + 1e-9
+    steps = [b - a for a, b in zip(pools, pools[1:], strict=False)]
+    assert pools[1] - pools[0] == pytest.approx(c.pool_per_chopper) and steps[1] < steps[0]  # (each new chopper adds less than the one before)
+    assert all(f.community_pool(n, pt.party_rules(RULES)) == 1.0 for n in (1, 2, 5, 10))  # a party tree is paid whole, whatever the party size
 
-    def haul(damage_share):
-        rng = Random(7)
+    def per_chopper(n, rules=RULES, seed=7):
         max_hp = 1_000_000
-        chops = {1: round(max_hp * damage_share)}
-        shares = community_shares_for(max_hp, chops, rng)
-        return shares[1]
+        return f.community_shares(max_hp, True, {u: max_hp // n for u in range(n)}, rules, Random(seed), REG, 3)
 
-    def community_shares_for(max_hp, chops, rng):
-        return f.community_shares(max_hp, True, chops, RULES, rng, REG, 3)
-
-    alone, half = haul(1.0), haul(0.5)
-    assert alone.bits == half.bits  # the same pay for all of it as for half of it (bits are worked out from the share, so they match exactly)
-    assert sum(alone.drops.values()) == pytest.approx(sum(half.drops.values()), rel=0.35)  # (drops are dice: about the same)
-    assert alone.damage == 1_000_000  # the damage (and xp) still counts in full
+    solo = per_chopper(1)[0]
+    assert solo.damage == 1_000_000  # (the damage, and so the xp, still counts in full)
+    # the same hp of work pays about pool x (1 + group bonus) of what a private tree would: a lone chopper about half, a crowd about the same as solo play
+    def pay(n):
+        return sum(sum(s.drops.values()) for s in (per_chopper(n, seed=k)[0] for k in range(30))) / 30 * n
+    assert pay(2) > pay(1) * 0.9 and pay(5) > pay(2) * 0.9  # (drops are dice: totals do not shrink as the crowd grows)
 
 
 async def test_a_new_tree_clears_the_streak_before_the_panel_is_drawn(db, monkeypatch):

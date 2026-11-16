@@ -893,7 +893,7 @@ A gadget (an upgrade level on your fishing skill, like the mining reactor, not a
 
 ## Community tree cap, compact streak text, "max" wording
 
-- **A lone community chopper is paid for at most half the tree** (`[community] max_share = 0.5`): drops and bits go by `min(your share of the hp, max_share)`; xp still counts all the work. Party trees have no cap (`party_rules` lifts it). The community page shows "max: you are paid for 50% of the tree" once you reach it.
+- **The community pool scales with the choppers** (see "Community tree pool" at the end; this replaced the old 50% cap on a lone chopper). Party trees pay the whole pool (`party_rules` sets `pool_base = 1`, `pool_per_chopper = 0`).
 - The streak shows only as `🔥 +10%` (and `max` at the cap) on the swing line; no sentences.
 - Player-facing text says **max** for "the most/the best" (the wiki says "Max odds in" for a fish's best water; upgrades say "maxed").
 
@@ -902,3 +902,18 @@ A gadget (an upgrade level on your fishing skill, like the mining reactor, not a
 - **The magnet is a fuel meter** (`[magnet]` in `configs/mining.toml`): capacity 1,000, copper 1 / iron 6 / gold 38 per ore (about 50 bits a point whatever you feed), and with it on every row you dig uses `drain_per_row = 4` and is marked with ✨ (the richest column). A full meter is about 12 mines. The meter stays between mines; `settle_run` takes off only what the mine used. It can only be fed outside a mine (`mining.in_a_mine`, a small in-memory map of live runs; a run counts for 15 minutes at most). The Reactor page has a picker (each ore with how many you hold and its points), Feed 1 / 10 / 100 / Fill with an exact preview, a Magnet on/off switch, and **Auto-miner feeds it** (copper, iron and gold from claimed lodes fill the meter first, never over capacity). Sim: following the marker roughly doubles a row's ore value at about +2 pressure a row, which is the trade-off (you spend braces on it).
 - **Reactor Engineer** replaces Safe Digger: Coolant Loop (`reactor_cool`: +0.4% less pressure per reactor level), Overclock (`auto_speed` +25% lodes), Efficient Magnet (`magnet_save` -30% drain, +1 brace), Deep Reserve (`auto_hours` +24, +25% lodes), and the capstone **Lifeline = a second chance from a collapse**: when a dig would collapse the mine, the reactor holds it once (you lose `lifeline_loss` 25% of what you carry, pressure drops to `lifeline_pressure` 30, the dig goes on) and recharges after `lifeline_runs = 8` mines (`Mining.lifeline_wait`). Un-recharged it was +100% in the sim; with the recharge it lands near +21% (power 3) / +17% (power 12), next to Gold Rush's +13% / +21%.
 - **Gems are rarer and worth more**: the four core gems sell for 400,000 (were 45,000) and drop at 1 in 12,000 (were 1 in 1,500), so mining income stays about the same but a gem is an event. **Geode Cracker** is about 1 cell in 1,400 (was 2%, about 14 gems an hour) and holds a gem you have not placed yet while any slot is empty. The guard test runs all three capstones at pickaxe power 3 and 12 (each +8% to +40%, within 15% of each other).
+
+## Community tree pool (balanced by number of choppers)
+
+The community tree used to cap a lone chopper at `max_share` 0.5 of the tree. Now the tree's total reward (drops and bits) is multiplied by a **pool** that depends on how many distinct choppers did their share (`community_pool(n, rules)` in `services/foraging.py`): `pool = pool_base + pool_per_chopper x (1 + d + d^2 + ... up to n-1 terms)` with `d = pool_decay`. Config in `[community]`: `pool_base = 0.5`, `pool_per_chopper = 0.2`, `pool_decay = 0.6` (ceiling 1.0). The group bonus was cut to +2% a chopper, max +20% (was 5% / 50%) because the pool now does most of the scaling. `max_share` stays at 1.0 (no cap). Party trees keep paying the whole tree.
+
+Sim (scratch, zone 5, 1,000,000 hp tree split evenly, value = sell price of drops per chopper, against the same hp of private-tree work):
+
+| choppers | pool | group bonus | pay vs solo play for the same hp |
+|---|---|---|---|
+| 1 | 0.50 | 0% | 0.50 |
+| 2 | 0.70 | 2% | 0.71 |
+| 5 | 0.94 | 8% | 0.99 |
+| 10 | 0.99 | 18% | 1.15 |
+
+So a lone chopper is paid half (as before), a pair about 70%, five about solo, and a crowd of ten a modest 15% over solo. TODO(balance): the community screen still shows "max: you are paid for X% of the tree" off `max_share`; it should show the pool instead.

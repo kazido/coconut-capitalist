@@ -579,26 +579,36 @@ class Share:
     xp: int
 
 
+def community_pool(choppers: int, rules: ForagingRules) -> float:
+    """How much of the tree's worth is paid out to ``choppers`` distinct choppers (those who did their share). One chopper gets `pool_base` of it; each
+    further one adds `pool_per_chopper`, but every new one adds `pool_decay` times what the last one did, so the pool climbs toward a ceiling instead of growing
+    forever. With the defaults (base 1, no increment) the pool is the whole tree, which is how a party tree pays."""
+    c = rules.community
+    extra = sum(c.pool_decay**k for k in range(max(0, choppers - 1)))
+    return c.pool_base + c.pool_per_chopper * extra
+
+
 def community_shares(
     max_hp: int, felled: bool, chops: dict[int, int], rules: ForagingRules, rng: random.Random, registry: Registry,
     zone: int = 1, *, efforts: dict[int, float] | None = None,
 ) -> dict[int, Share]:
-    """Who gets what from a finished community tree. Pure. Drops and bits go by share of the tree's hp (only for
+    """Who gets what from a finished community tree. Pure. Drops and bits go by share of the tree's hp, out of a pool that grows with the number of choppers (only for
     those with at least ``min_share``); xp is for work done (the quality of each chop, in `efforts`), whatever the share."""
     c = rules.community
     qualifying = [u for u, d in chops.items() if d / max_hp >= c.min_share]
     bonus = min(c.max_group_bonus, c.group_bonus * max(0, len(qualifying) - 1)) if felled else 0.0
     factor = 1.0 if felled else c.expired_factor
-    total_rolls = expected_rolls(max_hp, rules, zone)
+    total_rolls = expected_rolls(max_hp, rules, zone) * community_pool(len(qualifying), rules)  # (the pool grows with the number of choppers, so a crowd is balanced against solo play)
     pay = zone_reward_factor(zone, rules)
     shares = {}
     for user_id, damage in sorted(chops.items()):
         drops, bits = {}, 0
         if user_id in qualifying:
-            paid_share = min(damage / max_hp, c.max_share)  # (a lone chopper is paid for at most max_share of the tree)
+            paid_share = min(damage / max_hp, c.max_share)
+            pool = community_pool(len(qualifying), rules)
             rolls = whole_rolls(total_rolls * paid_share * (1 + bonus) * factor, rng)
             drops = dict(roll_drops(rolls, rng, registry))
-            bits = round(paid_share * max_hp * rules.bits_per_hp * pay * (1 + bonus) * factor)
+            bits = round(paid_share * max_hp * rules.bits_per_hp * pay * pool * (1 + bonus) * factor)
         shares[user_id] = Share(damage, drops, bits, round((efforts or {}).get(user_id, 0.0) * rules.xp_per_swing))
     return shares
 

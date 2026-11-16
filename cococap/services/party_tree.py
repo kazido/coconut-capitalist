@@ -35,7 +35,7 @@ def party_rules(rules: ForagingRules) -> ForagingRules:
     p = rules.party_tree
     return rules.model_copy(update={"community": rules.community.model_copy(update={
         "min_share": p.min_share, "group_bonus": p.group_bonus, "max_group_bonus": p.max_group_bonus,
-        "expired_factor": p.expired_factor, "max_share": 1.0})})  # (the 50% cap is for a lone community chopper; a party tree has no such cap)
+        "expired_factor": p.expired_factor, "max_share": 1.0, "pool_base": 1.0, "pool_per_chopper": 0.0})})  # (the pool that grows with the crowd is for the community tree; a party tree pays all of itself)
 
 
 def tree_hp(zone: int, members: int, rules: ForagingRules) -> int:
