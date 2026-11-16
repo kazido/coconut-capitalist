@@ -3,7 +3,7 @@ import random
 import discord
 
 from cococap.registry import get_registry
-from cococap.services import pets
+from cococap.services import pets, shop
 from cococap.ui import Page, PromptModal, Result, Screen
 from cococap.ui.components import button, row, select, sep, text, xp_bar
 from cococap.user import User
@@ -133,6 +133,12 @@ class PetScreen(Screen):
         await self.refresh(interaction, f"✨ {pet.name} now carries the {skill} Spirit.")
 
 
+def orb_items(reg=None):
+    """Every orb the shop sells (an item whose id is `familiar_orb` or ends in `_orb`, with a price), cheapest first. Add an orb tier in items.toml and it shows up here."""
+    reg = reg or get_registry()
+    return sorted((i for i in reg.shop_items() if i.id == pets.ORB or i.id.endswith("_orb")), key=lambda i: (i.price, i.name))
+
+
 class OrbScreen(Screen):
     """Familiar Orbs: open them and aim them at the pet you are hunting."""
 
@@ -149,7 +155,7 @@ class OrbScreen(Screen):
         orbs = (await self.user.items()).get(pets.ORB, 0)
         body = [*self.note_block(),
                 text(f"### 🔮 Familiar Orbs  ·  you have **{orbs:,}**\nAn orb hatches a random pet (a pet you own gains a star). "
-                     "Find them fishing or buy them in the shop.")]
+                     "Find them fishing, or buy them here.")]
         if house.target in reg.pets:
             target = reg.pets[house.target]
             chance = pets.orb_odds(reg, house.target, house.misses)[house.target]
@@ -164,10 +170,34 @@ class OrbScreen(Screen):
             hunt.append(discord.SelectOption(label=pet.name + (f" ({mine.stars}/{rules.max_stars})" if mine else ""), value=pet.id, emoji=pet.emoji,
                                              description=f"rarity {pet.rarity}  ·  {chance:.1%} per orb when hunted", default=pet.id == house.target))
         body.append(row(select("Hunt a pet (orbs favour it)...", hunt[:25], self._hunt)))
+        for orb in orb_items(reg):
+            body.append(row(
+                button(f"Buy a {orb.name} ({orb.price:,} bits)", emoji=orb.emoji, style=discord.ButtonStyle.success, disabled=self.user.purse < orb.price, on_click=self._buy(orb.id, 1)),
+                button("Buy several", emoji="🛒", on_click=self._buy(orb.id, None))))
         body.append(row(
             button(f"Open a Familiar Orb ({orbs})", emoji="🔮", style=discord.ButtonStyle.primary, disabled=orbs < 1, on_click=self._open_orb),
             button("Your pets", emoji="🐾", on_click=self._to_pets)))
         return Page("Familiar Orbs", body, accent=0x27AE60)
+
+    def _buy(self, item_id: str, quantity: int | None):
+        """One click buys one; `None` asks how many first. Pricing and the purchase itself are the shop's (services/shop.buy)."""
+        async def go(interaction: discord.Interaction) -> None:
+            if quantity is not None:
+                await self._purchase(interaction, item_id, quantity)
+                return
+
+            async def submitted(modal_interaction: discord.Interaction, raw: str) -> None:
+                from cococap.screens.shop import parse_quantity
+
+                await self._purchase(modal_interaction, item_id, parse_quantity(raw))
+
+            await interaction.response.send_modal(PromptModal(f"Buy {get_registry().item(item_id).name}", "How many?", submitted, default="5", max_length=4))
+
+        return go
+
+    async def _purchase(self, interaction: discord.Interaction, item_id: str, quantity: int) -> None:
+        purchase = await shop.buy(self.user, item_id, quantity)
+        await self.refresh(interaction, f"Bought {purchase.quantity:,} × {get_registry().item(item_id).name} for {purchase.total:,} bits.")
 
     async def _to_pets(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "pets")

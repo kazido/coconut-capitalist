@@ -306,6 +306,25 @@ async def test_the_pet_house_for_someone_with_no_pets_explains_orbs(db):
     assert nav.screen.id == "orbs" and find_button(nav, "Open a Familiar Orb (0)").disabled
 
 
+async def test_orbs_are_bought_on_the_orbs_page_for_the_configured_price(db):
+    from cococap.screens.pets import orb_items
+    from tests.test_hub import submit
+
+    orb = REG.item(pets.ORB)
+    assert orb in orb_items(REG) and orb.buyable
+    user = await User.get(1)
+    await set_columns(user, purse=orb.price * 4)
+    nav, inter = await hub("orbs")
+    await click(nav, inter, f"Buy a {orb.name} ({orb.price:,} bits)")
+    assert await (await User.get(1)).item_quantity(pets.ORB) == 1 and "Bought 1" in all_text(nav)
+    await click(nav, inter, "Buy several")
+    modal = await submit(inter, "3")
+    await modal.on_submit(inter)
+    user = await User.get(1)
+    assert await user.item_quantity(pets.ORB) == 4 and user.purse == 0
+    assert find_button(nav, f"Buy a {orb.name} ({orb.price:,} bits)").disabled  # (cannot afford another)
+
+
 async def test_opening_an_orb_from_the_orbs_page_shows_a_result_page(db, monkeypatch):
     monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0: REG.pets["cat"])
     user = await User.get(1)
