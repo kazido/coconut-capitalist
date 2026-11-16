@@ -759,46 +759,6 @@ class PartyTreeRules(_Data):
     refresh_seconds: float = Field(gt=0)
 
 
-class ForagingRules(_Data):
-    zones: int = Field(ge=1)
-    zone_levels: list[int] = Field(min_length=1)  # the foraging level each zone needs (zone 1 first; must climb)
-    heavy_zone: int = Field(ge=1)
-    heavy_solo_power: float = Field(gt=0, le=1)
-    zone_hp_growth: float = Field(ge=0)
-    xp_per_swing: float = Field(ge=0)  # xp for one chop at full quality. It does not depend on the axe: a better axe fells faster, it does not pay more xp
-    bits_per_hp: int = Field(ge=0)
-    hp_per_roll: int = Field(ge=1)
-    zone_reward_growth: float = Field(ge=0)  # each zone above 1 pays this much more per hp (bits and drop rolls)
-    heights: list[TreeHeight] = Field(min_length=1)
-    chopping: ChoppingRules
-    rotate: RotateRules
-    community: CommunityRules
-    party_tree: PartyTreeRules
-    releaf: ReleafRules
-
-    @model_validator(mode="after")
-    def _zones_fit(self):
-        if len(self.zone_levels) != self.zones or self.zone_levels[0] != 1:
-            raise ValueError("zone_levels needs one level per zone, starting at level 1")
-        if any(b <= a for a, b in zip(self.zone_levels, self.zone_levels[1:], strict=False)):
-            raise ValueError("zone_levels must climb")
-        if not 1 <= self.community.default_zone <= self.zones or self.community.min_active > self.community.max_active:
-            raise ValueError("community default_zone must be a real zone and min_active <= max_active")
-        return self
-
-
-class BiteRules(_Data):
-    wait_min: float = Field(gt=0)
-    wait_max: float = Field(gt=0)
-    speedup_per_power: float = Field(ge=0)
-    min_wait_factor: float = Field(gt=0, le=1)
-    window: float = Field(gt=0)
-    grace: float = Field(ge=0)  # extra seconds nobody is told about, to forgive a laggy connection
-
-    @model_validator(mode="after")
-    def _ordered(self):
-        if self.wait_max < self.wait_min:
-            raise ValueError("bite wait_max must be >= wait_min")
 class SpeciesDrop(_Data):
     """One signature drop of a tree species: `rate` is the chance PER DROP ROLL of the tree (0..1), then min..max of the item."""
 
@@ -837,6 +797,61 @@ class Species(_Data):
         return self.zone_min <= zone <= self.zone_max
 
 
+class ForagingRules(_Data):
+    zones: int = Field(ge=1)
+    zone_levels: list[int] = Field(min_length=1)  # the foraging level each zone needs (zone 1 first; must climb)
+    heavy_zone: int = Field(ge=1)
+    heavy_solo_power: float = Field(gt=0, le=1)
+    zone_hp_growth: float = Field(ge=0)
+    xp_per_swing: float = Field(ge=0)  # xp for one chop at full quality. It does not depend on the axe: a better axe fells faster, it does not pay more xp
+    bits_per_hp: int = Field(ge=0)
+    hp_per_roll: int = Field(ge=1)
+    zone_reward_growth: float = Field(ge=0)  # each zone above 1 pays this much more per hp (bits and drop rolls)
+    heights: list[TreeHeight] = Field(min_length=1)
+    chopping: ChoppingRules
+    rotate: RotateRules
+    community: CommunityRules
+    party_tree: PartyTreeRules
+    releaf: ReleafRules
+    species: list[Species] = Field(default_factory=list)  # tree species by zone (empty: no species, trees are plain)
+
+    def species_of(self, species_id: str) -> Species | None:
+        return next((sp for sp in self.species if sp.id == species_id), None)
+
+    def species_in(self, zone: int) -> list[Species]:
+        return [sp for sp in self.species if sp.grows_in(zone)]
+
+    @model_validator(mode="after")
+    def _species_cover_zones(self):
+        if len({sp.id for sp in self.species}) != len(self.species):
+            raise ValueError("species ids must be unique")
+        if self.species and (missing := [z for z in range(1, self.zones + 1) if not self.species_in(z)]):
+            raise ValueError(f"species: no species grows in zone(s) {missing}")
+        return self
+
+    @model_validator(mode="after")
+    def _zones_fit(self):
+        if len(self.zone_levels) != self.zones or self.zone_levels[0] != 1:
+            raise ValueError("zone_levels needs one level per zone, starting at level 1")
+        if any(b <= a for a, b in zip(self.zone_levels, self.zone_levels[1:], strict=False)):
+            raise ValueError("zone_levels must climb")
+        if not 1 <= self.community.default_zone <= self.zones or self.community.min_active > self.community.max_active:
+            raise ValueError("community default_zone must be a real zone and min_active <= max_active")
+        return self
+
+
+class BiteRules(_Data):
+    wait_min: float = Field(gt=0)
+    wait_max: float = Field(gt=0)
+    speedup_per_power: float = Field(ge=0)
+    min_wait_factor: float = Field(gt=0, le=1)
+    window: float = Field(gt=0)
+    grace: float = Field(ge=0)  # extra seconds nobody is told about, to forgive a laggy connection
+
+    @model_validator(mode="after")
+    def _ordered(self):
+        if self.wait_max < self.wait_min:
+            raise ValueError("bite wait_max must be >= wait_min")
         return self
 
 
@@ -853,21 +868,6 @@ class ReelRules(_Data):
     max_random_mysteries: int = Field(ge=1)  # a coin-flip ❓ can't be learned, so a fish has at most this many of them
     echo_window: float = Field(ge=0)  # pressing the arrow you JUST pressed again within this many seconds is ignored
 
-    species: list[Species] = Field(default_factory=list)  # tree species by zone (empty: no species, trees are plain)
-
-    def species_of(self, species_id: str) -> Species | None:
-        return next((sp for sp in self.species if sp.id == species_id), None)
-
-    def species_in(self, zone: int) -> list[Species]:
-        return [sp for sp in self.species if sp.grows_in(zone)]
-
-    @model_validator(mode="after")
-    def _species_cover_zones(self):
-        if len({sp.id for sp in self.species}) != len(self.species):
-            raise ValueError("species ids must be unique")
-        if self.species and (missing := [z for z in range(1, self.zones + 1) if not self.species_in(z)]):
-            raise ValueError(f"species: no species grows in zone(s) {missing}")
-        return self
 
 class QuestSlot(_Data):
     """One quest per slot: "catch N of a fish of this rarity" (which fish is picked per player and period)."""
