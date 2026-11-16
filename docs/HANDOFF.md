@@ -48,10 +48,17 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 - Done since the list below was written: shipments by skill (basic at level 10, hard at 30; community off), trading (shared window, both Accept), settings (keep upgrade
   materials, confirm upgrades, fishing estimate), combat PAUSED (button disabled, `/fight` says so; code and tests kept), tool lines (3 plain upgrades then the split at the
   4th: axe = Lumberjack/Forager, can = Sprinkler/Alchemist), mastery trees for mining/fishing/foraging/farming with a tuned capstone per branch, the fishing radar, Home
-  layout (Trade and Party on page 1). See DESIGN.md sections of the same names.
+  layout (superseded: see the `ideas` effort below). See DESIGN.md sections of the same names.
 - Numbers still to tune by play: axe/can road stats, shipment sizes, radar costs, capstones for fishing/foraging/farming are estimates (mining's are simulated).
 - The user's config edits are now COMMITTED (balance numbers in `configs/economy|farming|foraging|mining.toml`). Personal, unshared tuning goes in the git-ignored `configs/local/<name>.toml` overlay (see CLAUDE.md). The full suite is green.
 - Workflow decisions: do not run the full suite after every change (only on request or a reported break); use plan mode for big features; project skills in `.claude/skills/` (add-item, balance-check, finish-feature); optional `scripts/pre-commit` runs ruff.
+- **The `ideas` file effort (all committed, not pushed; restart the bot to see it)**: daily Farmer's Market window; one-item shake and grain-based Windfall; community tree pool scales with choppers;
+  Leave-button pages hide Home/Back; new Home (Skills, Shipments, Shop, Inventory, Pets, Check-in as sections, one row of Profile/Ranks/Leaderboards/Party/More; Trade lives under More);
+  expired menus delete themselves; one shared rewards screen (`cococap/ui/rewards.py`) with a page per rare drop and its drop rate (`services/odds.py`); shop sells no tools (free starter
+  tools claimed on first /play); orb buying on the orbs page and three orb tiers; per-rarity pet leveling (levels preserved by `Pethouse.curve_version`); pets Magpie/Mole/Fox/Bee/Raven;
+  rarity words + ANSI colours in the inventory only (experiment: roll out only if the user likes it); tree species by zone; Releaf Foundation (Bloom); mine types; small wyrmholes (1 in 100 mines);
+  crafting (Workbench under Inventory, `configs/recipes.toml`: battery, iron/gilded wedge, scarab bomb); fishing double hook (Double Hook enchant + Angler node) and the "Where does an effect belong?" rule in DESIGN.md.
+  Numbers are sim-based guesses marked TODO(balance). Open from it: five pets/effects flagged as misplaced in DESIGN.md, Scholar's Cavern a little weak, small wyrmhole strong at low power.
 - Dead code removed (exploration prototype, empty cogs, unused models/helpers). Wedges now leave a chop bonus, the burger is a pet feast, rare drops show banners (`cococap/ui/flair.py`), every item/enchant has an emoji, Sell all keeps upgrade materials by default.
 
 ## Open work (in rough priority)

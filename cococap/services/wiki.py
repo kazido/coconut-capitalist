@@ -138,10 +138,10 @@ def _fishing(reg: Registry) -> list[str]:
         "for rewards and level the book up. The **community book** and **monthly goals** are shared by the whole server.",
         f"**Extras.** About 1 in {r.treasure.hallucination_odds} catches brings a **hallucination**: remember the four numbers, because a **treasure chest** "
         f"may turn up next. About 1 cast in {r.boss.odds} is a **boss** with its own twist and a pile of loot. Every catch has a size, with personal and server records.",
-    ]
         f"**Double Hook.** A rod with the **Double Hook** enchant (or the Angler's Double Hook Mastery node) sometimes has a second line already biting after you land a fish: "
         f"a **Quick cast** you can take for {r.double_hook.window_seconds:g} seconds from the result page. It is free, in the same water, and pays like any catch; ignoring it costs nothing "
         "(your Hot Streak is safe). Never after a boss or chest, and a Quick cast never offers another.",
+    ]
 
 
 def _one_in(chance: float) -> str:
