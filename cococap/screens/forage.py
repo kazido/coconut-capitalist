@@ -158,7 +158,7 @@ async def swing_at(screen: Screen, power: int, stance: str, tree_key: object) ->
     if swing.correct is not None and await foraging.note_style(screen.user, grain, stance, swing.correct):
         note += (f"  📖 Learned: the **{name}** grain likes **{foraging.STANCES[stance][0]}**!" if swing.correct
                  else f"  ✖️ {foraging.STANCES[stance][0]} crossed off the **{name}** grain in your notes")
-    shaken = await foraging.shake(screen.user, stats.stats.get("shake", 0.0), screen.rng) + await foraging.windfall(screen.user, int(stats.stats.get("windfall", 0)), screen.rng)
+    shaken = await foraging.shake(screen.user, stats.stats.get("shake", 0.0), screen.rng) + await foraging.windfall(screen.user, int(stats.stats.get("windfall", 0)), screen.rng, grain_done=swing.clean_grain)
     if shaken:
         note += "  🍃 Shook loose " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in shaken.items()) + "!"
     if swing.ended:
