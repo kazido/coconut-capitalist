@@ -1137,3 +1137,23 @@ One stat, `double_hook`, two sources by the rule above: the **Double Hook rod en
 After a plain landing (never a boss, party fight or chest, and never after a Quick cast) `fishing.roll_double_hook(stats, rng, rules)` may offer a **Quick cast** on the result page for `[double_hook] window_seconds` (4, live countdown through `Result.live` and an action button). Taking it calls `fishing.quick_cast`: the same rod and water, a plain fish (`cast_line(plain=True)`), already biting, so it is hooked, reeled and landed like any cast and pays xp, quests and records unchanged. It uses no radar battery. Ignoring or missing the offer costs nothing (Hot Streak is untouched).
 
 Value: an offer is a free extra cast and cannot chain, so the chance IS the extra fish per cast: enchant at max 12% and the node 10% (both together 22%, below `cap` 0.25); the guard test in `tests/test_fishing.py` keeps each source within 8-15%. A Quick cast has no wait, so per minute it is worth a little more than per cast. TODO(balance). The Quick cast's hook window is the normal bite window (6 s); `window_seconds` is only how long the offer is open.
+
+## Custom emoji at runtime
+
+The art overhaul ships hundreds of emoji as the bot's *application emoji* (owned by the bot, usable in every server, 2000 slots).
+`cococap/emojis.py` fetches them at startup (`refresh(bot)` in `setup_hook`) and looks them up **by name**; data files never hold ids.
+
+- **Naming convention** (Discord name = `[a-z0-9_]{2,32}`): items `<item_id>` (`iron_ore`, `scroll_lure`), pets `pet_<id>`, tree species
+  `species_<id>`, enchants `enchant_<id>`, mine types `mine_<id>`, waters `water_<id>`, ranks `rank_<rank_id>`, UI icons `ui_<name>` (`ui_releaf`).
+- **Resolution**: `emojis.for_id(kind, id, fallback)` returns the loaded emoji of that name, else `fallback`. It is wired into the model
+  property `.emoji` of `Item`, `Pet`, `Species`, `Enchant`, `MineType`, `WaterRules` and `Rank` (the TOML `emoji` string is kept as the
+  fallback, field `emoji_raw`), so every screen that reads `.emoji` benefits with no per-screen code. `emojis.ui(name, fallback)` is the same for UI icons.
+- **Legacy**: the owner's first 22 emoji have other names (`ore_iron` for item `iron_ore`, `seed_weathered` for `dusty_dandelion_seed`, ...).
+  `<:name:id>` tokens in the data still resolve by name, and `emojis.ALIASES` maps legacy name -> item id; an emoji named exactly by the id wins.
+- **Fallback**: nothing loaded (tests, offline, fetch failed) or no emoji of that name: the Unicode/configured emoji is shown. Nothing breaks if art is missing.
+- **Where it renders**: message text, headings, button `emoji=`, select option emoji. NOT in code blocks and NOT in button/select *labels*
+  (Discord prints the raw `<:name:id>`); put custom emoji in the `emoji=` slot there, and keep ANSI/code blocks on Unicode.
+- **Uploading** (run by the owner, needs the bot token in `.env`): `.venv/bin/python scripts/upload_emojis.py` is a dry run that prints the
+  plan for the files in `art/out/` (`<name>.png` static, `.webp`/`.gif` animated; at most 256 KB each); add `--yes` to upload only the missing
+  names. Flags: `--only PREFIX`, `--replace NAME` (delete + recreate after new art), `--limit N`, `--pause SECONDS`. It waits out rate limits
+  and is safe to rerun. Then restart the bot (emoji are fetched at startup). Planning logic: `plan_upload` (tests/test_upload_plan.py).

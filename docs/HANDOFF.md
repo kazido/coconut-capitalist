@@ -59,6 +59,7 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
   rarity words + ANSI colours in the inventory only (experiment: roll out only if the user likes it); tree species by zone; Releaf Foundation (Bloom); mine types; small wyrmholes (1 in 100 mines);
   crafting (Workbench under Inventory, `configs/recipes.toml`: battery, iron/gilded wedge, scarab bomb); fishing double hook (Double Hook enchant + Angler node) and the "Where does an effect belong?" rule in DESIGN.md.
   Numbers are sim-based guesses marked TODO(balance). Open from it: five pets/effects flagged as misplaced in DESIGN.md, Scholar's Cavern a little weak, small wyrmhole strong at low power.
+- Custom emoji by name: upload `art/out/` with `scripts/upload_emojis.py` (dry run, then `--yes`), restart; screens pick up `<item_id>`, `pet_<id>`, `species_<id>`, `enchant_<id>`, `mine_<id>`, `water_<id>`, `rank_<id>` emoji automatically (DESIGN.md "Custom emoji at runtime").
 - Dead code removed (exploration prototype, empty cogs, unused models/helpers). Wedges now leave a chop bonus, the burger is a pet feast, rare drops show banners (`cococap/ui/flair.py`), every item/enchant has an emoji, Sell all keeps upgrade materials by default.
 
 ## Open work (in rough priority)
