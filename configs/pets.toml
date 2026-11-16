@@ -155,12 +155,12 @@ text = "+{v:.0%} foraging xp"
 name = "Mole"
 skill = "mining"
 emoji = "🐀"
-rarity = 2
-description = "Happiest underground. Every dig teaches you more."
+rarity = 3
+description = "Happiest underground. It tunnels ahead and eases the rock, so every row you dig adds less pressure."
 [[mole.bonuses]]
-stat = "xp_mining"
-value = 0.16
-text = "+{v:.0%} mining xp"
+stat = "dig_shave"
+value = 0.07
+text = "-{v:.0%} pressure from every dug row"
 
 [rabbit]
 name = "Rabbit"

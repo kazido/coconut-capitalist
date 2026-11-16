@@ -24,7 +24,7 @@ KNOWN_STATS = frozenset({
     "work_bonus",  # economy: the Work wage
     "sell_bonus",  # economy: every sale pays this much more (Magpie)
     "bite_speed", "rare_luck", "treasure_luck", "pot_speed", "pot_luck",  # fishing and crab pots
-    "danger_reduction", "ore_yield",  # mining
+    "danger_reduction", "ore_yield", "dig_shave",  # mining (the Mole's dig_shave takes this share off the pressure every dug row adds)
     "good_chop",  # foraging
     "grow_chance", "crop_yield",  # farming
     "xp_all",  # every skill's xp
@@ -34,7 +34,7 @@ KNOWN_STATS = frozenset({
 
 _STAT_SKILL = {
     "bite_speed": "fishing", "rare_luck": "fishing", "treasure_luck": "fishing", "pot_speed": "fishing", "pot_luck": "fishing",
-    "danger_reduction": "mining", "ore_yield": "mining", "good_chop": "foraging", "grow_chance": "farming", "crop_yield": "farming",
+    "danger_reduction": "mining", "ore_yield": "mining", "dig_shave": "mining", "good_chop": "foraging", "grow_chance": "farming", "crop_yield": "farming",
 }
 
 

@@ -56,3 +56,30 @@ async def test_a_magpie_makes_every_sale_pay_more_and_more_with_strength(db):
     star3 = await with_pet("magpie", user_id=4, stars=3)
     assert 0 < await shop.haggle(young, ore, REG) < value("magpie") < await shop.haggle(star3, ore, REG)
     assert await shop.haggle(star3, ore, REG) == pytest.approx(value("magpie") * (1 + 2 * RULES.star_bonus))
+
+
+# ---- Mole ---------------------------------------------------------------------------------------------------------
+async def _run_for(user):
+    from random import Random
+
+    from cococap.services import mining
+    from cococap.services.equipment import equip
+
+    inst = await user.give_instance("rookiepickaxe")
+    await equip(user, "mining", inst.id)
+    return await mining.start_run(user, Random(1), REG)
+
+
+async def test_a_mole_takes_pressure_off_every_row_and_more_with_strength(db):
+    plain, mole = await _run_for(await User.get(1)), await _run_for(await with_pet("mole", user_id=2))
+    assert mole.growth_factor == pytest.approx(plain.growth_factor * (1 - value("mole")))
+    young = await _run_for(await with_pet("mole", user_id=3, xp=0))
+    star3 = await _run_for(await with_pet("mole", user_id=4, stars=3))
+    assert plain.growth_factor > young.growth_factor > mole.growth_factor > star3.growth_factor
+    assert star3.growth_factor == pytest.approx(plain.growth_factor * (1 - value("mole") * (1 + 2 * RULES.star_bonus)))
+    # ...and it is the pressure itself that grows slower, not a softer collapse
+    assert mole.rules.descent.max_risk == plain.rules.descent.max_risk
+
+
+async def test_a_moles_shave_is_a_modest_slice_of_the_pressure():
+    assert 0.05 <= value("mole") <= 0.10

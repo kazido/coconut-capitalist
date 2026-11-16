@@ -567,7 +567,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         rng,
         cursors=_start_cursors(columns_dug(mining.reactor.level, rules), rules.columns),
         bombs=bombs,
-        growth_factor=1 - min(d.max_reduction, reduction),
+        growth_factor=(1 - min(d.max_reduction, reduction)) * (1 - min(0.5, pet.get("dig_shave", 0.0))),  # (a Mole shaves every dug row's pressure on top)
         yield_factor=(1 + d.power_yield_bonus * max(0, power - d.power_base)) * (1 + pet.get("ore_yield", 0.0) + tool.stats.get("ore_yield", 0.0)),
         braces=d.braces_base + (mining.reactor.level - 1) // d.braces_per_reactor_levels + int(tool.stats.get("braces", 0)),
         magnet=magnet,
