@@ -1,6 +1,7 @@
 import datetime
 import random
 import time
+from collections import Counter
 
 import discord
 
@@ -10,7 +11,8 @@ from cococap.screens.sellall import start_sell_all
 from cococap.services import fishing, fishing_community, party_boss, pets, pots
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
-from cococap.ui import flair
+from cococap.services import odds
+from cococap.ui.rewards import rewards_result
 from cococap.ui import Page, PromptModal, Result, Screen
 from cococap.ui.components import bar, bits, button, needs_text, row, select, sep, text, xp_bar
 from cococap.user import User
@@ -261,7 +263,7 @@ class FishScreen(Screen):
     def _catch_result(self, catch: fishing.Catch) -> Result:
         reg = get_registry()
         rarity = Rarities.from_value(catch.fish.rarity)
-        lines = [f"**{rarity.rarity_name}**  ·  📏 **{catch.size:g} cm**  ·  worth **{bits(catch.fish.sell_price)}** bits  ·  **+{catch.xp:,}** xp"]
+        lines = [f"**{rarity.rarity_name}**  ·  📏 **{catch.size:g} cm**  ·  worth **{bits(catch.fish.sell_price)}** bits"]
         if catch.slack_bits:
             lines.append(f"🧵 **Clean reel!** {catch.slack_left} slack unused: **+{bits(catch.slack_bits)}** bits")
         if catch.streak_bits:
@@ -276,10 +278,6 @@ class FishScreen(Screen):
             lines.append(f"🪝 **Bycatch!** Your rod also hauled up a **{catch.bycatch.display}**.")
         if catch.extra_fish:
             lines.append(f"🎣 Your rod hauled in **{catch.extra_fish}** more: **{catch.extra_fish + 1}** {catch.fish.display} in all!")
-        if catch.extras:
-            lines.append("🪸 Also washed up: " + ", ".join(f"{q:,} {reg.item(i).display}" for i, q in catch.extras.items()))
-            if fanfare := flair.banner(catch.extras):
-                lines.append(fanfare)
         for q in catch.finished:
             lines.append(f"📜 **Quest complete:** {q.text}  ·  +{bits(q.bits)} bits, +{q.xp} xp")
         if catch.hallucination:
@@ -296,8 +294,9 @@ class FishScreen(Screen):
                 return (["🌫️ The numbers slip away… hold on to what you remember."], False) if faded else ([], False)
         else:
             live = None
-        return Result(f"You caught a {catch.fish.display}!", lines, emoji="🎣", accent=int(rarity.color, 16),
-                      again=self._cast, again_label="Cast again", live=live)
+        return rewards_result(f"You caught a {catch.fish.display}!", items=Counter({catch.fish.id: 1 + catch.extra_fish}) + Counter(catch.extras), xp=catch.xp,
+                              notes=lines[1:], headline=lines[:1], odds=odds.fishing_catch(), emoji="🎣", accent=int(rarity.color, 16),
+                              again=self._cast, again_label="Cast again", live=live)
 
     # ---- handlers --------------------------------------------------------------------------------
     async def _cast(self, interaction: discord.Interaction) -> None:
@@ -322,16 +321,14 @@ class FishScreen(Screen):
         if not paid:
             return False
         reg = get_registry()
-        lines = []
+        headline, notes = [], []
         for p in paid:
-            loot = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in p.items.items()) or "nothing"
             team = f"  ·  👥 team bonus **+{p.bonus:.0%}** ({p.teammates} teammate(s) landed theirs)" if p.teammates else ""
-            lines += [f"💀 **{p.boss}** is beaten!  **+{bits(p.bits)}** bits  ·  **+{p.xp:,}** xp{team}", f"🎁 Loot: {loot}"]
-            if fanfare := flair.banner(p.items):
-                lines.append(fanfare)
+            headline.append(f"💀 **{p.boss}** is beaten!{team}")
             if p.slack_bits:
-                lines.append(f"🧵 Clean reel bonus included: **+{bits(p.slack_bits)}** bits")
-        self.result = Result("The party beat the boss!", lines, emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
+                notes.append(f"🧵 Clean reel bonus included: **+{bits(p.slack_bits)}** bits")
+        self.result = rewards_result("The party beat the boss!", items=sum((p.items for p in paid), Counter()), bits=sum(p.bits for p in paid), xp=sum(p.xp for p in paid),
+                                     headline=headline, notes=notes, odds=odds.fishing_boss(), emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
         return True
 
     async def _join_boss(self, interaction: discord.Interaction) -> None:
@@ -398,12 +395,9 @@ class FishScreen(Screen):
             if result == "landed" and cast.boss:
                 self.cast = None
                 won = await fishing.defeat_boss(self.user, cast, self.rng)
-                reg = get_registry()
-                loot = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in won.items.items()) or "nothing"
-                slack = f"\n🧵 Clean reel: **{won.slack_left}** slack unused  ·  **+{bits(won.slack_bits)}** bits" if won.slack_bits else ""
-                self.result = Result(f"You beat {won.name}!", [f"**+{bits(won.bits)}** bits  ·  **+{won.xp:,}** xp{slack}", f"🎁 Loot: {loot}",
-                                                              *filter(None, [flair.banner(won.items)])],
-                                     emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
+                slack = [f"🧵 Clean reel: **{won.slack_left}** slack unused  ·  **+{bits(won.slack_bits)}** bits"] if won.slack_bits else []
+                self.result = rewards_result(f"You beat {won.name}!", items=won.items, bits=won.bits, xp=won.xp, notes=slack, odds=odds.fishing_boss(),
+                                             emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
                 return await self.refresh(interaction)
             if result == "landed":
                 self.cast = None
@@ -443,10 +437,8 @@ class FishScreen(Screen):
             reg = get_registry()
             if result.opened:
                 self.cast = None
-                loot = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in result.items.items())
-                self.result = Result("The lock clicks open!", [f"**+{bits(result.bits)}** bits  ·  **+{result.xp}** xp", f"🎁 Inside: {loot}",
-                                                                  *filter(None, [flair.banner(result.items)])],
-                                     emoji="🧰", accent=0xF1C40F, again=self._cast, again_label="Cast again")
+                self.result = rewards_result("The lock clicks open!", items=result.items, bits=result.bits, xp=result.xp, odds=odds.fishing_chest(),
+                                             emoji="🧰", accent=0xF1C40F, again=self._cast, again_label="Cast again")
                 return await self.refresh(modal_interaction)
             if result.sunk:
                 self.cast = None
@@ -842,8 +834,7 @@ class FishPotsScreen(Screen):
         haul = await pots.collect_all(self.user, now())
         if not haul.catches:
             return await self.refresh(interaction, "🦀 Nothing has been caught yet.")
-        fish = ", ".join(f"{q:,} {reg.item(i).display}" for i, q in sorted(haul.fish.items(), key=lambda kv: -reg.item(kv[0]).rarity))
         worth = sum(reg.item(i).sell_price * q for i, q in haul.fish.items())
-        self.result = Result("The pots are emptied!", [f"🧺 {fish}", f"Worth about **{bits(worth)}** bits  ·  **+{haul.xp:,}** xp"],
-                             emoji="🦀", accent=0xD35400, back_label="Back to the pots")
+        self.result = rewards_result("The pots are emptied!", items=haul.fish, xp=haul.xp, notes=[f"Worth about **{bits(worth)}** bits"],
+                                     emoji="🦀", accent=0xD35400, back_label="Back to the pots")
         await self.refresh(interaction)

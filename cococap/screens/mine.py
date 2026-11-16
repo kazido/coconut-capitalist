@@ -7,7 +7,9 @@ import discord
 from cococap.constants import PROJECT_ROOT
 from cococap.registry import get_registry
 from cococap.services import mining
+from cococap.services import odds
 from cococap.ui import flair
+from cococap.ui.rewards import rewards_result
 from cococap.ui import Page, PromptModal, Screen
 from cococap.ui.components import bar, button, row, sep, text
 
@@ -202,8 +204,9 @@ class MineScreen(Screen):
         title, accent = titles[run.outcome]
         body = [*self.note_block(), text(f"## {title}")]
         if summary is not None:
-            body.append(text(f"Row **{summary.depth}** of {run.floor}  ·  **{summary.lodes}** lodes dug  ·  **+{summary.xp}** xp"))
-            body.append(text(("**Banked**\n" + loot_lines(summary.haul)) if summary.haul else "Nothing to bank this time."))
+            body.append(text(f"Row **{summary.depth}** of {run.floor}  ·  **{summary.lodes}** lodes dug"))
+            if not summary.haul:
+                body.append(text("Nothing to bank this time."))
         if self.challenge is not None:
             body += [sep(), text(f"🪲 **A subterranean scarab appears!** It holds a scroll: **{self.challenge.scrambled}**\n"
                                  f"Unscramble it before <t:{int(self.challenge_deadline)}:R> and it will reward you!"),
@@ -250,7 +253,7 @@ class MineScreen(Screen):
             if result.lifeline:
                 lost_text = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.lifeline_lost.items())
                 note = "🛟 **Lifeline!** The reactor held the tunnel when it would have collapsed" + (f" (it cost you {lost_text})" if lost_text else "") + ". " + note
-            if fanfare := flair.banner(result.found):
+            if not self.run.finished and (fanfare := flair.banner(result.found)):  # (a mine that just ended shows its finds on the reward screen)
                 note += "\n" + fanfare + "\n"
             if result.vented:
                 note += " The vent hisses; the tunnel cools."
@@ -291,7 +294,12 @@ class MineScreen(Screen):
 
     async def _end(self, note: str | None) -> None:
         """The run is over: bank it, and maybe a scarab shows up (after any mine, however it ended)."""
-        self.summary = await mining.settle_run(self.user, self.run)
+        self.summary = summary = await mining.settle_run(self.user, self.run)
+        titles = {"left": "You climbed out safely", "collapse": "The mine collapsed!", "wyrmhole": "You broke into a wyrmhole!", "floor": "You reached the vault!"}
+        self.result = rewards_result(
+            titles[self.run.outcome], items=summary.haul, xp=summary.xp,
+            headline=[f"Row **{summary.depth}** of {self.run.floor}  ·  **{summary.lodes}** lodes dug", *filter(None, [note])],
+            odds=odds.mining(depth=summary.depth), emoji="⛏️", accent=0x2ECC71 if self.run.outcome != "collapse" else 0xE74C3C, back_label="Continue")
         rules = get_registry().mining
         if mining.scarab_appears(rules, random.Random()):
             self.challenge = mining.make_scarab(_words(), rules, random.Random())

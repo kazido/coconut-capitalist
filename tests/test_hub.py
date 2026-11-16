@@ -53,6 +53,12 @@ def find_button(nav, label=None, emoji=None):
     raise AssertionError(f"no button label={label!r} emoji={emoji!r}; have {[(b.label, str(b.emoji)) for b in buttons(nav)]}")
 
 
+async def continue_through(nav, inter, label="Continue"):
+    """Click Continue on the reward screen and on every rare-drop page after it, until the screen it came from is back."""
+    while nav.screen.id == "result":
+        await click(nav, inter, label)
+
+
 def selects(nav):
     return [c for c in nav.walk_children() if isinstance(c, ui.Select)]
 
@@ -616,6 +622,8 @@ async def test_leave_banks_the_haul_and_unlocks_navigation(db):
         await find_button(nav, "Dig").callback(inter)
     carried = dict(run.haul)
     await click(nav, inter, "Leave & bank")
+    assert nav.screen.id == "result" and "climbed out safely" in all_text(nav) and nav.screen.locked  # the haul is shown first, then you carry on
+    await continue_through(nav, inter)
     assert "climbed out safely" in all_text(nav) and not nav.screen.locked
     assert await user.items() == carried
     assert (await user.skill("mining")).xp == 30 and not find_button(nav, "Home").disabled
@@ -634,6 +642,7 @@ async def test_a_collapse_halves_the_haul_and_still_gives_xp(db):
     run.rng = Rig(0.0)
     await find_button(nav, "Dig").callback(inter)
     assert "collapsed" in all_text(nav) and await user.item_quantity("copper_ore") == 5
+    await continue_through(nav, inter)
     assert (await user.skill("mining")).xp == 10 and not nav.screen.locked
 
 
@@ -645,11 +654,12 @@ async def test_a_wyrmhole_leads_to_a_one_pick_screen_and_banks_it(db):
     run._holes[0] = {2}
     await find_button(nav, "Dig").callback(inter)
     assert run.outcome == "wyrmhole" and "wyrmhole" in all_text(nav)
+    await continue_through(nav, inter)
     await find_button(nav, "Enter the wyrmhole").callback(inter)
     assert nav.screen.id == "wyrmhole" and nav.screen.locked
     await find_button(nav, "Dig").callback(inter)
-    assert not nav.screen.locked and sum((await user.items()).values()) > 0
-    await click(nav, inter, "Back to the mines")
+    assert nav.screen.id == "result" and sum((await user.items()).values()) > 0  # the pick is a reward screen like any other
+    await continue_through(nav, inter, "Back to the mines")
     assert nav.screen.id == "mining"
 
 
@@ -667,6 +677,7 @@ async def test_scarab_answered_in_time_pays_out_and_late_or_wrong_does_not(db):
         nav.screen.challenge = ScarabChallenge("lantern", "ternlan", 30)
         nav.screen.challenge_deadline = time.time() + 30 - delay
         await nav.screen.refresh(inter)
+        await continue_through(nav, inter)
         await find_button(nav, "Answer").callback(inter)
         modal = await submit(inter, answer)
         await modal.on_submit(fake_interaction())
@@ -853,6 +864,7 @@ async def test_the_bomb_button_only_appears_with_bombs_and_clears_a_row(db):
     user = await User.get(1)
     await user.add_item("scarab_bomb", 2)
     await click(nav, inter, "Leave & bank")
+    await continue_through(nav, inter)
     await click(nav, inter, "Mine again")
     nav.screen.run.rng = Rig(0.99)
     await click(nav, inter, "Bomb (2)")
@@ -1017,7 +1029,7 @@ async def test_harvesting_a_ripe_plot_from_the_farm(db):
     nav, inter = await hub("farm")
     assert "ready" in all_text(nav)
     await click(nav, inter, "1 Harvest")
-    assert nav.screen.id == "result" and "Harvested" in all_text(nav) and await user.item_quantity("apple") >= 10
+    assert nav.screen.id == "result" and "You got" in all_text(nav) and await user.item_quantity("apple") >= 10
     assert find_button(nav, "Back to the farm") and (await user.skill("farming")).xp > 0
     await click(nav, inter, "Back to the farm")
     assert nav.screen.id == "farm"
@@ -1036,7 +1048,7 @@ async def test_harvest_all_and_plant_all(db):
     await user.add_item("lemon_seed", 5)
     nav, inter = await hub("farm")
     await click(nav, inter, "Harvest all")
-    assert "Harvested" in all_text(nav)
+    assert "You got" in all_text(nav)
     await click(nav, inter, "Back to the farm")
     await click(nav, inter, "Plant all")
     assert await user.item_quantity("lemon_seed") == 5 - (free + 1)  # every empty plot took one seed
@@ -1320,7 +1332,7 @@ async def test_felling_the_community_tree_pays_everyone_from_their_own_panel(db,
     await foraging_service.chop_community(bob, tree.max_hp - tree.max_hp // 2, OPEN_HOUR)  # bob's chop fells it
     await nav.screen.refresh(inter)
     assert nav.screen.id == "result" and "TIMBER" in all_text(nav) and (await bob.skill("foraging")).xp > 0  # bob's share arrived (xp and drops: chopping pays no bits)
-    await click(nav, inter, "Continue")
+    await continue_through(nav, inter)
     assert "felled" in all_text(nav)
     nav_a, _ = await hub("forage", user_id=1)  # alice returns later and finds hers too
     assert nav_a.screen.id == "result" and "TIMBER" in all_text(nav_a) and (await (await User.get(1)).skill("foraging")).xp > 0
@@ -1641,6 +1653,7 @@ async def test_a_scarab_can_turn_up_after_any_mine_and_never_says_level_six(db, 
         run.outcome = how
         await nav.screen._end(None)
         await nav.screen.refresh(inter)
+        await continue_through(nav, inter)
         assert nav.screen.challenge is not None, how
         text = all_text(nav)
         assert "scarab" in text and "level 6" not in text.lower() and "reward you" in text, how
@@ -1732,3 +1745,26 @@ async def test_home_shows_pending_party_and_trade_invites(db):
     finally:
         party_invites.clear()
         trade._invites.clear()
+
+
+async def test_rare_drops_get_their_own_pages_after_the_reward_screen_with_the_drop_rate(db):
+    from cococap.services import odds
+    from cococap.ui.rewards import rewards_result
+
+    nav, inter = await hub("forage")
+    again = AsyncMock()
+    screen = nav.screen
+    screen.result = rewards_result("TIMBER!", items={"copper_ore": 2, "iron_wedge": 1, "scroll_keen": 1}, xp=40, odds=odds.foraging(),
+                                   again=again, again_label="Another tree", back_label="Back to foraging")
+    await screen.refresh(inter)
+    assert nav.screen.id == "result" and "Copper Ore" in all_text(nav) and "Scroll" not in all_text(nav) and "Wedge" not in all_text(nav)
+    assert [b.label for b in buttons(nav) if b.label not in ("Home", "Back")] == ["Continue"]  # no Again until the last page
+    await click(nav, inter, "Continue")
+    spec = get_registry().scrolls.foraging
+    assert "SUPER RARE" in all_text(nav) and f"1 in {spec.odds * len(spec.pool):,} trees felled" in all_text(nav)
+    assert nav.screen.locked and [b.label for b in buttons(nav) if b.label not in ("Home", "Back")] == ["Continue"]
+    await click(nav, inter, "Continue")
+    assert "Rare drop" in all_text(nav) and "1 in" in all_text(nav)  # (the wedge's own drop rate)
+    assert {b.label for b in buttons(nav)} >= {"Another tree", "Back to foraging"}
+    await click(nav, inter, "Back to foraging")
+    assert nav.screen.id == "forage"

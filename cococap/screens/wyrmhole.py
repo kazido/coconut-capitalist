@@ -7,6 +7,7 @@ from cococap.services import mining
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
 
+from cococap.ui.rewards import rewards_result
 from .mine import CURSOR, NOTCH, _cell, item_emoji, loot_lines
 
 
@@ -60,6 +61,9 @@ class WyrmholeScreen(Screen):
 
     async def _dig(self, interaction: discord.Interaction) -> None:
         await mining.finish_wyrmhole(self.user, self.hole)
+        item_id, quantity = self.hole.revealed
+        self.result = rewards_result("Your pick", items={item_id: quantity}, headline=["🌀 You dug one node of the wyrmhole."], emoji="🌀", accent=0x9B59B6,
+                                     back=self._back, back_label="Back to the mines")  # (no loot table to quote odds from: a rare pick shows its rarity)
         await self.refresh(interaction)
 
     async def _back(self, interaction: discord.Interaction) -> None:

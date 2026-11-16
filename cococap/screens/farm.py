@@ -8,7 +8,8 @@ from cococap.registry import get_registry
 from cococap.screens.sellall import start_sell_all
 from cococap.services import farming
 from cococap.services.equipment import equipped_stats
-from cococap.ui import flair
+from cococap.services import odds
+from cococap.ui.rewards import rewards_result
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import button, row, sep, select, text, xp_bar
 from cococap.user import User
@@ -132,19 +133,15 @@ class FarmScreen(Screen):
         return clicked
 
     async def _report(self, interaction: discord.Interaction, harvests: list[farming.Harvest]) -> None:
-        reg = get_registry()
-        parts = [f"{h.amount:,} {reg.item(h.crop_id).display}" for h in harvests]
-        lines = ["Harvested " + ", ".join(parts) + f"  ·  **+{sum(h.xp for h in harvests)}** xp"]
+        crops = sum((Counter({h.crop_id: h.amount}) for h in harvests), Counter())
         extras = sum((h.extras for h in harvests), Counter())
-        if extras:
-            lines.append("🧵 Also found: " + ", ".join(f"{q:,} {reg.item(i).display}" for i, q in extras.items()))
-            if fanfare := flair.banner(extras):
-                lines.append(fanfare)
+        notes = []
         if again := [h.plot for h in harvests if h.replanted]:
-            lines.append("🌲 **Evergreen!** Plot " + ", ".join(str(n) for n in again) + " replanted itself.")
+            notes.append("🌲 **Evergreen!** Plot " + ", ".join(str(n) for n in again) + " replanted itself.")
         if any(h.anomaly for h in harvests):
-            lines.append("✨ **An agricultural anomaly!** Marvelous! Your work and daily are ready again.")
-        self.result = Result("Harvest!", lines, emoji="🧺", accent=0x2F919E, back_label="Back to the farm")
+            notes.append("✨ **An agricultural anomaly!** Marvelous! Your work and daily are ready again.")
+        self.result = rewards_result("Harvest!", items=crops + extras, xp=sum(h.xp for h in harvests), notes=notes, odds=odds.farming(),
+                                     emoji="🧺", accent=0x2F919E, back_label="Back to the farm")
         await self.refresh(interaction)
 
     async def _harvest_all(self, interaction: discord.Interaction) -> None:

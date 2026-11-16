@@ -9,7 +9,8 @@ from cococap.screens.sellall import start_sell_all
 from cococap.services import foraging, party_tree, pets, releaf
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import Party, xp_bonus
-from cococap.ui import flair
+from cococap.services import odds
+from cococap.ui.rewards import rewards_result
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bar, bits, button, row, sep, select, text, xp_bar
 from cococap.user import User
@@ -27,18 +28,26 @@ def items_text(drops: Counter | dict) -> str:
     return ", ".join(f"{q:,} {reg.item(i).display}" for i, q in drops.items()) or "no drops"
 
 
-def reward_text(reward: foraging.Reward) -> str:
+def reward_headline(reward: foraging.Reward) -> str:
     what = "🌳 **TIMBER!**" if reward.felled else "🍂 The tree fell over before it was finished."
     where = " (party tree)" if reward.party else " (community tree)" if reward.window is not None else ""
-    paid = f"  **+{bits(reward.bits)}** bits  ·" if reward.bits else ""  # (chopping itself pays no bits: the drops are what you sell)
-    line = f"{what}{where}{paid}  {items_text(reward.drops)}  ·  +{reward.xp:,} xp"
-    if fanfare := flair.banner(reward.drops):
-        line += "\n" + fanfare
-    if reward.jackpot:
-        kind, amount = reward.jackpot
-        line += ("\n🌲🌲 **DOUBLE TREE!** A **Spirit of the Forest** drops: your pet will love it." if kind == "spirit"
-                 else f"\n🌲🌲 **DOUBLE TREE!** A jackpot of **+{amount:,}** foraging xp!")
-    return line
+    return what + where
+
+
+def reward_notes(reward: foraging.Reward) -> list[str]:
+    if not reward.jackpot:
+        return []
+    kind, amount = reward.jackpot
+    return ["🌲🌲 **DOUBLE TREE!** A **Spirit of the Forest** drops: your pet will love it." if kind == "spirit"
+            else f"🌲🌲 **DOUBLE TREE!** A jackpot of **+{amount:,}** foraging xp!"]
+
+
+def rewards_page(rewards: list[foraging.Reward], title: str, **after) -> Result:
+    """The shared reward screen for one or several trees: what you got in all, rare drops on pages of their own (their odds from the forest's tables)."""
+    return rewards_result(
+        title, items=sum((r.drops for r in rewards), Counter()), bits=sum(r.bits for r in rewards), xp=sum(r.xp for r in rewards),
+        headline=[reward_headline(r) for r in rewards], notes=[n for r in rewards for n in reward_notes(r)],
+        odds=odds.foraging(), emoji="🌳", accent=0x2E7D32, **after)
 
 
 async def releaf_actions(screen: Screen, drops: Counter, **after) -> list:
@@ -172,8 +181,7 @@ async def collect_community_rewards(screen: Screen) -> None:
     if rewards:
         title = "The tree is down!" if any(r.party for r in rewards) and not any(not r.party for r in rewards) else "The community tree is down!"
         drops = sum((r.drops for r in rewards), Counter())
-        screen.result = Result(title, [reward_text(r) for r in rewards], emoji="🌳", accent=0x2E7D32, back_label="Continue",
-                               actions=await releaf_actions(screen, drops, back_label="Continue"))
+        screen.result = rewards_page(rewards, title, back_label="Continue", actions=await releaf_actions(screen, drops, back_label="Continue"))
 
 
 class ForageScreen(Screen):
@@ -371,10 +379,9 @@ class TreeScreen(Screen):
             tree.bonus = min(reg.foraging.chopping.mark_cap, tree.bonus + swing.mark)
         if tree.felled:
             self.reward = await foraging.fell_private(self.user, tree, self.rng)
-            self.result = Result("TIMBER!", [reward_text(self.reward)], emoji="🌳", accent=0x4C8C4A, again=self._again,
-                                 again_label="Another tree", back=self._stop, back_label="Back to foraging",
-                                 actions=await releaf_actions(self, self.reward.drops, again=self._again, again_label="Another tree",
-                                                              back=self._stop, back_label="Back to foraging"))
+            self.result = rewards_page([self.reward], "TIMBER!", again=self._again, again_label="Another tree", back=self._stop, back_label="Back to foraging",
+                                       actions=await releaf_actions(self, self.reward.drops, again=self._again, again_label="Another tree",
+                                                                    back=self._stop, back_label="Back to foraging"))
             return await self.refresh(interaction)
         await self.refresh(interaction, note)
 

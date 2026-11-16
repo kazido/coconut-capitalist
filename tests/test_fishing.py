@@ -870,7 +870,8 @@ async def test_the_screen_flashes_the_numbers_then_hides_them_and_the_chest_open
     await nav.screen.nav.refresh(inter)
     assert "   ".join(code) not in all_text(nav) and "slip away" in all_text(nav) and nav.screen.origin.flash is None
     assert nav.screen.refresh_every is None
-    await click(nav, inter, "Continue")
+    while nav.screen.id == "result":  # (a rare find on the line gets its own page first)
+        await click(nav, inter, "Continue")
     assert "hallucination lingers" in all_text(nav) and nav.screen.refresh_every is None
     await click(nav, inter, "Cast")  # armed: with these dice the next cast is a chest
     assert nav.screen.cast.chest
@@ -1208,7 +1209,7 @@ async def test_beating_a_boss_on_the_screen_pays_and_losing_it_costs_only_the_bo
     await click(nav, inter, "Pull up the line")
     assert cast.boss in all_text(nav) and "15 arrows" in all_text(nav)
     await reel_in(nav, inter, cast)
-    assert f"You beat {cast.boss}" in all_text(nav) and "Loot" in all_text(nav)
+    assert f"You beat {cast.boss}" in all_text(nav) and "You got" in all_text(nav)
     assert nav.screen.id == "result" and nav.screen.origin.cast is None and (await user.skill("fishing")).stats.bosses_beaten == 1
 
 

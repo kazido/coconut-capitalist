@@ -30,19 +30,24 @@ def level(item: Item) -> int:
     return 1
 
 
-def banner(drops: Mapping[str, int]) -> str:
-    """The announcement for the best find in `drops` (item id -> quantity), or "" when there is none."""
+def finds(drops: Mapping[str, int]) -> list[tuple[int, Item, int]]:
+    """The rare finds in `drops` (item id -> quantity) as (level, item, quantity), the best first."""
     reg = get_registry()
     found = [(level(reg.item(i)), reg.item(i), q) for i, q in drops.items() if q > 0]
     found = [f for f in found if f[0]]
-    if not found:
-        return ""
     found.sort(key=lambda f: (-f[0], -f[1].rarity))
-    lines = []
-    for lvl, item, quantity in found:
-        what = f"{quantity:,} {item.display}"
-        if lvl == 2:
-            lines.append(f"## 🌟✨ SUPER RARE DROP! ✨🌟\n### {what}\n*{item.description}*" if item.description else f"## 🌟✨ SUPER RARE DROP! ✨🌟\n### {what}")
-        else:
-            lines.append(f"✨ **Rare drop!** {what}")
-    return "\n".join(lines)
+    return found
+
+
+def announce(lvl: int, item: Item, quantity: int) -> str:
+    """The fanfare for one find: a big banner (level 2) or a short highlighted line (level 1)."""
+    what = f"{quantity:,} {item.display}"
+    if lvl == 2:
+        head = f"## 🌟✨ SUPER RARE DROP! ✨🌟\n### {what}"
+        return f"{head}\n*{item.description}*" if item.description else head
+    return f"✨ **Rare drop!** {what}"
+
+
+def banner(drops: Mapping[str, int]) -> str:
+    """The announcement for the best find in `drops` (item id -> quantity), or "" when there is none."""
+    return "\n".join(announce(*f) for f in finds(drops))

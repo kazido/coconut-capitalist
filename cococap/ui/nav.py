@@ -9,7 +9,7 @@ think about navigation, so no screen can be a dead end.
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import ClassVar
 
 import discord
@@ -61,6 +61,7 @@ class Result:
     back_label: str = "Continue"
     live: Callable[[], tuple[list[str], bool]] | None = None  # (extra lines for now, keep redrawing?): fading numbers...
     actions: list[tuple[str, str, Handler]] = field(default_factory=list)  # extra buttons: (label, emoji, handler of the origin screen)
+    then: list["Result"] = field(default_factory=list)  # screens that follow this one (a rare drop's own page): "Continue" shows the first; it carries the rest
 
 
 async def report_error(interaction: discord.Interaction, error: Exception, where: str) -> None:
@@ -395,8 +396,8 @@ class ResultScreen(Screen):
             extra, self._ticking = r.live()
             lines += extra
         body = [text(line) for line in lines]  # (the panel header already shows the title)
-        buttons = [button(label, emoji=emoji, on_click=self._act(handler)) for label, emoji, handler in r.actions]
-        if r.again is not None:
+        buttons = [] if r.then else [button(label, emoji=emoji, on_click=self._act(handler)) for label, emoji, handler in r.actions]
+        if r.again is not None and not r.then:  # (with more pages to come, the choices wait for the last one)
             buttons.append(button(r.again_label, emoji="🔁", style=discord.ButtonStyle.primary, on_click=self._again))
         buttons.append(button(r.back_label, emoji="➡️", on_click=self._back))
         body.append(row(*buttons))
@@ -415,7 +416,11 @@ class ResultScreen(Screen):
 
     async def _back(self, interaction: discord.Interaction) -> None:
         self.nav.screen = self.origin
-        if self.shown.back is not None:
+        if self.shown.then:
+            following, *rest = self.shown.then
+            self.origin.result = replace(following, then=rest)  # the next page carries the ones after it
+            await self.origin.refresh(interaction)
+        elif self.shown.back is not None:
             await self.shown.back(interaction)
         else:
             await self.origin.refresh(interaction)

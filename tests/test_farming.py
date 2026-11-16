@@ -681,7 +681,7 @@ async def test_harvest_all_and_water_work_across_every_page(db, monkeypatch):
     nav, inter = await hub("farm")
     await click(nav, inter, "Harvest all")
     farm = (await user.skill("farming")).farm
-    assert not farm.plot_2.can_harvest and not farm.plot_14.can_harvest and "Harvested" in all_text(nav)
+    assert not farm.plot_2.can_harvest and not farm.plot_14.can_harvest and "You got" in all_text(nav)
 
 
 async def test_every_plot_of_the_big_farm_can_be_stored(db, monkeypatch):
