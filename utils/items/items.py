@@ -37,7 +37,7 @@ def item_attributes(item: Item, for_shop: bool = False) -> str:
 
     if item.wiki:
         add(item.wiki)
-    add(f"**Rarity**: {item.rarity_tag.split(' ', 1)[0]} *{Rarities.from_value(item.rarity).rarity_name}*", shop=True)
+    add(f"**Rarity**: *{Rarities.from_value(item.rarity).rarity_name}*", shop=True)
     add(f"**Type**: *{item.category.replace('_', ' ').title()}*")
     if item.skill:
         add(f"**Category**: *{item.skill.title()}*")

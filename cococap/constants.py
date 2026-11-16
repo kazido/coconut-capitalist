@@ -63,13 +63,6 @@ class GamblingChannels(Enum):
 STARTER_TOOLS = ("rookiepickaxe", "starter_axe", "starter_rod", "tin_can")
 
 
-# How an item's rarity (1-7) shows in text. Discord components have no coloured text, so from RARITY_WORD_FROM up the rarity's name is
-# written out ("Super Rare"), and lists in an ```ansi code block are coloured with these ANSI codes (30 grey, 31 red, 32 green, 33 yellow,
-# 34 blue, 35 pink, 36 cyan, 37 white). Only the inventory does this so far (an experiment: see docs/DESIGN.md).
-RARITY_ANSI = {1: 30, 2: 32, 3: 34, 4: 35, 5: 33, 6: 31, 7: 36}
-RARITY_WORD_FROM = 4
-
-
 class Rarities(Enum):
     COMMON = (1, "Common", "0x99F7A7")
     UNCOMMON = (2, "Uncommon", "0x63EFFF")

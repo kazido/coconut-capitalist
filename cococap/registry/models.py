@@ -188,13 +188,6 @@ class Item(_Data):
         """Emoji (if any) followed by the name."""
         return f"{self.emoji} {self.name}" if self.emoji else self.name
 
-    @property
-    def rarity_tag(self) -> str:
-        """The rarity's name from `RARITY_WORD_FROM` up (e.g. "Super Rare"), nothing below it (see constants.py)."""
-        from cococap.constants import RARITY_WORD_FROM, Rarities
-
-        return Rarities.from_value(self.rarity).rarity_name if self.rarity >= RARITY_WORD_FROM else ""
-
 
 class PetBonus(_Data):
     """One thing a pet does while it is your active pet. `stat` is what the game looks up (see services/pets.py)."""

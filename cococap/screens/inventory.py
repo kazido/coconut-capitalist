@@ -19,12 +19,12 @@ class InventoryScreen(Screen):
         self.page = 0
 
     async def build(self) -> Page:
-        lines = inventory_lines(await self.user.items(), ansi=True)  # (tools live on the Tools page)
+        lines = inventory_lines(await self.user.items())  # (tools live on the Tools page)
         body = [*self.note_block()]
         pages = max(1, -(-len(lines) // PER_PAGE))
         self.page = min(self.page, pages - 1)
         shown = "\n".join(lines[self.page * PER_PAGE : (self.page + 1) * PER_PAGE])
-        body.append(text(f"```ansi\n{shown}\n```" if lines else "You don't have any items yet. Get to it!"))
+        body.append(text(shown if lines else "You don't have any items yet. Get to it!"))
         if pages > 1:
             body.append(
                 row(
