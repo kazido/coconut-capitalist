@@ -1,0 +1,28 @@
+# Wisps are generated, not drawn: a silhouette (art/wisp.py SHAPES) + one base colour; shading, eyes and plum outline are automatic.
+# inverted = dark body, bright rim, white eyes (the ghostly ones). Add `rarity = 1-7` to put one in a cell; without it it is frameless.
+
+[ember]
+shape = "flame"
+base = "#f2561d"
+
+[tide]
+shape = "drop"
+base = "#2f9be8"
+
+[moss]
+shape = "mushroom"
+base = "#4cc04a"
+
+[gloom]
+shape = "ghost"
+base = "#6a5fb0"
+inverted = true
+
+[void]
+shape = "jelly"
+base = "#5a3ab8"
+inverted = true
+
+[bloom]
+shape = "round"
+base = "#f870b0"

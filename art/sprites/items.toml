@@ -1,0 +1,91 @@
+# Hand-drawn item art. Framed items sit in the cell recoloured to `rarity`. '.' is transparent; every letter is in the palette.
+# Style: ~10px sprite centred in the 16x16 cell, no outline, 5-6 shades with the hue shifting (shadows cool, lights warm),
+# one white specular pixel. The name is the item id.
+
+[iron_bar]
+rarity = 2
+palette = { w = "#ffffff", h = "#d9e0ec", l = "#b3c0d4", m = "#8a9bb8", s = "#65769a", d = "#47557a", e = "#323d5e" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "................",
+  "....hhhhhhhl....",
+  "...hwhhhhhhll...",
+  "..hhhhhhhhllm...",
+  "..llllllllmms...",
+  "..mmmmmmmmmss...",
+  "..mmmmmmmmsss...",
+  "..smmmmmmssse...",
+  "..sssssssssde...",
+  "...dddddddde....",
+  "................",
+  "................",
+  "................",
+]
+
+[copper_ore]
+rarity = 1
+palette = { w = "#ffffff", r = "#8c8497", q = "#6d6579", p = "#50485f", x = "#38304a", c = "#f2a05a", C = "#d1743a", D = "#a0502f" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "................",
+  "................",
+  ".....rrrr.......",
+  "....rrcwrqq.....",
+  "...rrcCCrrqq....",
+  "...rqrCDCrqpp...",
+  "...rqqrCDqqpp...",
+  "....qqqqrqppx...",
+  "....ppqqqppxx...",
+  ".....xppppxx....",
+  "................",
+  "................",
+  "................",
+]
+
+[worm]
+rarity = 1
+palette = { w = "#ffffff", h = "#ffc6c0", l = "#f09a9c", m = "#d06e84", s = "#a64c6c", d = "#74324f", k = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "................",
+  "......hhl.......",
+  ".....hwhlm......",
+  "....hhllmmm.....",
+  "...lhllmmmss....",
+  "...mllmmssss....",
+  "...mmmmssdd.....",
+  "....mmssdd..mm..",
+  ".....ssddlhhlmm.",
+  "......ddmmmmsk..",
+  "................",
+  "................",
+  "................",
+]
+
+[plant_fiber]
+rarity = 2
+palette = { w = "#ffffff", h = "#e4f5a6", l = "#b5de6a", m = "#82c24f", s = "#56a050", d = "#38784c", e = "#265446", t = "#c9a36a" }
+rows = [
+  "................",
+  "................",
+  "................",
+  ".......h........",
+  "......hlm.......",
+  "......hwm...hl..",
+  ".....hlmm..hlm..",
+  ".....lmms.hlms..",
+  "....lmmss.lmss..",
+  "....mmssslmssd..",
+  ".....msssmsdd...",
+  "......ttttt.....",
+  "......tttte.....",
+  "................",
+  "................",
+  "................",
+]
