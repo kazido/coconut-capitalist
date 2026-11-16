@@ -220,14 +220,30 @@ a thing you learn once and remember, not a pattern you re-read every spot.
   a wrong style cost xp too; `xp_per_swing` and `bits_per_hp` were raised a little to keep foraging where the xp audit put it (about 6,800 xp/h, a little under mining).
 - **Old notes:** the 8-step pattern notes are ignored (a new `styles` field); everyone relearns six styles, which takes minutes.
 
-### Re-leaf donations
+### The Releaf Foundation (server-wide Bloom)
 
-From foraging level 10, a felled tree's drops (private, community or party) can be donated from its result page (`services/releaf.py`).
-The meter grows by the **rarest** dropped item's rarity x5 (rarity 5 = 25). Three donations a day (UTC day). At 50 the meter empties
-and the **next private tree is a double tree**: double hp, and when felled it pays 1,000,000 bits or, one time in a hundred, a Spirit of the
-Forest. The flag is cleared when that tree is paid, so a full meter is worth exactly one double tree. Donations take the items atomically
-and give them back if the day's limit was already used (two clicks cannot slip a fourth through). **Growth mode** (420 donations) is not built:
-the wiki says only "grow trees instead of chopping", so it needs a design.
+Rebuilt from the old per-player Re-leaf (donate a tree's drops for a personal double tree, removed). `services/releaf.py`, `screens/releaf.py`, `[releaf]`
+in `configs/foraging.toml`. It is reached from a button on the Foraging page (from foraging level 10); the reward pages no longer offer donations.
+
+- **One shared meter** for the whole server, kept as one JSON document in the existing `community_state` table (key `releaf`, `services/community.py`: a read-modify-write
+  in one serialized transaction, so two givers at once cannot start two Blooms or overfill it; no new table, so no migration). It holds the meter, this round's and lifetime
+  points per player, and the recent Bloom windows.
+- **Rare only.** Only foraging items (not tools or key items) of rarity `min_rarity` (4) or more can be given, worth `points` by rarity (1/3/8/20). The item is consumed:
+  a real loss, and the page shows the bits it would have sold for. Items refused or left over (closed, cap, meter nearly full) go straight back.
+- **Bloom.** At `meter_goal` (300 points) a Bloom starts for `bloom_hours` (3): everybody's foraging xp is +10% (the `party.xp_multiplier` hook, foraging only) and every drop
+  chance of every foraging tree is +10% (`roll_drops(boost=)`: private trees at the moment they fall; community trees if a Bloom was up at any time in the tree's hour, since
+  they settle lazily; party trees take the best boost seen while they were chopped). Then the meter empties, the round's tallies reset and giving reopens.
+- **Why nobody has to give (the four rules):** (a) giving is CLOSED while the meter is full / a Bloom runs, so surplus is never wanted or wasted (the last item may top the meter
+  off; the surplus is not counted); (b) the Bloom is temporary and shared, so it is a gift to everyone including non-givers, never a personal to-do, and not giving costs
+  nothing but the bonus a few hours a day; (c) one player can give at most `max_share` (25% = 75 points) per round, so at least four people are needed; (d) there is no personal
+  reward at all, only a thank-you list (top givers this round, your own tally). Because points follow rarity but the sell value follows rarity much faster, the cheap rarity-4
+  drops (honeycomb) are the efficient thing to give; the rare feathers are better sold. The wiki says all of this.
+- **Numbers (sim in the session scratchpad, `releaf_sim.py`):** about 0.19 points per drop roll if every donatable drop were given, ~300 rolls an hour for an active mid-game
+  forager. A server of 12 players (half online each hour) that gives 20% of its donatable drops keeps a Bloom up about 29% of the time (a Bloom every ~10 h); 6 players at the same
+  rate 18%, 25 players 44%; giving 5% gives 10-18%. Even if everyone gave 40% it stays around 40-55%. The Bloom is worth about +3% xp averaged over the day. TODO(balance)
+- **Removed:** the personal meter, daily limit, `double_ready`, double trees (+hp, jackpot, double_items haul), the Re-leaf buttons on result pages and **growth mode** (never built).
+  The old per-player fields (`releaf_meter`, `donations_made_today`, `donation_day`, `double_ready`, `stats.double_trees_chopped`) stay on the Foraging model as unused legacy
+  so old saves load; `stats.releaf_donations` now counts your gifts to the Foundation.
 
 ### Zones and the community tree (v2)
 
@@ -661,7 +677,7 @@ active hours for x1.35). The fix is two layers, **tools** (what you wield) and *
 - **Balance rule:** at equal investment every branch earns within about 10% of the others in bits per minute (checked with the balance script).
   Differences are playstyle, not power.
 - **Pilot:** mining and fishing first, then foraging and farming. The first Mastery branch opens at skill level 5 and the first tool fork at 10.
-- **Level unlock audit** (today): mining magnet 5 and gems 10, farming market 5, foraging Re-leaf 10 and zones 4, 7, fishing quests 3, waters
+- **Level unlock audit** (today): mining magnet 5 and gems 10, farming market 5, foraging Releaf Foundation 10 and zones 4, 7, fishing quests 3, waters
   3/8/15, pot 6, book 10, combat fights 3/8 and the boss 20. Gaps to fill: foraging and fishing at 5, farming at 10, combat at 5.
 
 **What the pilot built** (all numbers `TODO(balance)`):
@@ -725,7 +741,6 @@ A pass over the busiest pages to cut text without cutting information. The rules
   farming's can **days** (passive). So the others were brought up, not mining down:
   - **Foraging:** `hp_per_roll` 170 -> 70 (2.4x the rolls), hardwood 1-in-6 -> 1-in-3, fine bark 1-in-30 -> 1-in-12, and `bits_per_hp` 230 -> 60 so the
     pay stays the same (about 11k bits a minute): the income moved from bits to materials. The first two axe steps now take about 1.5-2 h.
-  - **Double tree** (`releaf.double_items`): also drops a haul (25 hardwood, 60 feather, 8 fine bark, 4 maple leaf), about a third of an axe step, like the vault.
   - **Fishing boss:** a sure haul of salmon (6-10) and trout (8-12), pufferfish and tuna sometimes, on top of the coral and rare loot.
   - **Farming:** the drop table rolls once per 2 growth cycles (was 4), up to 60 rolls.
 

@@ -29,8 +29,8 @@ Keep this file current: update the "Open work" list at the end of every session.
 ## What is built (all committed)
 
 Mining (descent, wyrmholes, reactor, magnet), farming (plots, hourly rain, water, market, crop time estimate, 10 crops),
-foraging (20 zones, stance patterns + grain notes, community tree scaled by recent crowd, party trees, Re-leaf donations + double
-tree), fishing (cast/reel/❓ tells, field notes page, quests, books, community goals, bosses, records, crab pots, 8 waters... see
+foraging (20 zones, stance patterns + grain notes, community tree scaled by recent crowd, party trees, the Releaf Foundation (server-wide meter,
+temporary Bloom)), fishing (cast/reel/❓ tells, field notes page, quests, books, community goals, bosses, records, crab pots, 8 waters... see
 config), pets (orbs, stars, hunting a target, skill food drops in 3 tiers, pet skills), ranks 0-15 with +1% xp per rank, party idle
 kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools with 8 levels for axe/pickaxe/rod.
 
@@ -61,7 +61,7 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
    Possible follow-ups: a pet bonus for tokens, a "you found a token" channel ping, rank xp buff shown on Home.
 2. Migrate old players from MongoDB (needs a working login) and restore ranks; then make `data/cococap.db` live, split a dev DB.
 3. Hosting (VPS + backups + GitHub Action deploy): notes in `docs/HOSTING.md`, nothing built.
-4. Growth mode for Re-leaf (420 donations): the wiki gives no mechanics, needs the user's design.
+4. Releaf Foundation rebuilt as a server-wide Bloom (DESIGN.md); the old growth mode is dropped. Tune `[releaf]` numbers by play.
 5. Late-game "advanced" content for every skill, locked behind high levels (user wants ideas kept in mind, built later).
 6. **Combat in progress** (branch `claude/combat-item-drops-566935`, built on top of the audit branch): the battle engine and `/fight`
    are done (see DESIGN.md "Combat"). The final boss (Gravewarden: phases, telegraph, stun-immune, Brace counterplay) is built too. Enemy drops (weighted tables, bits or any item, `configs/drops.toml`) and the Graveyard Key that opens the boss are built too. Next: channel drops

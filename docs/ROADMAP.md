@@ -22,7 +22,7 @@ tests, and never touching unrelated code. The game itself is described in the wi
 | Shop + inventory (`/shop /buy /sell /inventory /equip /wiki`) | done |
 | **Mining** (`/mine`: mine, wyrmholes, scarab, reactor, magnet) | done, the template for other skills |
 | **Farming** (`/farm`: plots, hourly rain, harvest, Farmer's Market, land deeds) | done |
-| **Foraging** (`/chop`: private trees, hourly community tree, zones, Soloist) | done (Re-leaf donations and double tree built; growth mode still to do) |
+| **Foraging** (`/chop`: private trees, hourly community tree, zones, Soloist) | done (Releaf Foundation: server-wide meter and Bloom) |
 | **Fishing** (`/fish`: cast, wait, reel the arrows, sell) | done: casting, reeling, selling, daily/weekly quests, personal and community collection books, hallucinations and treasure, monthly goals waters, bosses, record fish (only fish appearing in channels still to do) |
 | **Pets** (`/pets`: orbs, stars, crop feeding, bonuses everywhere) | done |
 | **Crab pots** (AFK rare fish: craft, bait, upgrade) | done |
@@ -61,8 +61,8 @@ Each slice = **data -> service + tests -> thin cog -> enable the extension**, co
 
 1. ~~Farming~~ done. Follow-ups: fertilizer/imbued plots, feeding crops to pets (needs pets), a channel announcement for
    the rain, balance of `configs/farming.toml`.
-2. ~~Foraging~~ built (see docs/DESIGN.md). Re-leaf donations and the double tree are built. Still to do:
-   **growth mode** (420 donations), balance of `configs/foraging.toml`, a channel announcement for the community tree.
+2. ~~Foraging~~ built (see docs/DESIGN.md). the Releaf Foundation is built. Still to do:
+   balance of `configs/foraging.toml`, a channel announcement for the community tree.
 3. **Fishing** (`/fish`) first slice done (see docs/DESIGN.md). Quests, both books, treasure and monthly goals done. Still to do: fish appear in channels like drops; hallucination -> treasure chest minigame.
 4. **Combat** (`/fight`, dungeons): dungeon keys, 8-direction tile grid, idols, boss; mirror gates
    (once a day, one winner). Swords/enemies data already exists.

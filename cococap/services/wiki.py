@@ -112,9 +112,11 @@ def _species_text(reg: Registry) -> str:
         "Stuck on a bad grain? Use a **rotation wedge** (buy it in the shop or find it chopping) to move off at once: the Iron and Gilded wedges lean toward the good grains. A good chop hits extra hard.",
         "**Special spots** are rare and wear out fast, but chopped in the right style they pay off: 💎 **Heartwood** hits the tree several times harder, ✨ **Golden Knot** pays double xp, "
         "and 🏷️ **Rich Seam** marks a tree of your own for more drops when it falls. Better wedges make them likelier. An axe with **Double Strike** sometimes chops twice.",
-        f"**Re-leaf** (level {f.releaf.min_level}): after felling a tree you can **donate its drops** ({f.releaf.daily_limit} a day). The rarest item "
-        f"fills the meter by its rarity x{f.releaf.meter_per_rarity}; at **{f.releaf.meter_goal}** your next tree is a **double tree** with double the hp "
-        f"and a jackpot: {f.releaf.double_xp:,} foraging xp, or a 1 in {round(1 / f.releaf.double_spirit_chance)} chance of a Spirit of the Forest.",
+        f"**Releaf Foundation** (level {f.releaf.min_level}, a button on the foraging page): the whole server gives **rare** foraging drops (rarity {f.releaf.min_rarity} or more; the item is gone for good) "
+        f"to one shared meter, worth {', '.join(f'{p} for rarity {r}' for r, p in sorted(f.releaf.points.items()))}. At **{f.releaf.meter_goal}** a **Bloom** starts for {f.releaf.bloom_hours:g} hours: "
+        f"**+{f.releaf.bloom_xp:.0%}** foraging xp and **+{f.releaf.bloom_drops:.0%}** drop chances for EVERYONE, whether they gave or not. Giving is closed during a Bloom, "
+        f"and one person can give at most {f.releaf.max_share:.0%} of the goal per round. There is no personal reward, only the thank-you list.",
+        _species_text(reg),
         f"**The community tree.** One grows every hour and stands for {c.open_minutes} minutes. Everyone's chops add up; "
         f"chop at least {c.min_share:.0%} of it to be paid, and a bigger crowd earns a bonus. Rewards arrive in your own panel, even if you were offline.",
         _species_text(reg),
