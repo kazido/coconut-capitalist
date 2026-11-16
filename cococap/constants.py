@@ -59,6 +59,10 @@ class GamblingChannels(Enum):
     THERAPY = 962171351794327562
 
 
+# The tools every player gets for free (the shop sells none): one per skill, claimed on the first /play or from the Tools page.
+STARTER_TOOLS = ("rookiepickaxe", "starter_axe", "starter_rod", "tin_can")
+
+
 class Rarities(Enum):
     COMMON = (1, "Common", "0x99F7A7")
     UNCOMMON = (2, "Uncommon", "0x63EFFF")

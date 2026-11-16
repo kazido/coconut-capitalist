@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from cococap.constants import STARTER_TOOLS
 from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
@@ -52,8 +53,26 @@ async def buy(user: User, item_id: str, quantity: int = 1, registry: Registry | 
     return Purchase(item.id, quantity, total, made)
 
 
+async def claim_starter_tools(user: User, registry: Registry | None = None) -> list[str]:
+    """Give the free starter tools this player has never had and has no tool of that kind for. Each is claimed once ever (a stat remembers it).
+    Returns the item ids handed over; the first tool of a skill is equipped for you."""
+    reg = registry or get_registry()
+    have = {t.tool.kind for i in await user.instances() if (t := reg.find_item(i.template_id)) and t.tool}
+    given: list[str] = []
+    for item_id in STARTER_TOOLS:
+        item = reg.item(item_id)
+        stat = f"starter_claimed_{item_id}"
+        if item.tool.kind in have or await user.get_stat(stat):
+            continue
+        made = await user.give_instance(item_id)
+        await user.set_stat(stat, 1)
+        await _equip_first_tool(user, item, [made], reg)
+        given.append(item_id)
+    return given
+
+
 async def _check_can_own_another(user: User, item, quantity: int, reg: Registry) -> None:
-    """You own one tool per kind and make it better with upgrades; the shop only sells the first one."""
+    """You own one tool per kind and make it better with upgrades; starter tools are free (see claim_starter_tools)."""
     if quantity != 1:
         raise ShopError("You only need one. Buy it once, then upgrade it.")
     if item.tool is None:

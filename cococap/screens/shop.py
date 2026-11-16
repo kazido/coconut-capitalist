@@ -20,7 +20,7 @@ class ShopScreen(Screen):
     id = "shop"
     label = "Shop"
     emoji = "🛒"
-    description = "Buy tools and seeds, sell what you've gathered"
+    description = "Buy seeds and supplies, sell what you've gathered"
     links = ("upgrade",)
 
     def __init__(self, nav):

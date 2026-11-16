@@ -48,8 +48,8 @@ def _start(reg: Registry) -> list[str]:
         "**Two currencies.** **Bits** are power: skills, Work, selling and drops pay them, and they buy tools, seeds, land and "
         f"upgrades. **Luckbucks** are for fun: minigames, the weekly bonus and the casino pay them (you start with {e.starting_luckbucks}). "
         f"Bits turn into luckbucks one way at {_n(e.exchange.bits_per_luckbuck)} bits each.",
-        "**Where to start.** Check in (Work, Daily, Weekly) for bits, buy a starter tool in the Shop (a Rookie Pickaxe, Starter Axe or "
-        "Starter Rod, 2,000 bits: your first tool equips itself) and pick a skill. You own **one tool of each kind**; make it better "
+        "**Where to start.** Check in (Work, Daily, Weekly) for bits, use **/play**: you start with a free starter tool for every skill (a Rookie Pickaxe, Starter Axe, Starter Rod and Tin Watering "
+        "Can, equipped for you; the Tools page hands out any you are missing) and pick a skill. You own **one tool of each kind**; make it better "
         "with upgrades. Skills level with use, and levels open new things.",
         "**More ways to play.** Join a **party** for bonus xp in every skill, hatch **pets** with Familiar Orbs, and play the minigames "
         "and casino for luckbucks. Use **Home** and **Back** to move around; wins and losses get a page of their own.",
@@ -176,7 +176,7 @@ def _pots(reg: Registry) -> list[str]:
 
 
 def _tools(reg: Registry, only: tuple[str, ...] = ("axe", "can"), intro: bool = True) -> list[str]:
-    out = ["**One tool of each kind.** The shop sells only the starter tool, and you can't buy a second. Everything better comes from "
+    out = ["**One tool of each kind.** The shop sells no tools: you start with a free starter tool of each kind. Everything better comes from "
            "**Inventory → Tools → Upgrade**: your tool keeps its enchants and becomes the next one up for bits and materials. The first steps "
            "use only the tool's own skill; later ones add a little from others. Each level earns clearly more than the last: about x1.5 at "
            "level 2, x2.6 at level 3, x4 at level 4 and x18 at level 8, and a better rod also brings rarer fish and more of them."] if intro else []

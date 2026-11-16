@@ -22,42 +22,31 @@ async def test_buying_a_stackable_spends_bits_and_adds_items(db):
     assert await user.get_bits() == 700_000
 
 
-async def test_buying_a_tool_creates_a_unique_instance(db):
+async def test_the_shop_sells_no_tools_and_starter_tools_are_free_once(db):
+    from cococap.constants import STARTER_TOOLS
+    from cococap.services.shop import claim_starter_tools
+
+    reg = get_registry()
+    assert not [i.id for i in reg.shop_items() if i.tool]
     user = await rich()
-    purchase = await buy(user, "starter_axe")
-    assert len(purchase.instances) == 1
-    assert [i.template_id for i in await user.instances()] == ["starter_axe"]
-    assert await user.items() == {}  # tools are not stackables
+    for item_id in (*STARTER_TOOLS, "reinforced_axe"):
+        with pytest.raises(ShopError, match="isn't sold"):
+            await buy(user, item_id)
+    assert sorted(await claim_starter_tools(user)) == sorted(STARTER_TOOLS)
+    assert sorted(i.template_id for i in await user.instances()) == sorted(STARTER_TOOLS)
+    assert await user.items() == {} and await user.get_bits() == 10_000_000  # free, and tools are not stackables
+    assert await user.equipped_instance("foraging") is not None  # the first tool of a skill is equipped
+    assert await claim_starter_tools(user) == []
 
 
-async def test_you_can_own_only_one_tool_of_each_kind_and_it_costs_nothing_to_try(db):
+async def test_claiming_starters_skips_kinds_you_own_and_tools_you_already_had(db):
+    from cococap.services.shop import claim_starter_tools
+
     user = await rich()
-    await buy(user, "starter_axe")
-    before = await user.get_bits()
-    with pytest.raises(ShopError, match="already have a axe"):
-        await buy(user, "starter_axe")
-    with pytest.raises(ShopError, match="only need one"):
-        await buy(user, "starter_rod", 2)
-    assert await user.get_bits() == before and len(await user.instances()) == 1
-    await buy(user, "starter_rod")  # a different kind is fine
-    assert len(await user.instances()) == 2
-
-
-async def test_only_starter_tools_are_sold_the_rest_are_upgrades(db):
-    from cococap.registry import get_registry
-
-    tools = [i.id for i in get_registry().shop_items() if i.tool]
-    assert sorted(tools) == ["rookiepickaxe", "starter_axe", "starter_rod", "tin_can"]
-    user = await rich()
-    with pytest.raises(ShopError, match="isn't sold"):
-        await buy(user, "reinforced_axe")
-
-
-async def test_cannot_afford_changes_nothing(db):
-    user = await rich(50)
-    with pytest.raises(ShopError, match="need"):
-        await buy(user, "starter_axe")
-    assert await user.get_bits() == 50 and await user.instances() == []
+    await user.give_instance("reinforced_axe")  # an axe of another make: no free axe
+    got = await claim_starter_tools(user)
+    assert "starter_axe" not in got and len(got) == 3
+    assert await claim_starter_tools(user) == []  # each is handed out once ever
 
 
 @pytest.mark.parametrize("item_id, qty", [("cod", 1), ("nope", 1), ("scarab_bomb", 0), ("scarab_bomb", 10**6)])

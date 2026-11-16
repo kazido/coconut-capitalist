@@ -967,7 +967,7 @@ description = "A bent stick and some string. Everybody starts somewhere."
 rarity = 1
 skill = "fishing"
 category = "tool"
-price = 2000
+price = 0  # free: every new player gets it from /play (services/shop.claim_starter_tools)
 sell_price = 0
 
 [starter_rod.tool]
@@ -1285,7 +1285,7 @@ description = "A basic axe, meant for novice lumberjacks."
 rarity = 1
 skill = "foraging"
 category = "tool"
-price = 2000
+price = 0  # free: every new player gets it from /play (services/shop.claim_starter_tools)
 sell_price = 0
 
 [starter_axe.tool]
@@ -1623,7 +1623,7 @@ description = "They hand this one out to the new recruits. Guess that's you."
 rarity = 1
 skill = "mining"
 category = "tool"
-price = 2000
+price = 0  # free: every new player gets it from /play (services/shop.claim_starter_tools)
 sell_price = 0
 
 [rookiepickaxe.tool]
@@ -2720,7 +2720,7 @@ emoji = "🚿"
 rarity = 2
 skill = "farming"
 category = "tool"
-price = 2000
+price = 0  # free: every new player gets it from /play (services/shop.claim_starter_tools)
 sell_price = 0
 
 [tin_can.tool]

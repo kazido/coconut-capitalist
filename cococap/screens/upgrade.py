@@ -52,7 +52,7 @@ class UpgradeScreen(Screen):
         offers = await upgrades.offers(self.user)
         body = [*self.note_block()]
         if not offers:
-            body.append(text("Nothing to upgrade. Buy a starter tool in the shop first; "
+            body.append(text("Nothing to upgrade. Claim your free starter tools on the Tools page first; "
                              "tools that are already maxed don't show up here."))
             return Page("Upgrade Tools", [*body, sep(), row(button("Back to tools", emoji="🧰", on_click=self._back))], accent=0xB8860B)
         groups: dict[int, list] = {}

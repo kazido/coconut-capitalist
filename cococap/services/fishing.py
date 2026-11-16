@@ -431,7 +431,7 @@ def join_boss_cast(stats: EffectiveStats, rng: random.Random, now: float, boss_n
 async def rod_stats(user: User, registry: Registry | None = None) -> EffectiveStats:
     stats = await equipped_stats(user, "fishing", registry)
     if stats is None:
-        raise FishingError("You need a rod. Buy a Starter Rod in the shop (it's equipped for you).")
+        raise FishingError("You need a rod. Claim your free Starter Rod on the Tools page.")
     return stats
 
 

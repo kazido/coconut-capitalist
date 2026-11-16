@@ -210,7 +210,7 @@ class ForageScreen(Screen):
         body = [*self.note_block(), text(header)]
 
         if stats is None:
-            body.append(text("🪓 You need an axe. Buy a **Starter Axe** in the shop and it equips itself."))
+            body.append(text("🪓 You need an axe. Claim your free **Starter Axe** on the Tools page."))
         else:
             body.append(text(f"🪓 Axe power **{stats.power}**" + ("  ·  ✨ Soloist" if stats.has("soloist") else "")))
         if line := await releaf_line(self.user):

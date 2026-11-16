@@ -144,7 +144,7 @@ class FishScreen(Screen):
                 elif fight.you == "done":
                     body.append(text(f"### ✅ You landed your part of the fight with **{fight.boss}**\n**{fight.reeling}** still reeling · closes <t:{int(fight.closes_at)}:R>"))
             if stats is None:
-                body.append(text("🎣 You need a rod. Buy a **Starter Rod** in the shop and it equips itself."))
+                body.append(text("🎣 You need a rod. Claim your free **Starter Rod** on the Tools page."))
             else:
                 slips = fishing.slips_allowed(stats.power, reg.fishing, stats.stats.get("slips", 0))
                 wait = fishing.typical_wait(stats.power, reg.fishing, stats.stats.get("bite_speed", 0.0))

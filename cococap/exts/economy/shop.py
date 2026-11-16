@@ -13,7 +13,7 @@ from utils.items.items import _matching, buyable_autocomplete, construct_embed
 from utils.menus import Menu, MenuHandler, PaginationMenu
 
 class ShopCog(commands.Cog, name="Shop"):
-    """Buy tools, seeds and supplies. Sell what you've gathered."""
+    """Buy seeds and supplies. Sell what you've gathered."""
 
     @app_commands.command(name="shop", description="See what's for sale.")
     async def shop(self, interaction: discord.Interaction):

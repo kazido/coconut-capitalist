@@ -171,14 +171,14 @@ async def test_the_upgrade_screen_with_nothing_to_upgrade(db):
     assert "Nothing to upgrade" in all_text(nav)
 
 
-async def test_the_shop_marks_tools_you_already_have(db):
+async def test_the_shop_no_longer_lists_tools_you_have(db):
     user = await User.get(1)
     await set_columns(user, purse=10**6)
-    await shop.buy(user, "starter_axe")
+    await user.give_instance("starter_axe")
     nav, inter = await hub("shop")
     nav.screen.category = "foraging"
     await nav.screen.nav.refresh(inter)
-    assert "Owned" in all_text(nav)
+    assert "Starter Axe" not in all_text(nav)
     assert not [b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success and "axe" in (b.custom_id or "")]
     upgrade = next(b for b in buttons(nav) if b.label == "Upgrade tool")  # the axe's button is now a way to its upgrades
     await upgrade.callback(inter)

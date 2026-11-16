@@ -1,9 +1,11 @@
 import discord
 
+from cococap.constants import STARTER_TOOLS
 from cococap.errors import CustomError
 from cococap.registry import get_registry
 from cococap.services.equipment import TOOL_FOR_SKILL, effective_stats, equip, skill_for_tool
 from cococap.services import tool_effects
+from cococap.services import shop
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, section, sep, text
@@ -36,7 +38,7 @@ class ToolsScreen(Screen):
         equipped = await self._equipped_ids()
         body = [*self.note_block()]
         if not instances:
-            body.append(text("You have no tools yet. The shop sells a starter tool for each skill."))
+            body.append(text("You have no tools yet. Claim your free starter tools below."))
         order = list(KIND_LABEL)
         shown = sorted(instances, key=lambda i: (i.id not in equipped, order.index(reg.item(i.template_id).tool.kind)))
         for inst in sorted(shown[:MAX_SHOWN], key=lambda i: order.index(reg.item(i.template_id).tool.kind)):
@@ -57,6 +59,8 @@ class ToolsScreen(Screen):
             body.append(section(line, accessory=accessory))
         if len(instances) > MAX_SHOWN:
             body.append(text(f"-# …and {len(instances) - MAX_SHOWN} more tools (the equipped ones are shown first)."))
+        if await self._unclaimed():
+            body += [sep(), row(button("Claim free starter tools", emoji="🎁", style=discord.ButtonStyle.success, on_click=self._claim))]
         body += [sep(), row(button("Upgrade", emoji="🔨", style=discord.ButtonStyle.primary, on_click=self._upgrades),
                             button("Enchant", emoji="📜", on_click=self._enchant),
                             button("Inventory", emoji="🎒", on_click=self._inventory))]
@@ -72,6 +76,19 @@ class ToolsScreen(Screen):
             await self.refresh(interaction, f"Equipped **{instance_label(instance)}** for {skill}.")
 
         return go
+
+    async def _unclaimed(self) -> bool:
+        reg = get_registry()
+        have = {t.tool.kind for i in await self.user.instances() if (t := reg.find_item(i.template_id)) and t.tool}
+        for item_id in STARTER_TOOLS:
+            if reg.item(item_id).tool.kind not in have and not await self.user.get_stat(f"starter_claimed_{item_id}"):
+                return True
+        return False
+
+    async def _claim(self, interaction: discord.Interaction) -> None:
+        got = await shop.claim_starter_tools(self.user)
+        names = ", ".join(get_registry().item(i).name for i in got)
+        await self.refresh(interaction, f"🎁 You got: {names}." if got else "You have no starter tools to claim.")
 
     async def _upgrades(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "upgrade")

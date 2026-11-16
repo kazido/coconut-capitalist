@@ -219,14 +219,11 @@ async def test_selling_the_catch_empties_the_bag_and_pays(db):
 
 
 # ---- starting out: tools cost money, and your first one equips itself -------------------------------------------
-async def test_buying_your_first_tool_equips_it_and_you_cannot_buy_a_second(db):
+async def test_claiming_your_starter_tools_equips_them(db):
     user = await User.get(1)
-    await set_columns(user, purse=50_000_000)
-    for item_id, skill in (("starter_rod", "fishing"), ("starter_axe", "foraging"), ("rookiepickaxe", "mining")):
-        bought = await shop.buy(user, item_id, 1, REG)
-        assert (await user.equipped_instance(skill)).id == bought.instances[0].id
-    with pytest.raises(shop.ShopError, match="already have"):
-        await shop.buy(user, "starter_rod", 1, REG)  # one tool per kind: upgrade it instead
+    await shop.claim_starter_tools(user, REG)
+    for skill in ("fishing", "foraging", "mining", "farming"):
+        assert await user.equipped_instance(skill) is not None
 
 
 async def test_a_brand_new_player_can_afford_a_starter_tool_with_their_first_work_wage(db):

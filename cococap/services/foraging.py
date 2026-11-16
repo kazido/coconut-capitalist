@@ -387,7 +387,7 @@ async def windfall(user: User, every: int, rng: random.Random, registry: Registr
 async def axe_stats(user: User, registry: Registry | None = None) -> EffectiveStats:
     stats = await equipped_stats(user, "foraging", registry)
     if stats is None:
-        raise ForagingError("You need an axe. Buy a Starter Axe in the shop (it's equipped for you).")
+        raise ForagingError("You need an axe. Claim your free Starter Axe on the Tools page.")
     return stats
 
 

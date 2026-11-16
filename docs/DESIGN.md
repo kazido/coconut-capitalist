@@ -350,7 +350,7 @@ add a little from the others. Swords are unchanged until combat exists. Numbers:
 
 ## Tools: buy one, then upgrade it
 
-The shop sells only the **starter tool** of each kind, and you can own **one tool per kind**: buying a second is refused.
+The shop sells **no tools**: every player gets the four free **starter tools** (`STARTER_TOOLS` in `constants.py`) from `/play` (once ever, tracked by `starter_claimed_<id>` stats) or the **Claim free starter tools** button on the Tools page (for players who predate this), and you can own **one tool per kind**.
 Everything better comes from **Inventory -> Upgrade tools**, which turns your tool into the next one up for **bits plus
 materials**. Every tool kind has a chain (axes 7 tiers, pickaxes 3, rods 3, swords 4). **The first upgrades use only the
 tool's own skill** (an axe wants feathers, hardwood and bark; a pickaxe ore; a rod fish), and **later ones add smaller
