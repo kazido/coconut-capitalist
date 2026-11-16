@@ -69,7 +69,7 @@ class PetScreen(Screen):
             discord.SelectOption(label=reg.pets[i].name, value=i, emoji=reg.pets[i].emoji, default=i == focus,
                                  description=f"Lv {pets.pet_level(p.xp, reg.pets[i].rarity, reg)}  ·  {skill_line(reg.pets[i])}" + ("  ·  active" if i == house.active else ""))
             for i, p in sorted(house.pets.items())][:25], self._switch)))
-        body.append(row(button("Make active", emoji="✅", disabled=focus == house.active, on_click=self._make_active), orbs_button))
+        body.append(row(orbs_button))
 
         body.append(sep())
         foods = [(reg.item(i), q) for i, q in owned_items.items() if q > 0 and (it := reg.find_item(i)) and pets.food_xp(it, reg) > 0]
@@ -99,12 +99,14 @@ class PetScreen(Screen):
         base, boost = pets.food_xp(food, reg), pets.food_multiplier(pet, food, reg)
         return (f"{base:,} xp each" + (f" → {round(base * boost):,} for {pet.name} (x{boost:g})" if boost != 1 else f" for {pet.name}"))[:100]
 
-    async def _make_active(self, interaction: discord.Interaction) -> None:
-        pet = await pets.set_active(self.user, self.focus_id(self.user.pethouse))
-        await self.refresh(interaction, f"{pet.emoji} **{pet.name}** is your active pet now.")
-
     async def _switch(self, interaction: discord.Interaction, values: list[str]) -> None:
+        """Picking a pet in the menu looks at it AND makes it your active pet."""
         self.focus = values[0]
+        house = self.user.pethouse
+        if house.active != values[0]:
+            pet = await pets.set_active(self.user, values[0])
+            await self.refresh(interaction, f"{pet.emoji} **{pet.name}** is your active pet now.")
+            return
         await self.refresh(interaction)
 
     async def _feed(self, interaction: discord.Interaction, values: list[str]) -> None:
@@ -172,30 +174,26 @@ class OrbScreen(Screen):
             hunt.append(discord.SelectOption(label=pet.name + (f" ({mine.stars}/{rules.max_stars})" if mine else ""), value=pet.id, emoji=pet.emoji,
                                              description=f"rarity {pet.rarity}  ·  {chance:.1%} per orb when hunted", default=pet.id == house.target))
         body.append(row(select("Hunt a pet (orbs favour it)...", hunt[:25], self._hunt)))
-        for orb in orb_items(reg):
-            body.append(row(
-                button(f"Buy a {orb.name} ({orb.price:,} bits)", emoji=orb.emoji, style=discord.ButtonStyle.success, disabled=self.user.purse < orb.price, on_click=self._buy(orb.id, 1)),
-                button("Buy several", emoji="🛒", on_click=self._buy(orb.id, None))))
-        for orb_id in kinds:
+        for orb_id in kinds:  # one button per orb: Open it if you own some, otherwise Buy it (asks how many)
             orb = reg.item(orb_id)
-            body.append(row(button(f"Open a {orb.name} ({owned.get(orb_id, 0)})", emoji=orb.emoji, style=discord.ButtonStyle.primary,
-                                   disabled=owned.get(orb_id, 0) < 1, on_click=self._open_orb(orb_id))))
+            count = owned.get(orb_id, 0)
+            if count > 0:
+                body.append(row(button(f"Open {orb.name} ({count:,})", emoji=orb.emoji, style=discord.ButtonStyle.primary, on_click=self._open_orb(orb_id))))
+            else:
+                body.append(row(button(f"Buy {orb.name} ({orb.price:,} bits)", emoji=orb.emoji, style=discord.ButtonStyle.success,
+                                       disabled=not orb.buyable or self.user.purse < orb.price, on_click=self._buy(orb_id))))
         body.append(row(button("Your pets", emoji="🐾", on_click=self._to_pets)))
         return Page("Familiar Orbs", body, accent=0x27AE60)
 
-    def _buy(self, item_id: str, quantity: int | None):
-        """One click buys one; `None` asks how many first. Pricing and the purchase itself are the shop's (services/shop.buy)."""
+    def _buy(self, item_id: str):
+        """Asks how many in a popup (like the shop's). Pricing and the purchase itself are the shop's (services/shop.buy)."""
         async def go(interaction: discord.Interaction) -> None:
-            if quantity is not None:
-                await self._purchase(interaction, item_id, quantity)
-                return
-
             async def submitted(modal_interaction: discord.Interaction, raw: str) -> None:
                 from cococap.screens.shop import parse_quantity
 
                 await self._purchase(modal_interaction, item_id, parse_quantity(raw))
 
-            await interaction.response.send_modal(PromptModal(f"Buy {get_registry().item(item_id).name}", "How many?", submitted, default="5", max_length=4))
+            await interaction.response.send_modal(PromptModal(f"Buy {get_registry().item(item_id).name}", "How many?", submitted, default="1", max_length=4))
 
         return go
 

@@ -296,7 +296,7 @@ async def test_the_pet_house_for_someone_with_no_pets_explains_orbs(db):
     nav, inter = await hub("pets")
     assert "No pets yet" in all_text(nav) and "Familiar Orb" in all_text(nav)
     await click(nav, inter, "Familiar Orbs")
-    assert nav.screen.id == "orbs" and find_button(nav, "Open a Familiar Orb (0)").disabled
+    assert nav.screen.id == "orbs" and find_button(nav, f"Buy Familiar Orb ({REG.item(pets.ORB).price:,} bits)").disabled
 
 
 async def test_orbs_are_bought_on_the_orbs_page_for_the_configured_price(db):
@@ -308,15 +308,14 @@ async def test_orbs_are_bought_on_the_orbs_page_for_the_configured_price(db):
     user = await User.get(1)
     await set_columns(user, purse=orb.price * 4)
     nav, inter = await hub("orbs")
-    await click(nav, inter, f"Buy a {orb.name} ({orb.price:,} bits)")
-    assert await (await User.get(1)).item_quantity(pets.ORB) == 1 and "Bought 1" in all_text(nav)
-    several = [b for b in buttons(nav) if b.label == "Buy several"]
-    await several[orb_items(REG).index(orb)].callback(inter)  # (each orb has its own)
-    modal = await submit(inter, "3")
+    assert not [b for b in buttons(nav) if b.label == "Buy several"]
+    await click(nav, inter, f"Buy {orb.name} ({orb.price:,} bits)")  # (opens a popup asking how many)
+    modal = await submit(inter, "4")
     await modal.on_submit(inter)
     user = await User.get(1)
-    assert await user.item_quantity(pets.ORB) == 4 and user.purse == 0
-    assert find_button(nav, f"Buy a {orb.name} ({orb.price:,} bits)").disabled  # (cannot afford another)
+    assert await user.item_quantity(pets.ORB) == 4 and user.purse == 0 and "Bought 4" in all_text(nav)
+    assert find_button(nav, f"Open {orb.name} (4)")  # (owning some turns the button into Open)
+    assert not [b for b in buttons(nav) if b.label == f"Buy {orb.name} ({orb.price:,} bits)"]
 
 
 async def test_opening_an_orb_from_the_orbs_page_shows_a_result_page(db, monkeypatch):
@@ -324,7 +323,7 @@ async def test_opening_an_orb_from_the_orbs_page_shows_a_result_page(db, monkeyp
     user = await User.get(1)
     await user.add_item(pets.ORB, 2)
     nav, inter = await hub("orbs")
-    await click(nav, inter, "Open a Familiar Orb (2)")
+    await click(nav, inter, "Open Familiar Orb (2)")
     assert nav.screen.id == "result" and "Cat" in all_text(nav) and "A new friend" in all_text(nav) and "waiting for a bite" in all_text(nav)
     await click(nav, inter, "Another orb")
     assert "Another Cat" in all_text(nav) and "2" in all_text(nav)
@@ -342,10 +341,9 @@ async def test_the_pet_house_switches_pets_feeds_crops_and_hands_over_spirits(db
     nav, inter = await hub("pets")
     assert "Dog" in all_text(nav) and "work" in all_text(nav).lower()
     await choose(nav, inter, select_named(nav, "Look at a pet"), "cat")
-    assert user.pethouse.active == "dog" and "Cat" in all_text(nav)  # looking is not switching
-    await click(nav, inter, "Make active")
     await user.refresh()
-    assert user.pethouse.active == "cat"
+    assert user.pethouse.active == "cat" and "Cat" in all_text(nav)  # picking a pet makes it active
+    assert not [b for b in buttons(nav) if b.label == "Make active"]
     before = user.pethouse.pets["cat"].xp
     feed = select_named(nav, "Feed Cat")  # the menu names the pet it is for
     hint = next(o.description for o in feed.options if o.value == "lemon")
@@ -719,11 +717,10 @@ async def test_the_orbs_page_lets_you_buy_and_open_every_kind(db, monkeypatch):
     nav, inter = await hub("orbs")
     for orb in pets.orb_ids(REG):
         item = REG.item(orb)
-        find_button(nav, f"Buy a {item.name} ({item.price:,} bits)")
-        await click(nav, inter, f"Open a {item.name} (1)")
+        await click(nav, inter, f"Open {item.name} (1)")
         assert nav.screen.id == "result"
         await click(nav, inter, "Back to the orbs")
-        assert find_button(nav, f"Open a {item.name} (0)").disabled
+        assert find_button(nav, f"Buy {item.name} ({item.price:,} bits)")
 
 
 # ---- levels depend on rarity, and nobody loses a level when that was introduced ---------------------------------------------------------------
