@@ -140,17 +140,54 @@ def raven_dir() -> Path | None:
     return Path(p).expanduser() if p else None
 
 
+def _recolor(im: Image.Image, hue: float = 0.0, sat: float = 1.0, val: float = 1.0) -> Image.Image:
+    """Shift hue (degrees), scale saturation and value of every opaque pixel (palette swap: copper -> iron -> gold from one icon)."""
+    import colorsys
+
+    out = im.copy()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = out.getpixel((x, y))
+            if a:
+                h, s_, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+                r2, g2, b2 = colorsys.hsv_to_rgb((h + hue / 360) % 1.0, min(1.0, s_ * sat), min(1.0, v * val))
+                out.putpixel((x, y), (round(r2 * 255), round(g2 * 255), round(b2 * 255), a))
+    return out
+
+
+def _item_rarity(name: str) -> int:
+    """The item's rarity from the game data (1 when the id is not an item)."""
+    try:
+        from cococap.registry import get_registry
+
+        item = get_registry().find_item(name)
+        return int(item.rarity) if item is not None else 1
+    except Exception:  # (art tooling must still run when the game data cannot load)
+        return 1
+
+
 def load_raven(mapping: Path, pack: Path | None) -> list[Sprite]:
-    """Third-party icons cut from the Raven sheet. Local only: skipped when the pack is not on this machine."""
+    """Third-party icons cut from the Raven sheet. Local only: skipped when the pack is not on this machine.
+
+    A mapping value is `[row, col]` or a table `{cell = [row, col], hue = 40, sat = 1.0, val = 1.0, nudge = [dx, dy], rarity = 3}`;
+    the rarity defaults to the item's own rarity."""
     if pack is None or not (pack / RAVEN_SHEET).exists() or not mapping.exists():
         return []
     sheet = Image.open(pack / RAVEN_SHEET).convert("RGBA")
     out = []
     for name, v in _read(mapping).items():
         _check_name(name, str(mapping))
-        row, col = v[0], v[1]
-        rarity = _check_rarity(v[2], name) if len(v) > 2 else 1
+        opts = v if isinstance(v, dict) else {"cell": v}
+        row, col = opts["cell"][0], opts["cell"][1]
+        rarity = _check_rarity(opts.get("rarity", _item_rarity(name)), name)
         cell = sheet.crop((col * GRID, row * GRID, col * GRID + GRID, row * GRID + GRID))
+        if any(k in opts for k in ("hue", "sat", "val")):
+            cell = _recolor(cell, float(opts.get("hue", 0)), float(opts.get("sat", 1.0)), float(opts.get("val", 1.0)))
+        dx, dy = opts.get("nudge", [0, 0])
+        if dx or dy:
+            moved = Image.new("RGBA", cell.size, (0, 0, 0, 0))
+            moved.alpha_composite(cell, (dx, dy)) if dx >= 0 and dy >= 0 else moved.paste(cell, (dx, dy))
+            cell = moved
         out.append(Sprite(name, "raven", [cell], [], True, rarity))
     return out
 
@@ -163,7 +200,8 @@ def load_all(art_dir: Path = ART_DIR) -> list[Sprite]:
     if (art_dir / "wisps.toml").exists():
         sprites += load_wisps(art_dir / "wisps.toml")
     sprites += load_sources(art_dir / "sources")
-    sprites += load_raven(art_dir / "mappings" / "raven.toml", raven_dir())
+    for mp in sorted((art_dir / "mappings").glob("raven*.toml")):
+        sprites += load_raven(mp, raven_dir())
     seen: dict[str, str] = {}
     for s in sprites:
         if s.name in seen:

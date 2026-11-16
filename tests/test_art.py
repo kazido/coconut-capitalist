@@ -136,11 +136,13 @@ def test_contact_sheet_is_written(tmp_path):
 
 
 def test_no_third_party_images_in_art():
-    images = [p for p in ART.rglob("*") if p.suffix.lower() in {".png", ".webp", ".gif", ".jpg", ".jpeg"}]
-    tracked = subprocess.run(["git", "ls-files", "art"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split()
-    for p in images + [ROOT / t for t in tracked]:
-        low = str(p.relative_to(ROOT)).lower()
-        assert "raven" not in low and "joi3" not in low, p
+    """No third-party image may be tracked (or sit untracked but not ignored): the local pack lives in the git-ignored art/vendor."""
+    img = {".png", ".webp", ".gif", ".jpg", ".jpeg"}
+    listed = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard", "art"], cwd=ROOT, capture_output=True, text=True, check=True).stdout.split("\n")
+    for rel in listed:
+        if rel and Path(rel).suffix.lower() in img:
+            low = rel.lower()
+            assert "raven" not in low and "joi3" not in low and "vendor" not in low, rel
     # git-ignored locals and outputs
     for rel in ("art/local.toml", "art/out/x.png"):
         r = subprocess.run(["git", "check-ignore", "-q", rel], cwd=ROOT)

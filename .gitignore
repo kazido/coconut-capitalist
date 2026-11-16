@@ -147,3 +147,4 @@ configs/local/
 # Emoji art pipeline: local paths to third-party packs, and generated images
 art/local.toml
 art/out/
+art/vendor/
