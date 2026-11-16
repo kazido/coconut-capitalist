@@ -33,7 +33,7 @@ KIND_SKILL = {"pickaxe": "Mining", "axe": "Foraging", "sword": "Combat", "rod": 
 
 
 class UpgradeScreen(Screen):
-    """One tool per page: swipe with Prev / Next between your tools, so each one's costs are easy to read on their own."""
+    """One tool per page: a button per skill switches between your tools, so each one's costs are easy to read on their own."""
 
     id = "upgrade"
     label = "Upgrade Tools"
@@ -43,7 +43,7 @@ class UpgradeScreen(Screen):
 
     def __init__(self, nav):
         super().__init__(nav)
-        self.page = 0  # which tool is showing
+        self.kind: str | None = None  # the kind of tool showing (pickaxe, axe, rod, can); the first one you own until you pick
         self.sure: tuple[int, str] | None = None  # the upgrade waiting for its second press (when confirming is on)
         self.road: dict[int, str] = {}  # tool id -> the path showing, for a tool at a fork
 
@@ -55,12 +55,14 @@ class UpgradeScreen(Screen):
             body.append(text("Nothing to upgrade. Claim your free starter tools on the Tools page first; "
                              "tools that are already maxed don't show up here."))
             return Page("Upgrade Tools", [*body, sep(), row(button("Back to tools", emoji="🧰", on_click=self._back))], accent=0xB8860B)
-        groups: dict[int, list] = {}
-        for offer in sorted(offers, key=lambda o: KIND_ORDER.index(o.current.tool.kind)):
-            groups.setdefault(offer.instance.id, []).append(offer)
-        tools = list(groups.values())
-        self.page = max(0, min(self.page, len(tools) - 1))
-        mine = tools[self.page]
+        by_kind: dict[str, list] = {}  # kind -> the offers of the first tool you own of that kind
+        for offer in sorted(offers, key=lambda o: (KIND_ORDER.index(o.current.tool.kind), o.instance.id)):
+            kind_offers = by_kind.setdefault(offer.current.tool.kind, [])
+            if not kind_offers or kind_offers[0].instance.id == offer.instance.id:
+                kind_offers.append(offer)
+        if self.kind not in by_kind:
+            self.kind = next(iter(by_kind))
+        mine = by_kind[self.kind]
         first = mine[0]
         owned = await self.user.items()
         body.append(text(f"### {first.current.emoji or '🔨'} {instance_label(first.instance)}  ·  {KIND_SKILL[first.current.tool.kind]}\n"
@@ -95,16 +97,16 @@ class UpgradeScreen(Screen):
         if first.current.tool.fork:
             body.append(text("-# ⚠️ A fork in the road: the path you take is the one your tool climbs from now on."))
         body.append(sep())
-        if len(tools) > 1:
-            body.append(row(button("Prev", emoji="◀️", disabled=self.page == 0, on_click=self._turn(-1)),
-                            button(f"{self.page + 1}/{len(tools)}", disabled=True),
-                            button("Next", emoji="▶️", disabled=self.page >= len(tools) - 1, on_click=self._turn(1))))
+        if len(by_kind) > 1:  # one button per skill that has a tool to upgrade; the one showing is highlighted
+            body.append(row(*[button(KIND_SKILL[kind], emoji=kind_offers[0].current.emoji or None,
+                                     style=discord.ButtonStyle.primary if kind == self.kind else discord.ButtonStyle.secondary,
+                                     on_click=self._show(kind)) for kind, kind_offers in by_kind.items()]))
         body.append(row(button("Back to tools", emoji="🧰", on_click=self._back)))
         return Page("Upgrade Tools", body, accent=0xB8860B)
 
-    def _turn(self, step: int):
+    def _show(self, kind: str):
         async def go(interaction: discord.Interaction) -> None:
-            self.page += step
+            self.kind = kind
             self.sure = None
             await self.refresh(interaction)
 

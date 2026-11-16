@@ -392,23 +392,29 @@ def tool_page_title(nav) -> str:
     return next(line for line in all_text(nav).split("\n") if line.startswith("### "))
 
 
-async def test_the_upgrade_page_shows_one_tool_at_a_time_and_pages_between_them(db):
+async def test_the_upgrade_page_shows_one_tool_at_a_time_with_a_button_per_skill(db):
     user = await User.get(1)
     await own_every_kind(user)
     nav, inter = await hub("upgrade")
-    labels = [b.label for b in buttons(nav)]
-    assert "1/5" in labels and next(b for b in buttons(nav) if b.label == "Prev").disabled
+    skills = ("Mining", "Foraging", "Combat", "Fishing", "Farming")
+    assert not any(b.label in ("Prev", "Next") for b in buttons(nav))
+
+    def selected():
+        return [b.label for b in buttons(nav) if b.label in skills and b.style == discord.ButtonStyle.primary]
+
+    assert selected() == ["Mining"]
     first = tool_page_title(nav)
     text = all_text(nav)
     assert "Rookie Pickaxe" in first and "Reinforced Pickaxe" in text
     assert not any(name in text for name in ("Starter Axe", "Starter Rod", "Tin Watering Can", "Large Branch"))  # the others are on their own pages
     seen = [first]
-    for _ in range(4):
-        await click(nav, inter, "Next")
+    for skill in skills[1:]:
+        await click(nav, inter, skill)
         seen.append(tool_page_title(nav))
-    assert len(set(seen)) == 5 and "5/5" in [b.label for b in buttons(nav)] and next(b for b in buttons(nav) if b.label == "Next").disabled
-    await click(nav, inter, "Prev")
-    assert "4/5" in [b.label for b in buttons(nav)]
+        assert selected() == [skill]  # only the showing skill is highlighted
+    assert len(set(seen)) == 5
+    await click(nav, inter, "Mining")
+    assert "Rookie Pickaxe" in tool_page_title(nav)
 
 
 async def test_a_page_has_that_tools_costs_and_upgrading_it_keeps_you_on_it(db):
@@ -419,30 +425,30 @@ async def test_a_page_has_that_tools_costs_and_upgrading_it_keeps_you_on_it(db):
     for item, quantity in axe_cost.items.items():
         await user.add_item(item, quantity)
     nav, inter = await hub("upgrade")
-    await click(nav, inter, "Next")  # to the axe
+    await click(nav, inter, "Foraging")  # to the axe
     assert "Starter Axe" in tool_page_title(nav) and f"{axe_cost.items['feather']}" in all_text(nav)
     await click(nav, inter, "Upgrade")
     assert "became a **Thornwhip Axe**" in all_text(nav) and "Thornwhip Axe" in tool_page_title(nav)  # still on the axe's page, now the next step
 
 
-async def test_a_single_tool_has_no_page_buttons_and_only_a_fork_has_a_dropdown(db):
+async def test_a_single_tool_has_no_skill_buttons_and_only_a_fork_has_a_dropdown(db):
     from tests.test_hub import selects
 
     user, inst = await forked_pickaxe()
     nav, _ = await hub("upgrade")
-    assert not any(b.label in ("Prev", "Next") for b in buttons(nav)) and len(selects(nav)) == 1  # (one tool: nothing to page through)
+    assert not any(b.label in ("Mining", "Foraging") for b in buttons(nav)) and len(selects(nav)) == 1  # (one tool: nothing to switch between)
     await user.give_instance("starter_axe")
     nav, _ = await hub("upgrade")
-    assert any(b.label == "Prev" for b in buttons(nav))
+    assert {"Mining", "Foraging"} <= {b.label for b in buttons(nav)}
 
 
-async def test_the_upgrade_page_number_cannot_run_off_the_end(db):
+async def test_an_unknown_skill_falls_back_to_the_first_tool(db):
     user = await User.get(1)
     await user.give_instance("starter_axe")
     nav, inter = await hub("upgrade")
-    nav.screen.page = 9
+    nav.screen.kind = "sword"
     await nav.screen.nav.refresh(inter)
-    assert nav.screen.page == 0 and "Starter Axe" in tool_page_title(nav)
+    assert nav.screen.kind == "axe" and "Starter Axe" in tool_page_title(nav)
 
 
 async def test_confirm_upgrades_needs_a_second_press_and_moving_away_cancels_it(db):

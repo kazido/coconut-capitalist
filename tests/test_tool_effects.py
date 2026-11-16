@@ -57,12 +57,10 @@ async def test_the_upgrade_page_says_what_the_tool_does_and_what_the_next_one_ch
         await user.give_instance(item)
     nav, inter = await hub("upgrade")
     seen = {}
-    for _ in range(5):
+    for skill in ("Mining", "Foraging", "Combat", "Fishing", "Farming"):
+        await click(nav, inter, skill)
         text = all_text(nav)
         seen[next(line for line in text.split("\n") if line.startswith("### "))] = text
-        if next(b for b in buttons(nav) if b.label == "Next").disabled:
-            break
-        await click(nav, inter, "Next")
     joined = "\n".join(seen.values())
     assert len(seen) == 5
     assert "Ore per lode: ×1.00 → **×1.50**" in joined  # the pickaxe
@@ -92,15 +90,15 @@ async def test_a_new_ability_is_announced_on_the_upgrade_that_gives_it(db):
     assert "Nothing to upgrade" in all_text(nav2)
 
 
-async def test_the_tools_page_shows_each_tools_numbers(db):
+async def test_the_tools_page_shows_each_tool_with_its_power(db):
     user = await User.get(1)
     for kind, item in STARTERS.items():
         await equip(user, {"pickaxe": "mining", "axe": "foraging", "rod": "fishing", "can": "farming", "sword": "combat"}[kind],
                     (await user.give_instance(item)).id)
     nav, _ = await hub("tools")
-    text = all_text(nav)
-    for fragment in ("Ore per lode ×1.00", "Hit points per chop 3", "Plots watered an hour 3", "Wait for a bite", "Attack from the sword +9"):
-        assert fragment in text
+    lines = all_text(nav).split("\n")
+    for skill in ("Mining", "Foraging", "Fishing", "Farming", "Combat"):
+        assert sum(skill in line and "power **" in line for line in lines) == 1, skill  # one compact line per skill
 
 
 async def test_each_requirement_of_an_upgrade_is_on_its_own_line(db):
@@ -209,9 +207,7 @@ async def test_the_upgrade_page_lists_each_of_the_several_changes_for_every_tool
     for item in STARTERS.values():
         await user.give_instance(item)
     nav, inter = await hub("upgrade")
-    for _ in range(5):
+    for skill in ("Mining", "Foraging", "Combat", "Fishing", "Farming"):
+        await click(nav, inter, skill)
         arrows = [line for line in all_text(nav).split("\n") if "→ **" in line and ":" in line and "Power" not in line]
         assert len(arrows) >= 3, arrows  # at least three "label: now → after" lines on every tool's page
-        if next(b for b in buttons(nav) if b.label == "Next").disabled:
-            break
-        await click(nav, inter, "Next")

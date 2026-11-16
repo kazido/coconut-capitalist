@@ -1,27 +1,24 @@
 import discord
 
 from cococap.constants import STARTER_TOOLS
-from cococap.errors import CustomError
 from cococap.registry import get_registry
-from cococap.services.equipment import TOOL_FOR_SKILL, effective_stats, equip, skill_for_tool
-from cococap.services import tool_effects
+from cococap.services.equipment import TOOL_FOR_SKILL, effective_stats
 from cococap.services import shop
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
-from cococap.ui.components import button, row, section, sep, text
+from cococap.ui.components import button, row, sep, text
 from cococap.screens.upgrade import describe_stats
 
-MAX_SHOWN = 8  # a tool each of five kinds is all the game hands out; imported accounts can own more, and a page has room for only so many
 KIND_LABEL = {"pickaxe": "Mining", "axe": "Foraging", "sword": "Combat", "rod": "Fishing", "can": "Farming"}
 
 
 class ToolsScreen(Screen):
-    """Every tool you own: which one is equipped for each skill, with a way to equip it and to upgrade or enchant."""
+    """Your tool for each skill, as a compact list, with ways to upgrade or enchant them."""
 
     id = "tools"
     label = "Tools"
     emoji = "🧰"
-    description = "Your tools: equip, upgrade and enchant them"
+    description = "Your tools: upgrade and enchant them"
     links = ("inventory", "upgrade", "enchant")
 
     async def _equipped_ids(self) -> set[int]:
@@ -39,43 +36,26 @@ class ToolsScreen(Screen):
         body = [*self.note_block()]
         if not instances:
             body.append(text("You have no tools yet. Claim your free starter tools below."))
-        order = list(KIND_LABEL)
-        shown = sorted(instances, key=lambda i: (i.id not in equipped, order.index(reg.item(i.template_id).tool.kind)))
-        for inst in sorted(shown[:MAX_SHOWN], key=lambda i: order.index(reg.item(i.template_id).tool.kind)):
+        # one compact line per skill: the equipped tool (you hold one tool per skill, so there is nothing to pick between)
+        lines = []
+        for kind in KIND_LABEL:
+            mine = [i for i in instances if reg.item(i.template_id).tool.kind == kind]
+            if not mine:
+                continue
+            inst = next((i for i in mine if i.id in equipped), mine[0])
             item = reg.item(inst.template_id)
             tool = item.tool
-            stats = effective_stats(inst, reg)
-            extra = [describe_stats(tool.stats)] if tool.stats else []
-            if tool.path:
-                extra.insert(0, f"{tool.path} path")
-            line = (f"### {item.emoji or '🔨'} {instance_label(inst)}" + ("  ✅" if inst.id in equipped else "") + "\n"
-                    f"{KIND_LABEL[tool.kind]}  ·  power **{stats.power}**" + "".join(f"  ·  {e}" for e in extra)
-                    + f"\n-# {tool_effects.summary(tool.kind, stats.power, reg, tool.path, tool.stats)}"
-                    + (f"  ·  ✨ {tool.ability_name}" if tool.ability_name else ""))
-            if inst.id in equipped:
-                accessory = button("Equipped", disabled=True)
-            else:
-                accessory = button("Equip", style=discord.ButtonStyle.primary, on_click=self._equip(inst.id))
-            body.append(section(line, accessory=accessory))
-        if len(instances) > MAX_SHOWN:
-            body.append(text(f"-# …and {len(instances) - MAX_SHOWN} more tools (the equipped ones are shown first)."))
+            extra = ([f"{tool.path} path"] if tool.path else []) + ([describe_stats(tool.stats)] if tool.stats else [])
+            lines.append(f"{item.emoji or '🔨'} **{instance_label(inst)}**  ·  {KIND_LABEL[kind]}  ·  power **{effective_stats(inst, reg).power}**"
+                         + "".join(f"  ·  {e}" for e in extra) + (f"  ·  ✨ {tool.ability_name}" if tool.ability_name else ""))
+        if lines:
+            body.append(text("\n".join(lines)))
         if await self._unclaimed():
             body += [sep(), row(button("Claim free starter tools", emoji="🎁", style=discord.ButtonStyle.success, on_click=self._claim))]
         body += [sep(), row(button("Upgrade", emoji="🔨", style=discord.ButtonStyle.primary, on_click=self._upgrades),
                             button("Enchant", emoji="📜", on_click=self._enchant),
                             button("Inventory", emoji="🎒", on_click=self._inventory))]
         return Page("Tools", body, accent=0xB8860B)
-
-    def _equip(self, instance_id: int):
-        async def go(interaction: discord.Interaction) -> None:
-            instance = await self.user.instance(instance_id)
-            if instance is None:
-                raise CustomError("You don't own that tool.")
-            skill = skill_for_tool(get_registry().item(instance.template_id).tool.kind)
-            await equip(self.user, skill, instance.id)
-            await self.refresh(interaction, f"Equipped **{instance_label(instance)}** for {skill}.")
-
-        return go
 
     async def _unclaimed(self) -> bool:
         reg = get_registry()

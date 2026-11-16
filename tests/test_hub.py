@@ -347,48 +347,42 @@ async def test_the_sell_button_is_off_when_you_have_nothing(db):
     assert "don't have any items" in all_text(nav) and find_button(nav, "Sell").disabled
 
 
-async def test_the_tools_page_marks_the_equipped_tool_of_every_kind_including_the_can(db):
-    from cococap.services.equipment import equip
-
+async def test_the_tools_page_lists_one_tool_per_skill_including_the_can(db):
     user = await User.get(1)
-    for template, skill in (("starter_axe", "foraging"), ("tin_can", "farming"), ("rookiepickaxe", "mining")):
-        await equip(user, skill, (await user.give_instance(template)).id)
-    await user.give_instance("starter_rod")  # owned but not equipped
+    for template in ("starter_axe", "tin_can", "rookiepickaxe", "starter_rod"):
+        await user.give_instance(template)
     nav, _ = await hub("tools")
     lines = all_text(nav).split("\n")
-    marked = {name: any(name in line and "✅" in line for line in lines) for name in ("Starter Axe", "Tin Watering Can", "Rookie Pickaxe", "Starter Rod")}
-    assert marked == {"Starter Axe": True, "Tin Watering Can": True, "Rookie Pickaxe": True, "Starter Rod": False}
+    for name, skill in (("Starter Axe", "Foraging"), ("Tin Watering Can", "Farming"), ("Rookie Pickaxe", "Mining"), ("Starter Rod", "Fishing")):
+        assert sum(name in line for line in lines) == 1 and any(name in line and skill in line and "power" in line for line in lines)
+    assert "✅" not in all_text(nav)
 
 
-async def test_the_tools_page_shows_every_tool_equips_one_and_leads_to_upgrades(db):
+async def test_the_tools_page_is_a_compact_list_without_equip_buttons_and_leads_to_upgrades(db):
     from cococap.services.equipment import equip
 
     user = await User.get(1)
     axe = await user.give_instance("starter_axe")
-    can = await user.give_instance("tin_can")
+    await user.give_instance("tin_can")
     await equip(user, "foraging", axe.id)
     nav, inter = await hub("tools")
     text = all_text(nav)
-    assert "Starter Axe" in text and "Tin Watering Can" in text and "Farming" in text and "Foraging" in text
-    assert text.count("✅") == 1  # only the axe is equipped
-    assert [b.label for b in buttons(nav) if b.label in ("Equip", "Equipped")].count("Equipped") == 1
-    await click(nav, inter, "Equip")
-    assert (await user.skill("farming")).equipped_instance_id == can.id and "Equipped **Tin Watering Can**" in all_text(nav)
-    assert all_text(nav).count("✅") == 2 and [b.label for b in buttons(nav) if b.label in ("Equip", "Equipped")] == ["Equipped", "Equipped"]
+    assert "Starter Axe" in text and "Tin Watering Can" in text and "Farming" in text and "Foraging" in text and "power" in text
+    assert "✅" not in text and not [b for b in buttons(nav) if b.label in ("Equip", "Equipped")]
     await click(nav, inter, "Upgrade")
     assert nav.screen.id == "upgrade"
     await click(nav, inter, "Back to tools")
     assert nav.screen.id == "tools"
 
 
-async def test_the_tools_page_has_room_for_an_account_with_many_tools_and_the_empty_case(db):
+async def test_the_tools_page_shows_one_line_per_skill_and_the_empty_case(db):
     nav, _ = await hub("tools")
     assert "no tools yet" in all_text(nav)
     user = await User.get(1)
     for _ in range(30):
         await user.give_instance("starter_rod")
     nav, _ = await hub("tools")
-    assert len([b for b in buttons(nav) if b.label in ("Equip", "Equipped")]) == 8 and "22 more tools" in all_text(nav)
+    assert all_text(nav).count("Starter Rod") == 1  # (a spare is not listed again)
 
 
 async def test_inventory_paging(db):
