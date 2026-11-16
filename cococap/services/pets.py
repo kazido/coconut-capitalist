@@ -2,7 +2,7 @@
 
 * A pet species has one or more **bonuses** (``stat`` + value, in ``configs/pets.toml``). The game looks the stats up with
   ``bonuses(user)``: fishing asks for ``bite_speed``, mining for ``danger_reduction``, the Work button for ``work_bonus``...
-* A bonus is its configured value x **stars** (a duplicate adds one) x **level** (fed crops; a fresh pet does half of it).
+* A bonus is its configured value x **stars** (a duplicate adds one) x **level** (fed crops; a fresh pet does a tenth of it, see ``level_floor``).
 * A **Spirit** item, given to a pet, adds +15% xp in its skill while that pet is active.
 * One pet is active at a time. Everything that changes the pet house goes through ``User.update_pethouse`` (one transaction).
 """

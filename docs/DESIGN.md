@@ -290,10 +290,10 @@ pet, upgrade step, bait and enchant and uses the real numbers.
 
 Pets are the gacha part of the bot, and **every pet gives a bonus somewhere in the game** while it is your active pet
 (one at a time; `/pets` or the Pets shortcut on Home). They come from **Familiar Orbs** (treasure chests, boss loot,
-the shop at 1.5M), which hatch a random pet by rarity (`economy.toml` `[pets.orb_weights]`); a duplicate adds a **star**
+the shop at 1.5M), which hatch a random pet by rarity (`economy.toml` `[pets.orbs.<orb id>]`; three kinds: Lesser at 150k mostly common, Familiar at 1.5M, Greater at 15M mostly rare); a duplicate adds a **star**
 (up to 5; a fifth-star duplicate gives xp instead). Feed them **food** (and play with them active) to level them up to 100, and give them
 a **Spirit** item for +15% xp in its skill. A bonus is its listed value x stars (+25%
-each) x level (a fresh pet does half, a max one all of it).
+each) x level (a fresh pet does a tenth, a max one all of it). A level costs xp by the pet's rarity (`[pets.xp_scale]`: common quickest, legendary slowest); old saves were rescaled once (`Pethouse.curve_version`, `pets.upgrade_curve`) so no pet changed level.
 
 ### Pet food and pet skills
 
