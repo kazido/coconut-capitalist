@@ -148,6 +148,7 @@ class Navigator(ui.LayoutView):
         self._names: dict[int, str] = {}
         self._lock = asyncio.Lock()  # one redraw at a time (a click and the self-refresh must not interleave)
         self._ticker: asyncio.Task | None = None
+        self._pending_edit: asyncio.Future | None = None  # a self-refresh edit still on its way to Discord (see _push)
         # The last result page that was built but may never have reached the player (a self-refresh whose edit failed because the message was too
         # old, say). It stays here until an edit succeeds, and the next click shows it first, so what you were paid is never paid without being seen.
         self._unsent: Result | None = None
@@ -223,6 +224,26 @@ class Navigator(ui.LayoutView):
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
 
+    async def _push(self) -> bool:
+        """Send the current panel to Discord for a self-refresh. Returns False if an earlier refresh is still in flight (this one is skipped).
+
+        A slow edit must NOT be cancelled: Discord may still apply it, and discord.py only learns the new button ids once the request finishes.
+        A cancelled edit leaves the message showing buttons the bot no longer recognises, so every click on them ends in "didn't respond".
+        So a slow edit keeps running in the background (the next refresh waits for it) and we only stop waiting for it."""
+        if self._pending_edit is not None and not self._pending_edit.done():
+            return False
+        task = self._pending_edit = asyncio.ensure_future(self.message.edit(view=self))
+
+        def settled(done: asyncio.Future) -> None:
+            if not done.cancelled() and done.exception() is None:
+                self._unsent = None
+            elif not done.cancelled() and not isinstance(done.exception(), discord.HTTPException):
+                log.error("self-refresh edit failed", exc_info=done.exception())
+
+        task.add_done_callback(settled)
+        await asyncio.wait_for(asyncio.shield(task), TICK_EDIT_TIMEOUT)
+        return True
+
     def _restart_ticker(self) -> None:
         """(Re)start the timer that redraws the current screen, if it asks for one."""
         if self._ticker is not None:
@@ -245,13 +266,11 @@ class Navigator(ui.LayoutView):
                     if self.screen is not screen:  # it turned into a result page: that has its own redraw timer
                         self._ticker = None
                         self._restart_ticker()
-                        await asyncio.wait_for(self.message.edit(view=self), TICK_EDIT_TIMEOUT)
-                        self._unsent = None
+                        await self._push()
                         return
                     try:
                         # (a slow edit, e.g. waiting out a rate limit, must not hold up the next click)
-                        await asyncio.wait_for(self.message.edit(view=self), TICK_EDIT_TIMEOUT)
-                        self._unsent = None
+                        await self._push()
                     except asyncio.TimeoutError:
                         log.warning("self-refresh of %s was too slow; skipping this one", screen.id)
                     if not screen.refresh_every:

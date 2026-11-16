@@ -105,6 +105,8 @@ class FishScreen(Screen):
 
     @property
     def refresh_every(self) -> float | None:  # redraw by itself while a line is in the water or numbers are flashing, or a party fight is open
+        if self.cast is not None and self.flash is None and self.cast.status(now()) in ("chest", "reeling"):
+            return None  # nothing on these pages changes by itself: redrawing would only swap the buttons' ids under a player who is thinking
         return REFRESH if self.cast is not None or self.flash is not None or self.watching else None
 
     async def build(self) -> Page:

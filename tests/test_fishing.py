@@ -2211,3 +2211,71 @@ async def test_a_quick_cast_is_always_a_plain_fish_in_the_same_water(db):
     cast = f.quick_cast(stats, Boss(1), T0, water, REG)
     assert not cast.boss and not cast.chest and cast.quick and cast.water is water
     assert cast.bite_at == T0 and cast.expires_at == T0 + RULES.bite.window
+
+
+# ---- every chest button answers the click ------------------------------------------------------------------------------
+async def chest_page(db_user_id=1):
+    """The hub on a chest that has been pulled up and is waiting for its numbers."""
+    from cococap.models.skills.fishing import TreasureState
+
+    user, nav, inter = await open_fishing(db_user_id)
+    await user.update_skill("fishing", lambda s: setattr(s, "treasure", TreasureState(code="4815", armed_until=T0 + 600)))
+    screen = nav.screen
+    screen.rng = LuckyButNoBoss(1)
+    await click(nav, inter, "Cast")
+    assert screen.cast.chest
+    return user, nav, inter
+
+
+async def click_counting(nav, inter, label) -> int:
+    """Click a button and count how many times Discord was answered (it needs exactly one)."""
+    r = inter.response
+    for m in (r.edit_message, r.send_modal, r.send_message, r.defer):
+        m.reset_mock()
+    await find_button(nav, label).callback(inter)
+    return sum(m.await_count for m in (r.edit_message, r.send_modal, r.send_message, r.defer))
+
+
+async def test_every_chest_button_acknowledges_the_interaction(db, clock):
+    user, nav, inter = await chest_page()
+    clock[0] = nav.screen.cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    assert "treasure chest" in all_text(nav)
+    assert nav.screen.refresh_every is None  # nothing on the page changes by itself: no redraws to swap the buttons under the player
+    for label in ("Enter the numbers", "Leave it"):
+        assert await click_counting(nav, inter, label) == 1, label
+        if label == "Leave it":
+            break
+    # (the chest is gone; start again for the modal answers)
+    user, nav, inter = await chest_page(2)
+    clock[0] = nav.screen.cast.bite_at + 1
+    await nav.screen.nav.refresh(inter)
+    await click(nav, inter, "Pull up the line")
+    for guess in ("0000", "4815"):
+        assert await click_counting(nav, inter, "Enter the numbers") == 1
+        inter.response.edit_message.reset_mock()
+        await inter.response.send_modal.await_args.args[0]._handler(inter, guess)
+        assert inter.response.edit_message.await_count == 1, guess
+
+
+async def test_a_slow_self_refresh_is_never_cancelled_so_the_buttons_it_sent_stay_known(db, clock, monkeypatch):
+    """Cancelling an edit that Discord still applies leaves the message with button ids the bot never stored: every click then fails."""
+    import asyncio
+
+    from cococap.ui import nav as nav_module
+
+    monkeypatch.setattr(nav_module, "TICK_EDIT_TIMEOUT", 0.01)
+    user, nav, inter = await open_fishing()
+    finished = []
+
+    async def slow_edit(**kwargs):
+        await asyncio.sleep(0.05)
+        finished.append(kwargs)
+
+    nav.message = type("M", (), {"edit": staticmethod(slow_edit)})()
+    with pytest.raises(asyncio.TimeoutError):
+        await nav._push()  # we stop waiting...
+    assert await nav._push() is False  # ...a second one waits its turn instead of piling on...
+    await asyncio.sleep(0.1)
+    assert len(finished) == 1  # ...and the slow edit still went through
