@@ -1775,3 +1775,23 @@ async def test_rare_drops_get_their_own_pages_after_the_reward_screen_with_the_d
     assert {b.label for b in buttons(nav)} >= {"Another tree", "Back to foraging"}
     await click(nav, inter, "Back to foraging")
     assert nav.screen.id == "forage"
+
+
+async def test_the_mine_page_shows_the_kind_of_mine_and_mine_again_rolls_a_new_one(db, monkeypatch):
+    rules = get_registry().mining
+    kinds = iter([rules.mine_type("gold_vein"), rules.mine_type("standard")])
+    monkeypatch.setattr(mine_service, "roll_mine_type", lambda _rules, _rng: next(kinds))
+    nav, inter = await enter_mines()
+    gold = rules.mine_type("gold_vein")
+    assert nav.screen.run.mine_type is gold
+    assert gold.name in all_text(nav) and gold.description in all_text(nav)
+    await click(nav, inter, "Leave & bank")
+    await continue_through(nav, inter)
+    await click(nav, inter, "Mine again")
+    standard = rules.mine_type("standard")
+    assert nav.screen.run.mine_type is standard and standard.name in all_text(nav) and gold.name not in all_text(nav)
+
+
+async def test_the_mining_page_mentions_that_mines_come_in_kinds(db):
+    nav, _ = await hub("mining")
+    assert "Gold Vein" in all_text(nav)

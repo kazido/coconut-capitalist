@@ -974,3 +974,39 @@ rare items. Each species has one common and one rarer signature item (`configs/i
 - **Phase 5 (not built): set craft.** The intent is a special item crafted from ONE of each species' signature drop. Both signature items of every species
   are plain stackable materials, so the set recipe can ask for either the common or the rare one (or both) of every species.
 - Numbers are guesses (`TODO(balance)`): common rate ~0.27-0.30 per roll, rare 0.5-2%; sell prices scale with the zone band.
+
+## Mine types
+
+Every mine you enter ("Enter the mines" and "Mine again") rolls a TYPE by weight (`mining.roll_mine_type`, from `start_run`; `start_run(..., mine_type=)` forces one for tests).
+It is shown on the mine page before the first dig and kept on the `MineRun` (`run.mine_type`); nothing is stored. `[[mine_types]]` in `configs/mining.toml`:
+id, name, emoji, weight, description and effects, all neutral by default. Standard (first in the list, 75 of 100) must exist, change nothing and be at least half of all
+mines (validated in `MiningRules`; ore ids are checked in `_validate_mining_items`; bounds: pressure/xp/yield 0.25-3, rich add 0-0.5, boosts 1-5).
+
+| type | weight | effect |
+|---|---|---|
+| Copper Seam | 6 | `ore_yield` copper x1.2 (cells and the vault) |
+| Iron Vein | 6 | iron drop chance x1.1 and `ore_yield` x1.15 |
+| Gold Vein | 5 | `ore_yield` gold x1.25 (cells and the vault) |
+| Quiet Shaft | 3 | `pressure_mult` 0.93, applied in `growth_factor` AFTER the reactor/tool/pet cap (`max_reduction`) |
+| Scholar's Cavern | 2.5 | `xp_mult` 2.0, applied in `settle_run` on top of the rank/party xp multiplier |
+| Deep Pocket | 2.5 | `rich_chance_add` +0.12 (added to the cell chance and the Prospector bonus) and `yield_mult` 1.05 |
+
+Why quantity and not just drop chance for the ores: a bigger share of a hard ore means more pressure per row, so a pure chance boost made the run end sooner and the type
+a trap (Gold x2 chance: gold income +30% but the whole run -20%). `ore_yield` pays more of the ore with the same pressure (it rounds at random so +20% on a 1-3 ore
+still pays; the chance boost `ore_boost` stays in the model and is used mildly on iron). Capstones (Lifeline, Gold Rush, Geode Cracker) are untouched.
+
+Value check (`scratchpad/typesim*.py`, 12,000 mines per row, a player who stops at 7% collapse risk, braces when pressure is above 10, picks the column of the focused ore by
+its soft/firm/hard feel, same seeds as Standard): the focus ore's income per run, and the whole run's value in bits (xp counted at 20 bits per xp, the scarab's "lesson" prize):
+
+| type | focus ore income (power 3 / 12) | whole run (power 3 / 12) |
+|---|---|---|
+| Copper Seam | +21% / +21% | +4.6% / +4.6% |
+| Iron Vein | +22% / +24% | +4.1% / +2.9% |
+| Gold Vein | +20% / +28% | +4.3% / +5.0% |
+| Quiet Shaft | | +10.9% / +10.4% |
+| Deep Pocket | | +11.5% / +13.0% |
+| Scholar's Cavern | | +0% bits, +100% xp (about +6% with xp at 20 bits) |
+
+So none is a trap (every type is at or above Standard) and none is a jackpot (the best is about +13% of a run, on 2.5-3% of mines).  TODO(balance): the xp price is a guess;
+double xp is the headline, raise `xp_mult` if it feels thin.
+The wyrmhole code is untouched: a later "small wyrmhole" mine should decide its kind in `start_run` next to the type roll.

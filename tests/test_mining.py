@@ -1289,3 +1289,135 @@ def test_the_three_mining_capstones_are_about_equally_strong_at_low_and_high_pow
         }
         assert all(0.08 <= g <= 0.4 for g in gains.values()), (power, gains)
         assert max(gains.values()) - min(gains.values()) <= 0.15, (power, gains)
+
+
+# ---- mine types ---------------------------------------------------------------------------------
+TYPES = {t.id: t for t in RULES.mine_types}
+
+
+def _run(type_id=None, seed=1, **kw):
+    return m.MineRun(RULES, REG, Random(seed), cursors=[2], mine_type=TYPES[type_id] if type_id else None, **kw)
+
+
+def test_the_mine_type_weights_validate_and_standard_dominates():
+    assert "standard" in TYPES and len(RULES.mine_types) >= 6
+    total = sum(t.weight for t in RULES.mine_types)
+    assert TYPES["standard"].weight / total >= 0.5
+    assert all(t.weight > 0 for t in RULES.mine_types)
+    assert all(i in REG.items for t in RULES.mine_types for i in (*t.ore_boost, *t.ore_yield))
+    standard = TYPES["standard"]
+    assert (standard.pressure_mult, standard.xp_mult, standard.yield_mult, standard.rich_chance_add, standard.ore_boost, standard.ore_yield) == (1, 1, 1, 0, {}, {})
+
+
+def test_bad_mine_types_are_refused():
+    base = RULES.model_dump()
+    broken = lambda **change: {**base, "mine_types": [*base["mine_types"][:1], {**base["mine_types"][1], **change}, *base["mine_types"][2:]]}  # noqa: E731
+    for change in ({"weight": 0}, {"pressure_mult": 0.01}, {"xp_mult": 9}, {"ore_boost": {"copper_ore": 50}}, {"ore_yield": {"copper_ore": 0.5}}, {"rich_chance_add": 0.9}):
+        with pytest.raises(ValidationError):
+            type(RULES)(**broken(**change))
+    with pytest.raises(ValidationError, match="standard"):
+        type(RULES)(**{**base, "mine_types": base["mine_types"][1:]})
+    with pytest.raises(ValidationError, match="change nothing"):
+        type(RULES)(**{**base, "mine_types": [{**base["mine_types"][0], "xp_mult": 2.0}, *base["mine_types"][1:]]})
+    with pytest.raises(ValidationError, match="half"):
+        type(RULES)(**{**base, "mine_types": [{**base["mine_types"][0], "weight": 1}, *base["mine_types"][1:]]})
+
+
+def test_rolling_a_mine_type_follows_the_weights_and_is_seeded():
+    rolls = Counter(m.roll_mine_type(RULES, Random(seed)).id for seed in range(4000))
+    total = sum(t.weight for t in RULES.mine_types)
+    for t in RULES.mine_types:
+        assert abs(rolls[t.id] / 4000 - t.weight / total) < 0.03, t.id
+    assert [m.roll_mine_type(RULES, Random(7)).id for _ in range(3)] == [m.roll_mine_type(RULES, Random(7)).id for _ in range(3)]
+
+
+async def test_start_run_rolls_a_type_and_can_be_forced(db):
+    user = await player()
+    assert (await m.start_run(user, Random(1))).mine_type.id == "standard"  # (the first roll of seed 1 is the commonest kind)
+    forced = await m.start_run(user, Random(1), mine_type="gold_vein")
+    assert forced.mine_type is TYPES["gold_vein"]
+    assert (await m.start_run(user, Random(1), mine_type=TYPES["quiet_shaft"])).mine_type.id == "quiet_shaft"
+    assert [(await m.start_run(user, Random(5))).mine_type.id for _ in range(2)][0] == (await m.start_run(user, Random(5))).mine_type.id
+
+
+def test_a_plain_run_is_a_standard_mine_and_unchanged():
+    assert _run().mine_type.id == "standard"
+    plain = _run(seed=3)
+    explicit = _run("standard", seed=3)
+    assert [plain.row(i) for i in range(6)] == [explicit.row(i) for i in range(6)]
+
+
+def test_an_ore_focused_mine_pays_more_of_its_ore():
+    def income(type_id, ore, depth=6):
+        total = 0
+        for seed in range(150):
+            run = _run(type_id, seed)
+            total += sum(q for i in range(depth) for cell in run.row(i) if cell and cell[0] == ore for q in [cell[1]])
+        return total
+
+    for type_id, ore in (("copper_seam", "copper_ore"), ("iron_vein", "iron_ore"), ("gold_vein", "gold_ore")):
+        assert type_id in TYPES and ore in {**TYPES[type_id].ore_boost, **TYPES[type_id].ore_yield}
+        assert income(type_id, ore, 12) > income(None, ore, 12), type_id
+
+
+def test_ore_boost_raises_the_drop_chance_and_other_ores_stay_possible():
+    boosted = TYPES["standard"].model_copy(update={"id": "x", "ore_boost": {"iron_ore": 3.0}})
+    def count(kind, ore):
+        n = 0
+        for seed in range(60):
+            run = m.MineRun(RULES, REG, Random(seed), cursors=[2], mine_type=kind)
+            n += sum(1 for i in range(4, 8) for cell in run.row(i) if cell and cell[0] == ore)
+        return n
+    assert count(boosted, "iron_ore") > count(TYPES["standard"], "iron_ore") * 1.5
+    assert count(boosted, "copper_ore") > 0 and count(boosted, "gold_ore") > 0
+
+
+def test_ore_yield_also_fattens_the_vault_ore():
+    assert _run("gold_vein")._vault_ore()["gold_ore"] == round(RULES.descent.vault_ore["gold_ore"] * TYPES["gold_vein"].ore_yield["gold_ore"])
+    assert _run()._vault_ore() == RULES.descent.vault_ore
+
+
+async def test_a_quiet_shaft_slows_the_pressure_and_the_cap_is_unchanged(db):
+    user = await player()
+    quiet = await m.start_run(user, Random(1), mine_type="quiet_shaft")
+    plain = await m.start_run(user, Random(1), mine_type="standard")
+    assert quiet.growth_factor == pytest.approx(plain.growth_factor * TYPES["quiet_shaft"].pressure_mult)
+    for run in (quiet, plain):
+        run.rng = Rig(0.99)
+        run.dig()
+    assert quiet.danger < plain.danger and quiet.danger == pytest.approx(plain.danger * TYPES["quiet_shaft"].pressure_mult)
+    await user.update_skill("mining", lambda s: setattr(s.reactor, "level", 40))
+    assert (await m.start_run(user, Random(1), mine_type="standard")).growth_factor == pytest.approx(1 - D.max_reduction)  # the cap still holds for the rest
+    capped = await m.start_run(user, Random(1), mine_type="quiet_shaft")
+    assert capped.growth_factor == pytest.approx((1 - D.max_reduction) * TYPES["quiet_shaft"].pressure_mult)  # (the type comes on top of the cap)
+
+
+async def test_a_scholars_cavern_pays_extra_xp_and_a_standard_mine_does_not(db):
+    user = await player()
+    xps = {}
+    for type_id in ("standard", "scholars_cavern"):
+        run = await m.start_run(user, Random(1), mine_type=type_id)
+        run.rng = Rig(0.99)
+        run.dig()
+        run.leave()
+        xps[type_id] = (await m.settle_run(user, run)).xp
+    assert xps["standard"] == RULES.xp_per_column * 1 and xps["scholars_cavern"] == round(xps["standard"] * TYPES["scholars_cavern"].xp_mult)
+
+
+def test_a_deep_pocket_has_more_rich_lodes_and_more_ore():
+    def rich_cells(type_id):
+        return sum(run.signs(depth).count("rich") for seed in range(200) for run in [_run(type_id, seed)] for depth in range(6))
+    assert rich_cells("deep_pocket") > rich_cells(None) * 1.3
+    assert TYPES["deep_pocket"].yield_mult >= 1 and _run("deep_pocket")._quantity_factor(0) == pytest.approx(TYPES["deep_pocket"].yield_mult)
+
+
+async def test_mine_types_keep_the_live_run_guard_and_settle_working(db):
+    user = await player(level=5, scarab_bomb=1)
+    run = await m.start_run(user, Random(1), mine_type="iron_vein")
+    assert m.in_a_mine(user.id)
+    run.rng = Rig(0.99)
+    await m.use_bomb(user, run)  # bombs still work in a typed mine
+    run.leave()
+    summary = await m.settle_run(user, run)
+    assert not m.in_a_mine(user.id) and summary.lodes == run.lodes
+    assert await m.settle_run(user, run) == summary  # settling twice is harmless
