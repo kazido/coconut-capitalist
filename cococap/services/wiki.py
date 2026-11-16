@@ -90,6 +90,15 @@ def _farming(reg: Registry) -> list[str]:
 
 def _foraging(reg: Registry) -> list[str]:
     f = reg.foraging
+def _species_text(reg: Registry) -> str:
+    f = reg.foraging
+    """The tree species, by zone band, with their signature drops (empty when the rules have none)."""
+    if not f.species:
+        return ""
+    return ("**Tree species.** A tree's species is set by its zone, and each species drops its own signature items (on top of the usual drops, and more often; odds are per drop roll): " + "; ".join(
+        f"{sp.emoji} **{sp.name}** (zones {sp.zone_min}-{sp.zone_max}) " + " and ".join(f"{reg.item(d.item).name} 1 in {round(1 / d.rate)}" for d in sp.drops) for sp in f.species) + ".")
+
+
     c = f.community
     return [
         f"**Foraging** needs an axe. Chop a tree down for drops (sell them for bits) and xp. There are **{f.zones} zones**: zone 2 needs level {f.zone_levels[1]}, zone 10 level {f.zone_levels[9]} and zone {f.zones} level {f.zone_levels[-1]}, and each takes a little longer than the last; "
@@ -108,6 +117,7 @@ def _foraging(reg: Registry) -> list[str]:
         f"and a jackpot: {f.releaf.double_xp:,} foraging xp, or a 1 in {round(1 / f.releaf.double_spirit_chance)} chance of a Spirit of the Forest.",
         f"**The community tree.** One grows every hour and stands for {c.open_minutes} minutes. Everyone's chops add up; "
         f"chop at least {c.min_share:.0%} of it to be paid, and a bigger crowd earns a bonus. Rewards arrive in your own panel, even if you were offline.",
+        _species_text(reg),
     ]
 
 

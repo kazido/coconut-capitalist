@@ -111,3 +111,33 @@ def test_a_local_config_file_is_laid_over_the_shared_one(tmp_path, monkeypatch):
     assert loader._read(tmp_path, "x") == {"a": 9, "t": {"b": 2, "c": 30, "l": [7]}}  # tables merge, lists are replaced
     monkeypatch.setenv("COCOCAP_NO_LOCAL_CONFIG", "1")
     assert loader._read(tmp_path, "x")["a"] == 1  # (tests and CI ignore it)
+
+
+# ---- tree species ----------------------------------------------------------------------------------------------------------------------
+def test_every_zone_has_two_or_three_species_and_their_drops_are_foraging_items():
+    reg = get_registry()
+    rules = reg.foraging
+    assert all(2 <= len(rules.species_in(z)) <= 3 for z in range(1, rules.zones + 1))
+    for sp in rules.species:
+        assert len(sp.drops) == 2 and sp.emoji
+        for d in sp.drops:
+            assert reg.item(d.item).skill == "foraging" and reg.item(d.item).drop is None and 0 < d.rate <= 1
+
+
+def test_a_zone_without_a_species_is_rejected(data):
+    edit(data / "foraging.toml", "zone_min = 1\nzone_max = 5", "zone_min = 2\nzone_max = 5")
+    edit(data / "foraging.toml", 'id = "oak"\nname = "Oak"\nemoji = "🌳"\nzone_min = 1', 'id = "oak"\nname = "Oak"\nemoji = "🌳"\nzone_min = 2')
+    with pytest.raises(RegistryError, match="zone"):
+        load_registry(data)
+
+
+def test_a_species_drop_of_an_unknown_item_or_a_bad_rate_is_rejected(data):
+    edit(data / "foraging.toml", 'item = "birch_bark"', 'item = "no_such_item"')
+    with pytest.raises(RegistryError, match="no_such_item"):
+        load_registry(data)
+
+
+def test_a_species_drop_rate_must_be_a_chance(data):
+    edit(data / "foraging.toml", "rate = 0.3,", "rate = 1.5,")
+    with pytest.raises(RegistryError, match="rate"):
+        load_registry(data)

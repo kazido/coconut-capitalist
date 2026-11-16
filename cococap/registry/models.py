@@ -750,6 +750,44 @@ class BiteRules(_Data):
     def _ordered(self):
         if self.wait_max < self.wait_min:
             raise ValueError("bite wait_max must be >= wait_min")
+class SpeciesDrop(_Data):
+    """One signature drop of a tree species: `rate` is the chance PER DROP ROLL of the tree (0..1), then min..max of the item."""
+
+    item: str  # must exist in items.toml
+    rate: float = Field(gt=0, le=1)
+    min: int = Field(ge=1)
+    max: int = Field(ge=1)
+
+    @model_validator(mode="after")
+    def _ordered(self):
+        if self.max < self.min:
+            raise ValueError("species drop max must be >= min")
+        return self
+
+
+class Species(_Data):
+    """A kind of tree. Which one a tree is depends on its zone; it adds its own signature drops to the normal pool."""
+
+    id: str
+    name: str
+    emoji: str
+    zone_min: int = Field(ge=1)
+    zone_max: int = Field(ge=1)
+    weight: float = Field(gt=0)  # how common it is among the species of a zone
+    drops: list[SpeciesDrop] = Field(min_length=1)
+
+    _id = field_validator("id")(check_id)
+
+    @model_validator(mode="after")
+    def _ordered(self):
+        if self.zone_max < self.zone_min:
+            raise ValueError("species zone_max must be >= zone_min")
+        return self
+
+    def grows_in(self, zone: int) -> bool:
+        return self.zone_min <= zone <= self.zone_max
+
+
         return self
 
 
@@ -766,6 +804,21 @@ class ReelRules(_Data):
     max_random_mysteries: int = Field(ge=1)  # a coin-flip ❓ can't be learned, so a fish has at most this many of them
     echo_window: float = Field(ge=0)  # pressing the arrow you JUST pressed again within this many seconds is ignored
 
+    species: list[Species] = Field(default_factory=list)  # tree species by zone (empty: no species, trees are plain)
+
+    def species_of(self, species_id: str) -> Species | None:
+        return next((sp for sp in self.species if sp.id == species_id), None)
+
+    def species_in(self, zone: int) -> list[Species]:
+        return [sp for sp in self.species if sp.grows_in(zone)]
+
+    @model_validator(mode="after")
+    def _species_cover_zones(self):
+        if len({sp.id for sp in self.species}) != len(self.species):
+            raise ValueError("species ids must be unique")
+        if self.species and (missing := [z for z in range(1, self.zones + 1) if not self.species_in(z)]):
+            raise ValueError(f"species: no species grows in zone(s) {missing}")
+        return self
 
 class QuestSlot(_Data):
     """One quest per slot: "catch N of a fish of this rarity" (which fish is picked per player and period)."""

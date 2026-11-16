@@ -37,11 +37,17 @@ def _own_drop(item_id: str, reg: Registry, per: str) -> Odds | None:
     return Odds(item.drop.rate, per) if item.drop else None
 
 
+def species_odds(item_id: str, reg: Registry) -> Odds | None:
+    """A tree species' signature drop: 1 in (1 / rate) drop rolls of a tree of that species (the best rate if several species share it)."""
+    rate = max((d.rate for sp in reg.foraging.species for d in sp.drops if d.item == item_id), default=0.0)
+    return Odds(1 / rate, "drop rolls") if rate > 0 else None
+
+
 def foraging(reg: Registry | None = None) -> Lookup:
     reg = reg or get_registry()
 
     def lookup(item_id: str) -> Odds | None:
-        if found := _scroll("foraging", item_id, reg):
+        if found := _scroll("foraging", item_id, reg) or species_odds(item_id, reg):
             return found
         releaf = reg.foraging.releaf
         if item_id == releaf.spirit_item and releaf.double_spirit_chance > 0:

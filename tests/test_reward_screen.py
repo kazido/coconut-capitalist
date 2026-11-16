@@ -64,3 +64,14 @@ def test_without_a_table_only_the_rarity_is_shown():
 def test_a_super_rare_only_reward_still_has_a_first_screen():
     result = rewards_result("x", items={"scroll_keen": 1})
     assert result.lines and result.then
+
+
+def test_the_rare_drop_screen_shows_a_species_drops_rate():
+    from cococap.registry import get_registry
+    from cococap.services import odds
+
+    reg = get_registry()
+    sp = reg.foraging.species_of("redwood")
+    rare = sp.drops[1]
+    assert odds.foraging(reg)(rare.item).text() == f"1 in {round(1 / rare.rate):,} drop rolls"
+    assert drop_rate_line(reg.item(rare.item), odds.foraging(reg)(rare.item)).startswith("🎲 **Drop rate:** 1 in")
