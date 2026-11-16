@@ -17,7 +17,7 @@ from dataclasses import dataclass, field
 
 from cococap.errors import GameRuleError
 from cococap.registry import Item, Registry, get_registry
-from cococap.services import activity, community
+from cococap.services import activity, community, pets
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -251,6 +251,7 @@ async def ship(user: User, slot_id: str, registry: Registry | None = None) -> Sh
     await community.update(_key(user.id), DEFAULT, send)
     crate = outcome["crate"]
     bits, xp = reward(crate, reg)
+    bits = await pets.payout(user, bits, reg)  # (a Raven pays a few % more)
     await user.add_bits(bits)
     paid: dict[str, int] = {}
     for skill, amount in xp.items():
@@ -405,7 +406,8 @@ async def claim_community(user: User, now: float | None = None, registry: Regist
     paid = []
     for entry in owed:
         xp = round(entry["xp"] * await xp_multiplier(user.id, reg, entry["skill"]))
-        await user.add_bits(entry["bits"])
+        bits = await pets.payout(user, entry["bits"], reg)
+        await user.add_bits(bits)
         await user.add_xp(entry["skill"], xp)
-        paid.append(CommunityPayout(entry["bits"], xp, entry["skill"]))
+        paid.append(CommunityPayout(bits, xp, entry["skill"]))
     return paid

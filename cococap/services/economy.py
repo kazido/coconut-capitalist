@@ -71,7 +71,9 @@ class DailyReward:
 async def claim_daily(user: User) -> DailyReward:
     await _claim(user, Cooldowns.DAILY)
     await user.refresh()
-    interest = daily_interest(user.purse)
+    from cococap.services import pets
+
+    interest = await pets.payout(user, daily_interest(user.purse))  # (a Raven pays a few % more)
     await user.add_bits(interest)
     await user.add_tokens(DAILY_TOKENS)
     await user.inc_stat("claimed_daily")

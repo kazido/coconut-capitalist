@@ -320,17 +320,19 @@ skill (`python -m scripts.balance` prints it); level 100 is 2.94M xp (and play x
 | Frog | crops grow more often in the rain |
 | Monkey | more good chops on trees |
 | Koala | +xp in every skill |
-| Bee | bigger harvests |
+| Bee | each harvested plot may give a free extra harvest |
 | Eagle | more rare fish |
 | Python | faster crab pots |
 | Crab | rarer fish in crab pots |
 | Dragon | hallucinations and chests more often |
 | Otter / Seal | +8% / +14% fishing xp |
 | Beaver / Woodpecker | +8% / +14% foraging xp |
-| Mole / Badger | +8% / +14% mining xp |
+| Badger | +14% mining xp |
 | Rabbit / Hedgehog | +8% / +14% farming xp |
 | Wolf / Lion | +10% / +18% combat xp (combat is coming) |
 | Phoenix | +10% xp in every skill |
+| Magpie / Raven / Fox | every sale pays more / shipments and the daily pay more / rare drops may roll twice |
+| Mole | every dug row adds less pressure |
 
 **Hunting a pet.** Pick a pet to hunt on the Familiar Orbs page and orbs are `8x` likelier to give it, plus `1x` more for every orb
 that missed it (up to `40x`), so a long streak of bad luck makes the next orb better. A hit resets the count; a pet you
@@ -917,3 +919,27 @@ Sim (scratch, zone 5, 1,000,000 hp tree split evenly, value = sell price of drop
 | 10 | 0.99 | 18% | 1.15 |
 
 So a lone chopper is paid half (as before), a pair about 70%, five about solo, and a crowd of ten a modest 15% over solo. TODO(balance): the community screen still shows "max: you are paid for X% of the tree" off `max_share`; it should show the pool instead.
+
+## More pets: Magpie, Mole, Fox, Bee, Raven
+
+Five pets with small effects that are **not xp** and **never forgive a mistake** (a pet that softens a collapse or saves a missed press
+is useless once you play well). Each is one stat in `configs/pets.toml` (`TODO(balance)`); all are `value x stars x level factor` like
+every pet, and `tests/test_pet_effects.py` keeps the five at a modest max-level value in one band (read from the registry).
+
+| Pet (rarity, skill) | Stat | Max level, 1 star | Where it is applied |
+|---|---|---|---|
+| Magpie (3, global) | `sell_bonus` | +6% bits per sale | `shop.haggle` (adds to Appraiser/Haggler; also the Farmer's Market and `sell`) |
+| Mole (3, mining) | `dig_shave` | -7% pressure per dug row | `mining.start_run`: multiplies the run's `growth_factor` (the collapse curve is untouched) |
+| Fox (4, global) | `rare_reroll` | 15% chance of a free second roll | a rare drop (rarity 4+) that missed: `fishing.cast_line` (re-roll the catch, keep it if rare), `MineRun.row` (re-roll the cell), `foraging.roll_drops` (per rare item; private trees and Windfall, not community trees) |
+| Bee (2, farming) | `extra_harvest` | 10% chance of a whole extra harvest | `farming.harvest`: a second roll of the same crop's amount |
+| Raven (5, global) | `payout_bonus` | +6% bits | `pets.payout` in `shipments.ship`, `claim_community` and the daily interest (`economy.claim_daily`); not the weekly (that pays luckbucks) |
+
+**How the numbers were picked** (a short estimate, `scripts` not needed): the aim is about +5-7% of what the touched activity pays at
+max level and one star. Magpie and Raven are a straight % of the bits they touch. Mole: pressure is what ends a run, so 7% less growth
+is roughly 7-8% more rows before the same risk. Bee: one harvest in ten doubling is +10% crops, and crops are most of a farm's pay, so
+about +6%. Fox: the share of a skill's value that comes from rare (4+) drops is about 46% in the forest, 36-51% in the deep mine and 26-56%
+in the mid and deep waters (about 4% in the first pond), and a re-roll only helps when the first roll missed, so a 15% second roll is
+worth roughly +15% x 0.4 = +6% there and little in the early game. Five stars multiply each by 1.0 + 4 x 0.25 = 2.0.
+
+The Mole and Bee already existed (mining xp, +20% crops); they were repurposed in place (same ids, so saved pets keep working). A pet's
+rarity sets its xp curve, so an owned Mole (2 -> 3) now levels slower and a Bee (3 -> 2) quicker than before.

@@ -190,3 +190,35 @@ async def test_a_bee_always_giving_an_extra_harvest_doubles_the_crop(db, monkeyp
 
 async def _constant(value_):
     return value_
+
+
+# ---- Raven --------------------------------------------------------------------------------------------------------
+async def test_a_raven_makes_the_daily_interest_pay_more_and_more_with_strength(db):
+    from cococap.services import economy
+    from tests.conftest import set_columns
+
+    paid = {}
+    for uid, kwargs in {1: None, 2: {"xp": 0}, 3: {}, 4: {"stars": 3}}.items():
+        user = await with_pet("raven", user_id=uid, **kwargs) if kwargs is not None else await User.get(uid)
+        await set_columns(user, purse=1_000_000)
+        paid[uid] = (await economy.claim_daily(user)).interest
+    assert paid[1] == economy.daily_interest(1_000_000)
+    assert paid[1] < paid[2] < paid[3] < paid[4]
+    assert paid[3] == round(paid[1] * (1 + value("raven")))
+    assert paid[4] == round(paid[1] * (1 + value("raven") * (1 + 2 * RULES.star_bonus)))
+
+
+async def test_a_raven_makes_shipments_pay_more_bits(db):
+    from cococap.services import shipments as sh
+    from tests.test_shipments import fill_it
+
+    async def shipped(user):
+        crate = await fill_it(user)
+        await sh.fill(user, "mining:basic")
+        return (await sh.ship(user, "mining:basic")).bits, sh.reward(crate, REG)[0]
+
+    plain_paid, plain_base = await shipped(await User.get(1))
+    bits, base = await shipped(await with_pet("raven", user_id=2))
+    assert plain_paid == plain_base and bits == round(base * (1 + value("raven"))) > base
+    star3, star3_base = await shipped(await with_pet("raven", user_id=3, stars=3))
+    assert star3 == round(star3_base * (1 + value("raven") * (1 + 2 * RULES.star_bonus))) > bits

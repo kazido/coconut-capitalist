@@ -25,6 +25,7 @@ RARE_FROM = 4  # a "rare drop" for the Fox: an item of this rarity or more
 
 KNOWN_STATS = frozenset({
     "work_bonus",  # economy: the Work wage
+    "payout_bonus",  # economy: shipments and the daily check-in pay this much more bits (Raven)
     "sell_bonus",  # economy: every sale pays this much more (Magpie)
     "bite_speed", "rare_luck", "treasure_luck", "pot_speed", "pot_luck",  # fishing and crab pots
     "danger_reduction", "ore_yield", "dig_shave",  # mining (the Mole's dig_shave takes this share off the pressure every dug row adds)
@@ -153,6 +154,11 @@ async def bonuses(user: User, registry: Registry | None = None) -> dict[str, flo
     owned = house.pets.get(house.active) if house.active else None
     pet = reg.pets.get(house.active) if house.active else None
     return effects(pet, owned, reg) if pet and owned else {}
+
+
+async def payout(user: User, bits: int, registry: Registry | None = None) -> int:
+    """`bits` with your pet's `payout_bonus` (a Raven) added: what a shipment or the daily check-in pays."""
+    return round(bits * (1 + (await bonuses(user, registry)).get("payout_bonus", 0.0)))
 
 
 async def xp_bonus(user: User, skill: str | None, registry: Registry | None = None) -> float:

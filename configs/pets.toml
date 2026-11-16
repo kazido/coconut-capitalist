@@ -83,7 +83,7 @@ description = "A tireless pollinator. Now and then a plot gives a whole second h
 [[bee.bonuses]]
 stat = "extra_harvest"
 value = 0.1
-text = "{v:.0%} chance a harvested plot gives a free extra harvest"
+text = "{v:.0%} chance of a free extra harvest"
 
 [eagle]
 name = "Eagle"
@@ -272,4 +272,15 @@ description = "Cunning, and always checks twice. A rare find that slips past som
 [[fox.bonuses]]
 stat = "rare_reroll"
 value = 0.15
-text = "{v:.0%} chance of a free second roll for a rare drop"
+text = "{v:.0%} chance of a free 2nd roll on rare drops"
+
+[raven]
+name = "Raven"
+skill = "global"
+emoji = "🐦‍⬛"
+rarity = 5
+description = "Keeps an eye on every delivery. Shipments and your daily interest pay a little more."
+[[raven.bonuses]]
+stat = "payout_bonus"
+value = 0.06
+text = "+{v:.0%} bits from shipments and check-in"
