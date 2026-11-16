@@ -204,15 +204,15 @@ a thing you learn once and remember, not a pattern you re-read every spot.
 - **Spots wear.** Each chop wears the spot by `wear_per_chop` x the grain's `wear` (so a plain spot lasts 25 chops). **Good grains wear
   slowly and bad ones fast** (Burl 0.6, Clean 0.7 ... Knotty 1.6): a clean spot is worth staying on, a knotty one burns out. A worn
   spot chops weaker (down to 60% at the end, `wear_penalty`). When it is used up you are moved to a new random grain by yourself.
-- **Rotation wedges** are consumable items (shop): use one to leave the spot at once and land on a different grain. Three tiers
+- **Rotation wedges** are consumable items (the plain one in the shop, Iron and Gilded crafted at the Workbench, see "Crafting"): use one to leave the spot at once and land on a different grain. Three tiers
   (`[rotate]`): Rotation Wedge (random), Iron Wedge and Gilded Wedge, which lean toward good grains (a new grain's chance is its weight
   x multiplier ** bias). So you can only rotate as often as you can afford wedges.
 - **Special spots** (`[[chopping.specials]]`, `special_chance` 8% of new spots): a grain plus a special, shown by name. Chopped in the grain's RIGHT
   style: 💎 **Heartwood** x4 damage, ✨ **Golden Knot** x2 xp (effort, not damage), 🏷️ **Rich Seam** +15% bits and drops when the tree falls (tree-wide
   cap `mark_cap` 50%, private trees only, so it is never rolled on shared trees). They wear x6 faster, so you get about four chops. Wrong style = just
   a glancing blow. Wedges multiply the special chance (1.5x / 4x / 10x) on top of their grain bias.
-- **Wedges are found as well as bought:** they are on the foraging drop table (1 in 60 / 400 / 2,500 per roll) and cost 1k / 8k / 50k in the shop
-  (a wedge only moves you to a new spot, so it should not be expensive).
+- **Wedges are found as well as bought:** they are on the foraging drop table (1 in 60 / 400 / 2,500 per roll) and the plain one costs 1k in the shop (Iron and Gilded were 8k / 50k there and are crafted now;
+  a wedge only moves you to a new spot, so it should not be expensive).
 - **Double Strike** enchant (axe, 3 levels, +8% each): a chop hits twice as hard, still one swing for xp. Scroll drops from chopping.
 - **Upgrades that slow wear:** the **Seasoned** enchant (axe, 3 levels, -15% wear each; the scroll drops from chopping). Wear can never be
   slowed below a quarter of normal.
@@ -873,7 +873,7 @@ Players who had taken an old level-50 node get those points back (unknown nodes 
 
 ## The fishing radar
 
-A gadget (an upgrade level on your fishing skill, like the mining reactor, not a rod) that opens at fishing level 25. On the Radar page you pick the fish to chase (slots grow with its level), switch it on, and every cast in a water where a target lives uses one **Radar Battery** (3,000 bits in the shop). Chased fish are 1.4x to 3.3x likelier (their own odds are divided by the factor). Five levels cost bits and fish from the deeper waters. Balance: at level 1-2 it barely pays for the batteries (it is for chasing a quest, book or community fish); at level 3+ chasing the expensive deep-sea fish adds about a quarter to two-thirds to a cast's worth.
+A gadget (an upgrade level on your fishing skill, like the mining reactor, not a rod) that opens at fishing level 25. On the Radar page you pick the fish to chase (slots grow with its level), switch it on, and every cast in a water where a target lives uses one **Radar Battery** (crafted at the Workbench from coral shards and plant fiber; it was 3,000 bits in the shop). Chased fish are 1.4x to 3.3x likelier (their own odds are divided by the factor). Five levels cost bits and fish from the deeper waters. Balance: at level 1-2 it barely pays for the batteries (it is for chasing a quest, book or community fish); at level 3+ chasing the expensive deep-sea fish adds about a quarter to two-thirds to a cast's worth.
 
 
 ## Wedges, the burger, rare-drop fanfare, emoji
@@ -1101,6 +1101,32 @@ Stats are the shared currency (`equipped_stats` adds tool + enchants + Mastery; 
 4. Is it xp, luck, sell price or AFK utility, small, and fine to ignore? **Pet buff**. If it forgives a mistake or is the only way to get a mechanic, it is not a pet buff.
 5. Can the same effect already be reached from another home? Then give the new one a different SHAPE (a different number type, a trade-off), not the same stat again.
 6. Does the engine read it as one stat through `equipped_stats`? Add the stat once, to the known-stat lists (tests in `test_mastery.py`, `test_enchanting.py`), never a special case per source.
+
+## Crafting
+
+The **Workbench** (Inventory > Workbench, `screens/craft.py`, rules in `services/crafting.py`, data in `configs/recipes.toml`) makes things from
+materials instead of buying them. A recipe is `id, name, emoji, output + quantity, inputs {item: qty}, bits` and optionally `skill` + `min_level`.
+`Registry` validates them (`models.Recipe`, `Registry._validate_recipes`): the output and every input exist, nothing is a tool, quantities are above 0,
+and no recipe consumes its own output. `craft(user, recipe_id, times)` takes bits and items together or nothing (`services/payment.py`, shared with
+crab pots) and gives the output; `craftable_count` is what "Craft max" uses. The screen shows ticks and crosses (`needs_text`) and the result goes
+through the shared rewards screen.
+
+First recipes (all four used to be shop items, now `price = 0`; sell prices unchanged). Numbers are guesses, `TODO(balance)`, picked by comparing the
+inputs' sell value with the old shop price AND how fast the inputs come (about 720 clicks an hour, a mid axe at power 12, zone 4 with birch, oak and
+willow growing together):
+
+| Recipe | Inputs | Old price | Inputs sell for | Rate |
+|---|---|---|---|---|
+| Radar Battery | 2 coral shard, 2 plant fiber | 3,000 | 1,400 | shards 26 an hour of fishing (1 cast in 6): ~13 batteries per fishing hour. Kept cheap on purpose: a cast uses one battery |
+| Iron Wedge (+500 bits) | 2 birch bark, 1 oak gall, 1 willow switch | 8,000 | 7,300 | ~25 of each an hour: dozens an hour |
+| Gilded Wedge (+2,500 bits, foraging 7) | silver catkin, heart acorn, weeping pearl | 50,000 | 220,000 | ~1 of each an hour: a set takes a good session or two |
+| Scarab Bomb | 30 gold ore, 100 iron ore, 200 copper ore | 100,000 | 97,000 | gold 48 an hour, iron 180, copper 720: about 40 minutes |
+
+The rare signature drops sell for more (60k-90k each) than the old 50k price, so a Gilded Wedge costs more in forgone sales than it did in the shop;
+it is meant for foragers who keep their rares for it. Lower the quantities or the rares' sell prices if that feels wrong.
+
+**Sell all keeps craft inputs.** `screens/sellall.upgrade_needs_by_tool` adds `crafting.needed_items()` (every recipe's inputs and the crab pot's
+craft materials, the MAX any one craft needs, not the sum) to what the tool upgrades hold back. It follows the same "Keep upgrade materials" setting.
 
 ## Double Hook (fishing): the first effect built with the "where does it belong" rule
 
