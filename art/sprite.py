@@ -155,7 +155,7 @@ def load_sources(root: Path) -> list[Sprite]:
             from art.restyle import restyle_frames
 
             frames = restyle_frames(frames)
-            if framed:  # the outline must never reach the cell's border ring
+            if framed and not meta.get("over_border", False):  # the outline must not reach the cell's border ring (unless the art asks to, e.g. implosion's burst)
                 for im in frames:
                     for i in range(GRID):
                         for e in (0, GRID - 1):
