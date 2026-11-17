@@ -5,7 +5,7 @@
 [scroll_keen]
 rarity = 4
 ms = 170
-palette = { p = "#efdfcc", q = "#e0c7a4", s = "#c59f74", o = "#3f2a1c", r = "#d9b58b", k = "#2c1f36", j = "#473167", g = "#dbc3d8", h = "#bf9de9" }
+palette = { p = "#efdfcc", q = "#e0c7a4", s = "#c59f74", o = "#9a7a4c", r = "#e3cfab", k = "#2c1f36", j = "#473167", g = "#dbc3d8", h = "#bf9de9" }
 [[scroll_keen.frames]]
 rows = [
   "................",
@@ -86,7 +86,7 @@ rows = [
 [scroll_scholar]
 rarity = 4
 ms = 170
-palette = { p = "#efdfcc", q = "#e0c7a4", s = "#c59f74", o = "#3f2a1c", r = "#d9b58b", k = "#2c1f36", j = "#473167", g = "#dbc3d8", h = "#bf9de9" }
+palette = { p = "#efdfcc", q = "#e0c7a4", s = "#c59f74", o = "#9a7a4c", r = "#e3cfab", k = "#2c1f36", j = "#473167", g = "#dbc3d8", h = "#bf9de9" }
 [[scroll_scholar.frames]]
 rows = [
   "................",
@@ -167,7 +167,7 @@ rows = [
 [scroll_appraiser]
 rarity = 4
 ms = 170
-palette = { p = "#efdfcc", q = "#e0c7a4", s = "#c59f74", o = "#3f2a1c", r = "#d9b58b", k = "#2c1f36", j = "#473167", g = "#dbc3d8", h = "#bf9de9" }
+palette = { p = "#efdfcc", q = "#e0c7a4", s = "#c59f74", o = "#9a7a4c", r = "#e3cfab", k = "#2c1f36", j = "#473167", g = "#dbc3d8", h = "#bf9de9" }
 [[scroll_appraiser.frames]]
 rows = [
   "................",
@@ -248,7 +248,7 @@ rows = [
 [scroll_iron_frame]
 rarity = 4
 ms = 170
-palette = { p = "#f7e0ba", q = "#e8c892", s = "#cda162", o = "#3f2a1c", r = "#e3b674", k = "#3e210e", j = "#6d3712", g = "#f9c895", h = "#fba663" }
+palette = { p = "#f7e0ba", q = "#e8c892", s = "#cda162", o = "#9a7a4c", r = "#e9d09e", k = "#3e210e", j = "#6d3712", g = "#f9c895", h = "#fba663" }
 [[scroll_iron_frame.frames]]
 rows = [
   "................",
@@ -329,7 +329,7 @@ rows = [
 [scroll_veinfinder]
 rarity = 4
 ms = 170
-palette = { p = "#f7e0ba", q = "#e8c892", s = "#cda162", o = "#3f2a1c", r = "#e3b674", k = "#3e210e", j = "#6d3712", g = "#f9c895", h = "#fba663" }
+palette = { p = "#f7e0ba", q = "#e8c892", s = "#cda162", o = "#9a7a4c", r = "#e9d09e", k = "#3e210e", j = "#6d3712", g = "#f9c895", h = "#fba663" }
 [[scroll_veinfinder.frames]]
 rows = [
   "................",
@@ -410,7 +410,7 @@ rows = [
 [scroll_bounty]
 rarity = 4
 ms = 170
-palette = { p = "#f7e0ba", q = "#e8c892", s = "#cda162", o = "#3f2a1c", r = "#e3b674", k = "#3e210e", j = "#6d3712", g = "#f9c895", h = "#fba663" }
+palette = { p = "#f7e0ba", q = "#e8c892", s = "#cda162", o = "#9a7a4c", r = "#e9d09e", k = "#3e210e", j = "#6d3712", g = "#f9c895", h = "#fba663" }
 [[scroll_bounty.frames]]
 rows = [
   "................",
@@ -491,7 +491,7 @@ rows = [
 [scroll_lure]
 rarity = 4
 ms = 170
-palette = { p = "#e5e3cc", q = "#d6cba4", s = "#bba374", o = "#3f2a1c", r = "#cdba8b", k = "#162736", j = "#184467", g = "#b6d2d8", h = "#75bae9" }
+palette = { p = "#e5e3cc", q = "#d6cba4", s = "#bba374", o = "#9a7a4c", r = "#dcd2ab", k = "#162736", j = "#184467", g = "#b6d2d8", h = "#75bae9" }
 [[scroll_lure.frames]]
 rows = [
   "................",
@@ -572,7 +572,7 @@ rows = [
 [scroll_steady_line]
 rarity = 4
 ms = 170
-palette = { p = "#e5e3cc", q = "#d6cba4", s = "#bba374", o = "#3f2a1c", r = "#cdba8b", k = "#162736", j = "#184467", g = "#b6d2d8", h = "#75bae9" }
+palette = { p = "#e5e3cc", q = "#d6cba4", s = "#bba374", o = "#9a7a4c", r = "#dcd2ab", k = "#162736", j = "#184467", g = "#b6d2d8", h = "#75bae9" }
 [[scroll_steady_line.frames]]
 rows = [
   "................",
@@ -653,7 +653,7 @@ rows = [
 [scroll_double_hook]
 rarity = 4
 ms = 170
-palette = { p = "#e5e3cc", q = "#d6cba4", s = "#bba374", o = "#3f2a1c", r = "#cdba8b", k = "#162736", j = "#184467", g = "#b6d2d8", h = "#75bae9" }
+palette = { p = "#e5e3cc", q = "#d6cba4", s = "#bba374", o = "#9a7a4c", r = "#dcd2ab", k = "#162736", j = "#184467", g = "#b6d2d8", h = "#75bae9" }
 [[scroll_double_hook.frames]]
 rows = [
   "................",
@@ -734,7 +734,7 @@ rows = [
 [scroll_deepcall]
 rarity = 4
 ms = 170
-palette = { p = "#e5e3cc", q = "#d6cba4", s = "#bba374", o = "#3f2a1c", r = "#cdba8b", k = "#162736", j = "#184467", g = "#b6d2d8", h = "#75bae9" }
+palette = { p = "#e5e3cc", q = "#d6cba4", s = "#bba374", o = "#9a7a4c", r = "#dcd2ab", k = "#162736", j = "#184467", g = "#b6d2d8", h = "#75bae9" }
 [[scroll_deepcall.frames]]
 rows = [
   "................",
@@ -815,7 +815,7 @@ rows = [
 [scroll_sharp_eye]
 rarity = 4
 ms = 170
-palette = { p = "#e6e6be", q = "#d7ce95", s = "#bda666", o = "#3f2a1c", r = "#cebd79", k = "#192e16", j = "#1e5122", g = "#badca2", h = "#7fd07c" }
+palette = { p = "#e6e6be", q = "#d7ce95", s = "#bda666", o = "#9a7a4c", r = "#ddd4a0", k = "#192e16", j = "#1e5122", g = "#badca2", h = "#7fd07c" }
 [[scroll_sharp_eye.frames]]
 rows = [
   "................",
@@ -896,7 +896,7 @@ rows = [
 [scroll_seasoned]
 rarity = 4
 ms = 170
-palette = { p = "#e6e6be", q = "#d7ce95", s = "#bda666", o = "#3f2a1c", r = "#cebd79", k = "#192e16", j = "#1e5122", g = "#badca2", h = "#7fd07c" }
+palette = { p = "#e6e6be", q = "#d7ce95", s = "#bda666", o = "#9a7a4c", r = "#ddd4a0", k = "#192e16", j = "#1e5122", g = "#badca2", h = "#7fd07c" }
 [[scroll_seasoned.frames]]
 rows = [
   "................",
@@ -977,7 +977,7 @@ rows = [
 [scroll_double_strike]
 rarity = 4
 ms = 170
-palette = { p = "#e6e6be", q = "#d7ce95", s = "#bda666", o = "#3f2a1c", r = "#cebd79", k = "#192e16", j = "#1e5122", g = "#badca2", h = "#7fd07c" }
+palette = { p = "#e6e6be", q = "#d7ce95", s = "#bda666", o = "#9a7a4c", r = "#ddd4a0", k = "#192e16", j = "#1e5122", g = "#badca2", h = "#7fd07c" }
 [[scroll_double_strike.frames]]
 rows = [
   "................",
@@ -1058,7 +1058,7 @@ rows = [
 [scroll_fertile]
 rarity = 4
 ms = 170
-palette = { p = "#f7e6ba", q = "#e8ce92", s = "#cda762", o = "#3f2a1c", r = "#e3be74", k = "#3e2f0e", j = "#6d5412", g = "#f9de95", h = "#fbd463" }
+palette = { p = "#f7e6ba", q = "#e8ce92", s = "#cda762", o = "#9a7a4c", r = "#e9d49e", k = "#3e2f0e", j = "#6d5412", g = "#f9de95", h = "#fbd463" }
 [[scroll_fertile.frames]]
 rows = [
   "................",
@@ -1139,7 +1139,7 @@ rows = [
 [scroll_seedkeeper]
 rarity = 4
 ms = 170
-palette = { p = "#f7e6ba", q = "#e8ce92", s = "#cda762", o = "#3f2a1c", r = "#e3be74", k = "#3e2f0e", j = "#6d5412", g = "#f9de95", h = "#fbd463" }
+palette = { p = "#f7e6ba", q = "#e8ce92", s = "#cda762", o = "#9a7a4c", r = "#e9d49e", k = "#3e2f0e", j = "#6d5412", g = "#f9de95", h = "#fbd463" }
 [[scroll_seedkeeper.frames]]
 rows = [
   "................",
@@ -1220,7 +1220,7 @@ rows = [
 [scroll_gleaner]
 rarity = 4
 ms = 170
-palette = { p = "#f7e6ba", q = "#e8ce92", s = "#cda762", o = "#3f2a1c", r = "#e3be74", k = "#3e2f0e", j = "#6d5412", g = "#f9de95", h = "#fbd463" }
+palette = { p = "#f7e6ba", q = "#e8ce92", s = "#cda762", o = "#9a7a4c", r = "#e9d49e", k = "#3e2f0e", j = "#6d5412", g = "#f9de95", h = "#fbd463" }
 [[scroll_gleaner.frames]]
 rows = [
   "................",
