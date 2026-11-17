@@ -69,3 +69,41 @@ key `ship:<id>`, no migration), `tests/test_areas.py`. Not yet wired into any sk
 ## Open questions
 - Do skill levels also gate ship tiers (`skill_floors`)? Planned yes; exact numbers TODO(balance).
 - Do existing players start in Slime Hill, or in the area their levels already imply (migration)? Suggest: grandfather to the highest area their foraging zone fits.
+
+---
+# REWORK: locations instead of foraging's 20 zones (2026-11-17, supersedes the "Areas" table and per-skill caps above)
+
+**Idea:** every skill has the same shape as fishing's waters: a list of named *locations* you pick from a dropdown, each opening at a
+skill level. 14 locations per skill (2 per area): forests, mines, waters, fields. Area N holds locations 2N-1 and 2N.
+Open rule: `location.area index <= your current area index` AND `skill level >= location.min_level`. So you are capped by the area
+you are in until you travel on. Config: each location gets `area = "<area id>"` + `min_level`; `foraging_max_zone` and
+`fishing_max_water` come OUT of areas.toml.
+
+**Level schedule (all skills the same; fishing keeps its 1/3/8/15):**
+| loc | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| min level | 1 | 3 | 8 | 15 | 19 | 23 | 27 | 31 | 35 | 39 | 42 | 45 | 48 | 50 |
+| area | Slime Hill | | Twilight Desert | | Rust Belt | | Cadrega City | | Aerial Glades | | Star Kingdom | | The Void | |
+
+Final location at level 50 (of 100): the last 50 levels are mastery and level-50 capstones. Ship `skill_floors` change to match the
+first location of each area: 8, 19, 27, 35, 42, 48 (was 8/20/35/55/80/105).
+
+**Foraging:** the 20 zones become 14 forests. Forest k uses old zone round(1 + (k-1) x 19/13) = 1,2,4,5,7,8,10,11,13,14,16,17,19,20 for
+hp/reward scaling; species zone_min/max remapped to forest numbers; `zone_levels` replaced by the shared schedule; the picker becomes
+a dropdown like fishing's water select. RISK: forest 14 (old zone 20, which used to need level 136) is now reached at level 50, so
+`zone_reward_growth` (+7%/zone) and the community/party tree numbers (`default_zone`, `zone_below/above`) must be re-tuned with
+`scripts.balance`. Biggest balance job of the rework.
+**Mining:** a location picks the ore table (`depth_tables`) and hardness scale for a descent; deeper locations favour rarer ores.
+**Fishing:** waters grow from 4 to 14 (10 new, each with a fish list, wait_multiplier, xp).
+**Farming:** a location is a field tier that unlocks its crops/seeds (and the shop sells only seeds of reached areas).
+
+**Spreading materials (stars: 1/2/3-star versions drop more in harder locations):**
+- Mining: ~14 ores + gems: enough.
+- Fishing: 22 fish across 14 waters: enough (a few repeat across neighbours with higher star/rarity weights).
+- Farming: only 10 crops for 14 fields and crops are not starrable yet: add ~4 crops or make crops starrable.
+- Foraging: THINNEST. After the cull only hardwood, feather, fine_bark, maple_leaf, aged_feather (+ wedges). Need ~4-5 new foraging
+  materials (e.g. one per 3 forests) or each forest keeps its species' signature drop (species `drops` already exist, currently empty).
+- The star table (`economy.toml [stars]`, `starrable`) is being built by someone else right now: coordinate before touching it.
+
+**Build order (replaces steps 3-6):** 3. shared `Location` model + schedule + `areas.open_locations(skill)` helper + tests.
+4. Foraging forests (rebalance). 5. Fishing 14 waters. 6. Mining locations. 7. Farming fields + seed shop gating. 8. Ship screen.
