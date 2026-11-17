@@ -99,15 +99,9 @@ def species_label(species_id: str) -> str:
 
 
 def tree_title(base: str, species_id: str) -> str:
-    """The page title of a tree: "Oak Tree", "Oak Community Tree"... (Discord sidebar already shows 🌳 emoji)."""
+    """The page title of a tree: "🌿 Birch Tree", "🌳 Oak Community Tree"..."""
     label = species_label(species_id)
-    # Remove the leading emoji from label to avoid duplicate: "🌳 Oak Tree" → "Oak Tree"
-    if label and len(label) > 0:
-        first_char = label[0]
-        # If first character is in common tree-plant emojis, it's an emoji prefix we want to drop
-        if first_char in ("🌳", "🌿", "🍃", "🌲", "🌰", "🌸", "🌴", "🎄", "🔥"):
-            return f"{label[len(first_char):].strip()} {base}" if len(label) > 1 else base
-    return label + " " + base if label else base
+    return f"{label} {base}" if label else base
 
 
 def stance_buttons(on_click) -> list[discord.ui.Button]:
@@ -310,7 +304,7 @@ class TreeScreen(Screen):
 
     id = "tree"
     label = "Tree"
-    emoji = TREE
+    emoji = None  # Use only the Page title with species emoji to avoid duplicate display
     description = "Your own tree"
     links = ("forage",)
 
@@ -393,7 +387,7 @@ class GroveScreen(Screen):
 
     id = "grove"
     label = "Community Tree"
-    emoji = "🌲"
+    emoji = None  # Use only the Page title with species emoji to avoid duplicate display
     description = "Chop the hourly tree together"
     links = ("forage",)
 
@@ -478,7 +472,7 @@ class PartyGroveScreen(Screen):
 
     id = "partygrove"
     label = "Party Tree"
-    emoji = "👥"
+    emoji = None  # Use only the Page title with species emoji to avoid duplicate display
     description = "Chop your party's tree together"
     links = ("forage",)
 
