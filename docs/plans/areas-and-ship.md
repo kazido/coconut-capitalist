@@ -107,3 +107,33 @@ a dropdown like fishing's water select. RISK: forest 14 (old zone 20, which used
 
 **Build order (replaces steps 3-6):** 3. shared `Location` model + schedule + `areas.open_locations(skill)` helper + tests.
 4. Foraging forests (rebalance). 5. Fishing 14 waters. 6. Mining locations. 7. Farming fields + seed shop gating. 8. Ship screen.
+
+---
+# Decisions, round 3 (2026-11-17)
+- **Gems everywhere:** every mine location's ore table must be able to drop the reactor gems (`mining.toml [reactor] core_gems`), so the
+  reactor can always be fed. Add a loader check/test: each location's table contains all core gems.
+- **Crops will be starrable** (add them to `economy.toml [stars].starrable`; the star table is another session's work, coordinate first).
+  10 crops x 3 stars covers 14 fields, so no new crops are needed.
+- **Foraging materials:** the user is designing them. See `docs/plans/foraging-materials-needed.md`. Build forests with the existing
+  materials as placeholders until then.
+- **Ship skill_floors** already updated in `configs/areas.toml` to 8/19/27/35/42/48.
+
+## Location names (themed: area x skill; first column = loc number)
+| # | Area | Forest | Mine | Water | Field |
+|---|------|--------|------|-------|-------|
+| 1 | Slime Hill | Slimewood Thicket | Slimy Burrow | Slime Pond (`pond`) | Slimeside Garden |
+| 2 | Slime Hill | Jellybough Grove | Gumdrop Quarry | Slimeflow River (`river`) | Meadow Farmstead |
+| 3 | Twilight Desert | Duskthorn Scrub | Duskstone Quarry | Mirage Oasis (`reef`) | Dusk Terraces |
+| 4 | Twilight Desert | Oasis Palms | Glassfall Caverns | Sandglass Cenote (`deep_sea`) | Oasis Orchard |
+| 5 | Rust Belt | Rustleaf Woods | Scrapheap Tunnels | Oilslick Canal | Scrapyard Allotments |
+| 6 | Rust Belt | Cogbark Copse | Foundry Depths | Rustwater Reservoir | Hydroponic Bays |
+| 7 | Cadrega City | Canal Park Arboretum | Subway Catacombs | Cadrega Canals | Market Gardens |
+| 8 | Cadrega City | Rooftop Gardens | Clockwork Vaults | Grand Harbor | Rooftop Farms |
+| 9 | Aerial Glades | Cloudroot Canopy | Cloudstone Crags | Cloud Pools | Cloud Terraces |
+| 10 | Aerial Glades | Windbloom Meadow | Stormvein Rift | Skyfall Lake | Windmill Fields |
+| 11 | Star Kingdom | Starlit Orchard | Meteor Pits | Moonwell | Stardew Fields |
+| 12 | Star Kingdom | Moonbark Forest | Stardust Lode | Starlit Stream | Comet Orchards |
+| 13 | The Void | Hollow Wood | Hollow Seams | Black Tide | Pale Gardens |
+| 14 | The Void | The Withered Rift | Core of Nothing | The Bottomless | Dreamless Furrows |
+Fishing's existing water ids (`pond`, `river`, `reef`, `deep_sea`) are saved in player state (`models/skills/fishing.py` `water`): keep the
+ids for locations 1-4 and just rename the display names, or add a fallback to the first open water for unknown ids. Names are placeholders to rename freely.

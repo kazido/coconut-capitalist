@@ -3,6 +3,7 @@
 # (You still need the skill level for a zone; the area is a ceiling, so a maxed skill still waits on the ship.)
 # Going to an area you have already reached is free; the FIRST trip to a new area burns its `fuel` (crafted at the Workbench,
 # configs/recipes.toml) and needs ship tier N for area N. Ship tier 1 builds the ship; tier N+1 is an upgrade of tier N.
+# skill_floors = the level that opens the first location of the area you are sailing to (docs/plans/areas-and-ship.md).
 # Fuel and ship parts mix materials from every skill on purpose, so no skill can be skipped.
 # Plan: docs/plans/areas-and-ship.md.  TODO(balance): every number here is a first guess.
 
@@ -74,32 +75,32 @@ name = "Dune Skiff"
 emoji = "⛵"
 bits = 50000
 parts = { hardwood = 15, silver_ore = 60, beeswax = 10, coral_shard = 60 }
-skill_floors = { mining = 20, fishing = 20, foraging = 20, farming = 20 }
+skill_floors = { mining = 19, fishing = 19, foraging = 19, farming = 19 }
 
 [[ship_tier]]
 name = "Scrap Cruiser"
 emoji = "🚢"
 bits = 250000
 parts = { fine_bark = 20, platinum_ore = 40, living_vine = 10, sardine = 50 }
-skill_floors = { mining = 35, fishing = 35, foraging = 35, farming = 35 }
+skill_floors = { mining = 27, fishing = 27, foraging = 27, farming = 27 }
 
 [[ship_tier]]
 name = "Sky Frigate"
 emoji = "🛳️"
 bits = 1000000
 parts = { maple_leaf = 20, sapphire = 20, living_vine = 25, swordfish = 20 }
-skill_floors = { mining = 55, fishing = 55, foraging = 55, farming = 55 }
+skill_floors = { mining = 35, fishing = 35, foraging = 35, farming = 35 }
 
 [[ship_tier]]
 name = "Star Clipper"
 emoji = "🚀"
 bits = 5000000
 parts = { aged_feather = 5, emerald = 25, starfruit = 10, marlin = 15 }
-skill_floors = { mining = 80, fishing = 80, foraging = 80, farming = 80 }
+skill_floors = { mining = 42, fishing = 42, foraging = 42, farming = 42 }
 
 [[ship_tier]]
 name = "Void Runner"
 emoji = "🛸"
 bits = 25000000
 parts = { gilded_wedge = 5, emerald = 60, ambrosia = 2, abyssal_angler = 5 }
-skill_floors = { mining = 105, fishing = 105, foraging = 105, farming = 105 }
+skill_floors = { mining = 48, fishing = 48, foraging = 48, farming = 48 }
