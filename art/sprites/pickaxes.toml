@@ -1,0 +1,310 @@
+# Mining pickaxes: one family (1px diagonal handle, thin symmetric crescent head), 16x16 with a plum outline.
+# Veinhunter and Motherlode are the Raven originals (Motherlode recoloured black/white/gold); the rest follow their style.
+
+[rookiepickaxe]
+rarity = 1
+palette = { h = "#d0d6dc", m = "#9aa3ab", s = "#6b747c", o = "#2e1c2c", 1 = "#e8a860", 2 = "#c9894f", 3 = "#8a4f3a" }
+rows = [
+  "................",
+  "........oo......",
+  ".......omhoo....",
+  "........oshho...",
+  ".........ossho..",
+  ".........o1smo..",
+  "........o1oosho.",
+  ".......o1o..oso.",
+  "......o2o....o..",
+  ".....o2o........",
+  "....o2o.........",
+  "...o3o..........",
+  "..o3o...........",
+  ".o3o............",
+  "o3o.............",
+  ".o..............",
+]
+
+[reinforced_pickaxe]
+rarity = 3
+palette = { h = "#dce6f0", m = "#8fa6c4", s = "#5d7498", o = "#2e1c2c", 1 = "#e8a860", 2 = "#c9894f", 3 = "#8a4f3a" }
+rows = [
+  "................",
+  ".......ooo......",
+  "......ommhoo....",
+  ".......ooshho...",
+  ".........ossho..",
+  ".........o1smo..",
+  "........o1oosho.",
+  ".......o1o..omo.",
+  "......o2o...oso.",
+  ".....o2o.....o..",
+  "....o2o.........",
+  "...o3o..........",
+  "..o3o...........",
+  ".o3o............",
+  "o3o.............",
+  ".o..............",
+]
+
+[steel_pickaxe]
+rarity = 4
+palette = { h = "#e0f4ff", m = "#6fb4e8", s = "#3f78b8", o = "#2e1c2c", 1 = "#e8a860", 2 = "#c9894f", 3 = "#8a4f3a" }
+rows = [
+  "................",
+  "......oooo......",
+  ".....ommmhoo....",
+  "......oooshho...",
+  ".........ossho..",
+  ".........o1smo..",
+  "........o1oosho.",
+  ".......o1o..omo.",
+  "......o2o...omo.",
+  ".....o2o....oso.",
+  "....o2o......o..",
+  "...o3o..........",
+  "..o3o...........",
+  ".o3o............",
+  "o3o.............",
+  ".o..............",
+]
+
+[masterwork_pickaxe]
+rarity = 5
+palette = { h = "#fff0a0", m = "#ffc83c", s = "#e0881c", o = "#2e1c2c", w = "#ffffff", 1 = "#fbb853", 2 = "#f57d4a", 3 = "#e68f4e" }
+rows = [
+  "................",
+  ".....ooooo......",
+  "....ommmmhoo....",
+  ".....ooooswho...",
+  ".........ossho..",
+  ".........o1swo..",
+  "........o1oosho.",
+  ".......o1o..omo.",
+  "......o2o...omo.",
+  ".....o2o....omo.",
+  "....o2o.....oso.",
+  "...o3o.......o..",
+  "..o3o...........",
+  ".o3o............",
+  "o3o.............",
+  ".o..............",
+]
+
+[ironbound_pickaxe]
+rarity = 4
+palette = { h = "#b4b4c0", m = "#707080", s = "#44444f", o = "#2e1c2c", 1 = "#a07858", 2 = "#7a5240", 3 = "#4a3030", r = "#ff4d5e" }
+rows = [
+  "................",
+  ".....ooooo......",
+  "....ommmmhoo....",
+  ".....oooosrho...",
+  ".........ossho..",
+  ".........o1sro..",
+  "........o1oosho.",
+  ".......o1o..omo.",
+  "......o2o...omo.",
+  ".....o2o....omo.",
+  "....o2o.....oso.",
+  "...o3o.......o..",
+  "..o3o...........",
+  ".o3o............",
+  "o3o.............",
+  ".o..............",
+]
+
+[crystal_pickaxe]
+rarity = 5
+palette = { h = "#d8fff4", m = "#4cd8c0", s = "#1e8a8a", o = "#2e1c2c", 1 = "#fbb853", 2 = "#f57d4a", 3 = "#e68f4e", g = "#ffffff" }
+rows = [
+  "................",
+  ".....oooooo.....",
+  "....ommmhgho....",
+  ".....ooossmho...",
+  "........oossho..",
+  ".........o1smho.",
+  "........o1oomgo.",
+  ".......o1o.osmo.",
+  "......o2o...omo.",
+  ".....o2o....omo.",
+  "....o2o.....oso.",
+  "...o3o.......o..",
+  "..o3o...........",
+  ".o3o............",
+  "o3o.............",
+  ".o..............",
+]
+
+[deepdelver_pickaxe]
+rarity = 6
+palette = { h = "#9fd0e8", m = "#5a8cc0", s = "#3d5a9a", o = "#2e1c2c", 1 = "#9fd0e8", 2 = "#5a8cc0", 3 = "#3d5a9a", g = "#7ff0e0" }
+rows = [
+  "................",
+  "....ooooooo.....",
+  "...ommmmhhho....",
+  "....oooossggo...",
+  "........oossgo..",
+  ".........o1sgho.",
+  "........o1oommo.",
+  ".......o1o.osmo.",
+  "......o2o...omo.",
+  ".....o2o....omo.",
+  "....o2o.....omo.",
+  "...o3o......oso.",
+  "..o3o........o..",
+  ".o3o............",
+  "o3o.............",
+  ".o..............",
+]
+
+[mythril_pickaxe]
+rarity = 6
+palette = { h = "#e8fffa", m = "#7ee8d0", s = "#2a8f94", o = "#2e1c2c", 1 = "#e6e8ee", 2 = "#9cacb3", 3 = "#7f718a", g = "#ffffff", k = "#1e5a70", y = "#c8f0ff" }
+rows = [
+  "......ooo.......",
+  "....oohhhooo....",
+  "...ommsgggkko...",
+  "....oooosyymho..",
+  "........osmgmko.",
+  ".........osmyko.",
+  "........o1osygo.",
+  ".......oko.osgho",
+  "......o2o...ogmo",
+  ".....oko....omso",
+  "....o2o.....omo.",
+  "...oko......oso.",
+  "..o3o........o..",
+  ".oyo............",
+  "oyo.............",
+  ".o..............",
+]
+
+[worldsplitter_pickaxe]
+rarity = 7
+palette = { h = "#b585f7", m = "#6a3a8a", s = "#2e1f40", o = "#2e1c2c", 1 = "#9a8cb8", 2 = "#6b5a8a", 3 = "#43366a", r = "#ff9148", e = "#ffe27a", k = "#ff5a2a" }
+rows = [
+  "......ooo.......",
+  "....oohhhooo....",
+  "...ommsrrrkho...",
+  "....ooooseekho..",
+  "........osmrkho.",
+  ".........osmeko.",
+  "........o1osero.",
+  ".......oro.osrho",
+  "......o2o...ormo",
+  ".....oro....omso",
+  "....o2o.....omo.",
+  "...oro......oso.",
+  "..o3o........o..",
+  ".oro............",
+  "oko.............",
+  ".o..............",
+]
+
+[prospector_pickaxe]
+rarity = 4
+palette = { h = "#ffe9a0", m = "#e8a838", s = "#a0601c", o = "#2e1c2c", 1 = "#e8a860", 2 = "#c9894f", 3 = "#8a4f3a" }
+rows = [
+  "................",
+  ".....ooooo......",
+  "....ommmmhoo....",
+  ".....ooooshho...",
+  ".........ossho..",
+  ".........o1smo..",
+  "........o1oosho.",
+  ".......o1o..omo.",
+  "......o2o...omo.",
+  ".....o2o....omo.",
+  "....o2o.....oso.",
+  "...o3o.......o..",
+  "..o3o...........",
+  ".o3o............",
+  "o3o.............",
+  ".o..............",
+]
+
+[geode_pickaxe]
+rarity = 5
+palette = { h = "#e8d8ff", m = "#a070e0", s = "#6a3fa8", o = "#2e1c2c", 1 = "#e8a860", 2 = "#c9894f", 3 = "#8a4f3a", v = "#d8c0ff" }
+rows = [
+  "................",
+  "....oooooooo....",
+  "...ommmmvhhvo...",
+  "....oooossvhoo..",
+  "........oosshvo.",
+  ".........o1svho.",
+  "........o1oommo.",
+  ".......o1o.osvo.",
+  "......o2o...omo.",
+  ".....o2o....omo.",
+  "....o2o.....omo.",
+  "...o3o......oso.",
+  "..o3o........o..",
+  ".o3o............",
+  "o3o.............",
+  ".o..............",
+]
+
+[seekers_pickaxe]
+rarity = 6
+palette = { h = "#d4c4f0", m = "#8a6cc4", s = "#4a3a84", o = "#2e1c2c", 1 = "#b8a0e0", 2 = "#8a6cc4", 3 = "#5a3f94", g = "#9fe8c8" }
+rows = [
+  "................",
+  "....ooooooo.....",
+  "...ommmmhgho....",
+  "....oooossmho...",
+  "........oossho..",
+  ".........o1smho.",
+  "........o1oomgo.",
+  ".......o1o.osmo.",
+  "......o2o...omo.",
+  ".....o2o....omo.",
+  "....o2o.....omo.",
+  "...o3o......oso.",
+  "..o3o........o..",
+  ".o3o............",
+  "o3o.............",
+  ".o..............",
+]
+
+[veinhunter_pickaxe]
+rarity = 6
+palette = { a = "#8ff8e2", b = "#cf657f", c = "#a984f4", d = "#6b3f75", e = "#30e1b9", f = "#a34b70", g = "#a14b6f", h = "#2e2230", i = "#6b3e74", j = "#a24c70", k = "#2e222f", l = "#313638", m = "#303637", n = "#753c54", p = "#966b6b", q = "#fbb853", r = "#09b09c", s = "#fbb955", t = "#30e1ba", u = "#f57d4a", v = "#e68f4e", w = "#e6904e", x = "#6b3e75", o = "#2e1c2c" }
+rows = [
+  "......ooooo..oo.",
+  ".....oaabbboocdo",
+  "......ooefgghido",
+  "........oojklko.",
+  "..........omhno.",
+  ".........opongfo",
+  "........oqo.ogno",
+  ".......oqo..orno",
+  "......oso....oto",
+  ".....ouo.....oto",
+  "....ovo.......o.",
+  "...owo..........",
+  ".oowo...........",
+  "oxwo............",
+  "owxo............",
+  ".oo.............",
+]
+
+[motherlode_pickaxe]
+rarity = 7
+palette = { a = "#f4f4f8", b = "#ffffff", c = "#2a2a32", d = "#f2c14e", e = "#2e222f", f = "#313638", g = "#e09a2a", h = "#555560", i = "#8a8a98", j = "#c8c8d0", k = "#6a6a76", o = "#2e1c2c" }
+rows = [
+  "......ooooo..oo.",
+  ".....oaabbboocco",
+  "......ooadddecco",
+  "........oodefeo.",
+  "..........ofego.",
+  ".........ohogddo",
+  "........odo.odgo",
+  ".......odo..oigo",
+  "......odo....oao",
+  ".....ojo.....oao",
+  "....ojo.......o.",
+  "...ojo..........",
+  ".ooko...........",
+  "ocko............",
+  "okco............",
+  ".oo.............",
+]
