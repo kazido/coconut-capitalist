@@ -24,7 +24,7 @@ def rod(power=3):
     return EffectiveStats(power=power, requirement=0, stats={"power": float(power)})
 
 
-async def player(user_id=1, rod_name="starter_rod"):
+async def player(user_id=1, rod_name="tool_rod_starter"):
     user = await User.get(user_id)
     if rod_name:
         inst = await user.give_instance(rod_name)
@@ -32,7 +32,7 @@ async def player(user_id=1, rod_name="starter_rod"):
     return user
 
 
-def cast_of(fish_id="cod", pattern=None, slips=0, wait=10.0, hooked=True):
+def cast_of(fish_id="fish_cod", pattern=None, slips=0, wait=10.0, hooked=True):
     """A cast whose fish has bitten and (by default) been pulled up, so tests can go straight to reeling."""
     pattern = pattern or [f.LEFT, f.RIGHT, f.LEFT]
     return f.Cast(REG.item(fish_id), T0 + wait, T0 + wait + RULES.bite.window, list(pattern), slips, hooked=hooked)
@@ -56,7 +56,7 @@ def test_every_cast_catches_something_and_rarer_fish_are_rarer():
     for fish_id, n in seen.items():
         by_rarity[REG.item(fish_id).rarity] += n
     assert by_rarity[1] > by_rarity[2] > by_rarity[3] > by_rarity[4] > by_rarity[5]
-    assert seen["cod"] > 0 and seen["bass"] > 0
+    assert seen["fish_cod"] > 0 and seen["fish_bass"] > 0
 
 
 def test_a_cast_pays_about_what_it_should_at_starter_gear():
@@ -65,7 +65,7 @@ def test_a_cast_pays_about_what_it_should_at_starter_gear():
     n = 40_000
     worth = sum(f.roll_fish(rng, REG).sell_price for _ in range(n)) / n
     assert 4_000 <= worth <= 7_000, worth  # (a single 450,000-bit mega shark in the 40,000 draws moves this by ~11, so the top has some room)
-    power = REG.item("starter_rod").tool.power
+    power = REG.item("tool_rod_starter").tool.power
     seconds = sum(f.wait_seconds(power, RULES, rng) for _ in range(2000)) / 2000 + 1.5 * (RULES.reel.base_length + 2)
     assert 22 <= seconds <= 36, seconds  # a catch every ~25-30 seconds: about what mining and foraging pay per active minute
 
@@ -164,17 +164,17 @@ async def test_you_need_a_rod(db):
 
 async def test_landing_a_fish_pays_once(db):
     user = await player()
-    cast = cast_of("salmon", slips=0)
+    cast = cast_of("fish_salmon", slips=0)
     for arrow in cast.pattern:
         cast.press(arrow, T0 + 11)
     caught = await f.land(user, cast, REG)
-    assert caught.xp == RULES.xp_per_catch and caught.fish.id == "salmon"
-    assert await user.item_quantity("salmon") == 1
+    assert caught.xp == RULES.xp_per_catch and caught.fish.id == "fish_salmon"
+    assert await user.item_quantity("fish_salmon") == 1
     skill = await user.skill("fishing")
     assert skill.xp == caught.xp and skill.stats.fish_caught == 1
     with pytest.raises(f.FishingError, match="already"):
         await f.land(user, cast, REG)
-    assert await user.item_quantity("salmon") == 1
+    assert await user.item_quantity("fish_salmon") == 1
 
 
 async def test_an_unfinished_or_escaped_fish_pays_nothing(db):
@@ -185,7 +185,7 @@ async def test_an_unfinished_or_escaped_fish_pays_nothing(db):
     gone.press(f.RIGHT, T0 + 11)
     with pytest.raises(f.FishingError):
         await f.land(user, gone, REG)
-    assert await user.item_quantity("cod") == 0 and (await user.skill("fishing")).xp == 0
+    assert await user.item_quantity("fish_cod") == 0 and (await user.skill("fishing")).xp == 0
 
 
 async def test_fishing_xp_is_boosted_in_a_party(db):
@@ -205,16 +205,16 @@ async def test_fishing_xp_is_boosted_in_a_party(db):
 
 async def test_selling_the_catch_empties_the_bag_and_pays(db):
     user = await player()
-    await user.add_item("cod", 3)
-    await user.add_item("salmon", 1)
-    await user.add_item("apple", 5)  # not a fish: stays
+    await user.add_item("fish_cod", 3)
+    await user.add_item("fish_salmon", 1)
+    await user.add_item("crop_apple", 5)  # not a fish: stays
     haul = await f.stock(user, REG)
-    assert haul.count == 4 and haul.worth == 3 * REG.item("cod").sell_price + REG.item("salmon").sell_price
+    assert haul.count == 4 and haul.worth == 3 * REG.item("fish_cod").sell_price + REG.item("fish_salmon").sell_price
     before = user.purse
     earned = await f.sell_all(user, REG)
     await user.refresh()
     assert earned == haul.worth and user.purse == before + earned
-    assert await user.item_quantity("cod") == 0 and await user.item_quantity("apple") == 5
+    assert await user.item_quantity("fish_cod") == 0 and await user.item_quantity("crop_apple") == 5
     assert await f.sell_all(user, REG) == 0
 
 
@@ -227,7 +227,7 @@ async def test_claiming_your_starter_tools_equips_them(db):
 
 
 async def test_starter_tools_are_free_not_for_sale(db):
-    for item_id in ("starter_rod", "starter_axe", "rookiepickaxe", "tin_can"):
+    for item_id in ("tool_rod_starter", "tool_axe_starter", "tool_pickaxe_rookie", "tool_can_tin"):
         assert not REG.item(item_id).buyable
 
 
@@ -236,7 +236,7 @@ async def test_you_cannot_mine_without_a_pickaxe(db):
     user = await User.get(1)
     with pytest.raises(mining.MiningError, match="pickaxe"):
         await mining.start_run(user, Random(1))
-    inst = await user.give_instance("rookiepickaxe")
+    inst = await user.give_instance("tool_pickaxe_rookie")
     await equip(user, "mining", inst.id)
     assert (await mining.start_run(user, Random(1))).depth == 0
 
@@ -279,7 +279,7 @@ def clock(monkeypatch):
     return now
 
 
-async def open_fishing(user_id=1, power_item="starter_rod"):
+async def open_fishing(user_id=1, power_item="tool_rod_starter"):
     user = await player(user_id, power_item)
     nav, inter = await hub("fish", user_id=user_id)
     return user, nav, inter
@@ -291,7 +291,7 @@ async def test_without_a_rod_the_fishing_page_says_how_to_get_one(db):
 
 
 async def test_casting_waits_then_a_bite_then_reeling_lands_the_fish(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
     user, nav, inter = await open_fishing()
     assert nav.screen.refresh_every is None  # nothing in the water: no self-refresh
     await click(nav, inter, "Cast")
@@ -310,14 +310,14 @@ async def test_casting_waits_then_a_bite_then_reeling_lands_the_fish(db, clock, 
     assert find_button(nav, "Cast again") and find_button(nav, "Continue")
     await click(nav, inter, "Continue")
     assert nav.screen.id == "fish" and nav.screen.cast is None and nav.screen.refresh_every is None
-    assert await user.item_quantity("cod") == 1 and (await user.skill("fishing")).xp > 0
+    assert await user.item_quantity("fish_cod") == 1 and (await user.skill("fishing")).xp > 0
     await click(nav, inter, "Sell fish")
     await user.refresh()
-    assert await user.item_quantity("cod") == 0 and "You sold" in all_text(nav)
+    assert await user.item_quantity("fish_cod") == 0 and "You sold" in all_text(nav)
 
 
 async def test_a_wrong_arrow_on_the_screen_loses_the_fish_and_a_stale_click_is_harmless(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + 1
@@ -328,11 +328,11 @@ async def test_a_wrong_arrow_on_the_screen_loses_the_fish_and_a_stale_click_is_h
     await click(nav, inter, wrong)
     assert nav.screen.id == "result" and nav.screen.origin.cast is None and "slipped off" in all_text(nav)
     await stale.callback(inter)  # a click that was already on its way: the result stays on screen
-    assert nav.screen.id == "result" and nav.screen.origin.cast is None and await user.item_quantity("cod") == 0
+    assert nav.screen.id == "result" and nav.screen.origin.cast is None and await user.item_quantity("fish_cod") == 0
 
 
 async def test_a_fish_that_bites_while_you_are_away_gets_away(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.expires_at + 5
@@ -351,7 +351,7 @@ async def test_pulling_up_the_line_costs_nothing(db, clock):
 
 
 async def test_a_better_rod_shows_how_many_slips_it_forgives(db):
-    user = await player(1, "masterwork_rod")
+    user = await player(1, "tool_rod_masterwork")
     nav, _ = await hub("fish")
     assert "forgives" in all_text(nav)
 
@@ -473,7 +473,7 @@ async def test_quest_xp_is_added_on_top_of_the_catch(db):
 
 
 async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("pufferfish"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_pufferfish"))
     clock[0] = DAY0 + 100
     user, nav, inter = await open_fishing()
     assert find_button(nav, "Quests").disabled and "unlock at fishing level" in all_text(nav)
@@ -494,7 +494,7 @@ async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
 
 
 async def test_a_bite_you_ignore_gets_away_once_the_window_and_the_quiet_grace_are_over(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + RULES.bite.window - 1
@@ -531,8 +531,8 @@ def test_coral_comes_up_now_and_then_but_only_with_a_catch():
     got = Counter()
     for _ in range(6000):
         got += f.catch_extras(rng, REG)
-    assert {i for i in got if REG.item(i).category != "pet_food"} == {"coral_shard"} and 600 < got["coral_shard"] < 1400  # about 1 in 6
-    assert {i for i in got if REG.item(i).category == "pet_food"} <= {"fish_flakes", "dried_squid", "sea_feast"}  # (and pet food)
+    assert {i for i in got if REG.item(i).category != "pet_food"} == {"material_coral_shard"} and 600 < got["material_coral_shard"] < 1400  # about 1 in 6
+    assert {i for i in got if REG.item(i).category == "pet_food"} <= {"food_fish_flakes", "food_dried_squid", "food_sea_feast"}  # (and pet food)
 
 
 async def test_landing_a_fish_can_bring_coral_with_it(db):
@@ -545,17 +545,17 @@ async def test_landing_a_fish_can_bring_coral_with_it(db):
     for arrow in cast.pattern:
         cast.press(arrow, T0 + 11)
     got = await f.land(user, cast, REG, now=T0, rng=Lucky(1))
-    assert got.extras["coral_shard"] == 1 and await user.item_quantity("coral_shard") == 1
+    assert got.extras["material_coral_shard"] == 1 and await user.item_quantity("material_coral_shard") == 1
 
 
 # ---- the pickaxe: the first upgrade is plain ore, later ones add a little from other skills ----------------------------------
 def test_the_first_pickaxe_upgrade_needs_only_ore_and_the_next_adds_a_little_from_other_skills():
-    first = REG.item("rookiepickaxe").tool.upgrade.items
+    first = REG.item("tool_pickaxe_rookie").tool.upgrade.items
     assert {REG.item(i).skill for i in first} == {"mining"}
-    second = REG.item("reinforced_pickaxe").tool.upgrade.items
+    second = REG.item("tool_pickaxe_reinforced").tool.upgrade.items
     skills = {REG.item(i).skill for i in second}
     assert skills == {"mining"}  # (the first two steps of a long chain use only the tool's own skill)
-    third = REG.item("masterwork_pickaxe").tool.upgrade.items
+    third = REG.item("tool_pickaxe_masterwork").tool.upgrade.items
     assert "mining" in {REG.item(i).skill for i in third} and len({REG.item(i).skill for i in third}) > 1
     for item_id in (*first, *second, *third):  # every material really drops somewhere
         assert REG.item(item_id).drop is not None, item_id
@@ -566,14 +566,14 @@ async def test_you_can_upgrade_a_pickaxe_with_nothing_but_ore_at_first(db):
 
     user = await User.get(1)
     await set_columns(user, purse=10**6)
-    pick = await user.give_instance("rookiepickaxe")
+    pick = await user.give_instance("tool_pickaxe_rookie")
     await equip(user, "mining", pick.id)
-    cost = REG.item("rookiepickaxe").tool.upgrade
+    cost = REG.item("tool_pickaxe_rookie").tool.upgrade
     for item_id, quantity in cost.items.items():
         await user.add_item(item_id, quantity)
     done = await upgrades.upgrade(user, pick.id, REG)
-    assert done.target.id == "reinforced_pickaxe"
-    assert (await user.instance(pick.id)).template_id == "reinforced_pickaxe"
+    assert done.target.id == "tool_pickaxe_reinforced"
+    assert (await user.instance(pick.id)).template_id == "tool_pickaxe_reinforced"
 
 
 async def test_a_harvest_can_bring_plant_fiber(db):
@@ -586,8 +586,8 @@ async def test_a_harvest_can_bring_plant_fiber(db):
         def random(self):
             return 0.0
 
-    assert farming.harvest_extras(Lucky(1), REG, cycles=REG.farming.drop_cycles_per_roll)["plant_fiber"] == 1
-    assert sum(farming.harvest_extras(Random(2), REG, cycles=REG.farming.drop_cycles_per_roll)["plant_fiber"] for _ in range(1000)) > 500
+    assert farming.harvest_extras(Lucky(1), REG, cycles=REG.farming.drop_cycles_per_roll)["material_plant_fiber"] == 1
+    assert sum(farming.harvest_extras(Random(2), REG, cycles=REG.farming.drop_cycles_per_roll)["material_plant_fiber"] for _ in range(1000)) > 500
 
 
 # ---- the collection book ----------------------------------------------------------------------------------------------
@@ -623,43 +623,43 @@ def test_each_book_level_needs_more_but_common_fish_grow_fastest():
 async def test_the_book_is_locked_until_the_level(db):
     user = await player()
     with pytest.raises(f.FishingError, match="opens at fishing level"):
-        await f.turn_in(user, "cod", REG)
+        await f.turn_in(user, "fish_cod", REG)
 
 
 async def test_turning_in_fish_pays_a_bonus_and_fills_the_page(db):
-    user = await book_player(fish={"cod": 3})
+    user = await book_player(fish={"fish_cod": 3})
     before_xp, before_bits = (await user.skill("fishing")).xp, user.purse
-    done = await f.turn_in(user, "cod", REG)
+    done = await f.turn_in(user, "fish_cod", REG)
     assert done.quantity == B.need_base  # only as many as the page needs (level 1: one)
-    assert done.bits == round(REG.item("cod").sell_price * B.bits_per_sell * done.quantity)
-    assert await user.item_quantity("cod") == 3 - done.quantity  # the rest stay in the bag
+    assert done.bits == round(REG.item("fish_cod").sell_price * B.bits_per_sell * done.quantity)
+    assert await user.item_quantity("fish_cod") == 3 - done.quantity  # the rest stay in the bag
     await user.refresh()
     assert user.purse == before_bits + done.bits and (await user.skill("fishing")).xp == before_xp + done.xp
-    page = next(e for e in (await f.book(user, REG)).entries if e.fish.id == "cod")
+    page = next(e for e in (await f.book(user, REG)).entries if e.fish.id == "fish_cod")
     assert page.done
     with pytest.raises(f.FishingError, match="already has"):
-        await f.turn_in(user, "cod", REG)
+        await f.turn_in(user, "fish_cod", REG)
 
 
 async def test_you_cannot_turn_in_fish_you_do_not_have_or_that_the_book_does_not_hold(db):
     user = await book_player()
     with pytest.raises(f.FishingError, match="don't have any"):
-        await f.turn_in(user, "cod", REG)
-    await user.add_item("marlin", 1)  # legendary: not in the personal book
+        await f.turn_in(user, "fish_cod", REG)
+    await user.add_item("fish_marlin", 1)  # legendary: not in the personal book
     with pytest.raises(f.FishingError, match="no page"):
-        await f.turn_in(user, "marlin", REG)
-    assert await user.item_quantity("marlin") == 1
+        await f.turn_in(user, "fish_marlin", REG)
+    assert await user.item_quantity("fish_marlin") == 1
 
 
 async def test_two_clicks_at_once_cannot_turn_in_more_than_the_page_needs(db):
     import asyncio
 
-    user = await book_player(fish={"cod": 5})
-    results = await asyncio.gather(f.turn_in(user, "cod", REG), f.turn_in(user, "cod", REG), return_exceptions=True)
+    user = await book_player(fish={"fish_cod": 5})
+    results = await asyncio.gather(f.turn_in(user, "fish_cod", REG), f.turn_in(user, "fish_cod", REG), return_exceptions=True)
     assert sum(not isinstance(r, Exception) for r in results) == 1
-    page = next(e for e in (await f.book(user, REG)).entries if e.fish.id == "cod")
+    page = next(e for e in (await f.book(user, REG)).entries if e.fish.id == "fish_cod")
     assert page.given == page.need
-    assert await user.item_quantity("cod") == 5 - page.need  # nothing was eaten for nothing
+    assert await user.item_quantity("fish_cod") == 5 - page.need  # nothing was eaten for nothing
 
 
 async def test_a_full_book_can_be_finished_and_starts_over_a_level_up(db):
@@ -716,21 +716,21 @@ async def test_the_fishing_page_shows_the_book_button_once_unlocked(db):
 
 
 async def test_a_stale_second_click_gets_its_fish_back_when_the_page_filled_in_the_meantime(db, monkeypatch):
-    user = await book_player(fish={"cod": 5})
+    user = await book_player(fish={"fish_cod": 5})
     stale = await f.book(user, REG)  # what the second click saw before the first one landed
-    await f.turn_in(user, "cod", REG)
+    await f.turn_in(user, "fish_cod", REG)
 
     async def old_view(*_args, **_kwargs):
         return stale
 
     monkeypatch.setattr(f, "book", old_view)
-    before = await user.item_quantity("cod")
+    before = await user.item_quantity("fish_cod")
     with pytest.raises(f.FishingError, match="already has"):
-        await f.turn_in(user, "cod", REG)
-    assert await user.item_quantity("cod") == before  # nothing was eaten
-    page = next(e for e in stale.entries if e.fish.id == "cod")
+        await f.turn_in(user, "fish_cod", REG)
+    assert await user.item_quantity("fish_cod") == before  # nothing was eaten
+    page = next(e for e in stale.entries if e.fish.id == "fish_cod")
     monkeypatch.undo()
-    assert next(e for e in (await f.book(user, REG)).entries if e.fish.id == "cod").given == page.need
+    assert next(e for e in (await f.book(user, REG)).entries if e.fish.id == "fish_cod").given == page.need
 
 
 # ---- treasure ------------------------------------------------------------------------------------------------------
@@ -825,7 +825,7 @@ async def test_the_right_numbers_open_the_chest_once_and_pay(db):
     opened = await f.open_chest(user, chest, "4 8 1 5", Lucky(3), chest.bite_at + 2, REG)
     await user.refresh()
     assert opened.opened and T.bits_min <= opened.bits <= T.bits_max and user.purse == before + opened.bits
-    assert opened.items["coral_shard"] >= 2 and opened.items["spirit_of_the_sea"] == 1  # a lucky chest has everything
+    assert opened.items["material_coral_shard"] >= 2 and opened.items["spirit_of_the_sea"] == 1  # a lucky chest has everything
     assert await user.item_quantity("spirit_of_the_sea") == 1
     skill = await user.skill("fishing")
     assert skill.stats.treasures_found == 1 and skill.treasure.code == "" and skill.xp >= T.xp
@@ -843,7 +843,7 @@ async def test_wrong_numbers_cost_a_try_and_too_many_sink_the_chest(db):
     last = await f.open_chest(user, chest, "1111", Lucky(3), chest.bite_at + 2, REG)
     assert last.sunk and not last.opened and chest.escaped
     assert (await user.skill("fishing")).treasure.code == ""  # the hallucination is spent
-    assert await user.get_bits() == user.purse and await user.item_quantity("coral_shard") == 0
+    assert await user.get_bits() == user.purse and await user.item_quantity("material_coral_shard") == 0
     with pytest.raises(f.FishingError, match="no chest"):
         await f.open_chest(user, chest, "4815", Lucky(3), chest.bite_at + 3, REG)
 
@@ -896,7 +896,7 @@ async def test_the_screen_flashes_the_numbers_then_hides_them_and_the_chest_open
 
 
 async def test_a_catch_names_its_rarity(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("salmon"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_salmon"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + 1
@@ -985,7 +985,7 @@ def clicked(inter, at):
 
 
 async def test_the_screen_uses_when_you_clicked_not_when_the_bot_noticed(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -1003,7 +1003,7 @@ async def test_the_screen_uses_when_you_clicked_not_when_the_bot_noticed(db, clo
 
 
 async def test_a_click_made_in_time_but_delivered_late_saves_the_fish_on_the_same_screen(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -1018,11 +1018,11 @@ async def test_a_click_made_in_time_but_delivered_late_saves_the_fish_on_the_sam
     await pull_up.callback(inter)
     assert nav.screen.id == "fish" and nav.screen.cast is cast and cast.hooked and "just in time" in all_text(nav) and "is on the line" in all_text(nav)
     await reel_in(nav, inter, cast)
-    assert await user.item_quantity("cod") == 1
+    assert await user.item_quantity("fish_cod") == 1
 
 
 async def test_a_click_that_really_was_too_late_stays_too_late(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -1033,11 +1033,11 @@ async def test_a_click_that_really_was_too_late_stays_too_late(db, clock, monkey
     await nav.screen.nav.refresh(inter)
     clicked(inter, cast.bite_at + 30)  # clicked long after it got away
     await pull_up.callback(inter)
-    assert nav.screen.id == "result" and nav.screen.origin.cast is None and await user.item_quantity("cod") == 0
+    assert nav.screen.id == "result" and nav.screen.origin.cast is None and await user.item_quantity("fish_cod") == 0
 
 
 async def test_a_double_pressed_arrow_on_the_screen_does_not_cost_the_fish(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + 1
@@ -1069,26 +1069,26 @@ def test_a_cast_fixes_its_size_up_front():
 
 async def test_your_biggest_catch_of_each_fish_is_kept_and_beating_it_pays_xp(db):
     user = await player()
-    first = cast_of("cod")
+    first = cast_of("fish_cod")
     first.size = 50.0
     for arrow in first.pattern:
         first.press(arrow, T0 + 11)
     got = await f.land(user, first, REG, now=T0)
     assert got.size == 50 and got.personal_best  # the first of a fish is a best
-    assert (await user.skill("fishing")).records == {"cod": 50.0}
+    assert (await user.skill("fishing")).records == {"fish_cod": 50.0}
     xp_after_first = (await user.skill("fishing")).xp
-    smaller = cast_of("cod")
+    smaller = cast_of("fish_cod")
     smaller.size = 40.0
     for arrow in smaller.pattern:
         smaller.press(arrow, T0 + 11)
     small = await f.land(user, smaller, REG, now=T0)
-    assert not small.personal_best and (await user.skill("fishing")).records["cod"] == 50.0
-    bigger = cast_of("cod")
+    assert not small.personal_best and (await user.skill("fishing")).records["fish_cod"] == 50.0
+    bigger = cast_of("fish_cod")
     bigger.size = 90.0
     for arrow in bigger.pattern:
         bigger.press(arrow, T0 + 11)
     assert (await f.land(user, bigger, REG, now=T0)).personal_best
-    assert (await user.skill("fishing")).records["cod"] == 90.0 and (await user.skill("fishing")).xp > xp_after_first
+    assert (await user.skill("fishing")).records["fish_cod"] == 90.0 and (await user.skill("fishing")).xp > xp_after_first
 
 
 async def test_the_biggest_fish_on_the_server_is_a_record_that_pays_and_names_the_old_holder(db):
@@ -1096,7 +1096,7 @@ async def test_the_biggest_fish_on_the_server_is_a_record_that_pays_and_names_th
     await alice.set_name("Alice")
     await bob.set_name("Bob")
 
-    async def land_size(user, size, fish="salmon"):
+    async def land_size(user, size, fish="fish_salmon"):
         cast = cast_of(fish)
         cast.size = size
         for arrow in cast.pattern:
@@ -1105,20 +1105,20 @@ async def test_the_biggest_fish_on_the_server_is_a_record_that_pays_and_names_th
 
     first = await land_size(alice, 80.0)
     assert first.server_record and first.record_holder is None
-    assert first.record_bits == round(REG.item("salmon").sell_price * RULES.records.server_bits_multiplier)
+    assert first.record_bits == round(REG.item("fish_salmon").sell_price * RULES.records.server_bits_multiplier)
     smaller = await land_size(bob, 70.0)
     assert smaller.personal_best and not smaller.server_record and smaller.record_bits == 0  # his best, not the server's
     before = bob.purse
     beaten = await land_size(bob, 95.0)
     await bob.refresh()
     assert beaten.server_record and beaten.record_holder == "Alice" and bob.purse >= before + beaten.record_bits
-    assert (await f.server_records())["salmon"] == {"size": 95.0, "uid": 2, "name": "Bob"}
+    assert (await f.server_records())["fish_salmon"] == {"size": 95.0, "uid": 2, "name": "Bob"}
     tie = await land_size(alice, 95.0)
     assert not tie.server_record  # you have to beat it, not match it
 
 
 async def test_a_catch_says_its_size_and_a_record_and_the_records_page_lists_them(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("salmon"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_salmon"))
     user, nav, inter = await open_fishing()
     await user.set_name("Ahna")
     await click(nav, inter, "Cast")
@@ -1186,8 +1186,8 @@ async def test_a_boss_pays_a_pile_and_no_fish_and_only_once(db):
     won = await f.defeat_boss(user, boss, Lucky(2), REG)
     await user.refresh()
     assert won.name == boss.boss and won.bits == BOSS.bits_min and user.purse == before + won.bits
-    assert won.items["coral_shard"] == BOSS.loot[0].min and won.items["sturgeon"] == 1  # a lucky boss pays everything
-    assert await user.item_quantity("sturgeon") == 1
+    assert won.items["material_coral_shard"] == BOSS.loot[0].min and won.items["fish_sturgeon"] == 1  # a lucky boss pays everything
+    assert await user.item_quantity("fish_sturgeon") == 1
     assert await user.item_quantity(boss.fish.id) == won.items[boss.fish.id]  # no fish of its own: only what the loot gave
     skill = await user.skill("fishing")
     assert skill.stats.bosses_beaten == 1 and skill.stats.fish_caught == 0 and skill.xp >= BOSS.xp
@@ -1258,7 +1258,7 @@ def test_each_water_only_gives_its_own_fish_and_rarest_first():
         seen = {f.roll_fish(Random(i), REG, water).id for i in range(4000)}
         assert seen <= set(water.fish) and len(seen) >= 3, water.id
     deep = f.water_by_id(REG, "deep_sea")
-    assert "cod" not in {f.roll_fish(Random(i), REG, deep).id for i in range(2000)}
+    assert "fish_cod" not in {f.roll_fish(Random(i), REG, deep).id for i in range(2000)}
 
 
 def test_deeper_water_pays_more_per_cast_and_takes_longer_to_bite():
@@ -1278,7 +1278,7 @@ def test_deeper_water_pays_more_per_cast_and_takes_longer_to_bite():
 def test_quests_and_community_goals_only_ask_for_fish_from_the_first_waters():
     pool = {i.id for i in f.quest_pool(REG)}
     first = {fish_id for w in WATERS if w.min_level <= RULES.quests.min_level for fish_id in w.fish}
-    assert pool == first and "marlin" not in pool and "tuna" not in pool
+    assert pool == first and "fish_marlin" not in pool and "fish_tuna" not in pool
     for slot in (*RULES.quests.daily, *RULES.quests.weekly, *[s for s in RULES.community.monthly if s.kind == "fish"]):
         assert any(REG.item(i).rarity == slot.rarity for i in pool), slot
     from cococap.services import fishing_community as c
@@ -1293,7 +1293,7 @@ async def test_the_page_defaults_to_your_best_water_lets_you_pick_and_hints_at_t
 
     def spy(rng, reg=None, water=None, rare_luck=0.0):
         seen.append(water.id)
-        return REG.item("cod")
+        return REG.item("fish_cod")
 
     monkeypatch.setattr(f, "roll_fish", spy)
     user, nav, inter = await open_fishing()
@@ -1324,7 +1324,7 @@ async def test_a_locked_water_cannot_be_cast_into_even_with_a_stale_menu(db):
 async def test_the_records_page_is_one_click_from_the_fishing_page_and_shows_server_records_for_every_fish(db):
     from cococap.services import community
 
-    await community.update(f.RECORDS_KEY, {}, lambda r: r.update({"tuna": {"size": 188.5, "uid": 7, "name": "Ahna"}}))
+    await community.update(f.RECORDS_KEY, {}, lambda r: r.update({"fish_tuna": {"size": 188.5, "uid": 7, "name": "Ahna"}}))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Records")  # at level 1, straight from the main page
     assert nav.screen.id == "fishrecords"
@@ -1481,33 +1481,33 @@ def test_a_double_press_on_a_mystery_does_not_count_as_learning_twice():
 async def test_landing_a_fish_writes_what_its_mystery_was_in_the_field_notes(db):
     user = await player()
     cast = tricky_cast([f.LEFT, f.MYSTERY, f.RIGHT], [f.LEFT, f.RIGHT, f.RIGHT])
-    cast.fish = REG.item("pufferfish")
+    cast.fish = REG.item("fish_pufferfish")
     for step in cast.truth:
         cast.press(step, T0 + 11)
     got = await f.land(user, cast, REG, now=T0)
     assert got.reveals == ((f.LEFT, f.RIGHT),)
-    assert (await user.skill("fishing")).notes == {"pufferfish": [f"{f.LEFT}>{f.RIGHT}"]}
+    assert (await user.skill("fishing")).notes == {"fish_pufferfish": [f"{f.LEFT}>{f.RIGHT}"]}
 
 
 async def test_a_fish_that_got_away_still_teaches_you_and_the_notes_stay_short(db):
     user = await player()
     cast = tricky_cast([f.LEFT, f.MYSTERY], [f.LEFT, f.LEFT])
-    cast.fish = REG.item("moray_eel")
+    cast.fish = REG.item("fish_moray_eel")
     cast.press(f.LEFT, T0 + 11)
     assert cast.press(f.RIGHT, T0 + 12) == "escaped"
     await f.note_tells(user, cast)
-    assert (await user.skill("fishing")).notes == {"moray_eel": [f"{f.LEFT}>{f.LEFT}"]}
+    assert (await user.skill("fishing")).notes == {"fish_moray_eel": [f"{f.LEFT}>{f.LEFT}"]}
     for i in range(30):
         again = tricky_cast([f.LEFT, f.MYSTERY], [f.LEFT, f.RIGHT])
-        again.fish = REG.item("moray_eel")
+        again.fish = REG.item("fish_moray_eel")
         again.press(f.LEFT, T0 + 11)
         again.press(f.RIGHT, T0 + 12)
         await f.note_tells(user, again)
-    assert len((await user.skill("fishing")).notes["moray_eel"]) == f.NOTES_KEPT
+    assert len((await user.skill("fishing")).notes["fish_moray_eel"]) == f.NOTES_KEPT
 
 
 async def test_the_screen_has_a_reel_button_shows_breaks_and_mysteries_and_the_result_says_what_the_mystery_was(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("moray_eel"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_moray_eel"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -1519,14 +1519,14 @@ async def test_the_screen_has_a_reel_button_shows_breaks_and_mysteries_and_the_r
     assert find_button(nav, "Reel") and f.MYSTERY in page and f.REEL in page and "press **Reel**" in page.replace("**Reel**", "**Reel**")
     await reel_in(nav, inter, cast)
     assert nav.screen.id == "result" and "The ❓ was" in all_text(nav) and "field notes" in all_text(nav)
-    assert (await user.skill("fishing")).notes["moray_eel"]
+    assert (await user.skill("fishing")).notes["fish_moray_eel"]
     nav2, inter2 = await hub("fish")
     await click(nav2, inter2, "Field notes")  # a button on the fishing page itself
     assert nav2.screen.id == "fishnotes" and "Moray Eel" in all_text(nav2) and "after ◄" not in all_text(nav2)  # (nothing is confirmed from one ❓)
 
 
 async def test_losing_at_a_mystery_still_shows_it_on_the_result_page(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("moray_eel"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_moray_eel"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -1538,7 +1538,7 @@ async def test_losing_at_a_mystery_still_shows_it_on_the_result_page(db, clock, 
     wrong = "Right" if cast.wanted(cast.progress) == f.LEFT else "Left"
     await click(nav, inter, wrong)
     assert nav.screen.id == "result" and "slipped off" in all_text(nav) and "The ❓ was" in all_text(nav)
-    assert (await user.skill("fishing")).notes["moray_eel"]
+    assert (await user.skill("fishing")).notes["fish_moray_eel"]
 
 
 def test_a_coin_flip_fish_never_hides_more_arrows_than_you_can_stand():
@@ -1624,7 +1624,7 @@ def test_a_fog_shows_only_two_steps_and_a_reverse_boss_is_read_from_the_right():
 
 
 async def test_the_page_names_the_fish_on_the_line_so_you_can_use_what_you_have_learned(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("moray_eel"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_moray_eel"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + 1
@@ -1765,7 +1765,7 @@ async def test_the_page_shows_what_a_caught_fish_has_taught_you_and_what_it_adds
 
 
 async def test_the_field_notes_open_while_reeling_and_the_reel_carries_on_where_it_was(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("moray_eel"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_moray_eel"))
     user, nav, inter = await open_fishing()
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
@@ -1785,7 +1785,7 @@ async def test_the_field_notes_open_while_reeling_and_the_reel_carries_on_where_
 
 # ---- a better rod is a noticeably faster rod ----------------------------------------------------------------------------------------------------
 def test_each_rod_upgrade_cuts_the_wait_by_something_you_can_feel():
-    starter, reinforced, master = (f.typical_wait(REG.item(r).tool.power, RULES) for r in ("starter_rod", "reinforced_rod", "masterwork_rod"))
+    starter, reinforced, master = (f.typical_wait(REG.item(r).tool.power, RULES) for r in ("tool_rod_starter", "tool_rod_reinforced", "tool_rod_masterwork"))
     assert reinforced < 0.7 * starter and master < 0.65 * reinforced  # each step is a third or more off the wait
     assert master < 0.4 * starter
     assert f.typical_wait(100, RULES) >= RULES.bite.wait_min * RULES.bite.min_wait_factor  # (it still never hits zero)
@@ -1794,23 +1794,23 @@ def test_each_rod_upgrade_cuts_the_wait_by_something_you_can_feel():
 
 async def test_the_fishing_page_tells_you_how_long_your_rod_takes_to_bite(db):
     user = await User.get(1)
-    inst = await user.give_instance("reinforced_rod")
+    inst = await user.give_instance("tool_rod_reinforced")
     await equip(user, "fishing", inst.id)
     nav, _ = await hub("fish")
-    expected = f.typical_wait(REG.item("reinforced_rod").tool.power, RULES)
+    expected = f.typical_wait(REG.item("tool_rod_reinforced").tool.power, RULES)
     assert f"bites in ~**{expected:.0f}s**" in all_text(nav)
 
 
 # ---- xp is for the catch, not the fish or the rod ------------------------------------------------------------------------
 async def test_every_landed_fish_pays_the_same_xp_whatever_its_rarity(db):
     paid = {}
-    for fish_id in ("cod", "salmon", "pike"):  # rarities 1, 3, 4
+    for fish_id in ("fish_cod", "fish_salmon", "fish_pike"):  # rarities 1, 3, 4
         user = await player()
         cast = cast_of(fish_id, slips=0)
         for arrow in cast.pattern:
             cast.press(arrow, T0 + 11)
         paid[fish_id] = (await f.land(user, cast, REG)).xp
-    assert len(set(paid.values())) == 1 and paid["cod"] == RULES.xp_per_catch
+    assert len(set(paid.values())) == 1 and paid["fish_cod"] == RULES.xp_per_catch
 
 
 async def test_the_water_sets_the_xp_and_a_better_rod_does_not_change_it(db):
@@ -1828,14 +1828,14 @@ async def test_the_water_sets_the_xp_and_a_better_rod_does_not_change_it(db):
 
 def test_a_fishing_boss_pays_a_haul_of_the_fish_tools_are_upgraded_with():
     loot = {row.item: row for row in REG.fishing.boss.loot}
-    for fish in ("salmon", "trout"):
+    for fish in ("fish_salmon", "fish_trout"):
         assert loot[fish].chance == 1.0 and loot[fish].max >= 6  # a sure haul, like the mining vault
     upgrade_fish = {i for t in REG.items.values() if t.tool and t.tool.upgrade for i in t.tool.upgrade.items if REG.item(i).category == "fish"}
-    assert {"salmon", "trout", "pufferfish", "tuna"} <= upgrade_fish and {"salmon", "trout", "pufferfish", "tuna"} <= set(loot)
+    assert {"fish_salmon", "fish_trout", "fish_pufferfish", "fish_tuna"} <= upgrade_fish and {"fish_salmon", "fish_trout", "fish_pufferfish", "fish_tuna"} <= set(loot)
 
 
 # ---- a clean reel pays, and a cast tells you how long to wait ---------------------------------------------------------------------------
-async def land_with(user, slips_left, fish_id="cod", extra=0):
+async def land_with(user, slips_left, fish_id="fish_cod", extra=0):
     cast = cast_of(fish_id, slips=slips_left)
     cast.extra_fish = extra
     for arrow in cast.pattern:
@@ -1849,7 +1849,7 @@ async def test_every_slack_you_did_not_need_pays_a_bonus(db):
     none = await land_with(user, 0)
     assert none.slack_bits == 0 and none.slack_left == 0
     two = await land_with(user, 2)
-    assert two.slack_left == 2 and two.slack_bits == round(REG.item("cod").sell_price * RULES.reel.slack_bonus * 2)
+    assert two.slack_left == 2 and two.slack_bits == round(REG.item("fish_cod").sell_price * RULES.reel.slack_bonus * 2)
     four = await land_with(user, 4)
     assert four.slack_bits == 2 * two.slack_bits  # it adds up: the more slack to spare, the cleaner the reel
     await user.refresh()
@@ -1865,19 +1865,19 @@ async def test_a_slack_bonus_counts_the_extra_fish_a_good_rod_hauls_in(db):
 
 async def test_slack_you_used_is_not_paid_for(db):
     user = await player(1)
-    cast = cast_of("cod", slips=2)
+    cast = cast_of("fish_cod", slips=2)
     steps = list(cast.pattern)
     assert cast.press(f.RIGHT if steps[0] == f.LEFT else f.LEFT, T0 + 11) == "slip" and cast.slips_left == 1
     for step in steps:
         cast.press(step, T0 + 12)
     caught = await f.land(user, cast, REG)
-    assert caught.slack_left == 1 and caught.slack_bits == round(REG.item("cod").sell_price * RULES.reel.slack_bonus)
+    assert caught.slack_left == 1 and caught.slack_bits == round(REG.item("fish_cod").sell_price * RULES.reel.slack_bonus)
 
 
 async def test_a_boss_reel_with_slack_left_pays_a_bonus_on_its_bits(db):
     user = await player(1)
     for left, expect_bonus in ((0, False), (3, True)):
-        boss = cast_of("cod", slips=left)
+        boss = cast_of("fish_cod", slips=left)
         boss.boss, boss.modifiers = "Old Whiskers", []
         for arrow in boss.pattern:
             boss.press(arrow, T0 + 11)
@@ -1888,8 +1888,8 @@ async def test_a_boss_reel_with_slack_left_pays_a_bonus_on_its_bits(db):
 
 
 async def test_the_catch_page_says_it_was_a_clean_reel_and_the_reel_page_says_slack_pays(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
-    user, nav, inter = await open_fishing(power_item="reinforced_rod")  # power 8: forgives a wrong arrow
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
+    user, nav, inter = await open_fishing(power_item="tool_rod_reinforced")  # power 8: forgives a wrong arrow
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
     clock[0] = cast.bite_at + 1
@@ -1901,37 +1901,37 @@ async def test_the_catch_page_says_it_was_a_clean_reel_and_the_reel_page_says_sl
 
 
 async def test_casting_tells_you_how_long_the_bite_should_take_and_a_better_rod_shortens_it(db, clock, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
     waits = {}
-    for uid, item in ((1, "starter_rod"), (2, "masterwork_rod")):
+    for uid, item in ((1, "tool_rod_starter"), (2, "tool_rod_masterwork")):
         user, nav, inter = await open_fishing(uid, item)
         await click(nav, inter, "Cast")
         line = next(l for l in all_text(nav).split("\n") if "A bite in about" in l)
         waits[item] = (int(line.split("**")[1].rstrip("s")), "starter rod" in line)
-    assert waits["starter_rod"][1] is False  # (a starter rod's own line does not compare itself with itself)
-    assert waits["masterwork_rod"][0] < waits["starter_rod"][0] and waits["masterwork_rod"][1] is True
-    starter_wait = round(f.typical_wait(REG.item("starter_rod").tool.power, RULES) * f.water_by_id(REG, nav.screen.water).wait_multiplier)
-    assert waits["starter_rod"][0] == starter_wait
+    assert waits["tool_rod_starter"][1] is False  # (a starter rod's own line does not compare itself with itself)
+    assert waits["tool_rod_masterwork"][0] < waits["tool_rod_starter"][0] and waits["tool_rod_masterwork"][1] is True
+    starter_wait = round(f.typical_wait(REG.item("tool_rod_starter").tool.power, RULES) * f.water_by_id(REG, nav.screen.water).wait_multiplier)
+    assert waits["tool_rod_starter"][0] == starter_wait
 
 
 # ---- rod abilities: the Angler's Auto-Reel and the Treasure Hunter's Bycatch -----------------------------------------------------------
 def test_auto_reel_presses_the_first_plain_arrows_when_you_pull_up_the_line():
-    cast = cast_of("cod", pattern=[f.LEFT, f.RIGHT, f.LEFT, f.RIGHT, f.LEFT], hooked=False)
+    cast = cast_of("fish_cod", pattern=[f.LEFT, f.RIGHT, f.LEFT, f.RIGHT, f.LEFT], hooked=False)
     cast.auto_steps = 2
     cast.hook(T0 + 11)
     assert cast.hooked and cast.progress == 2 and cast.next_arrow == f.LEFT  # the first two are done for you
 
 
 def test_auto_reel_stops_at_a_reel_break_a_mystery_and_the_last_step_and_never_lands_the_fish_by_itself():
-    cast = cast_of("cod", pattern=[f.LEFT, f.REEL, f.LEFT], hooked=False)
+    cast = cast_of("fish_cod", pattern=[f.LEFT, f.REEL, f.LEFT], hooked=False)
     cast.auto_steps = 3
     cast.hook(T0 + 11)
     assert cast.progress == 1  # a Reel break is yours to press
-    short = cast_of("cod", pattern=[f.LEFT, f.RIGHT], hooked=False)
+    short = cast_of("fish_cod", pattern=[f.LEFT, f.RIGHT], hooked=False)
     short.auto_steps = 9
     short.hook(T0 + 11)
     assert short.progress == 1 and short.status(T0 + 12) == "reeling"  # always leaves you the last press
-    mystery = cast_of("cod", pattern=[f.LEFT, f.MYSTERY, f.LEFT, f.RIGHT], hooked=False)
+    mystery = cast_of("fish_cod", pattern=[f.LEFT, f.MYSTERY, f.LEFT, f.RIGHT], hooked=False)
     mystery.truth = [f.LEFT, f.RIGHT, f.LEFT, f.RIGHT]
     mystery.auto_steps = 3
     mystery.hook(T0 + 11)
@@ -1939,7 +1939,7 @@ def test_auto_reel_stops_at_a_reel_break_a_mystery_and_the_last_step_and_never_l
 
 
 def test_without_auto_reel_you_start_at_the_first_arrow():
-    cast = cast_of("cod", hooked=False)
+    cast = cast_of("fish_cod", hooked=False)
     cast.hook(T0 + 11)
     assert cast.progress == 0
 
@@ -1948,7 +1948,7 @@ def test_a_cast_carries_the_rods_abilities():
     from cococap.models.instance import ItemInstance
     from cococap.services.equipment import effective_stats
 
-    for template, field, value in (("tidecaller_rod", "auto_steps", 1), ("abyssal_rod", "auto_steps", 2), ("lantern_rod", "bycatch", 0.10)):
+    for template, field, value in (("tool_rod_tidecaller", "auto_steps", 1), ("tool_rod_abyssal", "auto_steps", 2), ("tool_rod_lantern", "bycatch", 0.10)):
         stats = effective_stats(ItemInstance(id=1, owner_id=1, template_id=template, enchants={}, rolled={}), REG)
         cast = f.cast_line(stats, Random(1), T0, REG)
         assert getattr(cast, field) == pytest.approx(value), template
@@ -1956,14 +1956,14 @@ def test_a_cast_carries_the_rods_abilities():
 
 async def test_bycatch_brings_a_second_different_fish_and_counts_it(db):
     user = await player(1)
-    cast = cast_of("cod", slips=0)
+    cast = cast_of("fish_cod", slips=0)
     cast.bycatch, cast.water = 1.0, next(w for w in RULES.waters if w.id == "river")
     for arrow in cast.pattern:
         cast.press(arrow, T0 + 11)
     caught = await f.land(user, cast, REG, rng=Random(3))
-    assert caught.bycatch is not None and caught.bycatch.id != "cod"
+    assert caught.bycatch is not None and caught.bycatch.id != "fish_cod"
     assert await user.item_quantity(caught.bycatch.id) == 1 and (await user.skill("fishing")).stats.caught[caught.bycatch.id] == 1
-    none = cast_of("cod")
+    none = cast_of("fish_cod")
     none.bycatch = 0.0
     for arrow in none.pattern:
         none.press(arrow, T0 + 11)
@@ -1971,9 +1971,9 @@ async def test_bycatch_brings_a_second_different_fish_and_counts_it(db):
 
 
 async def test_the_catch_page_mentions_the_bycatch(db, clock, monkeypatch):
-    fish = iter([REG.item("cod"), REG.item("bass")])  # the cast brings a cod; the bycatch roll brings a bass
+    fish = iter([REG.item("fish_cod"), REG.item("fish_bass")])  # the cast brings a cod; the bycatch roll brings a bass
     monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: next(fish))
-    user, nav, inter = await open_fishing(power_item="lantern_rod")
+    user, nav, inter = await open_fishing(power_item="tool_rod_lantern")
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
     cast.bycatch = 1.0
@@ -1981,12 +1981,12 @@ async def test_the_catch_page_mentions_the_bycatch(db, clock, monkeypatch):
     await nav.screen.nav.refresh(inter)
     await click(nav, inter, "Pull up the line")
     await reel_in(nav, inter, cast)
-    assert "Bycatch" in all_text(nav) and await user.item_quantity("bass") == 1
+    assert "Bycatch" in all_text(nav) and await user.item_quantity("fish_bass") == 1
 
 
 def test_the_rod_roads_data_each_road_has_its_own_ability_and_fish():
-    angler = ["tidecaller_rod", "moonlit_rod", "leviathan_rod", "abyssal_rod", "poseidon_rod"]
-    treasure = ["lantern_rod", "siren_rod", "trident_rod", "kraken_rod", "trophy_rod"]
+    angler = ["tool_rod_tidecaller", "tool_rod_moonlit", "tool_rod_leviathan", "tool_rod_abyssal", "tool_rod_poseidon"]
+    treasure = ["tool_rod_lantern", "tool_rod_siren", "tool_rod_trident", "tool_rod_kraken", "tool_rod_trophy"]
     steps = [REG.item(a).tool.stats["auto_reel"] for a in angler]
     chances = [REG.item(t).tool.stats["bycatch"] for t in treasure]
     assert steps == sorted(steps) and chances == sorted(chances) and steps[-1] > steps[0]
@@ -1995,14 +1995,14 @@ def test_the_rod_roads_data_each_road_has_its_own_ability_and_fish():
 
 
 async def test_bycatch_is_never_a_second_helping_of_the_same_fish(db, monkeypatch):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))  # the water only ever gives cod
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))  # the water only ever gives cod
     user = await player(1)
-    cast = cast_of("cod")
+    cast = cast_of("fish_cod")
     cast.bycatch, cast.water = 1.0, next(w for w in RULES.waters if w.id == "pond")
     for arrow in cast.pattern:
         cast.press(arrow, T0 + 11)
     caught = await f.land(user, cast, REG, rng=Random(3))
-    assert caught.bycatch is None and await user.item_quantity("cod") == 1  # (it gives up rather than hand you the same fish again)
+    assert caught.bycatch is None and await user.item_quantity("fish_cod") == 1  # (it gives up rather than hand you the same fish again)
 
 
 def test_big_accomplishments_pay_well_in_xp():
@@ -2016,14 +2016,14 @@ def test_big_accomplishments_pay_well_in_xp():
 
 async def test_the_wait_estimate_can_be_turned_off_in_settings(db):
     user = await User.get(1)
-    await equip(user, "fishing", (await user.give_instance("reinforced_rod")).id)
+    await equip(user, "fishing", (await user.give_instance("tool_rod_reinforced")).id)
     await user.set_setting("fishing_estimate", False)
     nav, _ = await hub("fish")
     assert "bites in" not in all_text(nav) and "Rod **" in all_text(nav)
 
 
 # ---- Mastery capstones: Hot Streak, Salvage, Chum Slick ------------------------------------------------------------------------------------------
-async def landed(user, rod_template="starter_rod", slips_used=0, seed=1):
+async def landed(user, rod_template="tool_rod_starter", slips_used=0, seed=1):
     from random import Random as R
 
     stats = await f.rod_stats(user)
@@ -2034,7 +2034,7 @@ async def landed(user, rod_template="starter_rod", slips_used=0, seed=1):
 
 async def test_hot_streak_pays_more_for_every_clean_reel_in_a_row_and_a_slip_or_escape_ends_it(db):
     user = await User.get(1)
-    await equip(user, "fishing", (await user.give_instance("starter_rod")).id)
+    await equip(user, "fishing", (await user.give_instance("tool_rod_starter")).id)
     await user.update_skill("fishing", lambda s: s.mastery.append("hot_streak"))
     paid = []
     for n in range(7):
@@ -2052,7 +2052,7 @@ async def test_hot_streak_pays_more_for_every_clean_reel_in_a_row_and_a_slip_or_
 
 async def test_without_the_capstone_nothing_is_paid_for_a_streak(db):
     user = await User.get(1)
-    await equip(user, "fishing", (await user.give_instance("starter_rod")).id)
+    await equip(user, "fishing", (await user.give_instance("tool_rod_starter")).id)
     for n in range(4):
         _, catch = await landed(user, seed=n)
         assert catch.streak_bits == 0
@@ -2062,19 +2062,19 @@ async def test_salvage_brings_up_a_chest_haul_every_nth_fish_and_chum_slick_make
     from random import Random as R
 
     user = await User.get(1)
-    await equip(user, "fishing", (await user.give_instance("starter_rod")).id)
+    await equip(user, "fishing", (await user.give_instance("tool_rod_starter")).id)
     await user.update_skill("fishing", lambda s: s.mastery.extend(["salvage", "chum_slick"]))
     every = int(REG.mastery.node("salvage").effects[0].amount)
     hauls = []
     for n in range(every * 2):
         _, catch = await landed(user, seed=n)
-        hauls.append("coral_shard" in catch.extras and catch.extras["coral_shard"] >= 2)  # (the chest loot always has coral)
+        hauls.append("material_coral_shard" in catch.extras and catch.extras["material_coral_shard"] >= 2)  # (the chest loot always has coral)
     assert hauls.count(True) >= 2
     cast = f.cast_line(await f.rod_stats(user), R(3), 1_000_000.0, REG, water=f.water_by_id(REG, "pond"))
     f.make_boss(cast, REG.fishing.boss.bosses[0].name, REG.fishing, R(3))
     cast.progress, cast.hooked = len(cast.pattern), True
     plain = await User.get(2)
-    await equip(plain, "fishing", (await plain.give_instance("starter_rod")).id)
+    await equip(plain, "fishing", (await plain.give_instance("tool_rod_starter")).id)
     cast2 = f.cast_line(await f.rod_stats(plain), R(3), 1_000_000.0, REG, water=f.water_by_id(REG, "pond"))
     f.make_boss(cast2, REG.fishing.boss.bosses[0].name, REG.fishing, R(3))
     cast2.progress, cast2.hooked = len(cast2.pattern), True
@@ -2154,7 +2154,7 @@ def test_double_hook_is_worth_about_a_tenth_more_fish_per_cast_from_each_source(
 
 
 async def hook_screen(db, clock, monkeypatch, *, enchant=3, mastery=()):
-    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("cod"))
+    monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
     user = await player()
     if enchant:
         await user.set_enchant_level((await user.equipped_instance("fishing")).id, "double_hook", enchant)
@@ -2187,7 +2187,7 @@ async def test_a_landing_can_offer_a_quick_cast_and_taking_it_pays_a_second_catc
     await reel_in(nav, inter, cast)
     assert nav.screen.id == "result" and "You caught a" in all_text(nav)
     assert "Quick cast" not in all_text(nav)  # a Quick cast never offers another
-    assert await user.item_quantity("cod") >= 2
+    assert await user.item_quantity("fish_cod") >= 2
 
 
 async def test_without_the_stat_nothing_is_offered(db, clock, monkeypatch):
@@ -2313,11 +2313,11 @@ async def test_a_slow_self_refresh_is_never_cancelled_so_the_buttons_it_sent_sta
 
 # ---- Megaladegalodon (Ahna's mega shark) -------------------------------------------------------------------------------------------------
 def test_megaladegalodon_is_a_rare_deep_sea_fish_priced_between_its_neighbours():
-    shark = REG.item("megaladegalodon")
+    shark = REG.item("fish_megaladegalodon")
     assert shark.name == "Megaladegalodon" and shark.rarity in (5, 6) and shark.category == "fish" and shark.emoji == "🦈"
     assert "Ahna" in shark.description
     deep = next(w for w in RULES.waters if w.id == "deep_sea")
-    assert "megaladegalodon" in deep.fish and shark in f.fish_pool(REG)
+    assert "fish_megaladegalodon" in deep.fish and shark in f.fish_pool(REG)
     same_rarity = [i.sell_price for i in f.fish_pool(REG) if i.rarity == shark.rarity and i.id != shark.id]
     assert min(same_rarity) / 4 < shark.sell_price <= max(same_rarity)
-    assert [w.id for w, _ in f.where_to_catch("megaladegalodon", REG)] == ["deep_sea"]
+    assert [w.id for w, _ in f.where_to_catch("fish_megaladegalodon", REG)] == ["deep_sea"]

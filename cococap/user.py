@@ -413,7 +413,7 @@ class User:
     @staticmethod
     def _check_item_id(item_id: str) -> None:
         if not item_id or not item_id.replace("_", "").isalnum():
-            raise ValueError(f"Invalid item id {item_id!r}: use e.g. 'apple_seed', not 'apple.seed'")
+            raise ValueError(f"Invalid item id {item_id!r}: use e.g. 'seed_apple', not 'apple.seed'")
 
     async def items(self) -> dict[str, int]:
         """The inventory as {item_id: quantity}."""

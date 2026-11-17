@@ -2,24 +2,3 @@
 # Style: ~10px sprite centred in the 16x16 cell, no outline, 5-6 shades with the hue shifting (shadows cool, lights warm),
 # one white specular pixel. The name is the item id.
 
-[iron_bar]
-rarity = 2
-palette = { w = "#ffffff", h = "#d9e0ec", l = "#b3c0d4", m = "#8a9bb8", s = "#65769a", d = "#47557a", e = "#323d5e" }
-rows = [
-  "................",
-  "................",
-  "................",
-  "................",
-  "....hhhhhhhl....",
-  "...hwhhhhhhll...",
-  "..hhhhhhhhllm...",
-  "..llllllllmms...",
-  "..mmmmmmmmmss...",
-  "..mmmmmmmmsss...",
-  "..smmmmmmssse...",
-  "..sssssssssde...",
-  "...dddddddde....",
-  "................",
-  "................",
-  "................",
-]

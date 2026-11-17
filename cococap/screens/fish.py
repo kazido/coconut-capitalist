@@ -250,7 +250,7 @@ class FishScreen(Screen):
         scale = water.wait_multiplier if water else 1.0
         bite = stats.stats.get("bite_speed", 0.0) + (await pets.bonuses(self.user)).get("bite_speed", 0.0)
         mine = fishing.typical_wait(stats.power, rules, bite) * scale
-        starter = fishing.typical_wait(reg.item("starter_rod").tool.power, rules) * scale
+        starter = fishing.typical_wait(reg.item("tool_rod_starter").tool.power, rules) * scale
         line = f"⏱️ A bite in about **{mine:.0f}s**"
         return line + (f"  ·  a starter rod: {starter:.0f}s" if round(starter) != round(mine) else "")
 

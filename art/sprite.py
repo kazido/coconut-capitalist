@@ -117,11 +117,11 @@ def load_wisps(path: Path) -> list[Sprite]:
     return out
 
 
-def _legacy_items() -> dict[str, str]:
-    """{old emoji name: item id} for the owner's emoji that are items (cococap.emojis.ALIASES), minus names that already equal the item id."""
-    from cococap.emojis import ALIASES
+def _item_ids() -> set[str]:
+    """Item ids: an owner's emoji folder named by one of these is rebuilt as that item's emoji (rarity from the item)."""
+    from cococap.registry.loader import get_registry
 
-    return {k: v for k, v in ALIASES.items() if k != v}
+    return set(get_registry().items)
 
 
 def load_sources(root: Path) -> list[Sprite]:
@@ -133,12 +133,11 @@ def load_sources(root: Path) -> list[Sprite]:
             continue
         _check_name(d.name, str(d))
         meta = _read(d / "meta.toml") if (d / "meta.toml").exists() else {}
-        # The owner's emoji are named for how they were first uploaded (gemstone_sanity, ore_iron). Those that ARE items are rebuilt under the
-        # ITEM id with the item's real rarity (the game finds an emoji named by item id first); the rest (cells, xp bars, wyrmhole...)
-        # are UI pieces already uploaded under their old names and stay exactly as they are (not built).
+        # The owner's emoji folders that are named by an item id (key_gemstone_rage, material_iron_ore) are rebuilt with the item's real rarity;
+        # the rest (cells, xp bars, wyrmhole...) are UI pieces already uploaded under their old names and stay as they are (not built).
         name, rarity = d.name, _check_rarity(meta.get("rarity", 1), d.name)
-        if "item" in meta or d.name in _legacy_items():
-            name = str(meta.get("item", _legacy_items().get(d.name)))
+        if "item" in meta or d.name in _item_ids():
+            name = str(meta.get("item", d.name))
             rarity = _item_rarity(name)
         elif not meta.get("emit", False):
             continue
@@ -152,10 +151,16 @@ def load_sources(root: Path) -> list[Sprite]:
         if len(frames) > 1 and len(ms) != len(frames):
             raise SpriteError(f"{d}: meta.toml ms needs {len(frames)} entries")
         framed = bool(meta.get("framed", False))
-        if name != d.name and meta.get("restyle", True):  # the owner's item art gets the shared refresh (outline, richer colour, specular)
+        if (name != d.name or d.name in _item_ids()) and meta.get("restyle", True):  # the owner's item art gets the shared refresh (outline, richer colour, specular)
             from art.restyle import restyle_frames
 
             frames = restyle_frames(frames)
+            if framed and not meta.get("over_border", False):  # the outline must not reach the cell's border ring (unless the art asks to, e.g. implosion's burst)
+                for im in frames:
+                    for i in range(GRID):
+                        for e in (0, GRID - 1):
+                            im.putpixel((i, e), (0, 0, 0, 0))
+                            im.putpixel((e, i), (0, 0, 0, 0))
         out.append(Sprite(name, "sources", frames, ms, framed, rarity, False))
     return out
 
@@ -184,6 +189,27 @@ def _recolor(im: Image.Image, hue: float = 0.0, sat: float = 1.0, val: float = 1
     return out
 
 
+def _ramp_recolor(im: Image.Image, ramp: list[str]) -> Image.Image:
+    """Re-colour by brightness: each opaque pixel's luminance, stretched over the sprite's own darkest..lightest, picks a colour
+    from `ramp` (dark -> light hex colours, blended between stops). Shape and shading stay exactly the source's; only colour changes."""
+    stops = [rgb(c) for c in ramp]
+    lum = {}
+    for y in range(im.height):
+        for x in range(im.width):
+            r, g, b, a = im.getpixel((x, y))
+            if a:
+                lum[(x, y)] = 0.299 * r + 0.587 * g + 0.114 * b
+    lo, hi = min(lum.values()), max(lum.values())
+    out = im.copy()
+    for (x, y), l in lum.items():
+        t = (l - lo) / ((hi - lo) or 1) * (len(stops) - 1)
+        i = min(int(t), len(stops) - 2)
+        f = t - i
+        c = tuple(round(stops[i][k] + (stops[i + 1][k] - stops[i][k]) * f) for k in range(3))
+        out.putpixel((x, y), (*c, im.getpixel((x, y))[3]))
+    return out
+
+
 def _item_rarity(name: str) -> int:
     """The item's rarity from the game data (1 when the id is not an item)."""
     try:
@@ -198,7 +224,7 @@ def _item_rarity(name: str) -> int:
 def load_raven(mapping: Path, pack: Path | None) -> list[Sprite]:
     """Third-party icons cut from the Raven sheet. Local only: skipped when the pack is not on this machine.
 
-    A mapping value is `[row, col]` or a table `{cell = [row, col], hue = 40, sat = 1.0, val = 1.0, nudge = [dx, dy], rarity = 3}`;
+    A mapping value is `[row, col]` or a table `{cell = [row, col], ramp = [dark, ..., light] (recolour by brightness), hue = 40, sat = 1.0, val = 1.0, nudge = [dx, dy], rarity = 3}`;
     the rarity defaults to the item's own rarity."""
     if pack is None or not (pack / RAVEN_SHEET).exists() or not mapping.exists():
         return []
@@ -210,14 +236,23 @@ def load_raven(mapping: Path, pack: Path | None) -> list[Sprite]:
         row, col = opts["cell"][0], opts["cell"][1]
         rarity = _check_rarity(opts.get("rarity", _item_rarity(name)), name)
         cell = sheet.crop((col * GRID, row * GRID, col * GRID + GRID, row * GRID + GRID))
-        if any(k in opts for k in ("hue", "sat", "val")):
+        if "swap" in opts:  # exact colour swaps: {"#a56c6c" = "#1f9d86"} recolours just those pixels (e.g. the ore flecks), the rest stays
+            sw = {rgb(k)[:3]: rgb(v)[:3] for k, v in opts["swap"].items()}
+            for yy in range(cell.height):
+                for xx in range(cell.width):
+                    px = cell.getpixel((xx, yy))
+                    if px[3] and px[:3] in sw:
+                        cell.putpixel((xx, yy), (*sw[px[:3]], px[3]))
+        if "ramp" in opts:
+            cell = _ramp_recolor(cell, opts["ramp"])
+        elif any(k in opts for k in ("hue", "sat", "val")):
             cell = _recolor(cell, float(opts.get("hue", 0)), float(opts.get("sat", 1.0)), float(opts.get("val", 1.0)))
         dx, dy = opts.get("nudge", [0, 0])
         if dx or dy:
             moved = Image.new("RGBA", cell.size, (0, 0, 0, 0))
             moved.alpha_composite(cell, (dx, dy)) if dx >= 0 and dy >= 0 else moved.paste(cell, (dx, dy))
             cell = moved
-        out.append(Sprite(name, "raven", [cell], [], True, rarity))
+        out.append(Sprite(name, "umbra", [cell], [], True, rarity))
     return out
 
 
@@ -232,15 +267,15 @@ def load_all(art_dir: Path = ART_DIR) -> list[Sprite]:
     for mp in sorted((art_dir / "mappings").glob("raven*.toml")):
         sprites += load_raven(mp, raven_dir())
     # A hand-drawn (or owner) sprite replaces a third-party pick of the same name: drawing a better icon never needs a mapping edit.
-    own = {s.name for s in sprites if s.category != "raven"}
-    sprites = [s for s in sprites if s.category != "raven" or s.name not in own]
+    own = {s.name for s in sprites if s.category != "umbra"}
+    sprites = [s for s in sprites if s.category != "umbra" or s.name not in own]
     seen: dict[str, str] = {}
     for s in sprites:
         if s.name in seen:
             raise SpriteError(f"duplicate sprite name {s.name!r} ({seen[s.name]} and {s.category})")
         seen[s.name] = s.category
     for s in sprites:  # the top rarities get a gentle shine (art/shine.py); art with its own animation keeps it
-        if s.framed and len(s.frames) == 1 and s.rarity >= SHINE_MIN_RARITY and s.category not in ("sources", "wisps"):
+        if s.framed and len(s.frames) == 1 and s.rarity >= SHINE_MIN_RARITY and s.category != "wisps":
             from art.shine import shine_frames
 
             s.frames, s.ms = shine_frames(s.frames[0])

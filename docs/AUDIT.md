@@ -262,7 +262,7 @@ startup, and `tests/test_db_migrations.py` fails if the two ever diverge.
 
 **Import of production data:** `scripts/import_mongo.py` (read-only on Mongo, dry-run by default).
 It converts both the legacy flat and the new nested shapes, renames items to registry ids
-(`apple.seed` → `apple_seed`, `implosion_gem` → `implosion_gemstone`, ...), clamps negative balances,
+(`apple.seed` → `seed_apple`, `implosion_gem` → `key_gemstone_implosion`, ...), clamps negative balances,
 drops duplicate users, and prints every anomaly. Legacy `pets` data is **not** imported (pets are being
 redesigned); it stays in MongoDB.
 

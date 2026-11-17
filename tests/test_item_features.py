@@ -24,34 +24,34 @@ def test_every_item_renders_an_embed(item_id, for_shop):
 
 
 def test_shop_embed_hides_non_shop_fields():
-    full, shop = construct_embed("copper_ore").description, construct_embed("copper_ore", True).description
+    full, shop = construct_embed("material_copper_ore").description, construct_embed("material_copper_ore", True).description
     assert "Drop Rate" in full and "Drop Rate" not in shop
-    fish_full, fish_shop = construct_embed("cod").description, construct_embed("cod", True).description
+    fish_full, fish_shop = construct_embed("fish_cod").description, construct_embed("fish_cod", True).description
     assert "Where to catch it" in fish_full and "Where to catch it" not in fish_shop
 
 
 def test_roll_item_respects_drop_table():
     reg = get_registry()
-    assert roll_item(reg.item("apple")) is None  # no drop table
-    gem = reg.item("implosion_gemstone")  # 1-in-5, exactly 1
+    assert roll_item(reg.item("crop_apple")) is None  # no drop table
+    gem = reg.item("key_gemstone_implosion")  # 1-in-5, exactly 1
     random.seed(1)
     rolls = [roll_item(gem) for _ in range(2000)]
     assert set(rolls) == {None, 1}
     assert 300 < rolls.count(1) < 500  # ~20%
-    ore = reg.item("copper_ore")
+    ore = reg.item("material_copper_ore")
     assert {r for r in (roll_item(ore) for _ in range(500)) if r} <= {1, 2, 3}
 
 
 async def test_autocomplete_is_capped_at_discords_limit():
     assert len(await item_autocomplete(None, "")) == MAX_CHOICES  # 47 items exist
-    assert [c.value for c in await item_autocomplete(None, "SANITY")] == ["sanity_gemstone"]
+    assert [c.value for c in await item_autocomplete(None, "SANITY")] == ["key_gemstone_sanity"]
 
 
 def test_inventory_lines_filter_sort_and_unknown_items():
     items = {
-        "iron_ore": 5,
-        "copper_ore": 1200,
-        "cod": 0,  # emptied stacks are hidden
+        "material_iron_ore": 5,
+        "material_copper_ore": 1200,
+        "fish_cod": 0,  # emptied stacks are hidden
         "ghost_item": 2,  # not in registry (renamed/removed)
     }
     lines = inventory_lines(items)
@@ -69,8 +69,8 @@ async def test_inventory_lists_tools_with_enchants_and_equipped_mark(db):
     from cococap.services.equipment import add_enchant
 
     user = await User.get(9)
-    a = await user.give_instance("starter_axe")
-    b = await user.give_instance("starter_axe")
+    a = await user.give_instance("tool_axe_starter")
+    b = await user.give_instance("tool_axe_starter")
     a = await add_enchant(user, a.id, "soloist")
     assert instance_label(a) == "Starter Axe [Soloist]"  # no "#4": you own one tool of each kind
     lines = instance_lines([a, b], {b.id}, None)
@@ -85,12 +85,12 @@ async def test_inventory_is_plain_lines_without_rarity_words(db):
     from tests.test_hub import all_text, hub
 
     reg = get_registry()
-    orb = reg.item("familiar_orb")
-    assert inventory_lines({"familiar_orb": 2}) == [f"{orb.emoji} 2 {orb.name}"]
+    orb = reg.item("key_orb_familiar")
+    assert inventory_lines({"key_orb_familiar": 2}) == [f"{orb.emoji} 2 {orb.name}"]
     nav, _ = await hub("inventory")
     assert "```" not in all_text(nav)
     user = await User.get(1)
-    await user.add_item("familiar_orb", 2)
+    await user.add_item("key_orb_familiar", 2)
     nav, _ = await hub("inventory")
     assert "```" not in all_text(nav) and f"{orb.emoji} 2 {orb.name}" in all_text(nav)
     user = await User.get(1)

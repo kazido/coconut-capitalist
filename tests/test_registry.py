@@ -33,10 +33,10 @@ def test_seeds_and_crops_are_linked_both_ways():
 
 def test_lookups():
     reg = get_registry()
-    assert reg.item("dreamnail").tool.requirement == 10
-    assert reg.item("shiningsilver").tool.ability_description.endswith("50% of their max health.")
-    assert reg.item("implosion_gemstone").wiki  # recovered from the old database
-    assert {i.id for i in reg.items_for_skill("mining")} >= {"copper_ore", "scarab_bomb"}
+    assert reg.item("tool_dreamnail").tool.requirement == 10
+    assert reg.item("tool_shiningsilver").tool.ability_description.endswith("50% of their max health.")
+    assert reg.item("key_gemstone_implosion").wiki  # recovered from the old database
+    assert {i.id for i in reg.items_for_skill("mining")} >= {"material_copper_ore", "tool_scarab_bomb"}
     assert all(i.price > 0 for i in reg.shop_items())
     assert reg.find_item("nope") is None
     with pytest.raises(UnknownItem):
@@ -64,7 +64,7 @@ def edit(path: Path, old: str, new: str):
 
 def test_typo_in_a_field_name_is_reported_with_file_and_entry(data):
     edit(data / "items.toml", "sell_price = 50  # TODO(balance): flattened (was 20)", "sel_price = 50  # TODO(balance): flattened (was 20)")
-    with pytest.raises(RegistryError, match=r"items\.toml \[copper_ore\].*sel_price"):
+    with pytest.raises(RegistryError, match=r"items\.toml \[material_copper_ore\].*sel_price"):
         load_registry(data)
 
 
@@ -75,14 +75,14 @@ def test_out_of_range_rarity_rejected(data):
 
 
 def test_dotted_or_uppercase_ids_rejected(data):
-    edit(data / "items.toml", "[cod]\n", "[Cod.x]\n")
+    edit(data / "items.toml", "[fish_cod]\n", "[Cod.x]\n")
     with pytest.raises(RegistryError):
         load_registry(data)
 
 
 def test_broken_seed_link_rejected(data):
-    edit(data / "items.toml", 'grows_into = "apple"', 'grows_into = "lemon"')
-    with pytest.raises(RegistryError, match="apple"):
+    edit(data / "items.toml", 'grows_into = "crop_apple"', 'grows_into = "crop_lemon"')
+    with pytest.raises(RegistryError, match="crop_apple"):
         load_registry(data)
 
 
@@ -144,7 +144,7 @@ def test_a_species_drop_of_an_unknown_item_or_a_bad_rate_is_rejected(data):
 
 
 def test_a_species_drop_rate_must_be_a_chance(data):
-    add_birch_drop(data, "hardwood", 1.5)
+    add_birch_drop(data, "material_hardwood", 1.5)
     with pytest.raises(RegistryError, match="rate"):
         load_registry(data)
 
@@ -174,12 +174,12 @@ async def test_stars_are_their_own_stacks(db):
     from cococap.user import User
 
     user = await User.get(1)
-    await user.add_item("gold_ore", 5)
-    await user.add_item("gold_ore_s2", 2)
-    assert await user.items() == {"gold_ore": 5, "gold_ore_s2": 2}
+    await user.add_item("material_gold_ore", 5)
+    await user.add_item("material_gold_ore_s2", 2)
+    assert await user.items() == {"material_gold_ore": 5, "material_gold_ore_s2": 2}
 
 
-@pytest.mark.parametrize("ids,problem", [('"no_such_item"', "does not exist"), ('"hardwood", "steel_pickaxe"', "plain material"), ('"hardwood", "hardwood_s2"', "does not exist")])
+@pytest.mark.parametrize("ids,problem", [('"no_such_item"', "does not exist"), ('"material_hardwood", "tool_pickaxe_steel"', "plain material"), ('"material_hardwood", "material_hardwood_s2"', "does not exist")])
 def test_bad_starrable_lists_are_rejected(data, ids, problem):
     text = (data / "economy.toml").read_text()
     start = text.index("starrable = [")

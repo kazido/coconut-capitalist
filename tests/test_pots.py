@@ -67,7 +67,7 @@ def manual_per_hour(water, power=3):
 def test_pots_are_a_side_dish_not_the_main_earner(water):
     """The point of the design: even a fully optimised set of pots earns a fraction of fishing by hand, and a basic one a trifle."""
     manual = manual_per_hour(water)
-    basic = pots.hourly_value(Pot(level=1, water=water.id, bait="worm"), REG)
+    basic = pots.hourly_value(Pot(level=1, water=water.id, bait="bait_worm"), REG)
     assert basic < 0.04 * manual, (basic, manual)
     nets = []
     for bait in (i for i in REG.items.values() if i.bait and i.buyable):  # whichever bait pays best in this water, bait cost and all
@@ -80,10 +80,10 @@ def test_pots_are_a_side_dish_not_the_main_earner(water):
 
 @pytest.mark.parametrize("water", RULES.waters, ids=lambda w: w.id)
 def test_optimising_really_does_pay_more(water):
-    base = pots.hourly_value(Pot(level=1, water=water.id, bait="worm"), REG)
-    leveled = pots.hourly_value(Pot(level=5, water=water.id, bait="worm"), REG)
-    baited = pots.hourly_value(Pot(level=5, water=water.id, bait="squid_chunk"), REG)
-    pet = pots.hourly_value(Pot(level=5, water=water.id, bait="squid_chunk"), REG, BEST_PET)
+    base = pots.hourly_value(Pot(level=1, water=water.id, bait="bait_worm"), REG)
+    leveled = pots.hourly_value(Pot(level=5, water=water.id, bait="bait_worm"), REG)
+    baited = pots.hourly_value(Pot(level=5, water=water.id, bait="bait_squid_chunk"), REG)
+    pet = pots.hourly_value(Pot(level=5, water=water.id, bait="bait_squid_chunk"), REG, BEST_PET)
     assert base < leveled < baited < pet
     assert pet > 5 * base
 
@@ -117,35 +117,35 @@ async def test_you_cannot_own_more_pots_than_your_level_allows(db):
 
 # ---- bait ------------------------------------------------------------------------------------------------------------------------------
 async def test_loading_bait_uses_it_up_starts_the_clock_and_stops_at_the_pots_capacity(db):
-    user = await angler(1, materials={"worm": 50})
+    user = await angler(1, materials={"bait_worm": 50})
     await crafted(user)
-    loaded, returned = await pots.load_bait(user, 0, "worm", 50, T0 + 100, REG)
-    assert loaded == P.levels[0].capacity and returned == 0 and await user.item_quantity("worm") == 50 - loaded
+    loaded, returned = await pots.load_bait(user, 0, "bait_worm", 50, T0 + 100, REG)
+    assert loaded == P.levels[0].capacity and returned == 0 and await user.item_quantity("bait_worm") == 50 - loaded
     pot = (await user.skill("fishing")).pots[0]
-    assert pot.bait == "worm" and pot.bait_left == loaded and pot.since == T0 + 100
+    assert pot.bait == "bait_worm" and pot.bait_left == loaded and pot.since == T0 + 100
     with pytest.raises(pots.PotError, match="already full"):
-        await pots.load_bait(user, 0, "worm", 5, T0 + 200, REG)
+        await pots.load_bait(user, 0, "bait_worm", 5, T0 + 200, REG)
     with pytest.raises(pots.PotError, match="isn't bait"):
-        await pots.load_bait(user, 0, "cod", 1, T0, REG)
+        await pots.load_bait(user, 0, "fish_cod", 1, T0, REG)
     with pytest.raises(pots.PotError, match="don't have any"):
-        await pots.load_bait(user, 0, "shrimp", 1, T0, REG)
+        await pots.load_bait(user, 0, "bait_shrimp", 1, T0, REG)
 
 
 async def test_topping_up_keeps_the_clock_and_switching_bait_gives_the_old_back(db):
-    user = await angler(1, materials={"worm": 20, "shrimp": 20})
+    user = await angler(1, materials={"bait_worm": 20, "bait_shrimp": 20})
     await crafted(user)
-    await pots.load_bait(user, 0, "worm", 3, T0, REG)
-    await pots.load_bait(user, 0, "worm", 2, T0 + 500, REG)
+    await pots.load_bait(user, 0, "bait_worm", 3, T0, REG)
+    await pots.load_bait(user, 0, "bait_worm", 2, T0 + 500, REG)
     pot = (await user.skill("fishing")).pots[0]
     assert pot.bait_left == 5 and pot.since == T0  # topping up doesn't restart the pot
-    loaded, returned = await pots.load_bait(user, 0, "shrimp", 4, T0 + 900, REG)
-    assert (loaded, returned) == (4, 5) and await user.item_quantity("worm") == 20 - 5 + 5
+    loaded, returned = await pots.load_bait(user, 0, "bait_shrimp", 4, T0 + 900, REG)
+    assert (loaded, returned) == (4, 5) and await user.item_quantity("bait_worm") == 20 - 5 + 5
     pot = (await user.skill("fishing")).pots[0]
-    assert pot.bait == "shrimp" and pot.bait_left == 4 and pot.since == T0 + 900
+    assert pot.bait == "bait_shrimp" and pot.bait_left == 4 and pot.since == T0 + 900
 
 
 # ---- catching ------------------------------------------------------------------------------------------------------------------------
-async def loaded_pot(user_id=1, bait="worm", n=6, level=None, materials=None):
+async def loaded_pot(user_id=1, bait="bait_worm", n=6, level=None, materials=None):
     user = await angler(user_id, level=level, materials={bait: n, **(materials or {})})
     await crafted(user)
     await pots.load_bait(user, 0, bait, n, T0, REG)
@@ -184,7 +184,7 @@ async def test_the_same_fish_come_up_however_often_you_look(db):
     user = await loaded_pot(n=6)
     pot = (await user.skill("fishing")).pots[0]
     step = step_of(pot)
-    a = Counter(pots.roll_catch(pot.water, REG.item("worm"), Random(f"pot:{user.id}:0:{pot.since}"), REG).id for _ in range(1))
+    a = Counter(pots.roll_catch(pot.water, REG.item("bait_worm"), Random(f"pot:{user.id}:0:{pot.since}"), REG).id for _ in range(1))
     haul = await pots.collect(user, 0, T0 + step + 1, REG)
     assert haul.fish == a  # the one fish is the seeded first roll: looking first changes nothing
 
@@ -203,11 +203,11 @@ async def test_a_pot_that_runs_out_of_bait_stops_and_a_full_pot_wastes_the_wait(
 
 
 async def test_collect_all_empties_every_pot(db):
-    user = await angler(1, level=P.slot_levels[1], materials={"worm": 20})
+    user = await angler(1, level=P.slot_levels[1], materials={"bait_worm": 20})
     await crafted(user)
     await crafted(user)
     for i in (0, 1):
-        await pots.load_bait(user, i, "worm", 3, T0, REG)
+        await pots.load_bait(user, i, "bait_worm", 3, T0, REG)
     step = step_of((await user.skill("fishing")).pots[0])
     haul = await pots.collect_all(user, T0 + 3 * step + 1, REG)
     assert haul.catches == 6 == sum(haul.fish.values())
@@ -217,24 +217,24 @@ async def test_pets_and_bait_change_how_fast_and_how_rare(db):
     user = await loaded_pot()
     pot = (await user.skill("fishing")).pots[0]
     assert step_of(pot, {"pot_speed": 0.25}) == pytest.approx(step_of(pot) / 1.25)
-    shrimp = Pot(level=1, water="river", bait="shrimp", bait_left=3, since=T0)
-    assert step_of(shrimp) == pytest.approx(P.levels[0].interval_minutes * 60 / REG.item("shrimp").bait.speed)
+    shrimp = Pot(level=1, water="river", bait="bait_shrimp", bait_left=3, since=T0)
+    assert step_of(shrimp) == pytest.approx(P.levels[0].interval_minutes * 60 / REG.item("bait_shrimp").bait.speed)
 
     def rare_share(bait_id, pet):
         rng = Random(7)
         bait = REG.item(bait_id)
         return sum(pots.roll_catch("deep_sea", bait, rng, REG, pet).rarity >= 4 for _ in range(6000)) / 6000
 
-    assert rare_share("worm", None) < rare_share("squid_chunk", None) < rare_share("squid_chunk", BEST_PET)
-    assert pots.ready(Pot(bait="worm", bait_left=9, since=T0, level=1), T0 + 5000, REG, {"pot_speed": 1.0}) > \
-        pots.ready(Pot(bait="worm", bait_left=9, since=T0, level=1), T0 + 5000, REG)
+    assert rare_share("bait_worm", None) < rare_share("bait_squid_chunk", None) < rare_share("bait_squid_chunk", BEST_PET)
+    assert pots.ready(Pot(bait="bait_worm", bait_left=9, since=T0, level=1), T0 + 5000, REG, {"pot_speed": 1.0}) > \
+        pots.ready(Pot(bait="bait_worm", bait_left=9, since=T0, level=1), T0 + 5000, REG)
 
 
 async def test_a_python_pet_really_speeds_the_pot_up_when_collecting(db):
     user = await loaded_pot(n=6)
     step = step_of((await user.skill("fishing")).pots[0])
-    await user.update_pethouse(lambda h: (h.pets.update({"python": __import__("cococap.models.pethouse", fromlist=["x"]).OwnedPet(xp=pets.level_xp(REG.economy.pets.max_level, REG.pets["python"].rarity, REG))}),
-                                          setattr(h, "active", "python")))
+    await user.update_pethouse(lambda h: (h.pets.update({"undertow": __import__("cococap.models.pethouse", fromlist=["x"]).OwnedPet(xp=pets.level_xp(REG.economy.pets.max_level, REG.pets["undertow"].rarity, REG))}),
+                                          setattr(h, "active", "undertow")))
     haul = await pots.collect(user, 0, T0 + 2.5 * step, REG)
     assert haul.catches > 2  # (without the pet, 2.5 intervals is only two catches)
 
@@ -242,7 +242,7 @@ async def test_a_python_pet_really_speeds_the_pot_up_when_collecting(db):
 async def test_the_catch_can_only_be_rare_even_in_the_shallowest_water(db):
     rng = Random(3)
     for water in RULES.waters:
-        got = {pots.roll_catch(water.id, REG.item("worm"), rng, REG).rarity for _ in range(2000)}
+        got = {pots.roll_catch(water.id, REG.item("bait_worm"), rng, REG).rarity for _ in range(2000)}
         assert min(got) >= P.min_rarity, water.id
 
 
@@ -312,11 +312,11 @@ async def test_the_pots_page_is_locked_until_the_level_and_linked_from_fishing(d
 
 
 async def test_crafting_loading_and_collecting_on_the_screen(db, clock):
-    user = await angler(1, materials={**P.craft_items, "worm": 10})
+    user = await angler(1, materials={**P.craft_items, "bait_worm": 10})
     nav, inter = await hub("fishpots")
     await click(nav, inter, "Craft a pot")
     assert "crafted a crab pot" in all_text(nav) and "Pot 1" in all_text(nav) and "no bait" in all_text(nav)
-    await choose(nav, inter, select_named(nav, "Load bait"), "worm")
+    await choose(nav, inter, select_named(nav, "Load bait"), "bait_worm")
     modal = inter.response.send_modal.await_args.args[0]
     await modal._handler(inter, "all")
     assert "Loaded 6" in all_text(nav) and "Worm ×6" in all_text(nav)
@@ -341,14 +341,14 @@ async def test_the_pots_page_shows_upgrade_costs_and_what_a_pot_is_worth(db):
 
 
 async def test_crafting_shows_what_you_have_against_what_you_need(db):
-    user = await angler(1, materials={"hardwood": 4, "plant_fiber": P.craft_items["plant_fiber"]})
+    user = await angler(1, materials={"material_hardwood": 4, "material_plant_fiber": P.craft_items["material_plant_fiber"]})
     nav, _ = await hub("fishpots")
     page = all_text(nav)
     assert "Craft a pot" in page and "Hardwood" in page
-    assert f"**4/{P.craft_items['hardwood']}**" in page and "❌" in page  # not enough hardwood yet
-    assert f"**{P.craft_items['plant_fiber']}/{P.craft_items['plant_fiber']}**" in page and "✅" in page
-    await user.add_item("hardwood", 100)
-    await user.add_item("coral_shard", 100)
+    assert f"**4/{P.craft_items['material_hardwood']}**" in page and "❌" in page  # not enough hardwood yet
+    assert f"**{P.craft_items['material_plant_fiber']}/{P.craft_items['material_plant_fiber']}**" in page and "✅" in page
+    await user.add_item("material_hardwood", 100)
+    await user.add_item("material_coral_shard", 100)
     nav, _ = await hub("fishpots")
     assert "❌" not in all_text(nav).split("Craft a pot")[1].split("-#")[0]  # every requirement is ticked
 
@@ -358,7 +358,7 @@ async def test_upgrading_shows_bits_and_materials_too(db):
     nav, inter = await hub("fishpots")
     await click(nav, inter, "Craft a pot")
     page = all_text(nav)
-    assert "Upgrade pot 1 to level 2" in page and f"**0/{P.levels[1].upgrade_items['hardwood']}**" in page
+    assert "Upgrade pot 1 to level 2" in page and f"**0/{P.levels[1].upgrade_items['material_hardwood']}**" in page
     assert "bits (you have" in page
 
 
@@ -366,9 +366,9 @@ async def test_the_tool_upgrade_page_shows_what_you_have_against_what_you_need(d
     from cococap.services.equipment import equip
 
     user = await User.get(1)
-    inst = await user.give_instance("starter_axe")
+    inst = await user.give_instance("tool_axe_starter")
     await equip(user, "foraging", inst.id)
-    await user.add_item("feather", 10)
+    await user.add_item("material_feather", 10)
     nav, _ = await hub("upgrade")
     page = all_text(nav)
     assert "**10/40**" in page and "❌" in page and "bits (you have" in page

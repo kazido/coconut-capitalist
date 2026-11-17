@@ -283,9 +283,9 @@ class Registry:
                 problems.append(f"enemies.toml [{enemy.id}]: unknown drop table '{enemy.drops}'")
         if self.combat is not None:
             problems += _validate_combat(self, self.combat)
-        orb_ids = {i for i in self.items if i.endswith("_orb")}
+        orb_ids = {i for i in self.items if i.startswith("key_orb_")}
         if set(self.economy.pets.orbs) != orb_ids:
-            problems.append(f"economy.toml [pets.orbs] must have one odds table per orb item (ids ending _orb): {sorted(orb_ids)}")
+            problems.append(f"economy.toml [pets.orbs] must have one odds table per orb item (ids starting key_orb_): {sorted(orb_ids)}")
         for orb_id, weights in self.economy.pets.orbs.items():
             if sum(weights.values()) <= 0 or any(w < 0 for w in weights.values()) or any(not 1 <= r <= 5 for r in weights):
                 problems.append(f"economy.toml [pets.orbs.{orb_id}]: weights must be >= 0, add up to something, and be for rarities 1-5")
@@ -324,7 +324,7 @@ def _validate_combat(reg: "Registry", rules: CombatRules) -> list[str]:
     return problems
 
 
-BOMB_ITEM = "scarab_bomb"  # the consumable that clears a row (see services.mining.use_bomb)
+BOMB_ITEM = "tool_scarab_bomb"  # the consumable that clears a row (see services.mining.use_bomb)
 
 
 def _validate_mining_items(reg: "Registry", rules: MiningRules) -> list[str]:

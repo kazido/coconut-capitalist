@@ -84,10 +84,10 @@ def with_signature_drops(reg):
 
     from cococap.registry.models import SpeciesDrop
 
-    pairs = {"birch": ("clay", "sapphire")}
+    pairs = {"birch": ("material_clay", "material_sapphire")}
     species = []
     for sp in reg.foraging.species:
-        common, rare = pairs.get(sp.id, ("coal", "emerald"))
+        common, rare = pairs.get(sp.id, ("material_coal", "material_emerald"))
         drops = [SpeciesDrop(item=common, rate=0.3, min=1, max=2), SpeciesDrop(item=rare, rate=0.02, min=1, max=1)]
         species.append(sp.model_copy(update={"drops": drops}))
     other = copy.copy(reg)

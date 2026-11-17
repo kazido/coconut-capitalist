@@ -148,12 +148,12 @@ async def test_crates_from_the_old_layout_are_cleared_and_what_was_inside_is_han
     from cococap.services import community
 
     user = await User.get(1)
-    old = {"made": 5, "slots": [{"theme": "mining", "need": {"copper_ore": 100}, "have": {"copper_ore": 40, "tin_ore": 3}}, {"theme": "mixed", "need": {"coal": 5}, "have": {}}]}
+    old = {"made": 5, "slots": [{"theme": "mining", "need": {"material_copper_ore": 100}, "have": {"material_copper_ore": 40, "material_tin_ore": 3}}, {"theme": "mixed", "need": {"material_coal": 5}, "have": {}}]}
     await community.update(sh._key(user.id), sh.DEFAULT, lambda d: d.update(old))
     assert await sh.mine(user) == []
-    assert await user.item_quantity("copper_ore") == 40 and await user.item_quantity("tin_ore") == 3
+    assert await user.item_quantity("material_copper_ore") == 40 and await user.item_quantity("material_tin_ore") == 3
     await sh.mine(user)
-    assert await user.item_quantity("copper_ore") == 40  # (handed back once)
+    assert await user.item_quantity("material_copper_ore") == 40  # (handed back once)
 
 
 

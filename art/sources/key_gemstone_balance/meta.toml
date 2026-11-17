@@ -1,0 +1,4 @@
+source = "gemstone_balance.webp"
+framed = true
+canvas = 16
+ms = [260, 260, 260, 260, 260, 260, 260, 260]

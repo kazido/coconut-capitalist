@@ -1,25 +1,33 @@
-feather = [0, 6]
-aged_feather = [15, 3]
-amber = [10, 10]
-beeswax = [9, 5]  # WEAK: plain gold block; no wax icon
-clay = {cell = [12, 1], sat = 0.5}
-coal = {cell = [12, 0], sat = 0.2, val = 0.4}
-compost = [26, 8]  # WEAK: dark specks stand in for compost
-coral_shard = [21, 6]
-dewdrop = [43, 5]
-emerald = [10, 1]
-fine_bark = [12, 12]
-garnet = [10, 2]
-gilded_wedge = {cell = [39, 6], hue = 20, sat = 1.2, val = 1.2}
-hardwood = [12, 9]
-iron_wedge = [40, 6]
-living_vine = [15, 0]
-maple_leaf = [16, 3]
-obsidian = {cell = [13, 3], sat = 0.3, val = 0.3}
-plant_fiber = {cell = [12, 2], hue = 60}
-platinum_ore = {cell = [13, 7], hue = 200, sat = 1.5}  # WEAK: sphere, not ore
-radar_battery = {cell = [17, 0], hue = -150}  # WEAK: thin vial as battery
-rotation_wedge = [39, 8]
-sapphire = [10, 4]
-silver_ore = [13, 0]
-tin_ore = [13, 1]
+material_feather = [0, 6]
+material_aged_feather = [15, 3]
+material_amber = [10, 10]
+material_beeswax = [9, 5]  # WEAK: plain gold block; no wax icon
+material_compost = [26, 8]  # WEAK: dark specks stand in for compost
+material_coral_shard = [21, 6]
+material_dewdrop = [43, 5]
+material_fine_bark = [12, 12]
+material_gilded_wedge = {cell = [39, 6], hue = 20, sat = 1.2, val = 1.2}
+material_hardwood = [12, 9]
+material_iron_wedge = [40, 6]
+material_living_vine = [15, 0]
+material_maple_leaf = [16, 3]
+material_obsidian = {cell = [13, 3], sat = 0.3, val = 0.3}
+material_plant_fiber = {cell = [12, 2], hue = 60}
+material_radar_battery = {cell = [17, 0], hue = -150}  # WEAK: thin vial as battery
+material_rotation_wedge = [39, 8]
+material_silver_ore = [13, 0]
+
+# Ores and coal/clay: recolours of silver ore's cell [13,0] by brightness ramp (dark -> light), so they share its shape and shading.
+material_copper_ore = {cell = [13, 0], ramp = ["#2e1410", "#7a3a1c", "#c8702f", "#f2b27a"]}
+material_tin_ore = {cell = [13, 0], ramp = ["#2b2b33", "#6b6f7a", "#a9adb8", "#e6e8ee"]}
+material_iron_ore = {cell = [13, 0], ramp = ["#1e1618", "#4f3b3a", "#8a6a5f", "#c6a89a"]}
+material_gold_ore = {cell = [13, 0], ramp = ["#33230a", "#8a6212", "#e0a81e", "#fff0a0"]}
+material_platinum_ore = {cell = [13, 0], ramp = ["#1c2733", "#4d7287", "#90c4d8", "#f2fdff"]}
+material_coal = {cell = [13, 0], ramp = ["#0c0c10", "#25252c", "#45454f", "#74747f"]}
+material_clay = {cell = [13, 0], ramp = ["#3a2a20", "#8a6a58", "#c49a7c", "#e6c8ae"]}
+
+# Gem materials: silver ore's stone with only its protruding flecks (#a56c6c darker, #b5957a lighter) swapped to the gem's colour; teal / orange / ice
+# so none matches a reactor key gem (blue, green, red, purple).
+material_emerald = {cell = [13, 0], swap = {"#a56c6c" = "#1f9d86", "#b5957a" = "#6ff0cf"}}
+material_garnet = {cell = [13, 0], swap = {"#a56c6c" = "#c4541c", "#b5957a" = "#ffa24a"}}
+material_sapphire = {cell = [13, 0], swap = {"#a56c6c" = "#4a90c0", "#b5957a" = "#b0ecff"}}

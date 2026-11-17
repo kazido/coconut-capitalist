@@ -25,7 +25,7 @@ class _Data(BaseModel):
 def check_id(value: str) -> str:
     # Ids are used as MongoDB field-path segments (items.<id>.quantity): no dots or '$'.
     if not ID_RE.match(value):
-        raise ValueError(f"invalid id {value!r}: use lowercase snake_case (e.g. 'apple_seed')")
+        raise ValueError(f"invalid id {value!r}: use lowercase snake_case (e.g. 'seed_apple')")
     return value
 
 

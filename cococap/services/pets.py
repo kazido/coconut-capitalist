@@ -16,7 +16,7 @@ from cococap.models.pethouse import CURVE_VERSION, OwnedPet, Pethouse
 from cococap.registry import Item, Pet, Registry, get_registry
 from cococap.user import User
 
-ORB = "familiar_orb"  # the standard orb; others are the items whose id ends `_orb`, each with its own odds table in economy.toml [pets.orbs]
+ORB = "key_orb_familiar"  # the standard orb; others are the items whose id ends `_orb`, each with its own odds table in economy.toml [pets.orbs]
 LEGACY_XP_SCALE = 300  # the one xp scale every pet had before levels depended on rarity (curve version 0); history, not balance
 
 # Every stat the rest of the game looks up (a test checks that pets cover all of them and use no others).
@@ -212,7 +212,7 @@ def target_boost(misses: int, registry: Registry) -> float:
 
 def orb_ids(registry: Registry) -> list[str]:
     """Every kind of orb (cheapest first): the items whose id ends `_orb`. Each has an odds table in economy.toml [pets.orbs]."""
-    return sorted((i for i in registry.items if i.endswith("_orb")), key=lambda i: (registry.items[i].price, i))
+    return sorted((i for i in registry.items if i.startswith("key_orb_")), key=lambda i: (registry.items[i].price, i))
 
 
 def orb_odds(registry: Registry, target: str | None = None, misses: int = 0, orb: str = ORB) -> dict[str, float]:

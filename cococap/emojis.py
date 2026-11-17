@@ -8,7 +8,7 @@ server). At startup ``refresh(bot)`` fetches them, so data files and code only n
 * ``resolve("<a:gemstone_rage:123>")`` -> the same emoji looked up by name (so a wrong/old id in a data
   file still works); text without custom emojis is returned unchanged.
 
-* ``for_id("item", "iron_ore", "⛏️")`` -> the application emoji named by the thing's id, else the fallback.
+* ``for_id("item", "material_iron_ore", "⛏️")`` -> the application emoji named by the thing's id, else the fallback.
   This is how hundreds of emoji work without a single token in the data: upload ``iron_ore`` and every
   screen that shows that item switches to it. Naming convention (kind -> emoji name):
 
@@ -37,25 +37,10 @@ log = getLogger(__name__)
 # The bot's uploaded emojis. Startup warns about any of these that are missing, and a test fails if one
 # stops being used anywhere (so no artwork silently goes to waste).
 LEGACY = (
-    "autominer", "cell", "cell_empty", "cell_upgraded", "wyrmhole", "seed_weathered",
-    "gemstone_balance", "gemstone_implosion", "gemstone_oreo", "gemstone_peace", "gemstone_rage", "gemstone_sanity",
-    "ore_copper", "ore_gold", "ore_iron",
+    "autominer", "cell", "cell_empty", "cell_upgraded", "wyrmhole",
     "spirit_of_the_forest", "spirit_of_the_mines", "spirit_of_the_sea",
     "xp_bar_empty", "xp_bar_full", "xp_bar_left", "xp_bar_right",
 )
-
-# The owner's first emojis were named differently from the items they show. Name in Discord -> item id.
-# (They still resolve through ``<:name:id>`` tokens; an emoji named exactly by the item id wins over them.)
-ALIASES = {
-    "gemstone_balance": "balance_gemstone", "gemstone_implosion": "implosion_gemstone",
-    "gemstone_oreo": "oreo_gemstone", "gemstone_peace": "peace_gemstone",
-    "gemstone_rage": "rage_gemstone", "gemstone_sanity": "sanity_gemstone",
-    "ore_copper": "copper_ore", "ore_gold": "gold_ore", "ore_iron": "iron_ore",
-    "seed_weathered": "dusty_dandelion_seed",
-    "spirit_of_the_forest": "spirit_of_the_forest", "spirit_of_the_mines": "spirit_of_the_mines",
-    "spirit_of_the_sea": "spirit_of_the_sea",
-}
-_ITEM_ALIAS = {item: name for name, item in ALIASES.items()}
 
 # Every custom-emoji name the bot's own code or data may mention.
 KNOWN = LEGACY
@@ -111,8 +96,6 @@ def for_id(kind: str, id, fallback=""):
     name = name_for(kind, id)
     if name in _by_name:
         return _by_name[name]
-    if kind == "item" and (old := _ITEM_ALIAS.get(name)) in _by_name:
-        return _by_name[old]
     return fallback
 
 
@@ -121,8 +104,6 @@ def image_url(kind: str, id, size: int = 128) -> str | None:
     if kind not in KINDS:
         raise ValueError(f"unknown emoji kind {kind!r}; use one of {KINDS}")
     name = name_for(kind, id)
-    if name not in _meta and kind == "item":
-        name = _ITEM_ALIAS.get(name, name)
     if name not in _meta:
         return None
     eid, animated = _meta[name]

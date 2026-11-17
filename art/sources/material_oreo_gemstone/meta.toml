@@ -1,0 +1,4 @@
+source = "gemstone_oreo.webp"
+framed = true
+canvas = 16
+ms = []

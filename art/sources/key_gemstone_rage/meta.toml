@@ -1,0 +1,4 @@
+source = "gemstone_rage.webp"
+framed = true
+canvas = 16
+ms = [260, 260, 260, 260, 260, 260, 260, 260]

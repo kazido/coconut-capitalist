@@ -43,6 +43,11 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 
 ## Latest state (read this before the list below)
 
+- **Prefixed ids (done, see `docs/plans/prefixed-ids.md`):** every item id is now `<category>_<name>` and the emoji name equals the id (no alias layer; owner emoji sources
+  live in `art/sources/<item id>`). Pets are named for their wisps (`dog` -> `cinder`). Alembic `0009` rewrites inventories, tool templates, JSON blobs and
+  `starter_claimed_*` stats (tested, and run on a copy of the live DB). Old map: `scripts/rename_map.toml`; Mongo import maps through `cococap/id_rename.py`.
+  Discord: delete the old emoji, then `scripts/upload_emojis.py --yes` (names are new, so they upload as missing).
+
 - **One branch only: `master`** (the audit branch was deleted; the bot runs from the main checkout). Push only when asked (`git push origin master`). The old pre-AI code is preserved on `history/pre-ai`.
 - **Material cull (2026-11-17)**: 19 unused materials removed (the 18 foraging species items and golden pollen); migration `0008` refunds holders at sell price and deletes the stacks. Iron/Gilded wedge recipes now use hardwood + ores (amounts are guesses, `TODO(balance)`). Reactor gemstones were kept (they feed the reactor). Next: **starred materials** (plan: `docs/plans/starred-materials.md`): 1/2/3-star drops as separate item ids, only later LOCATIONS (forests, waters, ...) drop higher stars, never depth; wiring drops (step 4) is on hold for the areas work, only late upgrades need them.
 - Done since the list below was written: shipments by skill (basic at level 10, hard at 30; community off), trading (shared window, both Accept), settings (keep upgrade

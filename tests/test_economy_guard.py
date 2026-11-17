@@ -68,14 +68,14 @@ def test_no_single_ore_or_find_is_most_of_what_mining_pays():
     worth = {i: REG.item(i).sell_price * q for i, q in tot.items()}
     total = sum(worth.values())
     assert max(worth.values()) / total <= 0.55, {i: round(v / total, 2) for i, v in worth.items() if v / total > 0.1}
-    assert REG.item("copper_ore").sell_price >= 40  # (the commonest ore is not worth pennies)
+    assert REG.item("material_copper_ore").sell_price >= 40  # (the commonest ore is not worth pennies)
 
 
 def test_the_commonest_materials_are_worth_something_next_to_the_rare_ones():
-    for common, rare in (("hardwood", "maple_leaf"), ("feather", "aged_feather"), ("copper_ore", "gold_ore")):
+    for common, rare in (("material_hardwood", "material_maple_leaf"), ("material_feather", "material_aged_feather"), ("material_copper_ore", "material_gold_ore")):
         ratio = REG.item(rare).sell_price / REG.item(common).sell_price
         assert ratio <= 3000, (common, rare, ratio)  # a rare drop is a lot, not a million times a common one
-    assert REG.item("hardwood").sell_price >= 2_000
+    assert REG.item("material_hardwood").sell_price >= 2_000
 
 
 def test_a_days_work_pays_less_than_an_hour_of_playing_at_the_ranks_new_players_reach():

@@ -298,7 +298,7 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")
     menu = select_named(nav, "Pick an item")
-    await choose(nav, inter, menu, next(o.value for o in menu.options if o.value.endswith("_seed")))
+    await choose(nav, inter, menu, next(o.value for o in menu.options if o.value.startswith("seed_")))
     buy = [b for b in item_buy_buttons(nav) if not b.disabled][0]
     await buy.callback(inter)
     modal = await submit(inter, "lots")
@@ -312,7 +312,7 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
 
 async def test_shop_sell_mode_sells_the_full_stack_by_default(db):
     user = await User.get(1)
-    await user.add_item("gold_ore", 4)
+    await user.add_item("material_gold_ore", 4)
     nav, inter = await hub("shop")
     await click(nav, inter, "Sell")
     await next(b for b in buttons(nav) if b.label == "Sell" and b.style == discord.ButtonStyle.success).callback(inter)
@@ -320,15 +320,15 @@ async def test_shop_sell_mode_sells_the_full_stack_by_default(db):
     assert modal.field.default == "4"
     modal.field._value = "4"
     await modal.on_submit(inter)
-    assert (await User.get(1)).purse == 1000 + 4 * get_registry().item("gold_ore").sell_price and await user.items() == {}
+    assert (await User.get(1)).purse == 1000 + 4 * get_registry().item("material_gold_ore").sell_price and await user.items() == {}
 
 
 async def test_inventory_lists_items_only_and_has_sell_and_tools_buttons(db):
     from cococap.services.equipment import equip
 
     user = await User.get(1)
-    await user.add_item("copper_ore", 7)
-    for template, skill in (("starter_axe", "foraging"), ("tin_can", "farming")):
+    await user.add_item("material_copper_ore", 7)
+    for template, skill in (("tool_axe_starter", "foraging"), ("tool_can_tin", "farming")):
         await equip(user, skill, (await user.give_instance(template)).id)
     nav, inter = await hub("inventory")
     text = all_text(nav)
@@ -341,7 +341,7 @@ async def test_inventory_lists_items_only_and_has_sell_and_tools_buttons(db):
 
 async def test_the_sell_button_opens_the_shop_in_sell_mode(db):
     user = await User.get(1)
-    await user.add_item("copper_ore", 7)
+    await user.add_item("material_copper_ore", 7)
     nav, inter = await hub("inventory")
     await click(nav, inter, "Sell")
     assert nav.screen.id == "shop" and nav.screen.mode == "sell" and "Copper Ore" in all_text(nav)
@@ -355,7 +355,7 @@ async def test_the_sell_button_is_off_when_you_have_nothing(db):
 
 async def test_the_tools_page_lists_one_tool_per_skill_including_the_can(db):
     user = await User.get(1)
-    for template in ("starter_axe", "tin_can", "rookiepickaxe", "starter_rod"):
+    for template in ("tool_axe_starter", "tool_can_tin", "tool_pickaxe_rookie", "tool_rod_starter"):
         await user.give_instance(template)
     nav, _ = await hub("tools")
     lines = all_text(nav).split("\n")
@@ -368,8 +368,8 @@ async def test_the_tools_page_is_a_compact_list_without_equip_buttons_and_leads_
     from cococap.services.equipment import equip
 
     user = await User.get(1)
-    axe = await user.give_instance("starter_axe")
-    await user.give_instance("tin_can")
+    axe = await user.give_instance("tool_axe_starter")
+    await user.give_instance("tool_can_tin")
     await equip(user, "foraging", axe.id)
     nav, inter = await hub("tools")
     text = all_text(nav)
@@ -386,7 +386,7 @@ async def test_the_tools_page_shows_one_line_per_skill_and_the_empty_case(db):
     assert "no tools yet" in all_text(nav)
     user = await User.get(1)
     for _ in range(30):
-        await user.give_instance("starter_rod")
+        await user.give_instance("tool_rod_starter")
     nav, _ = await hub("tools")
     assert all_text(nav).count("Starter Rod") == 1  # (a spare is not listed again)
 
@@ -421,18 +421,18 @@ async def test_empty_inventory_message(db):
 async def test_mining_screen_reactor_buttons(db):
     user = await User.get(1)
     await user.add_xp("mining", User.level_to_xp(10) + 1)
-    await user.add_item("sanity_gemstone", 1)
+    await user.add_item("key_gemstone_sanity", 1)
     nav, inter = await hub("reactor")
     await click(nav, inter, "Insert gems")
-    assert (await user.skill("mining")).reactor.core_1.gem_id == "sanity_gemstone"
+    assert (await user.skill("mining")).reactor.core_1.gem_id == "key_gemstone_sanity"
     assert "Inserted: Sanity" in all_text(nav)
-    await choose(nav, inter, select_named(nav, "Feed the magnet"), "copper_ore")  # picking an ore says exactly what feeding it does
+    await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")  # picking an ore says exactly what feeding it does
     assert "A full meter needs" in all_text(nav) and find_button(nav, "Feed 1").disabled  # (no copper to feed)
-    await user.add_item("copper_ore", 30)
+    await user.add_item("material_copper_ore", 30)
     nav, inter = await hub("reactor")
-    await choose(nav, inter, select_named(nav, "Feed the magnet"), "copper_ore")
+    await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")
     await click(nav, inter, "Feed 10")
-    assert "Fed the magnet **10 Copper Ore**" in all_text(nav) and (await user.skill("mining")).magnet_meter == 10 and await user.item_quantity("copper_ore") == 20
+    assert "Fed the magnet **10 Copper Ore**" in all_text(nav) and (await user.skill("mining")).magnet_meter == 10 and await user.item_quantity("material_copper_ore") == 20
     await click(nav, inter, "Magnet: on")
     assert (await user.skill("mining")).magnet_on is False and find_button(nav, "Magnet: off")
     assert find_button(nav, "Claim lodes").disabled
@@ -645,11 +645,11 @@ async def test_a_collapse_halves_the_haul_and_still_gives_xp(db):
     run = nav.screen.run
     run.rng = Rig(0.99)
     await find_button(nav, "Dig").callback(inter)
-    run.haul = Counter(copper_ore=10)
+    run.haul = Counter(material_copper_ore=10)
     run.danger = 90
     run.rng = Rig(0.0)
     await find_button(nav, "Dig").callback(inter)
-    assert "collapsed" in all_text(nav) and await user.item_quantity("copper_ore") == 5
+    assert "collapsed" in all_text(nav) and await user.item_quantity("material_copper_ore") == 5
     await continue_through(nav, inter)
     assert (await user.skill("mining")).xp == 10 and not nav.screen.locked
 
@@ -693,9 +693,9 @@ async def test_a_mine_with_a_small_wyrmhole_says_so_and_a_plain_one_does_not(db)
 
 async def test_entering_the_small_wyrmhole_banks_the_pack_then_one_pick_per_row_banks_the_rest(db):
     user = await User.get(1)
-    nav, inter, run = await _mine_with_a_small_wyrmhole(carry={"copper_ore": 7})
+    nav, inter, run = await _mine_with_a_small_wyrmhole(carry={"material_copper_ore": 7})
     await click(nav, inter, "Enter the small wyrmhole")
-    assert run.outcome == "mini_wyrmhole" and await user.item_quantity("copper_ore") == 7  # banked first, like the big wyrmhole
+    assert run.outcome == "mini_wyrmhole" and await user.item_quantity("material_copper_ore") == 7  # banked first, like the big wyrmhole
     await continue_through(nav, inter)
     await find_button(nav, "Enter the small wyrmhole").callback(inter)
     assert nav.screen.id == "wyrmhole" and nav.screen.locked
@@ -732,13 +732,13 @@ async def test_a_core_gem_from_a_small_wyrmhole_gets_the_rare_drop_screen(db):
     await click(nav, inter, "Enter the small wyrmhole")
     await continue_through(nav, inter)
     await find_button(nav, "Enter the small wyrmhole").callback(inter)
-    nav.screen.hole.rows[4][1] = ("sanity_gemstone", 1)  # the middle node of the last row, where the cursor starts
+    nav.screen.hole.rows[4][1] = ("key_gemstone_sanity", 1)  # the middle node of the last row, where the cursor starts
     for _ in range(5):
         await find_button(nav, "Dig").callback(inter)
     assert nav.screen.id == "result" and "Gold Ore" in all_text(nav)  # the plain finds first
     await click(nav, inter, "Continue")
     assert nav.screen.id == "result" and "Drop rate" in all_text(nav) and "small wyrmholes" in all_text(nav)  # then the gem's own page, with its odds
-    assert await user.item_quantity("sanity_gemstone") == 1
+    assert await user.item_quantity("key_gemstone_sanity") == 1
 
 
 async def test_scarab_answered_in_time_pays_out_and_late_or_wrong_does_not(db):
@@ -914,8 +914,8 @@ async def test_the_reactor_has_its_own_page_reachable_from_mining(db):
 
 async def test_the_weathered_seed_has_its_emoji(db):
     nav, _ = await hub("shop")
-    seed = get_registry().item("dusty_dandelion_seed")
-    assert seed.emoji and "seed_weathered" in seed.emoji
+    seed = get_registry().item("seed_dusty_dandelion")
+    assert seed.emoji
 
 
 # ---- the streamlined mine screen ---------------------------------------------------------------------------
@@ -940,7 +940,7 @@ async def test_the_bomb_button_only_appears_with_bombs_and_clears_a_row(db):
     nav, inter = await enter_mines()
     assert not [b for b in buttons(nav) if b.label and b.label.startswith("Bomb")]
     user = await User.get(1)
-    await user.add_item("scarab_bomb", 2)
+    await user.add_item("tool_scarab_bomb", 2)
     await click(nav, inter, "Leave & bank")
     await continue_through(nav, inter)
     await click(nav, inter, "Mine again")
@@ -948,7 +948,7 @@ async def test_the_bomb_button_only_appears_with_bombs_and_clears_a_row(db):
     await click(nav, inter, "Bomb (2)")
     run = nav.screen.run
     assert run.depth == 1 and run.bombs == 1 and run.lodes == 5 and "BOOM" in all_text(nav)
-    assert await user.item_quantity("scarab_bomb") == 1
+    assert await user.item_quantity("tool_scarab_bomb") == 1
     assert find_button(nav, "Bomb (1)") and not find_button(nav, "Bomb (1)").disabled
 
 
@@ -1064,7 +1064,7 @@ async def test_inviting_uses_the_party_rules_and_posts_nothing_in_the_chat(db):
 FRIDAY = 1_794_571_200  # 2026-11-13 12:00 UTC
 
 
-async def ripen(user, plot=1, seed="apple_seed"):
+async def ripen(user, plot=1, seed="seed_apple"):
     def set_plot(m):
         p = getattr(m.farm, f"plot_{plot}")
         p.crop_id, p.can_harvest = seed, True
@@ -1085,12 +1085,12 @@ async def test_farm_opens_from_skills_and_shows_the_grid(db):
 
 async def test_planting_from_the_farm_uses_the_selected_seed(db):
     user = await User.get(1)
-    await user.add_item("apple_seed", 2)
+    await user.add_item("seed_apple", 2)
     nav, inter = await hub("farm")
     assert [s for s in selects(nav) if s.placeholder == "Seed to plant"]
-    have = await user.item_quantity("apple_seed")  # (the 2 plus the free starter seeds)
+    have = await user.item_quantity("seed_apple")  # (the 2 plus the free starter seeds)
     await click(nav, inter, "1 Plant")
-    assert await user.item_quantity("apple_seed") == have - 1
+    assert await user.item_quantity("seed_apple") == have - 1
     assert "Planted Apple Seed in plot 1" in all_text(nav)
     assert any(b.label.startswith("1 ·") and b.disabled for b in buttons(nav))  # now shows its progress
 
@@ -1108,7 +1108,7 @@ async def test_harvesting_a_ripe_plot_from_the_farm(db):
     nav, inter = await hub("farm")
     assert "ready" in all_text(nav)
     await click(nav, inter, "1 Harvest")
-    assert nav.screen.id == "result" and "You got" in all_text(nav) and await user.item_quantity("apple") >= 10
+    assert nav.screen.id == "result" and "You got" in all_text(nav) and await user.item_quantity("crop_apple") >= 10
     assert find_button(nav, "Back to the farm") and (await user.skill("farming")).xp > 0
     await click(nav, inter, "Back to the farm")
     assert nav.screen.id == "farm"
@@ -1118,19 +1118,19 @@ async def test_harvesting_a_ripe_plot_from_the_farm(db):
 async def test_harvest_all_and_plant_all(db):
     user = await User.get(1)
     await user.update_skill("farming", lambda m: setattr(m, "starter_given", True))  # (no free seeds mixed in)
-    await user.add_item("land_deed", 1)
+    await user.add_item("key_land_deed", 1)
     await ripen(user, 1)
     nav, inter = await hub("farm")
     await click(nav, inter, "Buy plot")
     free = get_registry().farming.free_plots
     assert f"bought plot {free + 1}" in all_text(nav)
-    await user.add_item("lemon_seed", 5)
+    await user.add_item("seed_lemon", 5)
     nav, inter = await hub("farm")
     await click(nav, inter, "Harvest all")
     assert "You got" in all_text(nav)
     await click(nav, inter, "Back to the farm")
     await click(nav, inter, "Plant all")
-    assert await user.item_quantity("lemon_seed") == 5 - (free + 1)  # every empty plot took one seed
+    assert await user.item_quantity("seed_lemon") == 5 - (free + 1)  # every empty plot took one seed
     assert find_button(nav, "Plant all").disabled  # nothing left to plant into
 
 
@@ -1138,10 +1138,10 @@ async def test_buying_a_plot_needs_a_land_deed(db):
     nav, _ = await hub("farm")
     assert all(b.disabled for b in buttons(nav) if b.label == "Buy plot")
     user = await User.get(1)
-    await user.add_item("land_deed", 1)
+    await user.add_item("key_land_deed", 1)
     nav, inter = await hub("farm")
     await click(nav, inter, "Buy plot")
-    assert await user.item_quantity("land_deed") == 0 and labels_count(nav, "Buy plot") == 8 - get_registry().farming.free_plots
+    assert await user.item_quantity("key_land_deed") == 0 and labels_count(nav, "Buy plot") == 8 - get_registry().farming.free_plots
 
 
 def labels_count(nav, label):
@@ -1154,7 +1154,7 @@ async def test_market_is_locked_until_level_five_then_follows_the_calendar(db, m
     assert nav.screen.id == "market" and "level 5" in all_text(nav)
     user = await User.get(1)
     await user.add_xp("farming", User.level_to_xp(5) + 1)
-    await user.add_item("apple", 10)
+    await user.add_item("crop_apple", 10)
     clock = SimpleNamespace(time=lambda: FRIDAY)
     monkeypatch.setattr("cococap.screens.market.time", clock)
     monkeypatch.setattr("cococap.services.farming.time", clock)
@@ -1163,14 +1163,14 @@ async def test_market_is_locked_until_level_five_then_follows_the_calendar(db, m
     assert "Open" in text and "+50%" in text and find_button(nav, "Deposit blessings")
     before = (await User.get(1)).purse
     await click(nav, inter, next(b.label for b in buttons(nav) if b.label.startswith("Sell all")))
-    assert (await User.get(1)).purse > before and await user.item_quantity("apple") == 0
+    assert (await User.get(1)).purse > before and await user.item_quantity("crop_apple") == 0
     assert "Sold 10 crop(s)" in all_text(nav)
 
 
 async def test_market_is_closed_outside_its_hours(db, monkeypatch):
     user = await User.get(1)
     await user.add_xp("farming", User.level_to_xp(5) + 1)
-    await user.add_item("apple", 3)
+    await user.add_item("crop_apple", 3)
     clock = SimpleNamespace(time=lambda: FRIDAY - 12 * 3600)  # midnight UTC, closed
     monkeypatch.setattr("cococap.screens.market.time", clock)
     monkeypatch.setattr("cococap.services.farming.time", clock)
@@ -1218,13 +1218,13 @@ def check_payload(components) -> None:
 async def stock_the_player(user):
     from cococap.services.party import Party
 
-    for item, quantity in (("apple_seed", 3), ("hot_pepper_seed", 2), ("land_deed", 2), ("scarab_bomb", 2), ("apple", 4),
-                           ("sanity_gemstone", 1), ("copper_ore", 50), ("iron_ore", 9)):
+    for item, quantity in (("seed_apple", 3), ("seed_hot_pepper", 2), ("key_land_deed", 2), ("tool_scarab_bomb", 2), ("crop_apple", 4),
+                           ("key_gemstone_sanity", 1), ("material_copper_ore", 50), ("material_iron_ore", 9)):
         await user.add_item(item, quantity)
-    await user.give_instance("rookiepickaxe")
+    await user.give_instance("tool_pickaxe_rookie")
     from cococap.services.equipment import equip
 
-    await equip(user, "foraging", (await user.give_instance("starter_axe")).id)
+    await equip(user, "foraging", (await user.give_instance("tool_axe_starter")).id)
     await user.add_xp("mining", User.level_to_xp(10) + 1)
     await user.add_xp("farming", User.level_to_xp(5) + 1)
     await ripen(user, 1)
@@ -1266,7 +1266,7 @@ from cococap.services import foraging as foraging_service  # noqa: E402
 OPEN_HOUR = 490_000 * 3600 + 60  # a minute into an hour: the community tree is standing
 
 
-async def with_axe(user_id=1, flags=(), template="starter_axe"):
+async def with_axe(user_id=1, flags=(), template="tool_axe_starter"):
     from cococap.services.equipment import add_enchant, equip
 
     user = await User.get(user_id)
@@ -1330,10 +1330,10 @@ async def test_a_second_chop_click_on_a_fallen_tree_does_not_pay_twice(db, monke
 async def test_heavy_trees_are_slower_for_a_lone_chopper_and_soloist_fixes_it(db, monkeypatch):
     freeze_time(monkeypatch)
     heavy = get_registry().foraging.heavy_zone
-    await with_axe(1, template="reinforced_axe")
+    await with_axe(1, template="tool_axe_reinforced")
     nav, _ = await hub("tree", tree=foraging_service.Tree(heavy, 100, 100))
     assert "Heavy tree" in all_text(nav)
-    await with_axe(2, flags=("soloist",), template="reinforced_axe")
+    await with_axe(2, flags=("soloist",), template="tool_axe_reinforced")
     nav, _ = await hub("tree", tree=foraging_service.Tree(heavy, 100, 100), user_id=2)
     assert "Heavy tree" not in all_text(nav)
 
@@ -1366,7 +1366,7 @@ async def test_two_players_chop_the_community_tree_together(db, monkeypatch):
     await chop(a_nav, a_inter)
     await chop(b_nav, b_inter)
     tree = await foraging_service.community_tree(alice, OPEN_HOUR)
-    power = get_registry().item("starter_axe").tool.power
+    power = get_registry().item("tool_axe_starter").tool.power
     assert tree.hp == tree.max_hp - 3 * power and tree.choppers == 2
     assert f"**{2 * power:,}** hp" in all_text(a_nav) and f"**{power:,}** hp" in all_text(b_nav)  # each sees their own share
     assert "**2** chopper" in all_text(b_nav)  # and the panel reads the latest total when it redraws
@@ -1452,8 +1452,8 @@ async def test_home_only_says_whether_check_in_is_ready_and_the_timers_live_on_t
 
 async def test_a_spot_wears_out_and_moves_on_by_itself_and_a_wrong_style_only_glances_off(db, monkeypatch):
     freeze_time(monkeypatch)
-    user = await with_axe(template="reinforced_axe")
-    power = get_registry().item("reinforced_axe").tool.power
+    user = await with_axe(template="tool_axe_reinforced")
+    power = get_registry().item("tool_axe_reinforced").tool.power
     nav, inter = await hub("tree", tree=foraging_service.Tree(1, 1_000_000, 1_000_000))
     rules = get_registry().foraging
     right = nav.screen.spot.stance(rules)
@@ -1471,8 +1471,8 @@ async def test_a_spot_wears_out_and_moves_on_by_itself_and_a_wrong_style_only_gl
 
 async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
     freeze_time(monkeypatch, good_chops=True)
-    await with_axe(template="reinforced_axe")
-    power = get_registry().item("reinforced_axe").tool.power
+    await with_axe(template="tool_axe_reinforced")
+    power = get_registry().item("tool_axe_reinforced").tool.power
     nav, inter = await hub("tree", tree=foraging_service.Tree(1, 10_000, 10_000))
     await chop(nav, inter)
     bonus = round(power * (1 + RULES_CHOP.good_chop_bonus))
@@ -1485,8 +1485,8 @@ async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
 
 async def test_the_community_tree_has_the_same_spot_and_wear(db, monkeypatch):
     freeze_time(monkeypatch)
-    user = await with_axe(template="reinforced_axe")
-    power = get_registry().item("reinforced_axe").tool.power
+    user = await with_axe(template="tool_axe_reinforced")
+    power = get_registry().item("tool_axe_reinforced").tool.power
     nav, inter = await hub("grove")
     assert "left (about" in all_text(nav) and "per swing" in all_text(nav)
     await chop(nav, inter, zone=3)
@@ -1835,7 +1835,7 @@ async def test_rare_drops_get_their_own_pages_after_the_reward_screen_with_the_d
     nav, inter = await hub("forage")
     again = AsyncMock()
     screen = nav.screen
-    screen.result = rewards_result("TIMBER!", items={"copper_ore": 2, "iron_wedge": 1, "scroll_keen": 1}, xp=40, odds=odds.foraging(),
+    screen.result = rewards_result("TIMBER!", items={"material_copper_ore": 2, "material_iron_wedge": 1, "scroll_keen": 1}, xp=40, odds=odds.foraging(),
                                    again=again, again_label="Another tree", back_label="Back to foraging")
     await screen.refresh(inter)
     assert nav.screen.id == "result" and "Copper Ore" in all_text(nav) and "Scroll" not in all_text(nav) and "Wedge" not in all_text(nav)
@@ -1890,9 +1890,9 @@ async def test_wiki_item_page_has_a_big_thumbnail_when_the_emoji_is_uploaded(db)
 
     from cococap import emojis
 
-    emojis.load([SimpleNamespace(name="cod", id=7, animated=False, __str__=lambda s: "<:cod:7>")])
+    emojis.load([SimpleNamespace(name="fish_cod", id=7, animated=False, __str__=lambda s: "<:cod:7>")])
     try:
-        nav, inter = await hub("wiki", topic="items", skill="fishing", item="cod")
+        nav, inter = await hub("wiki", topic="items", skill="fishing", item="fish_cod")
         assert any(isinstance(c, ui.Thumbnail) for c in nav.walk_children())
     finally:
         emojis.load([])

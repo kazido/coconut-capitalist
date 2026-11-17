@@ -7,11 +7,11 @@ columns = 5
 xp_per_column = 10                 # xp for every column dug (kept even if the mine collapses)
 
 depth_tables = [
-  ["amber", "clay", "coal", "copper_ore"],
-  ["amber", "clay", "iron_ore", "tin_ore", "coal", "copper_ore"],
-  ["dusty_dandelion_seed", "amber", "silver_ore", "obsidian", "gold_ore", "clay", "iron_ore", "tin_ore", "coal", "copper_ore"],
-  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "dusty_dandelion_seed", "garnet", "amber", "platinum_ore", "silver_ore", "obsidian", "gold_ore", "clay", "iron_ore", "tin_ore", "coal", "copper_ore"],
-  ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone", "spirit_of_the_mines", "emerald", "sapphire", "dusty_dandelion_seed", "garnet", "amber", "platinum_ore", "silver_ore", "obsidian", "gold_ore", "clay", "iron_ore", "tin_ore", "coal", "copper_ore"],
+  ["material_amber", "material_clay", "material_coal", "material_copper_ore"],
+  ["material_amber", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["seed_dusty_dandelion", "material_amber", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
 # ---- Mine types: every time you head down the game rolls one by weight and shows it before you dig. Standard is the plain mine (no effects).
@@ -31,7 +31,7 @@ name = "Copper Seam"
 emoji = "🟤"
 weight = 6
 description = "Copper comes out in fatter heaps (+20%), the vault's too."
-ore_yield = { copper_ore = 1.2 }
+ore_yield = { material_copper_ore = 1.2 }
 
 [[mine_types]]
 id = "iron_vein"
@@ -39,8 +39,8 @@ name = "Iron Vein"
 emoji = "🔩"
 weight = 6
 description = "Iron shows more often and in bigger lumps (+15%), the vault's too."
-ore_boost = { iron_ore = 1.1 }
-ore_yield = { iron_ore = 1.15 }
+ore_boost = { material_iron_ore = 1.1 }
+ore_yield = { material_iron_ore = 1.15 }
 
 [[mine_types]]
 id = "gold_vein"
@@ -48,7 +48,7 @@ name = "Gold Vein"
 emoji = "🟡"
 weight = 5
 description = "Gold glints in the walls: +25% gold, the vault's too."
-ore_yield = { gold_ore = 1.25 }
+ore_yield = { material_gold_ore = 1.25 }
 
 [[mine_types]]
 id = "quiet_shaft"
@@ -80,12 +80,12 @@ odds = 25000                       # 1-in-N per cell below `min_row`
 gem_bonus = 5000                   # N shrinks by this for every gem placed in the reactor
 min_odds = 1000                    # ...but never below this
 min_depth = 2                      # first row (0-based) wyrmholes can hide in
-implosion_item = "implosion_gemstone"
+implosion_item = "key_gemstone_implosion"
 [wyrmhole.pool]                    # item = quantity found in a wyrmhole cell
-scarab_bomb = 20
-copper_ore = 1000
-iron_ore = 300
-gold_ore = 100
+tool_scarab_bomb = 20
+material_copper_ore = 1000
+material_iron_ore = 300
+material_gold_ore = 100
 
 # ---- Small wyrmholes: now and then a mine has one (decided when the mine starts, shown on the mine page). It is a 3-wide hole `rows` deep: on each row you
 # pick ONE of 3 hidden nodes, and everything you pick is banked. Each row pays from its own pool (item = quantity; the 3 hidden nodes are drawn from it), better
@@ -96,23 +96,23 @@ gold_ore = 100
 odds = 100                         # 1 in N mines
 columns = 3
 gem_chance = [0.001, 0.002, 0.003, 0.004, 0.0045]
-last_row_bonus = { gold_ore = 1 }
+last_row_bonus = { material_gold_ore = 1 }
 [[mini_wyrmhole.rows]]
-pool = { copper_ore = 24, iron_ore = 4, tin_ore = 6 }
+pool = { material_copper_ore = 24, material_iron_ore = 4, material_tin_ore = 6 }
 [[mini_wyrmhole.rows]]
-pool = { iron_ore = 6, tin_ore = 9, silver_ore = 2 }
+pool = { material_iron_ore = 6, material_tin_ore = 9, material_silver_ore = 2 }
 [[mini_wyrmhole.rows]]
-pool = { iron_ore = 8, silver_ore = 2, obsidian = 1, amber = 2 }
+pool = { material_iron_ore = 8, material_silver_ore = 2, material_obsidian = 1, material_amber = 2 }
 [[mini_wyrmhole.rows]]
-pool = { silver_ore = 3, amber = 2, obsidian = 1, gold_ore = 1 }
+pool = { material_silver_ore = 3, material_amber = 2, material_obsidian = 1, material_gold_ore = 1 }
 [[mini_wyrmhole.rows]]
-pool = { gold_ore = 2, amber = 2, silver_ore = 2, obsidian = 2 }
+pool = { material_gold_ore = 2, material_amber = 2, material_silver_ore = 2, material_obsidian = 2 }
 
 [reactor]
 gem_slot_level = 10                # mining level needed to place gems
 max_prestige = 25
 prestige_per_extra_column = 5      # +1 column dug every this many reactor levels
-core_gems = ["sanity_gemstone", "rage_gemstone", "peace_gemstone", "balance_gemstone"]
+core_gems = ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance"]
 automine_seconds = 360             # one lode per level every 6 minutes
 automine_cap_hours = 24            # lodes stop piling up after this long
 
@@ -123,9 +123,9 @@ drain_per_row = 4                  # while it is on, every row you dig uses this
 # Meter points per ore, set so a point costs about the same in bits whatever you feed (50 bits a point at today's prices): a full meter is about 50,000 bits of ore
 # (1,000 copper, 167 iron or 26 gold), and following the marker is worth several times what its rows cost.  TODO(balance)
 [magnet.values]
-copper_ore = 1
-iron_ore = 6
-gold_ore = 38
+material_copper_ore = 1
+material_iron_ore = 6
+material_gold_ore = 38
 
 [scarab]                           # a subterranean scarab can turn up after ANY mine (a safe exit, the vault, a collapse or a wyrmhole), holding a scrambled scroll
 chance = 12                        # 1 in 12 mines (it was 1 in 51, and only after a safe exit)
@@ -135,7 +135,7 @@ seconds = 45                       # time to unscramble the scroll (it was 30)
 [[scarab.prizes]]
 name = "Bombs"
 weight = 35
-items = { scarab_bomb = 3 }
+items = { tool_scarab_bomb = 3 }
 [[scarab.prizes]]
 name = "A lesson in the rock"
 weight = 35
@@ -143,12 +143,12 @@ xp = 1500                          # about 13 minutes of mining xp
 [[scarab.prizes]]
 name = "A scarab's hoard"
 weight = 20
-items = { copper_ore = 120, iron_ore = 35, gold_ore = 8 }   # about a sixth of a vault's ore
+items = { material_copper_ore = 120, material_iron_ore = 35, material_gold_ore = 8 }   # about a sixth of a vault's ore
 xp = 400
 [[scarab.prizes]]
 name = "A glittering find"
 weight = 10
-items = { sapphire = 1, emerald = 1 }
+items = { material_sapphire = 1, material_emerald = 1 }
 xp = 800
 
 # ---- The descent: a shaft of `floor` rows. Plain cells show their ore; richer ore is harder to dig and adds
@@ -192,9 +192,9 @@ hard_from = 9                      # Hard rock takes more pressure to dig and is
 lookahead = 3                      # rows ahead you can see (only rich lodes and wyrmholes show; the rest is hidden)
 vault_gem_chance = 0.03            # a reactor gem is rare: only this chance of one in the vault...
 [descent.vault_ore]                # ...but these ores are always there: all three, in the proportion you would mine them (the rarer, the fewer).
-copper_ore = 330                   # Worth about 94,000 bits at the doubled ore prices, but it is the ORE COUNT that matters for upgrades (it was 1100 / 300 / 100). The pickaxe upgrade to Masterwork
-iron_ore = 90                      # asks for 400 copper, 300 iron and 60 gold: one vault covers about a third of the iron, so it takes a few visits
-gold_ore = 30
+material_copper_ore = 330                   # Worth about 94,000 bits at the doubled ore prices, but it is the ORE COUNT that matters for upgrades (it was 1100 / 300 / 100). The pickaxe upgrade to Masterwork
+material_iron_ore = 90                      # asks for 400 copper, 300 iron and 60 gold: one vault covers about a third of the iron, so it takes a few visits
+material_gold_ore = 30
 
 # Landmark rows: finish row 10 or 20 and you reach a CHECKPOINT: what is in your pack is safe from a collapse from then on (a collapse only
 # takes a share of what you dug after it). So you can push on knowing what you already have is kept. (relief / braces / vault_share can add a
@@ -205,25 +205,25 @@ row = 10
 row = 20
 
 [descent.hardness]                 # pressure added when this item is dug (empty cells use empty_hardness)
-copper_ore = 4
-iron_ore = 6
-gold_ore = 10
-dusty_dandelion_seed = 8
-sanity_gemstone = 16
-rage_gemstone = 16
-peace_gemstone = 16
-balance_gemstone = 16
+material_copper_ore = 4
+material_iron_ore = 6
+material_gold_ore = 10
+seed_dusty_dandelion = 8
+key_gemstone_sanity = 16
+key_gemstone_rage = 16
+key_gemstone_peace = 16
+key_gemstone_balance = 16
 spirit_of_the_mines = 20
-coal = 3
-clay = 3
-amber = 4
-tin_ore = 5
-silver_ore = 7
-garnet = 8
-obsidian = 9
-platinum_ore = 11
-sapphire = 13
-emerald = 14
+material_coal = 3
+material_clay = 3
+material_amber = 4
+material_tin_ore = 5
+material_silver_ore = 7
+material_garnet = 8
+material_obsidian = 9
+material_platinum_ore = 11
+material_sapphire = 13
+material_emerald = 14
 
 # What the collapse-risk label says. `from_risk` is the collapse chance where each label begins.
 [[descent.warnings]]

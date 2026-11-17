@@ -47,10 +47,10 @@ def test_the_roll_follows_the_weights():
 
 def test_only_starrable_items_change_id():
     rng = random.Random(2)
-    assert all(stars.roll_item("copper_ore", 1.0, rng) == "copper_ore" for _ in range(200))  # not starrable
-    seen = {stars.roll_item("gold_ore", 1.0, rng) for _ in range(500)}
-    assert seen == {"gold_ore", "gold_ore_s2", "gold_ore_s3"}
-    assert {stars.roll_item("gold_ore", 0.0, rng) for _ in range(500)} == {"gold_ore", "gold_ore_s2"}  # no 3-star at the start
+    assert all(stars.roll_item("material_copper_ore", 1.0, rng) == "material_copper_ore" for _ in range(200))  # not starrable
+    seen = {stars.roll_item("material_gold_ore", 1.0, rng) for _ in range(500)}
+    assert seen == {"material_gold_ore", "material_gold_ore_s2", "material_gold_ore_s3"}
+    assert {stars.roll_item("material_gold_ore", 0.0, rng) for _ in range(500)} == {"material_gold_ore", "material_gold_ore_s2"}  # no 3-star at the start
     assert all(REG.find_item(i) for i in seen)  # every id it can return is a real item
 
 
