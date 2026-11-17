@@ -304,7 +304,6 @@ class TreeScreen(Screen):
 
     id = "tree"
     label = "Tree"
-    emoji = None  # Use only the Page title with species emoji to avoid duplicate display
     description = "Your own tree"
     links = ("forage",)
 
@@ -387,7 +386,6 @@ class GroveScreen(Screen):
 
     id = "grove"
     label = "Community Tree"
-    emoji = None  # Use only the Page title with species emoji to avoid duplicate display
     description = "Chop the hourly tree together"
     links = ("forage",)
 
@@ -472,7 +470,6 @@ class PartyGroveScreen(Screen):
 
     id = "partygrove"
     label = "Party Tree"
-    emoji = None  # Use only the Page title with species emoji to avoid duplicate display
     description = "Chop your party's tree together"
     links = ("forage",)
 
