@@ -96,7 +96,7 @@ Each slice = **data -> service + tests -> thin cog -> enable the extension**, co
 ```bash
 git clone https://github.com/kazido/coconut-capitalist.git
 cd coconut-capitalist
-git checkout claude/discord-bot-audit-modernize-4dd6c5   # until it is merged into master
+git checkout master
 
 # Python 3.11+ ; uv is easiest (https://docs.astral.sh/uv/)
 uv venv --python 3.12

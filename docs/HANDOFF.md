@@ -6,8 +6,7 @@ Keep this file current: update the "Open work" list at the end of every session.
 
 ## Setup
 
-- Repo `kazido/coconut-capitalist`. Work happens in the worktree `/Users/ellalbrys/Coding/coconut-capitalist/.claude/worktrees/discord-bot-audit-modernize-4dd6c5`
-  on branch `claude/discord-bot-audit-modernize-4dd6c5` (NOT pushed; never push or merge without being asked).
+- Repo `kazido/coconut-capitalist`. Work happens on `master` in the main checkout (the old audit branch/worktree was deleted). Never push or merge without being asked.
 - Python 3.12 in `.venv`. **Read `CLAUDE.md` first** (rules, architecture, checklists). Tests: `.venv/bin/python -m pytest -q [file]` (full suite ~55 s, ~1580 tests, all green). Lint: `.venv/bin/ruff check .`.
 - discord.py 2.7 Components V2 hub (`cococap/ui/nav.py`: `Navigator`, `Screen`, `Page`, `Result`). Game rules live in `cococap/services/*`
   (no Discord objects), data in `configs/*.toml` (validated by `cococap/registry/models.py`). SQLite + Alembic (migrations 0001-0004).
@@ -44,7 +43,7 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 
 ## Latest state (read this before the list below)
 
-- **One branch only**: all work is on `claude/discord-bot-audit-modernize-4dd6c5` (this worktree; the bot runs from here). Do not make other worktrees or touch the main checkout. GitHub `master` is the default branch and is fast-forwarded to this branch with `git push origin HEAD:master` (only when asked; last done at the README commit). The old pre-AI code is preserved on `history/pre-ai`.
+- **One branch only: `master`** (the audit branch was deleted; the bot runs from the main checkout). Push only when asked (`git push origin master`). The old pre-AI code is preserved on `history/pre-ai`.
 - Done since the list below was written: shipments by skill (basic at level 10, hard at 30; community off), trading (shared window, both Accept), settings (keep upgrade
   materials, confirm upgrades, fishing estimate), combat PAUSED (button disabled, `/fight` says so; code and tests kept), tool lines (3 plain upgrades then the split at the
   4th: axe = Lumberjack/Forager, can = Sprinkler/Alchemist), mastery trees for mining/fishing/foraging/farming with a tuned capstone per branch, the fishing radar, Home

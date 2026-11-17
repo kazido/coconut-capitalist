@@ -12,13 +12,11 @@ trading, parties, casino and minigames, one shared economy. Everything below is 
 
 ## Hard rules (the user set these; do not break them)
 
-- **One branch only.** All work is on `claude/discord-bot-audit-modernize-4dd6c5`, in this worktree
-  (`/Users/ellalbrys/Coding/coconut-capitalist/.claude/worktrees/discord-bot-audit-modernize-4dd6c5`). The bot runs from here.
-  Do not create other worktrees/branches and do not touch the main checkout (`/Users/ellalbrys/Coding/coconut-capitalist`).
-  GitHub's `master` is the public default branch: it is kept equal to this branch by a fast-forward push
-  (`git push origin HEAD:master`) when the user asks. The pre-AI code lives on `history/pre-ai` (never change it).
+- **One branch only: `master`.** The old `claude/discord-bot-audit-modernize-4dd6c5` branch and its worktree are gone; `master` in the
+  main checkout is the working branch (Windows PC: `C:\Users\Bryson\Documents\Coding\coconut-capitalist`). Do not create other
+  worktrees/branches. GitHub's `master` is the public default branch. The pre-AI code lives on `history/pre-ai` (never change it).
 - **Commit after every commit-worthy change without asking.** Detailed messages. End them with the attribution line the harness gives you.
-- **Never push unless the user says so.** Push only this branch: `git push origin claude/discord-bot-audit-modernize-4dd6c5`.
+- **Never push unless the user says so.** Push only `master`: `git push origin master`.
 - **Design before big features** (use plan mode: explore, write the plan, get approval, then build). Small fixes: just do them.
 - **Do not run the full test suite after every change** (the user chose speed; they will report breakage). Run it only when asked, when
   something they report is broken, or after a large refactor. DO run the one or two test files that cover what you touched (cheap, ~1 s each).
@@ -28,7 +26,7 @@ trading, parties, casino and minigames, one shared economy. Everything below is 
 
 ## Environment
 
-- Python 3.12 in `.venv`: always `.venv/bin/python` (the system python has no `tomllib`). Lint: `.venv/bin/ruff check .` (must stay clean).
+- Python 3.12 in `.venv`: always the venv python (Mac `.venv/bin/python`, Windows `.venv/Scripts/python.exe`; the system python has no `tomllib`). Lint: `.venv/bin/ruff check .` (must stay clean).
 - Tests: `.venv/bin/python -m pytest -q [file::test]`. Full suite ~55 s, ~1580 tests, all should pass. Slow/odd: wrap in `perl -e 'alarm 300; exec @ARGV' ...`.
 - Scratch files, sims and one-off scripts go in the session scratchpad, never in the repo.
 - Balance report: `.venv/bin/python -m scripts.balance` (what each skill pays per active minute). Balance guard tests: `tests/test_economy_guard.py`.
