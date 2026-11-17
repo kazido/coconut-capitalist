@@ -108,6 +108,13 @@ def load_wisps(path: Path) -> list[Sprite]:
     return out
 
 
+def _legacy_items() -> dict[str, str]:
+    """{old emoji name: item id} for the owner's emoji that are items (cococap.emojis.ALIASES), minus names that already equal the item id."""
+    from cococap.emojis import ALIASES
+
+    return {k: v for k, v in ALIASES.items() if k != v}
+
+
 def load_sources(root: Path) -> list[Sprite]:
     """The owner's extracted emoji: <root>/<name>/frame_NN.png + meta.toml."""
     out = []
@@ -117,6 +124,15 @@ def load_sources(root: Path) -> list[Sprite]:
             continue
         _check_name(d.name, str(d))
         meta = _read(d / "meta.toml") if (d / "meta.toml").exists() else {}
+        # The owner's emoji are named for how they were first uploaded (gemstone_sanity, ore_iron). Those that ARE items are rebuilt under the
+        # ITEM id with the item's real rarity (the game finds an emoji named by item id first); the rest (cells, xp bars, wyrmhole...)
+        # are UI pieces already uploaded under their old names and stay exactly as they are (not built).
+        name, rarity = d.name, _check_rarity(meta.get("rarity", 1), d.name)
+        if "item" in meta or d.name in _legacy_items():
+            name = str(meta.get("item", _legacy_items().get(d.name)))
+            rarity = _item_rarity(name)
+        elif not meta.get("emit", False):
+            continue
         frames = []
         for f in files:
             im = Image.open(f).convert("RGBA")
@@ -127,7 +143,7 @@ def load_sources(root: Path) -> list[Sprite]:
         if len(frames) > 1 and len(ms) != len(frames):
             raise SpriteError(f"{d}: meta.toml ms needs {len(frames)} entries")
         framed = bool(meta.get("framed", False))
-        out.append(Sprite(d.name, "sources", frames, ms, framed, _check_rarity(meta.get("rarity", 1), d.name), False))
+        out.append(Sprite(name, "sources", frames, ms, framed, rarity, False))
     return out
 
 
