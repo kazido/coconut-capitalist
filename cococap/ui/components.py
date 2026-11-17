@@ -42,6 +42,16 @@ def section(*lines: str, accessory: ui.Item) -> ui.Section:
     return ui.Section(*lines, accessory=accessory)
 
 
+def thumb(url: str) -> ui.Thumbnail:
+    return ui.Thumbnail(url)
+
+
+def section_art(markdown: str, url: str | None, fallback: ui.Item | None = None):
+    """Text with a big picture on the right; plain text (or `fallback` accessory) when there is no picture."""
+    accessory = thumb(url) if url else fallback
+    return ui.Section(markdown, accessory=accessory) if accessory else text(markdown)
+
+
 def select(
     placeholder: str,
     options: list[discord.SelectOption],

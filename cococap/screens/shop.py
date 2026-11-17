@@ -1,12 +1,13 @@
 import discord
 
+from cococap import emojis
 from cococap.errors import CustomError
 from cococap.registry import get_registry
 from cococap.services import shop
 from cococap.ui import Page, Screen, PromptModal
-from cococap.ui.components import bits, button, row, section, sep, text
+from cococap.ui.components import bits, button, row, section, section_art, select, sep, text
 
-PER_PAGE = 4
+PER_PAGE = 10
 
 
 def parse_quantity(raw: str) -> int:
@@ -26,6 +27,7 @@ class ShopScreen(Screen):
         super().__init__(nav)
         self.page = 0
         self.mode = "buy"
+        self.selected: str | None = None
         self.category: str | None = None  # None = everything; otherwise a skill name or "general"
 
     async def _entries(self):
@@ -61,14 +63,11 @@ class ShopScreen(Screen):
         ]
         if not entries:
             body.append(text("Nothing here yet." if self.mode == "buy" else "You have nothing to sell."))
-        for item, owned in entries[self.page * PER_PAGE : (self.page + 1) * PER_PAGE]:
-            if self.mode == "buy":
-                blurb = f"**{bits(item.price)}** bits  ·  {item.description}"[:300]
-                accessory = button("Buy", style=discord.ButtonStyle.success, disabled=self.user.purse < item.price, on_click=self._ask_quantity(item.id, "buy", 1))
-            else:
-                blurb = f"×{owned:,}  ·  {bits(item.sell_price)} each  ·  **{bits(item.sell_price * owned)}** for all"  # (the count is plain text, not in the bold heading)
-                accessory = button("Sell", style=discord.ButtonStyle.success, on_click=self._ask_quantity(item.id, "sell", owned))
-            body.append(section(f"### {item.display}\n{blurb}", accessory=accessory))
+        shown = entries[self.page * PER_PAGE : (self.page + 1) * PER_PAGE]
+        if shown:
+            if self.selected not in {i.id for i, _ in shown}:
+                self.selected = shown[0][0].id
+            body += self._listing(shown)
         if pages > 1:
             body.append(
                 row(
@@ -78,6 +77,38 @@ class ShopScreen(Screen):
                 )
             )
         return Page("Shop", body, accent=discord.Colour.gold().value)
+
+    def _line(self, item, owned) -> str:
+        if self.mode == "buy":
+            return f"{item.display}  ·  **{bits(item.price)}** bits"
+        return f"{item.display}  ·  ×{owned:,}  ·  {bits(item.sell_price * owned)} bits"
+
+    def _listing(self, shown) -> list:
+        """A markdown list of this page, one dropdown to pick from it, and one button for the picked item."""
+        buy = self.mode == "buy"
+        picked, owned = next((i, q) for i, q in shown if i.id == self.selected)
+        lines = [("▶ **" if i.id == self.selected else "") + self._line(i, q).replace("**", "") + ("**" if i.id == self.selected else "") for i, q in shown]
+        options = [
+            discord.SelectOption(
+                label=i.name, value=i.id, emoji=i.emoji or None, default=i.id == self.selected,
+                description=(f"{bits(i.price)} bits" if buy else f"×{q:,}  ·  {bits(i.sell_price)} each")[:100],
+            )
+            for i, q in shown
+        ]
+        if buy:
+            detail = f"### {picked.display}\n**{bits(picked.price)}** bits  ·  {picked.description}"[:600]
+            action = button("Buy", style=discord.ButtonStyle.success, disabled=self.user.purse < picked.price, on_click=self._ask_quantity(picked.id, "buy", 1))
+        else:
+            detail = f"### {picked.display}\n×{owned:,}  ·  {bits(picked.sell_price)} each  ·  **{bits(picked.sell_price * owned)}** for all"
+            action = button("Sell", style=discord.ButtonStyle.success, on_click=self._ask_quantity(picked.id, "sell", owned))
+        art = emojis.image_url("item", picked.id)
+        # A section holds one accessory: the big picture when we have it (button goes below), else the button.
+        detail_block = [section_art(detail, art), row(action)] if art else [section(detail, accessory=action)]
+        return [text("\n".join(lines)), row(select("Pick an item...", options, self._pick)), *detail_block]
+
+    async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
+        self.selected = values[0]
+        await self.refresh(interaction)
 
     CATEGORY_EMOJI = {"mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishing": "🐟", "combat": "⚔️", "general": "📦"}
 

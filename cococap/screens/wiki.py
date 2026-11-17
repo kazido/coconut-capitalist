@@ -1,10 +1,11 @@
 import discord
 
+from cococap import emojis
 from cococap.constants import Rarities
 from cococap.registry import get_registry
 from cococap.services import wiki
 from cococap.ui import Page, Screen
-from cococap.ui.components import button, row, select, sep, text
+from cococap.ui.components import button, row, section_art, select, sep, text
 from utils.items.items import item_attributes
 
 PER_PAGE = 25
@@ -57,7 +58,10 @@ class WikiScreen(Screen):
                              button(f"{self.page + 1}/{pages}", disabled=True),
                              button(emoji="▶️", disabled=self.page >= pages - 1, on_click=self._turn(1))))
         item = reg.find_item(self.item) if self.item else None
-        parts.append(text(f"### {item.display}\n" + item_attributes(item) if item else "Pick an item to read about it."))
+        if item:
+            parts.append(section_art(f"### {item.display}\n" + item_attributes(item), emojis.image_url("item", item.id)))
+        else:
+            parts.append(text("Pick an item to read about it."))
         return parts
 
     async def _pick_topic(self, interaction: discord.Interaction, values: list[str]) -> None:

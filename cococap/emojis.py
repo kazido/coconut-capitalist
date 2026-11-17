@@ -65,12 +65,16 @@ NAME_RE = re.compile(r"^[a-z0-9_]{2,32}$")  # Discord's rule for application emo
 
 _TOKEN = re.compile(r"<a?:(\w+):\d+>")
 _by_name: dict[str, str] = {}
+_meta: dict[str, tuple[int, bool]] = {}  # name -> (emoji id, animated), for big-image URLs
 
 
 def load(emojis) -> None:
     """Replace the known emojis with `emojis` (anything with ``.name`` and a mention ``str()``)."""
+    emojis = list(emojis)
     _by_name.clear()
     _by_name.update({e.name: str(e) for e in emojis})
+    _meta.clear()
+    _meta.update({e.name: (e.id, bool(getattr(e, "animated", False))) for e in emojis if getattr(e, "id", None)})
 
 
 async def refresh(bot) -> None:
@@ -110,6 +114,19 @@ def for_id(kind: str, id, fallback=""):
     if kind == "item" and (old := _ITEM_ALIAS.get(name)) in _by_name:
         return _by_name[old]
     return fallback
+
+
+def image_url(kind: str, id, size: int = 128) -> str | None:
+    """The CDN picture of this thing's emoji (for big thumbnails), or None if it isn't uploaded."""
+    if kind not in KINDS:
+        raise ValueError(f"unknown emoji kind {kind!r}; use one of {KINDS}")
+    name = name_for(kind, id)
+    if name not in _meta and kind == "item":
+        name = _ITEM_ALIAS.get(name, name)
+    if name not in _meta:
+        return None
+    eid, animated = _meta[name]
+    return f"https://cdn.discordapp.com/emojis/{eid}.{'gif' if animated else 'png'}?size={size}&quality=lossless"
 
 
 def ui(name: str, fallback: str = "") -> str:

@@ -258,7 +258,7 @@ async def test_shop_buy_opens_a_modal_and_buying_works(db):
     await set_columns(await User.get(1), purse=10_000_000)
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")  # seeds stack, so they ask how many (tools do not: see the next test)
-    buy = [b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success][1]  # (the can comes first: tools lead)
+    buy = [b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success][0]  # one Buy button: for the picked item
     await buy.callback(inter)
     modal = await submit(inter, "2")
     await modal.on_submit(inter)
@@ -287,9 +287,12 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
         return [b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success]
 
     nav, inter = await hub("shop")
-    # a brand-new player can only afford the very cheapest things (a starter seed for 500), not the rest
-    cheap = [b for b in item_buy_buttons(nav) if not b.disabled]
-    assert item_buy_buttons(nav) and len(cheap) < len(item_buy_buttons(nav))
+    # the page is a list + one dropdown + ONE Buy button, however many items it lists
+    assert len(item_buy_buttons(nav)) == 1 and select_named(nav, "Pick an item").options
+    # a brand-new player can afford the cheapest item but not the priciest: picking it disables Buy
+    opts = select_named(nav, "Pick an item").options
+    await choose(nav, inter, select_named(nav, "Pick an item"), opts[-1].value)
+    assert opts[-1].value and item_buy_buttons(nav)[0].disabled
     await set_columns(await User.get(1), purse=200_000)
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")
@@ -1875,3 +1878,16 @@ async def test_the_community_tree_lists_only_the_top_three_choppers(db, monkeypa
     assert "**20** hp" not in text_.split("You:")[0]  # (4th and 5th place are not listed)
     tree = await foraging_service.community_tree(users[0], OPEN_HOUR)
     assert [uid for uid, _ in tree.top] == [5, 4, 3]
+
+
+async def test_wiki_item_page_has_a_big_thumbnail_when_the_emoji_is_uploaded(db):
+    from types import SimpleNamespace
+
+    from cococap import emojis
+
+    emojis.load([SimpleNamespace(name="cod", id=7, animated=False, __str__=lambda s: "<:cod:7>")])
+    try:
+        nav, inter = await hub("wiki", topic="items", skill="fishing", item="cod")
+        assert any(isinstance(c, ui.Thumbnail) for c in nav.walk_children())
+    finally:
+        emojis.load([])

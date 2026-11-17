@@ -95,7 +95,7 @@ Workflow: Claude (lead) plans and delegates to the subagents in `.claude/agents/
    (collection books, achievements as new skills/features arrive). Then: mining rework (last), party versions
    of each skill.
 7. Foraging tree events, channel drops / megadrop, Familiar Orb sources, and a "you were removed from your party" notice.
-8. **Open items from the owner's `ideas` file (Batch 2, each needs its own plan first):** buy/sell menus as markdown lists with one dropdown and one button (no button per row);
+8. **Open items from the owner's `ideas` file (Batch 2, each needs its own plan first):** DONE (plan `docs/plans/batch2-thumbnails-and-shop-list.md`): shop buy/sell is a list + dropdown + one button; wiki item page has a big thumbnail (`emojis.image_url`, CDN picture; check how it looks live). Still to do from that plan: thumbnails on reward and rare-drop screens;
    live screen refresh for shared events (party joins, trade invites, falling trees; opening a new play menu closes the old one); the fishing rework (a sinking-hook minigame
    instead of the arrow reel: decide whether the arrow game stays, what bosses, rods and enchants then do); markdown/spoiler/radio-modal ideas; thumbnails (big art) on the
    reward, rare-drop, item and shop screens because inline emoji are small; starred materials (3 star tiers, needed for upgrades; stars on the art are paused until they can be

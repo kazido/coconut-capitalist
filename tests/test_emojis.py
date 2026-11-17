@@ -145,3 +145,11 @@ def test_the_xp_bar_uses_the_bots_emojis_and_falls_back_to_text():
     emojis.load([Emoji("xp_bar_left", 1), Emoji("xp_bar_full", 2), Emoji("xp_bar_empty", 3), Emoji("xp_bar_right", 4)])
     assert xp_bar(0.5, 4) == "<:xp_bar_left:1><:xp_bar_full:2><:xp_bar_full:2><:xp_bar_empty:3><:xp_bar_empty:3><:xp_bar_right:4>"
     assert xp_bar(1.0, 2).count("xp_bar_full") == 2 and xp_bar(0.0, 2).count("xp_bar_empty") == 2
+
+
+def test_image_url_gives_the_big_cdn_picture_or_none():
+    assert emojis.image_url("item", "iron_ore") is None  # nothing uploaded: no thumbnail
+    emojis.load([Emoji("cod", 11), Emoji("pet_ember", 22, animated=True), Emoji("ore_iron", 33)])
+    assert emojis.image_url("item", "cod").startswith("https://cdn.discordapp.com/emojis/11.png")
+    assert ".gif" in emojis.image_url("pet", "ember", size=64) and "size=64" in emojis.image_url("pet", "ember", size=64)
+    assert "/33.png" in emojis.image_url("item", "iron_ore")  # found through the legacy alias
