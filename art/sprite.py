@@ -105,6 +105,12 @@ def load_wisps(path: Path) -> list[Sprite]:
     out = []
     for name, d in _read(path).items():
         _check_name(name, str(path))
+        if d.get("kind") == "flame":  # slim flame wisps (art/flame.py): animated, frameless, no outline
+            from art.flame import FRAME_MS, render_flame_frames
+
+            frames = render_flame_frames(d["base"], d.get("face", "core"), bool(d.get("embers", True)))
+            out.append(Sprite(name, "wisps", frames, [FRAME_MS] * len(frames), False, 1, False))
+            continue
         framed = "rarity" in d
         im = render_wisp(d["shape"], d["base"], bool(d.get("inverted", False)), framed)
         out.append(Sprite(name, "wisps", [im], [], framed, _check_rarity(d["rarity"], name) if framed else 1))

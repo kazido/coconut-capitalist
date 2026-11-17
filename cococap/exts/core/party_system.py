@@ -87,7 +87,7 @@ class PartySystemCog(commands.GroupCog, name="party"):
         user = await User.get(interaction.user.id)
         interaction.extras.update(user=user)
         interaction.extras.update(party=await Party.for_user(user.id))
-        return await super().interaction_check(interaction)
+        return await discord.utils.maybe_coroutine(super().interaction_check, interaction)  # (the base check is a plain function in this discord.py)
 
     # Lists the members of a player's party
     @app_commands.command(name="list", description="See who is in your party")

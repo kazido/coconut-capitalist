@@ -84,7 +84,7 @@ def test_built_png_is_64x64_rgba(tmp_path):
 
 
 def test_build_is_deterministic(tmp_path):
-    sprite = next(s for s in load_all() if s.name == "ember")
+    sprite = next(s for s in load_all() if s.name == "flame_ember")  # (an animated one: webp output is deterministic too)
     a, b = build.build_one(sprite, tmp_path / "a"), build.build_one(sprite, tmp_path / "b")
     assert a.read_bytes() == b.read_bytes()
 
@@ -187,3 +187,27 @@ def test_restyle_keeps_every_frame_and_adds_the_outline():
     b.putpixel((9, 8), (40, 40, 200, 255))
     out = restyle_frames([a, b])
     assert len(out) == 2 and out[0].getpixel((7, 8)) == outline_color() and out[1].getpixel((10, 8)) == outline_color()
+
+
+def test_flame_wisps_are_slim_animated_and_frameless():
+    from art.flame import FRAMES, render_flame, render_flame_frames
+    from art.palette import outline_color
+
+    frames = render_flame_frames("#20c8b0", "skull")
+    assert len(frames) == FRAMES and len({f.tobytes() for f in frames}) == FRAMES  # four different frames
+    for f in frames:
+        xs = [x for x in range(16) for y in range(16) if f.getpixel((x, y))[3]]
+        assert max(xs) - min(xs) + 1 <= 12  # slim: the round wisps were too fat
+        assert all(f.getpixel((x, y)) != outline_color() for x in range(16) for y in range(16))  # no outline: they glow
+    assert render_flame("#ffb81c", "core", 0).getpixel((6, 9)) == (255, 255, 255, 255)  # the white eyes
+
+
+def test_warm_flames_keep_warm_shadows():
+    import colorsys
+
+    from art.flame import flame_ramp
+
+    for base in ("#ffb81c", "#f2561d"):
+        r, g, b, _ = flame_ramp(base)["d"]
+        hue = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)[0]
+        assert hue < 0.12 or hue > 0.9, base  # not olive green

@@ -1310,7 +1310,7 @@ def test_the_mine_type_weights_validate_and_standard_dominates():
 
 
 def test_bad_mine_types_are_refused():
-    base = RULES.model_dump()
+    base = RULES.model_dump(by_alias=True)
     broken = lambda **change: {**base, "mine_types": [*base["mine_types"][:1], {**base["mine_types"][1], **change}, *base["mine_types"][2:]]}  # noqa: E731
     for change in ({"weight": 0}, {"pressure_mult": 0.01}, {"xp_mult": 9}, {"ore_boost": {"copper_ore": 50}}, {"ore_yield": {"copper_ore": 0.5}}, {"rich_chance_add": 0.9}):
         with pytest.raises(ValidationError):

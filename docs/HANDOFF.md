@@ -62,6 +62,22 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 - Custom emoji by name: upload `art/out/` with `scripts/upload_emojis.py` (dry run, then `--yes`), restart; screens pick up `<item_id>`, `pet_<id>`, `species_<id>`, `enchant_<id>`, `mine_<id>`, `water_<id>`, `rank_<id>` emoji automatically (DESIGN.md "Custom emoji at runtime").
 - Dead code removed (exploration prototype, empty cogs, unused models/helpers). Wedges now leave a chop bonus, the burger is a pet feast, rare drops show banners (`cococap/ui/flair.py`), every item/enchant has an emoji, Sell all keeps upgrade materials by default.
 
+## Moving machines (2026-11-16: the owner moved from the Mac to a PC for good)
+
+Git carries the code, configs, art sources and docs. It does NOT carry these; copy them by hand if you need them:
+- `.env` (BOT_TOKEN; use the token of the SAME Discord application the bot runs as: emoji belong to one application).
+- `data/cococap.db` (the player database; back it up first) and `data/backups/`.
+- `configs/local/*.toml` (the owner's private balance tuning, git-ignored).
+- `art/out/` (built emoji; zip made with `cd art/out && zip -r ../emoji-out.zip . -x "sheets/*"`), `art/local.toml` and `art/vendor/` (the Raven Fantasy Icons pack and an atlas of it,
+  local only because of its license; without them `python -m art.build` skips the ~110 Raven-mapped items).
+- the owner's untracked `ideas` notes file (its open items are copied into "Open work" below).
+
+Emoji upload state: the new art (restyled owner emoji under item ids, 63 hand-drawn redraws, shine for rarity 6-7) is built but may not be uploaded. On the new machine:
+`.venv\Scripts\python scripts\upload_emojis.py --replace-all` (dry run) then `--yes`, restart the bot; then delete the 10 old emoji by hand
+(gemstone_balance/implosion/oreo/peace/rage/sanity, ore_copper/gold/iron, seed_weathered) once the new ones look right.
+
+Workflow: Claude plans, local Ollama models implement (`docs/WORKFLOW.md`, `docs/EXECUTOR.md`, `scripts/verify.sh`); the `.sh` helpers need Git Bash/WSL on Windows.
+
 ## Open work (in rough priority)
 
 1. DONE this session: tool levels checked (balance table), pet skills fixed + emoji, rank prices + random tokens (35%/active hour),
@@ -78,3 +94,9 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
    (collection books, achievements as new skills/features arrive). Then: mining rework (last), party versions
    of each skill.
 7. Foraging tree events, channel drops / megadrop, Familiar Orb sources, and a "you were removed from your party" notice.
+8. **Open items from the owner's `ideas` file (Batch 2, each needs its own plan first):** buy/sell menus as markdown lists with one dropdown and one button (no button per row);
+   live screen refresh for shared events (party joins, trade invites, falling trees; opening a new play menu closes the old one); the fishing rework (a sinking-hook minigame
+   instead of the arrow reel: decide whether the arrow game stays, what bosses, rods and enchants then do); markdown/spoiler/radio-modal ideas; thumbnails (big art) on the
+   reward, rare-drop, item and shop screens because inline emoji are small; starred materials (3 star tiers, needed for upgrades; stars on the art are paused until they can be
+   drawn small without covering the sprite); the flame wisps as pets (the generator and 8 approved examples ARE in the repo now: `art/flame.py`, `art/wisps.toml`, built as animated `flame_*` emoji; still to do: decide which wisp each of the 25 pets gets, name them `pet_<id>`, and add rarity-tied variety) and art for
+   species, enchants, UI icons, mine types. Weak art still worth redoing: sardine vs herring (same fish), rods look alike by tier, geode/worldsplitter pickaxes, weeping pearl, silver catkin.

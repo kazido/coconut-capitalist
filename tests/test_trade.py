@@ -4,6 +4,7 @@ import asyncio
 import time
 
 import pytest
+from discord import ui
 
 from cococap.services import trade
 from cococap.user import User
@@ -184,8 +185,9 @@ async def test_the_trade_page_is_reachable_from_inventory_and_more(db):
     nav, inter = await hub("inventory")
     await find_button(nav, "Trade").callback(inter)
     assert nav.screen.id == "trade"
-    nav, inter = await hub("home")
-    await find_button(nav, "Trade").callback(inter)
+    nav, inter = await hub("more")  # Trade lives on the More page (the Home page has no room for it)
+    sections = [c for c in nav.walk_children() if isinstance(c, ui.Section) and "Trade" in " ".join(getattr(t, "content", "") for t in c.children)]
+    await sections[0].accessory.callback(inter)
     assert nav.screen.id == "trade"
 
 

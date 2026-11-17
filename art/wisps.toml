@@ -1,28 +1,48 @@
-# Wisps are generated, not drawn: a silhouette (art/wisp.py SHAPES) + one base colour; shading, eyes and plum outline are automatic.
-# inverted = dark body, bright rim, white eyes (the ghostly ones). Add `rarity = 1-7` to put one in a cell; without it it is frameless.
+# Wisps are generated, not drawn.
+#
+# kind = "flame" (the pets' look): a slim flame with a face plate and four flicker frames, frameless and without an outline.
+#   face = "core" (dark plate, white eyes) | "skull" | "eyes";  base = the flame colour;  embers = false for no floating sparks.
+# otherwise: a silhouette (art/wisp.py SHAPES) + one base colour; shading, eyes and plum outline are automatic.
+#   inverted = dark body, bright rim, white eyes (the ghostly ones). Add `rarity = 1-7` to put one in a cell.
+#
+# These eight are the approved look; the mapping of the 25 pets to wisps (names `pet_<id>`) is still to be decided.
 
-[ember]
-shape = "flame"
+[flame_teal]
+kind = "flame"
+face = "skull"
+base = "#20c8b0"
+
+[flame_gold]
+kind = "flame"
+face = "core"
+base = "#ffb81c"
+
+[flame_ember]
+kind = "flame"
+face = "core"
 base = "#f2561d"
 
-[tide]
-shape = "drop"
-base = "#2f9be8"
+[flame_violet]
+kind = "flame"
+face = "skull"
+base = "#9b5cf0"
 
-[moss]
-shape = "mushroom"
+[flame_blue]
+kind = "flame"
+face = "eyes"
+base = "#3d8bff"
+
+[flame_rose]
+kind = "flame"
+face = "core"
+base = "#f870b0"
+
+[flame_green]
+kind = "flame"
+face = "skull"
 base = "#4cc04a"
 
-[gloom]
-shape = "ghost"
-base = "#6a5fb0"
-inverted = true
-
-[void]
-shape = "jelly"
-base = "#5a3ab8"
-inverted = true
-
-[bloom]
-shape = "round"
-base = "#f870b0"
+[flame_ash]
+kind = "flame"
+face = "core"
+base = "#8a8ab0"
