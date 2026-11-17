@@ -119,8 +119,8 @@ def test_every_zone_has_two_or_three_species_and_their_drops_are_foraging_items(
     rules = reg.foraging
     assert all(2 <= len(rules.species_in(z)) <= 3 for z in range(1, rules.zones + 1))
     for sp in rules.species:
-        assert len(sp.drops) == 2 and sp.emoji
-        for d in sp.drops:
+        assert sp.emoji
+        for d in sp.drops:  # (none right now; any added later must be a foraging item)
             assert reg.item(d.item).skill == "foraging" and reg.item(d.item).drop is None and 0 < d.rate <= 1
 
 
@@ -131,13 +131,18 @@ def test_a_zone_without_a_species_is_rejected(data):
         load_registry(data)
 
 
+def add_birch_drop(data, item, rate):
+    drop = '{ item = "%s", rate = %s, min = 1, max = 2 }' % (item, rate)
+    edit(data / "foraging.toml", 'id = "birch"' + chr(10), 'id = "birch"' + chr(10) + 'drops = [' + drop + ']' + chr(10))
+
+
 def test_a_species_drop_of_an_unknown_item_or_a_bad_rate_is_rejected(data):
-    edit(data / "foraging.toml", 'item = "birch_bark"', 'item = "no_such_item"')
+    add_birch_drop(data, "no_such_item", 0.3)
     with pytest.raises(RegistryError, match="no_such_item"):
         load_registry(data)
 
 
 def test_a_species_drop_rate_must_be_a_chance(data):
-    edit(data / "foraging.toml", "rate = 0.3,", "rate = 1.5,")
+    add_birch_drop(data, "hardwood", 1.5)
     with pytest.raises(RegistryError, match="rate"):
         load_registry(data)

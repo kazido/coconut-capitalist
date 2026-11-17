@@ -366,7 +366,11 @@ async def test_a_party_tree_has_a_species_of_its_zone_and_pays_its_signature_dro
     assert tree.species and RULES.species_of(tree.species).grows_in(1)
     assert (await pt.view(two, T0 + 1, REG)).species == tree.species  # the whole party sees the same one
     shares = f.community_shares(1_000_000, True, {1: 500_000, 2: 500_000}, pt.party_rules(RULES), Random(2), REG, 1, species=tree.species)
-    sig = {d.item for d in RULES.species_of(tree.species).drops}
+    from tests.conftest import with_signature_drops
+
+    sig_reg = with_signature_drops(REG)
+    shares = f.community_shares(1_000_000, True, {1: 500_000, 2: 500_000}, pt.party_rules(sig_reg.foraging), Random(2), sig_reg, 1, species=tree.species)
+    sig = {d.item for d in sig_reg.foraging.species_of(tree.species).drops}
     assert all(set(s.drops) & sig for s in shares.values())
     await pt.chop(one, tree.max_hp, T0 + 2, REG)
     rewards = await pt.claim(one, T0 + 3, REG)

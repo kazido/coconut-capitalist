@@ -75,3 +75,21 @@ def _free_pickaxe(request, monkeypatch):
 
     monkeypatch.setattr(mining_service, "equipped_stats", with_default)
     monkeypatch.setattr(mining_screen, "equipped_stats", with_default)
+
+
+def with_signature_drops(reg):
+    """A copy of the registry whose tree species have two signature drops each (the shipped data has none, since the old species
+    materials were removed). Lets the tests keep covering the mechanic: birch drops clay/sapphire, every other species coal/emerald."""
+    import copy
+
+    from cococap.registry.models import SpeciesDrop
+
+    pairs = {"birch": ("clay", "sapphire")}
+    species = []
+    for sp in reg.foraging.species:
+        common, rare = pairs.get(sp.id, ("coal", "emerald"))
+        drops = [SpeciesDrop(item=common, rate=0.3, min=1, max=2), SpeciesDrop(item=rare, rate=0.02, min=1, max=1)]
+        species.append(sp.model_copy(update={"drops": drops}))
+    other = copy.copy(reg)
+    other.foraging = reg.foraging.model_copy(update={"species": species})
+    return other

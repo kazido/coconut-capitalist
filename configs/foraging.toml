@@ -181,8 +181,8 @@ bloom_drops = 0.10                # ...and every drop chance of a foraging tree 
 top_donors = 5                    # names shown on the donor list
 
 # Tree species: set by the zone when a tree is rolled (a species grows in zones zone_min..zone_max; `weight` = how common it is there).
-# Each species also drops its OWN signature items, on top of the normal pool: `rate` is the chance PER DROP ROLL (0..1), then min..max of them.
-# Every species has a common and a rare signature drop, so a later 'one of each species' set craft is possible.  TODO(balance): all numbers
+# A species may also have its OWN signature items (`drops = [{ item, rate, min, max }]`, on top of the normal pool; `rate` is the chance PER DROP ROLL).
+# None have any right now: the old per-species materials were removed because nothing used them. Add `drops` back where a use for one appears.
 [[species]]
 id = "birch"
 name = "Birch"
@@ -190,10 +190,6 @@ emoji = "🌿"
 zone_min = 1
 zone_max = 5
 weight = 1.0
-drops = [
-  { item = "birch_bark", rate = 0.3, min = 1, max = 2 },
-  { item = "silver_catkin", rate = 0.02, min = 1, max = 1 },
-]
 [[species]]
 id = "oak"
 name = "Oak"
@@ -201,10 +197,6 @@ emoji = "🌳"
 zone_min = 1
 zone_max = 7
 weight = 1.0
-drops = [
-  { item = "oak_gall", rate = 0.3, min = 1, max = 2 },
-  { item = "heart_acorn", rate = 0.02, min = 1, max = 1 },
-]
 [[species]]
 id = "willow"
 name = "Willow"
@@ -212,10 +204,6 @@ emoji = "🍃"
 zone_min = 3
 zone_max = 9
 weight = 1.0
-drops = [
-  { item = "willow_switch", rate = 0.28, min = 1, max = 2 },
-  { item = "weeping_pearl", rate = 0.018, min = 1, max = 1 },
-]
 [[species]]
 id = "pine"
 name = "Pine"
@@ -223,10 +211,6 @@ emoji = "🌲"
 zone_min = 6
 zone_max = 12
 weight = 1.0
-drops = [
-  { item = "pine_resin", rate = 0.28, min = 1, max = 2 },
-  { item = "amber_cone", rate = 0.015, min = 1, max = 1 },
-]
 [[species]]
 id = "chestnut"
 name = "Chestnut"
@@ -234,10 +218,6 @@ emoji = "🌰"
 zone_min = 8
 zone_max = 13
 weight = 1.0
-drops = [
-  { item = "chestnut_burr", rate = 0.28, min = 1, max = 2 },
-  { item = "glossy_chestnut", rate = 0.015, min = 1, max = 1 },
-]
 [[species]]
 id = "cherry"
 name = "Cherry"
@@ -245,10 +225,6 @@ emoji = "🌸"
 zone_min = 10
 zone_max = 15
 weight = 1.0
-drops = [
-  { item = "cherry_petal", rate = 0.28, min = 1, max = 3 },
-  { item = "blossom_crown", rate = 0.015, min = 1, max = 1 },
-]
 [[species]]
 id = "palm"
 name = "Palm"
@@ -256,10 +232,6 @@ emoji = "🌴"
 zone_min = 13
 zone_max = 18
 weight = 1.0
-drops = [
-  { item = "palm_frond", rate = 0.28, min = 1, max = 2 },
-  { item = "sunfruit", rate = 0.015, min = 1, max = 1 },
-]
 [[species]]
 id = "redwood"
 name = "Redwood"
@@ -267,10 +239,6 @@ emoji = "🎄"
 zone_min = 14
 zone_max = 20
 weight = 1.0
-drops = [
-  { item = "redwood_cone", rate = 0.27, min = 1, max = 2 },
-  { item = "giants_heartwood", rate = 0.006, min = 1, max = 1 },
-]
 [[species]]
 id = "emberwood"
 name = "Emberwood"
@@ -278,7 +246,3 @@ emoji = "🔥"
 zone_min = 16
 zone_max = 20
 weight = 1.0
-drops = [
-  { item = "ember_bark", rate = 0.27, min = 1, max = 2 },
-  { item = "phoenix_cinder", rate = 0.005, min = 1, max = 1 },
-]

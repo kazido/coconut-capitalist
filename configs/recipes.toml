@@ -20,8 +20,8 @@ emoji = "🪚"
 output = "iron_wedge"
 quantity = 1
 bits = 500
-# Was 8,000 bits. Common drops of birch, oak and willow (their zones overlap in zones 3-5): ~25 of each per hour with a mid axe.
-inputs = { birch_bark = 2, oak_gall = 1, willow_switch = 1 }
+# Hardwood (a forest drop) plus common ores. TODO(balance): guessed amounts, check with scripts.balance.
+inputs = { hardwood = 1, iron_ore = 10, copper_ore = 20 }
 
 [gilded_wedge]
 name = "Gilded Wedge"
@@ -30,10 +30,9 @@ output = "gilded_wedge"
 quantity = 1
 bits = 2500
 skill = "foraging"
-min_level = 7                      # zone 3, where birch, oak and willow all grow
-# Was 50,000 bits. A SET of rare signature drops, one from each of three species (about 1 an hour each with a mid axe: a good session
-# or two). Their sell value is far above the old price (the rares are worth that much), so it is a craft for chopping, not for selling.
-inputs = { silver_catkin = 1, heart_acorn = 1, weeping_pearl = 1 }
+min_level = 7                      # forest 3
+# More hardwood and the higher ores (gold, platinum). TODO(balance): guessed amounts, check with scripts.balance.
+inputs = { hardwood = 3, gold_ore = 15, platinum_ore = 5 }
 
 [scarab_bomb]
 name = "Scarab Bomb"

@@ -827,7 +827,7 @@ class Species(_Data):
     zone_min: int = Field(ge=1)
     zone_max: int = Field(ge=1)
     weight: float = Field(gt=0)  # how common it is among the species of a zone
-    drops: list[SpeciesDrop] = Field(min_length=1)
+    drops: list[SpeciesDrop] = Field(default_factory=list)  # optional signature drops (none for now: the materials were cut)
 
     _id = field_validator("id")(check_id)
 

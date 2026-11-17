@@ -599,14 +599,14 @@ async def test_a_harvest_pays_farming_materials_in_proportion_to_the_crop(db):
 
 
 def test_the_farming_materials_are_used_by_upgrades_across_the_game():
-    made = {"compost", "dewdrop", "beeswax", "living_vine", "golden_pollen"}
+    made = {"compost", "dewdrop", "beeswax", "living_vine"}
     assert all(REG.item(m).skill == "farming" and REG.item(m).drop for m in made)
     used = {m for t in REG.items.values() if t.tool and t.tool.upgrade for m in t.tool.upgrade.items}
     assert made <= used  # every one of them is something you spend
     outside = {t.tool.kind for t in REG.items.values() if t.tool and t.tool.kind != "can" and t.tool.upgrade and made & set(t.tool.upgrade.items)}
     assert {"axe", "pickaxe", "rod", "sword"} <= outside  # ...in other skills' tools too, not only the can
-    rates = [REG.item(m).drop.rate for m in ("compost", "dewdrop", "beeswax", "living_vine", "golden_pollen")]
-    assert rates == sorted(rates) and len(set(rates)) == 5  # each rarer than the last
+    rates = [REG.item(m).drop.rate for m in ("compost", "dewdrop", "beeswax", "living_vine")]
+    assert rates == sorted(rates) and len(set(rates)) == 4  # each rarer than the last
 
 
 async def test_a_plot_you_watered_and_then_harvested_does_not_use_up_the_can(db):

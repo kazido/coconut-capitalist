@@ -70,7 +70,9 @@ def test_the_rare_drop_screen_shows_a_species_drops_rate():
     from cococap.registry import get_registry
     from cococap.services import odds
 
-    reg = get_registry()
+    from tests.conftest import with_signature_drops
+
+    reg = with_signature_drops(get_registry())
     sp = reg.foraging.species_of("redwood")
     rare = sp.drops[1]
     assert odds.foraging(reg)(rare.item).text() == f"1 in {round(1 / rare.rate):,} drop rolls"

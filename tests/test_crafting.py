@@ -71,11 +71,11 @@ def test_a_good_recipe_loads(tmp_path):
 async def test_craft_takes_exactly_the_inputs_and_bits_and_gives_the_output(db):
     user = await User.get(1)
     await stock(user, WEDGE, times=1, bits=WEDGE.bits + 7)
-    await user.add_item("birch_bark", 3)  # (spare)
+    await user.add_item("copper_ore", 3)  # (spare)
     made = await crafting.craft(user, "iron_wedge")
     assert made.items == {"iron_wedge": WEDGE.quantity} and made.bits == WEDGE.bits
     items = await user.items()
-    assert items["iron_wedge"] == WEDGE.quantity and items["birch_bark"] == 3 and "oak_gall" not in items
+    assert items["iron_wedge"] == WEDGE.quantity and items["copper_ore"] == 3 and "iron_ore" not in items
     await user.refresh()
     assert user.purse == 7
 
@@ -92,18 +92,18 @@ async def test_craft_several_scales_everything(db):
 async def test_a_short_input_or_short_bits_changes_nothing(db):
     user = await User.get(1)
     await stock(user, WEDGE, bits=WEDGE.bits * 2)
-    await user.remove_item("willow_switch", 1)  # one input short, bits and the others plenty
+    await user.remove_item("hardwood", 1)  # one input short, bits and the others plenty
     before = await user.items()
-    with pytest.raises(CraftError, match="Willow Switch"):
+    with pytest.raises(CraftError, match="Hardwood"):
         await crafting.craft(user, "iron_wedge")
     assert await user.items() == before
     await user.refresh()
     assert user.purse == WEDGE.bits * 2
-    await user.add_item("willow_switch", 1)
+    await user.add_item("hardwood", 1)
     await set_columns(user, purse=WEDGE.bits - 1)  # now only the bits are short
     with pytest.raises(CraftError, match="more bits"):
         await crafting.craft(user, "iron_wedge")
-    assert await user.items() == {**before, "willow_switch": 1} and (await User.get(1)).purse == WEDGE.bits - 1
+    assert await user.items() == {**before, "hardwood": 1} and (await User.get(1)).purse == WEDGE.bits - 1
 
 
 async def test_asking_for_more_than_you_have_is_refused_whole(db):
@@ -119,8 +119,8 @@ async def test_craftable_count_is_the_scarcest_input_or_the_bits(db):
     await stock(user, WEDGE, times=5, bits=WEDGE.bits * 3)
     assert await crafting.craftable_count(user, WEDGE) == 3  # bits are the limit
     await set_columns(user, purse=10**9)
-    await user.remove_item("oak_gall", 2)
-    assert await crafting.craftable_count(user, WEDGE) == 3  # oak gall: 3 left, 1 each
+    await user.remove_item("iron_ore", 2 * WEDGE.inputs["iron_ore"])
+    assert await crafting.craftable_count(user, WEDGE) == 3  # iron ore: 3 crafts left
     assert await crafting.craftable_count(user, BATTERY) == 0
     made = await crafting.craft(user, "iron_wedge", await crafting.craftable_count(user, WEDGE))
     assert made.times == 3 and await crafting.craftable_count(user, WEDGE) == 0
@@ -132,7 +132,7 @@ async def test_a_recipe_can_ask_for_a_skill_level(db):
     assert await crafting.craftable_count(user, GILDED) == 0
     with pytest.raises(CraftError, match="level"):
         await crafting.craft(user, "gilded_wedge")
-    assert await user.item_quantity("silver_catkin") == 1  # nothing was taken
+    assert await user.item_quantity("gold_ore") == GILDED.inputs["gold_ore"]  # nothing was taken
     await user.update_skill("foraging", lambda s: setattr(s, "xp", 10**6))
     assert await crafting.craftable_count(user, GILDED) == 1
     await crafting.craft(user, "gilded_wedge")
@@ -171,22 +171,22 @@ async def test_the_setting_off_sells_them_like_anything_else(db):
     from cococap.screens.sellall import start_sell_all  # noqa: F401  (the same path the button takes)
 
     user = await User.get(1)
-    await user.add_item("birch_bark", 5)
+    await user.add_item("hardwood", 5)
     await user.set_setting("confirm_sell_all", False)
     await user.set_setting("keep_upgrade_materials", False)
     nav, inter = await hub("forage")
     await click(nav, inter, "Sell all")
-    assert await user.item_quantity("birch_bark") == 0
+    assert await user.item_quantity("hardwood") == 0
 
 
 async def test_the_sell_all_button_leaves_the_spare_only(db):
     user = await User.get(1)
-    need = crafting.needed_items()["birch_bark"][0]
-    await user.add_item("birch_bark", need + 4)
+    need = crafting.needed_items()["hardwood"][0]
+    await user.add_item("hardwood", need + 4)
     await user.set_setting("confirm_sell_all", False)
     nav, inter = await hub("forage")
     await click(nav, inter, "Sell all")
-    assert await user.item_quantity("birch_bark") == need
+    assert await user.item_quantity("hardwood") == need
 
 
 # ---- the screen --------------------------------------------------------------------------------------------------------------------------

@@ -8,9 +8,12 @@ from cococap.services import foraging as f
 from cococap.services.equipment import EffectiveStats, add_enchant, effective_stats, equip
 from cococap.services.party import Party
 from cococap.user import User
+from tests.conftest import with_signature_drops
 
 REG = get_registry()
 RULES = REG.foraging
+SIG_REG = with_signature_drops(REG)  # (the shipped species have no signature drops)
+SIG_RULES = SIG_REG.foraging
 
 
 @pytest.fixture(autouse=True)
@@ -1132,34 +1135,34 @@ def test_a_tree_only_rolls_a_species_of_its_own_zone():
 
 
 def test_species_drops_come_at_the_configured_rate_on_top_of_the_normal_pool():
-    sp = RULES.species_of("oak")
+    sp = SIG_RULES.species_of("oak")
     common, rare = sp.drops
     rolls = 20_000
-    got = f.roll_drops(rolls, Random(5), REG, species="oak")
+    got = f.roll_drops(rolls, Random(5), SIG_REG, species="oak")
     for d in (common, rare):
         mean = (d.min + d.max) / 2
         assert got[d.item] > 0 and got[d.item] / rolls <= d.rate * d.max
         assert got[d.item] / rolls >= d.rate * d.min * 0.8, d.item
         assert got[d.item] / rolls <= d.rate * mean * 1.3 + 0.01, d.item
     assert got["hardwood"] > 0  # the normal pool still drops
-    plain = f.roll_drops(2000, Random(5), REG)
-    assert not any(d.item in plain for sp in RULES.species for d in sp.drops)  # no species, no signature drops
-    other = f.roll_drops(2000, Random(5), REG, species="birch")
-    assert common.item not in other and other["birch_bark"] > 0  # only its own species' drops
+    plain = f.roll_drops(2000, Random(5), SIG_REG)
+    assert not any(d.item in plain for sp in SIG_RULES.species for d in sp.drops)  # no species, no signature drops
+    other = f.roll_drops(2000, Random(5), SIG_REG, species="birch")
+    assert common.item not in other and other["clay"] > 0  # only its own species' drops
 
 
 def test_signature_drops_are_not_in_the_global_pool_and_are_likelier_than_the_poolsrare_items():
-    pool = {i.id for i in f.drop_pool(REG)}
-    assert all(d.item not in pool for sp in RULES.species for d in sp.drops)
-    assert all(d.rate >= 1 / 200 for sp in RULES.species for d in sp.drops)
+    pool = {i.id for i in f.drop_pool(SIG_REG)}
+    assert all(d.item not in pool for sp in SIG_RULES.species for d in sp.drops)
+    assert all(d.rate >= 1 / 200 for sp in SIG_RULES.species for d in sp.drops)
 
 
 async def test_a_private_tree_pays_its_species_drops(db):
     user = await player(1)
     tree = f.Tree(1, 1000, 0, species="oak")
-    reward = await f.fell_private(user, tree, Random(4), REG)
-    assert reward.drops["oak_gall"] > 0 and reward.drops["birch_bark"] == 0
-    assert await user.item_quantity("oak_gall") == reward.drops["oak_gall"]
+    reward = await f.fell_private(user, tree, Random(4), SIG_REG)
+    assert reward.drops["coal"] > 0 and reward.drops["clay"] == 0
+    assert await user.item_quantity("coal") == reward.drops["coal"]
 
 
 def test_the_community_species_is_the_same_for_everybody_and_fits_the_zone():
@@ -1178,8 +1181,8 @@ async def test_every_chopper_sees_the_community_trees_species_and_its_shares_are
     chops = {1: 600, 2: 400}
     same = [f.community_shares(1000, True, chops, RULES, Random(7), REG, first.zone, species=first.species) for _ in range(2)]
     assert same[0] == same[1]
-    sig = {d.item for d in RULES.species_of(first.species).drops}
-    assert any(set(s.drops) & sig for s in f.community_shares(100_000, True, {1: 100_000}, RULES, Random(7), REG, first.zone, species=first.species).values())
+    sig = {d.item for d in SIG_RULES.species_of(first.species).drops}
+    assert any(set(s.drops) & sig for s in f.community_shares(100_000, True, {1: 100_000}, SIG_RULES, Random(7), SIG_REG, first.zone, species=first.species).values())
 
 
 async def test_settling_a_community_tree_pays_its_species_drops(db):

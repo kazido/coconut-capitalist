@@ -97,7 +97,7 @@ def _farming(reg: Registry) -> list[str]:
 def _species_text(reg: Registry) -> str:
     f = reg.foraging
     """The tree species, by forest band, with their signature drops (empty when the rules have none)."""
-    if not f.species:
+    if not any(sp.drops for sp in f.species):
         return ""
     return ("**Tree species.** A tree's species is set by its forest, and each species drops its own signature items (on top of the usual drops, and more often; odds are per drop roll): " + "; ".join(
         f"{sp.emoji} **{sp.name}** (forests {sp.zone_min}-{sp.zone_max}) " + " and ".join(f"{reg.item(d.item).name} 1 in {round(1 / d.rate)}" for d in sp.drops) for sp in f.species) + ".")
@@ -122,7 +122,7 @@ def _foraging(reg: Registry) -> list[str]:
         f"to one shared meter, worth {', '.join(f'{p} for rarity {r}' for r, p in sorted(f.releaf.points.items()))}. At **{f.releaf.meter_goal}** a **Bloom** starts for {f.releaf.bloom_hours:g} hours: "
         f"**+{f.releaf.bloom_xp:.0%}** foraging xp and **+{f.releaf.bloom_drops:.0%}** drop chances for EVERYONE, whether they gave or not. Giving is closed during a Bloom, "
         f"and one person can give at most {f.releaf.max_share:.0%} of the goal per round. There is no personal reward, only the thank-you list.",
-        _species_text(reg),
+        *([_species_text(reg)] if _species_text(reg) else []),
         f"**The community tree.** One grows every hour and stands for {c.open_minutes} minutes. Everyone's chops add up; "
         f"chop at least {c.min_share:.0%} of it to be paid, and a bigger crowd earns a bonus. Rewards arrive in your own panel, even if you were offline.",
     ]

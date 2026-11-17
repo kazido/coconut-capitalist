@@ -706,7 +706,7 @@ active hours for x1.35). The fix is two layers, **tools** (what you wield) and *
   (bigger harvests, +5% to +25%) and `drop_luck` (more farming drops, +15% to +50%). Capacity is the main draw: a bigger farm needs a bigger can.
 - **Farming drops:** a harvest rolls the farming drop table once per `drop_cycles_per_roll` (4) growth cycles of the crop (a long crop pays for
   the waiting; at most 30 rolls). New materials, each rarer than the last: Rich Compost (1 in 3), Morning Dewdrop (1 in 12), Beeswax (1 in 40),
-  Living Vine (1 in 150), Golden Pollen (1 in 600), besides Plant Fiber. They upgrade the can and are also in a few steps of every other
+  Living Vine (1 in 150), besides Plant Fiber. They upgrade the can and are also in a few steps of every other
   tool (axe, pickaxe, rod and sword), so farming feeds the rest of the game.
 - Existing farmers have no can: they buy a Tin Watering Can first (the Water button says so). `free_plots` is a balance dial (a player set it to 3 by hand).
 
@@ -965,9 +965,9 @@ rarity sets its xp curve, so an owned Mole (2 -> 3) now levels slower and a Bee 
 
 Every tree has a **species**, set by its zone when the tree is rolled (`[[species]]` in `configs/foraging.toml`: id, name, emoji, `zone_min`..`zone_max`,
 `weight`, `drops`). Nine species cover zones 1-20 with bands that overlap a little (2-3 species grow in any zone): Birch 1-5, Oak 1-7, Willow 3-9, Pine 6-12,
-Chestnut 8-13, Cherry 10-15, Palm 13-18, Redwood 14-20, Emberwood 16-20. A species adds its own **signature drops** on top of the normal drop pool: each drop
+Chestnut 8-13, Cherry 10-15, Palm 13-18, Redwood 14-20, Emberwood 16-20. **Material cull (2026-11-17): every species' signature items were removed (nothing used them), so `drops` is empty for all species and they are flavour only. The mechanic below is kept in code and tests (`tests/conftest.py::with_signature_drops`); add `drops` back to a species when a use for one appears.** A species could add its own **signature drops** on top of the normal drop pool: each drop
 roll of the tree also rolls every signature drop at its `rate` (a chance 0..1 per roll, then `min`..`max` of them), so they are far likelier than the pool's
-rare items. Each species has one common and one rarer signature item (`configs/items.toml`, skill foraging, no `[drop]` block so they never join the global pool).
+rare items. A signature item is a foraging item with no `[drop]` block, so it never joins the global pool.
 - Who picks the species: private trees roll it in `roll_tree` (after the hp, so seeded hp rolls did not change); community trees derive it from the window and zone
   only (`community_species`, seeded `community-tree:{window}:species:{zone}`, nothing stored), so every chopper and the settling see the same one; party trees roll
   it when started and keep it in the party state (`species`).
