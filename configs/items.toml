@@ -3547,3 +3547,63 @@ sell_price = 400000  # TODO(balance)
 enchant = "gleaner"
 
 # ---- Tree species signature drops (see [[species]] in foraging.toml). No [drop] block: they only drop from their species. ----
+
+[twilight_fuel]
+name = "Twilight Fuel"
+description = "Burned by your ship to make the first trip to Twilight Desert."
+wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to Twilight Desert; later trips there are free."
+emoji = "🌅"
+rarity = 2
+category = "material"
+price = 0  # crafted at the Workbench (configs/recipes.toml)
+sell_price = 1000
+
+[rust_fuel]
+name = "Rust Fuel"
+description = "Burned by your ship to make the first trip to Rust Belt."
+wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to Rust Belt; later trips there are free."
+emoji = "🔩"
+rarity = 3
+category = "material"
+price = 0  # crafted at the Workbench (configs/recipes.toml)
+sell_price = 1000
+
+[cadrega_fuel]
+name = "Cadrega Fuel"
+description = "Burned by your ship to make the first trip to Cadrega City."
+wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to Cadrega City; later trips there are free."
+emoji = "🔆"
+rarity = 4
+category = "material"
+price = 0  # crafted at the Workbench (configs/recipes.toml)
+sell_price = 1000
+
+[glade_fuel]
+name = "Glade Fuel"
+description = "Burned by your ship to make the first trip to Aerial Glades."
+wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to Aerial Glades; later trips there are free."
+emoji = "🌤️"
+rarity = 5
+category = "material"
+price = 0  # crafted at the Workbench (configs/recipes.toml)
+sell_price = 1000
+
+[star_fuel]
+name = "Star Fuel"
+description = "Burned by your ship to make the first trip to Star Kingdom."
+wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to Star Kingdom; later trips there are free."
+emoji = "💫"
+rarity = 6
+category = "material"
+price = 0  # crafted at the Workbench (configs/recipes.toml)
+sell_price = 1000
+
+[void_fuel]
+name = "Void Fuel"
+description = "Burned by your ship to make the first trip to The Void."
+wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to The Void; later trips there are free."
+emoji = "🕳️"
+rarity = 7
+category = "material"
+price = 0  # crafted at the Workbench (configs/recipes.toml)
+sell_price = 1000

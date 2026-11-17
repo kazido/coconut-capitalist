@@ -1359,6 +1359,48 @@ class ShipmentRules(_Data):
     community: CommunityShipments
 
 
+# ---- Areas and the ship (configs/areas.toml) -------------------------------------------------------------------------------------------
+class Area(_Data):
+    """One area of the world. It caps how far each skill's own zones open (the skill level is still needed too).
+    `fuel` is what the ship burns to get here for the FIRST time; going back to an area you reached is free."""
+
+    id: str
+    name: str
+    emoji: str
+    description: str
+    foraging_max_zone: int = Field(ge=1)  # foraging zones 1..this are open
+    fishing_max_water: str  # the deepest fishing water id that is open (waters are listed shallowest first)
+    fuel: dict[str, int] = Field(default_factory=dict)  # item -> quantity burned on the first trip here
+
+
+class ShipTier(_Data):
+    """One ship upgrade: tier N lets you sail to area N (tier 1 builds the ship). Costs bits, materials and a level floor in each skill."""
+
+    name: str
+    emoji: str
+    bits: int = Field(ge=0)
+    parts: dict[str, int]
+    skill_floors: dict[str, int]  # skill -> the level you need in it
+
+
+class AreaRules(_Data):
+    areas: list[Area] = Field(min_length=2)  # in travel order: the starting area first
+    ship_tiers: list[ShipTier] = Field(min_length=1)  # one per area after the first
+
+    @model_validator(mode="after")
+    def _fit(self):
+        if len(self.ship_tiers) != len(self.areas) - 1:
+            raise ValueError("needs one ship tier per area after the first")
+        if len({a.id for a in self.areas}) != len(self.areas):
+            raise ValueError("area ids must be unique")
+        if self.areas[0].fuel:
+            raise ValueError("the first area is where you start: it needs no fuel")
+        caps = [a.foraging_max_zone for a in self.areas]
+        if caps != sorted(caps):
+            raise ValueError("foraging_max_zone must not shrink from one area to the next")
+        return self
+
+
 class Recipe(_Data):
     """One thing the Workbench makes (configs/recipes.toml): `inputs` and `bits` are used up, `quantity` of `output` is made.
     `skill` + `min_level` (optional) ask for a level in a skill first."""

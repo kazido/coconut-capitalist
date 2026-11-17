@@ -41,3 +41,57 @@ output = "scarab_bomb"
 quantity = 1
 # Was 100,000 bits. Mined ore: gold ~48 an hour, iron ~180, copper ~720, so about 40 minutes of digging per bomb.
 inputs = { gold_ore = 30, iron_ore = 100, copper_ore = 200 }
+
+[twilight_fuel]
+name = "Twilight Fuel"
+emoji = "🌅"
+output = "twilight_fuel"
+quantity = 1
+bits = 1000
+# Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
+inputs = { coal = 50, cod = 10, feather = 20, compost = 10 }
+
+[rust_fuel]
+name = "Rust Fuel"
+emoji = "🔩"
+output = "rust_fuel"
+quantity = 1
+bits = 5000
+# Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
+inputs = { iron_ore = 40, bass = 8, hardwood = 5, dewdrop = 10 }
+
+[cadrega_fuel]
+name = "Cadrega Fuel"
+emoji = "🔆"
+output = "cadrega_fuel"
+quantity = 1
+bits = 25000
+# Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
+inputs = { silver_ore = 30, salmon = 8, fine_bark = 5, beeswax = 5 }
+
+[glade_fuel]
+name = "Glade Fuel"
+emoji = "🌤️"
+output = "glade_fuel"
+quantity = 1
+bits = 100000
+# Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
+inputs = { platinum_ore = 30, swordfish = 8, maple_leaf = 5, living_vine = 5 }
+
+[star_fuel]
+name = "Star Fuel"
+emoji = "💫"
+output = "star_fuel"
+quantity = 1
+bits = 500000
+# Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
+inputs = { sapphire = 15, marlin = 5, aged_feather = 3, starfruit = 3 }
+
+[void_fuel]
+name = "Void Fuel"
+emoji = "🕳️"
+output = "void_fuel"
+quantity = 1
+bits = 2000000
+# Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
+inputs = { emerald = 20, abyssal_angler = 3, gilded_wedge = 3, ambrosia = 1 }

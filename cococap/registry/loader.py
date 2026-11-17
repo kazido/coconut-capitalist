@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
+from .models import AreaRules, ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -85,7 +85,9 @@ class Registry:
         shipments: ShipmentRules | None = None,
         scrolls: ScrollRules | None = None,
         recipes: list[Recipe] | None = None,
+        areas: AreaRules | None = None,
     ):
+        self.areas = areas
         self.items: dict[str, Item] = {i.id: i for i in items}
         self.pets: dict[str, Pet] = {p.id: p for p in pets}
         self.enemies: dict[str, Enemy] = {e.id: e for e in enemies}
@@ -153,6 +155,19 @@ class Registry:
             problems += [f"recipes.toml [{r.id}]: input '{i}' is a tool" for i in r.inputs if i in self.items and self.items[i].is_instance]
             if r.output in r.inputs:
                 problems.append(f"recipes.toml [{r.id}]: consumes its own output '{r.output}'")
+        return problems
+
+    def _validate_areas(self, rules: AreaRules) -> list[str]:
+        problems = []
+        for area in rules.areas:
+            problems += [f"areas.toml [{area.id}]: unknown fuel item '{i}'" for i in area.fuel if i not in self.items]
+            if self.foraging is not None and area.foraging_max_zone > self.foraging.zones:
+                problems.append(f"areas.toml [{area.id}]: foraging_max_zone is past the last zone ({self.foraging.zones})")
+            if self.fishing is not None and area.fishing_max_water not in {w.id for w in self.fishing.waters}:
+                problems.append(f"areas.toml [{area.id}]: unknown fishing water '{area.fishing_max_water}'")
+        for n, tier in enumerate(rules.ship_tiers, 1):
+            problems += [f"areas.toml ship tier {n}: unknown part '{i}'" for i in tier.parts if i not in self.items]
+            problems += [f"areas.toml ship tier {n}: unknown skill '{s}'" for s in tier.skill_floors if s not in ("mining", "fishing", "foraging", "farming")]
         return problems
 
     def _validate_mining(self, rules: MiningRules) -> list[str]:
@@ -240,6 +255,8 @@ class Registry:
                         problems.append(f"foraging.toml species '{sp.id}': unknown drop item '{d.item}'")
                     elif self.items[d.item].skill != "foraging":
                         problems.append(f"foraging.toml species '{sp.id}': drop '{d.item}' must be a foraging item")
+        if self.areas is not None:
+            problems += self._validate_areas(self.areas)
         if self.farming is not None and self.farming.deed_item not in self.items:
             problems.append(f"farming.toml: unknown deed item '{self.farming.deed_item}'")
         for table in self.drop_tables.values():
@@ -352,7 +369,9 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     shipments = _build(ShipmentRules, "shipments", [("shipments", _read(config_dir, "shipments"))])[0]
     scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
     recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools, shipments, scrolls, recipes)
+    raw_areas = _read(config_dir, "areas")
+    areas = _build(AreaRules, "areas", [("areas", {"areas": [{"id": k, **v} for k, v in raw_areas.get("area", {}).items()], "ship_tiers": raw_areas.get("ship_tier", [])})])[0]
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools, shipments, scrolls, recipes, areas)
 
 
 @lru_cache(maxsize=1)

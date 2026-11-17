@@ -1,0 +1,105 @@
+# Areas and the ship (services/areas.py). The world is 7 areas; a ship takes you from one to the next.
+# An area CAPS how far each skill's own zones open: foraging zones 1..foraging_max_zone, fishing waters up to fishing_max_water.
+# (You still need the skill level for a zone; the area is a ceiling, so a maxed skill still waits on the ship.)
+# Going to an area you have already reached is free; the FIRST trip to a new area burns its `fuel` (crafted at the Workbench,
+# configs/recipes.toml) and needs ship tier N for area N. Ship tier 1 builds the ship; tier N+1 is an upgrade of tier N.
+# Fuel and ship parts mix materials from every skill on purpose, so no skill can be skipped.
+# Plan: docs/plans/areas-and-ship.md.  TODO(balance): every number here is a first guess.
+
+[area.slime_hill]
+name = "Slime Hill"
+emoji = "🟢"
+description = "A gentle green hill where every adventure starts."
+foraging_max_zone = 3
+fishing_max_water = "pond"
+
+[area.twilight_desert]
+name = "Twilight Desert"
+emoji = "🏜️"
+description = "Dunes that glow at dusk, with trees and fish found nowhere else."
+foraging_max_zone = 6
+fishing_max_water = "river"
+fuel = { twilight_fuel = 1 }
+
+[area.rust_belt]
+name = "Rust Belt"
+emoji = "⚙️"
+description = "Scrapyards and rusted giants, rich in ore."
+foraging_max_zone = 9
+fishing_max_water = "reef"
+fuel = { rust_fuel = 1 }
+
+[area.cadrega_city]
+name = "Cadrega City"
+emoji = "🏙️"
+description = "A walled city of markets, canals and clever machines."
+foraging_max_zone = 12
+fishing_max_water = "reef"
+fuel = { cadrega_fuel = 1 }
+
+[area.aerial_glades]
+name = "Aerial Glades"
+emoji = "☁️"
+description = "Floating meadows above the clouds."
+foraging_max_zone = 15
+fishing_max_water = "deep_sea"
+fuel = { glade_fuel = 1 }
+
+[area.star_kingdom]
+name = "Star Kingdom"
+emoji = "⭐"
+description = "A realm of starlight, past the edge of the sky."
+foraging_max_zone = 18
+fishing_max_water = "deep_sea"
+fuel = { star_fuel = 1 }
+
+[area.the_void]
+name = "The Void"
+emoji = "🌑"
+description = "Where the map ends."
+foraging_max_zone = 20
+fishing_max_water = "deep_sea"
+fuel = { void_fuel = 1 }
+
+# ---- The ship: tier N takes you to area N. `parts` are used up, `skill_floors` are levels you must already have.
+[[ship_tier]]
+name = "Patchwork Raft"
+emoji = "🛶"
+bits = 10000
+parts = { hardwood = 5, iron_ore = 100, plant_fiber = 50, coral_shard = 20 }
+skill_floors = { mining = 8, fishing = 8, foraging = 8, farming = 8 }
+
+[[ship_tier]]
+name = "Dune Skiff"
+emoji = "⛵"
+bits = 50000
+parts = { hardwood = 15, silver_ore = 60, beeswax = 10, coral_shard = 60 }
+skill_floors = { mining = 20, fishing = 20, foraging = 20, farming = 20 }
+
+[[ship_tier]]
+name = "Scrap Cruiser"
+emoji = "🚢"
+bits = 250000
+parts = { fine_bark = 20, platinum_ore = 40, living_vine = 10, sardine = 50 }
+skill_floors = { mining = 35, fishing = 35, foraging = 35, farming = 35 }
+
+[[ship_tier]]
+name = "Sky Frigate"
+emoji = "🛳️"
+bits = 1000000
+parts = { maple_leaf = 20, sapphire = 20, living_vine = 25, swordfish = 20 }
+skill_floors = { mining = 55, fishing = 55, foraging = 55, farming = 55 }
+
+[[ship_tier]]
+name = "Star Clipper"
+emoji = "🚀"
+bits = 5000000
+parts = { aged_feather = 5, emerald = 25, starfruit = 10, marlin = 15 }
+skill_floors = { mining = 80, fishing = 80, foraging = 80, farming = 80 }
+
+[[ship_tier]]
+name = "Void Runner"
+emoji = "🛸"
+bits = 25000000
+parts = { gilded_wedge = 5, emerald = 60, ambrosia = 2, abyssal_angler = 5 }
+skill_floors = { mining = 105, fishing = 105, foraging = 105, farming = 105 }
