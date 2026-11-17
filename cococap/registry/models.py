@@ -849,8 +849,7 @@ class Species(_Data):
 
 
 class ForagingRules(_Data):
-    zones: int = Field(ge=1)
-    zone_levels: list[int] = Field(min_length=1)  # the foraging level each zone needs (zone 1 first; must climb)
+    zones: int = Field(ge=1)  # the forests (zone N = forest N); their unlock levels are areas.location_levels
     heavy_zone: int = Field(ge=1)
     heavy_solo_power: float = Field(gt=0, le=1)
     zone_hp_growth: float = Field(ge=0)
@@ -882,10 +881,6 @@ class ForagingRules(_Data):
 
     @model_validator(mode="after")
     def _zones_fit(self):
-        if len(self.zone_levels) != self.zones or self.zone_levels[0] != 1:
-            raise ValueError("zone_levels needs one level per zone, starting at level 1")
-        if any(b <= a for a, b in zip(self.zone_levels, self.zone_levels[1:], strict=False)):
-            raise ValueError("zone_levels must climb")
         if not 1 <= self.community.default_zone <= self.zones or self.community.min_active > self.community.max_active:
             raise ValueError("community default_zone must be a real zone and min_active <= max_active")
         return self
@@ -1441,6 +1436,19 @@ class AreaRules(_Data):
         if levels[0] != 1 or levels != sorted(set(levels)):
             raise ValueError("locations.min_levels must start at 1 and strictly climb")
         return self
+
+
+class Location(_Data):
+    """One named location of a skill (configs/locations.toml). `n` is its 1-based unlock order; `area` and `min_level` are derived
+    from it (area = the n-th pair of locations, min_level = AreaRules.location_levels[n - 1]), so they are not written in the TOML."""
+
+    skill: str
+    n: int = Field(ge=1)
+    id: str
+    name: str
+    emoji: str
+    area: str  # area id
+    min_level: int = Field(ge=1)
 
 
 class Recipe(_Data):

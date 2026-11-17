@@ -1,19 +1,18 @@
 # Foraging rules (see the wiki). Balance data: change numbers freely.  # TODO(balance): all numbers are guesses
 #
 # Chop a private tree any time, or join the community tree that grows every hour. A tree has hit points; every chop
-# takes off your axe's power. Zones 1..`zones` make trees bigger; zone N needs foraging level zone_levels[N - 1].
-# The gaps between levels grow (3, 3, 4, 4, 5, ...) so each zone takes a little longer than the one before. (The level
-# curve is quadratic: level 20 is about 74k xp, level 50 about 490k, level 100 about 2M.)
+# takes off your axe's power. The forests are the named locations of foraging (configs/locations.toml); forest N is zone N,
+# and forest N opens at the level in areas.location_levels (configs/areas.toml), the same for every skill.
+# Forests 1..`zones` make trees bigger. (The level curve is quadratic: level 20 is about 74k xp, level 50 about 490k, level 100 about 2M.)
 
-zones = 20
-zone_levels = [1, 4, 7, 11, 15, 20, 25, 31, 37, 44, 51, 59, 67, 76, 85, 94, 104, 114, 125, 136]
-heavy_zone = 8                    # private trees from this zone up are "heavy"...
+zones = 14
+heavy_zone = 6                    # private trees from this forest up are "heavy"...
 heavy_solo_power = 0.5            # ...and a lone chopper hits at this share of their power (the Soloist enchant removes it)
-zone_hp_growth = 0.75             # a tree's hp = its height x (1 + this x (zone - 1))
+zone_hp_growth = 0.6346           # a tree's hp = its height x (1 + this x (zone - 1)). Forest 14: hp x9.25 (was 0.75 over 20 zones: old zone 12 strength)
 xp_per_swing = 10                  # foraging xp = this x the quality of every chop (grain and good chops, never the axe). A normal chop is about 1.
 bits_per_hp = 0                   # no bits for chopping itself: foraging pays through what the tree drops (sell it) and xp. (Was 60.)
 hp_per_roll = 70                  # a felled tree makes ceil(hp / this) rolls on the foraging drop tables (was 170: upgrade materials came too slowly)
-zone_reward_growth = 0.07         # each zone above 1 pays +7% per hp (zone 10: x1.63, zone 20: x2.33). Kept small so the deep zones do not run away from the other skills
+zone_reward_growth = 0.0592       # each forest above 1 pays +5.92% per hp (forest 14: x1.77). Kept small so the deep zones do not run away from the other skills
 
 [[heights]]                       # a private tree's height (before the zone scaling), by weight
 min = 20
@@ -143,8 +142,8 @@ boost_chops = 120
 
 [community]                       # the tree everyone can join: one per hour, standing for `open_minutes`
 open_minutes = 30
-default_zone = 3                  # its zone when nobody has chopped lately
-zone_below = 2                    # its zone is picked from (the zone the typical recent chopper can reach) - this...
+default_zone = 3                  # its forest when nobody has chopped lately
+zone_below = 2                    # its forest is picked from (the forest the typical recent chopper can reach) - this...
 zone_above = 1                    # ...to + this, the same for everybody that hour
 hp_per_active = 5                 # community hp = a typical tree's hp in that zone x this x the number of recent choppers
 min_active = 3                    # (counted as at least 3, so a quiet server still gets a proper tree...
@@ -180,7 +179,7 @@ bloom_xp = 0.10                   # during a Bloom everyone's foraging xp is +10
 bloom_drops = 0.10                # ...and every drop chance of a foraging tree is +10% (private, community and party trees alike)  TODO(balance)
 top_donors = 5                    # names shown on the donor list
 
-# Tree species: set by the zone when a tree is rolled (a species grows in zones zone_min..zone_max; `weight` = how common it is there).
+# Tree species: set by the forest when a tree is rolled (a species grows in forests zone_min..zone_max; `weight` = how common it is there).
 # A species may also have its OWN signature items (`drops = [{ item, rate, min, max }]`, on top of the normal pool; `rate` is the chance PER DROP ROLL).
 # None have any right now: the old per-species materials were removed because nothing used them. Add `drops` back where a use for one appears.
 [[species]]
@@ -188,61 +187,61 @@ id = "birch"
 name = "Birch"
 emoji = "🌿"
 zone_min = 1
-zone_max = 5
+zone_max = 3
 weight = 1.0
 [[species]]
 id = "oak"
 name = "Oak"
 emoji = "🌳"
 zone_min = 1
-zone_max = 7
+zone_max = 5
 weight = 1.0
 [[species]]
 id = "willow"
 name = "Willow"
 emoji = "🍃"
-zone_min = 3
-zone_max = 9
+zone_min = 2
+zone_max = 6
 weight = 1.0
 [[species]]
 id = "pine"
 name = "Pine"
 emoji = "🌲"
-zone_min = 6
-zone_max = 12
+zone_min = 4
+zone_max = 8
 weight = 1.0
 [[species]]
 id = "chestnut"
 name = "Chestnut"
 emoji = "🌰"
-zone_min = 8
-zone_max = 13
+zone_min = 6
+zone_max = 9
 weight = 1.0
 [[species]]
 id = "cherry"
 name = "Cherry"
 emoji = "🌸"
-zone_min = 10
-zone_max = 15
+zone_min = 7
+zone_max = 10
 weight = 1.0
 [[species]]
 id = "palm"
 name = "Palm"
 emoji = "🌴"
-zone_min = 13
-zone_max = 18
+zone_min = 10
+zone_max = 13
 weight = 1.0
 [[species]]
 id = "redwood"
 name = "Redwood"
 emoji = "🎄"
-zone_min = 14
-zone_max = 20
+zone_min = 10
+zone_max = 14
 weight = 1.0
 [[species]]
 id = "emberwood"
 name = "Emberwood"
 emoji = "🔥"
-zone_min = 16
-zone_max = 20
+zone_min = 11
+zone_max = 14
 weight = 1.0

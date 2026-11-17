@@ -1,6 +1,6 @@
 """Party trees: a tree only your party can chop, with a little better rewards for working as a team.
 
-Any member of a party of two or more starts one (in a zone everybody in the party has unlocked) and it stands for a while.
+Any member of a party of two or more starts one (in a forest everybody in the party has unlocked) and it stands for a while.
 Every chop is applied inside one serialized transaction (``services.community``), so any number of members can chop at the
 same moment without losing a chop, and the tree can only fall once. When it falls (or falls over), everyone's reward is
 worked out once, in that same transaction, and kept until each member collects it from their own panel.
@@ -123,7 +123,7 @@ async def view(user: User, now: float | None = None, registry: Registry | None =
 
 
 async def unlocked_zone(party: Party, registry: Registry | None = None) -> int:
-    """The deepest zone that EVERY member has unlocked (so nobody is left out)."""
+    """The deepest forest that EVERY member has unlocked (so nobody is left out)."""
     reg = registry or get_registry()
     levels = [User.xp_to_level((await (await User.get(m)).skill("foraging")).xp) for m in party.members]
     return foraging.unlocked_zones(min(levels), reg.foraging)[-1]

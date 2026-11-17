@@ -4,11 +4,13 @@ from random import Random
 import pytest
 
 from cococap.registry import get_registry
+from cococap.registry.models import LOCATIONS_PER_AREA
 from cococap.services import foraging as f
 from cococap.services.equipment import EffectiveStats, add_enchant, effective_stats, equip
 from cococap.services.party import Party
 from cococap.user import User
 from tests.conftest import with_signature_drops
+from tests.test_hub import freeze_time, hub, select_named, with_axe
 
 REG = get_registry()
 RULES = REG.foraging
@@ -44,18 +46,19 @@ async def player(user_id, axe_name="tool_axe_starter"):
 
 # ---- zones and swings -------------------------------------------------------------------------------------------
 def test_zones_unlock_with_level():
-    assert f.zone_level(1, RULES) == 1 and f.zone_level(7, RULES) == RULES.zone_levels[6]
-    assert f.unlocked_zones(1, RULES) == [1]
+    levels = REG.areas.location_levels  # the shared schedule: zone N opens at levels[N - 1]
+    assert f.zone_level(1, RULES) == levels[0] and f.zone_level(7, RULES) == levels[6]
+    assert f.unlocked_zones(levels[0], RULES) == [1]
     assert f.unlocked_zones(f.zone_level(7, RULES), RULES) == list(range(1, 8))
     assert f.unlocked_zones(f.zone_level(7, RULES) - 1, RULES) == list(range(1, 7))
     assert f.unlocked_zones(999, RULES) == list(range(1, RULES.zones + 1))
-    assert f.unlocked_zones(7, RULES) == [1, 2, 3]  # level 7 is zone 3: zones are no longer a new one every two levels
+    # one level short of zone 3 keeps you at zones 1-2 (zones do not open a fixed number of levels apart)
+    assert f.unlocked_zones(levels[2], RULES) == [1, 2, 3] and f.unlocked_zones(levels[2] - 1, RULES) == [1, 2]
 
 
 def test_every_zone_takes_longer_to_reach_than_the_one_before():
-    levels = RULES.zone_levels
-    gaps = [b - a for a, b in zip(levels, levels[1:], strict=False)]
-    assert len(levels) == RULES.zones == 20 and gaps == sorted(gaps) and gaps[0] >= 3 and gaps[-1] > gaps[0]
+    levels = REG.areas.location_levels
+    assert len(levels) == RULES.zones and all(a < b for a, b in zip(levels, levels[1:], strict=False))
 
 
 def test_a_lone_chopper_is_slowed_on_heavy_trees_unless_soloist():
@@ -1167,7 +1170,7 @@ async def test_a_private_tree_pays_its_species_drops(db):
 
 def test_the_community_species_is_the_same_for_everybody_and_fits_the_zone():
     for window in range(WINDOW, WINDOW + 40):
-        for zone in (1, 8, 20):
+        for zone in range(1, RULES.zones + 1):
             first = f.community_species(window, zone, RULES)
             assert first == f.community_species(window, zone, RULES)
             assert RULES.species_of(first).grows_in(zone)
@@ -1192,3 +1195,12 @@ async def test_settling_a_community_tree_pays_its_species_drops(db):
     await f.settle_due(OPEN + 2, Random(1))
     paid = (await f.claim_rewards(a, OPEN + 3, Random(1)))[0]
     assert paid.drops  # (its signature items come from the tree's own species: see the shares test above for the rates)
+
+
+async def test_a_high_level_in_the_first_area_only_offers_its_first_forests(db, monkeypatch):
+    freeze_time(monkeypatch)
+    user = await with_axe()
+    await user.add_xp("foraging", User.level_to_xp(REG.areas.location_levels[-1]) + 1)  # every forest's level is met
+    nav, _ = await hub("forage")  # ...but the player has not left the first area
+    menu = select_named(nav, "Where to chop")
+    assert [o.value for o in menu.options] == [str(n) for n in range(1, LOCATIONS_PER_AREA + 1)]

@@ -1,0 +1,227 @@
+# Named locations per skill (forests, mines, waters, fields), in unlock order. Location n is in area ceil(n / 2) and opens at
+# `locations.min_levels[n - 1]` from configs/areas.toml, so area and level are NOT written here. Ids are saved in player state:
+# fishing's first four (pond, river, reef, deep_sea) must stay as they are. Other ids are free to rename before release.
+
+[foraging.slimewood_thicket]
+name = "Slimewood Thicket"
+emoji = "🍄"
+
+[foraging.jellybough_grove]
+name = "Jellybough Grove"
+emoji = "🍇"
+
+[foraging.duskthorn_scrub]
+name = "Duskthorn Scrub"
+emoji = "🌵"
+
+[foraging.oasis_palms]
+name = "Oasis Palms"
+emoji = "🌴"
+
+[foraging.rustleaf_woods]
+name = "Rustleaf Woods"
+emoji = "🍂"
+
+[foraging.cogbark_copse]
+name = "Cogbark Copse"
+emoji = "🌳"
+
+[foraging.canal_park_arboretum]
+name = "Canal Park Arboretum"
+emoji = "🌿"
+
+[foraging.rooftop_gardens]
+name = "Rooftop Gardens"
+emoji = "🌺"
+
+[foraging.cloudroot_canopy]
+name = "Cloudroot Canopy"
+emoji = "🌀"
+
+[foraging.windbloom_meadow]
+name = "Windbloom Meadow"
+emoji = "💨"
+
+[foraging.starlit_orchard]
+name = "Starlit Orchard"
+emoji = "⭐"
+
+[foraging.moonbark_forest]
+name = "Moonbark Forest"
+emoji = "🌙"
+
+[foraging.hollow_wood]
+name = "Hollow Wood"
+emoji = "🪵"
+
+[foraging.the_withered_rift]
+name = "The Withered Rift"
+emoji = "🥀"
+
+[mining.slimy_burrow]
+name = "Slimy Burrow"
+emoji = "🪱"
+
+[mining.gumdrop_quarry]
+name = "Gumdrop Quarry"
+emoji = "🍬"
+
+[mining.duskstone_quarry]
+name = "Duskstone Quarry"
+emoji = "🪨"
+
+[mining.glassfall_caverns]
+name = "Glassfall Caverns"
+emoji = "💎"
+
+[mining.scrapheap_tunnels]
+name = "Scrapheap Tunnels"
+emoji = "🔩"
+
+[mining.foundry_depths]
+name = "Foundry Depths"
+emoji = "🔥"
+
+[mining.subway_catacombs]
+name = "Subway Catacombs"
+emoji = "🚇"
+
+[mining.clockwork_vaults]
+name = "Clockwork Vaults"
+emoji = "⏰"
+
+[mining.cloudstone_crags]
+name = "Cloudstone Crags"
+emoji = "🗻"
+
+[mining.stormvein_rift]
+name = "Stormvein Rift"
+emoji = "⚡"
+
+[mining.meteor_pits]
+name = "Meteor Pits"
+emoji = "🌠"
+
+[mining.stardust_lode]
+name = "Stardust Lode"
+emoji = "✨"
+
+[mining.hollow_seams]
+name = "Hollow Seams"
+emoji = "🌑"
+
+[mining.core_of_nothing]
+name = "Core of Nothing"
+emoji = "⚫"
+
+[fishing.pond]
+name = "Slime Pond"
+emoji = "🐸"
+
+[fishing.river]
+name = "Slimeflow River"
+emoji = "🐟"
+
+[fishing.reef]
+name = "Mirage Oasis"
+emoji = "🪸"
+
+[fishing.deep_sea]
+name = "Sandglass Cenote"
+emoji = "🌊"
+
+[fishing.oilslick_canal]
+name = "Oilslick Canal"
+emoji = "⛽"
+
+[fishing.rustwater_reservoir]
+name = "Rustwater Reservoir"
+emoji = "🚰"
+
+[fishing.cadrega_canals]
+name = "Cadrega Canals"
+emoji = "🛶"
+
+[fishing.grand_harbor]
+name = "Grand Harbor"
+emoji = "⚓"
+
+[fishing.cloud_pools]
+name = "Cloud Pools"
+emoji = "💧"
+
+[fishing.skyfall_lake]
+name = "Skyfall Lake"
+emoji = "🪁"
+
+[fishing.moonwell]
+name = "Moonwell"
+emoji = "🌕"
+
+[fishing.starlit_stream]
+name = "Starlit Stream"
+emoji = "🌠"
+
+[fishing.black_tide]
+name = "Black Tide"
+emoji = "🖤"
+
+[fishing.the_bottomless]
+name = "The Bottomless"
+emoji = "🐙"
+
+[farming.slimeside_garden]
+name = "Slimeside Garden"
+emoji = "🌱"
+
+[farming.meadow_farmstead]
+name = "Meadow Farmstead"
+emoji = "🌾"
+
+[farming.dusk_terraces]
+name = "Dusk Terraces"
+emoji = "🌅"
+
+[farming.oasis_orchard]
+name = "Oasis Orchard"
+emoji = "🍊"
+
+[farming.scrapyard_allotments]
+name = "Scrapyard Allotments"
+emoji = "🔧"
+
+[farming.hydroponic_bays]
+name = "Hydroponic Bays"
+emoji = "🪴"
+
+[farming.market_gardens]
+name = "Market Gardens"
+emoji = "🥕"
+
+[farming.rooftop_farms]
+name = "Rooftop Farms"
+emoji = "🏢"
+
+[farming.cloud_terraces]
+name = "Cloud Terraces"
+emoji = "💭"
+
+[farming.windmill_fields]
+name = "Windmill Fields"
+emoji = "💨"
+
+[farming.stardew_fields]
+name = "Stardew Fields"
+emoji = "🌻"
+
+[farming.comet_orchards]
+name = "Comet Orchards"
+emoji = "🍎"
+
+[farming.pale_gardens]
+name = "Pale Gardens"
+emoji = "🌷"
+
+[farming.dreamless_furrows]
+name = "Dreamless Furrows"
+emoji = "💤"

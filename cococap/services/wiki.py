@@ -107,7 +107,7 @@ def _foraging(reg: Registry) -> list[str]:
     f = reg.foraging
     c = f.community
     return [
-        f"**Foraging** needs an axe. Chop a tree down for drops (sell them for bits) and xp. There are **{f.zones} forests**: forest 2 needs level {f.zone_levels[1]}, forest 10 level {f.zone_levels[9]} and forest {f.zones} level {f.zone_levels[-1]}, and each takes a little longer than the last; "
+        f"**Foraging** needs an axe. Chop a tree down for drops (sell them for bits) and xp. There are **{f.zones} forests**: forest 2 needs level {reg.areas.location_levels[1]}, forest 10 level {reg.areas.location_levels[9]} and forest {f.zones} level {reg.areas.location_levels[f.zones - 1]}, and each opens at a higher level than the last (and needs you to have travelled to its area); "
         f"from forest {f.heavy_zone} alone, trees are heavy and you swing at half power unless your axe has **Soloist**.",
         "**Learn the grain.** Every spot has a grain (Plain, Knotty, Clean, Twisted, Split or Burl), and every grain likes **one chop style** "
         "(⬆️ Overhead, ↔️ Sidecut or ⬇️ Undercut). Chop in that style for full strength; any other glances off at half. "
