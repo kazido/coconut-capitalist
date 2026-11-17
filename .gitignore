@@ -155,3 +155,4 @@ art/*.zip
 
 # large downloaded art packs (not committed)
 art/downloaded/
+.full_tests_last.txt

@@ -10,7 +10,7 @@ trading, parties, casino and minigames, one shared economy. Everything below is 
 ## Team (automatic delegation; the user pre-approved this, no need to ask)
 
 You are the **lead** of your branch: design, planning, tricky bugs, review, commits. Between steps ask the user ONE question (the next design
-decision) before building on. Do NOT do bounded work yourself: delegate it, then review the diff. Subagents in `.claude/agents/` (cheap Haiku) do the bulk work:
+decision) before building on. Do NOT do bounded work yourself: delegate it, then review the diff. Use LOW effort for routine steps (state it when you start a session or subagent). Subagents in `.claude/agents/` (cheap Haiku) do the bulk work:
 `worker` (bounded code change), `tester` (tests), `writer` (docs/prose).
 
 - **Delegate** when the change is well-specified and bounded (<= ~3 files, a clear behaviour, known tests), or tests/docs are needed for finished code.
@@ -33,8 +33,10 @@ decision) before building on. Do NOT do bounded work yourself: delegate it, then
 - **Commit after every commit-worthy change without asking.** Detailed messages. End them with the attribution line the harness gives you.
 - **Never push unless the user says so.** Push only `master`: `git push origin master`.
 - **Design before big features** (use plan mode: explore, write the plan, get approval, then build). Small fixes: just do them.
-- **Do not run the full test suite after every change** (the user chose speed; they will report breakage). Run it only when asked, when
-  something they report is broken, or after a large refactor. DO run the one or two test files that cover what you touched (cheap, ~1 s each).
+- **Tests, cheaply (the user is on a usage limit):** after a change run `python -m scripts.quick_tests` (picks only the test files related to what
+  changed and prints a few lines). Run the FULL suite only when landing a branch, after a large refactor, or when asked: `python -m scripts.full_tests`
+  with `run_in_background: true`, then read its few-line summary (`.full_tests_last.txt`) ONCE when it finishes. Never poll with sleep loops and
+  never paste long test output. If something fails on `master` too, say so and do not chase it.
 - Never write secrets (tokens, DB logins) into files, docs or commits.
 - Back up `data/cococap.db` (copy into `data/backups/`) before anything that touches it. It is the live-ish database.
 - Use Python string replaces for scripted edits. Mac BSD `sed -i` fails silently without `''`; prefer the Edit tool or python.
