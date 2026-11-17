@@ -1179,3 +1179,12 @@ The art overhaul ships hundreds of emoji as the bot's *application emoji* (owned
 **Building.** `.venv/bin/python -m art.build [--only NAME] [--sheets]` (needs the `art` extra: Pillow). Static sprites become `art/out/<name>.png` (64x64 RGBA), animated ones `art/out/<name>.webp` (lossless, via `img2webp -d <ms>`, Pillow as fallback). `--sheets` writes labelled contact sheets to `art/out/sheets/<category>.png`. The build is deterministic. Uploading `art/out` to Discord is `scripts/upload_emojis.py` (see "Custom emoji at runtime").
 
 **Not built yet:** star pips (rating stars on an emoji) are paused.
+
+## Flame wisps (pet art)
+
+Pets are drawn as wisps, not animals: slim flames (10 px wide, 12 tall) with a darker face plate, no outline, four flicker frames (140 ms each).
+`art/flame.py` generates them from one base colour and a face (`core`: dark plate with two white eyes, `skull`: pale skull with dark sockets, `eyes`:
+just two dark eyes); `art/wisps.toml` lists them with `kind = "flame"`. The flame runs from a pale tip to a saturated base with hue-shifted shadows
+(warm colours keep warm shadows: the shared ramp used to turn yellow shadows olive). The older round wisp silhouettes in `art/wisp.py` remain for
+other uses but read too fat for pets. Stars on the art are paused. Next: decide a wisp per pet (25), name them `pet_<id>`, upload.
+

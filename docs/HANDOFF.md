@@ -99,5 +99,5 @@ Workflow: Claude plans, local Ollama models implement (`docs/WORKFLOW.md`, `docs
    live screen refresh for shared events (party joins, trade invites, falling trees; opening a new play menu closes the old one); the fishing rework (a sinking-hook minigame
    instead of the arrow reel: decide whether the arrow game stays, what bosses, rods and enchants then do); markdown/spoiler/radio-modal ideas; thumbnails (big art) on the
    reward, rare-drop, item and shop screens because inline emoji are small; starred materials (3 star tiers, needed for upgrades; stars on the art are paused until they can be
-   drawn small without covering the sprite); the flame wisps as pets (25 pets, art in `art/`: slim flames with skull/core faces, 4 flicker frames, no outline) and art for
+   drawn small without covering the sprite); the flame wisps as pets (the generator and 8 approved examples ARE in the repo now: `art/flame.py`, `art/wisps.toml`, built as animated `flame_*` emoji; still to do: decide which wisp each of the 25 pets gets, name them `pet_<id>`, and add rarity-tied variety) and art for
    species, enchants, UI icons, mine types. Weak art still worth redoing: sardine vs herring (same fish), rods look alike by tier, geode/worldsplitter pickaxes, weeping pearl, silver catkin.
