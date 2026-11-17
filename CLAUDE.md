@@ -9,7 +9,8 @@ trading, parties, casino and minigames, one shared economy. Everything below is 
 
 ## Team (automatic delegation; the user pre-approved this, no need to ask)
 
-You are the **lead**: design, planning, tricky bugs, review, commits. Subagents in `.claude/agents/` (cheap Haiku) do the bulk work:
+You are the **lead** of your branch: design, planning, tricky bugs, review, commits. Between steps ask the user ONE question (the next design
+decision) before building on. Do NOT do bounded work yourself: delegate it, then review the diff. Subagents in `.claude/agents/` (cheap Haiku) do the bulk work:
 `worker` (bounded code change), `tester` (tests), `writer` (docs/prose).
 
 - **Delegate** when the change is well-specified and bounded (<= ~3 files, a clear behaviour, known tests), or tests/docs are needed for finished code.
@@ -21,9 +22,14 @@ You are the **lead**: design, planning, tricky bugs, review, commits. Subagents 
 
 ## Hard rules (the user set these; do not break them)
 
-- **One branch only: `master`.** The old `claude/discord-bot-audit-modernize-4dd6c5` branch and its worktree are gone; `master` in the
-  main checkout is the working branch (Windows PC: `C:\Users\Bryson\Documents\Coding\coconut-capitalist`). Do not create other
-  worktrees/branches. GitHub's `master` is the public default branch. The pre-AI code lives on `history/pre-ai` (never change it).
+- **Branches (3 total, no others without asking).** `master` = stable and public; its checkout (`C:\Users\Bryson\Documents\Coding\coconut-capitalist`) is the
+  integration point and the ONLY place the bot runs and `data/` lives. `design` (game features, systems, balance, configs, services; worktree
+  `..\coconut-capitalist-design`) and `art` (emoji, sprites, the art pipeline; worktree `..\coconut-capitalist-art`) are the work branches. One Claude
+  session per folder, never two in the same folder. `history/pre-ai` is never changed. Only `master` is ever pushed, and only when the user says so.
+- **Landing work:** in your worktree `git merge master` often (small diffs). To land: merge master in, run the FULL tests and ruff, show the user
+  the summary, and on their yes run `git merge --no-ff <branch>` in the master checkout. A change that removes/renames item ids or changes the
+  registry shape lands on `master` FIRST and alone, then the other branch syncs. Art may PROPOSE removing items; design decides.
+- **Ownership:** `art` owns `art/` and emoji files; `design` owns everything else. `configs/items.toml` is shared: keep edits small and land them soon.
 - **Commit after every commit-worthy change without asking.** Detailed messages. End them with the attribution line the harness gives you.
 - **Never push unless the user says so.** Push only `master`: `git push origin master`.
 - **Design before big features** (use plan mode: explore, write the plan, get approval, then build). Small fixes: just do them.
@@ -35,7 +41,7 @@ You are the **lead**: design, planning, tricky bugs, review, commits. Subagents 
 
 ## Environment
 
-- Python 3.12 in `.venv`: always the venv python (Mac `.venv/bin/python`, Windows `.venv/Scripts/python.exe`; the system python has no `tomllib`). Lint: `.venv/bin/ruff check .` (must stay clean).
+- Python 3.12 in `.venv` (master checkout only; from a worktree run `C:/Users/Bryson/Documents/Coding/coconut-capitalist/.venv/Scripts/python.exe -m pytest` with the worktree as cwd): always the venv python (Mac `.venv/bin/python`, Windows `.venv/Scripts/python.exe`; the system python has no `tomllib`). Lint: `.venv/bin/ruff check .` (must stay clean).
 - Tests: `.venv/bin/python -m pytest -q [file::test]`. Full suite ~55 s, ~1580 tests, all should pass. Slow/odd: wrap in `perl -e 'alarm 300; exec @ARGV' ...`.
 - Scratch files, sims and one-off scripts go in the session scratchpad, never in the repo.
 - Balance report: `.venv/bin/python -m scripts.balance` (what each skill pays per active minute). Balance guard tests: `tests/test_economy_guard.py`.
