@@ -152,7 +152,7 @@ def test_no_third_party_images_in_art():
 def test_top_rarity_items_shine_and_the_rest_stay_still():
     from art.sprite import SHINE_MIN_RARITY, load_all
 
-    sprites = [s for s in load_all() if s.framed and s.category not in ("sources", "wisps")]
+    sprites = [s for s in load_all() if s.framed and s.category not in ("sources", "wisps", "scrolls")]  # scrolls animate their own rune glow
     assert sprites
     for s in sprites:
         assert (len(s.frames) > 1) == (s.rarity >= SHINE_MIN_RARITY and s.category != "wisps"), s.name
