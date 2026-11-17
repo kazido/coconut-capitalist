@@ -324,13 +324,13 @@ async def test_opening_an_orb_from_the_orbs_page_shows_a_result_page(db, monkeyp
     await user.add_item(pets.ORB, 2)
     nav, inter = await hub("orbs")
     await click(nav, inter, "Open Familiar Orb (2)")
-    assert nav.screen.id == "result" and "Cat" in all_text(nav) and "A new friend" in all_text(nav) and "waiting for a bite" in all_text(nav)
+    assert nav.screen.id == "result" and "Drizzle" in all_text(nav) and "A new friend" in all_text(nav) and "waiting for a bite" in all_text(nav)
     await click(nav, inter, "Another orb")
-    assert "Another Cat" in all_text(nav) and "2" in all_text(nav)
+    assert "Another Drizzle" in all_text(nav) and "2" in all_text(nav)
     await click(nav, inter, "Back to the orbs")
     assert nav.screen.id == "orbs"
     await click(nav, inter, "Your pets")
-    assert nav.screen.id == "pets" and "Cat" in all_text(nav) and "⭐⭐" in all_text(nav)
+    assert nav.screen.id == "pets" and "Drizzle" in all_text(nav) and "⭐⭐" in all_text(nav)
 
 
 async def test_the_pet_house_switches_pets_feeds_crops_and_hands_over_spirits(db):
@@ -339,15 +339,15 @@ async def test_the_pet_house_switches_pets_feeds_crops_and_hands_over_spirits(db
     await user.add_item("lemon", 4)
     await user.add_item("spirit_of_the_forest", 1)
     nav, inter = await hub("pets")
-    assert "Dog" in all_text(nav) and "work" in all_text(nav).lower()
+    assert "Cinder" in all_text(nav) and "work" in all_text(nav).lower()
     await choose(nav, inter, select_named(nav, "Look at a pet"), "cat")
     await user.refresh()
-    assert user.pethouse.active == "cat" and "Cat" in all_text(nav)  # picking a pet makes it active
+    assert user.pethouse.active == "cat" and "Drizzle" in all_text(nav)  # picking a pet makes it active
     assert not [b for b in buttons(nav) if b.label == "Make active"]
     before = user.pethouse.pets["cat"].xp
-    feed = select_named(nav, "Feed Cat")  # the menu names the pet it is for
+    feed = select_named(nav, "Feed Drizzle")  # the menu names the pet it is for
     hint = next(o.description for o in feed.options if o.value == "lemon")
-    assert f"{REG.item('lemon').crop.pet_xp:,} xp each" in hint and "Cat" in hint
+    assert f"{REG.item('lemon').crop.pet_xp:,} xp each" in hint and "Drizzle" in hint
     await choose(nav, inter, feed, "lemon")
     modal = inter.response.send_modal.await_args.args[0]
     assert "xp each" in modal.children[0].description
@@ -454,7 +454,7 @@ async def test_the_pet_house_lets_you_aim_and_shows_your_chances(db):
     await user.refresh()
     assert user.pethouse.target == "dragon"
     page = all_text(nav)
-    assert "Dragon" in page and "Hunting" in page and "%" in page
+    assert "Tempest" in page and "Hunting" in page and "%" in page
     await choose(nav, inter, select_named(nav, "Hunt a pet"), "none")
     await user.refresh()
     assert user.pethouse.target is None and "Hunting" not in all_text(nav)
@@ -561,9 +561,9 @@ async def test_the_pet_house_lets_you_look_after_a_pet_that_is_not_active_and_pi
     nav, inter = await hub("pets")
     await choose(nav, inter, select_named(nav, "Look at a pet"), "cat")
     assert "Fishing 🎣" in all_text(nav) and "Looks after" not in all_text(nav)
-    hint = next(o.description for o in select_named(nav, "Feed Cat").options if o.value == "fish_flakes")
+    hint = next(o.description for o in select_named(nav, "Feed Drizzle").options if o.value == "fish_flakes")
     assert f"x{REG.economy.pets.matched_food_multiplier:g}" in hint  # its own skill's food: the boosted rate is shown
-    await choose(nav, inter, select_named(nav, "Feed Cat"), "fish_flakes")
+    await choose(nav, inter, select_named(nav, "Feed Drizzle"), "fish_flakes")
     modal = inter.response.send_modal.await_args.args[0]
     await modal._handler(inter, "2")
     await user.refresh()
@@ -578,14 +578,14 @@ async def test_the_pet_page_puts_the_description_under_the_name_and_stars_only_o
     user = await with_pet("koala", stars=3)
     await with_pet("cat", stars=2, active=False)
     nav, _ = await hub("pets")
-    head = next(c.content for c in nav.walk_children() if isinstance(c, ui.TextDisplay) and "Koala" in c.content and "###" in c.content)
+    head = next(c.content for c in nav.walk_children() if isinstance(c, ui.TextDisplay) and "Haze" in c.content and "###" in c.content)
     lines = head.splitlines()
-    assert "Koala" in lines[0] and "⭐⭐⭐" in lines[0]
+    assert "Haze" in lines[0] and "⭐⭐⭐" in lines[0]
     assert lines[1] == f"-# {REG.pets['koala'].description}"  # right under the name, above the xp bar
     assert "Global 🌐" in head and "Looks after" not in head and "any food" not in head
     menu = select_named(nav, "Look at a pet")
     assert all("⭐" not in (o.label + (o.description or "")) for o in menu.options)  # no stars in the dropdown
-    assert [o.label for o in menu.options] == ["Cat", "Koala"]
+    assert [o.label for o in menu.options] == ["Drizzle", "Haze"]
     assert user
 
 
@@ -609,7 +609,7 @@ def test_a_pet_grows_about_ten_times_stronger_from_a_new_one_to_a_five_star_leve
 def test_a_koala_is_worth_real_xp_at_the_top():
     koala = REG.pets["koala"]
     best = pets.effects(koala, OwnedPet(stars=RULES.max_stars, xp=pets.level_xp(RULES.max_level, koala.rarity, REG)), REG)["xp_all"]
-    assert best >= 0.15  # a five-star level-100 Koala: 20%
+    assert best >= 0.15  # a five-star level-100 Haze: 20%
     newborn = pets.effects(koala, OwnedPet(), REG)["xp_all"]
     assert newborn < 0.02
 

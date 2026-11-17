@@ -1,6 +1,8 @@
 """Flame wisps: slim flames with a darker face plate and four flickering frames. Frameless, no outline (they glow instead).
 
-Faces: "core" (a dark plate with two white eyes), "skull" (a pale skull with dark sockets) and "eyes" (just two dark eyes).
+Faces: "core" (a dark plate with two white eyes), "skull" (a pale skull with dark sockets) and "eyes" (just two dark eyes), plus
+"fang", "cyclops", "visor" and "sleepy" (plate faces) and the skull shapes "horned", "grin" and "slim".
+An optional `accent` colour makes the flame dual-toned: the tip is the accent and it melts into the base colour.
 The shape is tall and narrow (10 wide) on purpose: the round wisps in art/wisp.py looked too fat. Frames differ only in which
 tongues of the flame are tall and where the embers float, so a list of them is calm and a single one still reads when it is still."""
 from __future__ import annotations
@@ -12,7 +14,7 @@ from PIL import Image
 from art.palette import RGBA, WHITE, mix, outline_color, rgb
 from art.wisp import ramp
 
-FACES = ("core", "skull", "eyes")
+FACES = ("core", "skull", "eyes", "fang", "cyclops", "visor", "sleepy", "horned", "grin", "slim")
 FRAMES = 4
 FRAME_MS = 140
 
@@ -20,7 +22,13 @@ _TOP = [8, 6, 5, 4, 3, 3, 4, 5, 6, 8]       # first row of the body per column (
 _BOTTOM = [12, 13, 14, 14, 14, 14, 14, 14, 13, 12]
 _SPIKES = [{4: -2, 7: -1, 2: -1}, {5: -3, 2: -2, 8: -1}, {3: -2, 6: -2, 8: -1}, {4: -1, 5: -2, 1: -1}]  # tongues that flicker, per frame
 _EMBERS = [[(2, 1), (8, 2)], [(7, 0), (1, 3)], [(3, 1), (9, 3)], [(6, 1), (0, 2)]]
-_SKULL = ["..####..", ".######.", "#kk##kk#", "#kk##kk#", ".##kk##.", ".#.##.#."]
+# Skulls: 8 wide, drawn from (1, top). b = bone, k = dark socket, s = shaded bone (the jaw), . = nothing.
+_SKULLS = {
+    "skull": (7, ["..bbbb..", ".bbbbbb.", "bkkbbkkb", "bkkbbkkb", ".bbkkbb.", ".sbbbbs."]),
+    "horned": (6, ["b......b", "bbbbbbbb", "bkkbbkkb", "bkkbbkkb", ".bbkkbb.", ".sbsbbs."]),
+    "grin": (7, ["..bbbb..", ".bbbbbb.", "bkkbbkkb", ".bbbbbb.", ".bkbkbk.", ".ssssss."]),
+    "slim": (7, ["..bbbb..", "..bbbb..", ".bkbbkb.", ".bkbbkb.", "..bkkb..", "..sbbs.."]),
+}
 
 
 def flame_ramp(base_hex: str) -> dict[str, RGBA]:
@@ -34,6 +42,12 @@ def flame_ramp(base_hex: str) -> dict[str, RGBA]:
     return pal
 
 
+def _tint(pal: dict[str, RGBA], accent: dict[str, RGBA], t: float, tone: str) -> RGBA:
+    """Dual-tone: near the tip (t = 0) the accent's tone, melting into the base's by t = 0.65."""
+    k = max(0.0, min(1.0, t / 0.65))
+    return mix(accent[tone], pal[tone], k)
+
+
 def _cells(frame: int) -> set[tuple[int, int]]:
     cells = set()
     for x in range(10):
@@ -42,11 +56,12 @@ def _cells(frame: int) -> set[tuple[int, int]]:
     return cells
 
 
-def render_flame(base: str, face: str = "core", frame: int = 0, embers: bool = True) -> Image.Image:
+def render_flame(base: str, face: str = "core", frame: int = 0, embers: bool = True, accent: str | None = None) -> Image.Image:
     """One 16x16 frame (frame 0..3)."""
     if face not in FACES:
         raise ValueError(f"unknown flame face {face!r} (known: {', '.join(FACES)})")
     pal = flame_ramp(base)
+    acc = flame_ramp(accent) if accent else None
     cells = _cells(frame % FRAMES)
     y0, y1 = min(y for _, y in cells), max(y for _, y in cells)
     layer: dict[tuple[int, int], RGBA] = {}
@@ -56,31 +71,50 @@ def render_flame(base: str, face: str = "core", frame: int = 0, embers: bool = T
         rim = any((x + dx, y + dy) not in cells for dx, dy in ((1, 0), (-1, 0), (0, -1)))
         if rim and tone in ("m", "s") and y < y1 - 1:
             tone = "l" if tone == "m" else "m"
-        layer[(x, y)] = pal[tone]
+        layer[(x, y)] = _tint(pal, acc, t, tone) if acc else pal[tone]
     dark = mix(pal["d"], outline_color(), 0.55)
-    if face == "core":
+    if face in _SKULLS:
+        bone, shade = rgb("f2ecd2"), rgb("bfb48f")
+        top, rows = _SKULLS[face]
+        for y, row in enumerate(rows):
+            for x, ch in enumerate(row):
+                if ch != ".":
+                    layer[(1 + x, top + y)] = dark if ch == "k" else shade if ch == "s" else bone
+    elif face == "eyes":
+        for ex in (3, 6):
+            layer[(ex, 9)] = layer[(ex, 10)] = dark
+    elif face == "visor":  # a dark band across the whole flame with two glowing slits
+        for x in range(10):
+            for y in (9, 10):
+                if (x, y) in layer:
+                    layer[(x, y)] = dark
+        layer[(3, 9)] = layer[(6, 9)] = WHITE
+    else:  # the plate faces: a dark oval, then the eyes
         for (x, y) in list(layer):
             if ((x - 4.5) / 3.2) ** 2 + ((y - 10.2) / 2.8) ** 2 <= 1:
                 layer[(x, y)] = dark
-        for ex in (3, 6):
-            layer[(ex, 9)] = layer[(ex, 10)] = WHITE
-    elif face == "skull":
-        bone, shade = rgb("f2ecd2"), rgb("bfb48f")
-        for y, row in enumerate(_SKULL):
-            for x, ch in enumerate(row):
-                if ch != ".":
-                    layer[(1 + x, 7 + y)] = dark if ch == "k" else (shade if y >= 4 else bone)
-    else:
-        for ex in (3, 6):
-            layer[(ex, 9)] = layer[(ex, 10)] = dark
+        if face == "core":
+            for ex in (3, 6):
+                layer[(ex, 9)] = layer[(ex, 10)] = WHITE
+        elif face == "fang":  # eyes and two small fangs
+            for ex in (3, 6):
+                layer[(ex, 9)] = layer[(ex, 10)] = WHITE
+            layer[(3, 12)] = layer[(6, 12)] = WHITE
+        elif face == "cyclops":  # one big eye with a pupil
+            for p in ((4, 9), (5, 9), (4, 10), (5, 10)):
+                layer[p] = WHITE
+            layer[(5, 10)] = dark
+        else:  # sleepy: closed eyes, two flat dashes
+            for p in ((2, 10), (3, 10), (5, 10), (6, 10)):
+                layer[p] = WHITE
     if embers:
         for p in _EMBERS[frame % FRAMES]:
-            layer.setdefault(p, pal["h"])
+            layer.setdefault(p, (acc or pal)["h"])
     im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     for (x, y), c in layer.items():
         im.putpixel((3 + x, y), c)
     return im
 
 
-def render_flame_frames(base: str, face: str = "core", embers: bool = True) -> list[Image.Image]:
-    return [render_flame(base, face, f, embers) for f in range(FRAMES)]
+def render_flame_frames(base: str, face: str = "core", embers: bool = True, accent: str | None = None) -> list[Image.Image]:
+    return [render_flame(base, face, f, embers, accent) for f in range(FRAMES)]

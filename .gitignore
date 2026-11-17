@@ -149,3 +149,6 @@ art/local.toml
 art/out/
 art/vendor/
 art/*.zip
+
+# local-model scratch
+.local/

@@ -5,7 +5,9 @@
 # otherwise: a silhouette (art/wisp.py SHAPES) + one base colour; shading, eyes and plum outline are automatic.
 #   inverted = dark body, bright rim, white eyes (the ghostly ones). Add `rarity = 1-7` to put one in a cell.
 #
-# These eight are the approved look; the mapping of the 25 pets to wisps (names `pet_<id>`) is still to be decided.
+# The first eight are the approved samples. The `pet_<id>` entries below are the 25 pets (pet ids stay the old animal ids in the DB;
+# only the display names changed). Hue = skill theme (fishing blue, mining violet, foraging green, farming lime, combat red, global greys),
+# saturation and brightness grow with rarity. `accent` = a dual-toned tip.
 
 [flame_teal]
 kind = "flame"
@@ -46,3 +48,164 @@ base = "#4cc04a"
 kind = "flame"
 face = "core"
 base = "#8a8ab0"
+
+# ---- Pets ----
+
+# Cinder
+[pet_dog]
+kind = "flame"
+face = "core"
+base = "#8c8c8c"
+
+# Gloam
+[pet_magpie]
+kind = "flame"
+face = "visor"
+base = "#686868"
+
+# Haze
+[pet_koala]
+kind = "flame"
+face = "sleepy"
+base = "#b0b0b0"
+
+# Lune
+[pet_fox]
+kind = "flame"
+face = "fang"
+base = "#dcdcdc"
+accent = "#9aa0c0"
+
+# Halo
+[pet_phoenix]
+kind = "flame"
+face = "horned"
+base = "#ffffff"
+accent = "#c8c8dc"
+
+# Umbra
+[pet_raven]
+kind = "flame"
+face = "cyclops"
+base = "#26262c"
+accent = "#5a5a74"
+
+# Drizzle
+[pet_cat]
+kind = "flame"
+face = "sleepy"
+base = "#63a1db"
+
+# Ripple
+[pet_otter]
+kind = "flame"
+face = "eyes"
+base = "#4fb8c8"
+
+# Squall
+[pet_eagle]
+kind = "flame"
+face = "fang"
+base = "#2c70f5"
+
+# Undertow
+[pet_python]
+kind = "flame"
+face = "visor"
+base = "#3a4fd0"
+
+# Brine
+[pet_crab]
+kind = "flame"
+face = "grin"
+base = "#2fb0b0"
+
+# Eddy
+[pet_seal]
+kind = "flame"
+face = "cyclops"
+base = "#2cd0e8"
+
+# Tempest
+[pet_dragon]
+kind = "flame"
+face = "horned"
+base = "#00b8ff"
+accent = "#7a5cff"
+
+# Murk
+[pet_turtle]
+kind = "flame"
+face = "core"
+base = "#9f63db"
+
+# Lode
+[pet_mole]
+kind = "flame"
+face = "slim"
+base = "#b84beb"
+
+# Cairn
+[pet_badger]
+kind = "flame"
+face = "visor"
+base = "#6c2cf5"
+accent = "#ff9a3c"
+
+# Sprig
+[pet_beaver]
+kind = "flame"
+face = "eyes"
+base = "#63db84"
+
+# Bough
+[pet_monkey]
+kind = "flame"
+face = "grin"
+base = "#4beb5b"
+
+# Canopy
+[pet_woodpecker]
+kind = "flame"
+face = "horned"
+base = "#3cf52c"
+accent = "#d8f23c"
+
+# Dew
+[pet_frog]
+kind = "flame"
+face = "sleepy"
+base = "#c9d870"
+
+# Clover
+[pet_rabbit]
+kind = "flame"
+face = "slim"
+base = "#dbc863"
+
+# Pollen
+[pet_bee]
+kind = "flame"
+face = "fang"
+base = "#c3db63"
+accent = "#ffa83c"
+
+# Thistle
+[pet_hedgehog]
+kind = "flame"
+face = "cyclops"
+base = "#b5f52c"
+accent = "#3fae4a"
+
+# Scorch
+[pet_wolf]
+kind = "flame"
+face = "fang"
+base = "#eb554b"
+
+# Pyre
+[pet_lion]
+kind = "flame"
+face = "horned"
+base = "#ff3d00"
+accent = "#ffd23c"

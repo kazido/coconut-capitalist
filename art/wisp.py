@@ -60,7 +60,8 @@ def _col(h: float, s: float, v: float) -> RGBA:
 def ramp(base_hex: str) -> dict[str, RGBA]:
     """Saturated, hue-shifted ramp: shadows lean to blue/violet, lights to warm. d s m l h, plus w (white)."""
     h, s, v = colorsys.rgb_to_hsv(*(int(base_hex.lstrip("#")[i:i + 2], 16) / 255 for i in (0, 2, 4)))
-    s = min(1.0, max(s, 0.45) * 1.05)
+    # Greys (white/black wisps) stay grey: only coloured bases get the saturation floor.
+    s = s if s < 0.08 else min(1.0, max(s, 0.45) * 1.05)
     return {
         "d": _col(h + 0.07, s, v * 0.50), "s": _col(h + 0.04, s * 1.05, v * 0.72), "m": _col(h, s, v),
         "l": _col(h - 0.02, s * 0.75, min(1, v * 1.18)), "h": _col(h - 0.05, s * 0.4, 1.0), "w": WHITE,

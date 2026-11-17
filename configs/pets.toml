@@ -5,29 +5,29 @@
 # apply everywhere in the game. A bonus is `value` x stars x level (see [pets] in economy.toml). TODO(balance): all of it
 
 [dog]
-name = "Dog"
+name = "Cinder"
 skill = "global"
 emoji = "🐕"
 rarity = 1
-description = "A loyal worker. Pays you a bit extra every shift."
+description = "A faithful glow in the grey. Pays you a bit extra every shift."
 [[dog.bonuses]]
 stat = "work_bonus"
 value = 0.2
 text = "+{v:.0%} bits from Work"
 
 [cat]
-name = "Cat"
+name = "Drizzle"
 skill = "fishing"
 emoji = "🐈"
 rarity = 2
-description = "Has a way with fish. They find your hook sooner."
+description = "A soft blue light. Fish find your hook sooner."
 [[cat.bonuses]]
 stat = "bite_speed"
 value = 0.3
 text = "-{v:.0%} time waiting for a bite"
 
 [turtle]
-name = "Turtle"
+name = "Murk"
 skill = "mining"
 emoji = "🐢"
 rarity = 2
@@ -42,7 +42,7 @@ value = 0.1
 text = "+{v:.0%} ore from the mine"
 
 [frog]
-name = "Frog"
+name = "Dew"
 skill = "farming"
 emoji = "🐸"
 rarity = 2
@@ -53,18 +53,18 @@ value = 0.12
 text = "+{v:.0%} chance a crop grows each rain"
 
 [monkey]
-name = "Monkey"
+name = "Bough"
 skill = "foraging"
 emoji = "🐒"
 rarity = 3
-description = "Knows exactly where to hit a tree."
+description = "Knows exactly where to strike a tree."
 [[monkey.bonuses]]
 stat = "good_chop"
 value = 0.16
 text = "+{v:.0%} chance of a good chop"
 
 [koala]
-name = "Koala"
+name = "Haze"
 skill = "global"
 emoji = "🐨"
 rarity = 3
@@ -75,40 +75,40 @@ value = 0.1
 text = "+{v:.0%} xp in every skill"
 
 [bee]
-name = "Bee"
+name = "Pollen"
 skill = "farming"
 emoji = "🐝"
 rarity = 2
-description = "A tireless pollinator. Now and then a plot gives a whole second harvest."
+description = "A tireless little spark. Now and then a plot gives a whole second harvest."
 [[bee.bonuses]]
 stat = "extra_harvest"
 value = 0.1
 text = "{v:.0%} chance of a free extra harvest"
 
 [eagle]
-name = "Eagle"
+name = "Squall"
 skill = "fishing"
 emoji = "🦅"
 rarity = 4
-description = "Sharp eyes spot the big ones below the surface."
+description = "Sharp-eyed. It spots the big ones below the surface."
 [[eagle.bonuses]]
 stat = "rare_luck"
 value = 0.5
 text = "+{v:.0%} chance of rare fish"
 
 [python]
-name = "Python"
+name = "Undertow"
 skill = "fishing"
 emoji = "🐍"
 rarity = 4
-description = "Patient. Your crab pots fill faster while it watches."
+description = "Patient and deep. Your crab pots fill faster while it watches."
 [[python.bonuses]]
 stat = "pot_speed"
 value = 0.5
 text = "+{v:.0%} faster crab pots"
 
 [crab]
-name = "Crab"
+name = "Brine"
 skill = "fishing"
 emoji = "🦀"
 rarity = 4
@@ -119,7 +119,7 @@ value = 1
 text = "+{v:.0%} rare fish in crab pots"
 
 [dragon]
-name = "Dragon"
+name = "Tempest"
 skill = "fishing"
 emoji = "🐉"
 rarity = 5
@@ -130,40 +130,40 @@ value = 0.7
 text = "+{v:.0%} hallucination and chest chance"
 
 [otter]
-name = "Otter"
+name = "Ripple"
 skill = "fishing"
 emoji = "🦦"
 rarity = 2
-description = "Plays in the water and finds the fish. Teaches you a thing or two about fishing."
+description = "Playful and bright. Finds the fish and teaches you a thing or two about fishing."
 [[otter.bonuses]]
 stat = "xp_fishing"
 value = 0.16
 text = "+{v:.0%} fishing xp"
 
 [beaver]
-name = "Beaver"
+name = "Sprig"
 skill = "foraging"
 emoji = "🦫"
 rarity = 2
-description = "A born lumberjack. Trees teach you more around it."
+description = "A born woodcutter. Trees teach you more around it."
 [[beaver.bonuses]]
 stat = "xp_foraging"
 value = 0.16
 text = "+{v:.0%} foraging xp"
 
 [mole]
-name = "Mole"
+name = "Lode"
 skill = "mining"
 emoji = "🐀"
 rarity = 3
-description = "Happiest underground. It tunnels ahead and eases the rock, so every row you dig adds less pressure."
+description = "Happiest underground. It lights the way ahead and eases the rock, so every row you dig adds less pressure."
 [[mole.bonuses]]
 stat = "dig_shave"
 value = 0.07
 text = "-{v:.0%} pressure from every dug row"
 
 [rabbit]
-name = "Rabbit"
+name = "Clover"
 skill = "farming"
 emoji = "🐇"
 rarity = 2
@@ -174,7 +174,7 @@ value = 0.16
 text = "+{v:.0%} farming xp"
 
 [wolf]
-name = "Wolf"
+name = "Scorch"
 skill = "combat"
 emoji = "🐺"
 rarity = 3
@@ -185,7 +185,7 @@ value = 0.2
 text = "+{v:.0%} combat xp"
 
 [seal]
-name = "Seal"
+name = "Eddy"
 skill = "fishing"
 emoji = "🦭"
 rarity = 4
@@ -196,7 +196,7 @@ value = 0.28
 text = "+{v:.0%} fishing xp"
 
 [woodpecker]
-name = "Woodpecker"
+name = "Canopy"
 skill = "foraging"
 emoji = "🐦"
 rarity = 4
@@ -207,7 +207,7 @@ value = 0.28
 text = "+{v:.0%} foraging xp"
 
 [badger]
-name = "Badger"
+name = "Cairn"
 skill = "mining"
 emoji = "🦡"
 rarity = 4
@@ -218,7 +218,7 @@ value = 0.28
 text = "+{v:.0%} mining xp"
 
 [hedgehog]
-name = "Hedgehog"
+name = "Thistle"
 skill = "farming"
 emoji = "🦔"
 rarity = 4
@@ -229,7 +229,7 @@ value = 0.28
 text = "+{v:.0%} farming xp"
 
 [lion]
-name = "Lion"
+name = "Pyre"
 skill = "combat"
 emoji = "🦁"
 rarity = 5
@@ -240,7 +240,7 @@ value = 0.36
 text = "+{v:.0%} combat xp"
 
 [phoenix]
-name = "Phoenix"
+name = "Halo"
 skill = "global"
 emoji = "🔥"
 rarity = 5
@@ -253,7 +253,7 @@ text = "+{v:.0%} xp in every skill"
 # The Magpie, Mole, Fox, Bee and Raven give small effects that are not xp and never forgive a mistake (so they stay worth having when you play well).
 # Each gives roughly the same modest gain at max level (5-7% more of what the part of the game it touches pays); see DESIGN.md "More pets".  TODO(balance)
 [magpie]
-name = "Magpie"
+name = "Gloam"
 skill = "global"
 emoji = "🦜"
 rarity = 3
@@ -264,7 +264,7 @@ value = 0.06
 text = "+{v:.0%} bits from every sale"
 
 [fox]
-name = "Fox"
+name = "Lune"
 skill = "global"
 emoji = "🦊"
 rarity = 4
@@ -275,11 +275,11 @@ value = 0.15
 text = "{v:.0%} chance of a free 2nd roll on rare drops"
 
 [raven]
-name = "Raven"
+name = "Umbra"
 skill = "global"
 emoji = "🐦‍⬛"
 rarity = 5
-description = "Keeps an eye on every delivery. Shipments and your daily interest pay a little more."
+description = "Keeps watch over every delivery. Shipments and your daily interest pay a little more."
 [[raven.bonuses]]
 stat = "payout_bonus"
 value = 0.06
