@@ -1,86 +1,95 @@
-# Coconut Capitalist (`cococap`)
+<div align="center">
 
-An economy / gambling / skills Discord bot. Python 3.11+, discord.py, SQLite (SQLAlchemy + Alembic).
+# 🥥 Coconut Capitalist
 
-## Setup
+### An idle-adventure economy game that lives inside Discord
 
-```bash
-uv venv --python 3.12 && uv pip install -e ".[dev]"
-cp .env.example .env        # then fill in BOT_TOKEN and URI (see below)
-```
+Mine deep, chop trees, reel in giant fish, grow crops, hatch pets and build a coconut empire,
+all from one clean menu that never floods your chat.
 
-| Variable | Required | Purpose |
+![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
+![discord.py](https://img.shields.io/badge/discord.py-2.7-5865F2?logo=discord&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-SQLAlchemy-003B57?logo=sqlite&logoColor=white)
+![Status](https://img.shields.io/badge/status-in%20active%20development-E6B34A)
+
+</div>
+
+---
+
+## ✨ What is it?
+
+**Coconut Capitalist** is a Discord bot that turns your server into a tiny economy. Type `/play` and you get **one
+menu** that links to everything: skills, shop, inventory, pets, trading, parties and more. No wall of commands to
+learn, and no spam: the menu edits itself as you move around.
+
+Everything you earn is yours to spend, trade, craft and show off. Rare finds get their own spotlight screen, and every
+item has a hand-drawn pixel-art icon in a border coloured by its rarity.
+
+## 🎮 Skills
+
+| | Skill | What you do |
 |---|---|---|
-| `BOT_TOKEN` | yes | Discord bot token (use a separate dev application; `config.ini` → `dev mode: yes`) |
-| `DATABASE_PATH` | no | SQLite file (default `data/cococap.db`; created and migrated automatically) |
-| `GUILD_ID` | no | Guild the bot waits for before loading extensions (default: the original server) |
-| `OWNER_ID` | no | Discord user ID allowed to use debug commands / receive reports |
+| ⛏️ | **Mining** | Dig a 30-row shaft one row at a time. Richer ore is harder to dig and builds pressure, so every click is a risk. Find vaults, mini-wyrmholes and glowing reactor gems. Upgrade your **Reactor** and keep a **magnet** fuelled to chase the richest lode. |
+| 🌳 | **Foraging** | Chop trees across 20 zones. Every grain wants a different chop style, so learn the patterns and build a streak. Tree **species** change what falls. Help fell a **community tree** or start a **party tree** with friends. |
+| 🎣 | **Fishing** | Cast a line, hook the bite and reel it in with a timing mini-game. Chase bosses, crack chests, keep field notes and build your fish records. Land a lucky **double hook** for a second catch. |
+| 🌱 | **Farming** | Plant, water and harvest. The weather helps, a daily **market** pays a bonus, and rare deeds unlock more land. |
 
-The bot must also have the **Server Members** and **Message Content** privileged intents enabled in the
-Discord developer portal.
+Every skill has its own **mastery tree** (build your playstyle with points) and a **tool path** that you upgrade from a
+rusty starter to a late-game masterwork. Enchant tools with **scrolls** you find along the way.
 
-## Run
+## 🐾 And everything around it
 
-```bash
-python -m cococap            # add --drops to enable random channel drops
-```
+- 🐾 **Pets**: hatch pets from **Familiar Orbs** in three tiers, feed them, level them and bring them along for bonuses.
+- 🛠️ **Workbench**: craft consumables from the things you gather.
+- 🌱 **The Releaf Foundation**: players donate rare drops together; when the forest blooms, everyone benefits for a while.
+- 📦 **Shipments**: fill crates for bits and xp.
+- 🤝 **Trading & parties**: swap items safely, team up for shared trees and boss casts.
+- 🏅 **Ranks & leaderboards**: climb 16 ranks, compare with friends, track your records.
+- 🎲 **Minigames**: blackjack, high-low and more, when you want to gamble a little.
+- 📚 **A built-in wiki and bestiary**: look up any item, fish or rule without leaving Discord.
 
-## Develop
+## 🎨 The look
 
-```bash
-pytest          # real SQLite in a temp dir; no external services needed
-ruff check .
-```
+- **One live menu.** Built on Discord's newest message components, so pages feel like an app, not a chat.
+- **Pixel-art everything.** More than 190 item icons in a stone cell whose border changes colour with rarity:
 
-## Playing
+  `Common` ⬜ → `Uncommon` 🟩 → `Rare` 🟦 → `Super Rare` 🟪 → `Legendary` 🟧 → `Premium` 🟥 → `Mythical` 🩷
 
-`/play` opens a single menu message that links to everything (check-in, mining, inventory, shop,
-casino, ranks, leaderboards, stats, settings). Every older command still works as a shortcut.
+- **Rare-drop moments.** Super rare finds get a full-screen reveal with the drop rate, and the top rarities gently shine.
 
-## Architecture
+## 📸 Screenshots
 
-Dependencies only point down:
+<!-- Add screenshots to docs/screenshots/ and replace the lines below. -->
 
-```
-cococap/screens/ + exts/<area>/  Discord only: hub screens, commands, views. Calls a service, draws the result.
-cococap/services/              Game rules (mining.py, shop.py, equipment.py, loot.py). No Discord objects.
-cococap/user.py + cococap/db/  The only code that reads/writes player data (atomic SQL, tables, queries).
-cococap/registry/ + configs/   Typed, validated game data (items, enchants, ranks, mining rules, ...).
-```
+| The hub | A mine | The inventory |
+|---|---|---|
+| _coming soon_ | _coming soon_ | _coming soon_ |
 
-Rules of thumb:
+| A rare drop | The pet house | Foraging |
+|---|---|---|
+| _coming soon_ | _coming soon_ | _coming soon_ |
 
-- **Items** come in two kinds. *Stackables* (ore, seeds) are `user_items` counters. *Instances* (tools)
-  are rows in `item_instances` that store only what is unique to that object (rolled stats, enchants);
-  base stats come from the registry template, and `services.equipment.effective_stats()` combines them.
-- **A button is a thin translator**: it calls one service method (e.g. `mining.dig_row`) and redraws.
-  Game state that spans clicks is a plain object (e.g. `MineSession`) the view holds.
-- **Randomness is injected** (`random.Random`), so tests can fix outcomes.
-- **Balance numbers live in `configs/*.toml`**, validated at startup (`TODO(balance)` marks guesses).
-- Use `cococap.ui.OwnedView` / `ConfirmView` for any new view.
+## 🧰 Built with
 
-`cococap/exts/skills/mining.py` + `cococap/services/mining.py` + `tests/test_mining*.py` are the
-reference slice; port the remaining skills (farming, foraging, fishing, combat) the same way.
-Extensions still waiting for a port are listed in `constants.DISABLED_EXTENSIONS` and skipped at startup.
+- **Python 3.11+** and **discord.py** (modern components, no message-content hacks)
+- **SQLite** through SQLAlchemy and Alembic migrations, with atomic updates for every player action
+- **TOML game data**: every balance number lives in `configs/`, checked at startup, so tuning never needs a code change
+- A typed, tested rules engine: game logic is plain Python with no Discord objects, covered by **1,800+ tests**
 
-See [docs/AUDIT.md](docs/AUDIT.md) for the full architecture review, known issues and roadmap.
+## 🚀 Running your own
 
-## Database
+Want to host it? The setup guide, architecture notes and database tips are in
+**[docs/DEVELOPING.md](docs/DEVELOPING.md)**.
 
-One SQLite file. Change the schema by editing `cococap/db/tables.py`, then:
+## 🙏 Credits
 
-```bash
-DATABASE_PATH=/tmp/scratch.db alembic revision --autogenerate -m "what changed"
-```
+- Game design, code and pixel art: [@kazido](https://github.com/kazido)
+- Many item icons are recoloured and reframed from the free
+  [Raven Fantasy Icons](https://clockworkraven.itch.io/raven-fantasy-icons) by **Clockwork Raven Studios**.
+  Thank you for the beautiful art! Extra icons are hand-drawn to match.
 
-Review the generated file in `migrations/versions/`. The bot applies pending migrations at startup,
-and a test fails if `tables.py` and the migrations disagree. Back the file up (`sqlite3 data/cococap.db
-".backup backup.db"`); run only one bot process per database file.
+<div align="center">
 
-Importing the old MongoDB data (read-only on Mongo, dry-run by default):
+🥥 _Plant a coconut, build an empire._ 🥥
 
-```bash
-uv pip install -e ".[mongo-import]"
-python -m scripts.import_mongo --uri "mongodb+srv://..." --db discordbot           # report only
-python -m scripts.import_mongo --uri "mongodb+srv://..." --db discordbot --write   # create data/cococap.db
-```
+</div>
