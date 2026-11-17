@@ -26,7 +26,8 @@ material_platinum_ore = {cell = [13, 0], ramp = ["#1c2733", "#4d7287", "#90c4d8"
 material_coal = {cell = [13, 0], ramp = ["#0c0c10", "#25252c", "#45454f", "#74747f"]}
 material_clay = {cell = [13, 0], ramp = ["#3a2a20", "#8a6a58", "#c49a7c", "#e6c8ae"]}
 
-# Gem materials: the pack's crystal clusters (row 9), recoloured by ramp to teal / orange / ice so none matches a reactor key gem (blue, green, red, purple).
-material_emerald = {cell = [9, 4], ramp = ["#0a2f33", "#14786f", "#3cc6a8", "#c8fff0"]}
-material_garnet = {cell = [9, 2], ramp = ["#3a1308", "#a0441a", "#e8802a", "#ffe0a0"]}
-material_sapphire = {cell = [9, 8], ramp = ["#16283a", "#3f7fa8", "#8ad0f0", "#f0fcff"]}
+# Gem materials: silver ore's stone with only its protruding flecks (#a56c6c darker, #b5957a lighter) swapped to the gem's colour; teal / orange / ice
+# so none matches a reactor key gem (blue, green, red, purple).
+material_emerald = {cell = [13, 0], swap = {"#a56c6c" = "#1f9d86", "#b5957a" = "#6ff0cf"}}
+material_garnet = {cell = [13, 0], swap = {"#a56c6c" = "#c4541c", "#b5957a" = "#ffa24a"}}
+material_sapphire = {cell = [13, 0], swap = {"#a56c6c" = "#4a90c0", "#b5957a" = "#b0ecff"}}

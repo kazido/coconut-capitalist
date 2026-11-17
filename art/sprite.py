@@ -236,6 +236,13 @@ def load_raven(mapping: Path, pack: Path | None) -> list[Sprite]:
         row, col = opts["cell"][0], opts["cell"][1]
         rarity = _check_rarity(opts.get("rarity", _item_rarity(name)), name)
         cell = sheet.crop((col * GRID, row * GRID, col * GRID + GRID, row * GRID + GRID))
+        if "swap" in opts:  # exact colour swaps: {"#a56c6c" = "#1f9d86"} recolours just those pixels (e.g. the ore flecks), the rest stays
+            sw = {rgb(k)[:3]: rgb(v)[:3] for k, v in opts["swap"].items()}
+            for yy in range(cell.height):
+                for xx in range(cell.width):
+                    px = cell.getpixel((xx, yy))
+                    if px[3] and px[:3] in sw:
+                        cell.putpixel((xx, yy), (*sw[px[:3]], px[3]))
         if "ramp" in opts:
             cell = _ramp_recolor(cell, opts["ramp"])
         elif any(k in opts for k in ("hue", "sat", "val")):
