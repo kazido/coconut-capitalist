@@ -296,6 +296,8 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
     await set_columns(await User.get(1), purse=200_000)
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")
+    menu = select_named(nav, "Pick an item")
+    await choose(nav, inter, menu, next(o.value for o in menu.options if o.value.endswith("_seed")))
     buy = [b for b in item_buy_buttons(nav) if not b.disabled][0]
     await buy.callback(inter)
     modal = await submit(inter, "lots")

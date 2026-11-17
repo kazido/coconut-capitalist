@@ -187,3 +187,10 @@ async def test_looking_up_a_fish_says_where_it_is_caught_not_a_raw_drop_rate(db)
 def test_the_fishing_page_explains_double_hook():
     page = all_blocks("fishing")
     assert "Double Hook" in page and "Quick cast" in page and f"{REG.fishing.double_hook.window_seconds:g} seconds" in page
+
+
+def test_every_item_has_wiki_text():
+    from cococap.registry import get_registry
+
+    missing = [i.id for i in get_registry().items.values() if not i.wiki]
+    assert not missing, f"items without wiki text: {missing}"
