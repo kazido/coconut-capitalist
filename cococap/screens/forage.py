@@ -99,9 +99,15 @@ def species_label(species_id: str) -> str:
 
 
 def tree_title(base: str, species_id: str) -> str:
-    """The page title of a tree: "🌳 Oak Tree", "🌳 Oak Community Tree"..."""
+    """The page title of a tree: "Oak Tree", "Oak Community Tree"... (Discord sidebar already shows 🌳 emoji)."""
     label = species_label(species_id)
-    return f"{label} {base}" if label else base
+    # Remove the leading emoji from label to avoid duplicate: "🌳 Oak Tree" → "Oak Tree"
+    if label and len(label) > 0:
+        first_char = label[0]
+        # If first character is in common tree-plant emojis, it's an emoji prefix we want to drop
+        if first_char in ("🌳", "🌿", "🍃", "🌲", "🌰", "🌸", "🌴", "🎄", "🔥"):
+            return f"{label[len(first_char):].strip()} {base}" if len(label) > 1 else base
+    return label + " " + base if label else base
 
 
 def stance_buttons(on_click) -> list[discord.ui.Button]:
