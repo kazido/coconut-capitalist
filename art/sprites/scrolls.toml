@@ -1,0 +1,1299 @@
+# Enchant scrolls: ONE shared parchment, tinted a little by skill (mining orange, fishing blue, foraging green, farming gold,
+# any-tool violet), a unique rune per enchant, and a 4-frame rune glow. All scrolls are the same rarity (4).
+# Generated from one template; to change the look edit the template and regenerate (the TOML below is the source of truth once edited).
+
+[scroll_keen]
+rarity = 4
+ms = 160
+palette = { p = "#eee0ce", q = "#e2ccaa", s = "#cbaa82", d = "#a88561", o = "#4a3326", r = "#ad8aa1", a = "#6c5684", b = "#a98bff", c = "#c3aeff", x = "#e2ccaa", y = "#dac3b6" }
+[[scroll_keen.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppppapso...",
+  "...oqpppappso...",
+  "...oqpapappso...",
+  "...osqqaqqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_keen.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppppbpso...",
+  "...oqpppbppso...",
+  "...oqpbpbppso...",
+  "...osqqbqqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_keen.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...opppppyqqo...",
+  "...oqpppycyso...",
+  "...oqpyycypso...",
+  "...oqycycypso...",
+  "...osqycyqqso...",
+  "...osssysssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_keen.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...opppppxqqo...",
+  "...oqpppxbxso...",
+  "...oqpxxbxpso...",
+  "...oqxbxbxpso...",
+  "...osqxbxqqso...",
+  "...osssxsssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_scholar]
+rarity = 4
+ms = 160
+palette = { p = "#eee0ce", q = "#e2ccaa", s = "#cbaa82", d = "#a88561", o = "#4a3326", r = "#ad8aa1", a = "#6c5684", b = "#a98bff", c = "#c3aeff", x = "#e2ccaa", y = "#dac3b6" }
+[[scroll_scholar.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpappapso...",
+  "...oqpaaaapso...",
+  "...oqpappapso...",
+  "...osqaqqaqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_scholar.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpbppbpso...",
+  "...oqpbbbbpso...",
+  "...oqpbppbpso...",
+  "...osqbqqbqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_scholar.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppyppyqqo...",
+  "...oqycyycyso...",
+  "...oqyccccyso...",
+  "...oqycyycyso...",
+  "...osycyycyso...",
+  "...ossyssysso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_scholar.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppxppxqqo...",
+  "...oqxbxxbxso...",
+  "...oqxbbbbxso...",
+  "...oqxbxxbxso...",
+  "...osxbxxbxso...",
+  "...ossxssxsso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_appraiser]
+rarity = 4
+ms = 160
+palette = { p = "#eee0ce", q = "#e2ccaa", s = "#cbaa82", d = "#a88561", o = "#4a3326", r = "#ad8aa1", a = "#6c5684", b = "#a98bff", c = "#c3aeff", x = "#e2ccaa", y = "#dac3b6" }
+[[scroll_appraiser.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppaappso...",
+  "...oqpappapso...",
+  "...oqpappapso...",
+  "...osqqaaqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_appraiser.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppbbppso...",
+  "...oqpbppbpso...",
+  "...oqpbppbpso...",
+  "...osqqbbqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_appraiser.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...opppyypqqo...",
+  "...oqpyccypso...",
+  "...oqycyycyso...",
+  "...oqycyycyso...",
+  "...osqyccyqso...",
+  "...osssyyssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_appraiser.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...opppxxpqqo...",
+  "...oqpxbbxpso...",
+  "...oqxbxxbxso...",
+  "...oqxbxxbxso...",
+  "...osqxbbxqso...",
+  "...osssxxssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_iron_frame]
+rarity = 4
+ms = 160
+palette = { p = "#f7e0ba", q = "#eacc97", s = "#d4aa6e", d = "#b1854d", o = "#4a3326", r = "#d48a4a", a = "#93552d", b = "#ff8a3d", c = "#ffad77", x = "#eacc97", y = "#edc38b" }
+[[scroll_iron_frame.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpaaaapso...",
+  "...oqpappapso...",
+  "...oqpappapso...",
+  "...osqaaaaqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_iron_frame.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpbbbbpso...",
+  "...oqpbppbpso...",
+  "...oqpbppbpso...",
+  "...osqbbbbqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_iron_frame.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppyyyyqqo...",
+  "...oqyccccyso...",
+  "...oqycyycyso...",
+  "...oqycyycyso...",
+  "...osyccccyso...",
+  "...ossyyyysso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_iron_frame.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppxxxxqqo...",
+  "...oqxbbbbxso...",
+  "...oqxbxxbxso...",
+  "...oqxbxxbxso...",
+  "...osxbbbbxso...",
+  "...ossxxxxsso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_veinfinder]
+rarity = 4
+ms = 160
+palette = { p = "#f7e0ba", q = "#eacc97", s = "#d4aa6e", d = "#b1854d", o = "#4a3326", r = "#d48a4a", a = "#93552d", b = "#ff8a3d", c = "#ffad77", x = "#eacc97", y = "#edc38b" }
+[[scroll_veinfinder.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpppappso...",
+  "...oqppapapso...",
+  "...oqppapapso...",
+  "...osqqqaqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_veinfinder.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpppbppso...",
+  "...oqppbpbpso...",
+  "...oqppbpbpso...",
+  "...osqqqbqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_veinfinder.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppypqqo...",
+  "...oqppycypso...",
+  "...oqpycycyso...",
+  "...oqpycycyso...",
+  "...osqqycyqso...",
+  "...ossssyssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_veinfinder.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppxpqqo...",
+  "...oqppxbxpso...",
+  "...oqpxbxbxso...",
+  "...oqpxbxbxso...",
+  "...osqqxbxqso...",
+  "...ossssxssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_bounty]
+rarity = 4
+ms = 160
+palette = { p = "#f7e0ba", q = "#eacc97", s = "#d4aa6e", d = "#b1854d", o = "#4a3326", r = "#d48a4a", a = "#93552d", b = "#ff8a3d", c = "#ffad77", x = "#eacc97", y = "#edc38b" }
+[[scroll_bounty.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppapapso...",
+  "...oqpaaaapso...",
+  "...oqppapapso...",
+  "...osqaaaaqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_bounty.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppbpbpso...",
+  "...oqpbbbbpso...",
+  "...oqppbpbpso...",
+  "...osqbbbbqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_bounty.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...opppypyqqo...",
+  "...oqpycycyso...",
+  "...oqyccccyso...",
+  "...oqpycycyso...",
+  "...osyccccyso...",
+  "...ossyyyysso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_bounty.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...opppxpxqqo...",
+  "...oqpxbxbxso...",
+  "...oqxbbbbxso...",
+  "...oqpxbxbxso...",
+  "...osxbbbbxso...",
+  "...ossxxxxsso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_lure]
+rarity = 4
+ms = 160
+palette = { p = "#e4e4ce", q = "#d7d0aa", s = "#c1af82", d = "#9e8961", o = "#4a3326", r = "#7d9fa1", a = "#3c6a84", b = "#3fb8ff", c = "#79cdff", x = "#d7d0aa", y = "#c3cdb6" }
+[[scroll_lure.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpppappso...",
+  "...oqpppappso...",
+  "...oqpapappso...",
+  "...osqqaaqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_lure.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpppbppso...",
+  "...oqpppbppso...",
+  "...oqpbpbppso...",
+  "...osqqbbqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_lure.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppypqqo...",
+  "...oqppycypso...",
+  "...oqpyycypso...",
+  "...oqycycypso...",
+  "...osqyccyqso...",
+  "...osssyyssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_lure.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppxpqqo...",
+  "...oqppxbxpso...",
+  "...oqpxxbxpso...",
+  "...oqxbxbxpso...",
+  "...osqxbbxqso...",
+  "...osssxxssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_steady_line]
+rarity = 4
+ms = 160
+palette = { p = "#e4e4ce", q = "#d7d0aa", s = "#c1af82", d = "#9e8961", o = "#4a3326", r = "#7d9fa1", a = "#3c6a84", b = "#3fb8ff", c = "#79cdff", x = "#d7d0aa", y = "#c3cdb6" }
+[[scroll_steady_line.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpppappso...",
+  "...oqppapppso...",
+  "...oqpppappso...",
+  "...osqqaqqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_steady_line.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpppbppso...",
+  "...oqppbpppso...",
+  "...oqpppbppso...",
+  "...osqqbqqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_steady_line.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppypqqo...",
+  "...oqppycypso...",
+  "...oqpycyppso...",
+  "...oqppycypso...",
+  "...osqycyqqso...",
+  "...osssysssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_steady_line.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppxpqqo...",
+  "...oqppxbxpso...",
+  "...oqpxbxppso...",
+  "...oqppxbxpso...",
+  "...osqxbxqqso...",
+  "...osssxsssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_double_hook]
+rarity = 4
+ms = 160
+palette = { p = "#e4e4ce", q = "#d7d0aa", s = "#c1af82", d = "#9e8961", o = "#4a3326", r = "#7d9fa1", a = "#3c6a84", b = "#3fb8ff", c = "#79cdff", x = "#d7d0aa", y = "#c3cdb6" }
+[[scroll_double_hook.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpappapso...",
+  "...oqpappapso...",
+  "...oqpapaapso...",
+  "...osqqaaqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_double_hook.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpbppbpso...",
+  "...oqpbppbpso...",
+  "...oqpbpbbpso...",
+  "...osqqbbqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_double_hook.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppyppyqqo...",
+  "...oqycyycyso...",
+  "...oqycyycyso...",
+  "...oqycyccyso...",
+  "...osqyccyqso...",
+  "...osssyyssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_double_hook.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppxppxqqo...",
+  "...oqxbxxbxso...",
+  "...oqxbxxbxso...",
+  "...oqxbxbbxso...",
+  "...osqxbbxqso...",
+  "...osssxxssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_deepcall]
+rarity = 4
+ms = 160
+palette = { p = "#e4e4ce", q = "#d7d0aa", s = "#c1af82", d = "#9e8961", o = "#4a3326", r = "#7d9fa1", a = "#3c6a84", b = "#3fb8ff", c = "#79cdff", x = "#d7d0aa", y = "#c3cdb6" }
+[[scroll_deepcall.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpaaaapso...",
+  "...oqppaappso...",
+  "...oqppaappso...",
+  "...osqqqaqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_deepcall.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpbbbbpso...",
+  "...oqppbbppso...",
+  "...oqppbbppso...",
+  "...osqqqbqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_deepcall.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppyyyyqqo...",
+  "...oqyccccyso...",
+  "...oqpyccypso...",
+  "...oqpyccypso...",
+  "...osqqycyqso...",
+  "...ossssyssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_deepcall.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppxxxxqqo...",
+  "...oqxbbbbxso...",
+  "...oqpxbbxpso...",
+  "...oqpxbbxpso...",
+  "...osqqxbxqso...",
+  "...ossssxssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_sharp_eye]
+rarity = 4
+ms = 160
+palette = { p = "#e6e7bf", q = "#dad39c", s = "#c3b273", d = "#a08c52", o = "#4a3326", r = "#88ab5e", a = "#487642", b = "#58d36b", c = "#8ae097", x = "#dad39c", y = "#c8d395" }
+[[scroll_sharp_eye.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppppppso...",
+  "...oqppaappso...",
+  "...oqpaaaapso...",
+  "...osqqaaqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_sharp_eye.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppppppso...",
+  "...oqppbbppso...",
+  "...oqpbbbbpso...",
+  "...osqqbbqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_sharp_eye.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppyyppso...",
+  "...oqpyccypso...",
+  "...oqyccccyso...",
+  "...osqyccyqso...",
+  "...osssyyssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_sharp_eye.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppxxppso...",
+  "...oqpxbbxpso...",
+  "...oqxbbbbxso...",
+  "...osqxbbxqso...",
+  "...osssxxssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_seasoned]
+rarity = 4
+ms = 160
+palette = { p = "#e6e7bf", q = "#dad39c", s = "#c3b273", d = "#a08c52", o = "#4a3326", r = "#88ab5e", a = "#487642", b = "#58d36b", c = "#8ae097", x = "#dad39c", y = "#c8d395" }
+[[scroll_seasoned.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppapppso...",
+  "...oqpaapppso...",
+  "...oqppaappso...",
+  "...osqqqaaqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_seasoned.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqppbpppso...",
+  "...oqpbbpppso...",
+  "...oqppbbppso...",
+  "...osqqqbbqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_seasoned.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...opppyppqqo...",
+  "...oqpycyppso...",
+  "...oqyccyppso...",
+  "...oqpyccypso...",
+  "...osqqyccyso...",
+  "...ossssyysso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_seasoned.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...opppxppqqo...",
+  "...oqpxbxppso...",
+  "...oqxbbxppso...",
+  "...oqpxbbxpso...",
+  "...osqqxbbxso...",
+  "...ossssxxsso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_double_strike]
+rarity = 4
+ms = 160
+palette = { p = "#e6e7bf", q = "#dad39c", s = "#c3b273", d = "#a08c52", o = "#4a3326", r = "#88ab5e", a = "#487642", b = "#58d36b", c = "#8ae097", x = "#dad39c", y = "#c8d395" }
+[[scroll_double_strike.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpapappso...",
+  "...oqppapapso...",
+  "...oqpapappso...",
+  "...osqqaqaqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_double_strike.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpbpbppso...",
+  "...oqppbpbpso...",
+  "...oqpbpbppso...",
+  "...osqqbqbqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_double_strike.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppypypqqo...",
+  "...oqycycypso...",
+  "...oqpycycyso...",
+  "...oqycycypso...",
+  "...osqycycyso...",
+  "...osssysysso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_double_strike.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppxpxpqqo...",
+  "...oqxbxbxpso...",
+  "...oqpxbxbxso...",
+  "...oqxbxbxpso...",
+  "...osqxbxbxso...",
+  "...osssxsxsso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_fertile]
+rarity = 4
+ms = 160
+palette = { p = "#f7e7ba", q = "#ead397", s = "#d4b26f", d = "#b18c4d", o = "#4a3326", r = "#d4aa4b", a = "#93762e", b = "#ffd23f", c = "#ffe079", x = "#ead397", y = "#edd38b" }
+[[scroll_fertile.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpappapso...",
+  "...oqppaappso...",
+  "...oqpppappso...",
+  "...osqqqaqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_fertile.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpbppbpso...",
+  "...oqppbbppso...",
+  "...oqpppbppso...",
+  "...osqqqbqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_fertile.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppyppyqqo...",
+  "...oqycyycyso...",
+  "...oqpyccypso...",
+  "...oqppycypso...",
+  "...osqqycyqso...",
+  "...ossssyssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_fertile.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppxppxqqo...",
+  "...oqxbxxbxso...",
+  "...oqpxbbxpso...",
+  "...oqppxbxpso...",
+  "...osqqxbxqso...",
+  "...ossssxssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_seedkeeper]
+rarity = 4
+ms = 160
+palette = { p = "#f7e7ba", q = "#ead397", s = "#d4b26f", d = "#b18c4d", o = "#4a3326", r = "#d4aa4b", a = "#93762e", b = "#ffd23f", c = "#ffe079", x = "#ead397", y = "#edd38b" }
+[[scroll_seedkeeper.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpappapso...",
+  "...oqpapaapso...",
+  "...oqpapaapso...",
+  "...osqaqqaqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_seedkeeper.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpbppbpso...",
+  "...oqpbpbbpso...",
+  "...oqpbpbbpso...",
+  "...osqbqqbqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_seedkeeper.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppyppyqqo...",
+  "...oqycyycyso...",
+  "...oqycyccyso...",
+  "...oqycyccyso...",
+  "...osycyycyso...",
+  "...ossyssysso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_seedkeeper.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppxppxqqo...",
+  "...oqxbxxbxso...",
+  "...oqxbxbbxso...",
+  "...oqxbxbbxso...",
+  "...osxbxxbxso...",
+  "...ossxssxsso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[scroll_gleaner]
+rarity = 4
+ms = 160
+palette = { p = "#f7e7ba", q = "#ead397", s = "#d4b26f", d = "#b18c4d", o = "#4a3326", r = "#d4aa4b", a = "#93762e", b = "#ffd23f", c = "#ffe079", x = "#ead397", y = "#edd38b" }
+[[scroll_gleaner.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpapappso...",
+  "...oqppaappso...",
+  "...oqppapppso...",
+  "...osqqaqqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_gleaner.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppppppqqo...",
+  "...oqpbpbppso...",
+  "...oqppbbppso...",
+  "...oqppbpppso...",
+  "...osqqbqqqso...",
+  "...osssssssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_gleaner.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppypypqqo...",
+  "...oqycycypso...",
+  "...oqpyccypso...",
+  "...oqpycyppso...",
+  "...osqycyqqso...",
+  "...osssysssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
+[[scroll_gleaner.frames]]
+rows = [
+  "................",
+  "................",
+  "................",
+  "....oooooooo....",
+  "...orrrrrrrro...",
+  "...oppxpxpqqo...",
+  "...oqxbxbxpso...",
+  "...oqpxbbxpso...",
+  "...oqpxbxppso...",
+  "...osqxbxqqso...",
+  "...osssxsssso...",
+  "...orrrrrrrro...",
+  "....oooooooo....",
+  "................",
+  "................",
+  "................",
+]
