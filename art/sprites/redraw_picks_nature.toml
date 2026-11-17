@@ -1,6 +1,6 @@
 # Hand-drawn dreamnail, scarab bomb and tree/nature drops (16x16, plum outline). 
 
-[dreamnail]
+[tool_dreamnail]
 rarity = 5
 palette = { w = "#ffffff", v = "#c9b8ff", c = "#7fd6ff", y = "#ffe6a0", Y = "#e8a838", z = "#a8641c", a = "#7a5cb8", b = "#4a3584", o = "#2e1c2c" }
 rows = [
@@ -22,7 +22,7 @@ rows = [
   "oooo............",
 ]
 
-[scarab_bomb]
+[tool_scarab_bomb]
 rarity = 4
 palette = { w = "#ffffff", h = "#6b5c9a", m = "#3d3363", s = "#241c42", d = "#140f28", Y = "#ffd24a", y = "#fff2a0", g = "#b9761c", e = "#e89a2c", t = "#8a8aa8", T = "#55557a", f = "#b08a5a", q = "#ff9a2a", x = "#ffe14a", o = "#2e1c2c" }
 rows = [
@@ -242,7 +242,7 @@ rows = [
   "......oooo......",
 ]
 
-[compost]
+[material_compost]
 rarity = 1
 palette = { w = "#ffffff", h = "#6c4a3c", m = "#4a3028", s = "#35201f", d = "#241418", x = "#8a6a48", l = "#7cc04c", L = "#3f8a3c", v = "#2f6a38", o = "#2e1c2c", O = "#e0701c", e = "#f4ecd8", E = "#c8bca0" }
 rows = [
@@ -264,7 +264,7 @@ rows = [
   "oooooooooooooooo",
 ]
 
-[beeswax]
+[material_beeswax]
 rarity = 3
 palette = { w = "#ffffff", h = "#ffe27a", m = "#f5b83c", s = "#d68a28", d = "#a85a24", e = "#d9a02c", y = "#ffe14a", k = "#2a1c2c", f = "#8a5a24", o = "#2e1c2c" }
 rows = [
@@ -330,7 +330,7 @@ rows = [
   "................",
 ]
 
-[aged_feather]
+[material_aged_feather]
 rarity = 5
 palette = { w = "#ffffff", h = "#bfdcd8", m = "#86aab0", s = "#5a7e94", d = "#3e5878", g = "#a8b4ba", q = "#efe3c8", Q = "#c8b894", o = "#2e1c2c" }
 rows = [
@@ -352,7 +352,7 @@ rows = [
   "oooo............",
 ]
 
-[radar_battery]
+[material_radar_battery]
 rarity = 2
 palette = { w = "#ffffff", t = "#c8d0dc", T = "#8a94ac", c = "#3a4a6a", h = "#6ae8d0", m = "#2fb0b0", s = "#1e7a9a", y = "#ffee6a", Y = "#f0b428", d = "#1a3a58", o = "#2e1c2c" }
 rows = [

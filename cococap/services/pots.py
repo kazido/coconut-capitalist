@@ -254,7 +254,7 @@ def time_to_next(pot: Pot, now: float, registry: Registry, pet: dict[str, float]
 
 def hourly_value(pot: Pot, registry: Registry, pet: dict[str, float] | None = None) -> float:
     """What this pot is worth per hour (bits, in the fish it would catch). For tests and for showing off in the UI."""
-    bait = registry.item(pot.bait) if pot.bait else registry.item("worm")
+    bait = registry.item(pot.bait) if pot.bait else registry.item("bait_worm")
     water = next(w for w in registry.fishing.waters if w.id == pot.water)
     luck = bait.bait.luck * (1 + (pet or {}).get("pot_luck", 0.0))
     pool = [(registry.item(i), r) for i, r in water.fish.items() if registry.item(i).rarity >= registry.fishing.pots.min_rarity]

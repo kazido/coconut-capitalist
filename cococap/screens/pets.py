@@ -138,7 +138,7 @@ class PetScreen(Screen):
 def orb_items(reg=None):
     """Every orb the shop sells (an item whose id ends in `_orb`, with a price), cheapest first. Add an orb in items.toml (and its odds in economy.toml) and it shows up here."""
     reg = reg or get_registry()
-    return sorted((i for i in reg.shop_items() if i.id.endswith("_orb")), key=lambda i: (i.price, i.name))
+    return sorted((i for i in reg.shop_items() if i.id.startswith("key_orb_")), key=lambda i: (i.price, i.name))
 
 
 class OrbScreen(Screen):

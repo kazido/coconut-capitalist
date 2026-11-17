@@ -52,159 +52,159 @@ base = "#8a8ab0"
 # ---- Pets ----
 
 # Cinder
-[pet_dog]
+[pet_cinder]
 kind = "flame"
 face = "core"
 base = "#8c8c8c"
 
 # Gloam
-[pet_magpie]
+[pet_gloam]
 kind = "flame"
 face = "visor"
 base = "#686868"
 
 # Haze
-[pet_koala]
+[pet_haze]
 kind = "flame"
 face = "sleepy"
 base = "#b0b0b0"
 
 # Lune
-[pet_fox]
+[pet_lune]
 kind = "flame"
 face = "fang"
 base = "#dcdcdc"
 accent = "#9aa0c0"
 
 # Halo
-[pet_phoenix]
+[pet_halo]
 kind = "flame"
 face = "horned"
 base = "#ffffff"
 accent = "#c8c8dc"
 
 # Umbra
-[pet_raven]
+[pet_umbra]
 kind = "flame"
 face = "cyclops"
 base = "#26262c"
 accent = "#5a5a74"
 
 # Drizzle
-[pet_cat]
+[pet_drizzle]
 kind = "flame"
 face = "sleepy"
 base = "#63a1db"
 
 # Ripple
-[pet_otter]
+[pet_ripple]
 kind = "flame"
 face = "eyes"
 base = "#4fb8c8"
 
 # Squall
-[pet_eagle]
+[pet_squall]
 kind = "flame"
 face = "fang"
 base = "#2c70f5"
 
 # Undertow
-[pet_python]
+[pet_undertow]
 kind = "flame"
 face = "visor"
 base = "#3a4fd0"
 
 # Brine
-[pet_crab]
+[pet_brine]
 kind = "flame"
 face = "grin"
 base = "#2fb0b0"
 
 # Eddy
-[pet_seal]
+[pet_eddy]
 kind = "flame"
 face = "cyclops"
 base = "#2cd0e8"
 
 # Tempest
-[pet_dragon]
+[pet_tempest]
 kind = "flame"
 face = "horned"
 base = "#00b8ff"
 accent = "#7a5cff"
 
 # Murk
-[pet_turtle]
+[pet_murk]
 kind = "flame"
 face = "core"
 base = "#9f63db"
 
 # Lode
-[pet_mole]
+[pet_lode]
 kind = "flame"
 face = "slim"
 base = "#b84beb"
 
 # Cairn
-[pet_badger]
+[pet_cairn]
 kind = "flame"
 face = "visor"
 base = "#6c2cf5"
 accent = "#ff9a3c"
 
 # Sprig
-[pet_beaver]
+[pet_sprig]
 kind = "flame"
 face = "eyes"
 base = "#63db84"
 
 # Bough
-[pet_monkey]
+[pet_bough]
 kind = "flame"
 face = "grin"
 base = "#4beb5b"
 
 # Canopy
-[pet_woodpecker]
+[pet_canopy]
 kind = "flame"
 face = "horned"
 base = "#3cf52c"
 accent = "#d8f23c"
 
 # Dew
-[pet_frog]
+[pet_dew]
 kind = "flame"
 face = "sleepy"
 base = "#c9d870"
 
 # Clover
-[pet_rabbit]
+[pet_clover]
 kind = "flame"
 face = "slim"
 base = "#dbc863"
 
 # Pollen
-[pet_bee]
+[pet_pollen]
 kind = "flame"
 face = "fang"
 base = "#c3db63"
 accent = "#ffa83c"
 
 # Thistle
-[pet_hedgehog]
+[pet_thistle]
 kind = "flame"
 face = "cyclops"
 base = "#b5f52c"
 accent = "#3fae4a"
 
 # Scorch
-[pet_wolf]
+[pet_scorch]
 kind = "flame"
 face = "fang"
 base = "#eb554b"
 
 # Pyre
-[pet_lion]
+[pet_pyre]
 kind = "flame"
 face = "horned"
 base = "#ff3d00"

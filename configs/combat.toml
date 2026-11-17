@@ -117,10 +117,10 @@ effects = [{ kind = "speed_down", chance = 85, turns = 2, value = 0.3 }]
 # --- what each sword lets you do (the first skill is the basic, with no cooldown) ------------------------------------------
 [kits]
 default = ["slash"]  # bare hands
-largebranch = ["slash", "cleave", "brace"]
-rustedbroadsword = ["slash", "cleave", "sanguine_priming", "brace"]
-dreamnail = ["slash", "guard_break", "enter_the_mind", "quick_step", "brace"]
-shiningsilver = ["slash", "cleave", "glistening_haven", "guard_break", "brace"]
+tool_largebranch = ["slash", "cleave", "brace"]
+tool_rustedbroadsword = ["slash", "cleave", "sanguine_priming", "brace"]
+tool_dreamnail = ["slash", "guard_break", "enter_the_mind", "quick_step", "brace"]
+tool_shiningsilver = ["slash", "cleave", "glistening_haven", "guard_break", "brace"]
 
 # --- fights you can pick -------------------------------------------------------------------------------------------------
 [encounters.graveyard_lone]
@@ -141,4 +141,4 @@ min_level = 8
 name = "The Gravewarden (boss)"
 enemies = ["gravewarden"]
 min_level = 20
-key = "graveyard_key"
+key = "key_graveyard"

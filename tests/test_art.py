@@ -142,7 +142,7 @@ def test_no_third_party_images_in_art():
     for rel in listed:
         if rel and Path(rel).suffix.lower() in img:
             low = rel.lower()
-            assert "raven" not in low and "joi3" not in low and "vendor" not in low, rel
+            assert "umbra" not in low and "joi3" not in low and "vendor" not in low, rel
     # git-ignored locals and outputs
     for rel in ("art/local.toml", "art/out/x.png"):
         r = subprocess.run(["git", "check-ignore", "-q", rel], cwd=ROOT)

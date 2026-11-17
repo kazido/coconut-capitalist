@@ -76,9 +76,9 @@ def test_the_party_page_states_the_bonus_for_each_size():
 
 
 def test_the_wiki_follows_the_data(monkeypatch):
-    cat = REG.pets["cat"]
+    cat = REG.pets["drizzle"]
     stronger = cat.model_copy(update={"bonuses": [cat.bonuses[0].model_copy(update={"value": 0.77})]})
-    monkeypatch.setitem(REG.pets, "cat", stronger)
+    monkeypatch.setitem(REG.pets, "drizzle", stronger)
     assert "77%" in all_blocks("pets")  # change the data and the wiki changes with it
 
 
@@ -96,7 +96,7 @@ async def test_the_wiki_screen_switches_topics_and_looks_items_up(db):
     assert "Familiar Orbs" in all_text(nav) and "Wiki: Pets" in all_text(nav)
     await choose(nav, inter, select_named(nav, "Pick a topic"), "items")
     await choose(nav, inter, select_named(nav, "Pick a skill"), "fishing")
-    await choose(nav, inter, select_named(nav, "Pick an item"), "cod")
+    await choose(nav, inter, select_named(nav, "Pick an item"), "fish_cod")
     page = all_text(nav)
     assert "Cod" in page and "Rarity" in page
 
@@ -115,7 +115,7 @@ async def test_item_lists_longer_than_a_menu_get_pages(db):
 async def test_the_wiki_is_on_the_more_page_and_the_command_opens_it(db):
     nav, inter = await hub("more")
     assert "Wiki" in all_text(nav)
-    opened, _ = await hub("wiki", topic="items", skill="fishing", item="marlin")
+    opened, _ = await hub("wiki", topic="items", skill="fishing", item="fish_marlin")
     assert "Blue Marlin" in all_text(opened)
 
 
@@ -172,14 +172,14 @@ async def test_looking_up_a_fish_says_where_it_is_caught_not_a_raw_drop_rate(db)
     nav, inter = await hub("wiki")
     await choose(nav, inter, select_named(nav, "Pick a topic"), "items")
     await choose(nav, inter, select_named(nav, "Pick a skill"), "fishing")
-    for fish_id in ("muskie", "cod", "golden_koi"):
+    for fish_id in ("fish_muskie", "fish_cod", "fish_golden_koi"):
         nav.screen.item = fish_id
         await nav.screen.nav.refresh(inter)
         page = all_text(nav)
         best, chance = fishing.where_to_catch(fish_id, REG)[0]
         assert "Where to catch it" in page and f"Max odds in {best.emoji} {best.name}" in page and "Drop Rate" not in page, fish_id
         assert "Size" in page
-    nav.screen.skill, nav.screen.item = "foraging", "acorn_mix"
+    nav.screen.skill, nav.screen.item = "foraging", "food_acorn_mix"
     await nav.screen.nav.refresh(inter)
     assert "Drop Rate" in all_text(nav) and "Pet xp" in all_text(nav)  # other things still show their drop rate
 

@@ -40,7 +40,7 @@ def test_every_kind_of_tool_with_an_upgrade_chain_can_be_enchanted():
 
 # ---- applying a scroll --------------------------------------------------------------------------------------------------
 async def test_a_scroll_is_used_up_and_puts_one_level_of_its_enchant_on_the_tool(db):
-    user, rod = await with_tool("starter_rod", "fishing", scrolls={"scroll_lure": 2})
+    user, rod = await with_tool("tool_rod_starter", "fishing", scrolls={"scroll_lure": 2})
     done = await enchanting.apply_scroll(user, "scroll_lure", rod.id, REG)
     assert done.enchants == {"lure": 1} and await user.item_quantity("scroll_lure") == 1
     again = await enchanting.apply_scroll(user, "scroll_lure", rod.id, REG)
@@ -49,7 +49,7 @@ async def test_a_scroll_is_used_up_and_puts_one_level_of_its_enchant_on_the_tool
 
 
 async def test_it_only_fits_the_right_kind_of_tool_and_never_past_the_maximum_and_a_refusal_keeps_the_scroll(db):
-    user, axe = await with_tool("starter_axe", "foraging", scrolls={"scroll_lure": 1, "scroll_keen": 5})
+    user, axe = await with_tool("tool_axe_starter", "foraging", scrolls={"scroll_lure": 1, "scroll_keen": 5})
     with pytest.raises(enchanting.EnchantError, match="fits a rod"):
         await enchanting.apply_scroll(user, "scroll_lure", axe.id, REG)
     assert await user.item_quantity("scroll_lure") == 1
@@ -61,20 +61,20 @@ async def test_it_only_fits_the_right_kind_of_tool_and_never_past_the_maximum_an
 
 
 async def test_you_cannot_enchant_someone_elses_tool_or_with_a_scroll_you_do_not_have(db):
-    _, rod = await with_tool("starter_rod", "fishing", user_id=1)
+    _, rod = await with_tool("tool_rod_starter", "fishing", user_id=1)
     thief = await User.get(2)
     await thief.add_item("scroll_lure", 1)
     with pytest.raises(enchanting.EnchantError, match="don't own"):
         await enchanting.apply_scroll(thief, "scroll_lure", rod.id, REG)
-    mine, rod2 = await with_tool("starter_rod", "fishing", user_id=3)
+    mine, rod2 = await with_tool("tool_rod_starter", "fishing", user_id=3)
     with pytest.raises(enchanting.EnchantError, match="don't have"):
         await enchanting.apply_scroll(mine, "scroll_lure", rod2.id, REG)
     with pytest.raises(enchanting.EnchantError, match="isn't a scroll"):
-        await enchanting.apply_scroll(mine, "cod", rod2.id, REG)
+        await enchanting.apply_scroll(mine, "fish_cod", rod2.id, REG)
 
 
 async def test_keen_works_on_every_tool(db):
-    for template, skill, uid in (("starter_rod", "fishing", 1), ("starter_axe", "foraging", 2), ("rookiepickaxe", "mining", 3)):
+    for template, skill, uid in (("tool_rod_starter", "fishing", 1), ("tool_axe_starter", "foraging", 2), ("tool_pickaxe_rookie", "mining", 3)):
         user, tool = await with_tool(template, skill, uid, scrolls={"scroll_keen": 1})
         before = effective_stats(tool, REG).power
         done = await enchanting.apply_scroll(user, "scroll_keen", tool.id, REG)
@@ -111,7 +111,7 @@ def test_sharp_eye_makes_good_chops_more_likely():
 async def test_iron_frame_slows_the_mines_pressure(db):
     from cococap.services import mining
 
-    user, pick = await with_tool("rookiepickaxe", "mining", scrolls={"scroll_iron_frame": 2})
+    user, pick = await with_tool("tool_pickaxe_rookie", "mining", scrolls={"scroll_iron_frame": 2})
     plain = (await mining.start_run(user, Random(1))).growth_factor
     await enchanting.apply_scroll(user, "scroll_iron_frame", pick.id, REG)
     await enchanting.apply_scroll(user, "scroll_iron_frame", pick.id, REG)
@@ -150,8 +150,8 @@ def test_the_scroll_roll_drops_at_its_odds_from_the_skills_own_pool():
 
 # ---- the screen -----------------------------------------------------------------------------------------------------------
 async def test_the_enchant_screen_picks_a_scroll_then_a_tool(db):
-    user, rod = await with_tool("starter_rod", "fishing", scrolls={"scroll_lure": 1})
-    axe = await user.give_instance("starter_axe")
+    user, rod = await with_tool("tool_rod_starter", "fishing", scrolls={"scroll_lure": 1})
+    axe = await user.give_instance("tool_axe_starter")
     nav, inter = await hub("tools")
     await click(nav, inter, "Enchant")
     assert nav.screen.id == "enchant"
@@ -177,7 +177,7 @@ async def test_a_boss_can_drop_a_scroll_you_can_then_use(db):
         def random(self):
             return 0.0
 
-    user, rod = await with_tool("starter_rod", "fishing")
+    user, rod = await with_tool("tool_rod_starter", "fishing")
     boss = f.cast_line(equipment.EffectiveStats(power=3, requirement=0, stats={"power": 3.0}), Lucky(1), 0, REG)
     boss.hook(boss.bite_at + 1)
     for arrow in list(boss.truth):  # (what the boss really wants, which a mirror boss flips)
@@ -190,7 +190,7 @@ async def test_a_boss_can_drop_a_scroll_you_can_then_use(db):
 
 
 async def test_if_the_enchant_fails_the_scroll_is_given_back(db, monkeypatch):
-    user, rod = await with_tool("starter_rod", "fishing", scrolls={"scroll_lure": 1})
+    user, rod = await with_tool("tool_rod_starter", "fishing", scrolls={"scroll_lure": 1})
 
     async def broken(*_args, **_kwargs):
         raise RuntimeError("database hiccup")
@@ -205,11 +205,11 @@ async def test_the_scholar_scroll_adds_xp_and_the_appraiser_scroll_adds_to_what_
     from cococap.services import shop
     from cococap.services.party import xp_multiplier
 
-    user, pick = await with_tool("rookiepickaxe", "mining", scrolls={"scroll_scholar": 2, "scroll_appraiser": 2})
-    xp_before, sale_before = await xp_multiplier(user.id, REG, "mining"), await shop.haggle(user, REG.item("copper_ore"), REG)
+    user, pick = await with_tool("tool_pickaxe_rookie", "mining", scrolls={"scroll_scholar": 2, "scroll_appraiser": 2})
+    xp_before, sale_before = await xp_multiplier(user.id, REG, "mining"), await shop.haggle(user, REG.item("material_copper_ore"), REG)
     for scroll in ("scroll_scholar", "scroll_scholar", "scroll_appraiser", "scroll_appraiser"):
         await enchanting.apply_scroll(user, scroll, pick.id, REG)
     assert await xp_multiplier(user.id, REG, "mining") == pytest.approx(xp_before * 1.10)  # +5% a level, two levels
-    assert await shop.haggle(user, REG.item("copper_ore"), REG) == pytest.approx(sale_before + 0.08)
-    assert await shop.haggle(user, REG.item("apple"), REG) == 0  # (it only helps the tool's own skill)
+    assert await shop.haggle(user, REG.item("material_copper_ore"), REG) == pytest.approx(sale_before + 0.08)
+    assert await shop.haggle(user, REG.item("crop_apple"), REG) == 0  # (it only helps the tool's own skill)
     assert await xp_multiplier(user.id, REG, "foraging") == pytest.approx(xp_before)  # (and its xp)

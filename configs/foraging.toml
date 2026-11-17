@@ -125,17 +125,17 @@ private_only = true
 # You can craft them (or buy the plain one) or find them chopping (they are on the foraging drop table).
 [rotate]
 [[rotate.wedges]]
-item = "rotation_wedge"
+item = "material_rotation_wedge"
 bias = 0
 special_mult = 1.5
 [[rotate.wedges]]
-item = "iron_wedge"
+item = "material_iron_wedge"
 bias = 4
 special_mult = 4
 boost = 0.2
 boost_chops = 40
 [[rotate.wedges]]
-item = "gilded_wedge"
+item = "material_gilded_wedge"
 bias = 12
 special_mult = 10
 boost = 0.5

@@ -60,7 +60,7 @@ def test_the_months_goals_are_the_same_for_everybody_and_change_from_month_to_mo
 
 def test_goals_count_the_right_fish():
     any_goal, rarity_goal, fish_goal = c.goals(c.month_of(T0), REG)
-    cod, salmon = REG.item("cod"), REG.item("salmon")
+    cod, salmon = REG.item("fish_cod"), REG.item("fish_salmon")
     assert any_goal.counts(cod) and any_goal.counts(salmon)
     assert not rarity_goal.counts(cod) and rarity_goal.counts(salmon)
     assert fish_goal.counts(fish_goal.fish) and not fish_goal.counts(cod)
@@ -77,48 +77,48 @@ def test_the_community_book_holds_two_legendary_two_premium_and_a_mythical_fish(
 
 
 async def test_you_must_be_a_good_enough_angler_to_donate(db):
-    user = await angler(level=RULES.book.min_level - 1, fish={"marlin": 1})
+    user = await angler(level=RULES.book.min_level - 1, fish={"fish_marlin": 1})
     with pytest.raises(c.CommunityError, match="opens to anglers"):
-        await c.donate(user, "marlin", REG)
-    assert await user.item_quantity("marlin") == 1
+        await c.donate(user, "fish_marlin", REG)
+    assert await user.item_quantity("fish_marlin") == 1
 
 
 async def test_donating_pays_the_donor_and_fills_the_page_only_as_far_as_it_needs(db):
-    user = await angler(fish={"marlin": 5})
+    user = await angler(fish={"fish_marlin": 5})
     before = user.purse
-    done = await c.donate(user, "marlin", REG)
+    done = await c.donate(user, "fish_marlin", REG)
     assert done.quantity == 3 and done.finished_level is None  # level 1 wants 3 marlin
-    assert done.bits == round(REG.item("marlin").sell_price * CB.donor_bits_per_sell * 3)
+    assert done.bits == round(REG.item("fish_marlin").sell_price * CB.donor_bits_per_sell * 3)
     await user.refresh()
-    assert user.purse == before + done.bits and await user.item_quantity("marlin") == 2
+    assert user.purse == before + done.bits and await user.item_quantity("fish_marlin") == 2
     view = await c.book(user, REG)
-    page = next(p for p in view.pages if p.fish.id == "marlin")
+    page = next(p for p in view.pages if p.fish.id == "fish_marlin")
     assert page.given == 3 and page.done and view.donated_by_you == 3
     with pytest.raises(c.CommunityError, match="already has"):
-        await c.donate(user, "marlin", REG)
+        await c.donate(user, "fish_marlin", REG)
 
 
 async def test_you_cannot_donate_what_the_book_does_not_hold_or_you_do_not_have(db):
-    user = await angler(fish={"cod": 1})
+    user = await angler(fish={"fish_cod": 1})
     with pytest.raises(c.CommunityError, match="no page"):
-        await c.donate(user, "cod", REG)
+        await c.donate(user, "fish_cod", REG)
     with pytest.raises(c.CommunityError, match="don't have any"):
-        await c.donate(user, "marlin", REG)
+        await c.donate(user, "fish_marlin", REG)
 
 
 async def test_a_stale_second_donation_gets_its_fish_back(db, monkeypatch):
-    user = await angler(fish={"marlin": 6})
+    user = await angler(fish={"fish_marlin": 6})
     stale = await c.book(user, REG)
-    await c.donate(user, "marlin", REG)  # fills the page
+    await c.donate(user, "fish_marlin", REG)  # fills the page
 
     async def old(*_a, **_k):
         return stale
 
     monkeypatch.setattr(c, "book", old)
-    before = await user.item_quantity("marlin")
+    before = await user.item_quantity("fish_marlin")
     with pytest.raises(c.CommunityError, match="already has"):
-        await c.donate(user, "marlin", REG)
-    assert await user.item_quantity("marlin") == before
+        await c.donate(user, "fish_marlin", REG)
+    assert await user.item_quantity("fish_marlin") == before
 
 
 async def test_finishing_the_book_happens_once_levels_it_up_and_pays_everyone_once(db):
@@ -192,8 +192,8 @@ async def land_fish(user, fish_id, now=T0):
 async def test_a_landed_fish_adds_to_every_goal_it_fits(db):
     user = await angler(level=RULES.quests.min_level)
     fish_goal = c.goals(c.month_of(T0), REG)[2].fish.id
-    await land_fish(user, "cod")
-    await land_fish(user, "salmon")
+    await land_fish(user, "fish_cod")
+    await land_fish(user, "fish_salmon")
     await land_fish(user, fish_goal)
     any_goal, rare_goal, specific = await c.monthly(user, T0, REG)
     assert (any_goal.progress, rare_goal.progress, specific.progress) == (3, 2, 1)  # cod: only the first; salmon: two
@@ -202,15 +202,15 @@ async def test_a_landed_fish_adds_to_every_goal_it_fits(db):
 
 async def test_catches_before_the_unlock_level_do_not_count(db):
     user = await User.get(1)
-    await land_fish(user, "cod")
+    await land_fish(user, "fish_cod")
     assert (await c.monthly(user, T0, REG))[0].progress == 0
 
 
 async def test_everybody_adds_to_the_same_goal(db):
     one, two = await angler(1, level=3), await angler(2, level=3)
-    await land_fish(one, "cod")
-    await land_fish(two, "cod")
-    await land_fish(two, "cod")
+    await land_fish(one, "fish_cod")
+    await land_fish(two, "fish_cod")
+    await land_fish(two, "fish_cod")
     seen_by_one = await c.monthly(one, T0, REG)
     assert seen_by_one[0].progress == 3 and seen_by_one[0].yours == 1
     assert (await c.monthly(two, T0, REG))[0].yours == 2
@@ -218,7 +218,7 @@ async def test_everybody_adds_to_the_same_goal(db):
 
 async def test_a_new_month_starts_the_goals_over(db):
     user = await angler(level=3)
-    await land_fish(user, "cod")
+    await land_fish(user, "fish_cod")
     april = datetime.datetime(2026, 4, 2, tzinfo=datetime.timezone.utc).timestamp()
     assert (await c.monthly(user, april, REG))[0].progress == 0 and (await c.monthly(user, T0, REG))[0].progress == 1
 
@@ -272,13 +272,13 @@ async def test_an_unfinished_goal_pays_nothing(db):
 
 # ---- the screen ---------------------------------------------------------------------------------------------------
 async def test_the_community_page_shows_the_book_and_goals_and_you_donate_from_a_menu(db, monkeypatch):
-    user = await angler(fish={"marlin": 4, "giant_squid": 1})
+    user = await angler(fish={"fish_marlin": 4, "fish_giant_squid": 1})
     nav, inter = await hub("fishcommunity")
     text = all_text(nav)
     assert "Community Book" in text and "This month's goals" in text and "Blue Marlin" in text
     assert nav.screen.refresh_every  # redraws itself so you see everyone's progress
-    await choose(nav, inter, select_named(nav, "Donate a fish"), "marlin")
-    assert "You gave 3" in all_text(nav) and await user.item_quantity("marlin") == 1
+    await choose(nav, inter, select_named(nav, "Donate a fish"), "fish_marlin")
+    assert "You gave 3" in all_text(nav) and await user.item_quantity("fish_marlin") == 1
 
 
 async def test_the_page_pays_what_you_are_owed_when_you_open_it(db):

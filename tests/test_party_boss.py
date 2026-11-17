@@ -19,7 +19,7 @@ BOSS = RULES.boss
 P = BOSS.party
 
 
-async def team(size=2, rod="starter_rod"):
+async def team(size=2, rod="tool_rod_starter"):
     users = [await player(i, rod) for i in range(1, size + 1)]
     party = await Party.create(1)
     for i in range(2, size + 1):

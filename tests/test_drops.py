@@ -34,7 +34,7 @@ def test_shipped_tables_only_use_real_items_and_mix_bits_with_items():
     for table in REG.drop_tables.values():
         assert any(e.item is None for e in table.entries) and any(e.item for e in table.entries), table.id
         assert all(e.item in REG.items for e in table.entries if e.item)
-    rare = [e for e in REG.drop_tables["graveyard"].entries if e.item in {"familiar_orb", "land_deed", "scroll_keen"}]
+    rare = [e for e in REG.drop_tables["graveyard"].entries if e.item in {"key_orb_familiar", "key_land_deed", "scroll_keen"}]
     total = sum(e.weight for e in REG.drop_tables["graveyard"].entries)
     assert rare and all(e.weight / total < 0.01 + 0.01 for e in rare)  # rare things are rare
 
@@ -43,9 +43,9 @@ def test_an_entry_is_either_an_item_or_bits_and_ranges_must_be_ordered():
     with pytest.raises(ValidationError):
         DropEntry(weight=1)
     with pytest.raises(ValidationError):
-        DropEntry(weight=1, item="iron_ore", bits_max=5)
+        DropEntry(weight=1, item="material_iron_ore", bits_max=5)
     with pytest.raises(ValidationError):
-        DropEntry(weight=1, item="iron_ore", min=5, max=2)
+        DropEntry(weight=1, item="material_iron_ore", min=5, max=2)
     with pytest.raises(ValidationError):
         DropEntry(weight=1, bits_min=10, bits_max=5)
     assert DropEntry(weight=1, bits_min=1, bits_max=5).item is None
@@ -69,23 +69,23 @@ def test_unknown_items_tables_and_keys_are_rejected_when_the_data_loads(tmp_path
 
     broken("item", lambda d: (d / "drops.toml").write_text('[graveyard]\nentries = [{ weight = 1, item = "nope" }]\n'), "unknown item 'nope'")
     broken("table", swap("enemies.toml", 'drops = "graveyard"', 'drops = "nope"'), "unknown drop table 'nope'")
-    broken("key", swap("combat.toml", 'key = "graveyard_key"', 'key = "iron_ore"'), "not a key_item")
+    broken("key", swap("combat.toml", 'key = "key_graveyard"', 'key = "material_iron_ore"'), "not a key_item")
 
 
 # ---- rolling -----------------------------------------------------------------------------------------------------------------------
 def test_an_item_entry_gives_a_quantity_in_range_and_a_bits_entry_gives_bits_in_range():
-    table = DropTable(id="t", entries=[DropEntry(weight=1, item="iron_ore", min=2, max=6), DropEntry(weight=1, bits_min=100, bits_max=200)])
+    table = DropTable(id="t", entries=[DropEntry(weight=1, item="material_iron_ore", min=2, max=6), DropEntry(weight=1, bits_min=100, bits_max=200)])
     got = loot.roll_drop_table(table, Script(pick=0))
-    assert got.item_id == "iron_ore" and 2 <= got.quantity <= 6 and got.bits == 0
+    assert got.item_id == "material_iron_ore" and 2 <= got.quantity <= 6 and got.bits == 0
     got = loot.roll_drop_table(table, Script(pick=1))
     assert got.item_id is None and 100 <= got.bits <= 200
 
 
 def test_weights_decide_how_often_things_drop():
-    table = DropTable(id="t", entries=[DropEntry(weight=90, item="iron_ore"), DropEntry(weight=10, item="gold_ore")])
+    table = DropTable(id="t", entries=[DropEntry(weight=90, item="material_iron_ore"), DropEntry(weight=10, item="material_gold_ore")])
     rng = random.Random(1)
     counts = Counter(loot.roll_drop_table(table, rng).item_id for _ in range(4000))
-    assert 0.85 < counts["iron_ore"] / 4000 < 0.95 and counts["gold_ore"] > 200
+    assert 0.85 < counts["material_iron_ore"] / 4000 < 0.95 and counts["material_gold_ore"] > 200
 
 
 def test_drop_chance_is_the_percent_a_kill_drops_anything():
@@ -101,7 +101,7 @@ def test_the_graveyard_gives_keys_and_now_and_then_the_rare_things():
     for _ in range(20000):
         drop = loot.roll_drop_table(REG.drop_tables["graveyard"], rng)
         seen[drop.item_id or "bits"] += 1
-    assert seen["graveyard_key"] > 100 and 0 < seen["familiar_orb"] < seen["graveyard_key"] and seen["bits"] > seen["iron_ore"]
+    assert seen["key_graveyard"] > 100 and 0 < seen["key_orb_familiar"] < seen["key_graveyard"] and seen["bits"] > seen["material_iron_ore"]
 
 
 # ---- keys --------------------------------------------------------------------------------------------------------------------------
@@ -114,23 +114,23 @@ async def test_the_boss_needs_a_key_which_is_spent_when_you_walk_in(db):
     await level_up(user)
     with pytest.raises(CombatError, match="Graveyard Key"):
         await combat.start_fight(user, "gravewarden")
-    await user.add_item("graveyard_key", 2)
+    await user.add_item("key_graveyard", 2)
     battle = await combat.start_fight(user, "gravewarden")
-    assert battle.living("enemy")[0].name == "The Gravewarden" and await user.item_quantity("graveyard_key") == 1
+    assert battle.living("enemy")[0].name == "The Gravewarden" and await user.item_quantity("key_graveyard") == 1
 
 
 async def test_a_missing_level_does_not_cost_a_key(db):
     user = await User.get(1)
-    await user.add_item("graveyard_key", 1)
+    await user.add_item("key_graveyard", 1)
     with pytest.raises(CombatError, match="combat level 20"):
         await combat.start_fight(user, "gravewarden")
-    assert await user.item_quantity("graveyard_key") == 1
+    assert await user.item_quantity("key_graveyard") == 1
 
 
 async def test_ordinary_fights_need_no_key(db):
     user = await User.get(1)
     battle = await combat.start_fight(user, "graveyard_lone")
-    assert battle.living("enemy") and await user.item_quantity("graveyard_key") == 0
+    assert battle.living("enemy") and await user.item_quantity("key_graveyard") == 0
 
 
 # ---- settling ----------------------------------------------------------------------------------------------------------------------
@@ -150,8 +150,8 @@ async def test_a_win_pays_xp_and_the_drop_in_items_and_bits(db):
     user = await User.get(1)
     bits_before = await user.get_bits() if hasattr(user, "get_bits") else None
     paid = await combat.settle(user, won_battle(), REG, Script(pick=1, roll=0.0))  # entry 1 of the graveyard table: iron ore
-    assert paid.xp == 40 and paid.kills == 1 and list(paid.items) == ["iron_ore"]
-    assert await user.item_quantity("iron_ore") == paid.items["iron_ore"]
+    assert paid.xp == 40 and paid.kills == 1 and list(paid.items) == ["material_iron_ore"]
+    assert await user.item_quantity("material_iron_ore") == paid.items["material_iron_ore"]
     paid = await combat.settle(user, won_battle(), REG, Script(pick=0, roll=0.0))  # entry 0: bits
     assert paid.bits > 0 and not paid.items
     assert bits_before is None or await user.get_bits() >= bits_before + paid.bits

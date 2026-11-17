@@ -102,7 +102,7 @@ anything else is a bug and is not leaked to the player.
 
 ## How to add things (checklists)
 
-**A new item**: add `[id]` to `configs/items.toml` (with emoji, wiki text, drop odds if it drops), put it in the right shop/drop/craft table if any,
+**A new item**: its id is `<category prefix>_<name>` (`tool_pickaxe_x`, `material_`, `fish_`, `crop_`, `seed_`, `bait_`, `food_`, `key_`, `scroll_`) and the emoji is named exactly the id (<= 32 chars); add `[id]` to `configs/items.toml` (with emoji, wiki text, drop odds if it drops), put it in the right shop/drop/craft table if any,
 add the id to any test list that enumerates a category (e.g. `FOODS` in `tests/test_pets.py`), add a test for its behaviour, and a line in DESIGN.md.
 **A new screen**: subclass `Screen` in `cococap/screens/`, set `id/label/emoji/description/links`, import it in `screens/__init__.py`, link it from
 Home/More/another screen. `tests/test_hub.py::test_every_screen_renders_valid_layout_within_discord_limits` covers layout limits automatically.

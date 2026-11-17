@@ -117,11 +117,11 @@ def load_wisps(path: Path) -> list[Sprite]:
     return out
 
 
-def _legacy_items() -> dict[str, str]:
-    """{old emoji name: item id} for the owner's emoji that are items (cococap.emojis.ALIASES), minus names that already equal the item id."""
-    from cococap.emojis import ALIASES
+def _item_ids() -> set[str]:
+    """Item ids: an owner's emoji folder named by one of these is rebuilt as that item's emoji (rarity from the item)."""
+    from cococap.registry.loader import get_registry
 
-    return {k: v for k, v in ALIASES.items() if k != v}
+    return set(get_registry().items)
 
 
 def load_sources(root: Path) -> list[Sprite]:
@@ -133,12 +133,11 @@ def load_sources(root: Path) -> list[Sprite]:
             continue
         _check_name(d.name, str(d))
         meta = _read(d / "meta.toml") if (d / "meta.toml").exists() else {}
-        # The owner's emoji are named for how they were first uploaded (gemstone_sanity, ore_iron). Those that ARE items are rebuilt under the
-        # ITEM id with the item's real rarity (the game finds an emoji named by item id first); the rest (cells, xp bars, wyrmhole...)
-        # are UI pieces already uploaded under their old names and stay exactly as they are (not built).
+        # The owner's emoji folders that are named by an item id (key_gemstone_rage, material_iron_ore) are rebuilt with the item's real rarity;
+        # the rest (cells, xp bars, wyrmhole...) are UI pieces already uploaded under their old names and stay as they are (not built).
         name, rarity = d.name, _check_rarity(meta.get("rarity", 1), d.name)
-        if "item" in meta or d.name in _legacy_items():
-            name = str(meta.get("item", _legacy_items().get(d.name)))
+        if "item" in meta or d.name in _item_ids():
+            name = str(meta.get("item", d.name))
             rarity = _item_rarity(name)
         elif not meta.get("emit", False):
             continue
@@ -217,7 +216,7 @@ def load_raven(mapping: Path, pack: Path | None) -> list[Sprite]:
             moved = Image.new("RGBA", cell.size, (0, 0, 0, 0))
             moved.alpha_composite(cell, (dx, dy)) if dx >= 0 and dy >= 0 else moved.paste(cell, (dx, dy))
             cell = moved
-        out.append(Sprite(name, "raven", [cell], [], True, rarity))
+        out.append(Sprite(name, "umbra", [cell], [], True, rarity))
     return out
 
 
@@ -232,8 +231,8 @@ def load_all(art_dir: Path = ART_DIR) -> list[Sprite]:
     for mp in sorted((art_dir / "mappings").glob("raven*.toml")):
         sprites += load_raven(mp, raven_dir())
     # A hand-drawn (or owner) sprite replaces a third-party pick of the same name: drawing a better icon never needs a mapping edit.
-    own = {s.name for s in sprites if s.category != "raven"}
-    sprites = [s for s in sprites if s.category != "raven" or s.name not in own]
+    own = {s.name for s in sprites if s.category != "umbra"}
+    sprites = [s for s in sprites if s.category != "umbra" or s.name not in own]
     seen: dict[str, str] = {}
     for s in sprites:
         if s.name in seen:

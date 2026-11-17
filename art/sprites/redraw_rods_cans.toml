@@ -1,6 +1,6 @@
 # Hand-drawn replacements for weak Raven picks: fishing rods and watering/alchemy cans (16x16, plum outline).
 
-[sturdy_rod]
+[tool_rod_sturdy]
 rarity = 4
 palette = { a = "#c4894e", b = "#8f5a3a", c = "#5e3a3c", d = "#4a5a78", e = "#34405e", l = "#d8dfee", m = "#c9d4e6", n = "#6a7a9c", o = "#2e1c2c", r = "#e0603c", w = "#ffffff" }
 rows = [
@@ -22,7 +22,7 @@ rows = [
   ".oo.............",
 ]
 
-[masterwork_rod]
+[tool_rod_masterwork]
 rarity = 5
 palette = { a = "#fff0a8", b = "#f2b84a", c = "#c27a2c", d = "#a8324a", e = "#6e2040", l = "#fdf3d6", m = "#fff0a8", n = "#c27a2c", o = "#2e1c2c", r = "#e84a5c", w = "#ffffff" }
 rows = [
@@ -44,7 +44,7 @@ rows = [
   ".oo.............",
 ]
 
-[tidecaller_rod]
+[tool_rod_tidecaller]
 rarity = 5
 palette = { a = "#8af0e0", b = "#2ea8b8", c = "#1e5a8c", d = "#3a4a88", e = "#2a2866", l = "#c8f4f0", m = "#f6d0c0", n = "#c0809c", o = "#2e1c2c", p = "#fff0e4", q = "#d89aa8", r = "#f6e8f0", s = "#a86484", w = "#ffffff" }
 rows = [
@@ -66,7 +66,7 @@ rows = [
   ".oo.............",
 ]
 
-[moonlit_rod]
+[tool_rod_moonlit]
 rarity = 6
 palette = { a = "#f4f0ff", b = "#b4b0e8", c = "#6c68b8", d = "#4a3c88", e = "#322868", l = "#e6e2ff", m = "#e8e4ff", n = "#7c74c0", o = "#2e1c2c", p = "#fff4b8", q = "#e8b848", r = "#fff4b8", w = "#ffffff" }
 rows = [
@@ -88,7 +88,7 @@ rows = [
   ".oo.............",
 ]
 
-[lantern_rod]
+[tool_rod_lantern]
 rarity = 5
 palette = { a = "#e8b070", b = "#a8683c", c = "#6c3c3c", d = "#4a3438", e = "#2e2430", l = "#e8d8c0", m = "#f0c860", n = "#a05828", o = "#2e1c2c", p = "#fff2a0", q = "#ffb43c", s = "#8a4a28", w = "#ffffff" }
 rows = [
@@ -110,7 +110,7 @@ rows = [
   ".oo.............",
 ]
 
-[leviathan_rod]
+[tool_rod_leviathan]
 rarity = 6
 palette = { a = "#6cc8e8", b = "#2a6aa8", c = "#1c3c78", d = "#3c2c6c", e = "#261c4c", l = "#c0e0f0", m = "#e8f0f8", n = "#7c8cc0", o = "#2e1c2c", p = "#fcf6e4", q = "#d8c8a4", t = "#46c0b0", w = "#ffffff" }
 rows = [
@@ -132,7 +132,7 @@ rows = [
   ".oo.............",
 ]
 
-[siren_rod]
+[tool_rod_siren]
 rarity = 6
 palette = { a = "#ffb4d8", b = "#e0509c", c = "#8c2c8c", d = "#3ca8c8", e = "#2a5890", l = "#fcdcee", m = "#ffe8f2", n = "#d070a8", o = "#2e1c2c", p = "#9af0f0", q = "#38b8d0", r = "#f8f0ff", w = "#ffffff" }
 rows = [
@@ -154,7 +154,7 @@ rows = [
   ".oo.............",
 ]
 
-[trident_rod]
+[tool_rod_trident]
 rarity = 6
 palette = { a = "#e8f8ff", b = "#7ccaf0", c = "#2e6ca8", d = "#3a4a88", e = "#2a2866", l = "#c8e8f8", m = "#d8f4ff", n = "#5a78b8", o = "#2e1c2c", p = "#e4faff", q = "#78c8f0", r = "#e8f8ff", s = "#3a78b8", u = "#9a58c8", w = "#ffffff" }
 rows = [
@@ -176,7 +176,7 @@ rows = [
   ".oo.............",
 ]
 
-[poseidon_rod]
+[tool_rod_poseidon]
 rarity = 7
 palette = { a = "#fff4a8", b = "#f0b840", c = "#b8702c", d = "#2ea0b8", e = "#1e5a88", l = "#fdf0c8", m = "#fff4a8", n = "#b8702c", o = "#2e1c2c", p = "#fff8c0", q = "#f4c850", r = "#7af0e8", s = "#c07a30", u = "#38c8d0", w = "#ffffff" }
 rows = [
@@ -198,7 +198,7 @@ rows = [
   ".oo.............",
 ]
 
-[abyssal_rod]
+[tool_rod_abyssal]
 rarity = 7
 palette = { b = "#5a48a8", c = "#322468", d = "#2a2058", e = "#1a1038", l = "#8aa0d8", m = "#7a6cc0", n = "#3c2c70", o = "#2e1c2c", q = "#20b898", r = "#48f0c8", s = "#0c6c64", w = "#ffffff" }
 rows = [
@@ -220,7 +220,7 @@ rows = [
   ".oo.............",
 ]
 
-[kraken_rod]
+[tool_rod_kraken]
 rarity = 7
 palette = { a = "#e89ae0", b = "#a8489c", c = "#5c2470", d = "#8c2c4c", e = "#4a1c44", l = "#e8c0e8", m = "#f0b0e8", n = "#7c3490", o = "#2e1c2c", p = "#ffe0f0", q = "#e85a8c", r = "#ffd0e0", s = "#7a2c6c", w = "#ffffff" }
 rows = [
@@ -242,7 +242,7 @@ rows = [
   ".oo.............",
 ]
 
-[trophy_rod]
+[tool_rod_trophy]
 rarity = 7
 palette = { a = "#fff4a8", b = "#f0b840", c = "#b8702c", d = "#d0384c", e = "#7a1c44", l = "#fdf0c8", m = "#fff4a8", n = "#b8702c", o = "#2e1c2c", p = "#ffe478", q = "#e89c30", r = "#7ad0f0", w = "#ffffff" }
 rows = [
@@ -264,7 +264,7 @@ rows = [
   ".oo.............",
 ]
 
-[tin_can]
+[tool_can_tin]
 rarity = 2
 palette = { a = "#f4f8ff", b = "#b8c4d8", c = "#7e8ca8", d = "#525c7c", f = "#8a96b0", g = "#c8d2e4", o = "#2e1c2c", w = "#ffffff" }
 rows = [
@@ -286,7 +286,7 @@ rows = [
   "................",
 ]
 
-[copper_can]
+[tool_can_copper]
 rarity = 3
 palette = { a = "#ffd0a0", b = "#ec8844", c = "#b4503a", d = "#743040", f = "#46c4a0", g = "#a0f0d0", o = "#2e1c2c", w = "#ffffff" }
 rows = [
@@ -308,7 +308,7 @@ rows = [
   "................",
 ]
 
-[iron_can]
+[tool_can_iron]
 rarity = 4
 palette = { a = "#c4cee4", b = "#7684ac", c = "#52608c", d = "#363e68", f = "#2e2e50", g = "#98a4c8", o = "#2e1c2c", w = "#ffffff" }
 rows = [
@@ -330,7 +330,7 @@ rows = [
   "................",
 ]
 
-[silver_can]
+[tool_can_silver]
 rarity = 5
 palette = { a = "#ffffff", b = "#dde8f6", c = "#9ab0d8", d = "#6074a8", f = "#5c88d8", g = "#a8c8f8", o = "#2e1c2c", w = "#ffffff" }
 rows = [
@@ -352,7 +352,7 @@ rows = [
   "................",
 ]
 
-[gold_can]
+[tool_can_gold]
 rarity = 6
 palette = { a = "#fff6a8", b = "#f6c444", c = "#c47c2c", d = "#80443c", f = "#e04a5c", g = "#ff9aa8", o = "#2e1c2c", p = "#ffd0d8", r = "#e04a5c", w = "#ffffff" }
 rows = [
@@ -374,7 +374,7 @@ rows = [
   "................",
 ]
 
-[crystal_can]
+[tool_can_crystal]
 rarity = 7
 palette = { a = "#f0feff", b = "#8ce4f8", c = "#5a90f0", d = "#4a3cb0", f = "#e86cd8", g = "#ffb4f4", o = "#2e1c2c", p = "#fff0ff", r = "#e86cd8", w = "#ffffff" }
 rows = [
@@ -396,7 +396,7 @@ rows = [
   "................",
 ]
 
-[moonwell_can]
+[tool_can_moonwell]
 rarity = 7
 palette = { a = "#f4f8ff", b = "#b0c8fc", c = "#7088e0", d = "#4044a0", f = "#6070d0", g = "#c0d8ff", o = "#2e1c2c", w = "#ffffff", y = "#fff4b0", z = "#ffffff" }
 rows = [
@@ -418,7 +418,7 @@ rows = [
   "................",
 ]
 
-[cauldron_can]
+[tool_can_cauldron]
 rarity = 6
 palette = { a = "#8a92b8", b = "#4e5680", c = "#343c64", d = "#222648", f = "#52e87c", g = "#b8ffc8", h = "#1ea060", k = "#c8d0e8", o = "#2e1c2c", w = "#ffffff" }
 rows = [
@@ -440,7 +440,7 @@ rows = [
   "....oo...oo.....",
 ]
 
-[retort_can]
+[tool_can_retort]
 rarity = 7
 palette = { a = "#f0ffff", b = "#a8ecf0", c = "#5eb8d8", f = "#c06cf0", g = "#e8b4ff", h = "#7a38b8", o = "#2e1c2c", s = "#7c6048", t = "#b08860", w = "#ffffff" }
 rows = [
@@ -462,7 +462,7 @@ rows = [
   "....ooooo.......",
 ]
 
-[athanor_can]
+[tool_can_athanor]
 rarity = 7
 palette = { a = "#e8a090", b = "#b8584c", c = "#7c3444", d = "#4a2040", f = "#ffe060", g = "#ff9830", j = "#c8f0ff", k = "#d8e0f0", m = "#8a96c0", n = "#52608c", o = "#2e1c2c", w = "#ffffff" }
 rows = [

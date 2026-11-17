@@ -21,77 +21,77 @@ description = "A gentle green hill where every adventure starts."
 name = "Twilight Desert"
 emoji = "🏜️"
 description = "Dunes that glow at dusk, with trees and fish found nowhere else."
-fuel = { twilight_fuel = 1 }
+fuel = { material_twilight_fuel = 1 }
 
 [area.rust_belt]
 name = "Rust Belt"
 emoji = "⚙️"
 description = "Scrapyards and rusted giants, rich in ore."
-fuel = { rust_fuel = 1 }
+fuel = { material_rust_fuel = 1 }
 
 [area.cadrega_city]
 name = "Cadrega City"
 emoji = "🏙️"
 description = "A walled city of markets, canals and clever machines."
-fuel = { cadrega_fuel = 1 }
+fuel = { material_cadrega_fuel = 1 }
 
 [area.aerial_glades]
 name = "Aerial Glades"
 emoji = "☁️"
 description = "Floating meadows above the clouds."
-fuel = { glade_fuel = 1 }
+fuel = { material_glade_fuel = 1 }
 
 [area.star_kingdom]
 name = "Star Kingdom"
 emoji = "⭐"
 description = "A realm of starlight, past the edge of the sky."
-fuel = { star_fuel = 1 }
+fuel = { material_star_fuel = 1 }
 
 [area.the_void]
 name = "The Void"
 emoji = "🌑"
 description = "Where the map ends."
-fuel = { void_fuel = 1 }
+fuel = { material_void_fuel = 1 }
 
 # ---- The ship: tier N takes you to area N. `parts` are used up, `skill_floors` are levels you must already have.
 [[ship_tier]]
 name = "Patchwork Raft"
 emoji = "🛶"
 bits = 10000
-parts = { hardwood = 5, iron_ore = 100, plant_fiber = 50, coral_shard = 20 }
+parts = { material_hardwood = 5, material_iron_ore = 100, material_plant_fiber = 50, material_coral_shard = 20 }
 skill_floors = { mining = 8, fishing = 8, foraging = 8, farming = 8 }
 
 [[ship_tier]]
 name = "Dune Skiff"
 emoji = "⛵"
 bits = 50000
-parts = { hardwood = 15, silver_ore = 60, beeswax = 10, coral_shard = 60 }
+parts = { material_hardwood = 15, material_silver_ore = 60, material_beeswax = 10, material_coral_shard = 60 }
 skill_floors = { mining = 19, fishing = 19, foraging = 19, farming = 19 }
 
 [[ship_tier]]
 name = "Scrap Cruiser"
 emoji = "🚢"
 bits = 250000
-parts = { fine_bark = 20, platinum_ore = 40, living_vine = 10, sardine = 50 }
+parts = { material_fine_bark = 20, material_platinum_ore = 40, material_living_vine = 10, fish_sardine = 50 }
 skill_floors = { mining = 27, fishing = 27, foraging = 27, farming = 27 }
 
 [[ship_tier]]
 name = "Sky Frigate"
 emoji = "🛳️"
 bits = 1000000
-parts = { maple_leaf = 20, sapphire = 20, living_vine = 25, swordfish = 20 }
+parts = { material_maple_leaf = 20, material_sapphire = 20, material_living_vine = 25, fish_swordfish = 20 }
 skill_floors = { mining = 35, fishing = 35, foraging = 35, farming = 35 }
 
 [[ship_tier]]
 name = "Star Clipper"
 emoji = "🚀"
 bits = 5000000
-parts = { aged_feather = 5, emerald = 25, starfruit = 10, marlin = 15 }
+parts = { material_aged_feather = 5, material_emerald = 25, crop_starfruit = 10, fish_marlin = 15 }
 skill_floors = { mining = 42, fishing = 42, foraging = 42, farming = 42 }
 
 [[ship_tier]]
 name = "Void Runner"
 emoji = "🛸"
 bits = 25000000
-parts = { gilded_wedge = 5, emerald = 60, ambrosia = 2, abyssal_angler = 5 }
+parts = { material_gilded_wedge = 5, material_emerald = 60, crop_ambrosia = 2, fish_abyssal_angler = 5 }
 skill_floors = { mining = 48, fishing = 48, foraging = 48, farming = 48 }

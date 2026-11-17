@@ -92,11 +92,11 @@ async def test_cooldown_claimable_again_after_it_elapses(db):
 
 async def test_items_add_remove_are_atomic(db):
     user = await make_user()
-    await asyncio.gather(*(user.add_item("apple", 2) for _ in range(10)))
-    assert await user.items() == {"apple": 20}
+    await asyncio.gather(*(user.add_item("crop_apple", 2) for _ in range(10)))
+    assert await user.items() == {"crop_apple": 20}
     with pytest.raises(ValueError):
-        await user.remove_item("apple", 21)
-    await user.remove_item("apple", 20)
+        await user.remove_item("crop_apple", 21)
+    await user.remove_item("crop_apple", 20)
     assert await user.items() == {}  # emptied stacks are deleted
     with pytest.raises(ValueError):
         await user.remove_item("pear", 1)
@@ -104,17 +104,17 @@ async def test_items_add_remove_are_atomic(db):
 
 async def test_concurrent_item_removals_cannot_go_negative(db):
     user = await make_user()
-    await user.add_item("apple", 5)
+    await user.add_item("crop_apple", 5)
 
     async def take():
         try:
-            await user.remove_item("apple", 3)
+            await user.remove_item("crop_apple", 3)
             return True
         except ValueError:
             return False
 
     assert (await asyncio.gather(*(take() for _ in range(4)))).count(True) == 1
-    assert await user.item_quantity("apple") == 2
+    assert await user.item_quantity("crop_apple") == 2
 
 
 async def test_item_ids_with_dots_or_symbols_are_rejected(db):
@@ -147,17 +147,17 @@ async def test_skills_default_and_xp_accumulates(db):
 
 async def test_update_skill_persists_nested_data_and_columns(db):
     user = await make_user()
-    hoe = await user.give_instance("starter_axe")  # any real instance id will do
+    hoe = await user.give_instance("tool_axe_starter")  # any real instance id will do
 
     def plant(farming: Farming):
-        farming.farm.plot_2.crop_id = "apple"
+        farming.farm.plot_2.crop_id = "crop_apple"
         farming.farm.plot_2.cycle = 3
         farming.equipped_instance_id = hoe.id
         farming.xp += 7
 
     await user.update_skill("farming", plant)
     loaded = await user.skill("farming")
-    assert loaded.farm.plot_2.crop_id == "apple" and loaded.farm.plot_2.cycle == 3
+    assert loaded.farm.plot_2.crop_id == "crop_apple" and loaded.farm.plot_2.cycle == 3
     assert loaded.farm.plot_1.crop_id is None
     assert (loaded.equipped_instance_id, loaded.xp) == (hoe.id, 7)
 
@@ -201,7 +201,7 @@ async def test_settings_roundtrip_and_validation(db):
 
 async def test_deleting_a_user_cascades(db):
     user = await make_user()
-    await user.add_item("apple", 1)
+    await user.add_item("crop_apple", 1)
     await user.inc_stat("x")
     async with get_database().session() as session:
         await session.execute(text("DELETE FROM users WHERE discord_id = 1"))

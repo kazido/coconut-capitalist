@@ -1,0 +1,283 @@
+"""prefixed ids: every item id gets its category prefix, and the pets are named for their wisps
+
+Item ids (`rookiepickaxe` -> `tool_pickaxe_rookie`, `cod` -> `fish_cod`, ...) and pet ids (`dog` -> `cinder`) changed so the emoji
+name equals the id (docs/plans/prefixed-ids.md). This rewrites every place a player's data stores one: the inventory, tool
+templates, the JSON blobs (skill data, settings, pethouse, enchants, tree rewards, the shared community state) and the
+`starter_claimed_<tool>` stats. The map is written out here (copied from scripts/rename_map.toml) so the migration does not
+depend on the code. Run on a backup copy first; the downgrade applies the inverse map.
+
+Revision ID: 0009
+Revises: 0008
+"""
+import json
+
+from alembic import op
+import sqlalchemy as sa
+
+
+revision = '0009'
+down_revision = '0008'
+branch_labels = None
+depends_on = None
+
+# old item id -> new item id
+ITEMS = {
+    "abyssal_angler": "fish_abyssal_angler",
+    "abyssal_rod": "tool_rod_abyssal",
+    "acorn_mix": "food_acorn_mix",
+    "aged_feather": "material_aged_feather",
+    "amber": "material_amber",
+    "ambrosia": "crop_ambrosia",
+    "ambrosia_seed": "seed_ambrosia",
+    "apple": "crop_apple",
+    "apple_seed": "seed_apple",
+    "athanor_can": "tool_can_athanor",
+    "balance_gemstone": "key_gemstone_balance",
+    "bass": "fish_bass",
+    "bastards_broadaxe": "tool_broadaxe_bastards",
+    "beeswax": "material_beeswax",
+    "beeswax_s2": "material_beeswax_s2",
+    "beeswax_s3": "material_beeswax_s3",
+    "blueberry": "crop_blueberry",
+    "blueberry_seed": "seed_blueberry",
+    "burger": "food_burger",
+    "cadrega_fuel": "material_cadrega_fuel",
+    "canopy_axe": "tool_axe_canopy",
+    "catfish": "fish_catfish",
+    "cauldron_can": "tool_can_cauldron",
+    "clay": "material_clay",
+    "coal": "material_coal",
+    "coconut": "crop_coconut",
+    "coconut_seed": "seed_coconut",
+    "cod": "fish_cod",
+    "compost": "material_compost",
+    "copper_can": "tool_can_copper",
+    "copper_ore": "material_copper_ore",
+    "coral_shard": "material_coral_shard",
+    "coral_shard_s2": "material_coral_shard_s2",
+    "coral_shard_s3": "material_coral_shard_s3",
+    "crystal_can": "tool_can_crystal",
+    "crystal_chew": "food_crystal_chew",
+    "crystal_pickaxe": "tool_pickaxe_crystal",
+    "deepdelver_pickaxe": "tool_pickaxe_deepdelver",
+    "dewdrop": "material_dewdrop",
+    "dreamnail": "tool_dreamnail",
+    "dried_squid": "food_dried_squid",
+    "dusty_dandelion": "crop_dusty_dandelion",
+    "dusty_dandelion_seed": "seed_dusty_dandelion",
+    "elderwood_axe": "tool_axe_elderwood",
+    "emerald": "material_emerald",
+    "familiar_orb": "key_orb_familiar",
+    "feather": "material_feather",
+    "fine_bark": "material_fine_bark",
+    "fine_bark_s2": "material_fine_bark_s2",
+    "fine_bark_s3": "material_fine_bark_s3",
+    "fish_flakes": "food_fish_flakes",
+    "foragers_hatchet": "tool_hatchet_foragers",
+    "garnet": "material_garnet",
+    "gatherers_axe": "tool_axe_gatherers",
+    "geode_feast": "food_geode_feast",
+    "geode_pickaxe": "tool_pickaxe_geode",
+    "giant_squid": "fish_giant_squid",
+    "gilded_wedge": "material_gilded_wedge",
+    "glade_fuel": "material_glade_fuel",
+    "gold_can": "tool_can_gold",
+    "gold_ore": "material_gold_ore",
+    "gold_ore_s2": "material_gold_ore_s2",
+    "gold_ore_s3": "material_gold_ore_s3",
+    "golden_koi": "fish_golden_koi",
+    "golden_roe": "bait_golden_roe",
+    "golden_sap": "food_golden_sap",
+    "graveyard_key": "key_graveyard",
+    "greater_orb": "key_orb_greater",
+    "hardwood": "material_hardwood",
+    "hardwood_s2": "material_hardwood_s2",
+    "hardwood_s3": "material_hardwood_s3",
+    "herring": "fish_herring",
+    "honeycomb": "food_honeycomb",
+    "hot_pepper": "crop_hot_pepper",
+    "hot_pepper_seed": "seed_hot_pepper",
+    "implosion_gemstone": "key_gemstone_implosion",
+    "iron_can": "tool_can_iron",
+    "iron_ore": "material_iron_ore",
+    "iron_ore_s2": "material_iron_ore_s2",
+    "iron_ore_s3": "material_iron_ore_s3",
+    "iron_wedge": "material_iron_wedge",
+    "ironbound_pickaxe": "tool_pickaxe_ironbound",
+    "kraken_rod": "tool_rod_kraken",
+    "land_deed": "key_land_deed",
+    "lantern_rod": "tool_rod_lantern",
+    "largebranch": "tool_largebranch",
+    "lemon": "crop_lemon",
+    "lemon_seed": "seed_lemon",
+    "lesser_orb": "key_orb_lesser",
+    "leviathan_pup": "fish_leviathan_pup",
+    "leviathan_rod": "tool_rod_leviathan",
+    "living_vine": "material_living_vine",
+    "living_vine_s2": "material_living_vine_s2",
+    "living_vine_s3": "material_living_vine_s3",
+    "maple_leaf": "material_maple_leaf",
+    "maple_leaf_s2": "material_maple_leaf_s2",
+    "maple_leaf_s3": "material_maple_leaf_s3",
+    "marlin": "fish_marlin",
+    "masterwork_axe": "tool_axe_masterwork",
+    "masterwork_pickaxe": "tool_pickaxe_masterwork",
+    "masterwork_rod": "tool_rod_masterwork",
+    "megaladegalodon": "fish_megaladegalodon",
+    "moonlit_rod": "tool_rod_moonlit",
+    "moonwell_can": "tool_can_moonwell",
+    "moray_eel": "fish_moray_eel",
+    "mosswood_axe": "tool_axe_mosswood",
+    "motherlode_pickaxe": "tool_pickaxe_motherlode",
+    "muskie": "fish_muskie",
+    "mythril_pickaxe": "tool_pickaxe_mythril",
+    "oarfish": "fish_oarfish",
+    "obsidian": "material_obsidian",
+    "oreo_gemstone": "material_oreo_gemstone",
+    "peace_gemstone": "key_gemstone_peace",
+    "perch": "fish_perch",
+    "pike": "fish_pike",
+    "plant_fiber": "material_plant_fiber",
+    "platinum_ore": "material_platinum_ore",
+    "platinum_ore_s2": "material_platinum_ore_s2",
+    "platinum_ore_s3": "material_platinum_ore_s3",
+    "poseidon_rod": "tool_rod_poseidon",
+    "prospector_pickaxe": "tool_pickaxe_prospector",
+    "pufferfish": "fish_pufferfish",
+    "radar_battery": "material_radar_battery",
+    "rage_gemstone": "key_gemstone_rage",
+    "reinforced_axe": "tool_axe_reinforced",
+    "reinforced_pickaxe": "tool_pickaxe_reinforced",
+    "reinforced_rod": "tool_rod_reinforced",
+    "retort_can": "tool_can_retort",
+    "rookiepickaxe": "tool_pickaxe_rookie",
+    "rotation_wedge": "material_rotation_wedge",
+    "rust_fuel": "material_rust_fuel",
+    "rustedbroadsword": "tool_rustedbroadsword",
+    "salmon": "fish_salmon",
+    "sanity_gemstone": "key_gemstone_sanity",
+    "sapphire": "material_sapphire",
+    "sardine": "fish_sardine",
+    "scarab_bomb": "tool_scarab_bomb",
+    "sea_feast": "food_sea_feast",
+    "seekers_pickaxe": "tool_pickaxe_seekers",
+    "shiningsilver": "tool_shiningsilver",
+    "shrimp": "bait_shrimp",
+    "silver_can": "tool_can_silver",
+    "silver_ore": "material_silver_ore",
+    "silver_ore_s2": "material_silver_ore_s2",
+    "silver_ore_s3": "material_silver_ore_s3",
+    "siren_rod": "tool_rod_siren",
+    "sovereign_hatchet": "tool_hatchet_sovereign",
+    "squid_chunk": "bait_squid_chunk",
+    "star_fuel": "material_star_fuel",
+    "starfruit": "crop_starfruit",
+    "starfruit_seed": "seed_starfruit",
+    "starter_axe": "tool_axe_starter",
+    "starter_rod": "tool_rod_starter",
+    "steel_pickaxe": "tool_pickaxe_steel",
+    "stone_biscuit": "food_stone_biscuit",
+    "sturdy_rod": "tool_rod_sturdy",
+    "sturgeon": "fish_sturgeon",
+    "swordfish": "fish_swordfish",
+    "thornwhip_axe": "tool_axe_thornwhip",
+    "tidecaller_rod": "tool_rod_tidecaller",
+    "tin_can": "tool_can_tin",
+    "tin_ore": "material_tin_ore",
+    "trident_rod": "tool_rod_trident",
+    "trophy_rod": "tool_rod_trophy",
+    "trout": "fish_trout",
+    "tuna": "fish_tuna",
+    "twilight_fuel": "material_twilight_fuel",
+    "veinhunter_pickaxe": "tool_pickaxe_veinhunter",
+    "void_fuel": "material_void_fuel",
+    "watermelon": "crop_watermelon",
+    "watermelon_seed": "seed_watermelon",
+    "wilted_axe": "tool_axe_wilted",
+    "wilted_rose": "crop_wilted_rose",
+    "wilted_rose_seed": "seed_wilted_rose",
+    "worldsplitter_pickaxe": "tool_pickaxe_worldsplitter",
+    "worm": "bait_worm",
+}
+
+# old pet id -> new pet id
+PETS = {
+    "dog": "cinder",
+    "cat": "drizzle",
+    "turtle": "murk",
+    "frog": "dew",
+    "monkey": "bough",
+    "koala": "haze",
+    "bee": "pollen",
+    "eagle": "squall",
+    "python": "undertow",
+    "crab": "brine",
+    "dragon": "tempest",
+    "otter": "ripple",
+    "beaver": "sprig",
+    "mole": "lode",
+    "rabbit": "clover",
+    "wolf": "scorch",
+    "seal": "eddy",
+    "woodpecker": "canopy",
+    "badger": "cairn",
+    "hedgehog": "thistle",
+    "lion": "pyre",
+    "phoenix": "halo",
+    "magpie": "gloam",
+    "fox": "lune",
+    "raven": "umbra",
+}
+
+
+def _walk(value, mapping):
+    """Rename every dict key and every string value that is an id."""
+    if isinstance(value, dict):
+        return {mapping.get(k, k): _walk(v, mapping) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_walk(v, mapping) for v in value]
+    if isinstance(value, str):
+        return mapping.get(value, value)
+    return value
+
+
+def _json_column(conn, table, key_columns, column, mapping):
+    rows = conn.execute(sa.text(f"SELECT {', '.join(key_columns)}, {column} FROM {table}")).fetchall()
+    for row in rows:
+        *keys, raw = row
+        if raw is None:
+            continue
+        data = json.loads(raw) if isinstance(raw, (str, bytes)) else raw
+        new = _walk(data, mapping)
+        if new != data:
+            where = " AND ".join(f"{c} = :k{i}" for i, c in enumerate(key_columns))
+            conn.execute(
+                sa.text(f"UPDATE {table} SET {column} = :v WHERE {where}"),
+                {"v": json.dumps(new), **{f"k{i}": k for i, k in enumerate(keys)}},
+            )
+
+
+def _rename(conn, items, pets):
+    """Rewrite every stored id. Two passes through a temporary name are not needed: new ids never equal old ids."""
+    for old, new in items.items():
+        conn.execute(sa.text("UPDATE user_items SET item_id = :n WHERE item_id = :o"), {"o": old, "n": new})
+        conn.execute(sa.text("UPDATE item_instances SET template_id = :n WHERE template_id = :o"), {"o": old, "n": new})
+        conn.execute(
+            sa.text("UPDATE user_stats SET name = :n WHERE name = :o"),
+            {"o": f"starter_claimed_{old}", "n": f"starter_claimed_{new}"},
+        )
+    _json_column(conn, "user_skills", ["user_id", "skill"], "data", items)
+    _json_column(conn, "item_instances", ["id"], "rolled", items)
+    _json_column(conn, "item_instances", ["id"], "enchants", items)
+    _json_column(conn, "tree_rewards", ["window", "user_id"], "drops", items)
+    _json_column(conn, "community_state", ["key"], "data", items)
+    _json_column(conn, "users", ["discord_id"], "settings", {**items, **pets})
+    _json_column(conn, "users", ["discord_id"], "pethouse", {**items, **pets})
+
+
+def upgrade() -> None:
+    _rename(op.get_bind(), ITEMS, PETS)
+
+
+def downgrade() -> None:
+    _rename(op.get_bind(), {v: k for k, v in ITEMS.items()}, {v: k for k, v in PETS.items()})

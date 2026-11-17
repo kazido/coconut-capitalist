@@ -31,7 +31,7 @@ async def player(user_id, level=None, axe=True):
     if level:
         await user.add_xp("foraging", User.level_to_xp(level) + 1)
     if axe:
-        inst = await user.give_instance("starter_axe")
+        inst = await user.give_instance("tool_axe_starter")
         await equip(user, "foraging", inst.id)
     return user
 
@@ -232,7 +232,7 @@ async def test_a_pets_xp_bonus_is_added_to_the_xp_you_collect(db):
 
     users = await team(2)
     await fell(users, [0.5, 0.5], effort=40.0)  # (enough xp that a percentage bonus shows through the rounding)
-    await users[0].update_pethouse(lambda h: (h.pets.update({"koala": OwnedPet(xp=pets.level_xp(20, REG.pets["koala"].rarity, REG))}), setattr(h, "active", "koala")))
+    await users[0].update_pethouse(lambda h: (h.pets.update({"haze": OwnedPet(xp=pets.level_xp(20, REG.pets["haze"].rarity, REG))}), setattr(h, "active", "haze")))
     with_pet, without = (await pt.claim(users[0], T0 + 10, REG))[0], (await pt.claim(users[1], T0 + 10, REG))[0]
     assert with_pet.xp > without.xp > 0  # the same work, but the koala adds its bonus (and both get the party's)
 

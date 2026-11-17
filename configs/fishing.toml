@@ -100,32 +100,32 @@ xp = 150                          # a chest pays at least this much xp...
 xp_level_fraction = 0.25          # ...or a quarter of the xp it takes to finish your current level, so it stays worth opening as you grow
 
 [[treasure.loot]]
-item = "coral_shard"
+item = "material_coral_shard"
 min = 2
 max = 6
 chance = 1.0
 [[treasure.loot]]
-item = "sturgeon"
+item = "fish_sturgeon"
 min = 1
 max = 1
 chance = 0.15
 [[treasure.loot]]
-item = "oarfish"
+item = "fish_oarfish"
 min = 1
 max = 1
 chance = 0.05
 [[treasure.loot]]
-item = "leviathan_pup"
+item = "fish_leviathan_pup"
 min = 1
 max = 1
 chance = 0.01
 [[treasure.loot]]
-item = "golden_roe"
+item = "bait_golden_roe"
 min = 1
 max = 2
 chance = 0.05
 [[treasure.loot]]
-item = "familiar_orb"
+item = "key_orb_familiar"
 min = 1
 max = 1
 chance = 0.03
@@ -175,7 +175,7 @@ chance = 0.001                    # 1 in 1,000 (the wiki); boosts fishing xp whe
 min_share = 0.05                  # to be paid for a monthly goal you must have done this share of it
 
 [community.book]                  # donate these fish; when every page is full the whole server is paid and the book levels up
-fish = ["marlin", "giant_squid", "oarfish", "abyssal_angler", "golden_koi"]   # 2 legendary, 2 premium, 1 mythical
+fish = ["fish_marlin", "fish_giant_squid", "fish_oarfish", "fish_abyssal_angler", "fish_golden_koi"]   # 2 legendary, 2 premium, 1 mythical
 max_level = 10
 donor_bits_per_sell = 1.0         # a donated fish pays +100% of its sell price (these fish are rare: you give them up)
 donor_xp_per_rarity = 40
@@ -262,42 +262,42 @@ fog = "🌫️ **Fog:** you can only see the next couple of steps."
 wild = "🎲 **Wild:** some arrows are hidden behind coin-flip ❓ you can only guess."
 
 [[boss.loot]]
-item = "coral_shard"
+item = "material_coral_shard"
 min = 5
 max = 12
 chance = 1.0
 [[boss.loot]]                     # a boss pays a haul of the fish that tools are upgraded with (like the mining vault)
-item = "salmon"
+item = "fish_salmon"
 min = 6
 max = 10
 chance = 1.0
 [[boss.loot]]
-item = "trout"
+item = "fish_trout"
 min = 8
 max = 12
 chance = 1.0
 [[boss.loot]]
-item = "pufferfish"
+item = "fish_pufferfish"
 min = 1
 max = 3
 chance = 0.6
 [[boss.loot]]
-item = "tuna"
+item = "fish_tuna"
 min = 2
 max = 4
 chance = 0.5
 [[boss.loot]]
-item = "sturgeon"
+item = "fish_sturgeon"
 min = 1
 max = 1
 chance = 0.25
 [[boss.loot]]
-item = "oarfish"
+item = "fish_oarfish"
 min = 1
 max = 1
 chance = 0.1
 [[boss.loot]]
-item = "leviathan_pup"
+item = "fish_leviathan_pup"
 min = 1
 max = 1
 chance = 0.03
@@ -315,15 +315,15 @@ min_level = 1
 wait_multiplier = 1.0
 xp = 46
 [waters.fish]
-cod = 1
-herring = 2
-sardine = 3
-bass = 8
-trout = 10
-perch = 12
-catfish = 40
-salmon = 50
-pufferfish = 150
+fish_cod = 1
+fish_herring = 2
+fish_sardine = 3
+fish_bass = 8
+fish_trout = 10
+fish_perch = 12
+fish_catfish = 40
+fish_salmon = 50
+fish_pufferfish = 150
 
 [[waters]]
 id = "river"
@@ -334,15 +334,15 @@ min_level = 3
 wait_multiplier = 1.0
 xp = 55
 [waters.fish]
-perch = 1
-trout = 2
-bass = 3
-catfish = 12
-salmon = 15
-pike = 60
-muskie = 70
-sturgeon = 700
-golden_koi = 4000
+fish_perch = 1
+fish_trout = 2
+fish_bass = 3
+fish_catfish = 12
+fish_salmon = 15
+fish_pike = 60
+fish_muskie = 70
+fish_sturgeon = 700
+fish_golden_koi = 4000
 
 [[waters]]
 id = "reef"
@@ -353,14 +353,14 @@ min_level = 8
 wait_multiplier = 1.2
 xp = 65
 [waters.fish]
-herring = 1
-sardine = 2
-bass = 5
-tuna = 6
-moray_eel = 20
-pufferfish = 25
-swordfish = 40
-oarfish = 600
+fish_herring = 1
+fish_sardine = 2
+fish_bass = 5
+fish_tuna = 6
+fish_moray_eel = 20
+fish_pufferfish = 25
+fish_swordfish = 40
+fish_oarfish = 600
 
 [[waters]]
 id = "deep_sea"
@@ -371,20 +371,20 @@ min_level = 15
 wait_multiplier = 1.5
 xp = 90
 [waters.fish]
-tuna = 1
-swordfish = 5
-marlin = 120
-giant_squid = 120
-abyssal_angler = 350
-megaladegalodon = 400  # TODO(balance): Ahna's mega shark
-leviathan_pup = 2500
+fish_tuna = 1
+fish_swordfish = 5
+fish_marlin = 120
+fish_giant_squid = 120
+fish_abyssal_angler = 350
+fish_megaladegalodon = 400  # TODO(balance): Ahna's mega shark
+fish_leviathan_pup = 2500
 [[boss.loot]]
-item = "golden_roe"
+item = "bait_golden_roe"
 min = 1
 max = 3
 chance = 0.10
 [[boss.loot]]
-item = "familiar_orb"
+item = "key_orb_familiar"
 min = 1
 max = 1
 chance = 0.08
@@ -436,9 +436,9 @@ min_rarity = 3                    # Rare fish and better only
 xp_factor = 0.5
 craft_bits = 25000
 [pots.craft_items]
-hardwood = 10
-plant_fiber = 15
-coral_shard = 5
+material_hardwood = 10
+material_plant_fiber = 15
+material_coral_shard = 5
 
 [[pots.levels]]                   # level 1
 interval_minutes = 75
@@ -449,38 +449,38 @@ interval_minutes = 65
 capacity = 8
 upgrade_bits = 60000
 [pots.levels.upgrade_items]
-hardwood = 20
-plant_fiber = 20
-coral_shard = 10
+material_hardwood = 20
+material_plant_fiber = 20
+material_coral_shard = 10
 [[pots.levels]]
 interval_minutes = 52
 capacity = 12
 upgrade_bits = 250000
 [pots.levels.upgrade_items]
-hardwood = 50
-plant_fiber = 50
-coral_shard = 25
-salmon = 5
+material_hardwood = 50
+material_plant_fiber = 50
+material_coral_shard = 25
+fish_salmon = 5
 [[pots.levels]]
 interval_minutes = 40
 capacity = 16
 upgrade_bits = 1000000
 [pots.levels.upgrade_items]
-hardwood = 120
-plant_fiber = 100
-coral_shard = 60
-tuna = 5
-swordfish = 1
+material_hardwood = 120
+material_plant_fiber = 100
+material_coral_shard = 60
+fish_tuna = 5
+fish_swordfish = 1
 [[pots.levels]]
 interval_minutes = 30
 capacity = 24
 upgrade_bits = 5000000
 [pots.levels.upgrade_items]
-hardwood = 300
-plant_fiber = 250
-coral_shard = 150
-swordfish = 5
-marlin = 1
+material_hardwood = 300
+material_plant_fiber = 250
+material_coral_shard = 150
+fish_swordfish = 5
+fish_marlin = 1
 
 # Double Hook: after you LAND a fish (a plain catch: never a boss, a party fight or a chest, and never after a Quick cast itself) a second line may already be biting.
 # The chance is the `double_hook` stat (the Double Hook rod enchant, 4% a level, and the Double Hook Mastery node, 10%); `base_chance` is added to it for everyone.
@@ -497,30 +497,30 @@ cap = 0.25                        # the offer chance never goes above this, howe
 # each level costs bits and fish from the waters it helps in.  TODO(balance): all numbers
 [radar]
 unlock_level = 25
-battery = "radar_battery"
+battery = "material_radar_battery"
 
 [[radar.levels]]
 multiplier = 1.4
 slots = 1
 bits = 2000000
-items = { tuna = 150, swordfish = 20, coral_shard = 100 }
+items = { fish_tuna = 150, fish_swordfish = 20, material_coral_shard = 100 }
 [[radar.levels]]
 multiplier = 1.8
 slots = 1
 bits = 10000000
-items = { swordfish = 80, moray_eel = 40, coral_shard = 200 }
+items = { fish_swordfish = 80, fish_moray_eel = 40, material_coral_shard = 200 }
 [[radar.levels]]
 multiplier = 2.3
 slots = 2
 bits = 40000000
-items = { giant_squid = 6, marlin = 6, pike = 60, coral_shard = 400 }
+items = { fish_giant_squid = 6, fish_marlin = 6, fish_pike = 60, material_coral_shard = 400 }
 [[radar.levels]]
 multiplier = 2.8
 slots = 2
 bits = 150000000
-items = { abyssal_angler = 4, giant_squid = 15, marlin = 15, coral_shard = 600 }
+items = { fish_abyssal_angler = 4, fish_giant_squid = 15, fish_marlin = 15, material_coral_shard = 600 }
 [[radar.levels]]
 multiplier = 3.3
 slots = 3
 bits = 600000000
-items = { leviathan_pup = 1, abyssal_angler = 10, oarfish = 6, coral_shard = 900 }
+items = { fish_leviathan_pup = 1, fish_abyssal_angler = 10, fish_oarfish = 6, material_coral_shard = 900 }

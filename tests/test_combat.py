@@ -251,12 +251,12 @@ async def test_a_fresh_player_fights_bare_handed_and_a_sword_adds_attack_and_ski
     lv = User.xp_to_level(0)
     assert (bare.max_hp, bare.attack, bare.defense, bare.speed) == (
         p.base_hp + p.hp_per_level * lv, p.base_attack + p.attack_per_level * lv, p.base_defense + p.defense_per_level * lv, p.speed)
-    sword = await user.give_instance("rustedbroadsword")
+    sword = await user.give_instance("tool_rustedbroadsword")
     await user.equip("combat", sword.id)
     armed = await combat.build_player(user)
-    power = get_registry().item("rustedbroadsword").tool.power
+    power = get_registry().item("tool_rustedbroadsword").tool.power
     assert armed.attack == bare.attack + p.attack_per_power * power
-    assert armed.skills == RULES.kits["rustedbroadsword"]
+    assert armed.skills == RULES.kits["tool_rustedbroadsword"]
 
 
 async def test_settle_pays_xp_and_counts_kills(db):
