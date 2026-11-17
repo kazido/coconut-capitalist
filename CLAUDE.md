@@ -7,6 +7,18 @@ trading, parties, casino and minigames, one shared economy. Everything below is 
 > `docs/HANDOFF.md` (current state; read only its "Latest state" part when resuming work), `docs/DESIGN.md` (HUGE, ~120 KB: Grep for the system's
 > heading, then read only that section), `docs/ROADMAP.md`, `docs/AUDIT.md` (history, rarely needed). Plans for new work go in `docs/plans/`.
 
+## Team (automatic delegation; the user pre-approved this, no need to ask)
+
+You are the **lead**: design, planning, tricky bugs, review, commits. Subagents in `.claude/agents/` (cheap Haiku) do the bulk work:
+`worker` (bounded code change), `tester` (tests), `writer` (docs/prose).
+
+- **Delegate** when the change is well-specified and bounded (<= ~3 files, a clear behaviour, known tests), or tests/docs are needed for finished code.
+  Write the brief yourself: exact files, functions to reuse, behaviour, tests to pass. Independent pieces can run in parallel.
+- **Do it yourself** when it is small (a few lines), needs a design decision, touches many files at once, is a subtle bug, or the cause is unknown.
+- **Review cheaply:** `git diff --stat`, the verify tail, and only the key hunks. If a worker's result is wrong, retry once with a sharper brief,
+  then fix it yourself. Never loop. Then commit (workers do not commit).
+- Briefs live in the prompt, not in files. Plans for bigger work go in `docs/plans/`.
+
 ## Hard rules (the user set these; do not break them)
 
 - **One branch only: `master`.** The old `claude/discord-bot-audit-modernize-4dd6c5` branch and its worktree are gone; `master` in the

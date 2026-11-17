@@ -150,5 +150,5 @@ art/out/
 art/vendor/
 art/*.zip
 
-# local-model scratch
+# scratch
 .local/
