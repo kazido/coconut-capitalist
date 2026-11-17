@@ -161,10 +161,6 @@ class Registry:
         problems = []
         for area in rules.areas:
             problems += [f"areas.toml [{area.id}]: unknown fuel item '{i}'" for i in area.fuel if i not in self.items]
-            if self.foraging is not None and area.foraging_max_zone > self.foraging.zones:
-                problems.append(f"areas.toml [{area.id}]: foraging_max_zone is past the last zone ({self.foraging.zones})")
-            if self.fishing is not None and area.fishing_max_water not in {w.id for w in self.fishing.waters}:
-                problems.append(f"areas.toml [{area.id}]: unknown fishing water '{area.fishing_max_water}'")
         for n, tier in enumerate(rules.ship_tiers, 1):
             problems += [f"areas.toml ship tier {n}: unknown part '{i}'" for i in tier.parts if i not in self.items]
             problems += [f"areas.toml ship tier {n}: unknown skill '{s}'" for s in tier.skill_floors if s not in ("mining", "fishing", "foraging", "farming")]
@@ -397,7 +393,7 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
     recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
     raw_areas = _read(config_dir, "areas")
-    areas = _build(AreaRules, "areas", [("areas", {"areas": [{"id": k, **v} for k, v in raw_areas.get("area", {}).items()], "ship_tiers": raw_areas.get("ship_tier", [])})])[0]
+    areas = _build(AreaRules, "areas", [("areas", {"areas": [{"id": k, **v} for k, v in raw_areas.get("area", {}).items()], "ship_tiers": raw_areas.get("ship_tier", []), "location_levels": raw_areas.get("locations", {}).get("min_levels", [])})])[0]
     return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools, shipments, scrolls, recipes, areas)
 
 

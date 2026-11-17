@@ -1399,15 +1399,13 @@ class ShipmentRules(_Data):
 
 # ---- Areas and the ship (configs/areas.toml) -------------------------------------------------------------------------------------------
 class Area(_Data):
-    """One area of the world. It caps how far each skill's own zones open (the skill level is still needed too).
+    """One area of the world. Each area holds LOCATIONS_PER_AREA locations of every skill (see AreaRules.location_levels).
     `fuel` is what the ship burns to get here for the FIRST time; going back to an area you reached is free."""
 
     id: str
     name: str
     emoji: str
     description: str
-    foraging_max_zone: int = Field(ge=1)  # foraging zones 1..this are open
-    fishing_max_water: str  # the deepest fishing water id that is open (waters are listed shallowest first)
     fuel: dict[str, int] = Field(default_factory=dict)  # item -> quantity burned on the first trip here
 
 
@@ -1421,8 +1419,12 @@ class ShipTier(_Data):
     skill_floors: dict[str, int]  # skill -> the level you need in it
 
 
+LOCATIONS_PER_AREA = 2
+
+
 class AreaRules(_Data):
     areas: list[Area] = Field(min_length=2)  # in travel order: the starting area first
+    location_levels: list[int]  # the skill level that opens location n (1-based n = index + 1), the same for every skill; two per area
     ship_tiers: list[ShipTier] = Field(min_length=1)  # one per area after the first
 
     @model_validator(mode="after")
@@ -1433,9 +1435,11 @@ class AreaRules(_Data):
             raise ValueError("area ids must be unique")
         if self.areas[0].fuel:
             raise ValueError("the first area is where you start: it needs no fuel")
-        caps = [a.foraging_max_zone for a in self.areas]
-        if caps != sorted(caps):
-            raise ValueError("foraging_max_zone must not shrink from one area to the next")
+        levels = self.location_levels
+        if len(levels) != LOCATIONS_PER_AREA * len(self.areas):
+            raise ValueError(f"locations.min_levels needs {LOCATIONS_PER_AREA} levels per area ({LOCATIONS_PER_AREA * len(self.areas)})")
+        if levels[0] != 1 or levels != sorted(set(levels)):
+            raise ValueError("locations.min_levels must start at 1 and strictly climb")
         return self
 
 

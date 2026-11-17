@@ -1,7 +1,7 @@
 """Areas and the ship (configs/areas.toml). No Discord here.
 
 A player has a ship tier (0 = no ship yet), the highest area they have reached, and the area they are in now. An area caps how far
-each skill's zones open (`max_zone`, `max_water`). Travelling to an area you have already reached is free; the first trip to the
+each skill's locations open (`open_locations`). Travelling to an area you have already reached is free; the first trip to the
 next one burns its fuel and needs the ship tier. State is one small JSON document per player (services.community), so no migration.
 """
 
@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from cococap.errors import GameRuleError
 from cococap.registry import Registry, get_registry
-from cococap.registry.models import Area, ShipTier
+from cococap.registry.models import LOCATIONS_PER_AREA, Area, ShipTier
 from cococap.services import community, payment
 from cococap.user import User
 
@@ -51,14 +51,45 @@ async def current_area(user: User, registry: Registry | None = None) -> Area:
     return reg.areas.areas[(await state(user, reg)).current]
 
 
-async def max_zone(user: User, registry: Registry | None = None) -> int:
-    """The deepest foraging zone the area you are in allows (the foraging level is still needed on top)."""
-    return (await current_area(user, registry)).foraging_max_zone
+def area_of_location(n: int) -> int:
+    """The index of the area that location `n` (1-based) lives in: two locations per area."""
+    return (n - 1) // LOCATIONS_PER_AREA
 
 
-async def max_water(user: User, registry: Registry | None = None) -> str:
-    """The id of the deepest fishing water the area you are in allows."""
-    return (await current_area(user, registry)).fishing_max_water
+async def skill_level(user: User, skill: str) -> int:
+    return User.xp_to_level((await user.skill(skill)).xp)
+
+
+async def open_locations(user: User, skill: str, registry: Registry | None = None) -> int:
+    """How many of a skill's locations you can use right now (they open in order, so it is "the first N"). A location needs BOTH its skill
+    level and for you to be in its area (or a later one): the area is a ceiling, so a maxed skill still waits on the ship."""
+    reg = registry or get_registry()
+    st = await state(user, reg)
+    level = await skill_level(user, skill)
+    count = 0
+    for n, need in enumerate(reg.areas.location_levels, 1):
+        if need > level or area_of_location(n) > st.current:
+            break
+        count = n
+    return count
+
+
+async def next_location_hint(user: User, skill: str, registry: Registry | None = None) -> str | None:
+    """Why the next location is still shut ("Reach the Rust Belt" / "Needs level 19"), or None when every location is open."""
+    reg = registry or get_registry()
+    opened = await open_locations(user, skill, reg)
+    levels = reg.areas.location_levels
+    if opened >= len(levels):
+        return None
+    n = opened + 1
+    st = await state(user, reg)
+    level = await skill_level(user, skill)
+    problems = []
+    if levels[n - 1] > level:
+        problems.append(f"level {levels[n - 1]} {skill}")
+    if area_of_location(n) > st.current:
+        problems.append(f"be in {reg.areas.areas[area_of_location(n)].name}")
+    return "Needs " + " and ".join(problems)
 
 
 def next_tier(st: ShipState, reg: Registry) -> ShipTier | None:
@@ -68,7 +99,7 @@ def next_tier(st: ShipState, reg: Registry) -> ShipTier | None:
 
 
 async def _levels(user: User) -> dict[str, int]:
-    return {skill: User.xp_to_level((await user.skill(skill)).xp) for skill in SKILLS}
+    return {skill: await skill_level(user, skill) for skill in SKILLS}
 
 
 async def upgrade_ship(user: User, registry: Registry | None = None) -> ShipTier:

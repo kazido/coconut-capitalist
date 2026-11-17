@@ -163,3 +163,5 @@ New crops need: id, name, emoji, wiki, seed price, growth time/yield like their 
 - Mining: 13 ores (copper, coal, clay, tin, iron, silver, gold, amber, obsidian, platinum, garnet, sapphire, emerald) for 14 mines, plus the gems that are
   always present. Borderline but workable (neighbouring mines can differ in odds and hardness); one extra high ore would make it clean. Open.
 - Foraging: 5 materials for 14 forests: needs 9 new (brief updated).
+
+**Step 3 (shared location model) DONE:** `[locations] min_levels` in areas.toml (2 per area); `foraging_max_zone`/`fishing_max_water` removed; `services/areas.py`: `open_locations(user, skill)` (how many open: level AND area), `next_location_hint`, `area_of_location`. Skills are not wired to it yet (next: foraging forests).
