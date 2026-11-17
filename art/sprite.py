@@ -218,6 +218,9 @@ def load_all(art_dir: Path = ART_DIR) -> list[Sprite]:
     sprites += load_sources(art_dir / "sources")
     for mp in sorted((art_dir / "mappings").glob("raven*.toml")):
         sprites += load_raven(mp, raven_dir())
+    # A hand-drawn (or owner) sprite replaces a third-party pick of the same name: drawing a better icon never needs a mapping edit.
+    own = {s.name for s in sprites if s.category != "raven"}
+    sprites = [s for s in sprites if s.category != "raven" or s.name not in own]
     seen: dict[str, str] = {}
     for s in sprites:
         if s.name in seen:
