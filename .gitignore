@@ -148,3 +148,4 @@ configs/local/
 art/local.toml
 art/out/
 art/vendor/
+art/*.zip
