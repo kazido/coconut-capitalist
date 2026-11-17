@@ -4,7 +4,7 @@
 Upgrades should eventually need higher-quality materials. The user's decisions:
 - Stars are quality tiers 1★/2★/3★. Each tier is its OWN inventory slot (1★ and 2★ never stack), so players can bulk-sell lower stars once they are past that stage.
 - Stars can NOT be crafted up. They only drop.
-- Higher stars appear only deeper. 2★ can drop early but rarely; by mid-progression (e.g. foraging forest 10 of 20) 2★ is the main drop. 3★ is never the majority drop anywhere.
+- Higher stars depend on the LOCATION, never on depth: each skill moves between locations (forests, waters, ...; see docs/plans/areas-and-ship.md) and only the later locations drop higher stars. 2★ can drop early but rarely; by mid-progression (e.g. foraging forest 10 of 20) 2★ is the main drop. 3★ is never the majority drop anywhere.
 - Only LATER upgrades (the fork and top tiers) ask for 2★/3★ materials. Early upgrades stay plain.
 - Rename foraging "zones" to "forests" (player-facing text only; keep code identifiers).
 
@@ -14,10 +14,8 @@ Upgrades should eventually need higher-quality materials. The user's decisions:
 **Which materials.** Start with upgrade-cost staples: mining ores (copper, tin, iron, gold, silver, platinum) and gems (amber, garnet, sapphire, emerald, obsidian); foraging hardwood, fine bark, maple leaf, feathers; fishing coral shard; farming compost, dewdrop, plant fiber, beeswax, living vine. Not starrable: fish, crops, seeds, bait, key items, wedges.
 
 **Drop rule (the core).** One shared helper `star_tier(progress, rng) -> 1|2|3` in a new `cococap/services/stars.py`, driven by a per-skill progress axis and a data table in `configs/stars.toml`:
-- foraging: forest 1-20 (`foraging.zones`)
-- mining: depth tier / row in the descent (`depth_tables`, floor 30)
-- fishing: rod power / water tier (check exact axis when building)
-- farming: crop/plot tier (check when building)
+- progress = the player's chosen LOCATION in the skill, as a fraction of the skill's ordered locations (`stars.progress(step, steps)`): foraging forest 1-20, fishing waters. Mining and farming have no location ladder yet: wait for the areas work. NOT depth (an earlier draft wrongly used mining depth).
+- Steps 1-3 are built (variants, curve, roll helper). Step 4 (wiring drops) is ON HOLD until the areas agent's per-skill locations land.
 Table = per progress step, weights for 1★/2★/3★, e.g. step 1: 97/3/0; mid: 35/60/5; max: 15/65/20. A guard test asserts 3★ weight < 50% everywhere and 2★ is majority from the configured mid step. The roll happens where drops are granted (one per drop stack; quantity splits are rolled per item or per stack, decide at build), so each skill service calls the helper for starrable drops only.
 
 **Upgrade costs.** `ToolUpgrade.items` keys may be `<id>_s2`/`<id>_s3`; `upgrades._missing` already reads by id so it works unchanged. Edit late-chain tools in `configs/items.toml` (fork and top tiers) to swap part of the plain cost for 2★/3★. Numbers go through `scripts.balance` / `balance-check` so each skill's time-to-upgrade stays equal.
