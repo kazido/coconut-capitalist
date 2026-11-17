@@ -205,7 +205,7 @@ class ForageScreen(Screen):
         view = await foraging.community_tree(self.user)
         now = time.time()
         if view is not None and view.standing:
-            line = (f"### 🌲 Community tree: {species_label(view.species) or 'zone ' + str(view.zone)}  ·  zone {view.zone}\n{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp  ·  "
+            line = (f"### 🌲 Community tree: {species_label(view.species) or 'forest ' + str(view.zone)}  ·  forest {view.zone}\n{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp  ·  "
                     f"**{view.choppers}** chopping  ·  falls over <t:{int(view.closes_at)}:R>")
             if view.yours:
                 line += f"\nYou have chopped **{view.share:.0%}** of it."
@@ -223,15 +223,15 @@ class ForageScreen(Screen):
         body.append(sep())
         heavy = foraging.is_heavy(self.zone, rules) and not (stats and stats.has("soloist"))
         here = ", ".join(f"{sp.emoji} {sp.name}" for sp in rules.species_in(self.zone))
-        private = f"### 🪵 A tree of your own\nZone **{self.zone}**" + (f"  ·  {here}" if here else "") + (
+        private = f"### 🪵 A tree of your own\nForest **{self.zone}**" + (f"  ·  {here}" if here else "") + (
             "  ·  heavy: you swing at half power alone" if heavy else "")
         if len(zones) < rules.zones:
-            private += f"\n-# Zone {zones[-1] + 1} needs level {foraging.zone_level(zones[-1] + 1, rules)}."
+            private += f"\n-# Forest {zones[-1] + 1} needs level {foraging.zone_level(zones[-1] + 1, rules)}."
         body.append(text(private))
         if len(zones) > 1:
             body.append(row(select(
-                "Zone",
-                [discord.SelectOption(label=f"Zone {z}", value=str(z), default=z == self.zone,
+                "Forest",
+                [discord.SelectOption(label=f"Forest {z}", value=str(z), default=z == self.zone,
                                       description="Heavy trees" if foraging.is_heavy(z, rules) else None) for z in zones],
                 self._pick_zone,
             )))
@@ -251,14 +251,14 @@ class ForageScreen(Screen):
         pt = await party_tree.view(self.user)
         bonus = get_registry().foraging.party_tree
         if pt is not None and pt.standing:
-            line = (f"### 👥 Party tree: {species_label(pt.species) or 'zone ' + str(pt.zone)}  ·  zone {pt.zone}\n{bar(pt.fraction_left)}  **{pt.hp:,}**/{pt.max_hp:,} hp  ·  "
+            line = (f"### 👥 Party tree: {species_label(pt.species) or 'forest ' + str(pt.zone)}  ·  forest {pt.zone}\n{bar(pt.fraction_left)}  **{pt.hp:,}**/{pt.max_hp:,} hp  ·  "
                     f"**{len(pt.chops)}** chopping  ·  falls over <t:{int(pt.closes_at)}:R>")
             return [text(line), row(button("Join the party tree", emoji="👥", style=discord.ButtonStyle.success,
                                           disabled=stats is None, on_click=self._join_party))]
         best = await party_tree.unlocked_zone(party)
         zone = min(self.zone or 1, best)
-        return [text(f"### 👥 Party tree\nNo tree is up. Start one for your party of **{party.member_count()}**: **zone {zone}**, "
-                     f"up to **+{bonus.max_group_bonus:.0%}** reward for working together.\n-# The whole party needs an axe and the zone unlocked."),
+        return [text(f"### 👥 Party tree\nNo tree is up. Start one for your party of **{party.member_count()}**: **forest {zone}**, "
+                     f"up to **+{bonus.max_group_bonus:.0%}** reward for working together.\n-# The whole party needs an axe and the forest unlocked."),
                 row(button("Start a party tree", emoji="👥", style=discord.ButtonStyle.primary, disabled=stats is None,
                            on_click=self._start_party))]
 
@@ -326,12 +326,12 @@ class TreeScreen(Screen):
         rules = get_registry().foraging
         tree = self.tree
         if tree is None:
-            return Page("Tree", [text("Pick a zone on the Foraging page and chop a tree.")], accent=0x4C8C4A)
+            return Page("Tree", [text("Pick a forest on the Foraging page and chop a tree.")], accent=0x4C8C4A)
         stats = await foraging.axe_stats(self.user)
         power = foraging.swing_power(stats, tree.zone, rules)
         self.spot.on_tree(id(tree))  # (a new tree starts the right-style streak over before the panel draws it)
         body = [*self.note_block()]
-        body.append(text(f"**Zone {tree.zone}**{self._species_line(tree.species)}\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
+        body.append(text(f"**Forest {tree.zone}**{self._species_line(tree.species)}\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
                          f"\n{await spot_panel(self, power)}" + (f"\n🏷️ Marked: **+{tree.bonus:.0%}** drops when it falls" if tree.bonus else "") + (
                              f"\n-# Heavy tree: alone you swing at half your axe's {stats.power}. A Soloist axe fixes that."
                              if power < stats.power else "")))
@@ -427,7 +427,7 @@ class GroveScreen(Screen):
         top = [f"{medals[i]} {await self.nav.name_of(uid)}{' (you)' if uid == self.user.id else ''}: **{damage:,}** hp ({damage / view.max_hp:.0%})"
                for i, (uid, damage) in enumerate(view.top)]
         body += [
-            text(f"**Zone {view.zone}**{TreeScreen._species_line(view.species)}  ·  falls over <t:{int(view.closes_at)}:R>\n"
+            text(f"**Forest {view.zone}**{TreeScreen._species_line(view.species)}  ·  falls over <t:{int(view.closes_at)}:R>\n"
                  f"{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp\n"
                  f"**{view.choppers}** chopper(s)" + ("\n" + "\n".join(top) if top else "")),
             text(f"You: **{view.yours:,}** hp  ·  **{view.share:.1%}** of the tree\n"
@@ -507,7 +507,7 @@ class PartyGroveScreen(Screen):
         for uid, damage in sorted(view.chops.items(), key=lambda kv: -kv[1]):
             team.append(f"{await self.nav.name_of(uid)}{' (you)' if uid == self.user.id else ''}: **{damage:,}** hp ({damage / view.max_hp:.0%})")
         body += [
-            text(f"**Zone {view.zone}**{TreeScreen._species_line(view.species)}  ·  falls over <t:{int(view.closes_at)}:R>\n"
+            text(f"**Forest {view.zone}**{TreeScreen._species_line(view.species)}  ·  falls over <t:{int(view.closes_at)}:R>\n"
                  f"{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp\n" + ("\n".join(team) if team else "Nobody has chopped yet.")),
             text(f"{await spot_panel(self, power)}\n-# {status}"),
             row(*stance_buttons(self._chop)),

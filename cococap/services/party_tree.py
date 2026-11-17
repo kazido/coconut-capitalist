@@ -138,7 +138,7 @@ async def start(user: User, zone: int, now: float | None = None, registry: Regis
     await foraging.axe_stats(user, reg)  # (you need an axe to start a tree)
     best = await unlocked_zone(party, reg)
     if not 1 <= zone <= best:
-        raise PartyTreeError(f"Your party can start trees up to zone {best} (the deepest everyone has unlocked).")
+        raise PartyTreeError(f"Your party can start trees up to forest {best} (the deepest everyone has unlocked).")
     hp = tree_hp(zone, party.member_count(), rules)
     species = foraging.roll_species(zone, rng or random.Random(), rules)
 

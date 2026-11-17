@@ -96,19 +96,19 @@ def _farming(reg: Registry) -> list[str]:
 
 def _species_text(reg: Registry) -> str:
     f = reg.foraging
-    """The tree species, by zone band, with their signature drops (empty when the rules have none)."""
+    """The tree species, by forest band, with their signature drops (empty when the rules have none)."""
     if not f.species:
         return ""
-    return ("**Tree species.** A tree's species is set by its zone, and each species drops its own signature items (on top of the usual drops, and more often; odds are per drop roll): " + "; ".join(
-        f"{sp.emoji} **{sp.name}** (zones {sp.zone_min}-{sp.zone_max}) " + " and ".join(f"{reg.item(d.item).name} 1 in {round(1 / d.rate)}" for d in sp.drops) for sp in f.species) + ".")
+    return ("**Tree species.** A tree's species is set by its forest, and each species drops its own signature items (on top of the usual drops, and more often; odds are per drop roll): " + "; ".join(
+        f"{sp.emoji} **{sp.name}** (forests {sp.zone_min}-{sp.zone_max}) " + " and ".join(f"{reg.item(d.item).name} 1 in {round(1 / d.rate)}" for d in sp.drops) for sp in f.species) + ".")
 
 
 def _foraging(reg: Registry) -> list[str]:
     f = reg.foraging
     c = f.community
     return [
-        f"**Foraging** needs an axe. Chop a tree down for drops (sell them for bits) and xp. There are **{f.zones} zones**: zone 2 needs level {f.zone_levels[1]}, zone 10 level {f.zone_levels[9]} and zone {f.zones} level {f.zone_levels[-1]}, and each takes a little longer than the last; "
-        f"from zone {f.heavy_zone} alone, trees are heavy and you swing at half power unless your axe has **Soloist**.",
+        f"**Foraging** needs an axe. Chop a tree down for drops (sell them for bits) and xp. There are **{f.zones} forests**: forest 2 needs level {f.zone_levels[1]}, forest 10 level {f.zone_levels[9]} and forest {f.zones} level {f.zone_levels[-1]}, and each takes a little longer than the last; "
+        f"from forest {f.heavy_zone} alone, trees are heavy and you swing at half power unless your axe has **Soloist**.",
         "**Learn the grain.** Every spot has a grain (Plain, Knotty, Clean, Twisted, Split or Burl), and every grain likes **one chop style** "
         "(⬆️ Overhead, ↔️ Sidecut or ⬇️ Undercut). Chop in that style for full strength; any other glances off at half. "
         "Your **Grain notes** (a button on the foraging pages) remember the style you have found and cross off the ones that failed, so you learn each grain once. "

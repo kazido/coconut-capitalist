@@ -86,7 +86,7 @@ async def test_the_zone_is_limited_by_the_member_who_has_unlocked_the_least(db):
     party = await Party.create(1)
     await party.add_member(2)
     assert await pt.unlocked_zone(party, REG) == 2
-    with pytest.raises(pt.PartyTreeError, match="up to zone 2"):
+    with pytest.raises(pt.PartyTreeError, match="up to forest 2"):
         await pt.start(boss, 3, T0, REG)
     started = await pt.start(boss, 2, T0, REG)
     assert started.zone == 2 and started.standing and started.max_hp == pt.tree_hp(2, 2, RULES)
@@ -258,7 +258,7 @@ async def test_a_party_can_start_and_chop_a_tree_from_the_foraging_page(db, cloc
     nav, inter = await hub("forage")
     assert "Party tree" in all_text(nav)
     await click(nav, inter, "Start a party tree")
-    assert nav.screen.id == "partygrove" and "Zone 1" in all_text(nav) and "Nobody has chopped yet" in all_text(nav)
+    assert nav.screen.id == "partygrove" and "Forest 1" in all_text(nav) and "Nobody has chopped yet" in all_text(nav)
     for label in ("Overhead", "Sidecut", "Undercut", "Grain notes", "Leave"):
         assert find_button(nav, label)
     await chop(nav, inter)

@@ -5,7 +5,7 @@
 [soloist]
 name = "Soloist"
 emoji = "🧍"
-description = "Heavy trees (zone 7 and up) are no harder for you to chop alone: no half-power penalty."
+description = "Heavy trees (forest 7 and up) are no harder for you to chop alone: no half-power penalty."
 applies_to = ["axe"]
 max_level = 1
 
