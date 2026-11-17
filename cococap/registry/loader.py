@@ -272,6 +272,8 @@ class Registry:
         if self.areas is not None:
             problems += self._validate_areas(self.areas)
             problems += self._validate_locations(self.areas)
+            if self.foraging is not None and len(self.locations.get("foraging", [])) != self.foraging.zones:
+                problems.append("foraging.toml: zones must equal the number of foraging locations (forests) in locations.toml")
         if self.farming is not None and self.farming.deed_item not in self.items:
             problems.append(f"farming.toml: unknown deed item '{self.farming.deed_item}'")
         for table in self.drop_tables.values():

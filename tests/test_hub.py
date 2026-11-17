@@ -10,6 +10,7 @@ from discord import ui
 
 from cococap.errors import CustomError
 from cococap.registry import get_registry
+from cococap.registry.models import LOCATIONS_PER_AREA
 from cococap.screens import SCREENS, open_screen
 from cococap.services.economy import OnCooldown
 from cococap.ui import Navigator, PromptModal
@@ -1341,13 +1342,15 @@ async def test_you_can_pick_a_zone_you_have_unlocked(db, monkeypatch):
     freeze_time(monkeypatch)
     user = await with_axe()
     nav, _ = await hub("forage")
-    assert not [s for s in selects(nav) if s.placeholder == "Forest"]  # only zone 1 so far
-    await user.add_xp("foraging", User.level_to_xp(8) + 1)  # level 8 -> zones 1-3
+    assert not [s for s in selects(nav) if s.placeholder.startswith("Where to chop")]  # only one forest so far
+    # every forest's level is met, but the player is still in the first area: the area caps the list at its first forests
+    await user.add_xp("foraging", User.level_to_xp(get_registry().areas.location_levels[-1]) + 1)
     nav, inter = await hub("forage")
-    menu = select_named(nav, "Forest")
-    assert [o.value for o in menu.options] == ["1", "2", "3"] and nav.screen.zone == 3
-    await choose(nav, inter, menu, "2")
-    assert nav.screen.zone == 2
+    menu = select_named(nav, "Where to chop")
+    expected = [str(n) for n in range(1, LOCATIONS_PER_AREA + 1)]
+    assert [o.value for o in menu.options] == expected and nav.screen.zone == int(expected[-1])
+    await choose(nav, inter, menu, expected[0])
+    assert nav.screen.zone == 1
 
 
 async def test_two_players_chop_the_community_tree_together(db, monkeypatch):
