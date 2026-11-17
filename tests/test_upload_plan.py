@@ -64,3 +64,8 @@ def test_find_files_reads_a_folder(tmp_path):
     found = find_files(tmp_path)
     assert names(found) == ["iron_ore", "spin"] and found[0].size == 10
     assert find_files(tmp_path / "missing") == []
+
+
+def test_only_suffix_filters():
+    plan = plan_upload(set(), [f("iron_pickaxe"), f("rookiepickaxe"), f("iron_ore")], only_suffix="_pickaxe")
+    assert [e.name for e in plan.upload] == ["iron_pickaxe"]

@@ -3,6 +3,7 @@
     .venv/bin/python scripts/upload_emojis.py                  # dry run (default): prints the plan, touches nothing
     .venv/bin/python scripts/upload_emojis.py --yes            # really upload what is missing
     .venv/bin/python scripts/upload_emojis.py --only ui_ --yes # only names starting with a prefix
+    .venv/bin/python scripts/upload_emojis.py --only-suffix _pickaxe --replace-all --yes  # only names ending in a suffix
     .venv/bin/python scripts/upload_emojis.py --replace iron_ore --yes   # delete + recreate one emoji (new art)
     .venv/bin/python scripts/upload_emojis.py --limit 50 --yes # at most 50 uploads this run (rerun for the rest)
 
@@ -71,6 +72,7 @@ def plan_upload(
     files,
     *,
     only: str | None = None,
+    only_suffix: str | None = None,
     replace=(),
     limit: int | None = None,
     max_slots: int = MAX_SLOTS,
@@ -78,7 +80,7 @@ def plan_upload(
     """Decide what to do. `existing_names`: names already on Discord; `files`: `EmojiFile`s from art/out.
 
     Missing names are uploaded; names in `replace` are deleted and recreated (only if a file exists);
-    `only` keeps names with that prefix; `limit` caps the number of uploads+replacements this run.
+    `only` keeps names with that prefix and `only_suffix` names with that suffix (both given: both must match); `limit` caps the number of uploads+replacements this run.
     """
     existing, replace = set(existing_names), set(replace)
     plan = Plan(slots_used=len(existing))
@@ -88,7 +90,7 @@ def plan_upload(
 
     todo: list[tuple[str, EmojiFile]] = []
     for name in sorted(by_name):
-        if only and not name.startswith(only):
+        if (only and not name.startswith(only)) or (only_suffix and not name.endswith(only_suffix)):
             plan.skipped.append(name)
             continue
         if len(by_name[name]) > 1:
@@ -167,7 +169,7 @@ async def run(args: argparse.Namespace, token: str) -> int:
         replace = list(args.replace or ())
         if args.replace_all:  # re-upload every emoji that exists both here and on Discord (new art for the same names)
             replace += [f.name for f in files if f.name in by_name and f.name not in replace]
-        plan = plan_upload(by_name, files, only=args.only, replace=replace, limit=args.limit)
+        plan = plan_upload(by_name, files, only=args.only, only_suffix=args.only_suffix, replace=replace, limit=args.limit)
         print_plan(plan, len(existing))
         if not args.yes:
             print("Dry run: nothing was changed. Add --yes to upload.")
@@ -203,6 +205,7 @@ def main(argv=None) -> int:
     ap.add_argument("--yes", action="store_true", help="really upload (default is a dry run that only prints the plan)")
     ap.add_argument("--dry-run", action="store_true", help="print the plan only (this is the default)")
     ap.add_argument("--only", metavar="PREFIX", help="only names starting with PREFIX")
+    ap.add_argument("--only-suffix", metavar="SUFFIX", help="only names ending with SUFFIX (e.g. _pickaxe)")
     ap.add_argument("--replace", metavar="NAME", action="append", help="delete and recreate this emoji (repeatable)")
     ap.add_argument("--replace-all", action="store_true", help="delete and recreate EVERY emoji that already exists on Discord and has a file here (use after the art changed)")
     ap.add_argument("--limit", type=int, metavar="N", help="at most N uploads/replacements this run")
