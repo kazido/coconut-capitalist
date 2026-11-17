@@ -12,7 +12,7 @@ from tests.conftest import set_columns
 from tests.test_hub import all_text, buttons, click, hub
 
 REG = get_registry()
-STARTERS = {"pickaxe": "rookiepickaxe", "axe": "starter_axe", "rod": "starter_rod", "can": "tin_can", "sword": "largebranch"}
+STARTERS = {"pickaxe": "tool_pickaxe_rookie", "axe": "tool_axe_starter", "rod": "tool_rod_starter", "can": "tool_can_tin", "sword": "tool_largebranch"}
 
 
 def test_every_kind_of_tool_starts_at_power_three():
@@ -22,13 +22,13 @@ def test_every_kind_of_tool_starts_at_power_three():
 def test_a_starter_pickaxe_digs_plain_ore_and_each_step_still_pays_what_it_did():
     d = REG.mining.descent
     ore = lambda tool: tool_effects.effects("pickaxe", REG.item(tool).tool.power)[0].value  # noqa: E731
-    assert ore("rookiepickaxe") == "×1.00" and ore("reinforced_pickaxe") == "×1.50" and ore("masterwork_pickaxe") == "×2.50"
+    assert ore("tool_pickaxe_rookie") == "×1.00" and ore("tool_pickaxe_reinforced") == "×1.50" and ore("tool_pickaxe_masterwork") == "×2.50"
     assert d.power_base == 3  # (the jump from level to level is the same as when it started at power 1)
 
 
 def test_a_starter_sword_hits_as_hard_as_it_did_when_it_started_at_power_one():
     p = REG.combat.player
-    assert p.base_attack + p.attack_per_power * REG.item("largebranch").tool.power == 17  # (14 + 3 x 1 before)
+    assert p.base_attack + p.attack_per_power * REG.item("tool_largebranch").tool.power == 17  # (14 + 3 x 1 before)
 
 
 def test_the_effect_numbers_are_the_ones_the_game_uses():
@@ -75,7 +75,7 @@ async def test_the_upgrade_page_says_what_the_tool_does_and_what_the_next_one_ch
 async def test_an_enchant_or_rolled_bonus_is_counted_in_the_before_and_after(db):
     user = await User.get(1)
     await set_columns(user, purse=10**9)
-    await user.give_instance("rookiepickaxe", rolled={"power": 2})
+    await user.give_instance("tool_pickaxe_rookie", rolled={"power": 2})
     nav, _ = await hub("upgrade")
     # now 3 + 2 = 5 (x1.50), after 5 + 2 = 7 (x2.00): the bonus carries over to the better pickaxe
     assert "Power **5** → **7**" in all_text(nav) and "Ore per lode: ×1.50 → **×2.00**" in all_text(nav)
@@ -83,9 +83,9 @@ async def test_an_enchant_or_rolled_bonus_is_counted_in_the_before_and_after(db)
 
 async def test_a_new_ability_is_announced_on_the_upgrade_that_gives_it(db):
     user = await User.get(1)
-    await user.give_instance("rustedbroadsword")
+    await user.give_instance("tool_rustedbroadsword")
     nav, _ = await hub("upgrade")
-    assert "New ability" in all_text(nav) and REG.item("dreamnail").tool.ability_name in all_text(nav)
+    assert "New ability" in all_text(nav) and REG.item("tool_dreamnail").tool.ability_name in all_text(nav)
     nav2, _ = await hub("upgrade", user_id=2)  # (nobody has anything to upgrade: no page)
     assert "Nothing to upgrade" in all_text(nav2)
 
@@ -105,10 +105,10 @@ async def test_each_requirement_of_an_upgrade_is_on_its_own_line(db):
     from tests.test_upgrades import cost_of
 
     user = await User.get(1)
-    await user.give_instance("starter_axe")
+    await user.give_instance("tool_axe_starter")
     nav, _ = await hub("upgrade")
     lines = all_text(nav).split("\n")
-    cost = cost_of("starter_axe")
+    cost = cost_of("tool_axe_starter")
     wanted = [f"{REG.item(i).display}  **0/{q}**" for i, q in cost.items.items()]
     assert len(wanted) >= 2
     for requirement in wanted:
@@ -143,27 +143,27 @@ async def test_the_extras_are_in_the_stats_the_games_read(db):
     from cococap.services.equipment import effective_stats
 
     user = await User.get(1)
-    pick = effective_stats(await user.give_instance("ironbound_pickaxe"))
+    pick = effective_stats(await user.give_instance("tool_pickaxe_ironbound"))
     assert pick.stats["danger_reduction"] == pytest.approx(0.003 * 12 * 1.6) and pick.stats["braces"] == 0 and pick.stats["rich_chance"] == 0  # (the Warden leans safe)
-    deep = effective_stats(await user.give_instance("mythril_pickaxe"))
+    deep = effective_stats(await user.give_instance("tool_pickaxe_mythril"))
     assert deep.stats["braces"] == 1 and deep.stats["danger_reduction"] > pick.stats["danger_reduction"]
-    prospector = effective_stats(await user.give_instance("prospector_pickaxe"))
+    prospector = effective_stats(await user.give_instance("tool_pickaxe_prospector"))
     assert prospector.stats["danger_reduction"] == 0 and prospector.stats["braces"] == 0 and prospector.stats["rich_chance"] == pytest.approx(0.0006 * 12 * 2.5)
-    axe = effective_stats(await user.give_instance("masterwork_axe"))
-    assert axe.stats["good_chop"] > 0 and axe.stats["wear_slow"] > 0 and effective_stats(await user.give_instance("starter_axe")).stats["good_chop"] == 0
+    axe = effective_stats(await user.give_instance("tool_axe_masterwork"))
+    assert axe.stats["good_chop"] > 0 and axe.stats["wear_slow"] > 0 and effective_stats(await user.give_instance("tool_axe_starter")).stats["good_chop"] == 0
 
 
 async def test_a_better_pickaxe_makes_a_safer_and_richer_start_to_a_dig(db):
     from cococap.services import mining
 
     user = await User.get(1)
-    await equip(user, "mining", (await user.give_instance("rookiepickaxe")).id)
+    await equip(user, "mining", (await user.give_instance("tool_pickaxe_rookie")).id)
     plain = await mining.start_run(user, Random(1))
-    inst = await user.give_instance("mythril_pickaxe")  # a Warden: safety and braces
+    inst = await user.give_instance("tool_pickaxe_mythril")  # a Warden: safety and braces
     await equip(user, "mining", inst.id)
     deep = await mining.start_run(user, Random(1))
     assert deep.growth_factor < plain.growth_factor and deep.braces > plain.braces and deep.auto_bomb_every == 17
-    await equip(user, "mining", (await user.give_instance("veinhunter_pickaxe")).id)  # a Prospector: rich lodes and Multi-Mine, no pressure slow
+    await equip(user, "mining", (await user.give_instance("tool_pickaxe_veinhunter")).id)  # a Prospector: rich lodes and Multi-Mine, no pressure slow
     rich = await mining.start_run(user, Random(1))
     assert rich.growth_factor == 1.0 and rich.rich_bonus > plain.rich_bonus and rich.multi_mine == 0.55 and rich.auto_bomb_every == 0
 
@@ -172,7 +172,7 @@ async def test_a_better_can_gives_bigger_harvests_and_sometimes_the_seed_back(db
     from cococap.services import farming as f
 
     users = {}
-    for uid, can in ((1, "tin_can"), (2, "moonwell_can")):
+    for uid, can in ((1, "tool_can_tin"), (2, "tool_can_moonwell")):
         user = await User.get(uid)
         await equip(user, "farming", (await user.give_instance(can)).id)
         users[uid] = user
@@ -181,10 +181,10 @@ async def test_a_better_can_gives_bigger_harvests_and_sometimes_the_seed_back(db
         back[uid] = 0
         for i in range(120):
             await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
-            await user.add_item("apple_seed", 1)
-            await f.plant(user, 1, "apple_seed", now=0, registry=REG)
+            await user.add_item("seed_apple", 1)
+            await f.plant(user, 1, "seed_apple", now=0, registry=REG)
             await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
-            back[uid] += (await f.harvest(user, 1, Random(i), 0, REG)).extras["apple_seed"]
+            back[uid] += (await f.harvest(user, 1, Random(i), 0, REG)).extras["seed_apple"]
     assert back[1] == 0 and back[2] > 10  # (the starter can never gives a seed back: 18% for the best can)
 
 
@@ -194,10 +194,10 @@ async def test_a_better_sword_makes_you_tougher_not_only_stronger_and_a_starter_
     user = await User.get(1)
     await user.add_xp("combat", User.level_to_xp(10) + 1)
     bare = await combat.build_player(user, REG)
-    await equip(user, "combat", (await user.give_instance("largebranch")).id)
+    await equip(user, "combat", (await user.give_instance("tool_largebranch")).id)
     starter = await combat.build_player(user, REG)
     assert (starter.max_hp, starter.defense) == (bare.max_hp, bare.defense)  # (a power 3 sword adds no hp or defense)
-    await equip(user, "combat", (await user.give_instance("dreamnail")).id)
+    await equip(user, "combat", (await user.give_instance("tool_dreamnail")).id)
     dream = await combat.build_player(user, REG)
     assert dream.max_hp > starter.max_hp and dream.defense > starter.defense and dream.attack > starter.attack
 

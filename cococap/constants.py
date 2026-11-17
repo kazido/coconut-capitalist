@@ -60,7 +60,7 @@ class GamblingChannels(Enum):
 
 
 # The tools every player gets for free (the shop sells none): one per skill, claimed on the first /play or from the Tools page.
-STARTER_TOOLS = ("rookiepickaxe", "starter_axe", "starter_rod", "tin_can")
+STARTER_TOOLS = ("tool_pickaxe_rookie", "tool_axe_starter", "tool_rod_starter", "tool_can_tin")
 
 
 class Rarities(Enum):

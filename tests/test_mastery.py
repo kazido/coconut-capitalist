@@ -109,14 +109,14 @@ async def test_a_respec_clears_the_tree_for_bits_and_gives_the_points_back(db):
 # ---- the effects reach the game ------------------------------------------------------------------------------------------------
 async def test_owned_nodes_change_the_tool_stats_the_game_reads(db):
     user = await User.get(1)
-    pick = await user.give_instance("rookiepickaxe")
+    pick = await user.give_instance("tool_pickaxe_rookie")
     await equip(user, "mining", pick.id)
     assert (await equipped_stats(user, "mining")).stats.get("auto_speed", 0) == 0
     await level_up(user, "mining", 10)
     await mastery.buy(user, "mining", "coolant_loop")
     await mastery.buy(user, "mining", "overclock")
     stats = await equipped_stats(user, "mining")
-    assert stats.stats["reactor_cool"] == pytest.approx(0.004) and stats.stats["auto_speed"] == pytest.approx(0.25) and stats.power == REG.item("rookiepickaxe").tool.power
+    assert stats.stats["reactor_cool"] == pytest.approx(0.004) and stats.stats["auto_speed"] == pytest.approx(0.25) and stats.power == REG.item("tool_pickaxe_rookie").tool.power
 
 
 async def test_mastery_changes_how_a_mine_run_starts(db):
@@ -125,7 +125,7 @@ async def test_mastery_changes_how_a_mine_run_starts(db):
     from cococap.services import mining
 
     user = await User.get(1)
-    pick = await user.give_instance("rookiepickaxe")
+    pick = await user.give_instance("tool_pickaxe_rookie")
     await equip(user, "mining", pick.id)
     plain = await mining.start_run(user, Random(1))
     await level_up(user, "mining", 10)
@@ -136,7 +136,7 @@ async def test_mastery_changes_how_a_mine_run_starts(db):
     assert greedy.growth_factor > plain.growth_factor  # a creakier tunnel: the price of the ore
     assert greedy.rich_bonus == pytest.approx(0.04) and plain.rich_bonus == 0
     safe_user = await User.get(2)
-    spick = await safe_user.give_instance("rookiepickaxe")
+    spick = await safe_user.give_instance("tool_pickaxe_rookie")
     await equip(safe_user, "mining", spick.id)
     await level_up(safe_user, "mining", 20)
     await safe_user.update_skill("mining", lambda m: setattr(m.reactor, "level", 6))
@@ -144,7 +144,7 @@ async def test_mastery_changes_how_a_mine_run_starts(db):
         await mastery.buy(safe_user, "mining", node)
     careful = await mining.start_run(safe_user, Random(1))
     plain_reactor = await User.get(3)
-    ppick = await plain_reactor.give_instance("rookiepickaxe")
+    ppick = await plain_reactor.give_instance("tool_pickaxe_rookie")
     await equip(plain_reactor, "mining", ppick.id)
     await plain_reactor.update_skill("mining", lambda m: setattr(m.reactor, "level", 6))
     same_reactor = await mining.start_run(plain_reactor, Random(1))
@@ -157,7 +157,7 @@ async def test_fishing_mastery_changes_bites_boss_odds_and_luck(db):
     from cococap.services import fishing
 
     user = await User.get(1)
-    rod = await user.give_instance("starter_rod")
+    rod = await user.give_instance("tool_rod_starter")
     await equip(user, "fishing", rod.id)
     plain = await equipped_stats(user, "fishing")
     await level_up(user, "fishing", 10)

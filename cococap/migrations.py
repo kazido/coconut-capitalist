@@ -140,6 +140,7 @@ def migrate_legacy_user(doc: dict[str, Any]) -> dict[str, Any]:
 import re  # noqa: E402
 from dataclasses import dataclass, field  # noqa: E402
 
+from cococap.id_rename import ITEMS  # noqa: E402
 from cococap.models.skills.base import Skill  # noqa: E402
 
 # Item ids that were renamed when the item registry was introduced (docs/AUDIT.md).
@@ -157,7 +158,8 @@ _VALID_ID = re.compile(r"^[a-z][a-z0-9_]*$")
 def normalize_item_id(item_id: str) -> str:
     """Old id -> registry id: apply renames and turn 'apple.seed' into 'apple_seed'."""
     item_id = ITEM_ID_ALIASES.get(item_id, item_id).replace(".", "_")
-    return ITEM_ID_ALIASES.get(item_id, item_id)
+    item_id = ITEM_ID_ALIASES.get(item_id, item_id)
+    return ITEMS.get(item_id, item_id)  # then the prefixed-ids rename (cococap/id_rename.py)
 
 
 @dataclass

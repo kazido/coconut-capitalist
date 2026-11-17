@@ -256,7 +256,7 @@ async def test_the_releaf_screen_is_reachable_from_foraging_from_the_minimum_lev
     low, _ = await hub("forage")
     assert not [b for b in buttons(low) if b.label == "Releaf Foundation"]
     user = await forager(2)
-    inst = await user.give_instance("starter_axe")
+    inst = await user.give_instance("tool_axe_starter")
     from cococap.services.equipment import equip
 
     await equip(user, "foraging", inst.id)
@@ -292,7 +292,7 @@ async def test_the_screen_shows_the_bloom_and_closes_giving(db):
 async def test_the_old_donate_buttons_are_gone_from_the_reward_pages(db, monkeypatch):
     freeze_time(monkeypatch)
     user = await forager(items={})
-    inst = await user.give_instance("starter_axe")
+    inst = await user.give_instance("tool_axe_starter")
     from cococap.services.equipment import equip
 
     await equip(user, "foraging", inst.id)

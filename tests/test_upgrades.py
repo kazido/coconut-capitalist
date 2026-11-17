@@ -11,7 +11,7 @@ from tests.test_hub import all_text, buttons, click, find_button, hub
 REG = get_registry()
 
 
-async def with_tool(template="starter_axe", skill="foraging", purse=10**9, materials=None):
+async def with_tool(template="tool_axe_starter", skill="foraging", purse=10**9, materials=None):
     user = await User.get(1)
     await set_columns(user, purse=purse)
     inst = await user.give_instance(template)
@@ -45,52 +45,52 @@ def test_every_chain_climbs_and_ends():
 
 
 def test_every_starter_tool_can_be_upgraded_and_costs_bits_and_materials():
-    for starter in ("starter_axe", "starter_rod", "rookiepickaxe"):
+    for starter in ("tool_axe_starter", "tool_rod_starter", "tool_pickaxe_rookie"):
         up = cost_of(starter)
         assert up.bits > 0 and up.items, starter
 
 
 # ---- upgrading --------------------------------------------------------------------------------------------------
 async def test_an_upgrade_costs_bits_and_materials_and_the_tool_changes_in_place(db):
-    up = cost_of("starter_axe")
+    up = cost_of("tool_axe_starter")
     user, inst = await with_tool(purse=up.bits + 5, materials={k: v + 3 for k, v in up.items.items()})
     await add_enchant(user, inst.id, "soloist")
     done = await upgrades.upgrade(user, inst.id)
-    assert done.target.id == "thornwhip_axe"
+    assert done.target.id == "tool_axe_thornwhip"
     await user.refresh()
     assert user.purse == 5
     for item_id, quantity in up.items.items():
         assert await user.item_quantity(item_id) == 3
     after = await user.instance(inst.id)
-    assert after.template_id == "thornwhip_axe" and after.enchants == {"soloist": 1}
+    assert after.template_id == "tool_axe_thornwhip" and after.enchants == {"soloist": 1}
     assert (await user.equipped_instance("foraging")).id == inst.id  # still equipped, same tool
-    assert effective_stats(after).power == REG.item("thornwhip_axe").tool.power
+    assert effective_stats(after).power == REG.item("tool_axe_thornwhip").tool.power
     assert len(await user.instances()) == 1
 
 
 async def test_a_rolled_bonus_survives_the_upgrade(db):
     user = await User.get(1)
     await set_columns(user, purse=10**9)
-    inst = await user.give_instance("starter_axe", rolled={"power": 2})
-    await stock_up(user, "starter_axe")
+    inst = await user.give_instance("tool_axe_starter", rolled={"power": 2})
+    await stock_up(user, "tool_axe_starter")
     await upgrades.upgrade(user, inst.id)
-    assert effective_stats(await user.instance(inst.id)).power == REG.item("thornwhip_axe").tool.power + 2
+    assert effective_stats(await user.instance(inst.id)).power == REG.item("tool_axe_thornwhip").tool.power + 2
 
 
 async def test_missing_bits_or_materials_changes_nothing_and_says_what_is_short(db):
-    up = cost_of("starter_axe")
+    up = cost_of("tool_axe_starter")
     user, inst = await with_tool(purse=up.bits - 1, materials={k: v for k, v in up.items.items()})
     with pytest.raises(upgrades.UpgradeError, match="more bits"):
         await upgrades.upgrade(user, inst.id)
     user2 = await User.get(2)
     await set_columns(user2, purse=10**9)
-    inst2 = await user2.give_instance("starter_axe")
+    inst2 = await user2.give_instance("tool_axe_starter")
     short = {k: v - 1 for k, v in up.items.items()}
     for item_id, quantity in short.items():
         await user2.add_item(item_id, quantity)
     with pytest.raises(upgrades.UpgradeError, match=r"\d+/\d+"):
         await upgrades.upgrade(user2, inst2.id)
-    assert (await user2.instance(inst2.id)).template_id == "starter_axe"
+    assert (await user2.instance(inst2.id)).template_id == "tool_axe_starter"
     assert await user2.get_bits() == 10**9
     assert await user2.items() == short
 
@@ -98,19 +98,19 @@ async def test_missing_bits_or_materials_changes_nothing_and_says_what_is_short(
 async def test_two_clicks_at_once_upgrade_once_and_charge_once(db):
     import asyncio
 
-    up = cost_of("starter_axe")
+    up = cost_of("tool_axe_starter")
     user, inst = await with_tool(purse=up.bits * 2, materials={k: v * 2 for k, v in up.items.items()})
     results = await asyncio.gather(upgrades.upgrade(user, inst.id), upgrades.upgrade(user, inst.id), return_exceptions=True)
     assert sum(not isinstance(r, Exception) for r in results) == 1
     await user.refresh()
-    assert (await user.instance(inst.id)).template_id == "thornwhip_axe"
+    assert (await user.instance(inst.id)).template_id == "tool_axe_thornwhip"
     assert user.purse == up.bits  # charged once...
     for item_id, quantity in up.items.items():
         assert await user.item_quantity(item_id) == quantity  # ...for the materials too
 
 
 async def test_the_best_tool_of_a_kind_has_nowhere_to_go(db):
-    user, inst = await with_tool("elderwood_axe")
+    user, inst = await with_tool("tool_axe_elderwood")
     assert await upgrades.offer_for(user, inst) is None
     with pytest.raises(upgrades.UpgradeError, match="any further"):
         await upgrades.upgrade(user, inst.id)
@@ -124,11 +124,11 @@ async def test_you_cannot_upgrade_someone_elses_tool(db):
 
 
 async def test_a_tool_that_needs_a_higher_level_waits_for_it(db, monkeypatch):
-    up = cost_of("starter_axe")
+    up = cost_of("tool_axe_starter")
     user, inst = await with_tool(purse=up.bits, materials=dict(up.items))
-    target = REG.item("thornwhip_axe")
+    target = REG.item("tool_axe_thornwhip")
     harder = target.model_copy(update={"tool": target.tool.model_copy(update={"requirement": 5})})
-    monkeypatch.setitem(REG.items, "thornwhip_axe", harder)
+    monkeypatch.setitem(REG.items, "tool_axe_thornwhip", harder)
     with pytest.raises(upgrades.UpgradeError, match="level 5"):
         await upgrades.upgrade(user, inst.id)
 
@@ -140,20 +140,20 @@ async def test_the_whole_axe_chain_can_be_climbed(db):
         await stock_up(user, (await user.instance(inst.id)).template_id)
         await upgrades.upgrade(user, inst.id)
         steps += 1
-    assert (await user.instance(inst.id)).template_id == "elderwood_axe" and steps == 7
+    assert (await user.instance(inst.id)).template_id == "tool_axe_elderwood" and steps == 7
     assert offer is None
 
 
 # ---- the screens ------------------------------------------------------------------------------------------------
 async def test_the_upgrade_screen_lists_tools_and_upgrades_one(db):
-    up = cost_of("starter_axe")
+    up = cost_of("tool_axe_starter")
     user, inst = await with_tool(purse=up.bits, materials=dict(up.items))
     nav, inter = await hub("tools")
     await click(nav, inter, "Upgrade")
     assert nav.screen.id == "upgrade" and "Thornwhip Axe" in all_text(nav)
     await click(nav, inter, "Upgrade")
     assert "became a **Thornwhip Axe**" in all_text(nav)
-    assert (await user.instance(inst.id)).template_id == "thornwhip_axe"
+    assert (await user.instance(inst.id)).template_id == "tool_axe_thornwhip"
     assert all(b.disabled for b in buttons(nav) if b.label == "Upgrade")  # can't afford the next one
 
 
@@ -292,8 +292,8 @@ async def test_every_chain_can_be_climbed_to_the_top_with_the_right_stuff(db):
 
 # ---- forks: two roads from one tool ----------------------------------------------------------------------------------------------
 async def forked_pickaxe():
-    both = {**cost_of("masterwork_pickaxe").items, **REG.item("masterwork_pickaxe").tool.fork.items}  # (the stock for either road)
-    user, inst = await with_tool("masterwork_pickaxe", "mining", materials=both)
+    both = {**cost_of("tool_pickaxe_masterwork").items, **REG.item("tool_pickaxe_masterwork").tool.fork.items}  # (the stock for either road)
+    user, inst = await with_tool("tool_pickaxe_masterwork", "mining", materials=both)
     await user.add_xp("mining", User.level_to_xp(1))
     return user, inst
 
@@ -301,10 +301,10 @@ async def forked_pickaxe():
 async def test_a_tool_at_a_fork_has_two_offers_and_each_road_is_taken_on_its_own(db):
     user, inst = await forked_pickaxe()
     found = await upgrades.offers(user)
-    assert [(o.path, o.target.id) for o in found] == [("up", "ironbound_pickaxe"), ("fork", "prospector_pickaxe")]
+    assert [(o.path, o.target.id) for o in found] == [("up", "tool_pickaxe_ironbound"), ("fork", "tool_pickaxe_prospector")]
     done = await upgrades.upgrade(user, inst.id, path="fork")
-    assert done.target.id == "prospector_pickaxe" and (await user.instance(inst.id)).template_id == "prospector_pickaxe"
-    assert [o.target.id for o in await upgrades.offers(user)] == ["geode_pickaxe"]  # the road you took is the only one now
+    assert done.target.id == "tool_pickaxe_prospector" and (await user.instance(inst.id)).template_id == "tool_pickaxe_prospector"
+    assert [o.target.id for o in await upgrades.offers(user)] == ["tool_pickaxe_geode"]  # the road you took is the only one now
     assert (await user.equipped_instance("mining")).id == inst.id
 
 
@@ -320,9 +320,9 @@ async def test_each_road_gives_its_own_stats_and_ability_to_the_tool_in_use(db):
     assert safe.stats["auto_bomb"] == 32 and "multi_mine" not in safe.stats and safe.stats["rich_chance"] == 0  # safety and an Auto-Bomb, no rich-lode bonus
     user2 = await User.get(2)
     await set_columns(user2, purse=10**9)
-    inst2 = await user2.give_instance("masterwork_pickaxe")
+    inst2 = await user2.give_instance("tool_pickaxe_masterwork")
     await equip(user2, "mining", inst2.id)
-    for item_id, quantity in REG.item("masterwork_pickaxe").tool.fork.items.items():
+    for item_id, quantity in REG.item("tool_pickaxe_masterwork").tool.fork.items.items():
         await user2.add_item(item_id, quantity)
     await upgrades.upgrade(user2, inst2.id, path="fork")
     greedy = await equipped_stats(user2, "mining")
@@ -355,7 +355,7 @@ async def test_a_fork_shows_one_path_at_a_time_and_a_dropdown_swaps_between_them
     ups = [b for b in buttons(nav) if b.label == "Upgrade"]
     assert len(ups) == 1 and not ups[0].disabled
     await ups[0].callback(inter)
-    assert (await user.instance(inst.id)).template_id == "prospector_pickaxe" and "Prospector's Pickaxe" in all_text(nav)
+    assert (await user.instance(inst.id)).template_id == "tool_pickaxe_prospector" and "Prospector's Pickaxe" in all_text(nav)
 
 
 async def test_each_path_page_has_its_own_ability_materials_and_numbers(db):
@@ -384,7 +384,7 @@ def test_describe_stats_reads_negative_numbers_as_the_opposite():
 
 # ---- one tool per page ---------------------------------------------------------------------------------------------------------------
 async def own_every_kind(user):
-    for template in ("rookiepickaxe", "starter_axe", "starter_rod", "tin_can", "largebranch"):
+    for template in ("tool_pickaxe_rookie", "tool_axe_starter", "tool_rod_starter", "tool_can_tin", "tool_largebranch"):
         await user.give_instance(template)
 
 
@@ -421,12 +421,12 @@ async def test_a_page_has_that_tools_costs_and_upgrading_it_keeps_you_on_it(db):
     user = await User.get(1)
     await set_columns(user, purse=10**9)
     await own_every_kind(user)
-    axe_cost = cost_of("starter_axe")
+    axe_cost = cost_of("tool_axe_starter")
     for item, quantity in axe_cost.items.items():
         await user.add_item(item, quantity)
     nav, inter = await hub("upgrade")
     await click(nav, inter, "Foraging")  # to the axe
-    assert "Starter Axe" in tool_page_title(nav) and f"{axe_cost.items['feather']}" in all_text(nav)
+    assert "Starter Axe" in tool_page_title(nav) and f"{axe_cost.items['material_feather']}" in all_text(nav)
     await click(nav, inter, "Upgrade")
     assert "became a **Thornwhip Axe**" in all_text(nav) and "Thornwhip Axe" in tool_page_title(nav)  # still on the axe's page, now the next step
 
@@ -437,14 +437,14 @@ async def test_a_single_tool_has_no_skill_buttons_and_only_a_fork_has_a_dropdown
     user, inst = await forked_pickaxe()
     nav, _ = await hub("upgrade")
     assert not any(b.label in ("Mining", "Foraging") for b in buttons(nav)) and len(selects(nav)) == 1  # (one tool: nothing to switch between)
-    await user.give_instance("starter_axe")
+    await user.give_instance("tool_axe_starter")
     nav, _ = await hub("upgrade")
     assert {"Mining", "Foraging"} <= {b.label for b in buttons(nav)}
 
 
 async def test_an_unknown_skill_falls_back_to_the_first_tool(db):
     user = await User.get(1)
-    await user.give_instance("starter_axe")
+    await user.give_instance("tool_axe_starter")
     nav, inter = await hub("upgrade")
     nav.screen.kind = "sword"
     await nav.screen.nav.refresh(inter)
@@ -457,7 +457,7 @@ async def test_confirm_upgrades_needs_a_second_press_and_moving_away_cancels_it(
     nav, inter = await hub("upgrade")
     up = [b for b in buttons(nav) if b.label == "Upgrade"][0]
     await up.callback(inter)
-    assert (await user.instance(inst.id)).template_id != "prospector_pickaxe" and any(b.label == "Sure?" for b in buttons(nav))
+    assert (await user.instance(inst.id)).template_id != "tool_pickaxe_prospector" and any(b.label == "Sure?" for b in buttons(nav))
     from tests.test_hub import choose, select_named
 
     menu = select_named(nav, "Pick a path")
@@ -477,7 +477,7 @@ async def test_upgrades_are_one_press_by_default(db):
 
 # ---- every tool line: three plain upgrades, and the fourth upgrade is the split ---------------------------------------------------------------
 def test_every_line_takes_three_plain_upgrades_and_the_fourth_is_the_split():
-    for kind, start in (("pickaxe", "rookiepickaxe"), ("axe", "starter_axe"), ("rod", "starter_rod"), ("can", "tin_can")):
+    for kind, start in (("pickaxe", "tool_pickaxe_rookie"), ("axe", "tool_axe_starter"), ("rod", "tool_rod_starter"), ("can", "tool_can_tin")):
         tool, plain = REG.item(start), 0
         while not tool.tool.fork:
             assert tool.tool.path is None, (kind, tool.id)  # no road before the split
@@ -489,7 +489,7 @@ def test_every_line_takes_three_plain_upgrades_and_the_fourth_is_the_split():
 
 
 def test_each_line_gets_longer_with_every_split_road_going_at_least_three_more_steps():
-    for start in ("rookiepickaxe", "starter_axe", "starter_rod", "tin_can"):
+    for start in ("tool_pickaxe_rookie", "tool_axe_starter", "tool_rod_starter", "tool_can_tin"):
         for first_road in (lambda t: t.tool.upgrade.to, lambda t: t.tool.fork.to):
             tool = REG.item(start)
             while not tool.tool.fork:
@@ -507,5 +507,5 @@ def test_the_four_roads_all_differ_in_their_own_numbers_and_the_axe_and_can_road
     assert lj["good_chop"] > fg["good_chop"] and lj["wear_slow"] < fg["wear_slow"]
     sp, al = te.power_stats("can", 9, REG, "Sprinkler"), te.power_stats("can", 9, REG, "Alchemist")
     assert al["crop_yield"] > sp["crop_yield"] and sp["drop_luck"] > al["drop_luck"]
-    for tool_id in ("elderwood_axe", "canopy_axe", "moonwell_can", "athanor_can"):
+    for tool_id in ("tool_axe_elderwood", "tool_axe_canopy", "tool_can_moonwell", "tool_can_athanor"):
         assert REG.item(tool_id).tool.ability and REG.item(tool_id).tool.stats  # each road has its own ability

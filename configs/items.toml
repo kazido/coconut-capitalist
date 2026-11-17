@@ -18,7 +18,7 @@ rate = 1100
 min = 1
 max = 1
 
-[dreamnail]
+[tool_dreamnail]
 name = "Dreamnail"
 emoji = "🪡"
 description = "Shaped in a faraway grounds, with stories of an infected Kingdom sealed inside."
@@ -29,7 +29,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[dreamnail.tool]
+[tool_dreamnail.tool]
 kind = "sword"
 power = 22
 requirement = 10
@@ -37,20 +37,20 @@ ability = "enter_the_mind"
 ability_name = "Enter the Mind"
 ability_description = "Let's the wielder peer inside the mind of his foe, revealing its next move."
 
-[dreamnail.tool.upgrade]
-to = "shiningsilver"
+[tool_dreamnail.tool.upgrade]
+to = "tool_shiningsilver"
 bits = 200000000  # TODO(balance)
 
-[dreamnail.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-living_vine = 10
-gold_ore = 1000
-maple_leaf = 100
-aged_feather = 3
-pufferfish = 20
-hot_pepper = 20
-plant_fiber = 300
+[tool_dreamnail.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+material_living_vine = 10
+material_gold_ore = 1000
+material_maple_leaf = 100
+material_aged_feather = 3
+fish_pufferfish = 20
+crop_hot_pepper = 20
+material_plant_fiber = 300
 
-[largebranch]
+[tool_largebranch]
 name = "Large Branch"
 emoji = "🌿"
 description = "A sturdy branch from a sturdy tree."
@@ -61,22 +61,22 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[largebranch.tool]
+[tool_largebranch.tool]
 kind = "sword"
 power = 3
 requirement = 0
 
-[largebranch.tool.upgrade]
-to = "rustedbroadsword"
+[tool_largebranch.tool.upgrade]
+to = "tool_rustedbroadsword"
 bits = 50000  # TODO(balance)
 
-[largebranch.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-iron_ore = 40
-hardwood = 10
-plant_fiber = 10
-bass = 5
+[tool_largebranch.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+material_iron_ore = 40
+material_hardwood = 10
+material_plant_fiber = 10
+fish_bass = 5
 
-[rustedbroadsword]
+[tool_rustedbroadsword]
 name = "Rusted Broadsword"
 emoji = "🗡️"
 description = "A warrior's most trusted possession, now in the hands of another."
@@ -87,7 +87,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[rustedbroadsword.tool]
+[tool_rustedbroadsword.tool]
 kind = "sword"
 power = 5
 requirement = 0
@@ -95,20 +95,20 @@ ability = "sanguine_priming"
 ability_name = "Sanguine Priming"
 ability_description = "1/10 chance to cause enemies to take 2x damage on your next attack."
 
-[rustedbroadsword.tool.upgrade]
-to = "dreamnail"
+[tool_rustedbroadsword.tool.upgrade]
+to = "tool_dreamnail"
 bits = 5000000  # TODO(balance)
 
-[rustedbroadsword.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-beeswax = 10
-gold_ore = 200
-fine_bark = 25
-maple_leaf = 10
-salmon = 10
-coral_shard = 30
-lemon = 20
+[tool_rustedbroadsword.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+material_beeswax = 10
+material_gold_ore = 200
+material_fine_bark = 25
+material_maple_leaf = 10
+fish_salmon = 10
+material_coral_shard = 30
+crop_lemon = 20
 
-[shiningsilver]
+[tool_shiningsilver]
 name = "Shining Silver"
 emoji = "🥈"
 description = "A beautiful expression of forgery, which gleams in the sun."
@@ -119,7 +119,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[shiningsilver.tool]
+[tool_shiningsilver.tool]
 kind = "sword"
 power = 102
 requirement = 50
@@ -127,7 +127,7 @@ ability = "glistening_haven"
 ability_name = "Glistening Haven"
 ability_description = "Attacks heal allies for 50% of their max health."
 
-[ambrosia]
+[crop_ambrosia]
 name = "Olympian Ambrosia"
 emoji = "🍯"
 description = "Only a lucky few will find the lifeblood of Olympus."
@@ -138,13 +138,13 @@ category = "crop"
 price = 0
 sell_price = 50000000
 
-[ambrosia.crop]
-seed = "ambrosia_seed"
+[crop_ambrosia.crop]
+seed = "seed_ambrosia"
 min_harvest = 1
 max_harvest = 1
 pet_xp = 500000
 
-[apple]
+[crop_apple]
 name = "Apple"
 emoji = "🍎"
 description = "Good ol' apple."
@@ -155,13 +155,13 @@ category = "crop"
 price = 0
 sell_price = 1000
 
-[apple.crop]
-seed = "apple_seed"
+[crop_apple.crop]
+seed = "seed_apple"
 min_harvest = 10
 max_harvest = 20
 pet_xp = 5
 
-[coconut]
+[crop_coconut]
 name = "Coconut"
 emoji = "🥥"
 description = "Name of the game, right?"
@@ -172,13 +172,13 @@ category = "crop"
 price = 0
 sell_price = 2000000
 
-[coconut.crop]
-seed = "coconut_seed"
+[crop_coconut.crop]
+seed = "seed_coconut"
 min_harvest = 1
 max_harvest = 1
 pet_xp = 10000
 
-[dusty_dandelion]
+[crop_dusty_dandelion]
 name = "Dusty Dandelion"
 emoji = "🌼"
 description = "A beautiful bloom from a quiet tomb."
@@ -189,13 +189,13 @@ category = "crop"
 price = 0
 sell_price = 50000
 
-[dusty_dandelion.crop]
-seed = "dusty_dandelion_seed"
+[crop_dusty_dandelion.crop]
+seed = "seed_dusty_dandelion"
 min_harvest = 1
 max_harvest = 1
 pet_xp = 250
 
-[hot_pepper]
+[crop_hot_pepper]
 name = "Hot Pepper"
 emoji = "🌶️"
 description = "The spiciest of them all."
@@ -206,13 +206,13 @@ category = "crop"
 price = 0
 sell_price = 300000
 
-[hot_pepper.crop]
-seed = "hot_pepper_seed"
+[crop_hot_pepper.crop]
+seed = "seed_hot_pepper"
 min_harvest = 1
 max_harvest = 3
 pet_xp = 1450
 
-[lemon]
+[crop_lemon]
 name = "Lemon"
 emoji = "🍋"
 description = "Something about life... dumb quote anyway."
@@ -223,13 +223,13 @@ category = "crop"
 price = 0
 sell_price = 35000
 
-[lemon.crop]
-seed = "lemon_seed"
+[crop_lemon.crop]
+seed = "seed_lemon"
 min_harvest = 3
 max_harvest = 5
 pet_xp = 175
 
-[wilted_rose]
+[crop_wilted_rose]
 name = "Wilted Rose"
 emoji = "🥀"
 description = "It droops in hopelessness..."
@@ -240,13 +240,13 @@ category = "crop"
 price = 0
 sell_price = 1000000
 
-[wilted_rose.crop]
-seed = "wilted_rose_seed"
+[crop_wilted_rose.crop]
+seed = "seed_wilted_rose"
 min_harvest = 1
 max_harvest = 3
 pet_xp = 5000
 
-[graveyard_key]
+[key_graveyard]
 name = "Graveyard Key"
 description = "Cold, heavy and very old. Something in the graveyard has been waiting for whoever holds it."
 wiki = "Dropped by the monsters of the graveyard. Spent when you enter the Gravewarden's crypt."
@@ -257,7 +257,7 @@ category = "key_item"
 price = 0
 sell_price = 5000  # TODO(balance)
 
-[lesser_orb]
+[key_orb_lesser]
 name = "Lesser Familiar Orb"
 description = "A dull little orb. Something small is curled up inside."
 wiki = "Open it from the Pet House for a random pet, mostly a common one. A pet you already have gets another star."
@@ -267,7 +267,7 @@ category = "key_item"
 price = 150000  # TODO(balance): a tenth of the standard orb
 sell_price = 75000  # TODO(balance)
 
-[familiar_orb]
+[key_orb_familiar]
 name = "Familiar Orb"
 description = "A swirling orb. Something is curled up inside, waiting."
 wiki = "Open it from the Pet House for a random pet. A pet you already have gets another star."
@@ -277,7 +277,7 @@ category = "key_item"
 price = 1500000  # TODO(balance): also found in drops, chests and boss loot
 sell_price = 750000  # TODO(balance)
 
-[greater_orb]
+[key_orb_greater]
 name = "Greater Familiar Orb"
 description = "A blazing orb. Something rare is stirring inside."
 wiki = "Open it from the Pet House for a random pet, usually a rare one. A pet you already have gets another star."
@@ -287,7 +287,7 @@ category = "key_item"
 price = 15000000  # TODO(balance): ten times the standard orb
 sell_price = 7500000  # TODO(balance)
 
-[land_deed]
+[key_land_deed]
 name = "Land Deed"
 description = "Proof that a patch of earth is yours."
 wiki = "Buys one more farm plot (up to 9). Deposit rain god's blessings at the Farmer's Market for a chance to get one."
@@ -314,7 +314,7 @@ rate = 1100
 min = 1
 max = 1
 
-[ambrosia_seed]
+[seed_ambrosia]
 name = "Ambrosia Seed"
 emoji = "🌱"
 description = "???"
@@ -325,16 +325,16 @@ category = "seed"
 price = 0
 sell_price = 12500000  # TODO(balance)
 
-[ambrosia_seed.drop]
+[seed_ambrosia.drop]
 rate = 5000
 min = 1
 max = 1
 
-[ambrosia_seed.seed]
-grows_into = "ambrosia"
+[seed_ambrosia.seed]
+grows_into = "crop_ambrosia"
 cycles = 777
 
-[apple_seed]
+[seed_apple]
 name = "Apple Seed"
 emoji = "🌱"
 description = "Grows into some apples. Wait, shouldn't it grow into a tree?"
@@ -345,11 +345,11 @@ category = "seed"
 price = 500
 sell_price = 250  # TODO(balance)
 
-[apple_seed.seed]
-grows_into = "apple"
+[seed_apple.seed]
+grows_into = "crop_apple"
 cycles = 1  # TODO(balance): not in the old data; placeholder
 
-[coconut_seed]
+[seed_coconut]
 name = "Coconut Seed"
 emoji = "🌱"
 description = "Grows into the alpha crop, the coconut."
@@ -360,31 +360,31 @@ category = "seed"
 price = 1600000
 sell_price = 800000  # TODO(balance)
 
-[coconut_seed.seed]
-grows_into = "coconut"
+[seed_coconut.seed]
+grows_into = "crop_coconut"
 cycles = 100
 
-[dusty_dandelion_seed]
+[seed_dusty_dandelion]
 name = "Weathered Seed"
 description = "It's been slowly sinking into the earth."
 wiki = "Plant it on your farm to grow Dusty Dandelion. It needs rain to grow, so keep watering."
-emoji = "<:seed_weathered:1280657991992999988>"
+emoji = "🌱"
 rarity = 3
 skill = "farming"
 category = "seed"
 price = 0
 sell_price = 12500  # TODO(balance)
 
-[dusty_dandelion_seed.drop]
+[seed_dusty_dandelion.drop]
 rate = 150
 min = 1
 max = 3
 
-[dusty_dandelion_seed.seed]
-grows_into = "dusty_dandelion"
+[seed_dusty_dandelion.seed]
+grows_into = "crop_dusty_dandelion"
 cycles = 1
 
-[hot_pepper_seed]
+[seed_hot_pepper]
 name = "Hot Pepper Seed"
 emoji = "🌱"
 description = "Plant for a spicy ingredient."
@@ -395,11 +395,11 @@ category = "seed"
 price = 480000
 sell_price = 240000  # TODO(balance)
 
-[hot_pepper_seed.seed]
-grows_into = "hot_pepper"
+[seed_hot_pepper.seed]
+grows_into = "crop_hot_pepper"
 cycles = 20
 
-[lemon_seed]
+[seed_lemon]
 name = "Lemon Seed"
 emoji = "🌱"
 description = "Grows into some lemons."
@@ -410,11 +410,11 @@ category = "seed"
 price = 8000
 sell_price = 8000
 
-[lemon_seed.seed]
-grows_into = "lemon"
+[seed_lemon.seed]
+grows_into = "crop_lemon"
 cycles = 4  # not in the old data. 4 cycles keeps lemons (140k a harvest) near 30k bits an hour per plot, not 126k
 
-[wilted_rose_seed]
+[seed_wilted_rose]
 name = "Corrupted Seed"
 emoji = "🌱"
 description = "Doomed to fail in a garden of life."
@@ -425,16 +425,16 @@ category = "seed"
 price = 0
 sell_price = 250000  # TODO(balance)
 
-[wilted_rose_seed.drop]
+[seed_wilted_rose.drop]
 rate = 10000
 min = 1
 max = 1
 
-[wilted_rose_seed.seed]
-grows_into = "wilted_rose"
+[seed_wilted_rose.seed]
+grows_into = "crop_wilted_rose"
 cycles = 350
 
-[leviathan_pup]
+[fish_leviathan_pup]
 name = "Leviathan Pup"
 description = "Only a baby, and it still pulls like a truck."
 wiki = "A rarity 7 fish. Sell it, or turn it in to your collection book."
@@ -445,19 +445,19 @@ category = "fish"
 price = 0
 sell_price = 3000000  # TODO(balance)
 
-[leviathan_pup.drop]
+[fish_leviathan_pup.drop]
 rate = 8000  # 1 in 8000 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[leviathan_pup.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_leviathan_pup.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 400
 max = 900
 
-[leviathan_pup.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_leviathan_pup.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "random"
 
-[golden_koi]
+[fish_golden_koi]
 name = "Golden Koi"
 description = "A koi that shines like a coin. Stories say it grants wishes."
 wiki = "A rarity 7 fish. Sell it, or turn it in to your collection book."
@@ -468,19 +468,19 @@ category = "fish"
 price = 0
 sell_price = 2500000  # TODO(balance)
 
-[golden_koi.drop]
+[fish_golden_koi.drop]
 rate = 5000  # 1 in 5000 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[golden_koi.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_golden_koi.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 60
 max = 120
 
-[golden_koi.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_golden_koi.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "opposite"
 
-[oarfish]
+[fish_oarfish]
 name = "Oarfish"
 description = "A ribbon of silver from the deep. Sailors call it an omen."
 wiki = "A rarity 6 fish. Sell it, or turn it in to your collection book."
@@ -491,19 +491,19 @@ category = "fish"
 price = 0
 sell_price = 600000  # TODO(balance)
 
-[oarfish.drop]
+[fish_oarfish.drop]
 rate = 1500  # 1 in 1500 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[oarfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_oarfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 300
 max = 800
 
-[oarfish.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_oarfish.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "same"
 
-[abyssal_angler]
+[fish_abyssal_angler]
 name = "Abyssal Angler"
 description = "Its lure glows in the deepest, darkest water."
 wiki = "A rarity 6 fish. Sell it, or turn it in to your collection book."
@@ -514,19 +514,19 @@ category = "fish"
 price = 0
 sell_price = 500000  # TODO(balance)
 
-[abyssal_angler.drop]
+[fish_abyssal_angler.drop]
 rate = 1200  # 1 in 1200 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[abyssal_angler.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_abyssal_angler.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 100
 max = 250
 
-[abyssal_angler.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_abyssal_angler.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "random"
 
-[megaladegalodon]
+[fish_megaladegalodon]
 name = "Megaladegalodon"
 description = "The one Ahna warned everyone about. Legend says it only bites when somebody says her name. It is very large, very polite, and (we are fairly sure) smiling."
 wiki = "A rarity 6 fish from the Deep Sea, requested by Ahna. Sell it, or turn it in to your collection book."
@@ -537,19 +537,19 @@ category = "fish"
 price = 0
 sell_price = 450000  # TODO(balance): between the Abyssal Angler (500k, same rarity) and the Marlin (100k); shown in the deep sea at 1 in 400
 
-[megaladegalodon.drop]
+[fish_megaladegalodon.drop]
 rate = 12000  # 1 in 12000 per cast when no water is given (kept tiny so the no-water average stays inside the economy guard) (the waters' own `fish = N` is what is used in play: deep sea 1 in 400); rarest rolled first
 min = 1
 max = 1
 
-[megaladegalodon.size]  # cm: a mega shark
+[fish_megaladegalodon.size]  # cm: a mega shark
 min = 600
 max = 1800
 
-[megaladegalodon.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_megaladegalodon.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "same"
 
-[sturgeon]
+[fish_sturgeon]
 name = "Sturgeon"
 description = "An ancient armoured giant. Its eggs are worth a fortune."
 wiki = "A rarity 5 fish. Sell it, or turn it in to your collection book."
@@ -560,19 +560,19 @@ category = "fish"
 price = 0
 sell_price = 130000  # TODO(balance)
 
-[sturgeon.drop]
+[fish_sturgeon.drop]
 rate = 700  # 1 in 700 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[sturgeon.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_sturgeon.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 150
 max = 400
 
-[sturgeon.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_sturgeon.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "right"
 
-[marlin]
+[fish_marlin]
 name = "Blue Marlin"
 description = "A fast, proud fighter that tests every line."
 wiki = "A rarity 5 fish. Sell it, or turn it in to your collection book."
@@ -583,19 +583,19 @@ category = "fish"
 price = 0
 sell_price = 100000  # TODO(balance)
 
-[marlin.drop]
+[fish_marlin.drop]
 rate = 600  # 1 in 600 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[marlin.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_marlin.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 200
 max = 450
 
-[marlin.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_marlin.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "opposite"
 
-[giant_squid]
+[fish_giant_squid]
 name = "Giant Squid"
 description = "Rarely seen, and never seen twice."
 wiki = "A rarity 5 fish. Sell it, or turn it in to your collection book."
@@ -606,19 +606,19 @@ category = "fish"
 price = 0
 sell_price = 100000  # TODO(balance)
 
-[giant_squid.drop]
+[fish_giant_squid.drop]
 rate = 600  # 1 in 600 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[giant_squid.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_giant_squid.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 300
 max = 1000
 
-[giant_squid.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_giant_squid.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "random"
 
-[moray_eel]
+[fish_moray_eel]
 name = "Moray Eel"
 description = "Hides in rocks and bites hard."
 wiki = "A rarity 4 fish. Sell it, or turn it in to your collection book."
@@ -629,19 +629,19 @@ category = "fish"
 price = 0
 sell_price = 24000  # TODO(balance)
 
-[moray_eel.drop]
+[fish_moray_eel.drop]
 rate = 120  # 1 in 120 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[moray_eel.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_moray_eel.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 80
 max = 200
 
-[moray_eel.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_moray_eel.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "same"
 
-[swordfish]
+[fish_swordfish]
 name = "Swordfish"
 description = "All point, all power."
 wiki = "A rarity 4 fish. Sell it, or turn it in to your collection book."
@@ -652,19 +652,19 @@ category = "fish"
 price = 0
 sell_price = 28000  # TODO(balance)
 
-[swordfish.drop]
+[fish_swordfish.drop]
 rate = 100  # 1 in 100 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[swordfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_swordfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 150
 max = 400
 
-[swordfish.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_swordfish.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "right"
 
-[pufferfish]
+[fish_pufferfish]
 name = "Pufferfish"
 description = "Puffs up when angry. Handle with care."
 wiki = "A rarity 4 fish. Sell it, or turn it in to your collection book."
@@ -675,19 +675,19 @@ category = "fish"
 price = 0
 sell_price = 20000  # TODO(balance)
 
-[pufferfish.drop]
+[fish_pufferfish.drop]
 rate = 80  # 1 in 80 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[pufferfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_pufferfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 15
 max = 60
 
-[pufferfish.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_pufferfish.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "left"
 
-[pike]
+[fish_pike]
 name = "Pike"
 description = "A long, toothy ambusher of the river reeds."
 wiki = "A rarity 4 fish. Sell it, or turn it in to your collection book."
@@ -698,19 +698,19 @@ category = "fish"
 price = 0
 sell_price = 18000  # TODO(balance)
 
-[pike.drop]
+[fish_pike.drop]
 rate = 100  # (only used where no water gives its own odds)
 min = 1
 max = 1
 
-[pike.size]  # cm
+[fish_pike.size]  # cm
 min = 60
 max = 130
 
-[pike.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_pike.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "opposite"
 
-[muskie]
+[fish_muskie]
 name = "Muskie"
 description = "The fish of ten thousand casts."
 wiki = "A rarity 4 fish. Sell it, or turn it in to your collection book."
@@ -721,19 +721,19 @@ category = "fish"
 price = 0
 sell_price = 20000  # TODO(balance)
 
-[muskie.drop]
+[fish_muskie.drop]
 rate = 90  # (only used where no water gives its own odds)
 min = 1
 max = 1
 
-[muskie.size]  # cm
+[fish_muskie.size]  # cm
 min = 80
 max = 160
 
-[muskie.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
+[fish_muskie.reel]  # the fish's "tell": what the ❓ in its reel turns out to be (learn it from your field notes)
 tell = "random"
 
-[catfish]
+[fish_catfish]
 name = "Catfish"
 description = "Whiskers like a wise old fisher."
 wiki = "A rarity 3 fish. Sell it, or turn it in to your collection book."
@@ -744,16 +744,16 @@ category = "fish"
 price = 0
 sell_price = 7000  # TODO(balance)
 
-[catfish.drop]
+[fish_catfish.drop]
 rate = 45  # 1 in 45 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[catfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_catfish.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 30
 max = 140
 
-[tuna]
+[fish_tuna]
 name = "Tuna"
 description = "Fast, strong and delicious."
 wiki = "A rarity 3 fish. Sell it, or turn it in to your collection book."
@@ -764,16 +764,16 @@ category = "fish"
 price = 0
 sell_price = 10000  # TODO(balance)
 
-[tuna.drop]
+[fish_tuna.drop]
 rate = 40  # 1 in 40 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[tuna.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_tuna.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 60
 max = 250
 
-[salmon]
+[fish_salmon]
 name = "Salmon"
 description = "Swims upstream, straight into your net."
 wiki = "A rarity 3 fish. Sell it, or turn it in to your collection book."
@@ -784,16 +784,16 @@ category = "fish"
 price = 0
 sell_price = 8000  # TODO(balance)
 
-[salmon.drop]
+[fish_salmon.drop]
 rate = 35  # 1 in 35 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[salmon.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_salmon.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 50
 max = 120
 
-[perch]
+[fish_perch]
 name = "Perch"
 description = "Stripey and quick to bite."
 wiki = "A rarity 2 fish. Sell it, or turn it in to your collection book."
@@ -804,16 +804,16 @@ category = "fish"
 price = 0
 sell_price = 3200  # TODO(balance)
 
-[perch.drop]
+[fish_perch.drop]
 rate = 12  # 1 in 12 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[perch.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_perch.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 15
 max = 50
 
-[trout]
+[fish_trout]
 name = "Trout"
 description = "Likes cold, clear water."
 wiki = "A rarity 2 fish. Sell it, or turn it in to your collection book."
@@ -824,16 +824,16 @@ category = "fish"
 price = 0
 sell_price = 3600  # TODO(balance)
 
-[trout.drop]
+[fish_trout.drop]
 rate = 10  # 1 in 10 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[trout.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_trout.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 25
 max = 80
 
-[bass]
+[fish_bass]
 name = "Bass"
 description = "A solid catch with a good bit of fight."
 wiki = "A rarity 2 fish. Sell it, or turn it in to your collection book."
@@ -844,16 +844,16 @@ category = "fish"
 price = 0
 sell_price = 4000  # TODO(balance)
 
-[bass.drop]
+[fish_bass.drop]
 rate = 8  # 1 in 8 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[bass.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_bass.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 25
 max = 70
 
-[sardine]
+[fish_sardine]
 name = "Sardine"
 description = "Small, silver and everywhere."
 wiki = "A rarity 1 fish. Sell it, or turn it in to your collection book."
@@ -864,16 +864,16 @@ category = "fish"
 price = 0
 sell_price = 2000  # TODO(balance)
 
-[sardine.drop]
+[fish_sardine.drop]
 rate = 3  # 1 in 3 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[sardine.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_sardine.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 10
 max = 25
 
-[herring]
+[fish_herring]
 name = "Herring"
 description = "Silver and plentiful."
 wiki = "A rarity 1 fish. Sell it, or turn it in to your collection book."
@@ -884,16 +884,16 @@ category = "fish"
 price = 0
 sell_price = 2500  # TODO(balance)
 
-[herring.drop]
+[fish_herring.drop]
 rate = 2  # 1 in 2 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[herring.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_herring.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 20
 max = 40
 
-[cod]
+[fish_cod]
 name = "Cod"
 description = "A common fish."
 wiki = "A rarity 1 fish. Sell it, or turn it in to your collection book."
@@ -904,16 +904,16 @@ category = "fish"
 price = 0
 sell_price = 2500  # TODO(balance)
 
-[cod.drop]
+[fish_cod.drop]
 rate = 1  # 1 in 1 per cast, rarest rolled first; the common cod (1 in 1) is the catch-all
 min = 1
 max = 1
 
-[cod.size]  # cm: most catches are small, a few are giants (a size record is a thing)
+[fish_cod.size]  # cm: most catches are small, a few are giants (a size record is a thing)
 min = 40
 max = 130
 
-[worm]
+[bait_worm]
 name = "Worm"
 description = "A wriggling worm. Fish aren't picky."
 wiki = "Bait for crab pots: each catch uses one. Luck 1x for rare fish, speed 1x."
@@ -924,11 +924,11 @@ category = "bait"
 price = 300  # TODO(balance)
 sell_price = 150  # TODO(balance)
 
-[worm.bait]
+[bait_worm.bait]
 luck = 1.0
 speed = 1.0
 
-[shrimp]
+[bait_shrimp]
 name = "Shrimp"
 description = "A tasty shrimp: bigger fish take notice."
 wiki = "Bait for crab pots: each catch uses one. Luck 1.5x for rare fish, speed 1.2x."
@@ -939,11 +939,11 @@ category = "bait"
 price = 1500  # TODO(balance)
 sell_price = 1500
 
-[shrimp.bait]
+[bait_shrimp.bait]
 luck = 1.5
 speed = 1.2
 
-[squid_chunk]
+[bait_squid_chunk]
 name = "Squid Chunk"
 description = "Strong-smelling, and the deep fish love it."
 wiki = "Bait for crab pots: each catch uses one. Luck 3x for rare fish, speed 1.4x."
@@ -954,11 +954,11 @@ category = "bait"
 price = 6000  # TODO(balance)
 sell_price = 6000
 
-[squid_chunk.bait]
+[bait_squid_chunk.bait]
 luck = 3.0
 speed = 1.4
 
-[golden_roe]
+[bait_golden_roe]
 name = "Golden Roe"
 description = "Glittering fish eggs. Nothing resists them."
 wiki = "Bait for crab pots: each catch uses one. Luck 6x for rare fish, speed 1.8x."
@@ -969,11 +969,11 @@ category = "bait"
 price = 0  # TODO(balance)  (found in treasure chests and boss loot, never sold)
 sell_price = 20000  # TODO(balance)
 
-[golden_roe.bait]
+[bait_golden_roe.bait]
 luck = 6.0
 speed = 1.8
 
-[coral_shard]
+[material_coral_shard]
 name = "Coral Shard"
 description = "Sea-hardened and sharp. Smiths use it to temper a pickaxe head."
 wiki = "Sometimes washed up with a catch. Used to upgrade pickaxes."
@@ -984,12 +984,12 @@ category = "material"
 price = 0
 sell_price = 500
 
-[coral_shard.drop]
+[material_coral_shard.drop]
 rate = 6  # 1 in 6 casts brings one up
 min = 1
 max = 1
 
-[plant_fiber]
+[material_plant_fiber]
 name = "Plant Fiber"
 description = "Tough, stringy stalks. Perfect for binding a pickaxe's grip."
 wiki = "Left over from a harvest. Used to upgrade pickaxes."
@@ -1000,12 +1000,12 @@ category = "material"
 price = 0
 sell_price = 200
 
-[plant_fiber.drop]
+[material_plant_fiber.drop]
 rate = 2  # about every other harvest
 min = 1
 max = 3
 
-[hardwood]
+[material_hardwood]
 name = "Hardwood"
 description = "A dense, straight branch: the best kind of handle."
 wiki = "Chopped off trees. Used to upgrade pickaxes."
@@ -1016,12 +1016,12 @@ category = "material"
 price = 0
 sell_price = 5500  # TODO(balance): flattened (was 500); see DESIGN.md 'Sell prices'
 
-[hardwood.drop]
+[material_hardwood.drop]
 rate = 3
 min = 1
 max = 2
 
-[starter_rod]
+[tool_rod_starter]
 name = "Starter Rod"
 emoji = "🎣"
 description = "A bent stick and some string. Everybody starts somewhere."
@@ -1032,21 +1032,21 @@ category = "tool"
 price = 0  # free: every new player gets it from /play (services/shop.claim_starter_tools)
 sell_price = 0
 
-[starter_rod.tool]
+[tool_rod_starter.tool]
 kind = "rod"
 power = 3  # TODO(balance): grows with rarity
 requirement = 0
 
-[starter_rod.tool.upgrade]
-to = "reinforced_rod"
+[tool_rod_starter.tool.upgrade]
+to = "tool_rod_reinforced"
 bits = 100000  # TODO(balance)
 
-[starter_rod.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-herring = 20
-sardine = 20
-bass = 8
+[tool_rod_starter.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+fish_herring = 20
+fish_sardine = 20
+fish_bass = 8
 
-[reinforced_rod]
+[tool_rod_reinforced]
 name = "Reinforced Rod"
 emoji = "🎣"
 description = "Fibreglass and a proper reel. Fish bite sooner and slip away less."
@@ -1057,22 +1057,22 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[reinforced_rod.tool]
+[tool_rod_reinforced.tool]
 kind = "rod"
 power = 8  # TODO(balance): grows with rarity
 requirement = 0
 
-[reinforced_rod.tool.upgrade]
-to = "sturdy_rod"
+[tool_rod_reinforced.tool.upgrade]
+to = "tool_rod_sturdy"
 bits = 600000
 
-[reinforced_rod.tool.upgrade.items]
-salmon = 8
-trout = 10
-pufferfish = 1
-coral_shard = 8
+[tool_rod_reinforced.tool.upgrade.items]
+fish_salmon = 8
+fish_trout = 10
+fish_pufferfish = 1
+material_coral_shard = 8
 
-[masterwork_rod]
+[tool_rod_masterwork]
 name = "Masterwork Rod"
 emoji = "🎣"
 description = "Hand-balanced by someone who really loved fishing."
@@ -1083,22 +1083,22 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[masterwork_rod.tool]
+[tool_rod_masterwork.tool]
 kind = "rod"
 power = 18
 requirement = 0
 
-[masterwork_rod.tool.upgrade]
-to = "tidecaller_rod"
+[tool_rod_masterwork.tool.upgrade]
+to = "tool_rod_tidecaller"
 bits = 10000000
 
-[masterwork_rod.tool.upgrade.items]
-salmon = 40
-trout = 171
-catfish = 37
-dewdrop = 20
-coral_shard = 60
-hardwood = 30
+[tool_rod_masterwork.tool.upgrade.items]
+fish_salmon = 40
+fish_trout = 171
+fish_catfish = 37
+material_dewdrop = 20
+material_coral_shard = 60
+material_hardwood = 30
 
 [spirit_of_the_sea]
 name = "Spirit of the Sea"
@@ -1116,7 +1116,7 @@ rate = 1100
 min = 1
 max = 1
 
-[aged_feather]
+[material_aged_feather]
 name = "Aged Feather"
 emoji = "🪶"
 description = "A strong feather, capable of enduring high speeds."
@@ -1127,12 +1127,12 @@ category = "material"
 price = 0
 sell_price = 3600000  # TODO(balance): flattened (was 7,000,000); see DESIGN.md 'Sell prices'
 
-[aged_feather.drop]
+[material_aged_feather.drop]
 rate = 1000
 min = 1
 max = 1
 
-[burger]
+[food_burger]
 name = "Burger"
 description = "A burger, somehow still warm. Every pet will fight you for it."
 wiki = "A rare find while chopping. Feed it to a pet from the Pets page: it is worth five times Golden Sap in pet xp (25,000), and more again to a foraging pet. Not sellable."
@@ -1143,16 +1143,16 @@ category = "pet_food"
 price = 0
 sell_price = 100000  # TODO(balance)
 
-[burger.pet_food]
+[food_burger.pet_food]
 tier = 3
 xp_mult = 5
 
-[burger.drop]
+[food_burger.drop]
 rate = 200
 min = 1
 max = 1
 
-[feather]
+[material_feather]
 name = "Feather"
 description = "A small, flimsy feather."
 wiki = "A light drop from foraging. Axe upgrades use piles of them, especially on the Forager road."
@@ -1163,12 +1163,12 @@ category = "material"
 price = 0
 sell_price = 1600  # TODO(balance): flattened (was 100); see DESIGN.md 'Sell prices'
 
-[feather.drop]
+[material_feather.drop]
 rate = 2
 min = 2
 max = 5
 
-[fine_bark]
+[material_fine_bark]
 name = "Fine Bark"
 emoji = "🪵"
 description = "Few trees will shed such a quality bark."
@@ -1179,12 +1179,12 @@ category = "material"
 price = 0
 sell_price = 36000  # TODO(balance): flattened (was 30,000); see DESIGN.md 'Sell prices'
 
-[fine_bark.drop]
+[material_fine_bark.drop]
 rate = 12
 min = 1
 max = 4
 
-[maple_leaf]
+[material_maple_leaf]
 name = "Maple Leaf"
 description = "Said to harness the spirit of the north."
 wiki = "A foraging drop. Axe, pickaxe and rod upgrades all use maple leaves, so keep a stack."
@@ -1195,7 +1195,7 @@ category = "material"
 price = 0
 sell_price = 330000  # TODO(balance): flattened (was 500,000); see DESIGN.md 'Sell prices'
 
-[maple_leaf.drop]
+[material_maple_leaf.drop]
 rate = 100
 min = 1
 max = 2
@@ -1216,7 +1216,7 @@ rate = 1100
 min = 1
 max = 1
 
-[bastards_broadaxe]
+[tool_broadaxe_bastards]
 name = "Bastards Broadaxe"
 emoji = "🪓"
 description = "Fabled heirloom of the Burger Bastard."
@@ -1227,34 +1227,34 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[bastards_broadaxe.tool]
+[tool_broadaxe_bastards.tool]
 kind = "axe"
 power = 12  # TODO(balance): grows with rarity
 requirement = 0
 
-[bastards_broadaxe.tool.upgrade]
-to = "masterwork_axe"
+[tool_broadaxe_bastards.tool.upgrade]
+to = "tool_axe_masterwork"
 bits = 4000000  # TODO(balance)
 
-[bastards_broadaxe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-dewdrop = 30
-maple_leaf = 12
-fine_bark = 40
-hardwood = 100
-gold_ore = 30
+[tool_broadaxe_bastards.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+material_dewdrop = 30
+material_maple_leaf = 12
+material_fine_bark = 40
+material_hardwood = 100
+material_gold_ore = 30
 
-[bastards_broadaxe.tool.fork]
-to = "gatherers_axe"
+[tool_broadaxe_bastards.tool.fork]
+to = "tool_axe_gatherers"
 bits = 4000000
 
-[bastards_broadaxe.tool.fork.items]
-dewdrop = 30
-maple_leaf = 18
-feather = 120
-gold_ore = 30
+[tool_broadaxe_bastards.tool.fork.items]
+material_dewdrop = 30
+material_maple_leaf = 18
+material_feather = 120
+material_gold_ore = 30
 
 
-[masterwork_axe]
+[tool_axe_masterwork]
 name = "Masterwork Axe"
 emoji = "🪓"
 description = "Unleash your woodcutting potential with the Masterwork Axe, the pinnacle of craftsmanship."
@@ -1265,7 +1265,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[masterwork_axe.tool]
+[tool_axe_masterwork.tool]
 kind = "axe"
 power = 18  # TODO(balance): grows with rarity
 requirement = 0
@@ -1275,21 +1275,21 @@ ability_name = "Timber"
 ability_description = "6% of your chops land twice."
 stats = { double_chop = 0.06 }
 
-[masterwork_axe.tool.upgrade]
-to = "sovereign_hatchet"
+[tool_axe_masterwork.tool.upgrade]
+to = "tool_hatchet_sovereign"
 bits = 20000000  # TODO(balance)
 
-[masterwork_axe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-beeswax = 15
-maple_leaf = 40
-aged_feather = 1
-fine_bark = 80
-hardwood = 200
-gold_ore = 80
-coral_shard = 15
+[tool_axe_masterwork.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+material_beeswax = 15
+material_maple_leaf = 40
+material_aged_feather = 1
+material_fine_bark = 80
+material_hardwood = 200
+material_gold_ore = 80
+material_coral_shard = 15
 
 
-[reinforced_axe]
+[tool_axe_reinforced]
 name = "Reinforced Axe"
 emoji = "🪓"
 description = "Slightly higher chopping power than your average axe."
@@ -1300,23 +1300,23 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[reinforced_axe.tool]
+[tool_axe_reinforced.tool]
 kind = "axe"
 power = 8  # TODO(balance): grows with rarity
 requirement = 0
 
-[reinforced_axe.tool.upgrade]
-to = "bastards_broadaxe"
+[tool_axe_reinforced.tool.upgrade]
+to = "tool_broadaxe_bastards"
 bits = 800000  # TODO(balance)
 
-[reinforced_axe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-compost = 60
-fine_bark = 25
-hardwood = 60
-feather = 150
-iron_ore = 40
+[tool_axe_reinforced.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+material_compost = 60
+material_fine_bark = 25
+material_hardwood = 60
+material_feather = 150
+material_iron_ore = 40
 
-[sovereign_hatchet]
+[tool_hatchet_sovereign]
 name = "Sovereign Hatchet"
 emoji = "🪓"
 description = "Imbued with the spirit of a true woodsman."
@@ -1327,7 +1327,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[sovereign_hatchet.tool]
+[tool_hatchet_sovereign.tool]
 kind = "axe"
 power = 28  # TODO(balance): grows with rarity
 requirement = 0
@@ -1337,20 +1337,20 @@ ability_name = "Timber"
 ability_description = "10% of your chops land twice."
 stats = { double_chop = 0.1 }
 
-[sovereign_hatchet.tool.upgrade]
-to = "wilted_axe"
+[tool_hatchet_sovereign.tool.upgrade]
+to = "tool_axe_wilted"
 bits = 100000000  # TODO(balance)
 
-[sovereign_hatchet.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-living_vine = 5
-maple_leaf = 100
-aged_feather = 4
-fine_bark = 150
-hardwood = 400
-gold_ore = 200
-tuna = 10
+[tool_hatchet_sovereign.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+material_living_vine = 5
+material_maple_leaf = 100
+material_aged_feather = 4
+material_fine_bark = 150
+material_hardwood = 400
+material_gold_ore = 200
+fish_tuna = 10
 
-[starter_axe]
+[tool_axe_starter]
 name = "Starter Axe"
 emoji = "🪓"
 description = "A basic axe, meant for novice lumberjacks."
@@ -1361,20 +1361,20 @@ category = "tool"
 price = 0  # free: every new player gets it from /play (services/shop.claim_starter_tools)
 sell_price = 0
 
-[starter_axe.tool]
+[tool_axe_starter.tool]
 kind = "axe"
 power = 3  # TODO(balance): grows with rarity
 requirement = 0
 
-[starter_axe.tool.upgrade]
-to = "thornwhip_axe"
+[tool_axe_starter.tool.upgrade]
+to = "tool_axe_thornwhip"
 bits = 20000  # TODO(balance)
 
-[starter_axe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-feather = 40
-hardwood = 6
+[tool_axe_starter.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+material_feather = 40
+material_hardwood = 6
 
-[thornwhip_axe]
+[tool_axe_thornwhip]
 name = "Thornwhip Axe"
 emoji = "🪓"
 description = "An enhanced version of the starter axe."
@@ -1385,21 +1385,21 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[thornwhip_axe.tool]
+[tool_axe_thornwhip.tool]
 kind = "axe"
 power = 5  # TODO(balance): grows with rarity
 requirement = 0
 
-[thornwhip_axe.tool.upgrade]
-to = "reinforced_axe"
+[tool_axe_thornwhip.tool.upgrade]
+to = "tool_axe_reinforced"
 bits = 150000  # TODO(balance)
 
-[thornwhip_axe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-feather = 100
-hardwood = 25
-fine_bark = 5
+[tool_axe_thornwhip.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+material_feather = 100
+material_hardwood = 25
+material_fine_bark = 5
 
-[wilted_axe]
+[tool_axe_wilted]
 name = "Wilted Axe"
 emoji = "🪓"
 description = "Amidst ancient groves, the wilted axe struggles to bloom. A lumberjack's companion, whispering dreams. Hewn from history, it reigns amidst forests and streams."
@@ -1410,7 +1410,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[wilted_axe.tool]
+[tool_axe_wilted.tool]
 kind = "axe"
 power = 40
 requirement = 0
@@ -1420,19 +1420,19 @@ ability_name = "Timber"
 ability_description = "14% of your chops land twice."
 stats = { double_chop = 0.14 }
 
-[wilted_axe.tool.upgrade]
-to = "elderwood_axe"
+[tool_axe_wilted.tool.upgrade]
+to = "tool_axe_elderwood"
 bits = 500000000
 
-[wilted_axe.tool.upgrade.items]
-maple_leaf = 250
-aged_feather = 8
-fine_bark = 350
-hardwood = 900
-feather = 800
-gold_ore = 450
-plant_fiber = 250
-tuna = 25
+[tool_axe_wilted.tool.upgrade.items]
+material_maple_leaf = 250
+material_aged_feather = 8
+material_fine_bark = 350
+material_hardwood = 900
+material_feather = 800
+material_gold_ore = 450
+material_plant_fiber = 250
+fish_tuna = 25
 
 [scroll_keen]
 name = "Scroll of Keenness"
@@ -1531,146 +1531,146 @@ sell_price = 400000  # TODO(balance)
 [scroll_iron_frame.scroll]
 enchant = "iron_frame"
 
-[balance_gemstone]
+[key_gemstone_balance]
 name = "Balance"
 description = "Find your balance."
 wiki = "One of the four gemstones used for leveling up the reactor. Place it in your reactor for a bonus chance to find wyrmholes."
-emoji = "<a:gemstone_balance:1280656679972900976>"
+emoji = "💎"
 rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
 sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
 
-[balance_gemstone.drop]
+[key_gemstone_balance.drop]
 rate = 12000
 min = 1
 max = 1
 
-[implosion_gemstone]
+[key_gemstone_implosion]
 name = "Implosion Gem"
 description = "It's energy is so unstable that it implodes in on itself."
 wiki = "An extremely rare gemstone used to level up your reactor. 1 in 5 chance to find one in wyrmholes."
-emoji = "<a:gemstone_implosion:1280657127010078745>"
+emoji = "💎"
 rarity = 6
 skill = "mining"
 category = "key_item"
 price = 0
 sell_price = 5000000
 
-[implosion_gemstone.drop]
+[key_gemstone_implosion.drop]
 rate = 5
 min = 1
 max = 1
 
-[peace_gemstone]
+[key_gemstone_peace]
 name = "Peace"
 description = "Spread your peace."
 wiki = "One of the four gemstones used for leveling up the reactor. Place it in your reactor for a bonus chance to find wyrmholes."
-emoji = "<a:gemstone_peace:1280656803096432722>"
+emoji = "💎"
 rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
 sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
 
-[peace_gemstone.drop]
+[key_gemstone_peace.drop]
 rate = 12000
 min = 1
 max = 1
 
-[rage_gemstone]
+[key_gemstone_rage]
 name = "Rage"
 description = "Suppress your rage."
 wiki = "One of the four gemstones used for leveling up the reactor. Place it in your reactor for a bonus chance to find wyrmholes."
-emoji = "<a:gemstone_rage:1280656839973015553>"
+emoji = "💎"
 rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
 sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
 
-[rage_gemstone.drop]
+[key_gemstone_rage.drop]
 rate = 12000
 min = 1
 max = 1
 
-[sanity_gemstone]
+[key_gemstone_sanity]
 name = "Sanity"
 description = "Maintain your sanity."
 wiki = "One of the four gemstones used for leveling up the reactor. Place it in your reactor for a bonus chance to find wyrmholes."
-emoji = "<a:gemstone_sanity:1280702513208623114>"
+emoji = "💎"
 rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
 sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
 
-[sanity_gemstone.drop]
+[key_gemstone_sanity.drop]
 rate = 12000
 min = 1
 max = 1
 
-[copper_ore]
+[material_copper_ore]
 name = "Copper Ore"
 description = "Simple copper ore. Abundant and useful."
 wiki = "A common ore found while mining. Can be sold or used to purchase reactor gemstones."
-emoji = "<:ore_copper:1280658055125532693>"
+emoji = "🪨"
 rarity = 1
 skill = "mining"
 category = "material"
 price = 0
 sell_price = 50  # TODO(balance): flattened (was 20); see DESIGN.md 'Sell prices'
 
-[copper_ore.drop]
+[material_copper_ore.drop]
 rate = 2
 min = 1
 max = 3
 
-[gold_ore]
+[material_gold_ore]
 name = "Gold Ore"
 description = "Heard to possess special bargaining powers."
 wiki = "A rare ore found while mining. Can be sold or used to purchase implosion gemstones."
-emoji = "<:ore_gold:1280658070808170578>"
+emoji = "🪨"
 rarity = 3
 skill = "mining"
 category = "material"
 price = 0
 sell_price = 1900  # TODO(balance): flattened (was 2,000); see DESIGN.md 'Sell prices'
 
-[gold_ore.drop]
+[material_gold_ore.drop]
 rate = 15
 min = 1
 max = 1
 
-[iron_ore]
+[material_iron_ore]
 name = "Iron Ore"
 description = "Iron ore. No farms."
 wiki = "An uncommon ore found while mining. Can be sold or used to purchase reactor gemstones."
-emoji = "<:ore_iron:1280658083516776520>"
+emoji = "🪨"
 rarity = 2
 skill = "mining"
 category = "material"
 price = 0
 sell_price = 300  # TODO(balance): flattened (was 200); see DESIGN.md 'Sell prices'
 
-[iron_ore.drop]
+[material_iron_ore.drop]
 rate = 6
 min = 1
 max = 2
 
-[oreo_gemstone]
+[material_oreo_gemstone]
 name = "Oreore"
 description = "The favorite snack of a certain monopolist."
 wiki = "A rare ore that's only good for selling. Credit: Kenzopoly"
-emoji = "<a:gemstone_oreo:1280656872269156353>"
+emoji = "💎"
 rarity = 7
 skill = "mining"
 category = "material"
 price = 0
 sell_price = 20000000
 
-[oreo_gemstone.drop]
+[material_oreo_gemstone.drop]
 rate = 25000
 min = 1
 max = 1
@@ -1691,7 +1691,7 @@ rate = 1100
 min = 1
 max = 1
 
-[rookiepickaxe]
+[tool_pickaxe_rookie]
 name = "Rookie Pickaxe"
 emoji = "⛏️"
 description = "They hand this one out to the new recruits. Guess that's you."
@@ -1702,20 +1702,20 @@ category = "tool"
 price = 0  # free: every new player gets it from /play (services/shop.claim_starter_tools)
 sell_price = 0
 
-[rookiepickaxe.tool]
+[tool_pickaxe_rookie.tool]
 kind = "pickaxe"
 power = 3
 requirement = 0
 
-[rookiepickaxe.tool.upgrade]
-to = "reinforced_pickaxe"
+[tool_pickaxe_rookie.tool.upgrade]
+to = "tool_pickaxe_reinforced"
 bits = 30000  # TODO(balance)
 
-[rookiepickaxe.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-copper_ore = 200
-iron_ore = 40
+[tool_pickaxe_rookie.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
+material_copper_ore = 200
+material_iron_ore = 40
 
-[reinforced_pickaxe]
+[tool_pickaxe_reinforced]
 name = "Reinforced Pickaxe"
 emoji = "⛏️"
 description = "A sturdier head and a better grip. Piles come out bigger."
@@ -1726,21 +1726,21 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[reinforced_pickaxe.tool]
+[tool_pickaxe_reinforced.tool]
 kind = "pickaxe"
 power = 5  # +25% ore per point above 3 (mining.toml): x1.5
 requirement = 0
 
-[reinforced_pickaxe.tool.upgrade]
-to = "steel_pickaxe"
+[tool_pickaxe_reinforced.tool.upgrade]
+to = "tool_pickaxe_steel"
 bits = 200000
 
-[reinforced_pickaxe.tool.upgrade.items]
-copper_ore = 160
-iron_ore = 120
-gold_ore = 25
+[tool_pickaxe_reinforced.tool.upgrade.items]
+material_copper_ore = 160
+material_iron_ore = 120
+material_gold_ore = 25
 
-[masterwork_pickaxe]
+[tool_pickaxe_masterwork]
 name = "Masterwork Pickaxe"
 emoji = "⛏️"
 description = "Forged by someone who has seen the bottom of the mines."
@@ -1751,25 +1751,25 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[masterwork_pickaxe.tool]
+[tool_pickaxe_masterwork.tool]
 kind = "pickaxe"
 power = 9  # x2.5 ore (the same jump for every tool at this step: about x2.6 income)
 requirement = 0
 
-[masterwork_pickaxe.tool.upgrade]
-to = "ironbound_pickaxe"
+[tool_pickaxe_masterwork.tool.upgrade]
+to = "tool_pickaxe_ironbound"
 bits = 3000000
 
-[masterwork_pickaxe.tool.upgrade.items]
-coal = 1003
-clay = 483
-tin_ore = 450
-iron_ore = 800
-copper_ore = 1346
-hardwood = 40
-coral_shard = 20
+[tool_pickaxe_masterwork.tool.upgrade.items]
+material_coal = 1003
+material_clay = 483
+material_tin_ore = 450
+material_iron_ore = 800
+material_copper_ore = 1346
+material_hardwood = 40
+material_coral_shard = 20
 
-[scarab_bomb]
+[tool_scarab_bomb]
 name = "Scarab Bomb"
 description = "Careful handling these, they can be quite dangerous."
 wiki = "Take it down the mines (up to 3 per run). Blows an entire row at once: you collect every cell in it, vents and lodes included, for a flat bit of pressure and no collapse check."
@@ -1780,14 +1780,14 @@ category = "tool"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 90000
 
-[scarab_bomb.drop]
+[tool_scarab_bomb.drop]
 rate = 5
 min = 3
 max = 7
 
 
 # ---- more crops (balance: each crop pays roughly 20-30k bits an hour per watered plot, the seed already paid for) ------------------------
-[blueberry]
+[crop_blueberry]
 name = "Blueberry"
 emoji = "🫐"
 description = "Small, round, and gone before you reach the kitchen."
@@ -1798,13 +1798,13 @@ category = "crop"
 price = 0
 sell_price = 40000
 
-[blueberry.crop]
-seed = "blueberry_seed"
+[crop_blueberry.crop]
+seed = "seed_blueberry"
 min_harvest = 6
 max_harvest = 9
 pet_xp = 200
 
-[blueberry_seed]
+[seed_blueberry]
 name = "Blueberry Seed"
 emoji = "🌱"
 description = "Twelve patient rains from a handful of berries."
@@ -1815,11 +1815,11 @@ category = "seed"
 price = 30000
 sell_price = 15000  # TODO(balance)
 
-[blueberry_seed.seed]
-grows_into = "blueberry"
+[seed_blueberry.seed]
+grows_into = "crop_blueberry"
 cycles = 12
 
-[watermelon]
+[crop_watermelon]
 name = "Watermelon"
 emoji = "🍉"
 description = "Thumps like a drum. Probably ripe."
@@ -1830,13 +1830,13 @@ category = "crop"
 price = 0
 sell_price = 400000
 
-[watermelon.crop]
-seed = "watermelon_seed"
+[crop_watermelon.crop]
+seed = "seed_watermelon"
 min_harvest = 2
 max_harvest = 4
 pet_xp = 2000
 
-[watermelon_seed]
+[seed_watermelon]
 name = "Watermelon Seed"
 emoji = "🌱"
 description = "A long, hot summer in a seed (forty rains)."
@@ -1847,11 +1847,11 @@ category = "seed"
 price = 150000
 sell_price = 75000  # TODO(balance)
 
-[watermelon_seed.seed]
-grows_into = "watermelon"
+[seed_watermelon.seed]
+grows_into = "crop_watermelon"
 cycles = 40
 
-[starfruit]
+[crop_starfruit]
 name = "Starfruit"
 emoji = "⭐"
 description = "It really is shaped like a star."
@@ -1862,13 +1862,13 @@ category = "crop"
 price = 0
 sell_price = 1500000
 
-[starfruit.crop]
-seed = "starfruit_seed"
+[crop_starfruit.crop]
+seed = "seed_starfruit"
 min_harvest = 1
 max_harvest = 2
 pet_xp = 7500
 
-[starfruit_seed]
+[seed_starfruit]
 name = "Starfruit Seed"
 emoji = "🌱"
 description = "Slow, and worth it."
@@ -1879,15 +1879,15 @@ category = "seed"
 price = 900000
 sell_price = 450000  # TODO(balance)
 
-[starfruit_seed.seed]
-grows_into = "starfruit"
+[seed_starfruit.seed]
+grows_into = "crop_starfruit"
 cycles = 80
 
 
 # ---- pet food: each skill drops its own, in three tiers (worth 200 / 1,000 / 5,000 pet xp; see [pets] in economy.toml). Crops are
 # farming's food. Not sold. A pet assigned to the skill gets x3, a pet with no skill x2. TODO(balance): the drop rates aim at
 # roughly 3-5k base pet xp an hour in each skill (python -m scripts.balance prints it).
-[acorn_mix]
+[food_acorn_mix]
 name = "Acorn Mix"
 emoji = "🌰"
 description = "A crunchy bag of forest snacks. Pets go nuts for it."
@@ -1896,14 +1896,14 @@ rarity = 2
 skill = "foraging"
 category = "pet_food"
 sell_price = 500  # TODO(balance)
-[acorn_mix.pet_food]
+[food_acorn_mix.pet_food]
 tier = 1
-[acorn_mix.drop]
+[food_acorn_mix.drop]
 rate = 2
 min = 1
 max = 1
 
-[honeycomb]
+[food_honeycomb]
 name = "Honeycomb"
 emoji = "🍯"
 description = "Sticky, golden and a little bit magic."
@@ -1912,14 +1912,14 @@ rarity = 4
 skill = "foraging"
 category = "pet_food"
 sell_price = 6000  # TODO(balance)
-[honeycomb.pet_food]
+[food_honeycomb.pet_food]
 tier = 2
-[honeycomb.drop]
+[food_honeycomb.drop]
 rate = 10
 min = 1
 max = 1
 
-[golden_sap]
+[food_golden_sap]
 name = "Golden Sap"
 emoji = "🟡"
 description = "From the oldest tree in the forest. Pets would do anything for it."
@@ -1928,14 +1928,14 @@ rarity = 5
 skill = "foraging"
 category = "pet_food"
 sell_price = 60000  # TODO(balance)
-[golden_sap.pet_food]
+[food_golden_sap.pet_food]
 tier = 3
-[golden_sap.drop]
+[food_golden_sap.drop]
 rate = 50
 min = 1
 max = 1
 
-[stone_biscuit]
+[food_stone_biscuit]
 name = "Stone Biscuit"
 emoji = "🍪"
 description = "Baked hard, like everything down in the mine."
@@ -1944,14 +1944,14 @@ rarity = 2
 skill = "mining"
 category = "pet_food"
 sell_price = 500  # TODO(balance)
-[stone_biscuit.pet_food]
+[food_stone_biscuit.pet_food]
 tier = 1
-[stone_biscuit.drop]
+[food_stone_biscuit.drop]
 rate = 100
 min = 1
 max = 1
 
-[crystal_chew]
+[food_crystal_chew]
 name = "Crystal Chew"
 emoji = "💎"
 description = "Rock candy, the mine's way."
@@ -1960,14 +1960,14 @@ rarity = 4
 skill = "mining"
 category = "pet_food"
 sell_price = 6000  # TODO(balance)
-[crystal_chew.pet_food]
+[food_crystal_chew.pet_food]
 tier = 2
-[crystal_chew.drop]
+[food_crystal_chew.drop]
 rate = 500
 min = 1
 max = 1
 
-[geode_feast]
+[food_geode_feast]
 name = "Geode Feast"
 emoji = "🍱"
 description = "Cracked open, it is full of treats."
@@ -1976,14 +1976,14 @@ rarity = 5
 skill = "mining"
 category = "pet_food"
 sell_price = 60000  # TODO(balance)
-[geode_feast.pet_food]
+[food_geode_feast.pet_food]
 tier = 3
-[geode_feast.drop]
+[food_geode_feast.drop]
 rate = 2500
 min = 1
 max = 1
 
-[fish_flakes]
+[food_fish_flakes]
 name = "Fish Flakes"
 emoji = "🐟"
 description = "Dried and crumbled. Smells like a good day."
@@ -1992,14 +1992,14 @@ rarity = 2
 skill = "fishing"
 category = "pet_food"
 sell_price = 500  # TODO(balance)
-[fish_flakes.pet_food]
+[food_fish_flakes.pet_food]
 tier = 1
-[fish_flakes.drop]
+[food_fish_flakes.drop]
 rate = 13
 min = 1
 max = 1
 
-[dried_squid]
+[food_dried_squid]
 name = "Dried Squid"
 emoji = "🦑"
 description = "Chewy, salty, and gone in a minute."
@@ -2008,14 +2008,14 @@ rarity = 4
 skill = "fishing"
 category = "pet_food"
 sell_price = 6000  # TODO(balance)
-[dried_squid.pet_food]
+[food_dried_squid.pet_food]
 tier = 2
-[dried_squid.drop]
+[food_dried_squid.drop]
 rate = 130
 min = 1
 max = 1
 
-[sea_feast]
+[food_sea_feast]
 name = "Sea Feast"
 emoji = "🦞"
 description = "A whole platter from the deep. Fit for a pet king."
@@ -2024,9 +2024,9 @@ rarity = 5
 skill = "fishing"
 category = "pet_food"
 sell_price = 60000  # TODO(balance)
-[sea_feast.pet_food]
+[food_sea_feast.pet_food]
 tier = 3
-[sea_feast.drop]
+[food_sea_feast.drop]
 rate = 1300
 min = 1
 max = 1
@@ -2036,7 +2036,7 @@ max = 1
 # same in every skill: x1, x1.5, x2.6, x4, x6, x9, x13, x18 of a starter tool (python -m scripts.balance prints it). Each step costs about 5x the last.
 
 
-[ironbound_pickaxe]
+[tool_pickaxe_ironbound]
 name = "Ironbound Pickaxe"
 emoji = "⛏️"
 description = "Banded in black iron. It does not so much dig as insist."
@@ -2047,7 +2047,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[ironbound_pickaxe.tool]
+[tool_pickaxe_ironbound.tool]
 kind = "pickaxe"
 power = 15
 requirement = 0
@@ -2057,20 +2057,20 @@ ability_name = "Auto-Bomb"
 ability_description = "Every 32 rows a charge blows the whole row for free: flat pressure, no collapse check."
 stats = { auto_bomb = 32 }
 
-[ironbound_pickaxe.tool.upgrade]
-to = "crystal_pickaxe"
+[tool_pickaxe_ironbound.tool.upgrade]
+to = "tool_pickaxe_crystal"
 bits = 15000000
 
-[ironbound_pickaxe.tool.upgrade.items]
-coal = 3001
-tin_ore = 1346
-iron_ore = 2000
-silver_ore = 264
-hardwood = 100
-coral_shard = 50
+[tool_pickaxe_ironbound.tool.upgrade.items]
+material_coal = 3001
+material_tin_ore = 1346
+material_iron_ore = 2000
+material_silver_ore = 264
+material_hardwood = 100
+material_coral_shard = 50
 
 
-[crystal_pickaxe]
+[tool_pickaxe_crystal]
 name = "Crystal Pickaxe"
 emoji = "⛏️"
 description = "The head is a single cut gem. It hums when ore is near."
@@ -2081,7 +2081,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[crystal_pickaxe.tool]
+[tool_pickaxe_crystal.tool]
 kind = "pickaxe"
 power = 23
 requirement = 0
@@ -2091,20 +2091,20 @@ ability_name = "Auto-Bomb"
 ability_description = "Every 28 rows a charge blows the whole row for free: flat pressure, no collapse check."
 stats = { auto_bomb = 28 }
 
-[crystal_pickaxe.tool.upgrade]
-to = "deepdelver_pickaxe"
+[tool_pickaxe_crystal.tool.upgrade]
+to = "tool_pickaxe_deepdelver"
 bits = 70000000
 
-[crystal_pickaxe.tool.upgrade.items]
-iron_ore = 4523
-silver_ore = 672
-amber = 428
-clay = 2947
-beeswax = 8
-tuna = 8
+[tool_pickaxe_crystal.tool.upgrade.items]
+material_iron_ore = 4523
+material_silver_ore = 672
+material_amber = 428
+material_clay = 2947
+material_beeswax = 8
+fish_tuna = 8
 
 
-[deepdelver_pickaxe]
+[tool_pickaxe_deepdelver]
 name = "Deepdelver's Pick"
 emoji = "⛏️"
 description = "Carried down further than any map goes."
@@ -2115,7 +2115,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[deepdelver_pickaxe.tool]
+[tool_pickaxe_deepdelver.tool]
 kind = "pickaxe"
 power = 35
 requirement = 0
@@ -2125,20 +2125,20 @@ ability_name = "Auto-Bomb"
 ability_description = "Every 24 rows a charge blows the whole row for free: flat pressure, no collapse check."
 stats = { auto_bomb = 24 }
 
-[deepdelver_pickaxe.tool.upgrade]
-to = "mythril_pickaxe"
+[tool_pickaxe_deepdelver.tool.upgrade]
+to = "tool_pickaxe_mythril"
 bits = 300000000
 
-[deepdelver_pickaxe.tool.upgrade.items]
-silver_ore = 1868
-amber = 1193
-garnet = 108
-tin_ore = 7655
-maple_leaf = 40
-sturgeon = 2
+[tool_pickaxe_deepdelver.tool.upgrade.items]
+material_silver_ore = 1868
+material_amber = 1193
+material_garnet = 108
+material_tin_ore = 7655
+material_maple_leaf = 40
+fish_sturgeon = 2
 
 
-[mythril_pickaxe]
+[tool_pickaxe_mythril]
 name = "Mythril Pickaxe"
 emoji = "⛏️"
 description = "Light as a feather, hard as a promise."
@@ -2149,7 +2149,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[mythril_pickaxe.tool]
+[tool_pickaxe_mythril.tool]
 kind = "pickaxe"
 power = 51
 requirement = 0
@@ -2159,19 +2159,19 @@ ability_name = "Auto-Bomb"
 ability_description = "Every 17 rows a charge blows the whole row for free: flat pressure, no collapse check."
 stats = { auto_bomb = 17 }
 
-[mythril_pickaxe.tool.upgrade]
-to = "worldsplitter_pickaxe"
+[tool_pickaxe_mythril.tool.upgrade]
+to = "tool_pickaxe_worldsplitter"
 bits = 1200000000
 
-[mythril_pickaxe.tool.upgrade.items]
-garnet = 443
-amber = 3432
-silver_ore = 5363
-aged_feather = 4
-marlin = 5
+[tool_pickaxe_mythril.tool.upgrade.items]
+material_garnet = 443
+material_amber = 3432
+material_silver_ore = 5363
+material_aged_feather = 4
+fish_marlin = 5
 
 
-[worldsplitter_pickaxe]
+[tool_pickaxe_worldsplitter]
 name = "Worldsplitter"
 emoji = "⛏️"
 description = "They say the mine groans when it is carried in."
@@ -2182,7 +2182,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[worldsplitter_pickaxe.tool]
+[tool_pickaxe_worldsplitter.tool]
 kind = "pickaxe"
 power = 71
 requirement = 0
@@ -2193,7 +2193,7 @@ ability_description = "Every 14 rows a charge blows the whole row for free: flat
 stats = { auto_bomb = 14 }
 
 
-[tidecaller_rod]
+[tool_rod_tidecaller]
 name = "Tidecaller Rod"
 emoji = "🎣"
 description = "Fish come when it calls. Some even bring friends."
@@ -2204,7 +2204,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[tidecaller_rod.tool]
+[tool_rod_tidecaller.tool]
 kind = "rod"
 power = 30
 requirement = 0
@@ -2214,20 +2214,20 @@ ability_name = "Auto-Reel"
 ability_description = "The first 1 arrow of every reel is pressed for you."
 stats = { auto_reel = 1, bite_speed = 0.03 }
 
-[tidecaller_rod.tool.upgrade]
-to = "moonlit_rod"
+[tool_rod_tidecaller.tool.upgrade]
+to = "tool_rod_moonlit"
 bits = 40000000
 
-[tidecaller_rod.tool.upgrade.items]
-pike = 9
-muskie = 8
-salmon = 29
-coral_shard = 120
-hardwood = 40
-iron_ore = 60
+[tool_rod_tidecaller.tool.upgrade.items]
+fish_pike = 9
+fish_muskie = 8
+fish_salmon = 29
+material_coral_shard = 120
+material_hardwood = 40
+material_iron_ore = 60
 
 
-[moonlit_rod]
+[tool_rod_moonlit]
 name = "Moonlit Rod"
 emoji = "🎣"
 description = "Strung with silver line that glows after dark."
@@ -2238,7 +2238,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[moonlit_rod.tool]
+[tool_rod_moonlit.tool]
 kind = "rod"
 power = 45
 requirement = 0
@@ -2248,20 +2248,20 @@ ability_name = "Auto-Reel"
 ability_description = "The first 1 arrow of every reel is pressed for you."
 stats = { auto_reel = 1, bite_speed = 0.06 }
 
-[moonlit_rod.tool.upgrade]
-to = "leviathan_rod"
+[tool_rod_moonlit.tool.upgrade]
+to = "tool_rod_leviathan"
 bits = 150000000
 
-[moonlit_rod.tool.upgrade.items]
-sturgeon = 3
-muskie = 24
-pike = 28
-coral_shard = 250
-hardwood = 100
-gold_ore = 100
+[tool_rod_moonlit.tool.upgrade.items]
+fish_sturgeon = 3
+fish_muskie = 24
+fish_pike = 28
+material_coral_shard = 250
+material_hardwood = 100
+material_gold_ore = 100
 
 
-[leviathan_rod]
+[tool_rod_leviathan]
 name = "Leviathan Rod"
 emoji = "🎣"
 description = "Built to hold something far too big for a pond."
@@ -2272,7 +2272,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[leviathan_rod.tool]
+[tool_rod_leviathan.tool]
 kind = "rod"
 power = 65
 requirement = 0
@@ -2282,20 +2282,20 @@ ability_name = "Auto-Reel"
 ability_description = "The first 2 arrows of every reel are pressed for you."
 stats = { auto_reel = 2, bite_speed = 0.09, slips = 1 }
 
-[leviathan_rod.tool.upgrade]
-to = "abyssal_rod"
+[tool_rod_leviathan.tool.upgrade]
+to = "tool_rod_abyssal"
 bits = 500000000
 
-[leviathan_rod.tool.upgrade.items]
-oarfish = 9
-sturgeon = 6
-moray_eel = 208
-coral_shard = 500
-maple_leaf = 30
-gold_ore = 200
+[tool_rod_leviathan.tool.upgrade.items]
+fish_oarfish = 9
+fish_sturgeon = 6
+fish_moray_eel = 208
+material_coral_shard = 500
+material_maple_leaf = 30
+material_gold_ore = 200
 
 
-[abyssal_rod]
+[tool_rod_abyssal]
 name = "Abyssal Rod"
 emoji = "🎣"
 description = "Cold to the touch. The line never seems to reach the bottom."
@@ -2306,7 +2306,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[abyssal_rod.tool]
+[tool_rod_abyssal.tool]
 kind = "rod"
 power = 90
 requirement = 0
@@ -2316,20 +2316,20 @@ ability_name = "Auto-Reel"
 ability_description = "The first 2 arrows of every reel are pressed for you."
 stats = { auto_reel = 2, bite_speed = 0.12 }
 
-[abyssal_rod.tool.upgrade]
-to = "poseidon_rod"
+[tool_rod_abyssal.tool.upgrade]
+to = "tool_rod_poseidon"
 bits = 1500000000
 
-[abyssal_rod.tool.upgrade.items]
-golden_koi = 1
-oarfish = 7
-sturgeon = 5
-coral_shard = 800
-aged_feather = 3
-gold_ore = 400
+[tool_rod_abyssal.tool.upgrade.items]
+fish_golden_koi = 1
+fish_oarfish = 7
+fish_sturgeon = 5
+material_coral_shard = 800
+material_aged_feather = 3
+material_gold_ore = 400
 
 
-[poseidon_rod]
+[tool_rod_poseidon]
 name = "Poseidon's Rod"
 emoji = "🔱"
 description = "The sea gives up its best without being asked twice."
@@ -2340,7 +2340,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[poseidon_rod.tool]
+[tool_rod_poseidon.tool]
 kind = "rod"
 power = 120
 requirement = 0
@@ -2351,7 +2351,7 @@ ability_description = "The first 3 arrows of every reel are pressed for you."
 stats = { auto_reel = 3, bite_speed = 0.15, slips = 1 }
 
 
-[elderwood_axe]
+[tool_axe_elderwood]
 name = "Elderwood Greataxe"
 emoji = "🪓"
 description = "Cut from the oldest tree in the forest, which did not mind."
@@ -2362,7 +2362,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[elderwood_axe.tool]
+[tool_axe_elderwood.tool]
 kind = "axe"
 power = 54
 requirement = 0
@@ -2373,7 +2373,7 @@ ability_description = "18% of your chops land twice."
 stats = { double_chop = 0.18 }
 
 
-[rotation_wedge]
+[material_rotation_wedge]
 name = "Rotation Wedge"
 description = "Drive it into a bad spot and the grain gives way to another."
 wiki = "Use it while chopping to move off your spot at once: you land on a random new grain, with a slightly better chance of a special spot. Buy it or find it chopping. One use."
@@ -2384,12 +2384,12 @@ category = "material"
 price = 1000  # TODO(balance)
 sell_price = 500  # TODO(balance)
 
-[rotation_wedge.drop]
+[material_rotation_wedge.drop]
 rate = 60  # TODO(balance): 1 in 60 per drop roll
 min = 1
 max = 1
 
-[iron_wedge]
+[material_iron_wedge]
 name = "Iron Wedge"
 description = "A better wedge: a good new spot, and your next 40 chops hit 20% harder."
 wiki = "Like a Rotation Wedge, but the grain leans toward the good ones and special spots are about 4x likelier. It also leaves a bonus: your next 40 chops hit and pay xp 20% harder, wherever the spot moves. One use."
@@ -2400,12 +2400,12 @@ category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 4000  # TODO(balance)
 
-[iron_wedge.drop]
+[material_iron_wedge.drop]
 rate = 400  # TODO(balance): 1 in 400 per drop roll
 min = 1
 max = 1
 
-[gilded_wedge]
+[material_gilded_wedge]
 name = "Gilded Wedge"
 description = "The finest wedge there is: a top spot, and your next 120 chops hit 50% harder."
 wiki = "Like a Rotation Wedge, but the grain is very likely a good one and special spots are about 10x likelier. It also leaves a bonus: your next 120 chops hit and pay xp 50% harder, wherever the spot moves. One use."
@@ -2416,22 +2416,22 @@ category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 25000  # TODO(balance)
 
-[gilded_wedge.drop]
+[material_gilded_wedge.drop]
 rate = 2500  # TODO(balance): 1 in 2500 per drop roll
 min = 1
 max = 1
 
-[masterwork_pickaxe.tool.fork]
-to = "prospector_pickaxe"
+[tool_pickaxe_masterwork.tool.fork]
+to = "tool_pickaxe_prospector"
 bits = 3000000
 
-[masterwork_pickaxe.tool.fork.items]
-gold_ore = 225
-obsidian = 107
-hardwood = 40
-coral_shard = 20
+[tool_pickaxe_masterwork.tool.fork.items]
+material_gold_ore = 225
+material_obsidian = 107
+material_hardwood = 40
+material_coral_shard = 20
 
-[prospector_pickaxe]
+[tool_pickaxe_prospector]
 name = "Prospector's Pickaxe"
 emoji = "⛏️"
 description = "Light, quick and greedy: it finds more ore, and brings the roof down sooner."
@@ -2442,7 +2442,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[prospector_pickaxe.tool]
+[tool_pickaxe_prospector.tool]
 kind = "pickaxe"
 power = 15
 requirement = 0
@@ -2452,18 +2452,18 @@ ability_name = "Multi-Mine"
 ability_description = "Each dig has a 25% chance to bite the rock beside you too, for the pressure of its hardness only."
 stats = { ore_yield = 0.11, multi_mine = 0.25 }
 
-[prospector_pickaxe.tool.upgrade]
-to = "geode_pickaxe"
+[tool_pickaxe_prospector.tool.upgrade]
+to = "tool_pickaxe_geode"
 bits = 15000000
 
-[prospector_pickaxe.tool.upgrade.items]
-gold_ore = 547
-obsidian = 324
-platinum_ore = 37
-hardwood = 100
-coral_shard = 50
+[tool_pickaxe_prospector.tool.upgrade.items]
+material_gold_ore = 547
+material_obsidian = 324
+material_platinum_ore = 37
+material_hardwood = 100
+material_coral_shard = 50
 
-[geode_pickaxe]
+[tool_pickaxe_geode]
 name = "Geode Pickaxe"
 emoji = "⛏️"
 description = "Cracks rock to find the sparkle inside. Richer ore, a creakier tunnel."
@@ -2474,7 +2474,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[geode_pickaxe.tool]
+[tool_pickaxe_geode.tool]
 kind = "pickaxe"
 power = 23
 requirement = 0
@@ -2484,18 +2484,18 @@ ability_name = "Multi-Mine"
 ability_description = "Each dig has a 35% chance to bite the rock beside you too, for the pressure of its hardness only."
 stats = { ore_yield = 0.22, multi_mine = 0.35 }
 
-[geode_pickaxe.tool.upgrade]
-to = "seekers_pickaxe"
+[tool_pickaxe_geode.tool.upgrade]
+to = "tool_pickaxe_seekers"
 bits = 70000000
 
-[geode_pickaxe.tool.upgrade.items]
-gold_ore = 1200
-obsidian = 822
-platinum_ore = 135
-beeswax = 8
-tuna = 8
+[tool_pickaxe_geode.tool.upgrade.items]
+material_gold_ore = 1200
+material_obsidian = 822
+material_platinum_ore = 135
+material_beeswax = 8
+fish_tuna = 8
 
-[seekers_pickaxe]
+[tool_pickaxe_seekers]
 name = "Seeker's Pickaxe"
 emoji = "⛏️"
 description = "It seems to know where the good stuff is hiding."
@@ -2506,7 +2506,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[seekers_pickaxe.tool]
+[tool_pickaxe_seekers.tool]
 kind = "pickaxe"
 power = 35
 requirement = 0
@@ -2516,18 +2516,18 @@ ability_name = "Multi-Mine"
 ability_description = "Each dig has a 45% chance to bite the rock beside you too, for the pressure of its hardness only."
 stats = { ore_yield = 0.33, multi_mine = 0.45 }
 
-[seekers_pickaxe.tool.upgrade]
-to = "veinhunter_pickaxe"
+[tool_pickaxe_seekers.tool.upgrade]
+to = "tool_pickaxe_veinhunter"
 bits = 300000000
 
-[seekers_pickaxe.tool.upgrade.items]
-platinum_ore = 377
-obsidian = 1833
-sapphire = 9
-maple_leaf = 40
-sturgeon = 2
+[tool_pickaxe_seekers.tool.upgrade.items]
+material_platinum_ore = 377
+material_obsidian = 1833
+material_sapphire = 9
+material_maple_leaf = 40
+fish_sturgeon = 2
 
-[veinhunter_pickaxe]
+[tool_pickaxe_veinhunter]
 name = "Vein-Hunter's Pickaxe"
 emoji = "⛏️"
 description = "A hunter's tool. It takes more from every lode, and the mine knows it."
@@ -2538,7 +2538,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[veinhunter_pickaxe.tool]
+[tool_pickaxe_veinhunter.tool]
 kind = "pickaxe"
 power = 51
 requirement = 0
@@ -2548,18 +2548,18 @@ ability_name = "Multi-Mine"
 ability_description = "Each dig has a 55% chance to bite the rock beside you too, for the pressure of its hardness only."
 stats = { ore_yield = 0.44, multi_mine = 0.55 }
 
-[veinhunter_pickaxe.tool.upgrade]
-to = "motherlode_pickaxe"
+[tool_pickaxe_veinhunter.tool.upgrade]
+to = "tool_pickaxe_motherlode"
 bits = 1200000000
 
-[veinhunter_pickaxe.tool.upgrade.items]
-platinum_ore = 1086
-sapphire = 40
-emerald = 40
-aged_feather = 4
-marlin = 5
+[tool_pickaxe_veinhunter.tool.upgrade.items]
+material_platinum_ore = 1086
+material_sapphire = 40
+material_emerald = 40
+material_aged_feather = 4
+fish_marlin = 5
 
-[motherlode_pickaxe]
+[tool_pickaxe_motherlode]
 name = "Motherlode Pickaxe"
 emoji = "⛏️"
 description = "Everything in the mountain wants to be found by this pick."
@@ -2570,7 +2570,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[motherlode_pickaxe.tool]
+[tool_pickaxe_motherlode.tool]
 kind = "pickaxe"
 power = 71
 requirement = 0
@@ -2580,20 +2580,20 @@ ability_name = "Multi-Mine"
 ability_description = "Each dig has a 60% chance to bite the rock beside you too, for the pressure of its hardness only."
 stats = { ore_yield = 0.55, multi_mine = 0.6 }
 
-[masterwork_rod.tool.fork]
-to = "lantern_rod"
+[tool_rod_masterwork.tool.fork]
+to = "tool_rod_lantern"
 bits = 10000000
 
-[masterwork_rod.tool.fork.items]
-swordfish = 92
-tuna = 367
-pufferfish = 19
-moray_eel = 17
-dewdrop = 20
-coral_shard = 60
-hardwood = 30
+[tool_rod_masterwork.tool.fork.items]
+fish_swordfish = 92
+fish_tuna = 367
+fish_pufferfish = 19
+fish_moray_eel = 17
+material_dewdrop = 20
+material_coral_shard = 60
+material_hardwood = 30
 
-[lantern_rod]
+[tool_rod_lantern]
 name = "Lantern Rod"
 emoji = "🏮"
 description = "A glowing lure draws strange things up from the deep. Slower bites, better finds."
@@ -2604,7 +2604,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[lantern_rod.tool]
+[tool_rod_lantern.tool]
 kind = "rod"
 power = 30
 requirement = 0
@@ -2614,19 +2614,19 @@ ability_name = "Bycatch"
 ability_description = "10% of catches also bring up a second, different fish."
 stats = { bycatch = 0.1, rare_luck = 0.06, treasure_luck = 0.1, bite_speed = -0.02 }
 
-[lantern_rod.tool.upgrade]
-to = "siren_rod"
+[tool_rod_lantern.tool.upgrade]
+to = "tool_rod_siren"
 bits = 40000000
 
-[lantern_rod.tool.upgrade.items]
-swordfish = 85
-sturgeon = 1
-giant_squid = 2
-coral_shard = 120
-hardwood = 40
-iron_ore = 60
+[tool_rod_lantern.tool.upgrade.items]
+fish_swordfish = 85
+fish_sturgeon = 1
+fish_giant_squid = 2
+material_coral_shard = 120
+material_hardwood = 40
+material_iron_ore = 60
 
-[siren_rod]
+[tool_rod_siren]
 name = "Siren Rod"
 emoji = "🧜"
 description = "It hums a tune only the rare fish answer to."
@@ -2637,7 +2637,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[siren_rod.tool]
+[tool_rod_siren.tool]
 kind = "rod"
 power = 45
 requirement = 0
@@ -2647,19 +2647,19 @@ ability_name = "Bycatch"
 ability_description = "15% of catches also bring up a second, different fish."
 stats = { bycatch = 0.15, rare_luck = 0.12, treasure_luck = 0.2, bite_speed = -0.04 }
 
-[siren_rod.tool.upgrade]
-to = "trident_rod"
+[tool_rod_siren.tool.upgrade]
+to = "tool_rod_trident"
 bits = 150000000
 
-[siren_rod.tool.upgrade.items]
-marlin = 14
-giant_squid = 13
-swordfish = 255
-coral_shard = 250
-hardwood = 100
-gold_ore = 100
+[tool_rod_siren.tool.upgrade.items]
+fish_marlin = 14
+fish_giant_squid = 13
+fish_swordfish = 255
+material_coral_shard = 250
+material_hardwood = 100
+material_gold_ore = 100
 
-[trident_rod]
+[tool_rod_trident]
 name = "Trident Rod"
 emoji = "🔱"
 description = "Three prongs, three chances at something unusual."
@@ -2670,7 +2670,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[trident_rod.tool]
+[tool_rod_trident.tool]
 kind = "rod"
 power = 65
 requirement = 0
@@ -2680,19 +2680,19 @@ ability_name = "Bycatch"
 ability_description = "20% of catches also bring up a second, different fish."
 stats = { bycatch = 0.2, rare_luck = 0.18, treasure_luck = 0.3, bite_speed = -0.06 }
 
-[trident_rod.tool.upgrade]
-to = "kraken_rod"
+[tool_rod_trident.tool.upgrade]
+to = "tool_rod_kraken"
 bits = 500000000
 
-[trident_rod.tool.upgrade.items]
-abyssal_angler = 12
-giant_squid = 36
-marlin = 29
-coral_shard = 500
-maple_leaf = 30
-gold_ore = 200
+[tool_rod_trident.tool.upgrade.items]
+fish_abyssal_angler = 12
+fish_giant_squid = 36
+fish_marlin = 29
+material_coral_shard = 500
+material_maple_leaf = 30
+material_gold_ore = 200
 
-[kraken_rod]
+[tool_rod_kraken]
 name = "Kraken Rod"
 emoji = "🐙"
 description = "Whatever lives down there, this rod calls it."
@@ -2703,7 +2703,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[kraken_rod.tool]
+[tool_rod_kraken.tool]
 kind = "rod"
 power = 90
 requirement = 0
@@ -2713,19 +2713,19 @@ ability_name = "Bycatch"
 ability_description = "25% of catches also bring up a second, different fish."
 stats = { bycatch = 0.25, rare_luck = 0.24, treasure_luck = 0.4, bite_speed = -0.08 }
 
-[kraken_rod.tool.upgrade]
-to = "trophy_rod"
+[tool_rod_kraken.tool.upgrade]
+to = "tool_rod_trophy"
 bits = 1500000000
 
-[kraken_rod.tool.upgrade.items]
-leviathan_pup = 1
-abyssal_angler = 9
-giant_squid = 20
-coral_shard = 800
-aged_feather = 3
-gold_ore = 400
+[tool_rod_kraken.tool.upgrade.items]
+fish_leviathan_pup = 1
+fish_abyssal_angler = 9
+fish_giant_squid = 20
+material_coral_shard = 800
+material_aged_feather = 3
+material_gold_ore = 400
 
-[trophy_rod]
+[tool_rod_trophy]
 name = "Trophy Rod"
 emoji = "🏆"
 description = "Hung with trophies, and it earns every one."
@@ -2736,7 +2736,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[trophy_rod.tool]
+[tool_rod_trophy.tool]
 kind = "rod"
 power = 120
 requirement = 0
@@ -2746,7 +2746,7 @@ ability_name = "Bycatch"
 ability_description = "30% of catches also bring up a second, different fish."
 stats = { bycatch = 0.3, rare_luck = 0.3, treasure_luck = 0.5, bite_speed = -0.1 }
 
-[compost]
+[material_compost]
 name = "Rich Compost"
 description = "Dark, crumbly and alive. Every workbench seems to want a little."
 wiki = "Turns up when you harvest (longer crops make more rolls). Used to upgrade watering cans, and a little of it in other tools' upgrades."
@@ -2757,12 +2757,12 @@ category = "material"
 price = 0
 sell_price = 150
 
-[compost.drop]
+[material_compost.drop]
 rate = 3  # TODO(balance): 1 in 3 per drop roll
 min = 1
 max = 4
 
-[dewdrop]
+[material_dewdrop]
 name = "Morning Dewdrop"
 description = "A bead of water that never dries. Farmers treasure them."
 wiki = "Turns up when you harvest (longer crops make more rolls). Used to upgrade watering cans, and a little of it in other tools' upgrades."
@@ -2773,12 +2773,12 @@ category = "material"
 price = 0
 sell_price = 800
 
-[dewdrop.drop]
+[material_dewdrop.drop]
 rate = 12  # TODO(balance): 1 in 12 per drop roll
 min = 1
 max = 2
 
-[beeswax]
+[material_beeswax]
 name = "Beeswax"
 description = "A golden block, still warm. The bees will not miss it. Much."
 wiki = "Turns up when you harvest (longer crops make more rolls). Used to upgrade watering cans, and a little of it in other tools' upgrades."
@@ -2789,12 +2789,12 @@ category = "material"
 price = 0
 sell_price = 3000
 
-[beeswax.drop]
+[material_beeswax.drop]
 rate = 40  # TODO(balance): 1 in 40 per drop roll
 min = 1
 max = 2
 
-[living_vine]
+[material_living_vine]
 name = "Living Vine"
 description = "It keeps growing in your pack. Handle with care."
 wiki = "Turns up when you harvest (longer crops make more rolls). Used to upgrade watering cans, and a little of it in other tools' upgrades."
@@ -2805,12 +2805,12 @@ category = "material"
 price = 0
 sell_price = 12000
 
-[living_vine.drop]
+[material_living_vine.drop]
 rate = 150  # TODO(balance): 1 in 150 per drop roll
 min = 1
 max = 1
 
-[tin_can]
+[tool_can_tin]
 name = "Tin Watering Can"
 description = "Dented, leaky, and yours. It waters three plots an hour."
 wiki = "Waters 3 plots an hour: each always grows a cycle."
@@ -2821,20 +2821,20 @@ category = "tool"
 price = 0  # free: every new player gets it from /play (services/shop.claim_starter_tools)
 sell_price = 0
 
-[tin_can.tool]
+[tool_can_tin.tool]
 kind = "can"
 power = 3  # plots it waters an hour
 requirement = 0
 
-[tin_can.tool.upgrade]
-to = "copper_can"
+[tool_can_tin.tool.upgrade]
+to = "tool_can_copper"
 bits = 20000
 
-[tin_can.tool.upgrade.items]
-compost = 30
-plant_fiber = 20
+[tool_can_tin.tool.upgrade.items]
+material_compost = 30
+material_plant_fiber = 20
 
-[copper_can]
+[tool_can_copper]
 name = "Copper Watering Can"
 description = "A proper spout and a handle that fits."
 wiki = "Waters 4 plots an hour: each always grows a cycle."
@@ -2845,21 +2845,21 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[copper_can.tool]
+[tool_can_copper.tool]
 kind = "can"
 power = 4  # plots it waters an hour
 requirement = 0
 
-[copper_can.tool.upgrade]
-to = "iron_can"
+[tool_can_copper.tool.upgrade]
+to = "tool_can_iron"
 bits = 150000
 
-[copper_can.tool.upgrade.items]
-compost = 80
-dewdrop = 10
-plant_fiber = 40
+[tool_can_copper.tool.upgrade.items]
+material_compost = 80
+material_dewdrop = 10
+material_plant_fiber = 40
 
-[iron_can]
+[tool_can_iron]
 name = "Iron Watering Can"
 description = "Heavy when full, and it never seems to run dry."
 wiki = "Waters 5 plots an hour: each always grows a cycle."
@@ -2870,23 +2870,23 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[iron_can.tool]
+[tool_can_iron.tool]
 kind = "can"
 power = 5  # plots it waters an hour
 requirement = 0
 
-[iron_can.tool.upgrade]
-to = "silver_can"
+[tool_can_iron.tool.upgrade]
+to = "tool_can_silver"
 bits = 800000
 
-[iron_can.tool.upgrade.items]
-compost = 150
-dewdrop = 40
-beeswax = 5
-plant_fiber = 100
-hardwood = 20
+[tool_can_iron.tool.upgrade.items]
+material_compost = 150
+material_dewdrop = 40
+material_beeswax = 5
+material_plant_fiber = 100
+material_hardwood = 20
 
-[silver_can]
+[tool_can_silver]
 name = "Silver Watering Can"
 description = "Rain looks nicer coming out of silver. Crops thrive on it."
 wiki = "Waters 6 plots an hour: each always grows a cycle."
@@ -2897,30 +2897,30 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[silver_can.tool]
+[tool_can_silver.tool]
 kind = "can"
 power = 6  # plots it waters an hour
 requirement = 0
 
-[silver_can.tool.upgrade]
-to = "gold_can"
+[tool_can_silver.tool.upgrade]
+to = "tool_can_gold"
 bits = 4000000
 
-[silver_can.tool.upgrade.items]
-dewdrop = 100
-beeswax = 20
-hardwood = 50
+[tool_can_silver.tool.upgrade.items]
+material_dewdrop = 100
+material_beeswax = 20
+material_hardwood = 50
 
-[silver_can.tool.fork]
-to = "cauldron_can"
+[tool_can_silver.tool.fork]
+to = "tool_can_cauldron"
 bits = 4000000
 
-[silver_can.tool.fork.items]
-compost = 400
-plant_fiber = 260
-hardwood = 50
+[tool_can_silver.tool.fork.items]
+material_compost = 400
+material_plant_fiber = 260
+material_hardwood = 50
 
-[gold_can]
+[tool_can_gold]
 name = "Gold Watering Can"
 description = "Whatever it waters comes up richer."
 wiki = "Waters 7 plots an hour: each always grows a cycle."
@@ -2931,7 +2931,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[gold_can.tool]
+[tool_can_gold.tool]
 kind = "can"
 power = 7  # plots it waters an hour
 requirement = 0
@@ -2941,16 +2941,16 @@ ability_name = "Sprinkler"
 ability_description = "Watered plots are 8% likelier to grow each hour."
 stats = { sprinkle = 0.08 }
 
-[gold_can.tool.upgrade]
-to = "crystal_can"
+[tool_can_gold.tool.upgrade]
+to = "tool_can_crystal"
 bits = 20000000
 
-[gold_can.tool.upgrade.items]
-beeswax = 60
-living_vine = 6
-coral_shard = 40
+[tool_can_gold.tool.upgrade.items]
+material_beeswax = 60
+material_living_vine = 6
+material_coral_shard = 40
 
-[crystal_can]
+[tool_can_crystal]
 name = "Crystal Watering Can"
 description = "The water inside is older than the farm."
 wiki = "Waters 8 plots an hour: each always grows a cycle."
@@ -2961,7 +2961,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[crystal_can.tool]
+[tool_can_crystal.tool]
 kind = "can"
 power = 8  # plots it waters an hour
 requirement = 0
@@ -2971,16 +2971,16 @@ ability_name = "Sprinkler"
 ability_description = "Watered plots are 12% likelier to grow each hour."
 stats = { sprinkle = 0.12 }
 
-[crystal_can.tool.upgrade]
-to = "moonwell_can"
+[tool_can_crystal.tool.upgrade]
+to = "tool_can_moonwell"
 bits = 100000000
 
-[crystal_can.tool.upgrade.items]
-living_vine = 25
-beeswax = 120
-gold_ore = 30
+[tool_can_crystal.tool.upgrade.items]
+material_living_vine = 25
+material_beeswax = 120
+material_gold_ore = 30
 
-[moonwell_can]
+[tool_can_moonwell]
 name = "Moonwell Watering Can"
 description = "Filled at a well that is only there at night. It waters the whole farm."
 wiki = "Waters 9 plots an hour: each always grows a cycle."
@@ -2991,7 +2991,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[moonwell_can.tool]
+[tool_can_moonwell.tool]
 kind = "can"
 power = 9  # plots it waters an hour
 requirement = 0
@@ -3001,7 +3001,7 @@ ability_name = "Sprinkler"
 ability_description = "Watered plots are 16% likelier to grow each hour."
 stats = { sprinkle = 0.16 }
 
-[coal]
+[material_coal]
 name = "Coal"
 description = "Black and dusty. Burns well."
 wiki = "Found in soft rock in the mines. Sells for bits; nothing uses it yet."
@@ -3012,12 +3012,12 @@ category = "material"
 price = 0
 sell_price = 40  # TODO(balance): tuned so mining pays what it did
 
-[coal.drop]
+[material_coal.drop]
 rate = 3
 min = 1
 max = 3
 
-[clay]
+[material_clay]
 name = "Clay"
 description = "Cool, damp and good for shaping."
 wiki = "Found in soft rock in the mines. Sells for bits; nothing uses it yet."
@@ -3028,12 +3028,12 @@ category = "material"
 price = 0
 sell_price = 90  # TODO(balance): tuned so mining pays what it did
 
-[clay.drop]
+[material_clay.drop]
 rate = 8
 min = 1
 max = 2
 
-[amber]
+[material_amber]
 name = "Amber"
 description = "A drop of golden resin, hardened by a very long time."
 wiki = "Found in soft rock in the mines. Sells for bits; nothing uses it yet."
@@ -3044,12 +3044,12 @@ category = "material"
 price = 0
 sell_price = 1200  # TODO(balance): tuned so mining pays what it did
 
-[amber.drop]
+[material_amber.drop]
 rate = 60
 min = 1
 max = 1
 
-[tin_ore]
+[material_tin_ore]
 name = "Tin Ore"
 description = "Soft, silvery and easy to work."
 wiki = "Found in firm rock in the mines. Sells for bits; nothing uses it yet."
@@ -3060,12 +3060,12 @@ category = "material"
 price = 0
 sell_price = 200  # TODO(balance): tuned so mining pays what it did
 
-[tin_ore.drop]
+[material_tin_ore.drop]
 rate = 5
 min = 1
 max = 2
 
-[silver_ore]
+[material_silver_ore]
 name = "Silver Ore"
 description = "It shines even in the dark."
 wiki = "Found in firm rock in the mines. Sells for bits; nothing uses it yet."
@@ -3076,12 +3076,12 @@ category = "material"
 price = 0
 sell_price = 1000  # TODO(balance): tuned so mining pays what it did
 
-[silver_ore.drop]
+[material_silver_ore.drop]
 rate = 25
 min = 1
 max = 2
 
-[garnet]
+[material_garnet]
 name = "Garnet"
 description = "A deep red stone that holds the light of a fire."
 wiki = "Found in firm rock in the mines. Sells for bits; nothing uses it yet."
@@ -3092,12 +3092,12 @@ category = "material"
 price = 0
 sell_price = 6000  # TODO(balance): tuned so mining pays what it did
 
-[garnet.drop]
+[material_garnet.drop]
 rate = 120
 min = 1
 max = 1
 
-[obsidian]
+[material_obsidian]
 name = "Obsidian"
 description = "Black glass from somewhere very hot. Sharp enough to shave with."
 wiki = "Found in hard rock in the mines. Sells for bits; nothing uses it yet."
@@ -3108,12 +3108,12 @@ category = "material"
 price = 0
 sell_price = 1700  # TODO(balance): tuned so mining pays what it did
 
-[obsidian.drop]
+[material_obsidian.drop]
 rate = 20
 min = 1
 max = 2
 
-[platinum_ore]
+[material_platinum_ore]
 name = "Platinum Ore"
 description = "Heavy, rare and nearly impossible to dull."
 wiki = "Found in hard rock in the mines. Sells for bits; nothing uses it yet."
@@ -3124,12 +3124,12 @@ category = "material"
 price = 0
 sell_price = 9000  # TODO(balance): tuned so mining pays what it did
 
-[platinum_ore.drop]
+[material_platinum_ore.drop]
 rate = 55
 min = 1
 max = 1
 
-[sapphire]
+[material_sapphire]
 name = "Sapphire"
 description = "A blue stone with a star inside it, if you tilt it."
 wiki = "Found in hard rock in the mines. Sells for bits; nothing uses it yet."
@@ -3140,12 +3140,12 @@ category = "material"
 price = 0
 sell_price = 45000  # TODO(balance): tuned so mining pays what it did
 
-[sapphire.drop]
+[material_sapphire.drop]
 rate = 700
 min = 1
 max = 1
 
-[emerald]
+[material_emerald]
 name = "Emerald"
 description = "A green gem so clear it looks wet."
 wiki = "Found in hard rock in the mines. Sells for bits; nothing uses it yet."
@@ -3156,12 +3156,12 @@ category = "material"
 price = 0
 sell_price = 65000  # TODO(balance): tuned so mining pays what it did
 
-[emerald.drop]
+[material_emerald.drop]
 rate = 900
 min = 1
 max = 1
 
-[steel_pickaxe]
+[tool_pickaxe_steel]
 name = "Steel Pickaxe"
 emoji = "⛏️"
 description = "Quenched steel: it bites deeper and shrugs off the dust."
@@ -3172,22 +3172,22 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[steel_pickaxe.tool]
+[tool_pickaxe_steel.tool]
 kind = "pickaxe"
 power = 7
 requirement = 0
 
-[steel_pickaxe.tool.upgrade]
-to = "masterwork_pickaxe"
+[tool_pickaxe_steel.tool.upgrade]
+to = "tool_pickaxe_masterwork"
 bits = 500000
 
-[steel_pickaxe.tool.upgrade.items]
-iron_ore = 300
-gold_ore = 60
-copper_ore = 400
-hardwood = 12
+[tool_pickaxe_steel.tool.upgrade.items]
+material_iron_ore = 300
+material_gold_ore = 60
+material_copper_ore = 400
+material_hardwood = 12
 
-[sturdy_rod]
+[tool_rod_sturdy]
 name = "Sturdy Rod"
 emoji = "🎣"
 description = "A longer, stiffer rod with a smooth drag. Bites come sooner and fewer fish get away."
@@ -3198,23 +3198,23 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[sturdy_rod.tool]
+[tool_rod_sturdy.tool]
 kind = "rod"
 power = 12
 requirement = 0
 
-[sturdy_rod.tool.upgrade]
-to = "masterwork_rod"
+[tool_rod_sturdy.tool.upgrade]
+to = "tool_rod_masterwork"
 bits = 2000000
 
-[sturdy_rod.tool.upgrade.items]
-salmon = 15
-trout = 20
-pufferfish = 3
-coral_shard = 20
-gold_ore = 10
+[tool_rod_sturdy.tool.upgrade.items]
+fish_salmon = 15
+fish_trout = 20
+fish_pufferfish = 3
+material_coral_shard = 20
+material_gold_ore = 10
 
-[gatherers_axe]
+[tool_axe_gatherers]
 name = "Gatherer's Axe"
 emoji = "🪓"
 description = "Light and quick: it shakes loose what the branches hold."
@@ -3225,7 +3225,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[gatherers_axe.tool]
+[tool_axe_gatherers.tool]
 kind = "axe"
 power = 18
 requirement = 0
@@ -3235,18 +3235,18 @@ ability_name = "Shake the Branches"
 ability_description = "Each chop has a 10% chance to shake loose a drop."
 stats = { shake = 0.1 }
 
-[gatherers_axe.tool.upgrade]
-to = "foragers_hatchet"
+[tool_axe_gatherers.tool.upgrade]
+to = "tool_hatchet_foragers"
 bits = 20000000
 
-[gatherers_axe.tool.upgrade.items]
-beeswax = 15
-maple_leaf = 55
-feather = 240
-gold_ore = 80
-coral_shard = 15
+[tool_axe_gatherers.tool.upgrade.items]
+material_beeswax = 15
+material_maple_leaf = 55
+material_feather = 240
+material_gold_ore = 80
+material_coral_shard = 15
 
-[foragers_hatchet]
+[tool_hatchet_foragers]
 name = "Forager's Hatchet"
 emoji = "🪓"
 description = "A hatchet for those who walk the trees, not fell them."
@@ -3257,7 +3257,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[foragers_hatchet.tool]
+[tool_hatchet_foragers.tool]
 kind = "axe"
 power = 28
 requirement = 0
@@ -3267,18 +3267,18 @@ ability_name = "Shake the Branches"
 ability_description = "Each chop has a 16% chance to shake loose a drop."
 stats = { shake = 0.16 }
 
-[foragers_hatchet.tool.upgrade]
-to = "mosswood_axe"
+[tool_hatchet_foragers.tool.upgrade]
+to = "tool_axe_mosswood"
 bits = 100000000
 
-[foragers_hatchet.tool.upgrade.items]
-living_vine = 5
-maple_leaf = 134
-feather = 480
-gold_ore = 200
-tuna = 10
+[tool_hatchet_foragers.tool.upgrade.items]
+material_living_vine = 5
+material_maple_leaf = 134
+material_feather = 480
+material_gold_ore = 200
+fish_tuna = 10
 
-[mosswood_axe]
+[tool_axe_mosswood]
 name = "Mosswood Axe"
 emoji = "🪓"
 description = "Moss-wrapped and sure: the branches give up their fruit."
@@ -3289,7 +3289,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[mosswood_axe.tool]
+[tool_axe_mosswood.tool]
 kind = "axe"
 power = 40
 requirement = 0
@@ -3299,18 +3299,18 @@ ability_name = "Shake the Branches"
 ability_description = "Each chop has a 22% chance to shake loose a drop."
 stats = { shake = 0.22 }
 
-[mosswood_axe.tool.upgrade]
-to = "canopy_axe"
+[tool_axe_mosswood.tool.upgrade]
+to = "tool_axe_canopy"
 bits = 500000000
 
-[mosswood_axe.tool.upgrade.items]
-maple_leaf = 326
-feather = 1880
-gold_ore = 450
-plant_fiber = 250
-tuna = 25
+[tool_axe_mosswood.tool.upgrade.items]
+material_maple_leaf = 326
+material_feather = 1880
+material_gold_ore = 450
+material_plant_fiber = 250
+fish_tuna = 25
 
-[canopy_axe]
+[tool_axe_canopy]
 name = "Canopy Axe"
 emoji = "🪓"
 description = "Cut from the canopy itself. Everything up there falls to you."
@@ -3321,7 +3321,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[canopy_axe.tool]
+[tool_axe_canopy.tool]
 kind = "axe"
 power = 54
 requirement = 0
@@ -3331,7 +3331,7 @@ ability_name = "Shake the Branches"
 ability_description = "Each chop has a 28% chance to shake loose a drop."
 stats = { shake = 0.28 }
 
-[cauldron_can]
+[tool_can_cauldron]
 name = "Alembic Can"
 description = "Whatever it waters might turn out to be worth more."
 wiki = "Waters 7 plots an hour: each always grows a cycle."
@@ -3342,7 +3342,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[cauldron_can.tool]
+[tool_can_cauldron.tool]
 kind = "can"
 power = 7
 requirement = 0
@@ -3352,16 +3352,16 @@ ability_name = "Transmute"
 ability_description = "10% of harvests come up double."
 stats = { transmute = 0.1 }
 
-[cauldron_can.tool.upgrade]
-to = "retort_can"
+[tool_can_cauldron.tool.upgrade]
+to = "tool_can_retort"
 bits = 20000000
 
-[cauldron_can.tool.upgrade.items]
-plant_fiber = 600
-compost = 800
-coral_shard = 40
+[tool_can_cauldron.tool.upgrade.items]
+material_plant_fiber = 600
+material_compost = 800
+material_coral_shard = 40
 
-[retort_can]
+[tool_can_retort]
 name = "Retort Can"
 description = "A copper still on a spout. Harvests sometimes come up double."
 wiki = "Waters 8 plots an hour: each always grows a cycle."
@@ -3372,7 +3372,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[retort_can.tool]
+[tool_can_retort.tool]
 kind = "can"
 power = 8
 requirement = 0
@@ -3382,15 +3382,15 @@ ability_name = "Transmute"
 ability_description = "15% of harvests come up double."
 stats = { transmute = 0.15 }
 
-[retort_can.tool.upgrade]
-to = "athanor_can"
+[tool_can_retort.tool.upgrade]
+to = "tool_can_athanor"
 bits = 100000000
 
-[retort_can.tool.upgrade.items]
-plant_fiber = 3260
-gold_ore = 30
+[tool_can_retort.tool.upgrade.items]
+material_plant_fiber = 3260
+material_gold_ore = 30
 
-[athanor_can]
+[tool_can_athanor]
 name = "Athanor Can"
 description = "The alchemist's furnace, tipped over your field."
 wiki = "Waters 9 plots an hour: each always grows a cycle."
@@ -3401,7 +3401,7 @@ category = "tool"
 price = 0
 sell_price = 0
 
-[athanor_can.tool]
+[tool_can_athanor.tool]
 kind = "can"
 power = 9
 requirement = 0
@@ -3411,7 +3411,7 @@ ability_name = "Transmute"
 ability_description = "20% of harvests come up double."
 stats = { transmute = 0.2 }
 
-[radar_battery]
+[material_radar_battery]
 name = "Radar Battery"
 description = "One cast's worth of power for your radar."
 wiki = "Every cast with the radar on, while one of its targets lives in the water you fish, uses one battery. Craft them at the Workbench (Inventory > Workbench) from coral shards and plant fiber."
@@ -3548,7 +3548,7 @@ enchant = "gleaner"
 
 # ---- Tree species signature drops (see [[species]] in foraging.toml). No [drop] block: they only drop from their species. ----
 
-[twilight_fuel]
+[material_twilight_fuel]
 name = "Twilight Fuel"
 description = "Burned by your ship to make the first trip to Twilight Desert."
 wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to Twilight Desert; later trips there are free."
@@ -3558,7 +3558,7 @@ category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 1000
 
-[rust_fuel]
+[material_rust_fuel]
 name = "Rust Fuel"
 description = "Burned by your ship to make the first trip to Rust Belt."
 wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to Rust Belt; later trips there are free."
@@ -3568,7 +3568,7 @@ category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 1000
 
-[cadrega_fuel]
+[material_cadrega_fuel]
 name = "Cadrega Fuel"
 description = "Burned by your ship to make the first trip to Cadrega City."
 wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to Cadrega City; later trips there are free."
@@ -3578,7 +3578,7 @@ category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 1000
 
-[glade_fuel]
+[material_glade_fuel]
 name = "Glade Fuel"
 description = "Burned by your ship to make the first trip to Aerial Glades."
 wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to Aerial Glades; later trips there are free."
@@ -3588,7 +3588,7 @@ category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 1000
 
-[star_fuel]
+[material_star_fuel]
 name = "Star Fuel"
 description = "Burned by your ship to make the first trip to Star Kingdom."
 wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to Star Kingdom; later trips there are free."
@@ -3598,7 +3598,7 @@ category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 1000
 
-[void_fuel]
+[material_void_fuel]
 name = "Void Fuel"
 description = "Burned by your ship to make the first trip to The Void."
 wiki = "Craft it at the Workbench (Inventory > Workbench) from materials of all four skills. Your ship burns one the first time it sails to The Void; later trips there are free."

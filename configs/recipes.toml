@@ -5,93 +5,93 @@
 # Balance: each used to be a shop item; the inputs' sell value sits a little under the old shop price, but how fast you find them matters
 # more (see DESIGN.md "Crafting").  TODO(balance): all numbers
 
-[radar_battery]
+[material_radar_battery]
 name = "Radar Battery"
 emoji = "🔋"
-output = "radar_battery"
+output = "material_radar_battery"
 quantity = 1
 # Was 3,000 bits in the shop. Coral shards wash up on 1 cast in 6 (about 26 an hour of fishing), plant fiber is a farming leftover, so this is
 # about 13 batteries per hour of fishing: well under the old price in sell value on purpose (a cast needs a battery, shards are slow).
-inputs = { coral_shard = 2, plant_fiber = 2 }
+inputs = { material_coral_shard = 2, material_plant_fiber = 2 }
 
-[iron_wedge]
+[material_iron_wedge]
 name = "Iron Wedge"
 emoji = "🪚"
-output = "iron_wedge"
+output = "material_iron_wedge"
 quantity = 1
 bits = 500
 # Hardwood (a forest drop) plus common ores. TODO(balance): guessed amounts, check with scripts.balance.
-inputs = { hardwood = 1, iron_ore = 10, copper_ore = 20 }
+inputs = { material_hardwood = 1, material_iron_ore = 10, material_copper_ore = 20 }
 
-[gilded_wedge]
+[material_gilded_wedge]
 name = "Gilded Wedge"
 emoji = "🪚"
-output = "gilded_wedge"
+output = "material_gilded_wedge"
 quantity = 1
 bits = 2500
 skill = "foraging"
 min_level = 7                      # forest 3
 # More hardwood and the higher ores (gold, platinum). TODO(balance): guessed amounts, check with scripts.balance.
-inputs = { hardwood = 3, gold_ore = 15, platinum_ore = 5 }
+inputs = { material_hardwood = 3, material_gold_ore = 15, material_platinum_ore = 5 }
 
-[scarab_bomb]
+[tool_scarab_bomb]
 name = "Scarab Bomb"
 emoji = "💣"
-output = "scarab_bomb"
+output = "tool_scarab_bomb"
 quantity = 1
 # Was 100,000 bits. Mined ore: gold ~48 an hour, iron ~180, copper ~720, so about 40 minutes of digging per bomb.
-inputs = { gold_ore = 30, iron_ore = 100, copper_ore = 200 }
+inputs = { material_gold_ore = 30, material_iron_ore = 100, material_copper_ore = 200 }
 
-[twilight_fuel]
+[material_twilight_fuel]
 name = "Twilight Fuel"
 emoji = "🌅"
-output = "twilight_fuel"
+output = "material_twilight_fuel"
 quantity = 1
 bits = 1000
 # Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
-inputs = { coal = 50, cod = 10, feather = 20, compost = 10 }
+inputs = { material_coal = 50, fish_cod = 10, material_feather = 20, material_compost = 10 }
 
-[rust_fuel]
+[material_rust_fuel]
 name = "Rust Fuel"
 emoji = "🔩"
-output = "rust_fuel"
+output = "material_rust_fuel"
 quantity = 1
 bits = 5000
 # Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
-inputs = { iron_ore = 40, bass = 8, hardwood = 5, dewdrop = 10 }
+inputs = { material_iron_ore = 40, fish_bass = 8, material_hardwood = 5, material_dewdrop = 10 }
 
-[cadrega_fuel]
+[material_cadrega_fuel]
 name = "Cadrega Fuel"
 emoji = "🔆"
-output = "cadrega_fuel"
+output = "material_cadrega_fuel"
 quantity = 1
 bits = 25000
 # Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
-inputs = { silver_ore = 30, salmon = 8, fine_bark = 5, beeswax = 5 }
+inputs = { material_silver_ore = 30, fish_salmon = 8, material_fine_bark = 5, material_beeswax = 5 }
 
-[glade_fuel]
+[material_glade_fuel]
 name = "Glade Fuel"
 emoji = "🌤️"
-output = "glade_fuel"
+output = "material_glade_fuel"
 quantity = 1
 bits = 100000
 # Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
-inputs = { platinum_ore = 30, swordfish = 8, maple_leaf = 5, living_vine = 5 }
+inputs = { material_platinum_ore = 30, fish_swordfish = 8, material_maple_leaf = 5, material_living_vine = 5 }
 
-[star_fuel]
+[material_star_fuel]
 name = "Star Fuel"
 emoji = "💫"
-output = "star_fuel"
+output = "material_star_fuel"
 quantity = 1
 bits = 500000
 # Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
-inputs = { sapphire = 15, marlin = 5, aged_feather = 3, starfruit = 3 }
+inputs = { material_sapphire = 15, fish_marlin = 5, material_aged_feather = 3, crop_starfruit = 3 }
 
-[void_fuel]
+[material_void_fuel]
 name = "Void Fuel"
 emoji = "🕳️"
-output = "void_fuel"
+output = "material_void_fuel"
 quantity = 1
 bits = 2000000
 # Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
-inputs = { emerald = 20, abyssal_angler = 3, gilded_wedge = 3, ambrosia = 1 }
+inputs = { material_emerald = 20, fish_abyssal_angler = 3, material_gilded_wedge = 3, crop_ambrosia = 1 }

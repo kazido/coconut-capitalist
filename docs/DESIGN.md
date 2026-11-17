@@ -99,7 +99,7 @@ A run is a shaft of `floor` rows (30). Digging the last row opens the **vault** 
   player sees. Collapse loses half the haul; xp is kept.
 - **Special cells:** rich lode (`cell_upgraded`: a mystery that rolls the next tier's table, more of it), vent
   (💨 no loot, cools), cache (📦 +1 brace), wyrmhole (as before).
-- **Bomb** (`scarab_bomb`, up to 3 carried per run): clears a whole row (not wyrmholes) for a flat pressure and no
+- **Bomb** (`tool_scarab_bomb`, up to 3 carried per run): clears a whole row (not wyrmholes) for a flat pressure and no
   collapse check. Worth saving for a row with several rich lodes.
 - **Brace:** skips a dig to lower pressure.
 - The screen is deliberately small: risk line, map, pack, buttons. A `?` button toggles the legend.
@@ -1143,12 +1143,12 @@ Value: an offer is a free extra cast and cannot chain, so the chance IS the extr
 The art overhaul ships hundreds of emoji as the bot's *application emoji* (owned by the bot, usable in every server, 2000 slots).
 `cococap/emojis.py` fetches them at startup (`refresh(bot)` in `setup_hook`) and looks them up **by name**; data files never hold ids.
 
-- **Naming convention** (Discord name = `[a-z0-9_]{2,32}`): items `<item_id>` (`iron_ore`, `scroll_lure`), pets `pet_<id>`, tree species
+- **Naming convention** (Discord name = `[a-z0-9_]{2,32}`): items `<item_id>` (`material_iron_ore`, `scroll_lure`), pets `pet_<id>`, tree species
   `species_<id>`, enchants `enchant_<id>`, mine types `mine_<id>`, waters `water_<id>`, ranks `rank_<rank_id>`, UI icons `ui_<name>` (`ui_releaf`).
 - **Resolution**: `emojis.for_id(kind, id, fallback)` returns the loaded emoji of that name, else `fallback`. It is wired into the model
   property `.emoji` of `Item`, `Pet`, `Species`, `Enchant`, `MineType`, `WaterRules` and `Rank` (the TOML `emoji` string is kept as the
   fallback, field `emoji_raw`), so every screen that reads `.emoji` benefits with no per-screen code. `emojis.ui(name, fallback)` is the same for UI icons.
-- **Legacy**: the owner's first 22 emoji have other names (`ore_iron` for item `iron_ore`, `seed_weathered` for `dusty_dandelion_seed`, ...).
+- **Legacy**: the owner's first 22 emoji have other names (`ore_iron` for item `material_iron_ore`, `seed_weathered` for `seed_dusty_dandelion`, ...).
   `<:name:id>` tokens in the data still resolve by name, and `emojis.ALIASES` maps legacy name -> item id; an emoji named exactly by the id wins.
 - **Fallback**: nothing loaded (tests, offline, fetch failed) or no emoji of that name: the Unicode/configured emoji is shown. Nothing breaks if art is missing.
 - **Where it renders**: message text, headings, button `emoji=`, select option emoji. NOT in code blocks and NOT in button/select *labels*

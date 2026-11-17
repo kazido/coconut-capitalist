@@ -157,8 +157,8 @@ async def test_farming_xp_is_boosted_in_a_party(db):
 
     async def harvest_xp(user_id):
         user = await User.get(user_id)
-        await user.add_item("apple_seed", 1)
-        await farming.plant(user, 1, "apple_seed", now=0)
+        await user.add_item("seed_apple", 1)
+        await farming.plant(user, 1, "seed_apple", now=0)
         await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
         return (await farming.harvest(user, 1, Random(1), now=0)).xp
 

@@ -55,10 +55,10 @@ async def test_landing_a_fish_counts_it_in_the_bestiary_with_its_extras(db):
     from cococap.services import fishing as f
 
     user = await User.get(1)
-    cast = f.Cast(REG.item("salmon"), 10.0, 20.0, [f.LEFT], 0, hooked=True, extra_fish=2)
+    cast = f.Cast(REG.item("fish_salmon"), 10.0, 20.0, [f.LEFT], 0, hooked=True, extra_fish=2)
     cast.press(f.LEFT, 11.0)
     await f.land(user, cast, REG)
-    assert (await user.skill("fishing")).stats.caught["salmon"] == 3  # the fish and its two extras
+    assert (await user.skill("fishing")).stats.caught["fish_salmon"] == 3  # the fish and its two extras
 
 
 # ---- the Bestiary records ---------------------------------------------------------------------------------------------------------

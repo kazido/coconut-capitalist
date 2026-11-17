@@ -34,7 +34,7 @@ def axe(power=5, flags=()):
     return EffectiveStats(power=power, requirement=0, stats={"power": float(power)}, flags=frozenset(flags))
 
 
-async def player(user_id, axe_name="starter_axe"):
+async def player(user_id, axe_name="tool_axe_starter"):
     user = await User.get(user_id)
     if axe_name:
         inst = await user.give_instance(axe_name)
@@ -143,8 +143,8 @@ async def test_you_need_an_axe(db):
     user = await player(1, axe_name=None)
     with pytest.raises(f.ForagingError, match="need an axe"):
         await f.axe_stats(user)
-    await equip(user, "foraging", (await user.give_instance("starter_axe")).id)
-    assert (await f.axe_stats(user)).power == REG.item("starter_axe").tool.power
+    await equip(user, "foraging", (await user.give_instance("tool_axe_starter")).id)
+    assert (await f.axe_stats(user)).power == REG.item("tool_axe_starter").tool.power
 
 
 async def test_the_soloist_enchant_turns_the_flag_on(db):
@@ -399,7 +399,7 @@ def test_good_chops_happen_about_as_often_as_configured_and_hit_harder():
 
 def test_the_starter_axe_chops_a_first_zone_tree_quickly():
     """The complaint: the first tree took too long. With rotating, a typical zone 1 tree is a few dozen clicks at most."""
-    power = REG.item("starter_axe").tool.power
+    power = REG.item("tool_axe_starter").tool.power
     rng, tree, clicks = Random(1), f.roll_tree(1, Random(4), RULES), 0
     spot = f.Spot.pick(RULES, rng)
     while not tree.felled:  # (a master who knows every grain's style)
@@ -451,7 +451,7 @@ def test_foraging_pays_less_per_click_than_mining_at_starter_gear():
     rng = Random(1)
     mean_quantity = {i.id: sum(loot.skewed_roll(rng, i.drop.min, i.drop.max) for _ in range(20000)) / 20000 for i in f.drop_pool(REG)}
     per_roll = sum(price(i.id) * mean_quantity[i.id] / i.drop.rate for i in f.drop_pool(REG))
-    power, zone = REG.item("starter_axe").tool.power, 1
+    power, zone = REG.item("tool_axe_starter").tool.power, 1
     hp = f.average_hp(zone, RULES)
     rng, dealt, clicks = Random(2), 0, 6000
     spot = f.Spot.pick(RULES, rng)
@@ -544,28 +544,28 @@ async def test_a_wedge_is_spent_to_move_off_the_spot_and_you_need_one(db):
     spot = f.Spot()
     spot.wear = 0.5
     with pytest.raises(f.ForagingError, match="no Rotation Wedge"):
-        await f.spend_wedge(user, spot, "rotation_wedge", Random(1))
+        await f.spend_wedge(user, spot, "material_rotation_wedge", Random(1))
     with pytest.raises(f.ForagingError, match="not a rotation wedge"):
-        await f.spend_wedge(user, spot, "apple", Random(1))
-    await user.add_item("rotation_wedge", 2)
-    await f.spend_wedge(user, spot, "rotation_wedge", Random(1))
-    assert spot.wear == 0 and spot.grain != "plain" and await user.item_quantity("rotation_wedge") == 1
-    assert [(w.item, q) for w, q in await f.wedges(user)] == [("rotation_wedge", 1)]
+        await f.spend_wedge(user, spot, "crop_apple", Random(1))
+    await user.add_item("material_rotation_wedge", 2)
+    await f.spend_wedge(user, spot, "material_rotation_wedge", Random(1))
+    assert spot.wear == 0 and spot.grain != "plain" and await user.item_quantity("material_rotation_wedge") == 1
+    assert [(w.item, q) for w, q in await f.wedges(user)] == [("material_rotation_wedge", 1)]
 
 
 async def test_a_better_wedge_really_lands_you_on_better_grains(db):
     user = await player(1)
-    await user.add_item("rotation_wedge", 150)
-    await user.add_item("gilded_wedge", 150)
+    await user.add_item("material_rotation_wedge", 150)
+    await user.add_item("material_gilded_wedge", 150)
     share = {}
-    for item in ("rotation_wedge", "gilded_wedge"):
+    for item in ("material_rotation_wedge", "material_gilded_wedge"):
         good = 0
         for i in range(150):
             spot = f.Spot("Plain", 1.0, "plain")
             await f.spend_wedge(user, spot, item, Random(i))
             good += spot.quality > 1
         share[item] = good / 150
-    assert share["gilded_wedge"] > share["rotation_wedge"] + 0.3
+    assert share["material_gilded_wedge"] > share["material_rotation_wedge"] + 0.3
 
 
 # ---- special spots ---------------------------------------------------------------------------------------------------------------
@@ -630,7 +630,7 @@ def test_double_chop_hits_twice_but_pays_the_xp_of_one_swing():
 
 async def test_the_double_strike_enchant_gives_the_chance(db):
     user = await player(1)
-    inst = await user.give_instance("starter_axe")
+    inst = await user.give_instance("tool_axe_starter")
     await add_enchant(user, inst.id, "double_strike")
     await add_enchant(user, inst.id, "double_strike")
     assert effective_stats(await user.instance(inst.id), REG).stats["double_chop"] == pytest.approx(0.16)
@@ -641,7 +641,7 @@ def test_wedges_can_be_found_chopping_and_the_better_ones_are_rarer():
     rates = [pool[w.item].drop.rate for w in RULES.rotate.wedges]
     assert rates == sorted(rates) and len(set(rates)) == 3
     assert [w.special_mult for w in RULES.rotate.wedges] == sorted(w.special_mult for w in RULES.rotate.wedges)
-    assert REG.item("gilded_wedge").price <= 100_000  # (a wedge only moves you to a new spot: it should not cost a fortune)
+    assert REG.item("material_gilded_wedge").price <= 100_000  # (a wedge only moves you to a new spot: it should not cost a fortune)
 
 
 def test_the_wedges_get_better_and_cost_more():
@@ -656,7 +656,7 @@ def test_the_wedges_get_better_and_cost_more():
 
 async def test_the_seasoned_enchant_slows_wear_on_the_axe(db):
     user = await player(1)
-    inst = await user.give_instance("starter_axe")
+    inst = await user.give_instance("tool_axe_starter")
     await equip(user, "foraging", inst.id)
     await add_enchant(user, inst.id, "seasoned")
     stats = effective_stats(await user.instance(inst.id), REG)
@@ -739,12 +739,12 @@ async def test_a_wedge_button_appears_with_a_wedge_and_moves_you_to_a_new_spot(d
     user = await with_axe()
     nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
     assert not [b for b in buttons(nav) if "Wedge" in (b.label or "")]  # none held: no button
-    await user.add_item("iron_wedge", 2)
+    await user.add_item("material_iron_wedge", 2)
     nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
     nav.screen.spot.wear = 0.5
     assert [b.label for b in buttons(nav) if "Wedge" in (b.label or "")] == ["Iron Wedge ×2"]
     await click(nav, inter, "Iron Wedge ×2")
-    assert nav.screen.spot.wear == 0 and await user.item_quantity("iron_wedge") == 1
+    assert nav.screen.spot.wear == 0 and await user.item_quantity("material_iron_wedge") == 1
 
 
 async def test_a_heartwood_spot_on_screen_shows_itself_and_hits_the_tree_hard_and_a_rich_seam_marks_it(db, monkeypatch):
@@ -752,7 +752,7 @@ async def test_a_heartwood_spot_on_screen_shows_itself_and_hits_the_tree_hard_an
 
     freeze_time(monkeypatch)
     await with_axe()
-    power = REG.item("starter_axe").tool.power
+    power = REG.item("tool_axe_starter").tool.power
     nav, inter = await hub("tree", tree=f.Tree(1, 100_000, 100_000))
     nav.screen.spot = f.Spot("Plain", 1.0, "plain", special="heartwood")
     await nav._render()
@@ -787,16 +787,16 @@ async def test_a_marked_tree_makes_more_drop_rolls(db):
 
 async def test_the_better_wedges_really_find_special_spots_more_often(db):
     user = await player(1)
-    await user.add_item("rotation_wedge", 400)
-    await user.add_item("gilded_wedge", 400)
+    await user.add_item("material_rotation_wedge", 400)
+    await user.add_item("material_gilded_wedge", 400)
     found = {}
-    for item in ("rotation_wedge", "gilded_wedge"):
+    for item in ("material_rotation_wedge", "material_gilded_wedge"):
         found[item] = 0
         for i in range(400):
             spot = f.Spot()
             await f.spend_wedge(user, spot, item, Random(i))
             found[item] += bool(spot.special)
-    assert found["gilded_wedge"] > 3 * found["rotation_wedge"]
+    assert found["material_gilded_wedge"] > 3 * found["material_rotation_wedge"]
 
 
 # ---- upgrade materials come at a pace the other skills match ----------------------------------------------------------------------------
@@ -806,10 +806,10 @@ def test_the_axe_materials_come_in_a_couple_of_hours_not_a_working_week():
 
     rng = Random(2)
     spot = f.Spot.pick(RULES, rng)
-    power = REG.item("thornwhip_axe").tool.power
+    power = REG.item("tool_axe_thornwhip").tool.power
     dealt = sum(spot.swing(power, RULES, rng, 0.0, spot.stance(RULES)).damage for _ in range(4000)) / 4000
     rolls_per_hour = dealt / RULES.hp_per_roll * 12 * 60
-    need = {i: q for i, q in REG.item("thornwhip_axe").tool.upgrade.items.items() if REG.item(i).skill == "foraging"}
+    need = {i: q for i, q in REG.item("tool_axe_thornwhip").tool.upgrade.items.items() if REG.item(i).skill == "foraging"}
 
     def per_roll(item):
         r = Random(1)
@@ -821,7 +821,7 @@ def test_the_axe_materials_come_in_a_couple_of_hours_not_a_working_week():
 
 # ---- the axe roads: Timber (double chops) and Shake the Branches ---------------------------------------------------------------------------------
 async def test_a_foragers_axe_shakes_loose_drops_and_a_plain_axe_never_does(db):
-    user = await player(1, "canopy_axe")
+    user = await player(1, "tool_axe_canopy")
     shake = (await f.axe_stats(user)).stats["shake"]
     assert shake > 0
     always = type("Always", (Random,), {"random": lambda self: 0.0})()
@@ -836,7 +836,7 @@ async def test_a_foragers_axe_shakes_loose_drops_and_a_plain_axe_never_does(db):
 
 
 async def test_a_lumberjacks_axe_carries_double_chop_that_the_swing_already_uses(db):
-    user = await player(1, "elderwood_axe")
+    user = await player(1, "tool_axe_elderwood")
     stats = (await f.axe_stats(user)).stats
     assert stats["double_chop"] > 0 and "shake" not in stats
     spot = f.Spot.pick(RULES, Random(1))
@@ -923,12 +923,12 @@ def test_the_three_foraging_capstones_are_about_equally_strong():
 async def test_a_good_wedge_leaves_a_lasting_chop_bonus_that_follows_the_spot(db):
     user = await player(1)
     spot = f.Spot()
-    await user.add_item("rotation_wedge", 1)
-    await user.add_item("gilded_wedge", 1)
-    await f.spend_wedge(user, spot, "rotation_wedge", Random(1))
+    await user.add_item("material_rotation_wedge", 1)
+    await user.add_item("material_gilded_wedge", 1)
+    await f.spend_wedge(user, spot, "material_rotation_wedge", Random(1))
     assert spot.boost_chops == 0  # the plain wedge only moves you
-    await f.spend_wedge(user, spot, "gilded_wedge", Random(1))
-    wedge = next(w for w in RULES.rotate.wedges if w.item == "gilded_wedge")
+    await f.spend_wedge(user, spot, "material_gilded_wedge", Random(1))
+    wedge = next(w for w in RULES.rotate.wedges if w.item == "material_gilded_wedge")
     assert (spot.boost, spot.boost_chops) == (wedge.boost, wedge.boost_chops) and wedge.boost >= 0.4 and wedge.boost_chops >= 100
 
     class NoGood(Random):
@@ -949,19 +949,19 @@ async def test_a_good_wedge_leaves_a_lasting_chop_bonus_that_follows_the_spot(db
 def test_flair_marks_rare_finds_and_not_the_everyday_ones():
     from cococap.ui import flair
 
-    assert flair.level(REG.item("copper_ore")) == 0 and flair.level(REG.item("gold_ore")) == 0 and flair.level(REG.item("golden_sap")) == 0
+    assert flair.level(REG.item("material_copper_ore")) == 0 and flair.level(REG.item("material_gold_ore")) == 0 and flair.level(REG.item("food_golden_sap")) == 0
     assert flair.level(REG.item("scroll_keen")) == 2  # scrolls are always a big moment
-    assert flair.level(REG.item("iron_wedge")) == 1 and flair.level(REG.item("burger")) == 1
-    assert flair.level(REG.item("gilded_wedge")) == 2 and flair.level(REG.item("spirit_of_the_forest")) == 2
-    assert flair.banner({"copper_ore": 5}) == ""
-    assert "Rare drop" in flair.banner({"iron_wedge": 1}) and "SUPER RARE" in flair.banner({"iron_wedge": 1, "gilded_wedge": 1}).split("\n")[0]
+    assert flair.level(REG.item("material_iron_wedge")) == 1 and flair.level(REG.item("food_burger")) == 1
+    assert flair.level(REG.item("material_gilded_wedge")) == 2 and flair.level(REG.item("spirit_of_the_forest")) == 2
+    assert flair.banner({"material_copper_ore": 5}) == ""
+    assert "Rare drop" in flair.banner({"material_iron_wedge": 1}) and "SUPER RARE" in flair.banner({"material_iron_wedge": 1, "material_gilded_wedge": 1}).split("\n")[0]
 
 
 def test_the_burger_is_a_pet_feast_worth_five_golden_saps():
     from cococap.services import pets
 
-    burger = REG.item("burger")
-    assert burger.category == "pet_food" and pets.food_xp(burger, REG) == 5 * pets.food_xp(REG.item("golden_sap"), REG)
+    burger = REG.item("food_burger")
+    assert burger.category == "pet_food" and pets.food_xp(burger, REG) == 5 * pets.food_xp(REG.item("food_golden_sap"), REG)
 
 
 def test_every_item_and_enchant_has_an_emoji_and_scrolls_say_what_they_do():
@@ -1144,11 +1144,11 @@ def test_species_drops_come_at_the_configured_rate_on_top_of_the_normal_pool():
         assert got[d.item] > 0 and got[d.item] / rolls <= d.rate * d.max
         assert got[d.item] / rolls >= d.rate * d.min * 0.8, d.item
         assert got[d.item] / rolls <= d.rate * mean * 1.3 + 0.01, d.item
-    assert got["hardwood"] > 0  # the normal pool still drops
+    assert got["material_hardwood"] > 0  # the normal pool still drops
     plain = f.roll_drops(2000, Random(5), SIG_REG)
     assert not any(d.item in plain for sp in SIG_RULES.species for d in sp.drops)  # no species, no signature drops
     other = f.roll_drops(2000, Random(5), SIG_REG, species="birch")
-    assert common.item not in other and other["clay"] > 0  # only its own species' drops
+    assert common.item not in other and other["material_clay"] > 0  # only its own species' drops
 
 
 def test_signature_drops_are_not_in_the_global_pool_and_are_likelier_than_the_poolsrare_items():
@@ -1161,8 +1161,8 @@ async def test_a_private_tree_pays_its_species_drops(db):
     user = await player(1)
     tree = f.Tree(1, 1000, 0, species="oak")
     reward = await f.fell_private(user, tree, Random(4), SIG_REG)
-    assert reward.drops["coal"] > 0 and reward.drops["clay"] == 0
-    assert await user.item_quantity("coal") == reward.drops["coal"]
+    assert reward.drops["material_coal"] > 0 and reward.drops["material_clay"] == 0
+    assert await user.item_quantity("material_coal") == reward.drops["material_coal"]
 
 
 def test_the_community_species_is_the_same_for_everybody_and_fits_the_zone():

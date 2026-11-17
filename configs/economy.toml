@@ -20,7 +20,7 @@ weekly_luckbucks = 25
 # The plain id is the 1-star one. Start small: add a material here only when an upgrade needs its stars.
 [stars]
 sell_multipliers = [1.0, 2.5, 6.0]  # sell price of 1, 2 and 3 stars x the base price  TODO(balance)
-starrable = ["iron_ore", "gold_ore", "silver_ore", "platinum_ore", "hardwood", "fine_bark", "maple_leaf", "coral_shard", "beeswax", "living_vine"]
+starrable = ["material_iron_ore", "material_gold_ore", "material_silver_ore", "material_platinum_ore", "material_hardwood", "material_fine_bark", "material_maple_leaf", "material_coral_shard", "material_beeswax", "material_living_vine"]
 
 # Which star a starrable drop is, by how deep you are (progress 0 = first forest / top of the mine / shallowest water, 1 = the deepest).
 # Weights are 1-star / 2-star / 3-star, blended in a straight line between points. 2-star can turn up early but rarely and is the main drop from
@@ -92,19 +92,19 @@ max_boost = 40.0                   # ...up to this many times
 # What each kind of orb can turn out to be: one table per orb item (an item in items.toml whose id ends `_orb`), keyed by pet rarity.
 # Each rarity's weight is shared among its species. The standard Familiar Orb is the baseline; the Lesser one is cheap and mostly
 # gives common pets, the Greater one costs 10x and mostly gives rare ones. TODO(balance)
-[pets.orbs.lesser_orb]
+[pets.orbs.key_orb_lesser]
 1 = 55
 2 = 35
 3 = 9
 4 = 1
 5 = 0
-[pets.orbs.familiar_orb]
+[pets.orbs.key_orb_familiar]
 1 = 40
 2 = 30
 3 = 20
 4 = 8
 5 = 2
-[pets.orbs.greater_orb]
+[pets.orbs.key_orb_greater]
 1 = 0
 2 = 5
 3 = 20

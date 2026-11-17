@@ -42,7 +42,7 @@ def mining_per_click() -> float:
     return sum(v for v, _ in runs) / sum(c for _, c in runs)
 
 
-def foraging_per_click(zone: int = 1, axe: str = "starter_axe") -> float:
+def foraging_per_click(zone: int = 1, axe: str = "tool_axe_starter") -> float:
     rules = REG.foraging
     rng = Random(1)
     mean_q = {i.id: sum(loot.skewed_roll(rng, i.drop.min, i.drop.max) for _ in range(5000)) / 5000 for i in f.drop_pool(REG)}
@@ -61,7 +61,7 @@ def fishing_per_cast() -> tuple[float, float]:
     n = 20000
     worth = sum(fi.roll_fish(rng, REG).sell_price for _ in range(n)) / n
     rules = REG.fishing
-    power = REG.item("starter_rod").tool.power
+    power = REG.item("tool_rod_starter").tool.power
     seconds = sum(fi.wait_seconds(power, rules, rng) for _ in range(2000)) / 2000 + 1.5 * (rules.reel.base_length + 2)
     return worth, seconds
 
@@ -101,7 +101,7 @@ def foraging_dmg_per_click(zone: int = 1) -> float:
     rules = REG.foraging
     rng, dealt, clicks = Random(2), 0, 4000
     spot = f.Spot.pick(rules, rng)
-    power = REG.item("starter_axe").tool.power
+    power = REG.item("tool_axe_starter").tool.power
     for _ in range(clicks):
         dealt += spot.swing(power, rules, rng, 0.0, spot.stance(rules)).damage
     return dealt / clicks
@@ -132,9 +132,9 @@ def rod_per_minute(power: int) -> float:
 def tool_table() -> None:
     """Income of every tool level relative to the starter (target: x1, 1.5, 2.6, 4, 6, 9, 13, 18)."""
     yield_bonus = REG.mining.descent.power_yield_bonus if hasattr(REG.mining.descent, "power_yield_bonus") else 0.25
-    rows = {"axe": lambda p: p / REG.item("starter_axe").tool.power,
+    rows = {"axe": lambda p: p / REG.item("tool_axe_starter").tool.power,
             "pickaxe": lambda p: (1 + yield_bonus * max(0, p - REG.mining.descent.power_base)),
-            "rod": lambda p: rod_per_minute(p) / rod_per_minute(REG.item("starter_rod").tool.power)}
+            "rod": lambda p: rod_per_minute(p) / rod_per_minute(REG.item("tool_rod_starter").tool.power)}
     print("\nTool levels (income relative to the starter tool):")
     for kind, gain in rows.items():
         chain = tool_chain(kind)
@@ -218,8 +218,8 @@ def xp_report() -> None:
         "fishing L1 rod": fishing_xp_per_minute(rod[0].tool.power) * 60,
         "fishing L8 rod": fishing_xp_per_minute(rod[-1].tool.power) * 60,
     }
-    for label, enc, lv, pw, kit in (("combat lv1 lone zombie", "graveyard_lone", 1, 1, "largebranch"),
-                                    ("combat lv8 horde", "graveyard_horde", 8, 20, "dreamnail")):
+    for label, enc, lv, pw, kit in (("combat lv1 lone zombie", "graveyard_lone", 1, 1, "tool_largebranch"),
+                                    ("combat lv8 horde", "graveyard_horde", 8, 20, "tool_dreamnail")):
         rows[label], win = combat_xp_per_hour(enc, lv, pw, kit)
     print(f"  {'':24}{'xp/hour':>10}  " + "".join(f"{'to L' + str(lv):>9}" for lv in (20, 50, 90)) + "   (hours of play from level 1)")
     for label, xp in rows.items():

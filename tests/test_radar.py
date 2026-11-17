@@ -17,12 +17,12 @@ XP25 = 120_000  # about fishing level 25
 
 async def angler(uid=1, level_xp=XP25):
     user = await User.get(uid)
-    await equip(user, "fishing", (await user.give_instance("starter_rod")).id)
+    await equip(user, "fishing", (await user.give_instance("tool_rod_starter")).id)
     await user.add_xp("fishing", level_xp)
     return user
 
 
-async def with_radar(user, level=1, targets=("giant_squid",), on=True, batteries=50):
+async def with_radar(user, level=1, targets=("fish_giant_squid",), on=True, batteries=50):
     await user.update_skill("fishing", lambda s: (setattr(s.radar, "level", level), setattr(s.radar, "on", on), setattr(s.radar, "targets", list(targets))))
     await user.add_item(R.battery, batteries)
 
@@ -41,9 +41,9 @@ def test_each_radar_level_is_stronger_and_costlier_and_the_battery_is_crafted():
 def test_a_chased_fish_gets_likelier_by_the_multiplier_and_the_rest_of_the_water_shrinks_a_little():
     water = f.water_by_id(REG, "deep_sea")
     base = f.water_chances(water)
-    boosted = f.radar_chances(water, ["giant_squid"], 4.0, REG)
-    assert boosted["giant_squid"] == pytest.approx(base["giant_squid"] * 4, rel=0.15)
-    assert f.radar_chances(water, ["not_here"], 4.0, REG) == {} and f.radar_chances(f.water_by_id(REG, "pond"), ["giant_squid"], 4.0, REG) == {}
+    boosted = f.radar_chances(water, ["fish_giant_squid"], 4.0, REG)
+    assert boosted["fish_giant_squid"] == pytest.approx(base["fish_giant_squid"] * 4, rel=0.15)
+    assert f.radar_chances(water, ["not_here"], 4.0, REG) == {} and f.radar_chances(f.water_by_id(REG, "pond"), ["fish_giant_squid"], 4.0, REG) == {}
 
 
 def test_roll_fish_really_catches_the_chased_fish_more_often():
@@ -51,16 +51,16 @@ def test_roll_fish_really_catches_the_chased_fish_more_often():
 
     def count(chase):
         rng = Random(7)
-        return sum(f.roll_fish(rng, REG, water, 0.0, chase).id == "marlin" for _ in range(6000))
+        return sum(f.roll_fish(rng, REG, water, 0.0, chase).id == "fish_marlin" for _ in range(6000))
 
-    plain, chasing = count(None), count({"marlin": 6.0})
+    plain, chasing = count(None), count({"fish_marlin": 6.0})
     assert chasing > 3.5 * plain and plain > 0
 
 
 def test_the_top_radar_is_strong_but_not_trivial():
     """At the top level a chase fish is several times likelier, never certain: a legendary stays a long chase."""
     water = f.water_by_id(REG, "deep_sea")
-    for fish_id in ("leviathan_pup", "abyssal_angler", "marlin"):
+    for fish_id in ("fish_leviathan_pup", "fish_abyssal_angler", "fish_marlin"):
         base = f.water_chances(water)[fish_id]
         top = f.radar_chances(water, [fish_id], R.levels[-1].multiplier, REG)[fish_id]
         assert 3 * base <= top <= 8 * base and top < 0.5, fish_id
@@ -74,7 +74,7 @@ async def test_a_cast_uses_a_battery_only_when_the_radar_is_on_and_a_target_live
     await with_radar(user, level=2)
     assert await f.use_radar(user, pond, REG) == {} and await user.item_quantity(R.battery) == 50  # (no target there: no battery used)
     chase = await f.use_radar(user, deep, REG)
-    assert chase == {"giant_squid": R.levels[1].multiplier} and await user.item_quantity(R.battery) == 49
+    assert chase == {"fish_giant_squid": R.levels[1].multiplier} and await user.item_quantity(R.battery) == 49
     await f.set_radar(user, on=False)
     assert await f.use_radar(user, deep, REG) == {} and await user.item_quantity(R.battery) == 49
     await f.set_radar(user, on=True)
@@ -85,11 +85,11 @@ async def test_a_cast_uses_a_battery_only_when_the_radar_is_on_and_a_target_live
 async def test_targets_are_limited_to_the_slots_and_to_real_fish(db):
     user = await angler()
     await with_radar(user, level=1, targets=())
-    await f.set_radar(user, targets=["marlin", "giant_squid", "nonsense"])
-    assert (await f.radar(user, REG)).targets == ("marlin",)  # (one slot at level 1; nonsense ignored)
+    await f.set_radar(user, targets=["fish_marlin", "fish_giant_squid", "nonsense"])
+    assert (await f.radar(user, REG)).targets == ("fish_marlin",)  # (one slot at level 1; nonsense ignored)
     await user.update_skill("fishing", lambda s: setattr(s.radar, "level", 5))
-    await f.set_radar(user, targets=["marlin", "giant_squid", "swordfish", "tuna"])
-    assert (await f.radar(user, REG)).targets == ("marlin", "giant_squid", "swordfish")
+    await f.set_radar(user, targets=["fish_marlin", "fish_giant_squid", "fish_swordfish", "fish_tuna"])
+    assert (await f.radar(user, REG)).targets == ("fish_marlin", "fish_giant_squid", "fish_swordfish")
 
 
 async def test_the_chase_changes_what_a_cast_catches(db):
@@ -99,8 +99,8 @@ async def test_the_chase_changes_what_a_cast_catches(db):
     caught = {False: 0, True: 0}
     for chasing in (False, True):
         for seed in range(500):
-            cast = f.cast_line(stats, Random(seed), 1_000.0, REG, water=water, chase={"marlin": 6.0} if chasing else None)
-            caught[chasing] += cast.fish.id == "marlin" and not cast.boss
+            cast = f.cast_line(stats, Random(seed), 1_000.0, REG, water=water, chase={"fish_marlin": 6.0} if chasing else None)
+            caught[chasing] += cast.fish.id == "fish_marlin" and not cast.boss
     assert caught[True] > 3 * caught[False]
 
 
@@ -145,8 +145,8 @@ async def test_the_fishing_page_has_a_radar_button_that_opens_at_its_level_and_t
     await with_radar(user, level=3, targets=(), on=False)
     nav, inter = await hub("radar")
     menu = select_named(nav, "Chase up to 2")
-    await choose(nav, inter, menu, "marlin")
-    assert (await f.radar(user, REG)).targets == ("marlin",) and "1 in" in all_text(nav)
+    await choose(nav, inter, menu, "fish_marlin")
+    assert (await f.radar(user, REG)).targets == ("fish_marlin",) and "1 in" in all_text(nav)
     await find_button(nav, "Turn on").callback(inter)
     assert (await f.radar(user, REG)).on and find_button(nav, "Turn off")
 

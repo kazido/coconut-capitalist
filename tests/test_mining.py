@@ -48,8 +48,8 @@ def test_wyrmhole_mine_has_exactly_one_implosion_gem():
     for seed in range(50):
         hole = m.generate_wyrmhole(RULES, Random(seed))
         assert len(hole.nodes) == 5
-        assert [n[0] for n in hole.nodes].count("implosion_gemstone") == 1
-        assert all(n[0] in RULES.wyrmhole.pool or n[0] == "implosion_gemstone" for n in hole.nodes)
+        assert [n[0] for n in hole.nodes].count("key_gemstone_implosion") == 1
+        assert all(n[0] in RULES.wyrmhole.pool or n[0] == "key_gemstone_implosion" for n in hole.nodes)
 
 
 def test_wyrmhole_allows_a_single_dig():
@@ -75,8 +75,8 @@ def test_scarabs_are_common_enough_to_see_and_give_more_than_bombs():
     wins = Counter(m.scarab_reward(REG, RULES, Random(s)).name for s in range(3000))
     assert set(wins) == {p.name for p in RULES.scarab.prizes} and len(wins) >= 4
     prizes = {p.name: p for p in RULES.scarab.prizes}
-    assert any(p.xp for p in prizes.values()) and any(set(p.items) - {"scarab_bomb"} for p in prizes.values())  # xp, and loot that is not a bomb
-    assert wins["Bombs"] > wins["A glittering find"] and "scarab_bomb" in prizes["Bombs"].items  # (the bombs are the common one, the find the rare one)
+    assert any(p.xp for p in prizes.values()) and any(set(p.items) - {"tool_scarab_bomb"} for p in prizes.values())  # xp, and loot that is not a bomb
+    assert wins["Bombs"] > wins["A glittering find"] and "tool_scarab_bomb" in prizes["Bombs"].items  # (the bombs are the common one, the find the rare one)
 
 
 def test_a_prize_must_give_something():
@@ -103,68 +103,68 @@ async def player(level=1, **items):
 
 
 async def test_magnet_deposits(db):
-    gold, iron = RULES.magnet.values["gold_ore"], RULES.magnet.values["iron_ore"]
-    user = await player(level=5, gold_ore=3, iron_ore=2, apple=1)
-    assert await m.deposit_ore(user, "gold_ore", 3) == (3 * gold, 3)
-    assert await m.deposit_ore(user, "iron_ore", 2) == (3 * gold + 2 * iron, 2)
+    gold, iron = RULES.magnet.values["material_gold_ore"], RULES.magnet.values["material_iron_ore"]
+    user = await player(level=5, material_gold_ore=3, material_iron_ore=2, crop_apple=1)
+    assert await m.deposit_ore(user, "material_gold_ore", 3) == (3 * gold, 3)
+    assert await m.deposit_ore(user, "material_iron_ore", 2) == (3 * gold + 2 * iron, 2)
     with pytest.raises(m.MiningError, match="only takes"):
-        await m.deposit_ore(user, "apple", 1)
+        await m.deposit_ore(user, "crop_apple", 1)
     with pytest.raises(m.MiningError, match="don't have"):
-        await m.deposit_ore(user, "gold_ore", 1)
-    await user.add_item("gold_ore", 100)
-    meter, used = await m.deposit_ore(user, "gold_ore", 100)
+        await m.deposit_ore(user, "material_gold_ore", 1)
+    await user.add_item("material_gold_ore", 100)
+    meter, used = await m.deposit_ore(user, "material_gold_ore", 100)
     room = RULES.magnet.capacity - (3 * gold + 2 * iron)
     assert meter == RULES.magnet.capacity and used == -(-room // gold)  # only the ore that fits is taken
-    assert await user.item_quantity("gold_ore") == 100 - used
+    assert await user.item_quantity("material_gold_ore") == 100 - used
     with pytest.raises(m.MiningError, match="full"):
-        await m.deposit_ore(user, "gold_ore", 1)
+        await m.deposit_ore(user, "material_gold_ore", 1)
 
 
 async def test_the_magnet_cannot_be_fed_while_you_are_in_a_mine(db):
-    user = await player(level=5, gold_ore=3, copper_ore=3)
+    user = await player(level=5, material_gold_ore=3, material_copper_ore=3)
     run = await m.start_run(user, Random(1))
     assert m.in_a_mine(user.id)
     with pytest.raises(m.MiningError, match="in a mine"):
-        await m.deposit_ore(user, "gold_ore", 1)
-    assert await user.item_quantity("gold_ore") == 3  # nothing was taken
+        await m.deposit_ore(user, "material_gold_ore", 1)
+    assert await user.item_quantity("material_gold_ore") == 3  # nothing was taken
     run.leave()
     await m.settle_run(user, run)
     assert not m.in_a_mine(user.id)
-    assert (await m.deposit_ore(user, "copper_ore", 3))[1] == 3
+    assert (await m.deposit_ore(user, "material_copper_ore", 3))[1] == 3
 
 
 async def test_the_auto_miner_feeds_the_magnet_first_when_you_ask_it_to_and_never_overfills(db):
     from collections import Counter
 
     user = await player(level=5)
-    loot = Counter({"gold_ore": 10, "iron_ore": 5, "copper_ore": 7, "coal": 4})
+    loot = Counter({"material_gold_ore": 10, "material_iron_ore": 5, "material_copper_ore": 7, "material_coal": 4})
     assert await m._feed_from_loot(user, loot, REG) == Counter()  # (off by default)
     await m.set_magnet_option(user, "magnet_auto_feed", True)
     fed = await m._feed_from_loot(user, loot, REG)
     v = RULES.magnet.values
-    assert fed == Counter({"gold_ore": 10, "iron_ore": 5, "copper_ore": 7}) and "coal" not in fed
-    assert (await user.skill("mining")).magnet_meter == 10 * v["gold_ore"] + 5 * v["iron_ore"] + 7 * v["copper_ore"]
+    assert fed == Counter({"material_gold_ore": 10, "material_iron_ore": 5, "material_copper_ore": 7}) and "material_coal" not in fed
+    assert (await user.skill("mining")).magnet_meter == 10 * v["material_gold_ore"] + 5 * v["material_iron_ore"] + 7 * v["material_copper_ore"]
     await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", RULES.magnet.capacity - 50))
-    fed = await m._feed_from_loot(user, Counter({"gold_ore": 100}), REG)
-    assert fed["gold_ore"] == 50 // v["gold_ore"] and (await user.skill("mining")).magnet_meter <= RULES.magnet.capacity  # only what fits
+    fed = await m._feed_from_loot(user, Counter({"material_gold_ore": 100}), REG)
+    assert fed["material_gold_ore"] == 50 // v["material_gold_ore"] and (await user.skill("mining")).magnet_meter <= RULES.magnet.capacity  # only what fits
     await m.set_magnet_option(user, "magnet_auto_feed", True)
     await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", 0))
     run = await m.start_run(user, Random(1))  # in a mine: no feeding
-    assert await m._feed_from_loot(user, Counter({"gold_ore": 5}), REG) == Counter()
+    assert await m._feed_from_loot(user, Counter({"material_gold_ore": 5}), REG) == Counter()
     run.leave()
     await m.settle_run(user, run)
 
 
 async def test_magnet_requires_level(db):
-    user = await player(level=1, gold_ore=1)
+    user = await player(level=1, material_gold_ore=1)
     with pytest.raises(m.MiningError, match="level 5"):
-        await m.deposit_ore(user, "gold_ore", 1)
-    assert await user.item_quantity("gold_ore") == 1  # nothing was taken
+        await m.deposit_ore(user, "material_gold_ore", 1)
+    assert await user.item_quantity("material_gold_ore") == 1  # nothing was taken
 
 
 async def test_gem_placement_rules_and_prestige(db):
     gems = RULES.reactor.core_gems
-    user = await player(level=1, **{g: 1 for g in gems}, implosion_gemstone=2)
+    user = await player(level=1, **{g: 1 for g in gems}, key_gemstone_implosion=2)
     with pytest.raises(m.MiningError, match="level 10"):
         await m.place_gem(user, gems[0])
     await user.add_xp("mining", User.level_to_xp(10) + 1)
@@ -177,21 +177,21 @@ async def test_gem_placement_rules_and_prestige(db):
         await m.place_gem(user, gems[0])
     assert await user.item_quantity(gems[0]) == 1  # not consumed by the failed attempt
     with pytest.raises(m.MiningError, match="isn't a reactor gem"):
-        await m.place_gem(user, "copper_ore")
+        await m.place_gem(user, "material_copper_ore")
     with pytest.raises(m.MiningError, match="Fill all four"):
         await m.prestige(user)
 
     for gem in gems[1:]:
         await m.place_gem(user, gem)
-    assert await m.prestige(user) == 2 and await user.item_quantity("implosion_gemstone") == 1
-    assert await m.prestige(user) == 3 and await user.item_quantity("implosion_gemstone") == 0
+    assert await m.prestige(user) == 2 and await user.item_quantity("key_gemstone_implosion") == 1
+    assert await m.prestige(user) == 3 and await user.item_quantity("key_gemstone_implosion") == 0
     with pytest.raises(m.MiningError, match="implosion gem"):
         await m.prestige(user)
 
 
 async def test_prestige_stops_at_the_maximum(db):
     gems = RULES.reactor.core_gems
-    user = await player(level=10, implosion_gemstone=3)
+    user = await player(level=10, key_gemstone_implosion=3)
     def setup(s):
         for i, g in enumerate(gems, start=1):
             getattr(s.reactor, f"core_{i}").gem_id = g
@@ -199,7 +199,7 @@ async def test_prestige_stops_at_the_maximum(db):
     await user.update_skill("mining", setup)
     with pytest.raises(m.MiningError, match="maximum"):
         await m.prestige(user)
-    assert await user.item_quantity("implosion_gemstone") == 3
+    assert await user.item_quantity("key_gemstone_implosion") == 3
 
 
 async def test_lodes_accumulate_and_can_only_be_claimed_once(db):
@@ -208,7 +208,7 @@ async def test_lodes_accumulate_and_can_only_be_claimed_once(db):
     assert status["pending_lodes"] == 0
     lodes, loot = await m.claim_lodes(user, Random(1), now=1000 + 360 * 10)
     assert lodes == 10 and sum(loot.values()) > 0
-    assert await user.item_quantity("copper_ore") == loot["copper_ore"]
+    assert await user.item_quantity("material_copper_ore") == loot["material_copper_ore"]
     assert (await user.skill("mining")).stats.lodes_auto_mined == 10
     assert await m.claim_lodes(user, Random(1), now=1000 + 360 * 10) == (0, Counter())
 
@@ -296,7 +296,7 @@ def force_row(run, cells, kinds=None, holes=(), depth=None):
     run._holes[depth] = set(holes)
 
 
-COPPER, GOLD = ("copper_ore", 1), ("gold_ore", 1)
+COPPER, GOLD = ("material_copper_ore", 1), ("material_gold_ore", 1)
 
 
 # ---- the shaft: tiers, rows, loot -------------------------------------------------------------------
@@ -378,8 +378,8 @@ def test_every_dig_adds_creak_plus_the_hardness_of_the_cells_dug():
     for run in (copper, gold):
         run.rng = Rig(0.99)
         run.dig()
-    assert copper.danger == pytest.approx(D.creak + D.hardness["copper_ore"])
-    assert gold.danger == pytest.approx(D.creak + D.hardness["gold_ore"])
+    assert copper.danger == pytest.approx(D.creak + D.hardness["material_copper_ore"])
+    assert gold.danger == pytest.approx(D.creak + D.hardness["material_gold_ore"])
     assert gold.danger > copper.danger  # richer ore is louder
 
 
@@ -415,13 +415,13 @@ def test_calm_never_collapses_even_on_the_worst_luck():
 def test_collapse_costs_part_of_the_haul_and_ends_the_run():
     run = make_run()
     run.row(0)
-    run.haul = Counter(copper_ore=10, iron_ore=1)
+    run.haul = Counter(material_copper_ore=10, material_iron_ore=1)
     run.danger = 80
     run.rng = Rig(0.0)  # unlucky
     result = run.dig()
     assert result.collapsed and run.outcome == "collapse" and run.finished
-    assert run.haul == Counter(copper_ore=5)  # half kept (rounded down); the lone iron is gone
-    assert result.lost == Counter(copper_ore=5, iron_ore=1)
+    assert run.haul == Counter(material_copper_ore=5)  # half kept (rounded down); the lone iron is gone
+    assert result.lost == Counter(material_copper_ore=5, material_iron_ore=1)
     with pytest.raises(m.MiningError):
         run.dig()
 
@@ -448,9 +448,9 @@ def test_brace_lowers_pressure_uses_a_brace_and_does_not_descend():
 
 def test_leaving_keeps_everything_and_blocks_further_actions():
     run = make_run(bombs=1)
-    run.haul = Counter(copper_ore=3)
+    run.haul = Counter(material_copper_ore=3)
     run.leave()
-    assert run.outcome == "left" and run.haul == Counter(copper_ore=3)
+    assert run.outcome == "left" and run.haul == Counter(material_copper_ore=3)
     for action in (run.dig, run.brace, run.leave, run.bomb):
         with pytest.raises(m.MiningError):
             action()
@@ -460,9 +460,9 @@ def test_leaving_keeps_everything_and_blocks_further_actions():
 def test_breaking_into_a_wyrmhole_ends_the_run_and_keeps_the_haul():
     run = make_run()
     force_row(run, [COPPER] * 5, holes={2})
-    run.haul = Counter(copper_ore=4)
+    run.haul = Counter(material_copper_ore=4)
     result = run.dig()
-    assert result.wyrmhole and run.outcome == "wyrmhole" and run.haul == Counter(copper_ore=4) and run.depth == 0
+    assert result.wyrmhole and run.outcome == "wyrmhole" and run.haul == Counter(material_copper_ore=4) and run.depth == 0
 
 
 def test_wyrmholes_can_only_hide_below_the_minimum_depth():
@@ -480,11 +480,11 @@ def test_wyrmholes_can_only_hide_below_the_minimum_depth():
 
 def test_digging_several_columns_collects_each_and_adds_each_ones_pressure():
     run = make_run(cursors=[1, 2, 3])
-    force_row(run, [None, ("copper_ore", 2), ("copper_ore", 3), None, None])
+    force_row(run, [None, ("material_copper_ore", 2), ("material_copper_ore", 3), None, None])
     run.rng = Rig(0.99)
     result = run.dig()
-    assert result.found == Counter(copper_ore=5) and run.lodes == 3 and run.history[0].dug == (1, 2, 3)
-    assert run.danger == pytest.approx(D.creak + 2 * D.hardness["copper_ore"] + D.empty_hardness)
+    assert result.found == Counter(material_copper_ore=5) and run.lodes == 3 and run.history[0].dug == (1, 2, 3)
+    assert run.danger == pytest.approx(D.creak + 2 * D.hardness["material_copper_ore"] + D.empty_hardness)
 
 
 def test_cursor_movement_wraps():
@@ -534,9 +534,9 @@ def test_rich_lodes_are_a_mystery_with_better_loot_than_the_tier_would_give():
 
 def test_a_charged_magnet_marks_the_richest_cell_of_the_next_row():
     run = make_run(magnet=True)
-    force_row(run, [None, COPPER, GOLD, None, ("copper_ore", 1)])
+    force_row(run, [None, COPPER, GOLD, None, ("material_copper_ore", 1)])
     assert run.best_columns() == frozenset({2})
-    force_row(run, [None, COPPER, GOLD, None, ("copper_ore", 1)], holes={2})  # never points into a wyrmhole
+    force_row(run, [None, COPPER, GOLD, None, ("material_copper_ore", 1)], holes={2})  # never points into a wyrmhole
     assert run.best_columns() == frozenset({1, 4})
     assert make_run(magnet=False).best_columns() == frozenset()
 
@@ -557,7 +557,7 @@ def test_a_bomb_clears_the_whole_row_for_a_flat_pressure_and_skips_wyrmholes():
     run.danger = 30
     result = run.bomb()
     assert result.bombed and run.depth == 1 and run.bombs == 1 and run.bombs_used == 1
-    assert result.found == Counter(copper_ore=1, gold_ore=1) and run.lodes == 4  # the hole was left alone
+    assert result.found == Counter(material_copper_ore=1, material_gold_ore=1) and run.lodes == 4  # the hole was left alone
     assert run.history[0].dug == (0, 1, 2, 4)
     assert run.danger == pytest.approx(30 + D.creak + D.bomb_pressure - D.vent_relief)
 
@@ -613,7 +613,7 @@ def test_the_vault_holds_all_three_ores_in_proportion_to_how_often_they_drop():
 
     from cococap.services import loot
 
-    assert set(D.vault_ore) == {"copper_ore", "iron_ore", "gold_ore"}
+    assert set(D.vault_ore) == {"material_copper_ore", "material_iron_ore", "material_gold_ore"}
     rng = Random(1)
 
     def per_roll(ore):  # how much of it one roll of the ore's own drop table brings, on average
@@ -686,24 +686,24 @@ async def test_start_run_uses_reactor_braces_columns_and_carried_bombs(db):
 
 
 async def test_you_carry_at_most_the_allowed_number_of_bombs_down(db):
-    user = await player(scarab_bomb=D.bombs_per_run + 4)
+    user = await player(tool_scarab_bomb=D.bombs_per_run + 4)
     run = await m.start_run(user, Random(1))
     assert run.bombs == D.bombs_per_run
-    assert await user.item_quantity("scarab_bomb") == D.bombs_per_run + 4  # carried, not yet spent
+    assert await user.item_quantity("tool_scarab_bomb") == D.bombs_per_run + 4  # carried, not yet spent
 
 
 async def test_using_a_bomb_spends_exactly_one_from_the_inventory(db):
-    user = await player(scarab_bomb=2)
+    user = await player(tool_scarab_bomb=2)
     run = await m.start_run(user, Random(1))
     run.rng = Rig(0.99)
     result = await m.use_bomb(user, run)
-    assert result.bombed and run.bombs == 1 and await user.item_quantity("scarab_bomb") == 1
+    assert result.bombed and run.bombs == 1 and await user.item_quantity("tool_scarab_bomb") == 1
 
 
 async def test_a_bomb_you_no_longer_own_cannot_be_used(db):
-    user = await player(scarab_bomb=1)
+    user = await player(tool_scarab_bomb=1)
     run = await m.start_run(user, Random(1))
-    await user.remove_item("scarab_bomb", 1)  # e.g. sold or used in another run
+    await user.remove_item("tool_scarab_bomb", 1)  # e.g. sold or used in another run
     with pytest.raises(m.MiningError, match="don't have a bomb"):
         await m.use_bomb(user, run)
     assert run.bombs == 0 and run.depth == 0
@@ -719,7 +719,7 @@ async def test_a_better_pickaxe_means_bigger_piles_in_a_real_run(db):
     from cococap.services.equipment import equip
 
     user = await player()
-    pick = await user.give_instance("rookiepickaxe", rolled={"power": 4})
+    pick = await user.give_instance("tool_pickaxe_rookie", rolled={"power": 4})
     await equip(user, "mining", pick.id)
     run = await m.start_run(user, Random(1))
     assert run.yield_factor == pytest.approx(1 + D.power_yield_bonus * 4)
@@ -775,12 +775,12 @@ async def test_a_collapse_still_banks_what_survived_and_the_xp(db):
     run = await m.start_run(user, Random(1))
     run.rng = Rig(0.99)
     run.dig()
-    run.haul = Counter(copper_ore=10)
+    run.haul = Counter(material_copper_ore=10)
     run.danger = 90
     run.rng = Rig(0.0)
     run.dig()
     summary = await m.settle_run(user, run)
-    assert summary.outcome == "collapse" and await user.item_quantity("copper_ore") == 5
+    assert summary.outcome == "collapse" and await user.item_quantity("material_copper_ore") == 5
     assert (await user.skill("mining")).xp == RULES.xp_per_column
 
 
@@ -832,8 +832,8 @@ def test_a_cell_is_revealed_once_you_dig_it():
     from cococap.screens.mine import CACHE, VENT, dug_emoji, item_emoji
 
     assert dug_emoji("vent", None) == VENT and dug_emoji("cache", None) == CACHE
-    assert dug_emoji("ore", COPPER) == item_emoji("copper_ore")
-    assert dug_emoji("ore", None) not in (VENT, CACHE, item_emoji("copper_ore"))
+    assert dug_emoji("ore", COPPER) == item_emoji("material_copper_ore")
+    assert dug_emoji("ore", None) not in (VENT, CACHE, item_emoji("material_copper_ore"))
 
 
 def test_the_map_shows_three_rows_ahead_and_a_vent_looks_like_any_other_soft_rock():
@@ -851,10 +851,10 @@ def test_the_map_shows_three_rows_ahead_and_a_vent_looks_like_any_other_soft_roc
 
 def test_every_cell_feels_soft_firm_or_hard_by_how_much_pressure_it_costs_and_rich_lodes_and_holes_stand_out():
     run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0))
-    force_row(run, [None, COPPER, ("iron_ore", 1), GOLD, ("hardwood", 1)])
+    force_row(run, [None, COPPER, ("material_iron_ore", 1), GOLD, ("material_hardwood", 1)])
     feel = run.feel(run.depth)
     assert feel[:4] == ["soft", "soft", "firm", "hard"]  # nothing and copper: soft. iron: firm. gold: hard
-    assert D.hardness["copper_ore"] < D.soft_below <= D.hardness["iron_ore"] < D.hard_from <= D.hardness["gold_ore"]
+    assert D.hardness["material_copper_ore"] < D.soft_below <= D.hardness["material_iron_ore"] < D.hard_from <= D.hardness["material_gold_ore"]
     force_row(run, [GOLD] * 5, kinds=["rich", "ore", "vent", "cache", "ore"], holes={1})
     assert run.feel(run.depth)[:2] == ["rich", "hole"]
     vent_row = run.feel(run.depth)
@@ -942,7 +942,7 @@ def test_going_deeper_is_a_real_choice_not_always_the_right_one():
                 if sign[run.cursors[0]] == "hole":
                     run.move(next(c for c, k in enumerate(sign) if k != "hole") - run.cursors[0])
                 run.dig()
-            total += sum(REG.item(i).sell_price * q for i, q in run.haul.items() if i in ("copper_ore", "iron_ore", "gold_ore"))
+            total += sum(REG.item(i).sell_price * q for i, q in run.haul.items() if i in ("material_copper_ore", "material_iron_ore", "material_gold_ore"))
         return total / 1500
 
     cautious, balanced, reckless = average_value(0.02), average_value(0.08), average_value(1.0)
@@ -951,7 +951,7 @@ def test_going_deeper_is_a_real_choice_not_always_the_right_one():
 
 def test_one_vault_is_a_part_of_the_next_pickaxe_not_the_whole_of_it():
     """The reward for reaching the bottom should not pay for a pickaxe upgrade on its own: the ores it holds are a fraction of what Masterwork asks."""
-    ask = REG.item("steel_pickaxe").tool.upgrade.items  # (the step into Masterwork)
+    ask = REG.item("tool_pickaxe_steel").tool.upgrade.items  # (the step into Masterwork)
     for ore, quantity in D.vault_ore.items():
         assert quantity <= ask[ore], ore  # never more than the whole ask of any ore...
     shares = [D.vault_ore[ore] / ask[ore] for ore in ask if ore in D.vault_ore]
@@ -979,31 +979,31 @@ def test_the_milestone_rows_are_in_the_data_and_below_the_vault():
 def test_finishing_a_landmark_row_makes_a_checkpoint_of_what_you_hold():
     run = calm_run()
     dig_to(run, 9)
-    run.haul = Counter(copper_ore=40)
+    run.haul = Counter(material_copper_ore=40)
     run.danger = 0
     assert run.safe == Counter()
     result = run.dig()  # finishes row 10
     assert result.milestone is not None and result.milestone.row == 10 and run.depth == 10
-    assert run.safe == Counter(run.haul) and run.safe["copper_ore"] >= 40
+    assert run.safe == Counter(run.haul) and run.safe["material_copper_ore"] >= 40
 
 
 def test_a_collapse_after_a_checkpoint_only_costs_what_you_dug_since():
     run = calm_run()
     dig_to(run, 10)
-    run.haul = Counter(copper_ore=100)
-    run.safe = Counter(copper_ore=80)  # 80 are safe, 20 are at risk
+    run.haul = Counter(material_copper_ore=100)
+    run.safe = Counter(material_copper_ore=80)  # 80 are safe, 20 are at risk
     run.row(run.depth)  # (roll the row first: a rigged dice would put a wyrmhole in it)
     run.rng = Rig(0.0)
     run.danger = 100
     result = run.dig()
-    assert result.collapsed and run.haul["copper_ore"] == 80 + int(20 * (1 - D.collapse_loss))
+    assert result.collapsed and run.haul["material_copper_ore"] == 80 + int(20 * (1 - D.collapse_loss))
     before = calm_run()
-    before.haul = Counter(copper_ore=100)
+    before.haul = Counter(material_copper_ore=100)
     before.row(before.depth)
     before.rng = Rig(0.0)
     before.danger = 100
     before.dig()
-    assert before.haul["copper_ore"] == int(100 * (1 - D.collapse_loss))  # with no checkpoint a collapse takes its usual share of everything
+    assert before.haul["material_copper_ore"] == int(100 * (1 - D.collapse_loss))  # with no checkpoint a collapse takes its usual share of everything
 
 
 def test_an_ordinary_row_is_not_a_checkpoint():
@@ -1058,9 +1058,9 @@ def test_every_kind_of_rock_has_a_real_pool_of_things_to_find():
         for item in table:
             pools[rock_of(item)].add(item)
     assert len(pools["soft"]) >= 4 and len(pools["firm"]) >= 5 and len(pools["hard"]) >= 8, {k: sorted(v) for k, v in pools.items()}
-    assert {"copper_ore", "coal", "clay", "amber"} <= pools["soft"]
-    assert {"iron_ore", "tin_ore", "silver_ore", "garnet"} <= pools["firm"]
-    assert {"gold_ore", "obsidian", "platinum_ore", "sapphire", "emerald"} <= pools["hard"]
+    assert {"material_copper_ore", "material_coal", "material_clay", "material_amber"} <= pools["soft"]
+    assert {"material_iron_ore", "material_tin_ore", "material_silver_ore", "material_garnet"} <= pools["firm"]
+    assert {"material_gold_ore", "material_obsidian", "material_platinum_ore", "material_sapphire", "material_emerald"} <= pools["hard"]
 
 
 def test_the_pools_open_up_as_you_go_deeper():
@@ -1073,12 +1073,12 @@ def test_the_pools_open_up_as_you_go_deeper():
 
 
 def test_the_new_finds_all_sell_and_each_road_of_the_pickaxe_upgrades_with_its_own_rock():
-    new = ("coal", "clay", "amber", "tin_ore", "silver_ore", "garnet", "obsidian", "platinum_ore", "sapphire", "emerald")
+    new = ("material_coal", "material_clay", "material_amber", "material_tin_ore", "material_silver_ore", "material_garnet", "material_obsidian", "material_platinum_ore", "material_sapphire", "material_emerald")
     for item_id in new:
         item = REG.item(item_id)
         assert item.skill == "mining" and item.sell_price > 0 and item.drop and item_id in D.hardness
     def spent_on(road):
-        found, tool = set(), REG.item("masterwork_pickaxe")
+        found, tool = set(), REG.item("tool_pickaxe_masterwork")
         costs = [tool.tool.upgrade if road == "Warden" else tool.tool.fork]
         item = REG.item(costs[0].to)
         while item.tool.upgrade:
@@ -1088,8 +1088,8 @@ def test_the_new_finds_all_sell_and_each_road_of_the_pickaxe_upgrades_with_its_o
             found |= set(cost.items)
         return found
     warden, prospector = spent_on("Warden"), spent_on("Prospector")
-    assert {"coal", "clay", "tin_ore", "silver_ore", "amber", "garnet"} <= warden  # soft and firm rock
-    assert {"obsidian", "platinum_ore", "sapphire", "emerald", "gold_ore"} <= prospector  # hard rock
+    assert {"material_coal", "material_clay", "material_tin_ore", "material_silver_ore", "material_amber", "material_garnet"} <= warden  # soft and firm rock
+    assert {"material_obsidian", "material_platinum_ore", "material_sapphire", "material_emerald", "material_gold_ore"} <= prospector  # hard rock
     assert not {i for i in new if rock_of(i) == "hard"} & warden and not {i for i in new if rock_of(i) != "hard"} & prospector
 
 
@@ -1126,7 +1126,7 @@ def test_the_auto_bomb_clears_the_whole_row_for_a_flat_pressure():
     force_row(run, [COPPER, COPPER, GOLD, COPPER, COPPER])
     before = run.danger
     result = run.dig()
-    assert result.auto_bombed and sum(result.found.values()) >= 5 and "gold_ore" in result.found
+    assert result.auto_bombed and sum(result.found.values()) >= 5 and "material_gold_ore" in result.found
     assert run.danger == pytest.approx(before + (D.creak + D.bomb_pressure) * run.growth_factor)
 
 
@@ -1163,8 +1163,8 @@ def test_multi_mine_never_digs_a_wyrmhole_or_the_column_you_already_dug():
 
 
 def test_the_roads_chain_climbs_the_abilities_and_the_numbers_in_the_text_match_the_stats():
-    wardens = ["ironbound_pickaxe", "crystal_pickaxe", "deepdelver_pickaxe", "mythril_pickaxe", "worldsplitter_pickaxe"]
-    prospectors = ["prospector_pickaxe", "geode_pickaxe", "seekers_pickaxe", "veinhunter_pickaxe", "motherlode_pickaxe"]
+    wardens = ["tool_pickaxe_ironbound", "tool_pickaxe_crystal", "tool_pickaxe_deepdelver", "tool_pickaxe_mythril", "tool_pickaxe_worldsplitter"]
+    prospectors = ["tool_pickaxe_prospector", "tool_pickaxe_geode", "tool_pickaxe_seekers", "tool_pickaxe_veinhunter", "tool_pickaxe_motherlode"]
     bombs = [REG.item(w).tool.stats["auto_bomb"] for w in wardens]
     multis = [REG.item(p).tool.stats["multi_mine"] for p in prospectors]
     assert bombs == sorted(bombs, reverse=True) and multis == sorted(multis)  # better tools: sooner bombs, more multi-mining
@@ -1180,12 +1180,12 @@ def test_the_roads_chain_climbs_the_abilities_and_the_numbers_in_the_text_match_
 def test_lifeline_holds_the_mine_once_when_a_dig_would_collapse_it_and_only_if_ready():
     quiet = rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0)
     run = make_run(rules=quiet, lifeline=1)
-    run.haul.update({"copper_ore": 100})
+    run.haul.update({"material_copper_ore": 100})
     run.rng = Rig(0.0)  # every collapse roll comes up
     run.danger = 90
     first = run.dig()
     assert first.lifeline and not first.collapsed and run.outcome is None and run.lifeline_fired
-    assert first.lifeline_lost["copper_ore"] == int(100 * D.lifeline_loss) and run.haul["copper_ore"] >= 100 - int(100 * D.lifeline_loss)
+    assert first.lifeline_lost["material_copper_ore"] == int(100 * D.lifeline_loss) and run.haul["material_copper_ore"] >= 100 - int(100 * D.lifeline_loss)
     assert run.danger <= D.lifeline_pressure + D.creak + 20  # the reactor dropped the pressure before the dig added its own
     run.danger = 90
     assert run.dig().collapsed and run.outcome == "collapse"  # only once
@@ -1221,13 +1221,13 @@ def test_gold_rush_triples_every_nth_cell_and_geodes_hold_a_gem_you_have_not_pla
             force_row(run, [COPPER, COPPER, COPPER, COPPER, COPPER], depth=depth)
             run.danger = 0
             run.dig()
-        assert run.haul["copper_ore"] == 2 + expected, gold  # (two single cells, then the third one)
-    run = make_run(rules=quiet, geode=1.0, geode_gems=["rage_gemstone"])  # geodes: always a gem with the roll forced, and only one you are missing
+        assert run.haul["material_copper_ore"] == 2 + expected, gold  # (two single cells, then the third one)
+    run = make_run(rules=quiet, geode=1.0, geode_gems=["key_gemstone_rage"])  # geodes: always a gem with the roll forced, and only one you are missing
     run.rng = Rig(0.0)
     force_row(run, [COPPER] * 5)
     run.danger = 0
     run.dig()
-    assert run.haul["rage_gemstone"] == 1 and not run.haul["sanity_gemstone"]
+    assert run.haul["key_gemstone_rage"] == 1 and not run.haul["key_gemstone_sanity"]
     plain = make_run(rules=quiet, geode=0.0)
     plain.rng = Rig(0.99)
     force_row(plain, [COPPER] * 5)
@@ -1312,7 +1312,7 @@ def test_the_mine_type_weights_validate_and_standard_dominates():
 def test_bad_mine_types_are_refused():
     base = RULES.model_dump(by_alias=True)
     broken = lambda **change: {**base, "mine_types": [*base["mine_types"][:1], {**base["mine_types"][1], **change}, *base["mine_types"][2:]]}  # noqa: E731
-    for change in ({"weight": 0}, {"pressure_mult": 0.01}, {"xp_mult": 9}, {"ore_boost": {"copper_ore": 50}}, {"ore_yield": {"copper_ore": 0.5}}, {"rich_chance_add": 0.9}):
+    for change in ({"weight": 0}, {"pressure_mult": 0.01}, {"xp_mult": 9}, {"ore_boost": {"material_copper_ore": 50}}, {"ore_yield": {"material_copper_ore": 0.5}}, {"rich_chance_add": 0.9}):
         with pytest.raises(ValidationError):
             type(RULES)(**broken(**change))
     with pytest.raises(ValidationError, match="standard"):
@@ -1355,25 +1355,25 @@ def test_an_ore_focused_mine_pays_more_of_its_ore():
             total += sum(q for i in range(depth) for cell in run.row(i) if cell and cell[0] == ore for q in [cell[1]])
         return total
 
-    for type_id, ore in (("copper_seam", "copper_ore"), ("iron_vein", "iron_ore"), ("gold_vein", "gold_ore")):
+    for type_id, ore in (("copper_seam", "material_copper_ore"), ("iron_vein", "material_iron_ore"), ("gold_vein", "material_gold_ore")):
         assert type_id in TYPES and ore in {**TYPES[type_id].ore_boost, **TYPES[type_id].ore_yield}
         assert income(type_id, ore, 12) > income(None, ore, 12), type_id
 
 
 def test_ore_boost_raises_the_drop_chance_and_other_ores_stay_possible():
-    boosted = TYPES["standard"].model_copy(update={"id": "x", "ore_boost": {"iron_ore": 3.0}})
+    boosted = TYPES["standard"].model_copy(update={"id": "x", "ore_boost": {"material_iron_ore": 3.0}})
     def count(kind, ore):
         n = 0
         for seed in range(60):
             run = m.MineRun(RULES, REG, Random(seed), cursors=[2], mine_type=kind)
             n += sum(1 for i in range(4, 8) for cell in run.row(i) if cell and cell[0] == ore)
         return n
-    assert count(boosted, "iron_ore") > count(TYPES["standard"], "iron_ore") * 1.5
-    assert count(boosted, "copper_ore") > 0 and count(boosted, "gold_ore") > 0
+    assert count(boosted, "material_iron_ore") > count(TYPES["standard"], "material_iron_ore") * 1.5
+    assert count(boosted, "material_copper_ore") > 0 and count(boosted, "material_gold_ore") > 0
 
 
 def test_ore_yield_also_fattens_the_vault_ore():
-    assert _run("gold_vein")._vault_ore()["gold_ore"] == round(RULES.descent.vault_ore["gold_ore"] * TYPES["gold_vein"].ore_yield["gold_ore"])
+    assert _run("gold_vein")._vault_ore()["material_gold_ore"] == round(RULES.descent.vault_ore["material_gold_ore"] * TYPES["gold_vein"].ore_yield["material_gold_ore"])
     assert _run()._vault_ore() == RULES.descent.vault_ore
 
 
@@ -1412,7 +1412,7 @@ def test_a_deep_pocket_has_more_rich_lodes_and_more_ore():
 
 
 async def test_mine_types_keep_the_live_run_guard_and_settle_working(db):
-    user = await player(level=5, scarab_bomb=1)
+    user = await player(level=5, tool_scarab_bomb=1)
     run = await m.start_run(user, Random(1), mine_type="iron_vein")
     assert m.in_a_mine(user.id)
     run.rng = Rig(0.99)
@@ -1490,9 +1490,9 @@ def test_a_core_gem_in_a_small_wyrmhole_is_rare_and_only_core_gems_from_the_reac
 
 def test_entering_a_small_wyrmhole_ends_the_mine_and_only_if_it_has_one():
     run = make_run(mini_wyrmhole=True)
-    run.haul = Counter(copper_ore=4)
+    run.haul = Counter(material_copper_ore=4)
     run.enter_mini_wyrmhole()
-    assert run.finished and run.outcome == "mini_wyrmhole" and run.haul == Counter(copper_ore=4)
+    assert run.finished and run.outcome == "mini_wyrmhole" and run.haul == Counter(material_copper_ore=4)
     with pytest.raises(m.MiningError):
         run.dig()
     with pytest.raises(m.MiningError):
@@ -1534,7 +1534,7 @@ def test_small_wyrmhole_odds_for_the_rare_drop_screen():
     lookup = odds.for_source("mini_wyrmhole")
     gem = lookup(RULES.reactor.core_gems[0])
     assert gem and gem.one_in > 200 and "small wyrmholes" in gem.text()
-    assert lookup("gold_ore").one_in == 4 and lookup("sanity_gemstone") and lookup("clay") is None
+    assert lookup("material_gold_ore").one_in == 4 and lookup("key_gemstone_sanity") and lookup("material_clay") is None
 
 
 def test_small_wyrmhole_config_is_validated():

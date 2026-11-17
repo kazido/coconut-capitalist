@@ -13,7 +13,7 @@ async def noop(interaction):
 
 
 def test_the_reward_screen_lists_items_then_bits_and_xp_then_notes():
-    result = rewards_result("Harvest!", items={"copper_ore": 3, "coal": 0}, bits=1200, xp=45, headline=["⛏️ Row 3"], notes=["a note"])
+    result = rewards_result("Harvest!", items={"material_copper_ore": 3, "material_coal": 0}, bits=1200, xp=45, headline=["⛏️ Row 3"], notes=["a note"])
     assert not result.then
     head, items, totals, note = result.lines
     assert head == "⛏️ Row 3" and "**+3** Copper Ore" in items and "Coal" not in items
@@ -25,8 +25,8 @@ def test_an_empty_reward_still_says_so():
 
 
 def test_rare_drops_leave_the_reward_screen_and_get_a_page_each_in_order():
-    assert flair.level(REG.item("scroll_keen")) == 2 and flair.level(REG.item("iron_wedge")) == 1
-    result = rewards_result("TIMBER!", items={"copper_ore": 2, "iron_wedge": 1, "scroll_keen": 1}, xp=10, odds=odds.foraging(),
+    assert flair.level(REG.item("scroll_keen")) == 2 and flair.level(REG.item("material_iron_wedge")) == 1
+    result = rewards_result("TIMBER!", items={"material_copper_ore": 2, "material_iron_wedge": 1, "scroll_keen": 1}, xp=10, odds=odds.foraging(),
                             again=noop, again_label="Another tree", back=noop, back_label="Back to foraging", actions=[("Donate", "🌱", noop)])
     text = "\n".join(result.lines)
     assert "Copper Ore" in text and "Scroll" not in text and "Wedge" not in text  # nothing rare on the plain screen

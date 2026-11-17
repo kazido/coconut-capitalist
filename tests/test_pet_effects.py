@@ -11,7 +11,7 @@ from tests.test_pets import with_pet
 REG = get_registry()
 RULES = REG.economy.pets
 
-NEW_PETS = {"magpie": "sell_bonus", "mole": "dig_shave", "fox": "rare_reroll", "bee": "extra_harvest", "raven": "payout_bonus"}
+NEW_PETS = {"gloam": "sell_bonus", "lode": "dig_shave", "lune": "rare_reroll", "pollen": "extra_harvest", "umbra": "payout_bonus"}
 
 
 def built() -> dict[str, str]:
@@ -35,27 +35,27 @@ def test_the_new_pets_are_small_and_of_a_similar_size():
 
 
 def test_the_new_pets_have_the_rarity_and_skill_they_were_given():
-    wanted = {"magpie": (3, "global"), "mole": (3, "mining"), "fox": (4, "global"), "bee": (2, "farming"), "raven": (5, "global")}
+    wanted = {"gloam": (3, "global"), "lode": (3, "mining"), "lune": (4, "global"), "pollen": (2, "farming"), "umbra": (5, "global")}
     assert {p: (REG.pets[p].rarity, REG.pets[p].skill) for p in built()} == {p: wanted[p] for p in built()}
 
 
 # ---- Magpie -------------------------------------------------------------------------------------------------------
 async def test_a_magpie_makes_every_sale_pay_more_and_more_with_strength(db):
-    ore = REG.item("gold_ore")
+    ore = REG.item("material_gold_ore")
     plain = await User.get(1)
     await plain.add_item(ore.id, 100)
     base = await shop.sell(plain, ore.id, 100, REG)
     assert base == ore.sell_price * 100
 
-    user = await with_pet("magpie", user_id=2)
+    user = await with_pet("gloam", user_id=2)
     await user.add_item(ore.id, 100)
     paid = await shop.sell(user, ore.id, 100, REG)
-    assert paid == round(base * (1 + value("magpie"))) and paid > base
+    assert paid == round(base * (1 + value("gloam"))) and paid > base
 
-    young = await with_pet("magpie", user_id=3, xp=0)
-    star3 = await with_pet("magpie", user_id=4, stars=3)
-    assert 0 < await shop.haggle(young, ore, REG) < value("magpie") < await shop.haggle(star3, ore, REG)
-    assert await shop.haggle(star3, ore, REG) == pytest.approx(value("magpie") * (1 + 2 * RULES.star_bonus))
+    young = await with_pet("gloam", user_id=3, xp=0)
+    star3 = await with_pet("gloam", user_id=4, stars=3)
+    assert 0 < await shop.haggle(young, ore, REG) < value("gloam") < await shop.haggle(star3, ore, REG)
+    assert await shop.haggle(star3, ore, REG) == pytest.approx(value("gloam") * (1 + 2 * RULES.star_bonus))
 
 
 # ---- Mole ---------------------------------------------------------------------------------------------------------
@@ -65,24 +65,24 @@ async def _run_for(user):
     from cococap.services import mining
     from cococap.services.equipment import equip
 
-    inst = await user.give_instance("rookiepickaxe")
+    inst = await user.give_instance("tool_pickaxe_rookie")
     await equip(user, "mining", inst.id)
     return await mining.start_run(user, Random(1), REG)
 
 
 async def test_a_mole_takes_pressure_off_every_row_and_more_with_strength(db):
-    plain, mole = await _run_for(await User.get(1)), await _run_for(await with_pet("mole", user_id=2))
-    assert mole.growth_factor == pytest.approx(plain.growth_factor * (1 - value("mole")))
-    young = await _run_for(await with_pet("mole", user_id=3, xp=0))
-    star3 = await _run_for(await with_pet("mole", user_id=4, stars=3))
+    plain, mole = await _run_for(await User.get(1)), await _run_for(await with_pet("lode", user_id=2))
+    assert mole.growth_factor == pytest.approx(plain.growth_factor * (1 - value("lode")))
+    young = await _run_for(await with_pet("lode", user_id=3, xp=0))
+    star3 = await _run_for(await with_pet("lode", user_id=4, stars=3))
     assert plain.growth_factor > young.growth_factor > mole.growth_factor > star3.growth_factor
-    assert star3.growth_factor == pytest.approx(plain.growth_factor * (1 - value("mole") * (1 + 2 * RULES.star_bonus)))
+    assert star3.growth_factor == pytest.approx(plain.growth_factor * (1 - value("lode") * (1 + 2 * RULES.star_bonus)))
     # ...and it is the pressure itself that grows slower, not a softer collapse
     assert mole.rules.descent.max_risk == plain.rules.descent.max_risk
 
 
 async def test_a_moles_shave_is_a_modest_slice_of_the_pressure():
-    assert 0.05 <= value("mole") <= 0.10
+    assert 0.05 <= value("lode") <= 0.10
 
 
 # ---- Fox ----------------------------------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ def test_a_fox_gives_rare_forest_drops_a_free_second_roll_and_more_with_strength
         rng = Random(seed)
         return sum(q for item, q in foraging.roll_drops(60_000, rng, REG, chance).items() if item in rares)
 
-    base, small, big = found(0.0, 1), found(value("fox") / 2, 1), found(value("fox"), 1)
+    base, small, big = found(0.0, 1), found(value("lune") / 2, 1), found(value("lune"), 1)
     assert base < small < big
 
 
@@ -129,7 +129,7 @@ def test_a_fox_makes_rare_fish_likelier():
         rng = Random(7)
         return sum(fishing_service.cast_line(stats, rng, 0.0, REG, water=water, pet={"rare_reroll": chance}).fish.rarity >= pets.RARE_FROM for _ in range(6000))
 
-    assert rare(0.0) < rare(value("fox") / 2) < rare(value("fox"))
+    assert rare(0.0) < rare(value("lune") / 2) < rare(value("lune"))
 
 
 def test_a_fox_makes_rare_ore_likelier_in_the_mine():
@@ -145,14 +145,14 @@ def test_a_fox_makes_rare_ore_likelier_in_the_mine():
                 total += sum(1 for cell in run.row(depth) if cell and REG.item(cell[0]).rarity >= pets.RARE_FROM)
         return total
 
-    assert rare(0.0) < rare(value("fox") / 2) < rare(value("fox"))
+    assert rare(0.0) < rare(value("lune") / 2) < rare(value("lune"))
 
 
 async def test_the_fox_pet_hands_its_chance_to_the_game_and_scales_with_strength(db):
-    user, young = await with_pet("fox", user_id=1), await with_pet("fox", user_id=2, xp=0)
-    star3 = await with_pet("fox", user_id=3, stars=3)
-    assert (await pets.bonuses(user, REG))["rare_reroll"] == pytest.approx(value("fox"))
-    assert (await pets.bonuses(young, REG))["rare_reroll"] < value("fox") < (await pets.bonuses(star3, REG))["rare_reroll"]
+    user, young = await with_pet("lune", user_id=1), await with_pet("lune", user_id=2, xp=0)
+    star3 = await with_pet("lune", user_id=3, stars=3)
+    assert (await pets.bonuses(user, REG))["rare_reroll"] == pytest.approx(value("lune"))
+    assert (await pets.bonuses(young, REG))["rare_reroll"] < value("lune") < (await pets.bonuses(star3, REG))["rare_reroll"]
 
 
 # ---- Bee ----------------------------------------------------------------------------------------------------------
@@ -163,8 +163,8 @@ async def _harvests(user, plots: int, seed: int) -> int:
 
     rng, total = Random(seed), 0
     for _ in range(plots):
-        await user.add_item("apple_seed", 1)
-        await farming.plant(user, 1, "apple_seed", now=0)
+        await user.add_item("seed_apple", 1)
+        await farming.plant(user, 1, "seed_apple", now=0)
         await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
         total += (await farming.harvest(user, 1, rng, now=0)).amount
     return total
@@ -172,11 +172,11 @@ async def _harvests(user, plots: int, seed: int) -> int:
 
 async def test_a_bee_gives_free_extra_harvests_and_more_often_with_strength(db):
     plain = await _harvests(await User.get(1), 300, 1)
-    young = await _harvests(await with_pet("bee", user_id=2, xp=0), 300, 1)
-    bee = await _harvests(await with_pet("bee", user_id=3), 300, 1)
-    star3 = await _harvests(await with_pet("bee", user_id=4, stars=3), 300, 1)
+    young = await _harvests(await with_pet("pollen", user_id=2, xp=0), 300, 1)
+    bee = await _harvests(await with_pet("pollen", user_id=3), 300, 1)
+    star3 = await _harvests(await with_pet("pollen", user_id=4, stars=3), 300, 1)
     assert plain < young < bee < star3
-    assert bee / plain == pytest.approx(1 + value("bee"), abs=0.06)  # about one plot in ten gives a second harvest
+    assert bee / plain == pytest.approx(1 + value("pollen"), abs=0.06)  # about one plot in ten gives a second harvest
 
 
 async def test_a_bee_always_giving_an_extra_harvest_doubles_the_crop(db, monkeypatch):
@@ -199,13 +199,13 @@ async def test_a_raven_makes_the_daily_interest_pay_more_and_more_with_strength(
 
     paid = {}
     for uid, kwargs in {1: None, 2: {"xp": 0}, 3: {}, 4: {"stars": 3}}.items():
-        user = await with_pet("raven", user_id=uid, **kwargs) if kwargs is not None else await User.get(uid)
+        user = await with_pet("umbra", user_id=uid, **kwargs) if kwargs is not None else await User.get(uid)
         await set_columns(user, purse=1_000_000)
         paid[uid] = (await economy.claim_daily(user)).interest
     assert paid[1] == economy.daily_interest(1_000_000)
     assert paid[1] < paid[2] < paid[3] < paid[4]
-    assert paid[3] == round(paid[1] * (1 + value("raven")))
-    assert paid[4] == round(paid[1] * (1 + value("raven") * (1 + 2 * RULES.star_bonus)))
+    assert paid[3] == round(paid[1] * (1 + value("umbra")))
+    assert paid[4] == round(paid[1] * (1 + value("umbra") * (1 + 2 * RULES.star_bonus)))
 
 
 async def test_a_raven_makes_shipments_pay_more_bits(db):
@@ -218,7 +218,7 @@ async def test_a_raven_makes_shipments_pay_more_bits(db):
         return (await sh.ship(user, "mining:basic")).bits, sh.reward(crate, REG)[0]
 
     plain_paid, plain_base = await shipped(await User.get(1))
-    bits, base = await shipped(await with_pet("raven", user_id=2))
-    assert plain_paid == plain_base and bits == round(base * (1 + value("raven"))) > base
-    star3, star3_base = await shipped(await with_pet("raven", user_id=3, stars=3))
-    assert star3 == round(star3_base * (1 + value("raven") * (1 + 2 * RULES.star_bonus))) > bits
+    bits, base = await shipped(await with_pet("umbra", user_id=2))
+    assert plain_paid == plain_base and bits == round(base * (1 + value("umbra"))) > base
+    star3, star3_base = await shipped(await with_pet("umbra", user_id=3, stars=3))
+    assert star3 == round(star3_base * (1 + value("umbra") * (1 + 2 * RULES.star_bonus))) > bits

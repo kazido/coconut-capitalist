@@ -78,10 +78,10 @@ from scripts.import_mongo import write_sqlite  # noqa: E402
 
 
 def test_normalize_item_id():
-    assert normalize_item_id("apple.seed") == "apple_seed"
-    assert normalize_item_id("implosion_gem") == "implosion_gemstone"
-    assert normalize_item_id("sanity") == "sanity_gemstone"
-    assert normalize_item_id("cod") == "cod"
+    assert normalize_item_id("apple.seed") == "seed_apple"
+    assert normalize_item_id("implosion_gem") == "key_gemstone_implosion"
+    assert normalize_item_id("sanity") == "key_gemstone_sanity"
+    assert normalize_item_id("fish_cod") == "fish_cod"
 
 
 def test_convert_legacy_mongo_user():
@@ -90,7 +90,7 @@ def test_convert_legacy_mongo_user():
         "cooldowns": {"work": 10.5, "daily": 0, "weekly": 3},
         "statistics": {"hl_wins": 9, "claimed_work": 2, "junk": "x"},
         "settings": {"auto_deposit": True, "mystery": 1},
-        "items": {"copper_ore": {"quantity": 5}, "starter_axe": {"quantity": 2}, "apple.seed": {"quantity": 2}, "apple_seed": {"quantity": 1},
+        "items": {"material_copper_ore": {"quantity": 5}, "tool_axe_starter": {"quantity": 2}, "apple.seed": {"quantity": 2}, "seed_apple": {"quantity": 1},
                   "empty": {"quantity": 0}, "Bad Id!": {"quantity": 1}, "implosion_gem": {"quantity": 1}},
     }
     u = convert_mongo_user(doc)
@@ -98,8 +98,8 @@ def test_convert_legacy_mongo_user():
     assert (u.columns["bank"], u.columns["rank"], u.columns["work_cooldown"]) == (700, 3, 10.5)
     assert u.columns["settings"] == {"auto_deposit": True}
     assert u.stats == {"hl_wins": 9, "claimed_work": 2}
-    assert u.items == {"copper_ore": 5, "apple_seed": 3, "implosion_gemstone": 1}
-    assert u.instances.count("starter_axe") == 2  # tools become unique objects, one per quantity
+    assert u.items == {"material_copper_ore": 5, "seed_apple": 3, "key_gemstone_implosion": 1}
+    assert u.instances.count("tool_axe_starter") == 2  # tools become unique objects, one per quantity
     assert any("Bad Id!" in w for w in u.warnings) and any("pets" in w for w in u.warnings)
     assert u.skills["mining"]["xp"] == 900
     assert u.skills["mining"]["data"]["reactor"]["core_4"]["gem_id"] == "opal"
@@ -114,7 +114,7 @@ def test_convert_survives_garbage():
 
 async def test_full_import_into_sqlite_then_play(db):
     docs = [
-        convert_mongo_user({**LEGACY, "purse": 500, "items": {"cod": {"quantity": 3}}, "statistics": {"hl_wins": 4}}),
+        convert_mongo_user({**LEGACY, "purse": 500, "items": {"fish_cod": {"quantity": 3}}, "statistics": {"hl_wins": 4}}),
         convert_mongo_user({"discord_id": 8, "name": "friend", "purse": 10}),
     ]
     parties = [{"party_id": 1234, "party_owner": 7, "party_members": [7, 8, 999]}]  # 999 doesn't exist
@@ -123,7 +123,7 @@ async def test_full_import_into_sqlite_then_play(db):
     assert counts["users"] == 2 and counts["parties"] == 1 and counts["megadrop"] == 1
 
     old = await User.get(7)
-    assert old.purse == 500 and await old.items() == {"cod": 3} and await old.get_stat("hl_wins") == 4
+    assert old.purse == 500 and await old.items() == {"fish_cod": 3} and await old.get_stat("hl_wins") == 4
     assert (await old.skill("farming")).farm.plot_4.crop_id == "corn"
     assert (await old.skill("mining")).reactor.level == 3
     from cococap.exts.core.party_system import Party
@@ -135,12 +135,12 @@ async def test_full_import_into_sqlite_then_play(db):
 
 
 async def test_import_creates_instances_and_equips_the_old_equipped_tool(db):
-    old = {**LEGACY, "mining": {**LEGACY["mining"], "equipped_tool": "rookiepickaxe"},
+    old = {**LEGACY, "mining": {**LEGACY["mining"], "equipped_tool": "tool_pickaxe_rookie"},
            "farming": {**LEGACY["farming"], "equipped_tool": "hoe"}}  # "hoe" isn't a real tool
     converted = convert_mongo_user(old)
-    assert converted.equipped == {"mining": "rookiepickaxe"}
+    assert converted.equipped == {"mining": "tool_pickaxe_rookie"}
     assert any("hoe" in w for w in converted.warnings)
     await write_sqlite(db, [converted], [], [], force=False)
     user = await User.get(7)
     pick = await user.equipped_instance("mining")
-    assert pick.template_id == "rookiepickaxe" and [i.template_id for i in await user.instances()] == ["rookiepickaxe"]
+    assert pick.template_id == "tool_pickaxe_rookie" and [i.template_id for i in await user.instances()] == ["tool_pickaxe_rookie"]
