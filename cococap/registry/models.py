@@ -1443,6 +1443,19 @@ class AreaRules(_Data):
         return self
 
 
+class Location(_Data):
+    """One named location of a skill (configs/locations.toml). `n` is its 1-based unlock order; `area` and `min_level` are derived
+    from it (area = the n-th pair of locations, min_level = AreaRules.location_levels[n - 1]), so they are not written in the TOML."""
+
+    skill: str
+    n: int = Field(ge=1)
+    id: str
+    name: str
+    emoji: str
+    area: str  # area id
+    min_level: int = Field(ge=1)
+
+
 class Recipe(_Data):
     """One thing the Workbench makes (configs/recipes.toml): `inputs` and `bits` are used up, `quantity` of `output` is made.
     `skill` + `min_level` (optional) ask for a level in a skill first."""
