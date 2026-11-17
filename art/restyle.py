@@ -40,7 +40,8 @@ def restyle_frames(frames: list[Image.Image], specular: bool = True) -> list[Ima
                 p = f.getpixel((x, y))
                 if p[3]:
                     im.putpixel((x, y), _pixel(p, plum))
-        if spec and im.getpixel(spec)[3]:
+        # the white pixel rides on the light core only: skip frames where that spot has gone dark (e.g. an animation closing in on itself)
+        if spec and im.getpixel(spec)[3] and sum(f.getpixel(spec)[:3]) >= 0.8 * sum(frames[0].getpixel(spec)[:3]):
             im.putpixel(spec, (255, 255, 255, 255))
         base = im.copy()
         for y in range(n):

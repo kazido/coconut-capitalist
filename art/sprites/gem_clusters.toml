@@ -1,0 +1,68 @@
+# Gem material clusters (emerald, garnet, sapphire): one chunky crystal-cluster shape in three colourways, deliberately NOT the cut gems of the reactor key items.
+# Plum outline baked in; palette letters: h highlight, l light, m mid, d dark, b/c base rock, o outline.
+
+[material_emerald]
+rarity = 5
+palette = { o = "#2e1c2c", h = "#e0fff6", l = "#4de0c0", m = "#17a98f", d = "#0b6b6e", b = "#59525f", c = "#76707c" }
+rows = [
+  "................",
+  "................",
+  ".......oo.......",
+  "......oldo......",
+  "...ooohmmdooo...",
+  "..oldolmmdoldo..",
+  ".ohmmdlmmdhmmdo.",
+  ".olmmdlmmdlmmdo.",
+  ".olmmdlmmdlmmdo.",
+  ".olmmdlmmdlmmdo.",
+  ".olmmdlmmdlmmdo.",
+  "..obcbbbbcbbbo..",
+  "...obbbbcbbbo...",
+  "....oooooooo....",
+  "................",
+  "................",
+]
+
+[material_garnet]
+rarity = 4
+palette = { o = "#2e1c2c", h = "#ffd0c8", l = "#d8434f", m = "#9a2338", d = "#5c1428", b = "#59525f", c = "#76707c" }
+rows = [
+  "................",
+  "................",
+  ".......oo.......",
+  "......oldo......",
+  "...ooohmmdooo...",
+  "..oldolmmdoldo..",
+  ".ohmmdlmmdhmmdo.",
+  ".olmmdlmmdlmmdo.",
+  ".olmmdlmmdlmmdo.",
+  ".olmmdlmmdlmmdo.",
+  ".olmmdlmmdlmmdo.",
+  "..obcbbbbcbbbo..",
+  "...obbbbcbbbo...",
+  "....oooooooo....",
+  "................",
+  "................",
+]
+
+[material_sapphire]
+rarity = 5
+palette = { o = "#2e1c2c", h = "#e2e0ff", l = "#7a7cf0", m = "#4a4bc0", d = "#2a2a7a", b = "#59525f", c = "#76707c" }
+rows = [
+  "................",
+  "................",
+  ".......oo.......",
+  "......oldo......",
+  "...ooohmmdooo...",
+  "..oldolmmdoldo..",
+  ".ohmmdlmmdhmmdo.",
+  ".olmmdlmmdlmmdo.",
+  ".olmmdlmmdlmmdo.",
+  ".olmmdlmmdlmmdo.",
+  ".olmmdlmmdlmmdo.",
+  "..obcbbbbcbbbo..",
+  "...obbbbcbbbo...",
+  "....oooooooo....",
+  "................",
+  "................",
+]

@@ -5,9 +5,7 @@ material_beeswax = [9, 5]  # WEAK: plain gold block; no wax icon
 material_compost = [26, 8]  # WEAK: dark specks stand in for compost
 material_coral_shard = [21, 6]
 material_dewdrop = [43, 5]
-material_emerald = [10, 1]
 material_fine_bark = [12, 12]
-material_garnet = [10, 2]
 material_gilded_wedge = {cell = [39, 6], hue = 20, sat = 1.2, val = 1.2}
 material_hardwood = [12, 9]
 material_iron_wedge = [40, 6]
@@ -17,7 +15,6 @@ material_obsidian = {cell = [13, 3], sat = 0.3, val = 0.3}
 material_plant_fiber = {cell = [12, 2], hue = 60}
 material_radar_battery = {cell = [17, 0], hue = -150}  # WEAK: thin vial as battery
 material_rotation_wedge = [39, 8]
-material_sapphire = [10, 4]
 material_silver_ore = [13, 0]
 
 # Ores and coal/clay: recolours of silver ore's cell [13,0] by brightness ramp (dark -> light), so they share its shape and shading.
