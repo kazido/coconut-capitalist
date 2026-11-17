@@ -15,16 +15,19 @@ systems to ask for. Placeholders will be used until these exist.
 | rotation_wedge, iron_wedge, gilded_wedge | 2 / 4 / 6 | crafted wedges (reroll a forest spot); not drops |
 Trees have species (birch ... emberwood) but no signature drops now. Mastery/enchant/pet systems that care about foraging items: grep the item id.
 
-## What we need: about 5 new base materials (each can be starrable: 1/2/3-star versions drop more in deeper forests)
-Aim for ONE new material per ~3 forests, so every forest feels different, spread by rarity:
+## What we need: 9 new base materials, so every one of the 14 forests has something new
+Stars (2/3-star versions of the same item) do NOT count as a new unlock, so we want a different material for (nearly) every forest. We have
+5 (feather, hardwood, fine_bark, maple_leaf, aged_feather) and need 9 more. Roughly one new material becomes available per forest, by rarity:
 
-| slot | roughly where it drops | rarity | what to decide |
-|------|------------------------|--------|----------------|
-| A | forests 1-3 (Slime Hill, early Twilight Desert) | 1-2 | common filler |
-| B | forests 4-6 (Twilight Desert / Rust Belt) | 3 | |
-| C | forests 7-9 (Cadrega City / Aerial Glades) | 4 | |
-| D | forests 10-12 (Aerial Glades / Star Kingdom) | 5 | |
-| E | forests 13-14 (The Void) | 6-7 | the rare endgame wood |
+| forests | area | rarity band | new materials needed (existing ones fill some) |
+|---------|------|-------------|------------------------------------------------|
+| 1-2 | Slime Hill | 1-2 | feather, hardwood exist; maybe 1 new |
+| 3-4 | Twilight Desert | 2-3 | 2 new |
+| 5-6 | Rust Belt | 3 | fine_bark exists; 1-2 new |
+| 7-8 | Cadrega City | 3-4 | maple_leaf exists; 1-2 new |
+| 9-10 | Aerial Glades | 4-5 | 1-2 new |
+| 11-12 | Star Kingdom | 5-6 | aged_feather exists; 1-2 new |
+| 13-14 | The Void | 6-7 | 2 new (the rare endgame woods) |
 
 ## For each one, give me
 1. id, name, emoji (needs a unique emoji; the wiki/shop show a big art thumbnail of it)

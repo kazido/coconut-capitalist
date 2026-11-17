@@ -112,8 +112,8 @@ a dropdown like fishing's water select. RISK: forest 14 (old zone 20, which used
 # Decisions, round 3 (2026-11-17)
 - **Gems everywhere:** every mine location's ore table must be able to drop the reactor gems (`mining.toml [reactor] core_gems`), so the
   reactor can always be fed. Add a loader check/test: each location's table contains all core gems.
-- **Crops will be starrable** (add them to `economy.toml [stars].starrable`; the star table is another session's work, coordinate first).
-  10 crops x 3 stars covers 14 fields, so no new crops are needed.
+- **Principle: every new location needs a NEW unlock, not just a higher star** (stars are 2/3-star versions of the same item, so they do not
+  count as something new). Crops may still become starrable later, but 14 fields need 14 different crops (see "Crops" below).
 - **Foraging materials:** the user is designing them. See `docs/plans/foraging-materials-needed.md`. Build forests with the existing
   materials as placeholders until then.
 - **Ship skill_floors** already updated in `configs/areas.toml` to 8/19/27/35/42/48.
@@ -137,3 +137,29 @@ a dropdown like fishing's water select. RISK: forest 14 (old zone 20, which used
 | 14 | The Void | The Withered Rift | Core of Nothing | The Bottomless | Dreamless Furrows |
 Fishing's existing water ids (`pond`, `river`, `reef`, `deep_sea`) are saved in player state (`models/skills/fishing.py` `water`): keep the
 ids for locations 1-4 and just rename the display names, or add a fallback to the first open water for unknown ids. Names are placeholders to rename freely.
+
+## Crops: 14 fields need 14 crops (we have 10, add 4)
+One new crop unlocks per field, in sell-price order (seed + crop item pair each, `[crop]`/`[seed]` tables in items.toml; the add-item checklist).
+| field | crop | sell price (bits) |
+|---|---|---|
+| 1 Slimeside Garden | apple (have) | 1,000 |
+| 2 Meadow Farmstead | lemon (have) | 35,000 |
+| 3 Dusk Terraces | blueberry (have) | 40,000 |
+| 4 Oasis Orchard | dusty dandelion (have) | 50,000 |
+| 5 Scrapyard Allotments | **Rustroot** (new, ~100,000) | |
+| 6 Hydroponic Bays | hot pepper (have) | 300,000 |
+| 7 Market Gardens | watermelon (have) | 400,000 |
+| 8 Rooftop Farms | **Marketfig** (new, ~700,000) | |
+| 9 Cloud Terraces | wilted rose (have) | 1,000,000 |
+| 10 Windmill Fields | **Cloudberry** (new, ~1,200,000) | |
+| 11 Stardew Fields | starfruit (have) | 1,500,000 |
+| 12 Comet Orchards | coconut (have) | 2,000,000 |
+| 13 Pale Gardens | **Voidbloom** (new, ~10,000,000) | |
+| 14 Dreamless Furrows | ambrosia (have) | 50,000,000 |
+New crops need: id, name, emoji, wiki, seed price, growth time/yield like their neighbours in `farming.toml`, a use, and the same new-crop checks as the others. Each crop shows in the shop only once its field's area is reached.
+
+## Same check for the other skills (a new unlock per location)
+- Fishing: 22 fish over 14 waters: fine (each water adds at least 1-2 fish not found earlier).
+- Mining: 13 ores (copper, coal, clay, tin, iron, silver, gold, amber, obsidian, platinum, garnet, sapphire, emerald) for 14 mines, plus the gems that are
+  always present. Borderline but workable (neighbouring mines can differ in odds and hardness); one extra high ore would make it clean. Open.
+- Foraging: 5 materials for 14 forests: needs 9 new (brief updated).
