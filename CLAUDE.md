@@ -3,16 +3,9 @@
 A Discord game bot (discord.py 2.7, Components V2). Skills (mining, fishing, foraging, farming; combat is PAUSED), pets, shipments,
 trading, parties, casino and minigames, one shared economy. Everything below is the short version; the long ones are in `docs/`.
 
-> **Roles.** Work is planned by a strong cloud model and implemented by local models (Ollama). If you are a **local executor** (small model), read ONLY
-> `docs/EXECUTOR.md` and the brief you were given, and ignore the rest of this file unless the brief points to it. If you are the **planner**, read
-> `docs/WORKFLOW.md`: write plans and briefs, review diffs, do not type bulk code. `scripts/verify.sh` is the objective "done" gate.
-
-## Read these, in this order, when starting a session
-
-1. This file.
-2. `docs/HANDOFF.md`: current state, open work, what the user decided lately (keep it current).
-3. `docs/DESIGN.md`: how each system works and WHY (one section per system; append a section when you build something).
-4. `docs/ROADMAP.md` (architecture rules, long-term plan), `docs/AUDIT.md` (history of the original cleanup).
+> **Usage tip:** this file is loaded every turn, so it is deliberately lean. Do NOT read `docs/` files up front. Look things up on demand:
+> `docs/HANDOFF.md` (current state; read only its "Latest state" part when resuming work), `docs/DESIGN.md` (HUGE, ~120 KB: Grep for the system's
+> heading, then read only that section), `docs/ROADMAP.md`, `docs/AUDIT.md` (history, rarely needed). Plans for new work go in `docs/plans/`.
 
 ## Hard rules (the user set these; do not break them)
 
