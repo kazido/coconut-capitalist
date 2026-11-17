@@ -22,6 +22,25 @@ weekly_luckbucks = 25
 sell_multipliers = [1.0, 2.5, 6.0]  # sell price of 1, 2 and 3 stars x the base price  TODO(balance)
 starrable = ["iron_ore", "gold_ore", "silver_ore", "platinum_ore", "hardwood", "fine_bark", "maple_leaf", "coral_shard", "beeswax", "living_vine"]
 
+# Which star a starrable drop is, by how deep you are (progress 0 = first forest / top of the mine / shallowest water, 1 = the deepest).
+# Weights are 1-star / 2-star / 3-star, blended in a straight line between points. 2-star can turn up early but rarely and is the main drop from
+# the middle on; 3-star is never the majority anywhere (the registry refuses it). TODO(balance): all numbers
+[[stars.curve]]
+progress = 0.0
+weights = [97, 3, 0]
+[[stars.curve]]
+progress = 0.25
+weights = [75, 24, 1]
+[[stars.curve]]
+progress = 0.5
+weights = [40, 55, 5]
+[[stars.curve]]
+progress = 0.75
+weights = [25, 60, 15]
+[[stars.curve]]
+progress = 1.0
+weights = [15, 65, 20]
+
 [minigames]
 daily_cap = 300                    # max luckbucks per player per day from ALL minigames combined
 streak_bonus = 0.10                # +10% per consecutive win...

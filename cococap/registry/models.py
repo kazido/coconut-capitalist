@@ -1187,18 +1187,38 @@ class PetRules(_Data):
     orbs: dict[str, dict[int, float]]  # orb item id -> chance weight of each pet rarity when you open that orb
 
 
+class StarAnchor(_Data):
+    """One point of the star curve: at `progress` (0 = the first forest / the top of the mine / the shallowest water, 1 = the deepest) a starrable
+    drop is 1, 2 or 3 stars with these relative weights. Between anchors the weights are blended in a straight line."""
+
+    progress: float = Field(ge=0, le=1)
+    weights: list[float] = Field(min_length=3, max_length=3)  # 1-star, 2-star, 3-star
+
+    @model_validator(mode="after")
+    def _sane(self):
+        if any(w < 0 for w in self.weights) or sum(self.weights) <= 0:
+            raise ValueError("star weights must be non-negative and not all zero")
+        if self.weights[2] >= sum(self.weights) / 2:
+            raise ValueError("3-star must never be the majority drop")
+        return self
+
+
 class StarRules(_Data):
     """Starred materials: a material in `starrable` also exists as `<id>_s2` and `<id>_s3` (2- and 3-star), each its own inventory stack.
     The plain id is the 1-star one. Stars only drop, they are never crafted up. Which star drops where is `configs/stars.toml` (later)."""
 
     sell_multipliers: list[float] = Field(default_factory=lambda: [1.0, 2.5, 6.0], min_length=3, max_length=3)  # sell price of 1, 2, 3 stars x the base
     starrable: list[str] = Field(default_factory=list)
+    curve: list[StarAnchor] = Field(default_factory=lambda: [StarAnchor(progress=0, weights=[1, 0, 0]), StarAnchor(progress=1, weights=[1, 0, 0])])
 
     @model_validator(mode="after")
     def _climbing(self):
         m = self.sell_multipliers
         if m[0] != 1.0 or any(b <= a for a, b in zip(m, m[1:], strict=False)):
             raise ValueError("stars.sell_multipliers must start at 1 and climb")
+        marks = [a.progress for a in self.curve]
+        if marks[0] != 0 or marks[-1] != 1 or any(b <= a for a, b in zip(marks, marks[1:], strict=False)):
+            raise ValueError("stars.curve must run from progress 0 to 1, in order")
         return self
 
 
