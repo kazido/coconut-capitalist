@@ -23,6 +23,9 @@ GRID = 16
 RAVEN_SHEET = "Full Spritesheet/16x16.png"
 
 
+SHINE_MIN_RARITY = 6  # Premium and Mythical items shine; set to 8 to turn the shine off
+
+
 class SpriteError(ValueError):
     pass
 
@@ -143,6 +146,10 @@ def load_sources(root: Path) -> list[Sprite]:
         if len(frames) > 1 and len(ms) != len(frames):
             raise SpriteError(f"{d}: meta.toml ms needs {len(frames)} entries")
         framed = bool(meta.get("framed", False))
+        if name != d.name and meta.get("restyle", True):  # the owner's item art gets the shared refresh (outline, richer colour, specular)
+            from art.restyle import restyle_frames
+
+            frames = restyle_frames(frames)
         out.append(Sprite(name, "sources", frames, ms, framed, rarity, False))
     return out
 
@@ -226,4 +233,9 @@ def load_all(art_dir: Path = ART_DIR) -> list[Sprite]:
         if s.name in seen:
             raise SpriteError(f"duplicate sprite name {s.name!r} ({seen[s.name]} and {s.category})")
         seen[s.name] = s.category
+    for s in sprites:  # the top rarities get a gentle shine (art/shine.py); art with its own animation keeps it
+        if s.framed and len(s.frames) == 1 and s.rarity >= SHINE_MIN_RARITY and s.category not in ("sources", "wisps"):
+            from art.shine import shine_frames
+
+            s.frames, s.ms = shine_frames(s.frames[0])
     return sorted(sprites, key=lambda s: (s.category, s.name))

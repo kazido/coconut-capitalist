@@ -147,3 +147,43 @@ def test_no_third_party_images_in_art():
     for rel in ("art/local.toml", "art/out/x.png"):
         r = subprocess.run(["git", "check-ignore", "-q", rel], cwd=ROOT)
         assert r.returncode == 0, f"{rel} must be git-ignored"
+
+
+def test_top_rarity_items_shine_and_the_rest_stay_still():
+    from art.sprite import SHINE_MIN_RARITY, load_all
+
+    sprites = [s for s in load_all() if s.framed and s.category not in ("sources", "wisps")]
+    assert sprites
+    for s in sprites:
+        assert (len(s.frames) > 1) == (s.rarity >= SHINE_MIN_RARITY and s.category != "wisps"), s.name
+        if len(s.frames) > 1:
+            assert len(s.ms) == len(s.frames) and s.ms[0] > s.ms[1]  # a long still frame, then the sweep
+
+
+def test_shine_only_touches_the_sprite_and_keeps_the_first_frame():
+    from PIL import Image
+
+    from art.shine import shine_frames
+
+    im = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    for x in range(4, 12):
+        for y in range(4, 12):
+            im.putpixel((x, y), (100, 40, 40, 255))
+    frames, ms = shine_frames(im)
+    assert frames[0].tobytes() == im.tobytes() and len(frames) == len(ms)
+    for f in frames:
+        assert all((f.getpixel((x, y))[3] == 0) == (im.getpixel((x, y))[3] == 0) for x in range(16) for y in range(16))  # alpha untouched
+
+
+def test_restyle_keeps_every_frame_and_adds_the_outline():
+    from PIL import Image
+
+    from art.palette import outline_color
+    from art.restyle import restyle_frames
+
+    a = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    a.putpixel((8, 8), (200, 40, 40, 255))
+    b = a.copy()
+    b.putpixel((9, 8), (40, 40, 200, 255))
+    out = restyle_frames([a, b])
+    assert len(out) == 2 and out[0].getpixel((7, 8)) == outline_color() and out[1].getpixel((10, 8)) == outline_color()
