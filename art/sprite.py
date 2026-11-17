@@ -151,10 +151,16 @@ def load_sources(root: Path) -> list[Sprite]:
         if len(frames) > 1 and len(ms) != len(frames):
             raise SpriteError(f"{d}: meta.toml ms needs {len(frames)} entries")
         framed = bool(meta.get("framed", False))
-        if name != d.name and meta.get("restyle", True):  # the owner's item art gets the shared refresh (outline, richer colour, specular)
+        if (name != d.name or d.name in _item_ids()) and meta.get("restyle", True):  # the owner's item art gets the shared refresh (outline, richer colour, specular)
             from art.restyle import restyle_frames
 
             frames = restyle_frames(frames)
+            if framed:  # the outline must never reach the cell's border ring
+                for im in frames:
+                    for i in range(GRID):
+                        for e in (0, GRID - 1):
+                            im.putpixel((i, e), (0, 0, 0, 0))
+                            im.putpixel((e, i), (0, 0, 0, 0))
         out.append(Sprite(name, "sources", frames, ms, framed, rarity, False))
     return out
 
@@ -262,7 +268,7 @@ def load_all(art_dir: Path = ART_DIR) -> list[Sprite]:
             raise SpriteError(f"duplicate sprite name {s.name!r} ({seen[s.name]} and {s.category})")
         seen[s.name] = s.category
     for s in sprites:  # the top rarities get a gentle shine (art/shine.py); art with its own animation keeps it
-        if s.framed and len(s.frames) == 1 and s.rarity >= SHINE_MIN_RARITY and s.category not in ("sources", "wisps"):
+        if s.framed and len(s.frames) == 1 and s.rarity >= SHINE_MIN_RARITY and s.category != "wisps":
             from art.shine import shine_frames
 
             s.frames, s.ms = shine_frames(s.frames[0])
