@@ -75,7 +75,7 @@ def test_wisp_shapes_are_valid():
 
 
 def test_built_png_is_64x64_rgba(tmp_path):
-    sprite = next(s for s in load_all() if s.name == "iron_bar")
+    sprite = next(s for s in load_all() if s.name == "material_copper_ore")
     path = build.build_one(sprite, tmp_path)
     im = Image.open(path)
     assert im.size == (64, 64) and im.mode == "RGBA"
