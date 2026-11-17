@@ -86,7 +86,7 @@ def test_every_item_can_be_found_by_browsing_its_skill():
     seen = set()
     for skill in wiki.SKILL_FILTERS:
         seen |= {i.id for i in wiki.items_for(skill, REG)}
-    assert seen == set(REG.items)
+    assert seen == {i for i, item in REG.items.items() if not item.star_of}  # (star variants sit under their base item)
 
 
 async def test_the_wiki_screen_switches_topics_and_looks_items_up(db):

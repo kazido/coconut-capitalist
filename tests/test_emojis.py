@@ -59,7 +59,7 @@ def test_aliases_point_at_real_items_and_known_names():
         assert name in emojis.LEGACY, name
         assert item_id in reg.items, (name, item_id)
     # every legacy item token is covered by an alias to the item that uses it
-    for item in reg.items.values():
+    for item in (i for i in reg.items.values() if not i.star_of):  # (a star variant shares its base item's emoji)
         m = item.emoji_raw and emojis._TOKEN.match(item.emoji_raw)
         if m:
             assert emojis.ALIASES[m.group(1)] == item.id

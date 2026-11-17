@@ -307,7 +307,7 @@ SKILL_FILTERS = ["mining", "farming", "foraging", "fishing", "combat", "general"
 
 
 def items_for(skill: str, registry: Registry | None = None) -> list[Item]:
-    """Every item of a skill ("general" = not tied to a skill), by rarity then name."""
+    """Every item of a skill ("general" = not tied to a skill), by rarity then name. Star variants are left out: they sit under their base item."""
     reg = registry or get_registry()
-    pool = [i for i in reg.items.values() if (i.skill or "general") == skill]
+    pool = [i for i in reg.items.values() if (i.skill or "general") == skill and not i.star_of]
     return sorted(pool, key=lambda i: (i.rarity, i.name))

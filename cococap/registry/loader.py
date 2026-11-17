@@ -347,6 +347,32 @@ def _validate_mining_items(reg: "Registry", rules: MiningRules) -> list[str]:
     return problems
 
 
+STAR_MARKS = {2: "★★", 3: "★★★"}
+
+
+def star_variants(items: list[Item], rules) -> list[Item]:
+    """The 2- and 3-star versions of every starrable material: `<id>_s2`, `<id>_s3`. Own stacks, never in a drop pool (`drop` is None: stars are
+    rolled by the star service when the base item drops), not sold in shops, sell price = base x the star multiplier."""
+    by_id = {i.id: i for i in items}
+    out = []
+    for item_id in rules.starrable:
+        base = by_id.get(item_id)
+        if base is None:
+            raise RegistryError(f"economy.toml [stars]: starrable item '{item_id}' does not exist")
+        if base.category != "material" or base.tool or base.stars != 1:
+            raise RegistryError(f"economy.toml [stars]: '{item_id}' must be a plain material")
+        for stars in (2, 3):
+            vid = f"{item_id}_s{stars}"
+            if vid in by_id:
+                raise RegistryError(f"economy.toml [stars]: '{vid}' already exists as an item")
+            out.append(base.model_copy(update={
+                "id": vid, "name": f"{base.name} {STAR_MARKS[stars]}", "stars": stars, "star_of": item_id, "drop": None, "price": 0,
+                "sell_price": round(base.sell_price * rules.sell_multipliers[stars - 1]) if base.sell_price else 0,
+                "wiki": f"{base.wiki} A {stars}-star version: same use, better quality, its own stack (it does not stack with the plain one).".strip(),
+            }))
+    return out
+
+
 def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     items = _build(Item, "items", ((k, {"id": k, **v}) for k, v in _read(config_dir, "items").items()))
     pets = _build(Pet, "pets", ((k, {"id": k, **v}) for k, v in _read(config_dir, "pets").items()))
@@ -355,6 +381,7 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     enchants = _build(Enchant, "enchants", ((k, {"id": k, **v}) for k, v in _read(config_dir, "enchants").items()))
     mining = _build(MiningRules, "mining", [("mining", _read(config_dir, "mining"))])[0]
     economy = _build(EconomyRules, "economy", [("economy", _read(config_dir, "economy"))])[0]
+    items = items + star_variants(items, economy.stars)
     farming = _build(FarmingRules, "farming", [("farming", _read(config_dir, "farming"))])[0]
     foraging = _build(ForagingRules, "foraging", [("foraging", _read(config_dir, "foraging"))])[0]
     fishing = _build(FishingRules, "fishing", [("fishing", _read(config_dir, "fishing"))])[0]

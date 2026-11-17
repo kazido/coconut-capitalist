@@ -16,6 +16,12 @@ party_idle_hours = 0.1
 starting_luckbucks = 0
 weekly_luckbucks = 25
 
+# Starred materials (see docs/plans/starred-materials.md): each id below also exists as <id>_s2 and <id>_s3 (own inventory stacks, never crafted up).
+# The plain id is the 1-star one. Start small: add a material here only when an upgrade needs its stars.
+[stars]
+sell_multipliers = [1.0, 2.5, 6.0]  # sell price of 1, 2 and 3 stars x the base price  TODO(balance)
+starrable = ["iron_ore", "gold_ore", "silver_ore", "platinum_ore", "hardwood", "fine_bark", "maple_leaf", "coral_shard", "beeswax", "living_vine"]
+
 [minigames]
 daily_cap = 300                    # max luckbucks per player per day from ALL minigames combined
 streak_bonus = 0.10                # +10% per consecutive win...

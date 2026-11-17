@@ -146,3 +146,49 @@ def test_a_species_drop_rate_must_be_a_chance(data):
     add_birch_drop(data, "hardwood", 1.5)
     with pytest.raises(RegistryError, match="rate"):
         load_registry(data)
+
+
+# ---- starred materials ---------------------------------------------------------------------------------------------------------------------
+def test_every_starrable_material_has_a_two_and_three_star_variant():
+    reg = get_registry()
+    rules = reg.economy.stars
+    assert rules.starrable
+    for base_id in rules.starrable:
+        base = reg.item(base_id)
+        assert base.stars == 1 and base.star_of is None
+        for stars in (2, 3):
+            v = reg.item(f"{base_id}_s{stars}")
+            assert v.star_of == base_id and v.stars == stars and v.category == "material" and v.skill == base.skill
+            assert v.drop is None and not v.buyable  # stars are rolled by the star service, never part of a drop pool or sold in a shop
+            assert v.sell_price == round(base.sell_price * rules.sell_multipliers[stars - 1])
+            assert "★" * stars in v.name
+
+
+def test_only_starrable_materials_have_variants():
+    reg = get_registry()
+    assert {i.star_of for i in reg.items.values() if i.star_of} == set(reg.economy.stars.starrable)
+
+
+async def test_stars_are_their_own_stacks(db):
+    from cococap.user import User
+
+    user = await User.get(1)
+    await user.add_item("gold_ore", 5)
+    await user.add_item("gold_ore_s2", 2)
+    assert await user.items() == {"gold_ore": 5, "gold_ore_s2": 2}
+
+
+@pytest.mark.parametrize("ids,problem", [('"no_such_item"', "does not exist"), ('"hardwood", "steel_pickaxe"', "plain material"), ('"hardwood", "hardwood_s2"', "does not exist")])
+def test_bad_starrable_lists_are_rejected(data, ids, problem):
+    text = (data / "economy.toml").read_text()
+    start = text.index("starrable = [")
+    end = text.index("]", start) + 1
+    (data / "economy.toml").write_text(text[:start] + f"starrable = [{ids}]" + text[end:])
+    with pytest.raises(RegistryError, match=problem):
+        load_registry(data)
+
+
+def test_star_sell_multipliers_must_climb(data):
+    edit(data / "economy.toml", "sell_multipliers = [1.0, 2.5, 6.0]", "sell_multipliers = [1.0, 6.0, 2.5]")
+    with pytest.raises(RegistryError, match="climb"):
+        load_registry(data)
