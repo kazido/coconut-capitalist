@@ -44,7 +44,7 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 
 ## Latest state (read this before the list below)
 
-- **One branch only**: all work is on `claude/discord-bot-audit-modernize-4dd6c5` (this worktree; the bot runs from here). Never touch master or make other worktrees. The branch is ahead of GitHub; push only when asked.
+- **One branch only**: all work is on `claude/discord-bot-audit-modernize-4dd6c5` (this worktree; the bot runs from here). Do not make other worktrees or touch the main checkout. GitHub `master` is the default branch and is fast-forwarded to this branch with `git push origin HEAD:master` (only when asked; last done at the README commit). The old pre-AI code is preserved on `history/pre-ai`.
 - Done since the list below was written: shipments by skill (basic at level 10, hard at 30; community off), trading (shared window, both Accept), settings (keep upgrade
   materials, confirm upgrades, fishing estimate), combat PAUSED (button disabled, `/fight` says so; code and tests kept), tool lines (3 plain upgrades then the split at the
   4th: axe = Lumberjack/Forager, can = Sprinkler/Alchemist), mastery trees for mining/fishing/foraging/farming with a tuned capstone per branch, the fishing radar, Home

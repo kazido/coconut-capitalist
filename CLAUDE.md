@@ -14,7 +14,9 @@ trading, parties, casino and minigames, one shared economy. Everything below is 
 
 - **One branch only.** All work is on `claude/discord-bot-audit-modernize-4dd6c5`, in this worktree
   (`/Users/ellalbrys/Coding/coconut-capitalist/.claude/worktrees/discord-bot-audit-modernize-4dd6c5`). The bot runs from here.
-  Never touch `master`/`main`, the main checkout, or create other worktrees/branches.
+  Do not create other worktrees/branches and do not touch the main checkout (`/Users/ellalbrys/Coding/coconut-capitalist`).
+  GitHub's `master` is the public default branch: it is kept equal to this branch by a fast-forward push
+  (`git push origin HEAD:master`) when the user asks. The pre-AI code lives on `history/pre-ai` (never change it).
 - **Commit after every commit-worthy change without asking.** Detailed messages. End them with the attribution line the harness gives you.
 - **Never push unless the user says so.** Push only this branch: `git push origin claude/discord-bot-audit-modernize-4dd6c5`.
 - **Design before big features** (use plan mode: explore, write the plan, get approval, then build). Small fixes: just do them.
