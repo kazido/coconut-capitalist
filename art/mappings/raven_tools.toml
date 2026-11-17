@@ -1,5 +1,7 @@
 # Tools: pickaxes, axes, rods, watering cans, bombs, swords. Cells are [row, col] in the Raven 16x16 sheet.
 
+# --- Pickaxes: ALL superseded by the hand-drawn family in art/sprites/pickaxes.toml (same names win over these mappings).
+#     Kept only as the raw Raven source cells; Veinhunter/Motherlode there are pixel copies of cells [110,2]/[110,3]. ---
 # --- Pickaxes (mining chain: rookie..worldsplitter) ---
 rookiepickaxe = [91, 0]
 reinforced_pickaxe = [91, 1]
@@ -7,15 +9,15 @@ steel_pickaxe = [101, 0]
 masterwork_pickaxe = [96, 1]
 ironbound_pickaxe = {cell = [91, 1], val = 0.55}
 crystal_pickaxe = {cell = [101, 1], hue = 150}
-deepdelver_pickaxe = [109, 2]  # WEAK: thin pick, small head
+deepdelver_pickaxe = [109, 2]
 mythril_pickaxe = [109, 3]
-worldsplitter_pickaxe = [105, 14]  # WEAK: dark, curved pick
+worldsplitter_pickaxe = [105, 14]
 # --- Pickaxes (prospector chain) ---
 prospector_pickaxe = [96, 0]
-geode_pickaxe = [109, 4]  # WEAK: thin pick
-seekers_pickaxe = {cell = [101, 0], hue = -100}  # WEAK: recoloured purple/green, no seeker motif
-veinhunter_pickaxe = [110, 2]  # WEAK: thin pick
-motherlode_pickaxe = [110, 3]  # WEAK: thin pick
+geode_pickaxe = [109, 4]
+seekers_pickaxe = {cell = [101, 0], hue = -100}
+veinhunter_pickaxe = [110, 2]
+motherlode_pickaxe = [110, 3]
 
 # --- Axes ---
 starter_axe = [91, 7]
@@ -34,34 +36,34 @@ wilted_axe = {cell = [101, 9], sat = 0.4, val = 0.6}
 # --- Fishing rods ---
 starter_rod = [21, 0]
 reinforced_rod = [21, 1]
-sturdy_rod = [98, 6]  # WEAK: staff
-masterwork_rod = [98, 7]  # WEAK: staff
-tidecaller_rod = [103, 5]  # WEAK: staff
-moonlit_rod = [103, 6]  # WEAK: staff
-lantern_rod = [24, 7]  # WEAK: bobber with flame, not a rod
-leviathan_rod = [103, 7]  # WEAK: staff
-siren_rod = {cell = [93, 8], hue = 100}  # WEAK: generic staff
-trident_rod = {cell = [91, 5], hue = 0}  # WEAK: trident polearm, not a rod
-abyssal_rod = {cell = [103, 8], val = 0.6}  # WEAK: dark staff
-kraken_rod = [101, 5]  # WEAK: trident, no kraken
-poseidon_rod = [96, 5]  # WEAK: trident polearm, not a rod
-trophy_rod = [98, 9]  # WEAK: generic staff
+sturdy_rod = [98, 6]
+masterwork_rod = [98, 7]
+tidecaller_rod = [103, 5]
+moonlit_rod = [103, 6]
+lantern_rod = [24, 7]
+leviathan_rod = [103, 7]
+siren_rod = {cell = [93, 8], hue = 100}
+trident_rod = {cell = [91, 5], hue = 0}
+abyssal_rod = {cell = [103, 8], val = 0.6}
+kraken_rod = [101, 5]
+poseidon_rod = [96, 5]
+trophy_rod = [98, 9]
 
 # --- Watering cans ---
-tin_can = {cell = [3, 1], val = 0.8}  # WEAK: a pail, no watering can in the pack
-copper_can = [3, 5]  # WEAK: a pail
-iron_can = {cell = [3, 1], val = 0.5}  # WEAK: a pail, darkened
-silver_can = [3, 2]  # WEAK: a pail
-gold_can = [3, 6]  # WEAK: a pail
-crystal_can = [3, 10]  # WEAK: a pail
-moonwell_can = [3, 14]  # WEAK: a pail
-cauldron_can = [58, 7]  # WEAK: cauldron, not an alembic
-retort_can = [3, 7]  # WEAK: a goblet, not a retort
-athanor_can = [56, 14]  # WEAK: campfire, not a furnace/can
+tin_can = {cell = [3, 1], val = 0.8}
+copper_can = [3, 5]
+iron_can = {cell = [3, 1], val = 0.5}
+silver_can = [3, 2]
+gold_can = [3, 6]
+crystal_can = [3, 10]
+moonwell_can = [3, 14]
+cauldron_can = [58, 7]
+retort_can = [3, 7]
+athanor_can = [56, 14]
 
 # --- Bomb and swords ---
-scarab_bomb = [48, 9]  # WEAK: plain bomb, no scarab
-dreamnail = {cell = [100, 3], hue = 20}  # WEAK: thin blue dagger as nail
+scarab_bomb = [48, 9]
+dreamnail = {cell = [100, 3], hue = 20}
 largebranch = [91, 11]
 rustedbroadsword = {cell = [90, 7], hue = 15, sat = 0.7, val = 0.75}
 shiningsilver = [94, 5]
