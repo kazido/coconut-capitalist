@@ -183,6 +183,27 @@ def _recolor(im: Image.Image, hue: float = 0.0, sat: float = 1.0, val: float = 1
     return out
 
 
+def _ramp_recolor(im: Image.Image, ramp: list[str]) -> Image.Image:
+    """Re-colour by brightness: each opaque pixel's luminance, stretched over the sprite's own darkest..lightest, picks a colour
+    from `ramp` (dark -> light hex colours, blended between stops). Shape and shading stay exactly the source's; only colour changes."""
+    stops = [rgb(c) for c in ramp]
+    lum = {}
+    for y in range(im.height):
+        for x in range(im.width):
+            r, g, b, a = im.getpixel((x, y))
+            if a:
+                lum[(x, y)] = 0.299 * r + 0.587 * g + 0.114 * b
+    lo, hi = min(lum.values()), max(lum.values())
+    out = im.copy()
+    for (x, y), l in lum.items():
+        t = (l - lo) / ((hi - lo) or 1) * (len(stops) - 1)
+        i = min(int(t), len(stops) - 2)
+        f = t - i
+        c = tuple(round(stops[i][k] + (stops[i + 1][k] - stops[i][k]) * f) for k in range(3))
+        out.putpixel((x, y), (*c, im.getpixel((x, y))[3]))
+    return out
+
+
 def _item_rarity(name: str) -> int:
     """The item's rarity from the game data (1 when the id is not an item)."""
     try:
@@ -197,7 +218,7 @@ def _item_rarity(name: str) -> int:
 def load_raven(mapping: Path, pack: Path | None) -> list[Sprite]:
     """Third-party icons cut from the Raven sheet. Local only: skipped when the pack is not on this machine.
 
-    A mapping value is `[row, col]` or a table `{cell = [row, col], hue = 40, sat = 1.0, val = 1.0, nudge = [dx, dy], rarity = 3}`;
+    A mapping value is `[row, col]` or a table `{cell = [row, col], ramp = [dark, ..., light] (recolour by brightness), hue = 40, sat = 1.0, val = 1.0, nudge = [dx, dy], rarity = 3}`;
     the rarity defaults to the item's own rarity."""
     if pack is None or not (pack / RAVEN_SHEET).exists() or not mapping.exists():
         return []
@@ -209,7 +230,9 @@ def load_raven(mapping: Path, pack: Path | None) -> list[Sprite]:
         row, col = opts["cell"][0], opts["cell"][1]
         rarity = _check_rarity(opts.get("rarity", _item_rarity(name)), name)
         cell = sheet.crop((col * GRID, row * GRID, col * GRID + GRID, row * GRID + GRID))
-        if any(k in opts for k in ("hue", "sat", "val")):
+        if "ramp" in opts:
+            cell = _ramp_recolor(cell, opts["ramp"])
+        elif any(k in opts for k in ("hue", "sat", "val")):
             cell = _recolor(cell, float(opts.get("hue", 0)), float(opts.get("sat", 1.0)), float(opts.get("val", 1.0)))
         dx, dy = opts.get("nudge", [0, 0])
         if dx or dy:

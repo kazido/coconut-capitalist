@@ -2,8 +2,6 @@ material_feather = [0, 6]
 material_aged_feather = [15, 3]
 material_amber = [10, 10]
 material_beeswax = [9, 5]  # WEAK: plain gold block; no wax icon
-material_clay = {cell = [12, 1], sat = 0.5}
-material_coal = {cell = [12, 0], sat = 0.2, val = 0.4}
 material_compost = [26, 8]  # WEAK: dark specks stand in for compost
 material_coral_shard = [21, 6]
 material_dewdrop = [43, 5]
@@ -17,9 +15,16 @@ material_living_vine = [15, 0]
 material_maple_leaf = [16, 3]
 material_obsidian = {cell = [13, 3], sat = 0.3, val = 0.3}
 material_plant_fiber = {cell = [12, 2], hue = 60}
-material_platinum_ore = {cell = [13, 7], hue = 200, sat = 1.5}  # WEAK: sphere, not ore
 material_radar_battery = {cell = [17, 0], hue = -150}  # WEAK: thin vial as battery
 material_rotation_wedge = [39, 8]
 material_sapphire = [10, 4]
 material_silver_ore = [13, 0]
-material_tin_ore = [13, 1]
+
+# Ores and coal/clay: recolours of silver ore's cell [13,0] by brightness ramp (dark -> light), so they share its shape and shading.
+material_copper_ore = {cell = [13, 0], ramp = ["#2e1410", "#7a3a1c", "#c8702f", "#f2b27a"]}
+material_tin_ore = {cell = [13, 0], ramp = ["#2b2b33", "#6b6f7a", "#a9adb8", "#e6e8ee"]}
+material_iron_ore = {cell = [13, 0], ramp = ["#1e1618", "#4f3b3a", "#8a6a5f", "#c6a89a"]}
+material_gold_ore = {cell = [13, 0], ramp = ["#33230a", "#8a6212", "#e0a81e", "#fff0a0"]}
+material_platinum_ore = {cell = [13, 0], ramp = ["#1c2733", "#4d7287", "#90c4d8", "#f2fdff"]}
+material_coal = {cell = [13, 0], ramp = ["#0c0c10", "#25252c", "#45454f", "#74747f"]}
+material_clay = {cell = [13, 0], ramp = ["#3a2a20", "#8a6a58", "#c49a7c", "#e6c8ae"]}
