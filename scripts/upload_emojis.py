@@ -163,7 +163,11 @@ async def run(args: argparse.Namespace, token: str) -> int:
         await client.login(token)
         existing = await client.fetch_application_emojis()
         by_name = {e.name: e for e in existing}
-        plan = plan_upload(by_name, find_files(), only=args.only, replace=args.replace or (), limit=args.limit)
+        files = find_files()
+        replace = list(args.replace or ())
+        if args.replace_all:  # re-upload every emoji that exists both here and on Discord (new art for the same names)
+            replace += [f.name for f in files if f.name in by_name and f.name not in replace]
+        plan = plan_upload(by_name, files, only=args.only, replace=replace, limit=args.limit)
         print_plan(plan, len(existing))
         if not args.yes:
             print("Dry run: nothing was changed. Add --yes to upload.")
@@ -200,6 +204,7 @@ def main(argv=None) -> int:
     ap.add_argument("--dry-run", action="store_true", help="print the plan only (this is the default)")
     ap.add_argument("--only", metavar="PREFIX", help="only names starting with PREFIX")
     ap.add_argument("--replace", metavar="NAME", action="append", help="delete and recreate this emoji (repeatable)")
+    ap.add_argument("--replace-all", action="store_true", help="delete and recreate EVERY emoji that already exists on Discord and has a file here (use after the art changed)")
     ap.add_argument("--limit", type=int, metavar="N", help="at most N uploads/replacements this run")
     ap.add_argument("--pause", type=float, default=1.5, help="seconds to wait between uploads (default 1.5)")
     args = ap.parse_args(argv)
