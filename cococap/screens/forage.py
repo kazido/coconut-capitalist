@@ -140,7 +140,7 @@ async def swing_at(screen: Screen, power: int, stance: str, tree_key: object, sp
                  else f"  {emojis.icon('cross', '✖️')} {foraging.STANCES[stance][0]} crossed off the **{name}** grain in your notes")
     shaken = await foraging.shake(screen.user, stats.stats.get("shake", 0.0), screen.rng) + await foraging.windfall(screen.user, int(stats.stats.get("windfall", 0)), screen.rng, grain_done=swing.clean_grain, species=species)
     if shaken:
-        note += f"  {emojis.icon('leaf', '🍃')} Shook loose " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in shaken.items()) + "!"
+        note += f"  {emojis.icon('leaf', '🍃')} Shook loose " + ", ".join(f"{reg.item(i).emoji or ''} {q:,} {reg.item(i).name}".strip() for i, q in shaken.items()) + "!"
     if swing.ended:
         note += f"\n{emojis.icon('grain', '🪵')} The spot wore out. New spot: **{screen.spot.title(rules)}** grain"
     return swing, note
