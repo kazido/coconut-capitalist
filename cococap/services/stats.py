@@ -14,6 +14,27 @@ class StatPage:
     title: str
     emoji: str
     groups: list[tuple[str, list[tuple[str, int | str]]]]  # [(group name, [(label, value)])]
+    note: str = ""  # a line under the title, e.g. which counters only count from the day they were added
+
+
+def seen(stats: dict[str, int], name: str, seed: int = 0) -> int:
+    """A counter's value: its row if it has one, else what the game already knew from another source (`seed`, 0 if nothing)."""
+    return stats.get(name, seed)
+
+
+# One page per skill, built by services/stats_<name>.py (`async def page(user, stats) -> StatPage`). A page reads numbers the game already stores
+# directly (so existing players keep theirs) and counters that only exist from the update on (and say so in `note`).
+PAGE_MODULES = ("mining", "fishing", "foraging", "farming", "pets", "shipments", "casino")
+
+
+async def skill_pages(user: User, stats: dict[str, int]) -> list[StatPage]:
+    import importlib
+
+    pages = []
+    for name in PAGE_MODULES:
+        module = importlib.import_module(f"cococap.services.stats_{name}")
+        pages.append(await module.page(user, stats))
+    return pages
 
 
 async def stat_pages(user: User) -> list[StatPage]:
@@ -48,5 +69,6 @@ async def stat_pages(user: User) -> list[StatPage]:
             ("Flashcard", [("Current streak", g("flashcard_streak")), ("Longest streak", g("longest_flashcard_streak"))]),
             ("Other", [("Sequence best", g("longest_sq_streak")), ("Trivia wins", g("trivia_wins")), ("Trivia games", g("trivia_games"))]),
         ]),
-        StatPage("skills", "Skills", emojis.icon('milestone', '📈'), [("Levels", skill_lines)]),
+        StatPage("skills", "Levels", emojis.icon('milestone', '📈'), [("Levels", skill_lines)]),
+        *await skill_pages(user, s),
     ]
