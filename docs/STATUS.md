@@ -5,7 +5,7 @@ Setup and moving machines: `docs/DEVELOPING.md`. Working rules: `CLAUDE.md`. Las
 
 ## Built and live in the code
 Skills: mining (14 mines, descent, wyrmholes, reactor, magnet with auto-aim), fishing (14 waters, radar, quests, books, bosses), foraging (14 forests, community
-and party trees, Releaf Foundation), farming (14 fields, Tend byproducts, market twice a day). Pets (25 flame wisps), mastery trees, shipments by skill (Crates),
+and party trees, Releaf Foundation), farming (14 zones picked on the Farm page, per-zone byproduct materials, market twice a day). Pets (25 flame wisps), mastery trees, shipments by skill (Crates),
 trading, parties, casino and minigames, crafting, ranks, wiki, per-skill stats pages, areas and the ship (Travel), the channel janitor (ops).
 Screens are consolidated into tab pages (33 registered). Item ids are prefixed (`<category>_<name>`), emoji named by id. Combat is PAUSED (code kept).
 
