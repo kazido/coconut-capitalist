@@ -17,7 +17,7 @@ SOURCES = HERE / "sources"
 DEFAULT_SRC = Path.home() / "Downloads" / "bot emojis"
 CANVAS = 16
 NAMES = [
-    "gemstone_balance", "gemstone_oreo", "gemstone_peace", "gemstone_rage", "gemstone_sanity", "gemstone_implosion",
+    "gemstone_oreo", "gemstone_implosion",
     "spirit_of_the_forest", "spirit_of_the_mines", "spirit_of_the_sea", "ore_copper", "ore_gold", "ore_iron", "wyrmhole",
     "autominer", "cell", "cell_upgraded", "empty_cell", "seed_weathered", "xp_bar_empty", "xp_bar_full", "xp_bar_left", "xp_bar_right",
 ]

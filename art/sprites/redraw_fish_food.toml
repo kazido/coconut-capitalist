@@ -112,22 +112,22 @@ rows = [
 
 [fish_pufferfish]
 rarity = 4
-palette = { y = "#f6e27a", Y = "#e8c040", c = "#fff6d0", e = "#1a1030", w = "#ffffff", p = "#e07a5a", t = "#d49a40", k = "#fffbe8", o = "#2e1c2c" }
+palette = { u = "#fff2a8", y = "#f6e27a", Y = "#e8c040", t = "#c8903c", T = "#9a6a2c", c = "#fff6d0", k = "#fffbe8", b = "#e8d098", e = "#1a1030", w = "#ffffff", p = "#e07a5a", o = "#2e1c2c" }
 rows = [
-  "....o..o..o.....",
-  "...okookooko....",
-  ".o.ooyyyyyyyoo..",
-  "okoyyYYYYYYYyko.",
-  ".oyYYYYYYYYYYyo.",
-  "okYYewYYYYYYYYko",
-  ".oYYeYYYYYYYYYto",
-  "okYpYYYYYYYYYttt",
-  ".oycccccccccYkoo",
-  "okyccccccccccyo.",
-  ".occcccccccccco.",
-  "..occcccccccco..",
-  "..okookookooko..",
-  "...o..o..o..o...",
+  "................",
+  "................",
+  "......o...o.....",
+  ".....okoooYo....",
+  ".....ouuuuo.....",
+  "..o.ouuuuyyoo...",
+  ".oTouuuuuuwYko..",
+  "..oYuuuuuyeYo...",
+  "..ottTuuyyYYo...",
+  "..oYobkkkcccpo..",
+  ".oToocbcccboo...",
+  "..o..obbbbo.....",
+  ".....oYoooko....",
+  "......o...o.....",
   "................",
   "................",
 ]
