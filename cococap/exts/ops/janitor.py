@@ -19,17 +19,19 @@ def _age_minutes(message: discord.Message) -> float:
     return idle_minutes(message.created_at, message.edited_at, datetime.now(timezone.utc))
 
 
-async def collect(channel, bot_id: int, cfg: JanitorConfig) -> list[discord.Message]:
-    return [
-        m
-        async for m in channel.history(limit=None)
-        if should_delete(age_minutes=_age_minutes(m), from_bot=m.author.id == bot_id, is_menu=m.flags.components_v2, cfg=cfg)
-    ]
+def _created_days(message: discord.Message) -> float:
+    """Days since the message was POSTED. Discord's 14-day bulk-delete limit counts from posting, not from the last edit."""
+    return (datetime.now(timezone.utc) - message.created_at).total_seconds() / 86400
+
+
+async def collect(channel, bot_id: int, limit: float) -> list[discord.Message]:
+    """The bot's messages in `channel` untouched for `limit` minutes (0 = all of them)."""
+    return [m async for m in channel.history(limit=None) if should_delete(idle=_age_minutes(m), from_bot=m.author.id == bot_id, limit=limit)]
 
 
 async def delete_all(channel, messages: list[discord.Message], cfg: JanitorConfig) -> int:
     """Bulk delete the recent ones; delete the rest one by one, slowly."""
-    recent = [m for m in messages if can_bulk(_age_minutes(m) / 1440)]
+    recent = [m for m in messages if can_bulk(_created_days(m))]
     old = [m for m in messages if m not in recent]
     done = 0
     for i in range(0, len(recent), 100):
@@ -75,10 +77,10 @@ class Janitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.cfg = load_config()
+        self._startup = True  # the first pass after the bot starts deletes EVERY bot message: no menu can still be played after a restart
 
     async def cog_load(self):
         if self.cfg.enabled:
-            self.sweep.change_interval(minutes=self.cfg.interval_minutes)
             self.sweep.change_interval(minutes=self.cfg.interval_minutes)  # the config sets how often, not the decorator
             self.sweep.start()
 
@@ -87,12 +89,14 @@ class Janitor(commands.Cog):
 
     @tasks.loop(minutes=5)
     async def sweep(self):
+        limit = 0 if self._startup else self.cfg.idle_minutes
+        self._startup = False
         for cid in self.cfg.channel_ids:
             channel = self.bot.get_channel(cid)
             if channel is None:
                 continue
             try:
-                messages = await collect(channel, self.bot.user.id, self.cfg)
+                messages = await collect(channel, self.bot.user.id, limit)
                 if messages:
                     n = await delete_all(channel, messages, self.cfg)
                     log.info("janitor deleted %s message(s) in %s", n, cid)
@@ -113,7 +117,7 @@ class Janitor(commands.Cog):
             return
         await interaction.response.defer(ephemeral=True)
         # One-time pass: every bot message goes, whatever its age (limits of 0).
-        cfg = JanitorConfig(True, self.cfg.channel_ids, 0, 0, 0, self.cfg.delete_delay_seconds)
+        cfg = JanitorConfig(True, self.cfg.channel_ids, 0, 0, self.cfg.delete_delay_seconds)
         plan, lines = {}, []
         for cid in cfg.channel_ids:
             channel = self.bot.get_channel(cid)
@@ -121,12 +125,12 @@ class Janitor(commands.Cog):
                 lines.append(f"<#{cid}>: not visible to the bot")
                 continue
             try:
-                messages = await collect(channel, self.bot.user.id, cfg)
+                messages = await collect(channel, self.bot.user.id, 0)
             except discord.Forbidden:
                 lines.append(f"<#{cid}>: missing Read Message History / Manage Messages")
                 continue
             plan[channel] = messages
-            old = sum(not can_bulk(_age_minutes(m) / 1440) for m in messages)
+            old = sum(not can_bulk(_created_days(m)) for m in messages)
             lines.append(f"<#{cid}>: {len(messages)} to delete ({old} older than 14 days, slow)")
         text = "\n".join(lines)
         if dry_run:

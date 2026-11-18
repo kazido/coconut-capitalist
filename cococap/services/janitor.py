@@ -13,8 +13,7 @@ class JanitorConfig:
     enabled: bool
     channel_ids: tuple[int, ...]
     interval_minutes: int
-    menu_max_age_minutes: float
-    other_max_age_minutes: float
+    idle_minutes: float  # a bot message untouched for this long is swept (the startup pass ignores it: everything goes)
     delete_delay_seconds: float
 
 
@@ -25,18 +24,14 @@ def load_config(path: Path = CONFIG_PATH) -> JanitorConfig:
         enabled=bool(raw["enabled"]),
         channel_ids=tuple(int(i) for i in raw["channel_ids"]),
         interval_minutes=int(raw["interval_minutes"]),
-        menu_max_age_minutes=float(raw["menu_max_age_minutes"]),
-        other_max_age_minutes=float(raw["other_max_age_minutes"]),
+        idle_minutes=float(raw["idle_minutes"]),
         delete_delay_seconds=float(raw["delete_delay_seconds"]),
     )
 
 
-def should_delete(*, age_minutes: float, from_bot: bool, is_menu: bool, cfg: JanitorConfig) -> bool:
-    """Only the bot's own messages, and only once they are older than their limit (menus sooner than other messages)."""
-    if not from_bot:
-        return False
-    limit = cfg.menu_max_age_minutes if is_menu else cfg.other_max_age_minutes
-    return age_minutes >= limit
+def should_delete(*, idle: float, from_bot: bool, limit: float) -> bool:
+    """Only the bot's own messages, and only once nobody has touched them (posted or edited) for `limit` minutes. Limit 0 = every one."""
+    return from_bot and idle >= limit
 
 
 def idle_minutes(created_at, edited_at, now) -> float:
