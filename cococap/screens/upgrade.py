@@ -38,7 +38,7 @@ class UpgradeScreen(Screen):
 
     id = "upgrade"
     label = "Upgrade Tools"
-    emoji = emojis.Lazy("craft", "🔨")
+    emoji = emojis.Lazy("ui_craft", "🔨")
     description = "Turn a tool into the next one up"
     links = ("tools",)
 

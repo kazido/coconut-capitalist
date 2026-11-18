@@ -20,7 +20,7 @@ def blank() -> str:
 class SequenceScreen(Screen):
     id = "sequence"
     label = "Sequence"
-    emoji = emojis.Lazy("brain", "🧠")
+    emoji = emojis.Lazy("ui_brain", "🧠")
     description = "Remember the pattern; it grows every round"
     links = ("minigames",)
 

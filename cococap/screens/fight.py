@@ -21,7 +21,7 @@ def effect_line(unit: Unit) -> str:
 class FightScreen(Screen):
     id = "fight"
     label = "Fight"
-    emoji = emojis.Lazy("sword", "⚔️")
+    emoji = emojis.Lazy("ui_sword", "⚔️")
     description = "Turn-based fights: speed, cooldowns and timing"
     links = ("bestiary",)
 

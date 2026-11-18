@@ -11,7 +11,7 @@ from cococap.ui.components import button, row, select, sep, text
 class EnchantScreen(Screen):
     id = "enchant"
     label = "Enchant"
-    emoji = emojis.Lazy("scroll", "📜")
+    emoji = emojis.Lazy("ui_scroll", "📜")
     description = "Use a scroll to enchant a tool"
     links = ("inventory",)
 
