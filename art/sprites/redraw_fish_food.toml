@@ -506,3 +506,25 @@ rows = [
   "..oFo...........",
 ]
 
+[crop_coconut]
+rarity = 4
+palette = { w = "#f0d8b8", H = "#c68a58", h = "#a56e40", m = "#855030", s = "#643a24", d = "#432618", e = "#1e100c", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  ".......oo.......",
+  ".....ooHhoo.....",
+  "....oHHHHhho....",
+  "...oHwHHHHhmo...",
+  "...oHHeHemhmo...",
+  "..oHHHHHHHhmso..",
+  "..ohHhHeHhdmso..",
+  "..ohhHsHshmdso..",
+  "...ohhhdhmdso...",
+  "...ommdmmdsso...",
+  "....oomsssoo....",
+  "......oooo......",
+  "................",
+  "................",
+]
+
