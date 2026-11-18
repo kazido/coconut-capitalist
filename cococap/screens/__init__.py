@@ -36,6 +36,7 @@ from .radar import RadarScreen
 from .rank import RankScreen
 from .settings import SettingsScreen
 from .sellall import SellAllScreen
+from .ship import ShipScreen
 from .shipments import ShipmentsScreen
 from .shop import ShopScreen
 from .skills import SkillsScreen
@@ -60,6 +61,7 @@ SCREENS: dict[str, type[Screen]] = {
         ToolsScreen,
         SellAllScreen,
         ShipmentsScreen,
+        ShipScreen,
         TradeScreen,
         MasteryScreen,
         CheckInScreen,

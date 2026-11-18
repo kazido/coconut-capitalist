@@ -63,11 +63,13 @@ async def test_building_the_ship_needs_levels_then_takes_bits_and_parts(db):
     user = await User.get(1)
     tier = RULES.ship_tiers[0]
     await stock_tier(user, 1)
-    await user.update_skill("mining", lambda s: setattr(s, "xp", 0))
-    with pytest.raises(AreaError, match="mining"):
+    for skill in areas.SKILLS:
+        await user.update_skill(skill, lambda s: setattr(s, "xp", 0))
+    with pytest.raises(AreaError, match="any one skill"):
         await areas.upgrade_ship(user)
     assert await user.item_quantity(next(iter(tier.parts))) == tier.parts[next(iter(tier.parts))]  # nothing was taken
-    await level_all(user, 100)
+    # ANY ONE skill at the floor is enough, the others can stay at level 1
+    await user.update_skill("farming", lambda s: setattr(s, "xp", User.level_to_xp(max(tier.skill_floors.values()) + 1)))
     await areas.upgrade_ship(user)
     assert (await areas.state(user)).tier == 1
     await user.refresh()
