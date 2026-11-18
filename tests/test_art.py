@@ -75,8 +75,8 @@ def test_wisp_shapes_are_valid():
 
 
 def test_built_png_is_64x64_rgba(tmp_path):
-    sprite = next(s for s in load_all() if s.name == "material_copper_ore")
-    path = build.build_one(sprite, tmp_path)
+    # (any still sprite will do; a fixed name goes stale whenever art is redone, e.g. the ores are now recolours of one source)
+    path = next(p for p in (build.build_one(s, tmp_path) for s in load_all()) if p.suffix == ".png")
     im = Image.open(path)
     assert im.size == (64, 64) and im.mode == "RGBA"
     # corners of the cell stay transparent
