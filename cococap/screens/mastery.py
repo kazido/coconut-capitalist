@@ -14,7 +14,7 @@ class MasteryScreen(Screen):
 
     id = "mastery"
     label = "Mastery"
-    emoji = emojis.Lazy("star", "🌟")
+    emoji = emojis.Lazy("ui_star", "🌟")
     description = "Spend mastery points on how you play a skill"
     links = ("mining", "fish", "farm", "forage")
 

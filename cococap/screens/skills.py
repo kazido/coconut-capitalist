@@ -14,7 +14,7 @@ SKILL_SCREENS: dict[str, str | None] = {"mining": "mining", "farming": "farm", "
 class SkillsScreen(Screen):
     id = "skills"
     label = "Skills"
-    emoji = emojis.Lazy("milestone", "📈")
+    emoji = emojis.Lazy("ui_milestone", "📈")
     description = "Mining, farming, foraging, fishing and combat"
     links = ("mining", "farm", "forage", "fish")
 

@@ -24,7 +24,7 @@ def _outcomes() -> dict:
 class BlackjackScreen(Screen):
     id = "blackjack"
     label = "Blackjack"
-    emoji = emojis.Lazy("cards", "🃏")
+    emoji = emojis.Lazy("ui_cards", "🃏")
     description = "Beat the dealer to 21"
     links = ("casino",)
 

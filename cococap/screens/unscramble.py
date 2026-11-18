@@ -16,7 +16,7 @@ INTRO = "Unscramble the word before the clock runs out. Longer words pay more."
 class UnscrambleScreen(Screen):
     id = "unscramble"
     label = "Unscramble"
-    emoji = emojis.Lazy("page", "📄")
+    emoji = emojis.Lazy("ui_page", "📄")
     description = "Unjumble the word"
     links = ("minigames",)
 

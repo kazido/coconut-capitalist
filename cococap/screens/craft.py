@@ -13,7 +13,7 @@ class CraftScreen(Screen):
 
     id = "craft"
     label = "Workbench"
-    emoji = emojis.Lazy("craft", "🛠️")
+    emoji = emojis.Lazy("ui_craft", "🛠️")
     description = "Make things from materials"
     links = ()
 
