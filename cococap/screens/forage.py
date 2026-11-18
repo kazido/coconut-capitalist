@@ -159,7 +159,7 @@ class ForageScreen(Screen):
     label = "Foraging"
     emoji = emojis.Lazy("ui_tree", "🌳")
     description = "Chop trees alone or join the community tree"
-    links = ("trees", "sellall", "mastery", "releaf")
+    links = ("trees", "mastery", "releaf")
 
     def __init__(self, nav):
         super().__init__(nav)

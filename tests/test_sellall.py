@@ -61,7 +61,7 @@ async def test_every_skill_page_has_a_sell_all_button_that_asks_first(db, screen
     nav, inter = await hub(screen)
     assert find_button(nav, "Sell all")
     await click(nav, inter, "Sell all")
-    assert nav.screen.id == "sellall" and "Sell everything from" in all_text(nav)
+    assert nav.screen.id == "shop" and nav.screen.tab == "sellall" and "Sell everything from" in all_text(nav)
     assert await user.item_quantity("material_copper_ore") == 10  # nothing sold yet: it asked
 
 

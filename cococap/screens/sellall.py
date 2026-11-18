@@ -32,20 +32,19 @@ async def upgrade_needs(user) -> dict[str, int]:
 async def start_sell_all(screen: Screen, interaction: discord.Interaction, skill: str) -> None:
     """A skill's Sell all button: straight to selling if you turned confirming off, otherwise to the confirm page."""
     if screen.user.settings.confirm_sell_all:
-        return await screen.go(interaction, "sellall", skill=skill)
+        return await screen.go(interaction, "shop", tab="sellall", skill=skill)
     keep = await upgrade_needs(screen.user) if screen.user.settings.keep_upgrade_materials else None
     earned, sold = await shop.sell_all_for_skill(screen.user, skill, keep=keep)
     await screen.refresh(interaction, f"{emojis.icon('sell', '💰')} Sold {sum(sold.values()):,} items for **{emojis.bits(earned)}**." if sold else "You have nothing from this skill to sell.")
 
 
-class SellAllScreen(Screen):
-    """"Sell everything this skill gave you?": what it is worth, and a way to keep what your upgrades need."""
+class SellAllPane(Screen):
+    """"Sell everything this skill gave you?": what it is worth, and a way to keep what your upgrades need. The "Sell all by skill" tab of
+    the Shop page (screens/shop.py); `skill` is set on the host when a skill page opens it."""
 
-    id = "sellall"
-    label = "Sell all"
+    label = "Sell all by skill"
     emoji = emojis.Lazy("ui_sell", "💰")
     description = "Sell everything one skill gave you"
-    links = ()
 
     def __init__(self, nav):
         super().__init__(nav)

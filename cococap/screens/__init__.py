@@ -34,7 +34,6 @@ from .reactor import ReactorScreen
 from .radar import RadarScreen
 from .rank import RankScreen
 from .settings import SettingsScreen
-from .sellall import SellAllScreen
 from .ship import ShipScreen
 from .shipments import ShipmentsScreen
 from .shop import ShopScreen
@@ -42,7 +41,6 @@ from .skills import SkillsScreen
 from .tools import ToolsScreen
 from .trade import TradeScreen
 from .wiki import WikiScreen
-from .wyrmhole import WyrmholeScreen
 
 SCREENS: dict[str, type[Screen]] = {
     screen.id: screen
@@ -54,7 +52,6 @@ SCREENS: dict[str, type[Screen]] = {
         PlayerScreen,
         BestiaryScreen,
         ToolsScreen,
-        SellAllScreen,
         ShipmentsScreen,
         ShipScreen,
         TradeScreen,
@@ -74,7 +71,6 @@ SCREENS: dict[str, type[Screen]] = {
         ReactorScreen,
         RadarScreen,
         MineScreen,
-        WyrmholeScreen,
         MinigamesScreen,
         CasinoScreen,
         FlashcardScreen,

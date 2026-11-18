@@ -153,6 +153,24 @@ async def test_every_player_tab_renders_valid_layout(db, tab):
     assert nav.content_length() <= 4000
 
 
+@pytest.mark.parametrize("tab", list(SCREENS["shop"].panes))
+async def test_every_shop_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("shop", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
+@pytest.mark.parametrize("tab", list(SCREENS["reactor"].panes))
+async def test_every_reactor_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("reactor", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
 
 # ---- navigation -------------------------------------------------------------------------------
 async def test_home_buttons_open_screens_and_back_returns(db):
@@ -710,7 +728,7 @@ async def test_a_wyrmhole_leads_to_a_one_pick_screen_and_banks_it(db):
     assert run.outcome == "wyrmhole" and "wyrmhole" in all_text(nav)
     await continue_through(nav, inter)
     await find_button(nav, "Enter the wyrmhole").callback(inter)
-    assert nav.screen.id == "wyrmhole" and nav.screen.locked
+    assert nav.screen.id == "reactor" and nav.screen.tab == "wyrmholes" and nav.screen.locked
     await find_button(nav, "Dig").callback(inter)
     assert nav.screen.id == "result" and sum((await user.items()).values()) > 0  # the pick is a reward screen like any other
     await continue_through(nav, inter, "Back to the mines")
@@ -744,11 +762,11 @@ async def test_entering_the_small_wyrmhole_banks_the_pack_then_one_pick_per_row_
     assert run.outcome == "mini_wyrmhole" and await user.item_quantity("material_copper_ore") == 7  # banked first, like the big wyrmhole
     await continue_through(nav, inter)
     await find_button(nav, "Enter the small wyrmhole").callback(inter)
-    assert nav.screen.id == "wyrmhole" and nav.screen.locked
+    assert nav.screen.id == "reactor" and nav.screen.tab == "wyrmholes" and nav.screen.locked
     hole = nav.screen.hole
     assert hole.small and "Row **1** of 5" in all_text(nav)
     for r in range(5):
-        assert nav.screen.id == "wyrmhole" and hole.row == r and nav.screen.locked
+        assert nav.screen.id == "reactor" and hole.row == r and nav.screen.locked
         await find_button(nav, "Dig").callback(inter)
     assert nav.screen.id == "result" and hole.finished and hole.banked
     for item_id, qty in hole.loot().items():

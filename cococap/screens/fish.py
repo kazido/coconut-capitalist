@@ -79,7 +79,7 @@ class FishScreen(Screen):
     label = "Fishing"
     emoji = ROD
     description = "Cast a line and reel in fish"
-    links = ("fishlog", "fishpots", "mastery", "sellall", "radar")
+    links = ("fishlog", "fishpots", "mastery", "radar")
 
     def __init__(self, nav):
         super().__init__(nav)

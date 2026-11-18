@@ -23,7 +23,7 @@ class FarmScreen(Screen):
     label = "Farm"
     emoji = emojis.Lazy("ui_wheat", "🌾")
     description = "Plant seeds, wait for the rain, harvest"
-    links = ("market", "sellall", "mastery")
+    links = ("market", "mastery")
 
     def __init__(self, nav):
         super().__init__(nav)

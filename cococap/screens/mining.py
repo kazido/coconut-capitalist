@@ -18,7 +18,7 @@ class MiningScreen(Screen):
     label = "Mining"
     emoji = emojis.Lazy("tool_pickaxe_rookie", "⛏️")
     description = "Dig for ores and gems"
-    links = ("mine", "reactor", "mastery", "sellall")
+    links = ("mine", "reactor", "mastery")
 
     def __init__(self, nav):
         super().__init__(nav)

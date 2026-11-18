@@ -3,9 +3,11 @@ import discord
 from cococap import emojis
 from cococap.errors import CustomError
 from cococap.registry import get_registry
+from cococap.screens.sellall import SellAllPane
 from cococap.services import farming, shop
 from cococap.ui import Page, Screen, PromptModal
 from cococap.ui.components import bits, button, row, section, section_art, select, sep, text
+from cococap.ui.tabs import TabsScreen
 
 PER_PAGE = 10
 
@@ -17,8 +19,9 @@ def parse_quantity(raw: str) -> int:
         raise CustomError("Enter a whole number, like 5.") from None
 
 
-class ShopScreen(Screen):
-    id = "shop"
+class ShopPane(Screen):
+    """Buy seeds and supplies, sell what you've gathered. The Buy/Sell tab of the Shop page (ShopScreen)."""
+
     label = "Shop"
     emoji = emojis.Lazy("ui_sell", "🛒")
     description = "Buy seeds and supplies, sell what you've gathered"
@@ -166,3 +169,13 @@ class ShopScreen(Screen):
             )
 
         return ask
+
+
+class ShopScreen(TabsScreen):
+    """The Shop page: buy and sell (ShopPane), and selling a whole skill's haul (SellAllPane). Skill pages open the second tab."""
+
+    id = "shop"
+    label = "Shop"
+    emoji = emojis.Lazy("ui_sell", "🛒")
+    description = "Buy seeds and supplies, sell what you've gathered, or sell a whole skill's haul"
+    panes = {"buy": ShopPane, "sellall": SellAllPane}

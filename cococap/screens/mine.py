@@ -149,7 +149,7 @@ class MineScreen(Screen):
     label = "The Mines"
     emoji = emojis.Lazy("tool_pickaxe_rookie", "⛏️")
     description = "Dig deeper for rarer loot, but watch the danger meter"
-    links = ("mining", "wyrmhole")
+    links = ("mining", "reactor")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -361,8 +361,8 @@ class MineScreen(Screen):
 
     async def _wyrmhole(self, interaction: discord.Interaction) -> None:
         hole = await mining.enter_wyrmhole(self.user, random.Random())
-        await self.go(interaction, "wyrmhole", hole=hole)
+        await self.go(interaction, "reactor", tab="wyrmholes", hole=hole)
 
     async def _wyrmhole_small(self, interaction: discord.Interaction) -> None:
         hole = await mining.enter_wyrmhole(self.user, random.Random(), small=True)
-        await self.go(interaction, "wyrmhole", hole=hole)
+        await self.go(interaction, "reactor", tab="wyrmholes", hole=hole)
