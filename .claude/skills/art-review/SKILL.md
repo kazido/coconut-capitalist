@@ -25,7 +25,9 @@ Work only on the `art` branch/worktree. Python: the master venv (see CLAUDE.md E
 3. Re-run step 1 with the same names. Send the sheet. Only add `--context 0` if the comparison row is no longer needed.
 4. When the user zooms in on one sprite ("that one is off"), crop it big with PIL from `art/out/<name>.png`
    (nearest-neighbour x24) instead of resending the whole sheet.
-5. Commit after each accepted state, no asking (see CLAUDE.md). Message format: what changed and why.
+5. Do NOT commit until the user says they are happy with that sprite ("done", "fine", "commit it"). Until then keep iterating
+   and leave the changes uncommitted. When committing, stage only the accepted sprites (if a file also holds unaccepted work, commit
+   the accepted blocks only). Message format: what changed and why. This overrides the generic commit-after-every-change rule in CLAUDE.md.
 
 ## Design rules learned (apply on the first pass)
 - 16x16, 1px diagonal handle bottom-left to top-right, head at the top. Same family look within a tool kind.

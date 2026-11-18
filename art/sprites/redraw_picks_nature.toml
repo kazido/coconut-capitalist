@@ -134,22 +134,22 @@ rows = [
 
 [material_radar_battery]
 rarity = 2
-palette = { w = "#ffffff", W = "#c8fff0", t = "#dfe5ee", T = "#8a94ac", c = "#3a4a6a", C = "#5d6e92", h = "#6ae8d0", m = "#2fb0b0", s = "#1e7a9a", S = "#155a80", y = "#ffee6a", Y = "#f0b428", d = "#1a3a58", o = "#2e1c2c" }
+palette = { w = "#ffffff", W = "#c8fff0", t = "#dfe5ee", T = "#8a94ac", c = "#3a4a6a", C = "#5d6e92", h = "#6ae8d0", m = "#2fb0b0", s = "#1e7a9a", S = "#155a80", y = "#ffee6a", Y = "#f0b428", o = "#2e1c2c" }
 rows = [
   "................",
   "................",
   ".......oo.......",
   "......owto......",
   "....oTTTTTTo....",
-  "...oCCcccccco...",
-  "...oWhhmmmsSo...",
-  "...oWhmmyYsSo...",
-  "...oWhmyYmsSo...",
-  "...oWhmyyYsSo...",
-  "...oWhmmYmsSo...",
-  "...oWhhmmmsSo...",
-  "...oCCcccccco...",
-  "....oooooooo....",
+  "....oCCcccco....",
+  "....oWhmmsSo....",
+  "....oWhmysSo....",
+  "....oWhyYsSo....",
+  "....oWhmYsSo....",
+  "....oWhmmsSo....",
+  "....oCCcccco....",
+  ".....oooooo.....",
+  "................",
   "................",
   "................",
 ]
