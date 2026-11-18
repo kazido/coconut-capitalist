@@ -69,3 +69,10 @@ def test_find_files_reads_a_folder(tmp_path):
 def test_only_suffix_filters():
     plan = plan_upload(set(), [f("rod_iron_tip"), f("tidecaller_rod"), f("material_iron_ore")], only_suffix="_rod")
     assert names(plan.upload) == ["tidecaller_rod"]
+
+
+def test_delete_only_removes_names_that_exist_and_reports_the_rest():
+    from scripts.upload_emojis import plan_delete
+
+    gone, missing = plan_delete({"flame_ash", "material_iron_ore"}, ["flame_ash", "flame_blue", "flame_ash"])
+    assert gone == ["flame_ash"] and missing == ["flame_blue"]  # (no duplicates, and a name not on Discord is only reported)

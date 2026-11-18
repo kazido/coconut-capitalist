@@ -118,6 +118,13 @@ def plan_upload(
     return plan
 
 
+def plan_delete(existing_names, names) -> tuple[list[str], list[str]]:
+    """(names that exist on Discord and will be deleted, names that are not there). Used by --delete, which only removes."""
+    have = set(existing_names)
+    names = list(dict.fromkeys(names))  # no duplicates, keep the order given
+    return [n for n in names if n in have], [n for n in names if n not in have]
+
+
 def find_files(folder: Path = OUT_DIR) -> list[EmojiFile]:
     if not folder.is_dir():
         return []
@@ -158,7 +165,7 @@ async def run(args: argparse.Namespace, token: str) -> int:
     import discord
 
     client = discord.Client(intents=discord.Intents.none())
-    uploaded, replaced, failed = [], [], []
+    uploaded, replaced, failed, deleted = [], [], [], []
     code = 0
 
     async with client:
@@ -171,9 +178,23 @@ async def run(args: argparse.Namespace, token: str) -> int:
             replace += [f.name for f in files if f.name in by_name and f.name not in replace]
         plan = plan_upload(by_name, files, only=args.only, only_suffix=args.only_suffix, replace=replace, limit=args.limit)
         print_plan(plan, len(existing))
+        to_delete, not_there = plan_delete(by_name, args.delete or ())
+        for name in to_delete:
+            print(f"  delete   {name}")
+        for name in not_there:
+            print(f"  (not on Discord, nothing to delete) {name}")
         if not args.yes:
             print("Dry run: nothing was changed. Add --yes to upload.")
             return 1 if plan.invalid else 0
+        for name in to_delete:
+            try:
+                await _with_backoff(by_name[name].delete, f"delete {name}")
+                deleted.append(name)
+                print(f"  deleted  {name}")
+            except Exception as e:  # keep going; rerun to retry
+                failed.append((name, str(e)[:120]))
+                print(f"  FAILED   delete {name}: {e}")
+            await asyncio.sleep(args.pause)
         for kind, f in plan.actions:
             try:
                 if kind == "replace":
@@ -189,11 +210,11 @@ async def run(args: argparse.Namespace, token: str) -> int:
             await asyncio.sleep(args.pause)
         used = len(await client.fetch_application_emojis())
 
-    print(f"\nUploaded {len(uploaded)}, replaced {len(replaced)}, skipped {len(plan.skipped)}, failed {len(failed)}, invalid {len(plan.invalid)}, deferred {len(plan.deferred)}.")
+    print(f"\nUploaded {len(uploaded)}, replaced {len(replaced)}, deleted {len(deleted)}, skipped {len(plan.skipped)}, failed {len(failed)}, invalid {len(plan.invalid)}, deferred {len(plan.deferred)}.")
     print(f"Slots used: {used} of {MAX_SLOTS}.")
     for name, why in failed:
         print(f"  failed: {name}: {why}")
-    if uploaded or replaced:
+    if uploaded or replaced or deleted:
         print("Restart the bot so it loads the new emoji.")
     if failed:
         code = 1
@@ -207,6 +228,7 @@ def main(argv=None) -> int:
     ap.add_argument("--only", metavar="PREFIX", help="only names starting with PREFIX")
     ap.add_argument("--only-suffix", metavar="SUFFIX", help="only names ending with SUFFIX (e.g. _pickaxe)")
     ap.add_argument("--replace", metavar="NAME", action="append", help="delete and recreate this emoji (repeatable)")
+    ap.add_argument("--delete", metavar="NAME", action="append", help="just delete this emoji from Discord (repeatable; needs --yes). Use with --only zzz to upload nothing")
     ap.add_argument("--replace-all", action="store_true", help="delete and recreate EVERY emoji that already exists on Discord and has a file here (use after the art changed)")
     ap.add_argument("--limit", type=int, metavar="N", help="at most N uploads/replacements this run")
     ap.add_argument("--pause", type=float, default=1.5, help="seconds to wait between uploads (default 1.5)")
