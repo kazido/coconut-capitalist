@@ -686,6 +686,8 @@ class FarmingRules(_Data):
     xp_per_cycle: int = Field(ge=0)  # xp for a harvest = the seed's growth cycles x this: a long crop pays for the waiting
     deed_item: str
     field_seeds: list[str]  # the seed each field opens, in field order (14, one per farming location)
+    byproduct_rolls: list[int] = Field(min_length=1)  # Tend: rolls of the farming drop table per growth cycle, by field (same order as field_seeds): bigger crops, bigger byproducts
+    byproduct_max_cycles: int = Field(default=3, ge=1)  # a plot keeps at most this many cycles of byproducts waiting, so you collect by checking in often
     market: MarketRules
 
 

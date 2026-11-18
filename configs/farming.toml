@@ -13,6 +13,12 @@ max_drop_rolls = 60               # ...up to this many
 anomaly_odds = 25                 # 1 in N per harvest: refreshes your work and daily cooldowns (wiki: 1/25)
 xp_per_cycle = 500               # farming xp for a harvest = the crop's growth cycles x this (apple 500, coconut 50,000). Tools never change xp
 deed_item = "key_land_deed"
+# Tend: every growth cycle a growing plot makes byproducts (the farming drop table: plant fiber, compost, dewdrops, beeswax, living vines), collected with the Tend
+# button. A plot keeps at most `byproduct_max_cycles` cycles waiting, so you get them all by checking in about every 3 hours. `byproduct_rolls` = rolls of the drop
+# table per cycle, by field (the same order as field_seeds); one full roll of the table is worth about 618 bits, set so a crop's byproducts are about 15-40% of what
+# the crop itself earns an hour (a guard test keeps it). Later fields also roll starred materials (services/stars.py). Xp is NOT paid for tending: it stays 500 per cycle at harvest.
+byproduct_max_cycles = 3
+byproduct_rolls = [4, 6, 8, 10, 10, 10, 12, 12, 4, 14, 14, 14, 16, 18]
 # The crop each of the 14 fields (configs/locations.toml [farming], in order) opens. A field is open once you have the farming level
 # (areas.toml [locations]) AND have reached its area; until then its seed is not sold. Seeds you got from drops or trades still plant.
 field_seeds = [

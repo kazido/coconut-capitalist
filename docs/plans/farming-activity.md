@@ -12,3 +12,8 @@ Rule for all options: **xp stays tied to growth cycles** (`xp_per_cycle`); the n
 Recommendation: option 1 first (cheap, grindable, bounded), then 2 for materials if wanted. Crop xp (see the xp proposal) is separate and should be lowered before any of this ships.
 
 Question: which one first: Tend streak (1), Scavenge (2) or the watering minigame (3)?
+
+## BUILT (approved shape of option 1: Tend, byproducts every growth cycle)
+- `Plot.tended` counts cycles already collected; the **Tend** button on the farm page rolls the farming drop table `byproduct_rolls[field]` times per waiting cycle (a plot keeps at most `byproduct_max_cycles` = 3 waiting: check in about every 3 hours or lose some). No xp (xp_per_cycle stays 500, paid at harvest).
+- Rolls per cycle by field: [4, 6, 8, 10, 10, 10, 12, 12, 4, 14, 14, 14, 16, 18]. One full roll of the drop table is worth ~618 bits, so byproducts are 10-45% of a crop's own hourly income (rose, a weak crop, is 43%; ambrosia 14%); guard test keeps every field within 10-50%.
+- 9 plots tended every hour add roughly 55,000 bits' worth of materials an hour on top of about 270,000 from the crops themselves; later fields also roll starred materials (`services/stars.py`).

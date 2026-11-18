@@ -793,3 +793,84 @@ def test_the_three_farming_capstones_are_about_equally_strong():
     gains = {"haggler": node("haggler"), "heirloom": node("heirloom") * 0.6, "evergreen": node("evergreen") * 0.3}
     assert all(0.1 <= g <= 0.25 for g in gains.values()), gains
     assert max(gains.values()) - min(gains.values()) <= 0.08, gains
+
+
+# ---- Tend: byproducts of every growth cycle ---------------------------------------------------------------------------------------
+async def growing(user, seed="seed_lemon", cycle=2, number=1):
+    await user.add_item(seed, 1)
+    await f.plant(user, number, seed, now=T0, registry=REG)
+    await user.update_skill("farming", lambda m: setattr(f.plot_of(m, number), "cycle", cycle))
+
+
+async def test_tending_collects_the_byproducts_of_the_cycles_since_last_time_once(db):
+    user = await User.get(1)
+    with pytest.raises(f.FarmingError, match="Nothing has grown"):
+        await f.tend(user, Random(1), T0, REG)
+    await growing(user, cycle=2)
+    report = await f.tend(user, Random(1), T0, REG)
+    assert (report.plots, report.cycles) == (1, 2) and (await user.skill("farming")).farm.plot_1.tended == 2
+    assert all(REG.item(i).skill == "farming" for i in report.found) and sum(report.found.values()) > 0
+    for item, quantity in report.found.items():
+        assert await user.item_quantity(item) == quantity
+    with pytest.raises(f.FarmingError):  # nothing new has grown
+        await f.tend(user, Random(1), T0, REG)
+    await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "cycle", 3))
+    assert (await f.tend(user, Random(2), T0, REG)).cycles == 1  # only the new cycle
+
+
+async def test_a_plot_only_keeps_a_few_cycles_of_byproducts_waiting(db):
+    user = await User.get(1)
+    await growing(user, seed="seed_coconut", cycle=RULES.byproduct_max_cycles + 20)
+    assert f.tend_waiting(await user.skill("farming"), RULES) == RULES.byproduct_max_cycles
+    assert (await f.tend(user, Random(1), T0, REG)).cycles == RULES.byproduct_max_cycles
+    assert f.tend_waiting(await user.skill("farming"), RULES) == 0  # the rest is lost, not saved up
+
+
+async def test_tending_gives_no_xp_and_a_new_crop_starts_counting_again(db):
+    user = await User.get(1)
+    await growing(user, cycle=2)
+    xp = (await user.skill("farming")).xp
+    await f.tend(user, Random(1), T0, REG)
+    assert (await user.skill("farming")).xp == xp
+    await user.update_skill("farming", lambda m: (setattr(m.farm.plot_1, "crop_id", None), setattr(m.farm.plot_1, "cycle", 0), setattr(m.farm.plot_1, "tended", 0)))
+    await growing(user, cycle=1)
+    assert (await f.tend(user, Random(1), T0, REG)).cycles == 1
+
+
+async def test_with_no_byproduct_rolls_tending_finds_nothing(db):
+    user = await User.get(1)
+    await growing(user, cycle=2)
+    none = registry_with(byproduct_rolls=[0] * len(RULES.byproduct_rolls))
+    assert not (await f.tend(user, Random(1), T0, none)).found
+
+
+def test_byproducts_are_a_fair_share_of_what_each_crop_earns_an_hour():
+    """Guard: tending is worth about 10-50% of the crop's own watered income an hour, so farming stays in line with the other skills (see scripts.balance)."""
+    assert len(RULES.byproduct_rolls) == len(RULES.field_seeds)
+    one_roll = sum(REG.item(i).sell_price * (i_d.min + i_d.max) / 2 / i_d.rate
+                   for i in REG.items if (i_d := REG.item(i).drop) and REG.item(i).skill == "farming" and REG.item(i).category == "material")
+    for seed_id, rolls in zip(RULES.field_seeds, RULES.byproduct_rolls):
+        seed = REG.item(seed_id)
+        crop = REG.item(seed.seed.grows_into)
+        per_hour = crop.sell_price * (crop.crop.min_harvest + crop.crop.max_harvest) / 2 / seed.seed.cycles  # watered: one cycle an hour
+        share = rolls * one_roll / per_hour
+        assert 0.1 <= share <= 0.5, (seed_id, round(share, 2))
+    assert RULES.byproduct_rolls[-1] > RULES.byproduct_rolls[0]  # bigger crops, bigger byproducts
+
+
+async def test_the_farm_page_has_a_tend_button_that_wakes_up_when_something_grew(db):
+    nav, inter = await hub("farm")
+    assert find_button_named(nav, "Tend").disabled
+    user = await User.get(1)
+    await with_can(user)
+    await growing(user, cycle=2)
+    nav, inter = await hub("farm")
+    assert not find_button_named(nav, "Tend").disabled
+    await click(nav, inter, "Tend")
+    assert "You tended" in all_text(nav) and find_button_named(nav, "Tend").disabled
+
+
+def find_button_named(nav, label):
+    from tests.test_hub import find_button
+
+    return find_button(nav, label)

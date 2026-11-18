@@ -356,7 +356,7 @@ async def plant(
             raise FarmingError("You don't own that plot yet.")
         if plot.crop_id:
             raise FarmingError("Something is already growing there.")
-        plot.crop_id, plot.cycle, plot.can_harvest, plot.since = seed_id, 0, False, hour_of(now)
+        plot.crop_id, plot.cycle, plot.can_harvest, plot.since, plot.tended = seed_id, 0, False, hour_of(now), 0
 
     try:
         await user.update_skill("farming", sow)
@@ -374,6 +374,65 @@ class Harvest:
     anomaly: bool
     extras: Counter = field(default_factory=Counter)  # leftovers from the harvest (plant fiber...)
     replanted: bool = False  # Evergreen: the plot is growing the same crop again
+
+
+# ---- Tend: byproducts of every growth cycle ---------------------------------------------------------------------------------------
+@dataclass(frozen=True)
+class TendReport:
+    plots: int  # plots that had something to collect
+    cycles: int  # growth cycles collected
+    found: Counter = field(default_factory=Counter)
+
+
+def _byproduct_rolls(seed_id: str, rules) -> int:
+    """Rolls of the farming drop table per growth cycle of this crop: its field's number (a seed that opens no field uses the first)."""
+    fields = rules.field_seeds
+    return rules.byproduct_rolls[fields.index(seed_id)] if seed_id in fields else rules.byproduct_rolls[0]
+
+
+def tend_waiting(farm: Farming, rules) -> int:
+    """How many growth cycles of byproducts are waiting across all plots (never more than `byproduct_max_cycles` per plot)."""
+    return sum(min(rules.byproduct_max_cycles, p.cycle - p.tended) for n in range(1, PLOTS + 1)
+               if (p := plot_of(farm, n)).crop_id and is_unlocked(farm, n, rules) and p.cycle > p.tended)
+
+
+async def tend(user: User, rng: random.Random, now: float | None = None, registry: Registry | None = None) -> TendReport:
+    """Collect the byproducts every growing plot made since you last tended: per waiting cycle (up to `byproduct_max_cycles` per plot) the farming drop table is
+    rolled `byproduct_rolls` times for that crop's field, a can's drop luck adds more, and later fields can roll starred materials. No xp: that is paid at harvest."""
+    reg, now = registry or get_registry(), now if now is not None else time.time()
+    rules = reg.farming
+    can = await equipped_stats(user, "farming", reg)
+    luck = can.stats.get("drop_luck", 0.0) if can else 0.0
+    pet = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
+    materials = [i for i in reg.items_for_skill("farming") if i.category == "material" and i.drop]
+    waiting: list[tuple[str, int]] = []  # (seed, cycles) per plot with something to collect
+
+    def collect(m: Farming) -> None:
+        apply_rain(m, user.id, now, reg, pet)
+        for number in range(1, PLOTS + 1):
+            plot = plot_of(m, number)
+            if not plot.crop_id or plot.cycle <= plot.tended:
+                continue
+            waiting.append((plot.crop_id, min(rules.byproduct_max_cycles, plot.cycle - plot.tended)))
+            plot.tended = plot.cycle  # (cycles past the cap are lost: that is the price of not checking in)
+
+    await user.update_skill("farming", collect)
+    if not waiting:
+        raise FarmingError("Nothing has grown since you last tended.")
+    found: Counter = Counter()
+    for seed_id, cycles in waiting:
+        expected = cycles * _byproduct_rolls(seed_id, rules) * (1 + luck)
+        rolls = int(expected) + (1 if rng.random() < expected - int(expected) else 0)
+        part: Counter = Counter()
+        for _ in range(rolls):
+            for item in materials:
+                if quantity := roll_drop(item, rng):
+                    part[item.id] += quantity
+        field_no = rules.field_seeds.index(seed_id) + 1 if seed_id in rules.field_seeds else 1
+        found.update(stars.apply(part, stars.progress(field_no, len(rules.field_seeds)), rng, reg))
+    for item_id, quantity in found.items():
+        await user.add_item(item_id, quantity)
+    return TendReport(len(waiting), sum(c for _, c in waiting), found)
 
 
 def drop_rolls(cycles: int, rules, rng: random.Random, luck: float = 0.0) -> int:
@@ -424,9 +483,9 @@ async def harvest(
         replant = bool(evergreen) and rng.random() < evergreen
         taken["replanted"] = replant
         if replant:  # Evergreen: the same crop is growing again, no seed spent
-            plot.cycle, plot.can_harvest, plot.since = 0, False, hour_of(now)
+            plot.cycle, plot.can_harvest, plot.since, plot.tended = 0, False, hour_of(now), 0
         else:
-            plot.crop_id, plot.cycle, plot.can_harvest = None, 0, False  # the plot is empty from this moment: once only
+            plot.crop_id, plot.cycle, plot.can_harvest, plot.tended = None, 0, False, 0  # the plot is empty from this moment: once only
         m.xp += taken["xp"]
         m.stats.crops_grown += taken["amount"]
 

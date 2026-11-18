@@ -77,6 +77,7 @@ class FarmScreen(Screen):
             button("Harvest all", emoji=emojis.icon('basket', '🧺'), style=discord.ButtonStyle.success, disabled=not any(v.ready for v in views), on_click=self._harvest_all),
             button("Water", emoji=emojis.icon('drop', '💧'), style=discord.ButtonStyle.primary,
                    disabled=can is None or not any(v.growing and not v.watered for v in views), on_click=self._water),
+            button("Tend", emoji=emojis.icon('sprout', '🌿'), disabled=not farming.tend_waiting(skill, reg.farming), on_click=self._tend),
             button("Plant page" if pages > 1 else "Plant all", emoji=emojis.icon('sprout', '🌱'), disabled=not (self.seed and empty), on_click=self._plant_all),
             button("Market", emoji=emojis.icon('sell', '🛒'), on_click=self._market),
         ))
@@ -159,6 +160,11 @@ class FarmScreen(Screen):
         if report.matured:
             note += " " + ", ".join(f"Plot {n}" for n in report.matured) + (" is" if len(report.matured) == 1 else " are") + " ready!"
         await self.refresh(interaction, note)
+
+    async def _tend(self, interaction: discord.Interaction) -> None:
+        report = await farming.tend(self.user, random.Random())
+        got = ", ".join(f"{q:,} × {get_registry().item(i).name}" for i, q in report.found.items()) or "nothing this time"
+        await self.refresh(interaction, f"{emojis.icon('sprout', '🌿')} You tended {report.plots} plot(s) ({report.cycles} growth cycle(s)): {got}.")
 
     def _turn(self, step: int):
         async def go(interaction: discord.Interaction) -> None:
