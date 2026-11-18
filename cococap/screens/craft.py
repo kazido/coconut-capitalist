@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import crafting
 from cococap.ui import Page, Screen
@@ -61,7 +62,7 @@ class CraftScreen(Screen):
             n = times if times is not None else await crafting.craftable_count(self.user, recipe)
             made = await crafting.craft(self.user, recipe.id, max(n, 1), reg)
             self.last = made.times
-            fee = f"  (for {bits(made.bits)} bits)" if made.bits else ""
+            fee = f"  (for {emojis.bits(made.bits)})" if made.bits else ""
             self.result = rewards_result("Crafted!", items=made.items, headline=[f"🛠️ You made **{made.times:,}** × {recipe.name}{fee}."],
                                          emoji="🛠️", accent=0xB8860B, again=self._again, again_label="Craft again", back_label="Back to the Workbench")
             await self.refresh(interaction)

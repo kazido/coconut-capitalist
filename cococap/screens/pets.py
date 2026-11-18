@@ -2,6 +2,7 @@ import random
 
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import pets, shop
 from cococap.ui import Page, PromptModal, Result, Screen
@@ -199,7 +200,7 @@ class OrbScreen(Screen):
 
     async def _purchase(self, interaction: discord.Interaction, item_id: str, quantity: int) -> None:
         purchase = await shop.buy(self.user, item_id, quantity)
-        await self.refresh(interaction, f"Bought {purchase.quantity:,} × {get_registry().item(item_id).name} for {purchase.total:,} bits.")
+        await self.refresh(interaction, f"Bought {purchase.quantity:,} × {get_registry().item(item_id).name} for {emojis.bits(purchase.total)}.")
 
     async def _to_pets(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "pets")

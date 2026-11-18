@@ -22,7 +22,7 @@ class ProfileScreen(Screen):
         avatar = self.nav.owner.display_avatar
         header = section(
             f"### {self.nav.owner.display_name}",
-            f"{rank.emoji} **{rank.display_name}**  ·  wage {bits(rank.wage)} bits",
+            f"{rank.emoji} **{rank.display_name}**  ·  wage {emojis.bits(rank.wage)}",
             accessory=ui.Thumbnail(getattr(avatar, "url", str(avatar))),
         )
         skills = []

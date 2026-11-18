@@ -14,7 +14,7 @@ def describe(items: dict[str, int], bit_amount: int) -> str:
     reg = get_registry()
     parts = [f"{reg.item(i).display} ×{q:,}" for i, q in items.items()]
     if bit_amount:
-        parts.append(f"{emojis.currency('bits')} **{bits(bit_amount)}** bits")
+        parts.append(f"{emojis.currency('bits')} **{emojis.bits(bit_amount)}**")
     return "\n".join(parts) if parts else "*nothing yet*"
 
 

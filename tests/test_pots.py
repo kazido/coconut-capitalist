@@ -337,7 +337,7 @@ async def test_the_pots_page_shows_upgrade_costs_and_what_a_pot_is_worth(db):
     nav, inter = await hub("fishpots")
     await click(nav, inter, "Craft a pot")
     page = all_text(nav)
-    assert find_button(nav, "Upgrade pot 1") and "level 2" in page and "bits an hour" in page and "Fishing yourself earns far more" in page
+    assert find_button(nav, "Upgrade pot 1") and "level 2" in page and "an hour" in page and "Fishing yourself earns far more" in page
 
 
 async def test_crafting_shows_what_you_have_against_what_you_need(db):
@@ -359,7 +359,7 @@ async def test_upgrading_shows_bits_and_materials_too(db):
     await click(nav, inter, "Craft a pot")
     page = all_text(nav)
     assert "Upgrade pot 1 to level 2" in page and f"**0/{P.levels[1].upgrade_items['material_hardwood']}**" in page
-    assert "bits (you have" in page
+    assert "(you have" in page
 
 
 async def test_the_tool_upgrade_page_shows_what_you_have_against_what_you_need(db):
@@ -371,4 +371,4 @@ async def test_the_tool_upgrade_page_shows_what_you_have_against_what_you_need(d
     await user.add_item("material_feather", 10)
     nav, _ = await hub("upgrade")
     page = all_text(nav)
-    assert "**10/40**" in page and "❌" in page and "bits (you have" in page
+    assert "**10/40**" in page and "❌" in page and "(you have" in page

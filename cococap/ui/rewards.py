@@ -8,6 +8,7 @@ buttons) wait on the last page.
 
 from collections.abc import Callable, Iterable, Mapping, Sequence
 
+from cococap import emojis
 from cococap.constants import Rarities
 from cococap.registry import Item, get_registry
 from cococap.services.odds import Lookup, Odds
@@ -29,7 +30,7 @@ def items_block(drops: Mapping[str, int]) -> str:
 
 
 def totals_line(bits: int = 0, xp: int = 0) -> str:
-    parts = ([f"💰 **+{bits_text(bits)}** bits"] if bits else []) + ([f"✨ **+{xp:,}** xp"] if xp else [])
+    parts = ([f"💰 **+{emojis.bits(bits)}**"] if bits else []) + ([f"✨ **+{xp:,}** xp"] if xp else [])
     return "  ·  ".join(parts)
 
 

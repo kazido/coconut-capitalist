@@ -53,7 +53,7 @@ class ShipmentsScreen(Screen):
                 item = reg.item(item_id)
                 lines.append(f"{'✅' if have >= need else '▫️'} {item.display}  **{have:,}/{need:,}**" + (f"  ·  you have {owned.get(item_id, 0):,}" if have < need and owned.get(item_id, 0) else ""))
             name, emoji = names[ship.id]
-            body.append(text(f"### {emoji} {name}\n" + "\n".join(lines) + f"\n-# Ships for **{bits(reward_bits)}** bits and {xp_text} xp"))
+            body.append(text(f"### {emoji} {name}\n" + "\n".join(lines) + f"\n-# Ships for **{emojis.bits(reward_bits)}** and {xp_text} xp"))
             usable = any(owned.get(i, 0) and ship.have.get(i, 0) < q for i, q in ship.need.items())
             body.append(row(button("Fill", emoji="📥", style=discord.ButtonStyle.primary, disabled=ship.done() or not usable, on_click=self._fill(ship.id)),
                             button("Ship", emoji="🚚", style=discord.ButtonStyle.success, disabled=not ship.done(), on_click=self._ship(ship.id))))
@@ -65,7 +65,7 @@ class ShipmentsScreen(Screen):
                 lines.append(f"{'✅' if have >= need else '▫️'} {reg.item(item_id).display}  **{have:,}/{need:,}**")
             body.append(text(f"### 🌍 Community shipment\n{bar(view.fraction, 12)}  **{view.fraction:.0%}**" + (" ✅ full!" if view.done else f"  ·  new one <t:{int(view.closes_at)}:R>")
                              + "\n" + "\n".join(lines)
-                             + f"\n-# Sized for **{view.players}** active player(s): **{bits(view.value)}** bits' worth in all. You have given **{bits(view.yours)}** bits' worth. Finishing pays everyone who gave at least {c.min_share:.0%} {c.bits_factor:.1f}x what they gave, and {c.xp:,} xp."))
+                             + f"\n-# Sized for **{view.players}** active player(s): **{emojis.bits(view.value)}**' worth in all. You have given **{emojis.bits(view.yours)}**' worth. Finishing pays everyone who gave at least {c.min_share:.0%} {c.bits_factor:.1f}x what they gave, and {c.xp:,} xp."))
             body.append(row(button("Give what it needs", emoji="🎁", style=discord.ButtonStyle.primary, disabled=view.done, on_click=self._donate)))
         if locked:
             soonest = sorted(locked, key=lambda e: e[2])[:3]

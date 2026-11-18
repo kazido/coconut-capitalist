@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import combat
 from cococap.services.combat import Battle, Unit
@@ -166,7 +167,7 @@ class FightScreen(Screen):
         recap = "\n".join(battle.log[-6:])
         if battle.outcome == "win":
             reg = get_registry()
-            loot = [f"{reg.item(i).display} ×{q:,}" for i, q in paid.items.items()] + ([f"**{paid.bits:,}** bits"] if paid.bits else [])
+            loot = [f"{reg.item(i).display} ×{q:,}" for i, q in paid.items.items()] + ([f"**{emojis.bits(paid.bits)}**"] if paid.bits else [])
             lines = [recap, f"**+{paid.xp:,}** combat xp  ·  {paid.kills} slain", "🎁 " + (", ".join(loot) if loot else "Nothing dropped this time.")]
             self.result = Result("Victory!", lines, emoji="🏆", accent=0x2ECC71, again=self._again, again_label="Fight again")
         else:

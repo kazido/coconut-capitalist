@@ -25,7 +25,7 @@ class CheckInScreen(Screen):
         wage = get_registry().rank(self.user.rank).wage
         body = [
             *self.note_block(),
-            section("### 💼 Work", f"Your wage: **{bits(wage)}** bits  ·  every {Cooldowns.WORK.value}h",
+            section("### 💼 Work", f"Your wage: **{emojis.bits(wage)}**  ·  every {Cooldowns.WORK.value}h",
                     accessory=self._claim_button(Cooldowns.WORK, self._work)),
             section("### 🌅 Daily", f"Interest on your bits + **{economy.DAILY_TOKENS}** token  ·  every {Cooldowns.DAILY.value}h",
                     accessory=self._claim_button(Cooldowns.DAILY, self._daily)),
@@ -36,13 +36,13 @@ class CheckInScreen(Screen):
 
     async def _work(self, interaction: discord.Interaction) -> None:
         reward = await economy.claim_work(self.user)
-        await self.refresh(interaction, f"{emojis.currency('bits')} Work: +{bits(reward.wage)} bits.")
+        await self.refresh(interaction, f"{emojis.currency('bits')} Work: +{emojis.bits(reward.wage)}.")
 
     async def _daily(self, interaction: discord.Interaction) -> None:
         reward = await economy.claim_daily(self.user)
         await self.refresh(
             interaction,
-            f"🌅 Daily: +{bits(reward.interest)} bits interest, +{reward.tokens} token.\n> 💡 {randfacts.get_fact()}",
+            f"🌅 Daily: +{emojis.bits(reward.interest)} interest, +{reward.tokens} token.\n> 💡 {randfacts.get_fact()}",
         )
 
     async def _weekly(self, interaction: discord.Interaction) -> None:

@@ -123,6 +123,12 @@ def ui(name: str, fallback: str = "") -> str:
 CURRENCY = {"bits": "💸", "tokens": "🪙", "luckbucks": "🍀"}
 
 
+def bits(amount: int) -> str:
+    """Bits written the way the game says them in text: "1,234 <bits icon> bits". Only for message text and headings: custom emoji
+    do not render in button labels or select options/descriptions, so those keep the plain "1,234 bits"."""
+    return f"{amount:,} {currency('bits')} bits"
+
+
 def currency(name: str) -> str:
     """The icon for a currency (``bits``, ``tokens`` or ``luckbucks``): its ``ui_<name>`` emoji, else the plain glyph."""
     return ui(name, CURRENCY[name])
