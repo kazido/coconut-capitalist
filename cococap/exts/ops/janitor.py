@@ -91,14 +91,22 @@ def find_channels(bot, cfg: JanitorConfig) -> tuple[list, list[str]]:
             if any(n in category.name.lower() for n in cfg.category_names):
                 for channel in category.text_channels:
                     found[channel.id] = channel
+    missing = []
     for cid in cfg.channel_ids:
         channel = bot.get_channel(cid)
         if channel is None:
-            problems.append(f"channel id {cid} is not visible to the bot (wrong id, or the bot cannot see it)")
+            missing.append(str(cid))
         else:
             found[cid] = channel
+    if missing:
+        problems.append(f"{len(missing)} channel id(s) are not visible to the bot ({', '.join(missing)})")
     if cfg.category_names and not any(n in c.name.lower() for n in cfg.category_names for g in bot.guilds for c in g.categories):
         problems.append(f"no category named {', '.join(cfg.category_names)} found in any server the bot is in")
+    if problems:
+        # The usual cause is that this bot account is not in the server that holds the play channels (the dev bot and the real bot are different
+        # accounts), so say exactly what this one can see.
+        seen = "; ".join(f"{g.name} ({g.id}): categories {', '.join(repr(c.name) for c in g.categories) or 'none'}" for g in bot.guilds)
+        problems.append(f"this bot ({bot.user}) can see {len(bot.guilds)} server(s): {seen or 'none'}")
     return list(found.values()), problems
 
 
