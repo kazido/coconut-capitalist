@@ -11,5 +11,5 @@ odds = 150                        # 1 in this many private trees felled (about 4
 pool = ["scroll_sharp_eye", "scroll_seasoned", "scroll_double_strike", "scroll_keen", "scroll_scholar", "scroll_appraiser"]
 
 [farming]
-odds = 30                         # 1 in this many growth cycles of what you harvest (nine plots growing for an hour is nine cycles)
+odds = 2000                       # 1 in this many growth cycles of what you harvest (a long crop is 100+ cycles). Nine plots watered every hour for a WEEK is ~1,500 cycles: under one scroll a week at the very most. TODO(balance)
 pool = ["scroll_fertile", "scroll_seedkeeper", "scroll_gleaner", "scroll_keen", "scroll_scholar", "scroll_appraiser"]

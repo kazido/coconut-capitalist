@@ -132,12 +132,19 @@ def test_every_skill_has_its_own_scrolls_and_shares_the_same_three_global_ones()
 
 
 def test_scrolls_are_rare_about_one_every_few_hours_in_each_skill():
-    # per hour of play: mining ~720 cells, foraging ~45 private trees, farming ~9 growth cycles (nine plots), fishing ~2 bosses and a chest now and then
-    per_hour = {"mining": 720 / REG.scrolls.mining.odds, "foraging": 45 / REG.scrolls.foraging.odds, "farming": 9 / REG.scrolls.farming.odds}
+    # per hour of play: mining ~720 cells, foraging ~45 private trees, fishing ~2 bosses and a chest now and then
+    per_hour = {"mining": 720 / REG.scrolls.mining.odds, "foraging": 45 / REG.scrolls.foraging.odds}
     boss = sum(r.chance for r in REG.fishing.boss.loot if r.item.startswith("scroll_"))
     per_hour["fishing"] = 1.5 * boss  # (bosses are hooked about 1 in 80 casts and not every one is landed)
     for skill, rate in per_hour.items():
         assert 1 / 6 <= rate <= 1 / 2, f"{skill}: a scroll every {1 / rate:.1f} hours"
+
+
+def test_farming_scrolls_are_about_one_a_week_at_most():
+    # nine plots watered every hour for a week is ~1,500 growth cycles (one chance each): the very busiest farmer should see under one scroll a week
+    weekly = 9 * 24 * 7 / REG.scrolls.farming.odds
+    assert weekly <= 1, f"farming: {weekly:.1f} scrolls a week for a nonstop farmer"
+    assert weekly >= 0.3, "farming scrolls are now almost never"
 
 
 def test_the_scroll_roll_drops_at_its_odds_from_the_skills_own_pool():

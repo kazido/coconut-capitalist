@@ -62,7 +62,7 @@ class PetScreen(Screen):
         body.append(text(found))
         body.append(row(select("Look at a pet...", [
             discord.SelectOption(label=reg.pets[i].name, value=i, emoji=reg.pets[i].emoji, default=i == focus,
-                                 description=f"Lv {pets.pet_level(p.xp, reg.pets[i].rarity, reg)}  ·  {skill_line(reg.pets[i])}" + ("  ·  active" if i == house.active else ""))
+                                 description=f"Lv {pets.pet_level(p.xp, reg.pets[i].rarity, reg)}  ·  {reg.pets[i].skill.title()}" + ("  ·  active" if i == house.active else ""))
             for i, p in sorted(house.pets.items())][:25], self._switch)))
         body.append(sep())
         foods = [(reg.item(i), q) for i, q in owned_items.items() if q > 0 and (it := reg.find_item(i)) and pets.food_xp(it, reg) > 0]
