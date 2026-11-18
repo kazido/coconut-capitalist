@@ -12,6 +12,5 @@ food_geode_feast = [29, 12]
 food_golden_sap = {cell = [7, 9], hue = 85, val = 1.1}
 food_honeycomb = [33, 7]  # WEAK: honey jar
 food_sea_feast = [32, 14]
-food_stone_biscuit = {cell = [32, 4], sat = 0.2, val = 0.75}  # WEAK: grey cookie
 spirit_of_the_fields = [69, 8]
 spirit_of_the_sword = [69, 12]
