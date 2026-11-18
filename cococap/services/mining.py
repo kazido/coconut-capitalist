@@ -15,7 +15,7 @@ import logging
 import random
 import time
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 from cococap.errors import GameRuleError
 from cococap.models.skills.mining import Mining
@@ -24,7 +24,7 @@ from cococap.registry.loader import BOMB_ITEM
 from cococap.registry.models import MiningRules, MineSite, MineType, Milestone, RiskLabel
 from cococap.services.equipment import equipped_stats
 from cococap.services.loot import roll_table, skewed_roll
-from cococap.services import areas, pets, scrolls
+from cococap.services import areas, pets, scrolls, stars
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -753,6 +753,10 @@ async def settle_run(user: User, run: MineRun, registry: Registry | None = None)
     for item_id, quantity in (await pets.roll_food("mining", run.lodes, run.rng, registry)).items():
         run.haul[item_id] += quantity  # pet food turns up in the rock too
         summary.haul[item_id] += quantity
+    # starred ores: the further down the list of mines, the likelier a better star (one roll per ore stack)
+    mine_no = next((i for i, s in enumerate(rules.mines, 1) if s.id == run.site.id), 1)
+    run.haul = stars.apply(run.haul, stars.progress(mine_no, len(rules.mines)), run.rng, registry)
+    summary = replace(summary, haul=Counter(run.haul))
     for item_id, quantity in run.haul.items():
         await user.add_item(item_id, quantity)
 

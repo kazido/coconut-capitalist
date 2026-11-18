@@ -157,6 +157,10 @@ cycles), **watermelon** (40) and **starfruit** (80). `python -m scripts.balance`
 ### The 14 fields (seed gating)
 `field_seeds` in `configs/farming.toml` lists the seed each farming location (`locations.toml [farming]`) opens, in order. A field is open by farming level AND the farthest area reached (`areas.reached_locations`, so seeds stay buyable after travelling back). `farming.locked_seeds(user)` = seeds not yet on sale: hidden from the shop list and refused by `shop.buy`. Planting is NOT gated (seeds from drops/trades still plant). Fields 4, 9 and 14 are drop-only crops (dandelion, wilted rose, ambrosia), so their gate only matters for the shop of the others. New crops: Rustroot (field 5), Marketfig (8), Cloudberry (10), Voidbloom (13), sell price ~30k bits per growth cycle like their neighbours. Numbers are drafts (TODO balance).
 
+Starred drops: a harvest's material extras (beeswax, living vine) go through `stars.apply` with progress = the seed's field number of 14. Mining does the same for a settled run's haul (progress = the mine's number of 14).
+
+Balance snapshot (income per active minute, stars included, starter gear): mining 13.9k at mine 1 to 43.7k at mine 14, foraging 11.6k to 50.9k, fishing 6.5k (pond) to ~76k (the bottomless, lottery fish), farming ~30k bits per plot-hour in every field. Fishing is the outlier (low early, high late); fixing it by rarer prize fish makes trophies unreachable, so it is left for a decision.
+
 ### Getting into farming
 
 Farming used to be slow to start: the first seed cost 10,000 bits (a new player has 1,000) and everything waited on the hourly

@@ -792,7 +792,7 @@ async def test_reaching_the_floor_banks_the_vault(db):
         run.danger = 0
         run.dig()
     summary = await m.settle_run(user, run)
-    assert summary.outcome == "floor" and all([await user.item_quantity(ore) >= q for ore, q in D.vault_ore.items()])
+    assert summary.outcome == "floor" and all([sum([await user.item_quantity(i) for i in (ore, f"{ore}_s2", f"{ore}_s3")]) >= q for ore, q in D.vault_ore.items()])  # (a starrable ore may come up starred)
 
 
 async def test_settling_an_unfinished_run_is_refused_and_abandoning_climbs_out_safely(db):

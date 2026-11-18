@@ -26,7 +26,7 @@ Table = per progress step, weights for 1★/2★/3★, e.g. step 1: 97/3/0; mid:
 1. TODO Rename zone -> forest in player-facing text (screens/forage.py still has 33 "zone" mentions). Small, separate commit.
 2. DONE Registry: starrable flag + generated variants + validation + tests (`tests/test_registry*.py`).
 3. DONE `services/stars.py` + `configs/stars.toml` + guard tests (3★ never majority; monotone with progress).
-4. Wire into each skill's drop grant (foraging, mining, fishing, farming), one skill at a time, with a test each. DONE foraging, fishing; TODO mining, farming.
+4. Wire into each skill's drop grant (foraging, mining, fishing, farming), one skill at a time, with a test each. DONE foraging, fishing, mining (settle_run: ore stacks of a banked run, progress = mine n of 14; wyrmhole/scarab/auto-mine stay plain), farming (harvest extras, progress = the seed's field n of 14).
 5. Edit late-tier upgrade costs + balance run; update `tests/test_economy_guard.py` if needed.
 6. UI names/wiki/shop/sell-all check; DESIGN.md section + HANDOFF "Latest state".
 
