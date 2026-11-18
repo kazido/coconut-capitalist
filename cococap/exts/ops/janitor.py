@@ -3,7 +3,7 @@
 import asyncio
 from collections import Counter
 from datetime import datetime, timedelta, timezone
-from logging import getLogger
+from logging import ERROR, getLogger
 
 import discord
 from discord import Interaction, app_commands, ui
@@ -14,6 +14,7 @@ from cococap.constants import OWNER_ID
 from cococap.services.janitor import JanitorConfig, can_bulk, idle_minutes, load_config, should_delete
 
 log = getLogger("janitor")
+log.setLevel(ERROR)  # the janitor is chatty (every sweep logs): show only real errors in the terminal
 
 
 def _age_minutes(message: discord.Message) -> float:

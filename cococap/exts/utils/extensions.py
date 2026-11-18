@@ -46,6 +46,10 @@ class Extensions(commands.Cog):
     @commands.is_owner()
     @commands.command(name="restart", aliases=("rs",))
     async def restart(self, ctx: Context) -> None:
+        try:
+            await ctx.message.delete()  # tidy the channel: the janitor removes the bot's reply, this removes the command itself
+        except discord.HTTPException:  # no Manage Messages here, or already gone
+            pass
         await ctx.send("Restarting bot...")
         await self.bot.change_presence(status=discord.Status.dnd)
         python = sys.executable
