@@ -42,13 +42,16 @@ class ForagingError(GameRuleError):
     """A rule was broken; the message is safe to show the player."""
 
 
-# ---- zones --------------------------------------------------------------------------------------------
+# ---- forests (zones) ----------------------------------------------------------------------------------
+# A zone number IS a forest number (1..rules.zones). The forests are foraging's named locations (configs/locations.toml) and
+# the level each opens at is the shared schedule in areas.location_levels, the same for every skill.
 def zone_level(zone: int, rules: ForagingRules) -> int:
-    """The foraging level a zone needs."""
-    return rules.zone_levels[min(max(zone, 1), rules.zones) - 1]
+    """The foraging level a forest (zone) needs."""
+    return get_registry().areas.location_levels[min(max(zone, 1), rules.zones) - 1]
 
 
 def unlocked_zones(level: int, rules: ForagingRules) -> list[int]:
+    """The forests (zones) a foraging level reaches. LEVEL only: area gating is the screen's job (areas.open_location_list)."""
     return [z for z in range(1, rules.zones + 1) if level >= zone_level(z, rules)]
 
 

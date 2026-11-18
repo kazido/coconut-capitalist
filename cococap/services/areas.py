@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from cococap.errors import GameRuleError
 from cococap.registry import Registry, get_registry
-from cococap.registry.models import LOCATIONS_PER_AREA, Area, ShipTier
+from cococap.registry.models import LOCATIONS_PER_AREA, Area, Location, ShipTier
 from cococap.services import community, payment
 from cococap.user import User
 
@@ -72,6 +72,21 @@ async def open_locations(user: User, skill: str, registry: Registry | None = Non
             break
         count = n
     return count
+
+
+async def open_location_list(user: User, skill: str, registry: Registry | None = None) -> list[Location]:
+    """The named locations of a skill you can use right now, in unlock order (the first N of the skill's list)."""
+    reg = registry or get_registry()
+    return reg.locations.get(skill, [])[: await open_locations(user, skill, reg)]
+
+
+def location(skill: str, location_id: str, registry: Registry | None = None) -> Location:
+    """One named location by id (saved in player state). Raises AreaError for an unknown id."""
+    reg = registry or get_registry()
+    for loc in reg.locations.get(skill, []):
+        if loc.id == location_id:
+            return loc
+    raise AreaError("There is no such location.")
 
 
 async def next_location_hint(user: User, skill: str, registry: Registry | None = None) -> str | None:

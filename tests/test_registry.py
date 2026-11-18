@@ -125,8 +125,9 @@ def test_every_zone_has_two_or_three_species_and_their_drops_are_foraging_items(
 
 
 def test_a_zone_without_a_species_is_rejected(data):
-    edit(data / "foraging.toml", "zone_min = 1\nzone_max = 5", "zone_min = 2\nzone_max = 5")
+    # zone 1 is covered by birch and oak only: move both up so no species grows there
     edit(data / "foraging.toml", 'id = "oak"\nname = "Oak"\nemoji = "🌳"\nzone_min = 1', 'id = "oak"\nname = "Oak"\nemoji = "🌳"\nzone_min = 2')
+    edit(data / "foraging.toml", 'id = "birch"\nname = "Birch"\nemoji = "🌿"\nzone_min = 1', 'id = "birch"\nname = "Birch"\nemoji = "🌿"\nzone_min = 2')
     with pytest.raises(RegistryError, match="zone"):
         load_registry(data)
 

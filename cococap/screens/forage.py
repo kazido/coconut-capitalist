@@ -6,7 +6,7 @@ import discord
 
 from cococap.registry import get_registry
 from cococap.screens.sellall import start_sell_all
-from cococap.services import foraging, party_tree, pets, releaf
+from cococap.services import areas, foraging, party_tree, pets, releaf
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import Party, xp_bonus
 from cococap.services import odds
@@ -21,11 +21,6 @@ TREE = "🌳"
 def new_rng() -> random.Random:
     """Each chopping screen's dice (tests replace this to make good chops predictable)."""
     return random.Random()
-
-
-def items_text(drops: Counter | dict) -> str:
-    reg = get_registry()
-    return ", ".join(f"{q:,} {reg.item(i).display}" for i, q in drops.items()) or "no drops"
 
 
 def reward_headline(reward: foraging.Reward) -> str:
@@ -181,9 +176,12 @@ class ForageScreen(Screen):
         await collect_community_rewards(self)
         skill = await self.user.skill("foraging")
         level = User.xp_to_level(skill.xp)
-        zones = foraging.unlocked_zones(level, rules)
+        # the forests you can chop: unlocked by level AND by area (a forest's number is its zone)
+        forests = await areas.open_location_list(self.user, "foraging", reg)
+        zones = [loc.n for loc in forests]
         if self.zone not in zones:
-            self.zone = zones[-1]
+            self.zone = zones[-1]  # an unknown or closed forest falls back to the highest open one
+        here_forest = forests[zones.index(self.zone)]
         stats = await equipped_stats(self.user, "foraging")
         overflow, needed = User.xp_for_next_level(skill.xp)
 
@@ -223,16 +221,17 @@ class ForageScreen(Screen):
         body.append(sep())
         heavy = foraging.is_heavy(self.zone, rules) and not (stats and stats.has("soloist"))
         here = ", ".join(f"{sp.emoji} {sp.name}" for sp in rules.species_in(self.zone))
-        private = f"### 🪵 A tree of your own\nForest **{self.zone}**" + (f"  ·  {here}" if here else "") + (
+        private = f"### 🪵 A tree of your own\n{here_forest.emoji} **{here_forest.name}**  ·  forest {self.zone}" + (f"  ·  {here}" if here else "") + (
             "  ·  heavy: you swing at half power alone" if heavy else "")
-        if len(zones) < rules.zones:
-            private += f"\n-# Forest {zones[-1] + 1} needs level {foraging.zone_level(zones[-1] + 1, rules)}."
+        if (hint := await areas.next_location_hint(self.user, "foraging", reg)) is not None:
+            private += f"\n-# Next forest: {hint}."
         body.append(text(private))
-        if len(zones) > 1:
+        if len(forests) > 1:
             body.append(row(select(
-                "Forest",
-                [discord.SelectOption(label=f"Forest {z}", value=str(z), default=z == self.zone,
-                                      description="Heavy trees" if foraging.is_heavy(z, rules) else None) for z in zones],
+                "Where to chop...",
+                [discord.SelectOption(label=loc.name, value=str(loc.n), emoji=loc.emoji, default=loc.n == self.zone,
+                                      description=f"Forest {loc.n}" + (" · heavy trees" if foraging.is_heavy(loc.n, rules) else ""))
+                 for loc in forests],
                 self._pick_zone,
             )))
         body.append(row(button("Chop a tree", emoji="🪓", style=discord.ButtonStyle.primary, disabled=stats is None,

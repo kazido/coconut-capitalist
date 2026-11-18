@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import AreaRules, ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
+from .models import LOCATIONS_PER_AREA, AreaRules, Location, ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -86,8 +86,10 @@ class Registry:
         scrolls: ScrollRules | None = None,
         recipes: list[Recipe] | None = None,
         areas: AreaRules | None = None,
+        locations: dict[str, list[Location]] | None = None,
     ):
         self.areas = areas
+        self.locations: dict[str, list[Location]] = locations or {}  # skill -> its named locations, in unlock order
         self.items: dict[str, Item] = {i.id: i for i in items}
         self.pets: dict[str, Pet] = {p.id: p for p in pets}
         self.enemies: dict[str, Enemy] = {e.id: e for e in enemies}
@@ -164,6 +166,22 @@ class Registry:
         for n, tier in enumerate(rules.ship_tiers, 1):
             problems += [f"areas.toml ship tier {n}: unknown part '{i}'" for i in tier.parts if i not in self.items]
             problems += [f"areas.toml ship tier {n}: unknown skill '{s}'" for s in tier.skill_floors if s not in ("mining", "fishing", "foraging", "farming")]
+        return problems
+
+    def _validate_locations(self, rules: AreaRules) -> list[str]:
+        problems = []
+        per_skill = LOCATIONS_PER_AREA * len(rules.areas)
+        for skill in ("mining", "fishing", "foraging", "farming"):
+            locs = self.locations.get(skill)
+            if not locs:
+                problems.append(f"locations.toml: no locations for '{skill}'")
+                continue
+            if len(locs) != per_skill:
+                problems.append(f"locations.toml [{skill}]: needs {per_skill} locations, has {len(locs)}")
+            ids = [loc.id for loc in locs]
+            problems += [f"locations.toml [{skill}]: duplicate id '{i}'" for i in sorted({i for i in ids if ids.count(i) > 1})]
+            if skill == "fishing" and ids[:4] != ["pond", "river", "reef", "deep_sea"]:
+                problems.append("locations.toml [fishing]: the first four must be pond, river, reef, deep_sea (saved in player state)")
         return problems
 
     def _validate_mining(self, rules: MiningRules) -> list[str]:
@@ -253,6 +271,9 @@ class Registry:
                         problems.append(f"foraging.toml species '{sp.id}': drop '{d.item}' must be a foraging item")
         if self.areas is not None:
             problems += self._validate_areas(self.areas)
+            problems += self._validate_locations(self.areas)
+            if self.foraging is not None and len(self.locations.get("foraging", [])) != self.foraging.zones:
+                problems.append("foraging.toml: zones must equal the number of foraging locations (forests) in locations.toml")
         if self.farming is not None and self.farming.deed_item not in self.items:
             problems.append(f"farming.toml: unknown deed item '{self.farming.deed_item}'")
         for table in self.drop_tables.values():
@@ -394,7 +415,27 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
     raw_areas = _read(config_dir, "areas")
     areas = _build(AreaRules, "areas", [("areas", {"areas": [{"id": k, **v} for k, v in raw_areas.get("area", {}).items()], "ship_tiers": raw_areas.get("ship_tier", []), "location_levels": raw_areas.get("locations", {}).get("min_levels", [])})])[0]
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools, shipments, scrolls, recipes, areas)
+    locations = _build_locations(_read(config_dir, "locations"), areas)
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools, shipments, scrolls, recipes, areas, locations)
+
+
+def _build_locations(raw: dict, areas: AreaRules) -> dict[str, list[Location]]:
+    """Turn locations.toml into Location rows. Area and min_level come from the location's unlock order (n), never from the file.
+    Count and id checks live in Registry._validate_locations; a wrong count here is reported before the derived fields would break."""
+    out: dict[str, list[Location]] = {}
+    for skill, entries in raw.items():
+        if not isinstance(entries, dict):
+            raise RegistryError(f"locations.toml [{skill}]: expected a table of locations")
+        if len(entries) > LOCATIONS_PER_AREA * len(areas.areas):
+            raise RegistryError(f"locations.toml [{skill}]: more locations than the areas hold")
+        rows = []
+        for n, (loc_id, fields) in enumerate(entries.items(), 1):
+            rows.append(Location(
+                skill=skill, n=n, id=loc_id, name=fields.get("name", ""), emoji=fields.get("emoji", ""),
+                area=areas.areas[(n - 1) // LOCATIONS_PER_AREA].id, min_level=areas.location_levels[n - 1],
+            ))
+        out[skill] = rows
+    return out
 
 
 @lru_cache(maxsize=1)
