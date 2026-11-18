@@ -26,22 +26,22 @@ rows = [
 rarity = 4
 palette = { w = "#ffffff", h = "#6b5c9a", m = "#3d3363", s = "#241c42", d = "#140f28", Y = "#ffd24a", y = "#fff2a0", g = "#b9761c", e = "#e89a2c", t = "#8a8aa8", T = "#55557a", f = "#b08a5a", q = "#ff9a2a", x = "#ffe14a", o = "#2e1c2c" }
 rows = [
-  "........ooofqxo.",
-  ".......ooffoooo.",
-  ".......ottoo....",
-  "....ooootTo.....",
-  "...oommmmsoo....",
-  "..oohwhmmmsoo...",
-  ".oohwhggmmssoo..",
-  ".omhhgYYgmssdo..",
-  ".ommgYyeYgssdo..",
-  ".ommgYyeYgssdo..",
-  ".ommmgYegssddo..",
-  ".osmmmggsssddo..",
-  ".oosssssssddoo..",
-  "..oossssdddoo...",
-  "...oodddddoo....",
-  "....ooooooo.....",
+  "............o...",
+  "...........oxo..",
+  "........ooofqo..",
+  "......ootTfoo...",
+  "....oohhooo.....",
+  "...ohhhhhmo.....",
+  "..ohhwhhmmso....",
+  "..ohhhhhhmmso...",
+  "..ohhhhgmmsso...",
+  "..omhhgYgmmso...",
+  "..ommheyemsso...",
+  "..osmmmgmsso....",
+  "...osmssssdo....",
+  "....oosssoo.....",
+  "......ooo.......",
+  "................",
 ]
 
 [material_compost]
@@ -68,22 +68,22 @@ rows = [
 
 [material_beeswax]
 rarity = 3
-palette = { w = "#ffffff", h = "#ffe27a", m = "#f5b83c", s = "#d68a28", d = "#a85a24", e = "#d9a02c", y = "#ffe14a", k = "#2a1c2c", f = "#8a5a24", o = "#2e1c2c" }
+palette = { h = "#fff0a0", W = "#fffbd0", m = "#f5b83c", s = "#c98424", d = "#9a5420", e = "#e6b030", y = "#ffe14a", k = "#3a2418", o = "#2e1c2c" }
 rows = [
   "................",
   "................",
   "................",
-  ".....ooooooooo..",
-  "....ohhehhhhso..",
-  "...ohhehhhhhsso.",
-  "..ommmmmmmssso..",
-  "..ommmmmmmssso..",
-  "..ommwwmmmssso..",
-  "..omykykmmssso..",
-  "..ommmykmmssdo..",
-  "..ommmmmmmsddo..",
-  "..oddddddddddo..",
-  "..oooooooooooo..",
+  ".....oooooooo...",
+  "....ohhehehhho..",
+  "...ohehehhhhso..",
+  "..ohhhhhhhhsso..",
+  ".oWWWWWWWWssso..",
+  ".oWmmmmmmmssso..",
+  ".oWmkykmmmssdo..",
+  ".oWmykymmmsdo...",
+  ".oWmkykmmmdo....",
+  ".oddddddddo.....",
+  "..oooooooo......",
   "................",
   "................",
 ]
@@ -112,45 +112,45 @@ rows = [
 
 [material_maple_leaf]
 rarity = 4
-palette = { w = "#ffd8a0", l = "#f0703a", r = "#d23a2a", R = "#9a2024", s = "#7a4a2a", o = "#2e1c2c" }
+palette = { w = "#ffb060", l = "#f0703a", r = "#d23a2a", R = "#8c1c28", s = "#7a4a2a", o = "#2e1c2c" }
 rows = [
-  "................",
-  ".......oo.......",
-  "......olro......",
-  "..oo..olrro.oo..",
-  "..olooolrrooRro.",
-  "..olllrlrrrrRRo.",
-  "...ollrlrrrRRo..",
-  "....ollrlrrRo...",
-  "...olllrlrrRRo..",
-  "..ollrrrlrrRRRo.",
-  "...ooorrrrRooo..",
-  ".......rsRo.....",
-  "......osoo......",
-  ".....os.........",
-  "....os..........",
-  "................",
+  ".......o........",
+  "......owo.......",
+  ".....owRlo......",
+  "..oo.owRlo.oo...",
+  ".owwollRllorRo..",
+  ".owRwllRlrrRRo..",
+  "..owRRlRrRRRo...",
+  "..olllRrRRRRo...",
+  "...ollRRRRRo....",
+  "....oRRRRRo.....",
+  "...orRRRRRRo....",
+  "...oRRRoRRRo....",
+  "....ooosooo.....",
+  "......oso.......",
+  ".....oso........",
+  "......o.........",
 ]
 
 [material_radar_battery]
 rarity = 2
-palette = { w = "#ffffff", t = "#c8d0dc", T = "#8a94ac", c = "#3a4a6a", h = "#6ae8d0", m = "#2fb0b0", s = "#1e7a9a", y = "#ffee6a", Y = "#f0b428", d = "#1a3a58", o = "#2e1c2c" }
+palette = { w = "#ffffff", W = "#c8fff0", t = "#dfe5ee", T = "#8a94ac", c = "#3a4a6a", C = "#5d6e92", h = "#6ae8d0", m = "#2fb0b0", s = "#1e7a9a", S = "#155a80", y = "#ffee6a", Y = "#f0b428", d = "#1a3a58", o = "#2e1c2c" }
 rows = [
   "................",
   "................",
-  "......oooo......",
-  "......otTo......",
-  "...oooottoooo...",
-  "...occcccccco...",
-  "...ohwhmmmsso...",
-  "...ohhmmyYsso...",
-  "...ohhmyYmsso...",
-  "...ohhmyyYsso...",
-  "...ohhmmYmsso...",
+  ".......oo.......",
+  "......owto......",
+  "....oTTTTTTo....",
+  "...oCCcccccco...",
+  "...oWhhmmmsSo...",
+  "...oWhmmyYsSo...",
+  "...oWhmyYmsSo...",
+  "...oWhmyyYsSo...",
+  "...oWhmmYmsSo...",
+  "...oWhhmmmsSo...",
   "...oddddddddo...",
   "...ooddddddoo...",
   "....oooooooo....",
-  "................",
   "................",
 ]
 
