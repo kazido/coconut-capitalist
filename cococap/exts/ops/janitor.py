@@ -73,6 +73,25 @@ class ConfirmView(ui.View):
         await interaction.response.edit_message(content="Cancelled. Nothing was deleted.", view=None)
 
 
+def find_channels(bot, cfg: JanitorConfig) -> tuple[list, list[str]]:
+    """The channels to sweep: every text channel in a category named in the config, plus the listed ids. Returns (channels, problems)."""
+    found, problems = {}, []
+    for guild in bot.guilds:
+        for category in guild.categories:
+            if category.name.lower() in cfg.category_names:
+                for channel in category.text_channels:
+                    found[channel.id] = channel
+    for cid in cfg.channel_ids:
+        channel = bot.get_channel(cid)
+        if channel is None:
+            problems.append(f"channel id {cid} is not visible to the bot (wrong id, or the bot cannot see it)")
+        else:
+            found[cid] = channel
+    if cfg.category_names and not any(c.name.lower() in cfg.category_names for g in bot.guilds for c in g.categories):
+        problems.append(f"no category named {', '.join(cfg.category_names)} found in any server the bot is in")
+    return list(found.values()), problems
+
+
 class Janitor(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -91,19 +110,25 @@ class Janitor(commands.Cog):
     async def sweep(self):
         limit = 0 if self._startup else self.cfg.idle_minutes
         self._startup = False
-        for cid in self.cfg.channel_ids:
-            channel = self.bot.get_channel(cid)
-            if channel is None:
+        channels, problems = find_channels(self.bot, self.cfg)
+        for problem in problems:
+            log.warning("janitor: %s", problem)
+        if limit == 0:
+            log.info("janitor startup pass over %s channel(s): %s", len(channels), ", ".join(f"#{c.name}" for c in channels) or "none")
+        for channel in channels:
+            perms = channel.permissions_for(channel.guild.me)
+            if not (perms.manage_messages and perms.read_message_history):
+                log.warning("janitor: the bot lacks Manage Messages and/or Read Message History in #%s", channel.name)
                 continue
             try:
                 messages = await collect(channel, self.bot.user.id, limit)
                 if messages:
                     n = await delete_all(channel, messages, self.cfg)
-                    log.info("janitor deleted %s message(s) in %s", n, cid)
+                    log.info("janitor deleted %s message(s) in #%s", n, channel.name)
             except discord.Forbidden:
-                log.warning("janitor lacks Manage Messages / Read Message History in %s", cid)
+                log.warning("janitor lacks Manage Messages / Read Message History in #%s", channel.name)
             except Exception:  # noqa: BLE001 - a failed sweep must not stop the loop
-                log.exception("janitor sweep failed in %s", cid)
+                log.exception("janitor sweep failed in #%s", channel.name)
 
     @sweep.before_loop
     async def _wait(self):
@@ -117,12 +142,17 @@ class Janitor(commands.Cog):
             return
         await interaction.response.defer(ephemeral=True)
         # One-time pass: every bot message goes, whatever its age (limits of 0).
-        cfg = JanitorConfig(True, self.cfg.channel_ids, 0, 0, self.cfg.delete_delay_seconds)
+        cfg = self.cfg
         plan, lines = {}, []
-        for cid in cfg.channel_ids:
-            channel = self.bot.get_channel(cid)
-            if channel is None:
-                lines.append(f"<#{cid}>: not visible to the bot")
+        channels, problems = find_channels(self.bot, cfg)
+        lines += [f"⚠️ {p}" for p in problems]
+        if not channels:
+            lines.append("I found no channels to clean, so nothing can be deleted.")
+        for channel in channels:
+            cid = channel.id
+            perms = channel.permissions_for(channel.guild.me)
+            if not (perms.manage_messages and perms.read_message_history):
+                lines.append(f"<#{cid}>: the bot lacks Manage Messages and/or Read Message History here")
                 continue
             try:
                 messages = await collect(channel, self.bot.user.id, 0)

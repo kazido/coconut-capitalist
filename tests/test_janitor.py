@@ -32,3 +32,19 @@ def test_an_edited_menu_counts_as_just_touched():
     assert idle_minutes(posted, now - timedelta(minutes=2), now) == 2  # clicked 2 minutes ago: still being played
     assert not should_delete(idle=idle_minutes(posted, now - timedelta(minutes=2), now), from_bot=True, limit=5)
     assert should_delete(idle=idle_minutes(posted, now - timedelta(minutes=9), now), from_bot=True, limit=5)  # abandoned
+
+
+def test_channels_are_found_by_category_name_and_missing_ids_are_reported():
+    from types import SimpleNamespace as NS
+
+    from cococap.exts.ops.janitor import find_channels
+    from cococap.services.janitor import JanitorConfig
+
+    play, other = NS(id=1, name="play"), NS(id=2, name="chat")
+    guild = NS(categories=[NS(name="Gambling", text_channels=[play]), NS(name="General", text_channels=[other])])
+    bot = NS(guilds=[guild], get_channel=lambda cid: None)
+    cfg = JanitorConfig(True, (999,), ("gambling",), 5, 5, 0.1)
+    channels, problems = find_channels(bot, cfg)
+    assert channels == [play] and len(problems) == 1 and "999" in problems[0]
+    none_found, problems = find_channels(NS(guilds=[], get_channel=lambda cid: None), JanitorConfig(True, (), ("gambling",), 5, 5, 0.1))
+    assert none_found == [] and "no category" in problems[0]
