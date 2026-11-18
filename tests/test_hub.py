@@ -428,7 +428,7 @@ async def test_mining_screen_reactor_buttons(db):
     assert (await user.skill("mining")).reactor.core_1.gem_id == "key_gemstone_sanity"
     assert "Inserted: Sanity" in all_text(nav)
     await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")  # picking an ore says exactly what feeding it does
-    assert "A full meter needs" in all_text(nav) and find_button(nav, "Feed 1").disabled  # (no copper to feed)
+    assert "full needs" in all_text(nav) and find_button(nav, "Feed 1").disabled  # (no copper to feed)
     await user.add_item("material_copper_ore", 30)
     nav, inter = await hub("reactor")
     await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")
@@ -908,7 +908,7 @@ async def test_the_reactor_has_its_own_page_reachable_from_mining(db):
     assert nav.screen.id == "reactor"
     text = all_text(nav)
     assert "Reactor Level 1" in text and "Auto-miner" in text and "empty: Sanity" in text
-    assert "Digs **1** column" in text and "Wyrmholes: 1 in" in text
+    assert "**1** column" in text and "wyrmhole **1 in" in text
     assert {b.label for b in buttons(nav)} >= {"Claim lodes", "Insert gems", "Prestige"}
     assert find_button(nav, "Back")  # Back returns to Mining
     await click(nav, inter, "Back")
