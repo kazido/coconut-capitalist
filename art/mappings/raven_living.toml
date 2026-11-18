@@ -5,13 +5,10 @@ fish_cod = {cell = [22, 12], ramp = ["#2e2418", "#6a5a38", "#a89868", "#e4dcb4"]
 fish_herring = {cell = [21, 15], hue = 160, sat = 0.35, val = 1.15}  # WEAK: recoloured clownfish
 fish_sardine = [34, 15]  # WEAK: fish-on-a-diagonal icon, small
 fish_perch = [21, 12]
-fish_trout = {cell = [21, 9], ramp = ["#2e2a1c", "#4a6a3a", "#8aa860", "#e6d89a"]}
-fish_bass = [22, 15]
 fish_pike = [22, 9]
 fish_muskie = {cell = [21, 14], hue = 40, sat = 0.7, val = 0.75}
 fish_salmon = {cell = [22, 13], ramp = ["#2e1c2c", "#8a4a46", "#e4755a", "#ffc4a8"]}
 fish_catfish = {cell = [21, 10], ramp = ["#2a2024", "#5a4a46", "#8e7a6c", "#cdbfae"]}
-fish_tuna = {cell = [21, 11], ramp = ["#1a2440", "#2e4f86", "#6a98c4", "#d8e6ee"]}
 fish_marlin = {cell = [22, 10], hue = 175, sat = 1.1, val = 1.0}
 fish_sturgeon = {cell = [21, 13], hue = 0, sat = 0.5, val = 0.85}  # WEAK: just a brown fish, no armour plates
 fish_pufferfish = [21, 8]  # WEAK: spotted yellow blob, not clearly puffed

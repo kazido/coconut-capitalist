@@ -2,46 +2,46 @@
 
 [fish_sardine]
 rarity = 1
-palette = { B = "#3b4f9a", b = "#5b86c8", s = "#b5c9e6", h = "#e6eef8", y = "#f3dfd2", d = "#7a78b8", t = "#6f78c0", e = "#1a1030", w = "#ffffff", o = "#2e1c2c" }
+palette = { D = "#2e5470", M = "#6896b0", L = "#c4dae6", W = "#f2f8fb", s = "#2a4a64", f = "#3a6280", F = "#5a8aa6", e = "#1a1030", o = "#2e1c2c" }
 rows = [
   "................",
   "................",
   "................",
-  "...ooooooo...oo.",
-  "..oBBBBBBBo.otto",
-  ".oBBBBBBBBBottto",
-  "oBBbbbbbbbbttto.",
-  "oBebbbbbbbbtto..",
-  "osswssssssdttto.",
-  "ohhhhsssssdottto",
-  ".ooyyyyyyyo.otto",
-  "...ooooooo...oo.",
-  "................",
-  "................",
-  "................",
-  "................",
+  ".........ooo....",
+  "........oDDMo...",
+  ".....oooDeeWo...",
+  "....offDsMLWo...",
+  ".....oDsMLWo....",
+  "....oDsMLWo.....",
+  "....oDsLWo......",
+  "...oDMLWo.......",
+  ".oofMWoo........",
+  "offofo..........",
+  ".oofo...........",
+  "..ofo...........",
+  "...o............",
 ]
 
 [fish_herring]
 rarity = 1
-palette = { T = "#2d5f86", g = "#3f8fa6", b = "#6fb7d0", s = "#bcd6e6", h = "#eef6fa", y = "#f4e8d8", d = "#4a5c9a", t = "#5a7ab8", e = "#1a1030", w = "#ffffff", o = "#2e1c2c" }
+palette = { D = "#2a4a7c", M = "#5c8cba", L = "#bcd2e6", W = "#f2f8fb", f = "#34588a", F = "#4a74a4", e = "#1a1030", o = "#2e1c2c" }
 rows = [
   "................",
   "................",
-  "....oooo........",
-  "..ooddddooo.oo..",
-  ".oTTTTTTTTTotto.",
-  "oTTTTTTTTTTttto.",
-  "oTTggggggggtttto",
-  "oTebbbbbbbbttoo.",
-  "osswsssssssttto.",
-  "ohhhhsssssdtttto",
-  "oyyhhhhhhhhdotto",
-  ".oyyyyyyyyyo.oo.",
-  "..ooooooooo.....",
-  "................",
-  "................",
-  "................",
+  "...........o....",
+  ".........ooDo...",
+  ".......ooDeMWo..",
+  ".....ooDDMeLo...",
+  "....ofDDMMLWo...",
+  ".....oDMMLWo....",
+  "....oDMMLWWo....",
+  "...oDMMLWWo.....",
+  "...oDMLWoo......",
+  ".ooDMLWo........",
+  "offFWoo.........",
+  "ofofo...........",
+  ".offo...........",
+  "..oo............",
 ]
 
 [fish_megaladegalodon]
@@ -438,5 +438,71 @@ rows = [
   "....odGGGGGGGGo.",
   ".....oooddoooGdo",
   "........oo...oo.",
+]
+
+[fish_trout]
+rarity = 2
+palette = { D = "#46663a", M = "#7a9c58", L = "#c2d0a6", W = "#f2eecc", p = "#e07a8c", s = "#2c4426", f = "#34502c", F = "#58743c", e = "#1a1030", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "..........oo....",
+  "........ooDDo...",
+  "......ooDDeMWo..",
+  "....oofDsMeLWo..",
+  "...offDDpMLWo...",
+  "....oDDpMLWWo...",
+  "....osMsLWWfo...",
+  "...oDMMLWWofo...",
+  "..oDMMLWWo.o....",
+  "oooDMLWoo.......",
+  "FffMLWo.........",
+  "ofofoo..........",
+  ".offo...........",
+  "..oFo...........",
+]
+
+[fish_tuna]
+rarity = 4
+palette = { D = "#1c3668", M = "#3868a8", L = "#9cbad6", W = "#e6eef2", Y = "#f0d048", f = "#162a54", F = "#2a4a84", e = "#1a1030", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  ".........ooo....",
+  ".......ooDDDo...",
+  "....oooDDDeMWo..",
+  "...offDDDMeLWo..",
+  "....oDDDMMLWWo..",
+  "...ooDDMMLLWo...",
+  "..ofDDMMLLWWo...",
+  "..oYDMMLLWWfo...",
+  "..oYMMLWWWofo...",
+  "oooDMLWWoo.o....",
+  "FffMWYYo........",
+  "ffofooo.........",
+  "ooffo...........",
+  ".ofFo...........",
+]
+
+[fish_bass]
+rarity = 3
+palette = { D = "#2c5636", M = "#58884a", L = "#aac46c", W = "#eee8b4", p = "#243e2c", f = "#294a2e", F = "#4a7a40", e = "#1a1030", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "..........oo....",
+  "........ooDDo...",
+  "......ooDDeMWo..",
+  "....oofDDMeLWo..",
+  "...offDDppLWo...",
+  "...ofDDppLWWo...",
+  "....oDMpLWWfo...",
+  "...oDMpLWWofo...",
+  "..oDMpLWWo.o....",
+  "oooDpLWoo.......",
+  "FffMLWo.........",
+  "ofofoo..........",
+  ".offo...........",
+  "..oFo...........",
 ]
 
