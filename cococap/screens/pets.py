@@ -41,11 +41,9 @@ class PetScreen(Screen):
         house = self.user.pethouse
         owned_items = await self.user.items()
         body = [*self.note_block()]
-        orbs_button = button("Familiar Orbs", emoji=emojis.icon("orb", "🔮"), style=discord.ButtonStyle.primary, on_click=self._to_orbs)
 
         if not house.pets:
-            body.append(text("No pets yet. A **Familiar Orb** hatches one (found while fishing, or in the shop). Every pet gives a bonus."))
-            body.append(row(orbs_button))
+            body.append(text("No pets yet. A **Familiar Orb** hatches one (found while fishing, or in the shop; switch to the Familiar Orbs page with the menu above). Every pet gives a bonus."))
             return Page("Pets", body, accent=0x27AE60)
 
         focus = self.focus_id(house)
@@ -66,8 +64,6 @@ class PetScreen(Screen):
             discord.SelectOption(label=reg.pets[i].name, value=i, emoji=reg.pets[i].emoji, default=i == focus,
                                  description=f"Lv {pets.pet_level(p.xp, reg.pets[i].rarity, reg)}  ·  {skill_line(reg.pets[i])}" + ("  ·  active" if i == house.active else ""))
             for i, p in sorted(house.pets.items())][:25], self._switch)))
-        body.append(row(orbs_button))
-
         body.append(sep())
         foods = [(reg.item(i), q) for i, q in owned_items.items() if q > 0 and (it := reg.find_item(i)) and pets.food_xp(it, reg) > 0]
         foods.sort(key=lambda e: (pets.food_skill(e[0]) or "", pets.food_xp(e[0], reg)))
@@ -86,9 +82,6 @@ class PetScreen(Screen):
                                      description=f"+{rules.spirit_bonus:.0%} {s.skill} xp while it is active") for s, q in spirits][:25],
                                    self._spirit)))
         return Page("Pets", body, accent=0x27AE60)
-
-    async def _to_orbs(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "pets", tab="orbs")
 
     @staticmethod
     def _food_note(food, pet, reg) -> str:
@@ -177,7 +170,6 @@ class OrbScreen(Screen):
             else:
                 body.append(row(button(f"Buy {orb.name} ({orb.price:,} bits)", emoji=orb.emoji, style=discord.ButtonStyle.success,
                                        disabled=not orb.buyable or self.user.purse < orb.price, on_click=self._buy(orb_id))))
-        body.append(row(button("Your pets", emoji=emojis.icon("paw", "🐾"), on_click=self._to_pets)))
         return Page("Familiar Orbs", body, accent=0x27AE60)
 
     def _buy(self, item_id: str):
@@ -195,9 +187,6 @@ class OrbScreen(Screen):
     async def _purchase(self, interaction: discord.Interaction, item_id: str, quantity: int) -> None:
         purchase = await shop.buy(self.user, item_id, quantity)
         await self.refresh(interaction, f"Bought {purchase.quantity:,} × {get_registry().item(item_id).name} for {emojis.bits(purchase.total)}.")
-
-    async def _to_pets(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "pets", tab="pets")
 
     async def _hunt(self, interaction: discord.Interaction, values: list[str]) -> None:
         pet = await pets.set_target(self.user, None if values[0] == "none" else values[0])

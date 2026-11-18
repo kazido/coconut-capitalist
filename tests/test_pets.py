@@ -295,7 +295,9 @@ async def test_the_frog_makes_crops_grow_more_often_and_the_bee_makes_harvests_b
 async def test_the_pet_house_for_someone_with_no_pets_explains_orbs(db):
     nav, inter = await hub("pets")
     assert "No pets yet" in all_text(nav) and "Familiar Orb" in all_text(nav)
-    await click(nav, inter, "Familiar Orbs")
+    assert not any(b.label == "Familiar Orbs" for b in buttons(nav))  # the tab menu switches pages now
+    nav.screen.tab = "orbs"
+    await nav.refresh(inter)
     assert nav.screen.tab == "orbs" and find_button(nav, f"Buy Familiar Orb ({REG.item(pets.ORB).price:,} bits)").disabled
 
 
@@ -329,7 +331,8 @@ async def test_opening_an_orb_from_the_orbs_page_shows_a_result_page(db, monkeyp
     assert "Another Drizzle" in all_text(nav) and "2" in all_text(nav)
     await click(nav, inter, "Back to the orbs")
     assert nav.screen.tab == "orbs"
-    await click(nav, inter, "Your pets")
+    nav.screen.tab = "pets"
+    await nav.refresh(inter)
     assert nav.screen.id == "pets" and "Drizzle" in all_text(nav) and "⭐⭐" in all_text(nav)
 
 
@@ -589,13 +592,13 @@ async def test_the_pet_page_puts_the_description_under_the_name_and_stars_only_o
     assert user
 
 
-async def test_the_orbs_and_pet_pages_link_to_each_other(db):
+async def test_the_orbs_and_pet_pages_are_switched_by_the_tab_menu_not_buttons(db):
     await with_pet("drizzle")
     nav, inter = await hub("pets")
-    await click(nav, inter, "Familiar Orbs")
-    assert nav.screen.tab == "orbs"
-    await click(nav, inter, "Your pets")
-    assert nav.screen.id == "pets"
+    assert not any(b.label == "Familiar Orbs" for b in buttons(nav))
+    nav.screen.tab = "orbs"
+    await nav.refresh(inter)
+    assert not any(b.label == "Your pets" for b in buttons(nav))
 
 
 # ---- pets level as you play, and a much wider range of strength -----------------------------------------------------------------------
