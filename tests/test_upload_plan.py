@@ -69,3 +69,4 @@ def test_find_files_reads_a_folder(tmp_path):
 def test_only_suffix_filters():
     plan = plan_upload(set(), [f("rod_iron_tip"), f("tidecaller_rod"), f("material_iron_ore")], only_suffix="_rod")
     assert names(plan.upload) == ["tidecaller_rod"]
+

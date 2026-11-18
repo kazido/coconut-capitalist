@@ -103,9 +103,8 @@ class ShopScreen(Screen):
             detail = f"### {picked.display}\n×{owned:,}  ·  {bits(picked.sell_price)} each  ·  **{bits(picked.sell_price * owned)}** for all"
             action = button("Sell", style=discord.ButtonStyle.success, on_click=self._ask_quantity(picked.id, "sell", owned))
         art = emojis.image_url("item", picked.id)
-        # A section holds one accessory: the big picture when we have it (button goes below), else the button.
-        detail_block = [section_art(detail, art), row(action)] if art else [section(detail, accessory=action)]
-        return [text("\n".join(lines)), row(select("Pick an item...", options, self._pick)), *detail_block]
+        # Discord gives a dropdown a whole row, so the button sits straight under it: list, details (+picture), dropdown, button.
+        return [text("\n".join(lines)), section_art(detail, art), row(select("Pick an item...", options, self._pick)), row(action)]
 
     async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.selected = values[0]
