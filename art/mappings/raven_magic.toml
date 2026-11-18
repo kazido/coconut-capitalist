@@ -40,7 +40,6 @@ ui_upgrade = {cell = [54, 0], framed = false}
 ui_craft = {cell = [7, 13], framed = false}
 ui_star = {cell = [0, 11], framed = false}
 ui_key = {cell = [4, 6], framed = false}
-ui_flame = {cell = [43, 4], framed = false}
 ui_boss = {cell = [14, 0], framed = false}
 ui_unknown = {cell = [0, 12], framed = false}
 ui_tree = {cell = [1, 15], framed = false}
@@ -71,8 +70,6 @@ ui_crate = {cell = [0, 8], framed = false}
 ui_gift = {cell = [0, 8], hue = 300, framed = false}
 ui_bag = {cell = [0, 13], framed = false}
 ui_skull = {cell = [14, 0], framed = false}
-ui_swirl = {cell = [46, 0], framed = false}
-ui_sparkle = {cell = [61, 10], framed = false}
 ui_party = {cell = [65, 6], framed = false}
 ui_money = {cell = [9, 15], framed = false}
 ui_anvil = {cell = [7, 12], framed = false}

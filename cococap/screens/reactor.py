@@ -208,7 +208,7 @@ class WyrmholePane(Screen):
             return Page("Wyrmhole", body, accent=0x9B59B6)
         item_id, quantity = hole.revealed
         body += [sep(), text("## Your pick\n" + loot_lines(Counter({item_id: quantity}))),
-                 row(button("Back to the mines", emoji=emojis.icon("pickaxe", "⛏️"), on_click=self._back))]
+                 row(button("Back to the mines", emoji=emojis.icon("dig", "⛏️"), on_click=self._back))]
         return Page("Wyrmhole", body, accent=0x9B59B6)
 
     def _small_page(self, hole: mining.WyrmholeSession) -> Page:
@@ -230,7 +230,7 @@ class WyrmholePane(Screen):
     def _controls(self):
         return row(
             button(emoji=emojis.icon("prev", "⬅️"), on_click=self._move(-1)),
-            button("Dig", emoji=emojis.icon("pickaxe", "⛏️"), style=discord.ButtonStyle.primary, on_click=self._dig),
+            button("Dig", emoji=emojis.icon("dig", "⛏️"), style=discord.ButtonStyle.primary, on_click=self._dig),
             button(emoji=emojis.icon("next", "➡️"), on_click=self._move(1)),
         )
 

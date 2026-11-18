@@ -47,4 +47,4 @@ async def page(user: User, stats: dict[str, int]) -> StatPage:
         ]),
         ("Ores mined", ores),
     ]
-    return StatPage("mining", "Mining", emojis.icon("pickaxe", "⛏️"), groups)
+    return StatPage("mining", "Mining", emojis.icon("dig", "⛏️"), groups)

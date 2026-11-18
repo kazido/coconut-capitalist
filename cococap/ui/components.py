@@ -84,13 +84,21 @@ def user_select(
 
 # What each kind of bar is called and its colour (the segments are art/sources/ui_bar_<colour>_<left|mid|right>, cut from the pixel UI pack
 # by art/bars_from_pack.py; the empty part is shared: ui_bar_empty_*). XP bars are separate (xp_bar below).
-BAR_COLOURS = {"hp": "red", "wear": "yellow", "progress": "green", "meter": "blue"}
+# hp and wear are "health" bars: their colour follows how much is left (see health_colour). progress (a goal filling up) is green; meter
+# (Releaf, the reactor magnet) is always blue.
+BAR_COLOURS = {"progress": "green", "meter": "blue"}
+HEALTH_KINDS = ("hp", "wear")
+
+
+def health_colour(fraction: float) -> str:
+    """Green when full, yellow from 75% down to 25%, red below 25%."""
+    return "green" if fraction > 0.75 else "yellow" if fraction >= 0.25 else "red"
 
 
 def colored_bar(fraction: float, width: int, kind: str) -> str | None:
     """A bar of pixel-art segments: left end, `width` middles, right end. Filled part in the kind's colour, the rest dark. None when the
     segments are not uploaded (the caller then falls back to the plain text bar)."""
-    colour = BAR_COLOURS[kind]
+    colour = health_colour(fraction) if kind in HEALTH_KINDS else BAR_COLOURS[kind]
     names = {(c, p): emojis.ui(f"bar_{c}_{p}") for c in (colour, "empty") for p in ("left", "mid", "right")}
     if not all(names.values()):
         return None
