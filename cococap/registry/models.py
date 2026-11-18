@@ -1049,13 +1049,13 @@ class RecordRules(_Data):
 
 
 class WaterRules(_Data):
-    """A place to fish: unlocked by fishing level, with its own fish (each `fish = N` means 1 in N, rarest rolled first)."""
+    """A place to fish (one per fishing location, same order as configs/locations.toml): its own fish (each `fish = N` means 1 in N,
+    rarest rolled first). Its name and emoji come from the location (the loader fills them in), and its unlock level from areas."""
 
     id: str
-    name: str
+    name: str = ""
     emoji_raw: str = Field(default="🌊", alias="emoji")
     description: str = ""
-    min_level: int = Field(ge=1)
     wait_multiplier: float = Field(gt=0)  # deeper water takes longer to bite
     xp: int = Field(ge=0)  # xp for every fish landed here: deeper waters pay more, a better rod never does
     fish: dict[str, int] = Field(min_length=1)

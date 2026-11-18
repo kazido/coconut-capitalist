@@ -19,7 +19,7 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.fishing import Pot
 from cococap.registry import Item, Registry, get_registry
 from cococap.registry.models import FishingRules, PotLevel
-from cococap.services import payment, pets
+from cococap.services import areas, payment, pets
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -83,7 +83,7 @@ async def craft(user: User, now: float | None = None, registry: Registry | None 
         nxt = next((n for n in rules.pots.slot_levels if n > level), None)
         raise PotError("You have all the pots you can look after" + (f" until fishing level {nxt}." if nxt else "."))
     await _pay(user, rules.pots.craft_bits, rules.pots.craft_items, reg)
-    water = [w for w in rules.waters if w.min_level <= level][-1].id
+    water = (await areas.open_location_list(user, "fishing", reg))[-1].id  # the newest water you can fish
     pot = Pot(level=1, water=water)
 
     def add(skill) -> None:
@@ -132,9 +132,7 @@ def _get(skill, index: int) -> Pot:
 async def set_water(user: User, index: int, water_id: str, now: float | None = None, registry: Registry | None = None) -> None:
     reg = registry or get_registry()
     now = time.time() if now is None else now
-    level = await _level(user)
-    water = next((w for w in reg.fishing.waters if w.id == water_id), None)
-    if water is None or level < water.min_level:
+    if water_id not in {loc.id for loc in await areas.open_location_list(user, "fishing", reg)}:
         raise PotError("You haven't opened that water yet.")
     pot = _get(await user.skill("fishing"), index)
     if ready(pot, now, reg, await pets.bonuses(user, reg)):

@@ -240,11 +240,9 @@ class Registry:
             for w in self.fishing.waters:
                 problems += [f"fishing.toml water '{w.id}': '{f}' is not a fish" for f in w.fish
                              if f not in self.items or self.items[f].category != "fish"]
-            if self.fishing.waters[0].min_level != 1:
-                problems.append("fishing.toml: the first water must be open from level 1")
-            levels = [w.min_level for w in self.fishing.waters]
-            if levels != sorted(levels):
-                problems.append("fishing.toml: waters must be listed shallowest first")
+            loc_ids = [loc.id for loc in self.locations.get("fishing", [])]
+            if [w.id for w in self.fishing.waters] != loc_ids:
+                problems.append("fishing.toml: waters must be one per fishing location, in locations.toml order")
             pots = self.fishing.pots
             problems += [f"fishing.toml pots: unknown item '{i}'" for i in (*pots.craft_items, *(m for lv in pots.levels for m in lv.upgrade_items))
                          if i not in self.items]
@@ -401,7 +399,10 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     items = items + star_variants(items, economy.stars)
     farming = _build(FarmingRules, "farming", [("farming", _read(config_dir, "farming"))])[0]
     foraging = _build(ForagingRules, "foraging", [("foraging", _read(config_dir, "foraging"))])[0]
-    fishing = _build(FishingRules, "fishing", [("fishing", _read(config_dir, "fishing"))])[0]
+    raw_areas = _read(config_dir, "areas")
+    areas = _build(AreaRules, "areas", [("areas", {"areas": [{"id": k, **v} for k, v in raw_areas.get("area", {}).items()], "ship_tiers": raw_areas.get("ship_tier", []), "location_levels": raw_areas.get("locations", {}).get("min_levels", [])})])[0]
+    locations = _build_locations(_read(config_dir, "locations"), areas)
+    fishing = _name_waters(_build(FishingRules, "fishing", [("fishing", _read(config_dir, "fishing"))])[0], locations)
     raw = _read(config_dir, "combat")
     raw["skills"] = {k: {"id": k, **v} for k, v in raw.get("skills", {}).items()}
     raw["encounters"] = [{"id": k, **v} for k, v in raw.get("encounters", {}).items()]
@@ -413,10 +414,14 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     shipments = _build(ShipmentRules, "shipments", [("shipments", _read(config_dir, "shipments"))])[0]
     scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
     recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
-    raw_areas = _read(config_dir, "areas")
-    areas = _build(AreaRules, "areas", [("areas", {"areas": [{"id": k, **v} for k, v in raw_areas.get("area", {}).items()], "ship_tiers": raw_areas.get("ship_tier", []), "location_levels": raw_areas.get("locations", {}).get("min_levels", [])})])[0]
-    locations = _build_locations(_read(config_dir, "locations"), areas)
     return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools, shipments, scrolls, recipes, areas, locations)
+
+
+def _name_waters(rules: FishingRules, locations: dict[str, list[Location]]) -> FishingRules:
+    """Each water takes its name and emoji from its fishing location (configs/locations.toml), so they are written only once."""
+    by_id = {loc.id: loc for loc in locations.get("fishing", [])}
+    waters = [w.model_copy(update={"name": by_id[w.id].name, "emoji_raw": by_id[w.id].emoji}) if w.id in by_id else w for w in rules.waters]
+    return rules.model_copy(update={"waters": waters})
 
 
 def _build_locations(raw: dict, areas: AreaRules) -> dict[str, list[Location]]:
