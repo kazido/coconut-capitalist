@@ -225,6 +225,9 @@ async def sync(user: User, now: float | None = None, registry: Registry | None =
     seen: list[RainReport] = []
     grow = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
     farming = await user.update_skill("farming", lambda m: seen.append(apply_rain(m, user.id, now, reg, grow)))
+    ready = sum(1 for v in plot_views(farming, reg) if v.ready)
+    if ready:
+        await user.stat_best("most_ready_at_once", ready)  # stats page: most plots ready to harvest at once
     return farming, seen[0]
 
 
@@ -305,6 +308,8 @@ async def water(user: User, now: float | None = None, registry: Registry | None 
                     outcome["matured"].append(number)
 
     await user.update_skill("farming", pour)
+    if outcome["watered"]:
+        await user.inc_stat("plots_watered", outcome["watered"])  # stats page
     return WaterReport(outcome["watered"], outcome["grew"], tuple(outcome["matured"]), outcome["thirsty"], can.power)
 
 
@@ -329,6 +334,7 @@ async def buy_plot(user: User, number: int, registry: Registry | None = None) ->
     except Exception:
         await user.add_item(rules.deed_item, 1)  # never swallow the deed
         raise
+    await user.inc_stat("deeds_bought")  # stats page
 
 
 async def plant(
@@ -417,6 +423,8 @@ async def tend(user: User, rng: random.Random, now: float | None = None, registr
     await user.update_skill("farming", collect)
     if not waiting:
         raise FarmingError("Nothing has grown since you last tended.")
+    await user.inc_stat("tends")  # stats page
+    await user.inc_stat("cycles_tended", sum(cycles for _, cycles in waiting))
     found: Counter = Counter()
     for seed_id, cycles in waiting:
         expected = cycles * _byproduct_rolls(seed_id, rules) * (1 + luck)
@@ -497,6 +505,7 @@ async def harvest(
 
         await user.update_skill("farming", restore)  # the crop never arrived: the plot is still ripe
         raise
+    await user.inc_stat(f"harvested:{taken['crop']}", taken["amount"])  # stats page: harvests by crop
     extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0)
     field_no = reg.farming.field_seeds.index(taken["seed"]) + 1 if taken["seed"] in reg.farming.field_seeds else 1
     extras = stars.apply(extras, stars.progress(field_no, len(reg.farming.field_seeds)), rng, reg)  # starred materials: the further the field, the better the star
@@ -509,6 +518,7 @@ async def harvest(
     anomaly = rng.randint(1, rules.anomaly_odds) == 1
     if anomaly:
         await user.refresh_cooldowns(Cooldowns.WORK, Cooldowns.DAILY)
+        await user.inc_stat("anomalies")  # stats page
     return Harvest(number, taken["crop"], taken["amount"], taken["xp"], anomaly, extras, taken.get("replanted", False))
 
 
@@ -563,6 +573,7 @@ async def sell_crops(user: User, now: float | None = None, registry: Registry | 
     if not sold:
         raise FarmingError("You have no crops to sell.")
     await user.inc_stat("items_sold", sum(sold.values()))
+    await user.inc_stat("crop_bits_sold", earned)  # stats page
     return earned, sold
 
 
@@ -592,4 +603,7 @@ async def deposit_blessings(
         except Exception:
             await user.update_skill("farming", lambda m: setattr(m, "rain_god_blessings", m.rain_god_blessings + taken["n"]))
             raise
+    await user.inc_stat("blessings_deposited", taken["n"])  # stats page
+    if deeds:
+        await user.inc_stat("deeds_from_blessings", deeds)
     return taken["n"], deeds

@@ -133,6 +133,7 @@ async def swing_at(screen: Screen, power: int, stance: str, tree_key: object, sp
     pet = await pets.bonuses(screen.user)
     swing = screen.spot.swing(power, rules, screen.rng, stats.stats.get("good_chop", 0.0) + pet.get("good_chop", 0.0), stance,
                               stats.stats.get("wear_slow", 0.0), stats.stats.get("double_chop", 0.0), stats.stats.get("clean_cut", 0.0))
+    await foraging.record_chop(screen.user, screen.spot.streak)  # stats page (the chop is rules; this only counts it)
     note = swing_note(swing, stance)
     if swing.correct is not None and await foraging.note_style(screen.user, grain, stance, swing.correct):
         note += (f"  {emojis.icon('book', '📖')} Learned: the **{name}** grain likes **{foraging.STANCES[stance][0]}**!" if swing.correct

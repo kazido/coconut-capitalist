@@ -222,9 +222,16 @@ async def spend_wedge(user: User, spot: Spot, item_id: str, rng: random.Random, 
         await user.remove_item(item_id, 1)
     except ValueError:
         raise ForagingError(f"You have no {reg.item(item_id).name}.") from None
+    await user.inc_stat("wedges_used")  # stats page
     spot.rotate(reg.foraging, rng, wedge.bias, wedge.special_mult)
     if wedge.boost_chops:  # a better wedge also leaves a lasting bonus (a new one replaces the old, it does not stack)
         spot.boost, spot.boost_chops = wedge.boost, wedge.boost_chops
+
+
+async def record_chop(user: User, streak: int) -> None:
+    """Count one chop for the stats page: every chop, and the best right-style streak (the spot's streak after the chop)."""
+    await user.update_skill("foraging", lambda m: setattr(m.stats, "chops", m.stats.chops + 1))
+    await user.stat_best("best_chop_streak", streak)
 
 
 # ---- grain notes: which style each grain likes, as you have found out -----------------------------------------------
@@ -393,6 +400,10 @@ async def _pay(user: User, drops: Counter, bits: int, xp: int, trees: int) -> No
         m.stats.trees_chopped += trees
 
     await user.update_skill("foraging", grant)
+    reg = get_registry()
+    rarest = max((reg.item(i).drop.rate for i in drops if reg.item(i).drop), default=0)  # stats page: the most 1-in-N drop you have had
+    if rarest:
+        await user.stat_best("rarest_drop", rarest)
 
 
 async def shake(user: User, chance: float, rng: random.Random, registry: Registry | None = None) -> Counter:
@@ -455,6 +466,8 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules) * (1 + tree.bonus + final_cut))
     xp = round(tree.effort * rules.xp_per_swing * await xp_multiplier(user.id, reg, "foraging"))
     await _pay(user, drops, bits, xp, trees=1)
+    if tree.species:  # stats page: species felled
+        await user.inc_stat(f"felled:{tree.species}")
     return Reward(drops, bits, xp)
 
 
@@ -607,6 +620,7 @@ async def chop_community(
             )
         )
         view = await _view(session, row, user.id, rules)
+    await user.inc_stat("community_hits")  # stats page: how often you chopped the community tree
     return CommunityChop(applied, view, felled_now=view.status == "felled")
 
 
