@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from cococap.errors import GameRuleError
 from cococap.models.skills.farming import Farming, Plot
 from cococap.registry import Registry, get_registry
-from cococap.services import pets, scrolls
+from cococap.services import areas, pets, scrolls
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
@@ -228,6 +228,14 @@ async def sync(user: User, now: float | None = None, registry: Registry | None =
     grow = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
     farming = await user.update_skill("farming", lambda m: seen.append(apply_rain(m, user.id, now, reg, grow)))
     return farming, seen[0]
+
+
+async def locked_seeds(user: User, registry: Registry | None = None) -> dict[str, str]:
+    """Seeds the shop will not sell you yet, as {seed id: the field that opens it}. Fields open by farming level and the farthest area reached."""
+    reg = registry or get_registry()
+    opened = await areas.reached_locations(user, "farming", reg)
+    fields = reg.locations["farming"]
+    return {seed: fields[n].name for n, seed in enumerate(reg.farming.field_seeds) if n >= opened}
 
 
 async def starter_gift(user: User, registry: Registry | None = None) -> dict[str, int]:

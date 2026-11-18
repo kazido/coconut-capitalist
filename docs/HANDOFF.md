@@ -43,6 +43,7 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 
 ## Latest state (read this before the list below)
 
+- **Farming fields (done):** `field_seeds` in farming.toml (14 seeds, one per field), 4 new crops (rustroot, marketfig, cloudberry, voidbloom), seed shop only sells seeds of reached fields (`farming.locked_seeds`). Crop emoji are unicode placeholders (art). Farming stars still TODO.
 - **Mining locations (done):** 14 mines via `[[mines]]` in `configs/mining.toml` (own tables, yield/hardness scale), picker on the Mining page. Draft numbers, not balanced yet (`scripts.balance`). Stars for mining drops and farming fields are still TODO.
 - **Prefixed ids (done, see `docs/plans/prefixed-ids.md`):** every item id is now `<category>_<name>` and the emoji name equals the id (no alias layer; owner emoji sources
   live in `art/sources/<item id>`). Pets are named for their wisps (`dog` -> `cinder`). Alembic `0009` rewrites inventories, tool templates, JSON blobs and

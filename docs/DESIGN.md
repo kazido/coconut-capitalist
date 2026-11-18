@@ -154,6 +154,9 @@ number one time in ten and by the second nine times in ten (`farming.estimate`; 
 ones). New crops, priced so a watered plot earns about 20-30k bits an hour once the seed is paid for: **blueberry** (12
 cycles), **watermelon** (40) and **starfruit** (80). `python -m scripts.balance` prints the numbers for every crop.
 
+### The 14 fields (seed gating)
+`field_seeds` in `configs/farming.toml` lists the seed each farming location (`locations.toml [farming]`) opens, in order. A field is open by farming level AND the farthest area reached (`areas.reached_locations`, so seeds stay buyable after travelling back). `farming.locked_seeds(user)` = seeds not yet on sale: hidden from the shop list and refused by `shop.buy`. Planting is NOT gated (seeds from drops/trades still plant). Fields 4, 9 and 14 are drop-only crops (dandelion, wilted rose, ambrosia), so their gate only matters for the shop of the others. New crops: Rustroot (field 5), Marketfig (8), Cloudberry (10), Voidbloom (13), sell price ~30k bits per growth cycle like their neighbours. Numbers are drafts (TODO balance).
+
 ### Getting into farming
 
 Farming used to be slow to start: the first seed cost 10,000 bits (a new player has 1,000) and everything waited on the hourly

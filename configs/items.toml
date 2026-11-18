@@ -1884,6 +1884,134 @@ grows_into = "crop_starfruit"
 cycles = 80
 
 
+[crop_rustroot]
+name = "Rustroot"
+emoji = "🥔"
+description = "A knobbly root that grew up in the scrap piles. Tastes of iron."
+wiki = "Grown from a Rustroot Seed. Feed it to a pet for pet xp, or sell it. Its field in the Farm opens the seed in the shop."
+rarity = 3
+skill = "farming"
+category = "crop"
+price = 0
+sell_price = 100000
+
+[crop_rustroot.crop]
+seed = "seed_rustroot"
+min_harvest = 2
+max_harvest = 4
+pet_xp = 500
+
+[seed_rustroot]
+name = "Rustroot Seed"
+emoji = "🌱"
+description = "Ten rains of rust and patience."
+wiki = "Plant it on your farm to grow Rustroot. It needs rain to grow, so keep watering."
+rarity = 3
+skill = "farming"
+category = "seed"
+price = 60000
+sell_price = 30000  # TODO(balance)
+
+[seed_rustroot.seed]
+grows_into = "crop_rustroot"
+cycles = 10
+
+[crop_marketfig]
+name = "Marketfig"
+emoji = "🫒"
+description = "A fig sold from the rooftops of Cadrega. Every vendor swears theirs is the sweetest."
+wiki = "Grown from a Marketfig Seed. Feed it to a pet for pet xp, or sell it. Its field in the Farm opens the seed in the shop."
+rarity = 3
+skill = "farming"
+category = "crop"
+price = 0
+sell_price = 700000
+
+[crop_marketfig.crop]
+seed = "seed_marketfig"
+min_harvest = 1
+max_harvest = 3
+pet_xp = 3500
+
+[seed_marketfig]
+name = "Marketfig Seed"
+emoji = "🌱"
+description = "Forty-five rains, then straight to market."
+wiki = "Plant it on your farm to grow Marketfig. It needs rain to grow, so keep watering."
+rarity = 3
+skill = "farming"
+category = "seed"
+price = 300000
+sell_price = 150000  # TODO(balance)
+
+[seed_marketfig.seed]
+grows_into = "crop_marketfig"
+cycles = 45
+
+[crop_cloudberry]
+name = "Cloudberry"
+emoji = "🍈"
+description = "Grown so high the rain falls up. Soft as a cloud."
+wiki = "Grown from a Cloudberry Seed. Feed it to a pet for pet xp, or sell it. Its field in the Farm opens the seed in the shop."
+rarity = 4
+skill = "farming"
+category = "crop"
+price = 0
+sell_price = 1200000
+
+[crop_cloudberry.crop]
+seed = "seed_cloudberry"
+min_harvest = 1
+max_harvest = 3
+pet_xp = 6000
+
+[seed_cloudberry]
+name = "Cloudberry Seed"
+emoji = "🌱"
+description = "It grows on the wind. Seventy rains."
+wiki = "Plant it on your farm to grow Cloudberry. It needs rain to grow, so keep watering."
+rarity = 4
+skill = "farming"
+category = "seed"
+price = 500000
+sell_price = 250000  # TODO(balance)
+
+[seed_cloudberry.seed]
+grows_into = "crop_cloudberry"
+cycles = 70
+
+[crop_voidbloom]
+name = "Voidbloom"
+emoji = "🌑"
+description = "A flower with no colour, no scent and no shadow. It is still somehow beautiful."
+wiki = "Grown from a Voidbloom Seed. Feed it to a pet for pet xp, or sell it. Its field in the Farm opens the seed in the shop."
+rarity = 5
+skill = "farming"
+category = "crop"
+price = 0
+sell_price = 10000000
+
+[crop_voidbloom.crop]
+seed = "seed_voidbloom"
+min_harvest = 1
+max_harvest = 1
+pet_xp = 40000
+
+[seed_voidbloom]
+name = "Voidbloom Seed"
+emoji = "🌱"
+description = "Three hundred rains in the dark. Nobody knows what feeds it."
+wiki = "Plant it on your farm to grow Voidbloom. It needs rain to grow, so keep watering."
+rarity = 5
+skill = "farming"
+category = "seed"
+price = 4000000
+sell_price = 2000000  # TODO(balance)
+
+[seed_voidbloom.seed]
+grows_into = "crop_voidbloom"
+cycles = 300
+
 # ---- pet food: each skill drops its own, in three tiers (worth 200 / 1,000 / 5,000 pet xp; see [pets] in economy.toml). Crops are
 # farming's food. Not sold. A pet assigned to the skill gets x3, a pet with no skill x2. TODO(balance): the drop rates aim at
 # roughly 3-5k base pet xp an hour in each skill (python -m scripts.balance prints it).

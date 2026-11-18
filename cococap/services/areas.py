@@ -74,6 +74,20 @@ async def open_locations(user: User, skill: str, registry: Registry | None = Non
     return count
 
 
+async def reached_locations(user: User, skill: str, registry: Registry | None = None) -> int:
+    """Like `open_locations`, but by the farthest area you have EVER reached, not the one you are in: used for what stays buyable after
+    you travel back (farming's seeds)."""
+    reg = registry or get_registry()
+    st = await state(user, reg)
+    level = await skill_level(user, skill)
+    count = 0
+    for n, need in enumerate(reg.areas.location_levels, 1):
+        if need > level or area_of_location(n) > st.highest:
+            break
+        count = n
+    return count
+
+
 async def open_location_list(user: User, skill: str, registry: Registry | None = None) -> list[Location]:
     """The named locations of a skill you can use right now, in unlock order (the first N of the skill's list)."""
     reg = registry or get_registry()

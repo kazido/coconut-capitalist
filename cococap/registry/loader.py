@@ -182,6 +182,11 @@ class Registry:
             problems += [f"locations.toml [{skill}]: duplicate id '{i}'" for i in sorted({i for i in ids if ids.count(i) > 1})]
             if skill == "fishing" and ids[:4] != ["pond", "river", "reef", "deep_sea"]:
                 problems.append("locations.toml [fishing]: the first four must be pond, river, reef, deep_sea (saved in player state)")
+        seeds = self.farming.field_seeds
+        if len(seeds) != per_skill:
+            problems.append(f"farming.toml field_seeds: needs {per_skill} seeds (one per field), has {len(seeds)}")
+        problems += [f"farming.toml field_seeds: '{s}' is not a seed item" for s in seeds if not (self.items.get(s) and self.items[s].seed)]
+        problems += [f"farming.toml field_seeds: duplicate '{s}'" for s in sorted({s for s in seeds if seeds.count(s) > 1})]
         return problems
 
     def _validate_mining(self, rules: MiningRules) -> list[str]:

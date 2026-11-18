@@ -6,7 +6,7 @@ from cococap.constants import STARTER_TOOLS
 from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
-from cococap.services import pets
+from cococap.services import farming, pets
 from cococap.services.equipment import EquipmentError, equip, equipped_stats, skill_for_tool
 from cococap.user import InsufficientFunds, User
 
@@ -30,6 +30,8 @@ async def buy(user: User, item_id: str, quantity: int = 1, registry: Registry | 
     item = reg.find_item(item_id)
     if item is None or not item.buyable:
         raise ShopError("That isn't sold in the shop.")
+    if (field := (await farming.locked_seeds(user, reg)).get(item.id)) is not None:
+        raise ShopError(f"Reach {field} to buy that seed.")
     if not 1 <= quantity <= MAX_PER_PURCHASE:
         raise ShopError(f"You can buy between 1 and {MAX_PER_PURCHASE:,} at a time.")
     if item.is_instance:

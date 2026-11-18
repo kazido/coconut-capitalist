@@ -681,6 +681,7 @@ class FarmingRules(_Data):
     anomaly_odds: int = Field(ge=1)  # 1 in N per harvest
     xp_per_cycle: int = Field(ge=0)  # xp for a harvest = the seed's growth cycles x this: a long crop pays for the waiting
     deed_item: str
+    field_seeds: list[str]  # the seed each field opens, in field order (14, one per farming location)
     market: MarketRules
 
 

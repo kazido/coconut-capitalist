@@ -152,6 +152,6 @@ def test_the_validator_reports_duplicate_ids_within_a_skill():
     # A TOML table cannot hold two ids with the same key, so the duplicate check is exercised on the built rows directly.
     locs = list(REG.locations["mining"])
     dup = locs[:-1] + [locs[0].model_copy(update={"n": len(locs)})]
-    fake = SimpleNamespace(locations={**{s: REG.locations[s] for s in SKILLS if s != "mining"}, "mining": dup})
+    fake = SimpleNamespace(farming=REG.farming, items=REG.items, locations={**{s: REG.locations[s] for s in SKILLS if s != "mining"}, "mining": dup})
     problems = Registry._validate_locations(fake, RULES)
     assert any("mining" in p and "duplicate" in p for p in problems)

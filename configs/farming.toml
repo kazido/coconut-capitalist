@@ -13,6 +13,12 @@ max_drop_rolls = 60               # ...up to this many
 anomaly_odds = 25                 # 1 in N per harvest: refreshes your work and daily cooldowns (wiki: 1/25)
 xp_per_cycle = 500               # farming xp for a harvest = the crop's growth cycles x this (apple 500, coconut 50,000). Tools never change xp
 deed_item = "key_land_deed"
+# The crop each of the 14 fields (configs/locations.toml [farming], in order) opens. A field is open once you have the farming level
+# (areas.toml [locations]) AND have reached its area; until then its seed is not sold. Seeds you got from drops or trades still plant.
+field_seeds = [
+    "seed_apple", "seed_lemon", "seed_blueberry", "seed_dusty_dandelion", "seed_rustroot", "seed_hot_pepper", "seed_watermelon",
+    "seed_marketfig", "seed_wilted_rose", "seed_cloudberry", "seed_starfruit", "seed_coconut", "seed_voidbloom", "seed_ambrosia",
+]
 
 [starter_seeds]                   # a free gift, once, the first time you open your farm, so you can plant straight away
 seed_apple = 3

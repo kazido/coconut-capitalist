@@ -15,7 +15,7 @@ Upgrades should eventually need higher-quality materials. The user's decisions:
 
 **Drop rule (the core).** One shared helper `star_tier(progress, rng) -> 1|2|3` in a new `cococap/services/stars.py`, driven by a per-skill progress axis and a data table in `configs/stars.toml`:
 - progress = the player's chosen LOCATION in the skill, as a fraction of the skill's ordered locations (`stars.progress(step, steps)`): foraging forest 1-14, fishing waters 1-14. Mining and farming have no location ladder yet (their locations are still TODO in areas-and-ship.md). NOT depth.
-- Steps 1-3 are built (variants, curve, roll helper). Step 4 is DONE for foraging and fishing; mining and farming still TODO (wait for their locations).
+- Steps 1-3 are built (variants, curve, roll helper). Step 4 is DONE for foraging and fishing; farming TODO (its locations exist now; progress = fields reached).
 Table = per progress step, weights for 1★/2★/3★, e.g. step 1: 97/3/0; mid: 35/60/5; max: 15/65/20. A guard test asserts 3★ weight < 50% everywhere and 2★ is majority from the configured mid step. The roll happens where drops are granted (one per drop stack; quantity splits are rolled per item or per stack, decide at build), so each skill service calls the helper for starrable drops only.
 
 **Upgrade costs.** `ToolUpgrade.items` keys may be `<id>_s2`/`<id>_s3`; `upgrades._missing` already reads by id so it works unchanged. Edit late-chain tools in `configs/items.toml` (fork and top tiers) to swap part of the plain cost for 2★/3★. Numbers go through `scripts.balance` / `balance-check` so each skill's time-to-upgrade stays equal.
