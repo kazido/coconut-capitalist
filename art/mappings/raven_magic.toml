@@ -16,4 +16,50 @@ spirit_of_the_forest = {cell = [69, 8], hue = -85, sat = 0.5, val = 0.9}
 spirit_of_the_mines = {cell = [69, 8], ramp = ["#241c20", "#5a5058", "#9a9094", "#e6dede"]}
 ui_bits = {cell = [8, 6], framed = false}
 ui_tokens = {cell = [8, 2], framed = false}
-ui_luckbucks = {cell = [41, 11], framed = false}
+
+# World icons (bare, no rarity frame): areas and the treasure chest
+area_slime_hill = {cell = [1, 0], ramp = ["#10281a", "#2f8a3a", "#7ee06a", "#eaffd8"], framed = false}
+area_twilight_desert = {cell = [1, 5], framed = false}
+area_rust_belt = {cell = [1, 8], framed = false}
+area_cadrega_city = {cell = [2, 14], framed = false}
+area_aerial_glades = {cell = [1, 3], framed = false}
+area_star_kingdom = {cell = [2, 5], framed = false}
+area_the_void = {cell = [2, 3], framed = false}
+ui_chest = {cell = [0, 5], framed = false}
+ui_hook = {cell = [24, 8], framed = false}
+
+# Action icons (bare): one per meaning, picked from the Raven sheet
+ui_crab = {cell = [22, 5], framed = false}
+ui_book = {cell = [6, 0], framed = false}
+ui_record = {cell = [0, 14], framed = false}
+ui_quest = {cell = [6, 12], framed = false}
+ui_bolt = {cell = [64, 0], framed = false}
+ui_haul = {cell = [25, 10], framed = false}
+ui_sell = {cell = [9, 13], framed = false}
+ui_upgrade = {cell = [54, 0], framed = false}
+ui_craft = {cell = [7, 13], framed = false}
+ui_star = {cell = [0, 11], framed = false}
+ui_key = {cell = [4, 6], framed = false}
+ui_flame = {cell = [43, 4], framed = false}
+ui_boss = {cell = [14, 0], framed = false}
+ui_unknown = {cell = [0, 12], framed = false}
+ui_tree = {cell = [1, 15], framed = false}
+
+# Mining icons (candidates, awaiting review)
+ui_bomb = {cell = [47, 11], framed = false}
+ui_boom = {cell = [47, 14], framed = false}
+ui_brace = {cell = [41, 7], framed = false}
+ui_cursor = {cell = [39, 7], framed = false}
+ui_milestone = {cell = [2, 11], framed = false}
+ui_vault = {cell = [4, 0], framed = false}
+ui_tips = {cell = [0, 12], framed = false}
+ui_scroll = {cell = [18, 8], framed = false}
+ui_rock_soft = {cell = [12, 3], framed = false}
+ui_rock_firm = {cell = [13, 3], framed = false}
+ui_rock_hard = {cell = [12, 3], hue = -25, sat = 1.3, framed = false}
+ui_vent = {cell = [45, 4], framed = false}
+ui_wyrmhole = {cell = [48, 4], framed = false}
+ui_small_wyrmhole = {cell = [43, 11], framed = false}
+ui_magnet = {cell = [7, 4], framed = false}
+ui_lifeline = {cell = [41, 2], framed = false}
+ui_cache = {cell = [9, 13], framed = false}

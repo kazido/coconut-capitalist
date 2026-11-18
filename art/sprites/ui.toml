@@ -1,0 +1,65 @@
+# Bare UI icons (no rarity frame): palette letters + 16 rows, plum outline drawn in.
+
+[ui_luckbucks]
+palette = { H = "#d4ffa8", h = "#9ae460", m = "#58bc44", s = "#34903a", d = "#1e6030", t = "#4a8a3a", T = "#2a5a28", o = "#2e1c2c" }
+rows = [
+  "................",
+  "....oo....oo....",
+  "...oHHo..omso...",
+  "..oHHHHoohHsso..",
+  "..oHHHHHHHmmso..",
+  "...oHHHmmhmmo...",
+  "....oHmmmmmo....",
+  "....oHmmmmmo....",
+  "...ohHhmmHsdo...",
+  "..omHmmmmsHddo..",
+  "..ossssodddddo..",
+  "...oddotooddo...",
+  "....ootto.oo....",
+  ".....oTo........",
+  "......o.........",
+  "................",
+]
+# Mining UI icons (first pass, awaiting review).
+
+[ui_scarab]
+palette = { b = "#38ff9c", c = "#1ecb62", d = "#2c8d44", w = "#e8fff4", y = "#ffd84a", o = "#232e1c" }
+rows = [
+  "................",
+  "...ooooo........",
+  "..obbwcdooo.....",
+  ".ocwccdcbbbo....",
+  ".odccdcbccco....",
+  "obcoocccdddco...",
+  "ocdo.ocdcbbyco..",
+  ".obcoocdbbbcodo.",
+  ".ocdcooccycoocdo",
+  "..ocdcoocco.oddo",
+  "..odooocoooocodo",
+  "...o.ocobbcoodo.",
+  "......occdod.o..",
+  "......oddddo....",
+  ".......oooo.....",
+  "................",
+]
+
+[ui_again]
+palette = { h = "#b8ffc8", g = "#48d068", G = "#2a8c48", o = "#1c3024" }
+rows = [
+  "................",
+  "....oooooooo....",
+  "...oohhhhhgooooo",
+  "..oohgGGGGggohgo",
+  "..ohgGoooogghgGo",
+  "..ogGoo..oohggGo",
+  "..oooo...ogGGgGo",
+  "oooo.....oooogGo",
+  "ohgoooo.....oooo",
+  "ohghhgo...oooo..",
+  "ohggGoo..oohgo..",
+  "ohgGggoooohgGo..",
+  "ogGogghhhhgGoo..",
+  "ooooogGGGGGoo...",
+  "....oooooooo....",
+  "................",
+]
