@@ -273,7 +273,7 @@ async def test_an_unfinished_goal_pays_nothing(db):
 # ---- the screen ---------------------------------------------------------------------------------------------------
 async def test_the_community_page_shows_the_book_and_goals_and_you_donate_from_a_menu(db, monkeypatch):
     user = await angler(fish={"fish_marlin": 4, "fish_giant_squid": 1})
-    nav, inter = await hub("fishcommunity")
+    nav, inter = await hub("fishlog", tab="community")
     text = all_text(nav)
     assert "Community Book" in text and "This month's goals" in text and "Blue Marlin" in text
     assert nav.screen.refresh_every  # redraws itself so you see everyone's progress
@@ -285,7 +285,7 @@ async def test_the_page_pays_what_you_are_owed_when_you_open_it(db):
     donor = await angler(1, fish=full_book())
     await fill_book([donor])
     watcher = await angler(2, level=RULES.book.min_level)
-    nav, _ = await hub("fishcommunity", user_id=2)
+    nav, _ = await hub("fishlog", user_id=2, tab="community")
     assert "community finished its book" in all_text(nav)
     assert (await watcher.skill("fishing")).community_claimed == 1
 
@@ -293,15 +293,17 @@ async def test_the_page_pays_what_you_are_owed_when_you_open_it(db):
 async def test_the_fishing_page_links_to_the_community_once_unlocked(db):
     user = await User.get(1)
     nav, inter = await hub("fish")
-    assert find_button(nav, "Community").disabled
+    assert find_button(nav, "Collection").disabled
     await user.add_xp("fishing", User.level_to_xp(RULES.quests.min_level) + 1)
     nav, inter = await hub("fish")
-    await click(nav, inter, "Community")
-    assert nav.screen.id == "fishcommunity"
+    await click(nav, inter, "Collection")  # opens on Quests
+    nav.screen.tab = "community"
+    await nav.refresh(inter)
+    assert nav.screen.id == "fishlog" and nav.screen.tab == "community"
     await click(nav, inter, "Back to fishing")
     assert nav.screen.id == "fish"
 
 
 async def test_below_the_level_the_community_page_says_when_it_opens(db):
-    nav, _ = await hub("fishcommunity")
+    nav, _ = await hub("fishlog", tab="community")
     assert "opens at fishing level" in all_text(nav)

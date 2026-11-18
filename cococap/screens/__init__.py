@@ -14,7 +14,7 @@ from .highlow import HighLowScreen
 from .farm import FarmScreen
 from .fight import FightScreen
 from .flashcard import FlashcardScreen
-from .fish import FishBookScreen, FishCommunityScreen, FishPotsScreen, FishNotesScreen, FishQuestsScreen, FishRecordsScreen, FishScreen
+from .fish import FishLogScreen, FishPotsScreen, FishScreen
 from .enchant import EnchantScreen
 from .forage import ForageScreen, GroveScreen, PartyGroveScreen, TreeScreen
 from .releaf import ReleafScreen
@@ -71,11 +71,7 @@ SCREENS: dict[str, type[Screen]] = {
         ForageScreen,
         ReleafScreen,
         FishScreen,
-        FishQuestsScreen,
-        FishBookScreen,
-        FishCommunityScreen,
-        FishRecordsScreen,
-        FishNotesScreen,
+        FishLogScreen,
         FishPotsScreen,
         TreeScreen,
         GroveScreen,

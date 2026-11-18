@@ -108,6 +108,13 @@ async def test_every_screen_renders_valid_layout_within_discord_limits(db, scree
     assert inter.response.send_message.await_args.kwargs["view"] is nav
 
 
+@pytest.mark.parametrize("tab", list(SCREENS["fishlog"].panes))
+async def test_every_fishlog_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("fishlog", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
 
 
 
