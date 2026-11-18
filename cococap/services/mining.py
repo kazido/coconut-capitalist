@@ -21,10 +21,10 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.mining import Mining
 from cococap.registry import Registry, get_registry
 from cococap.registry.loader import BOMB_ITEM
-from cococap.registry.models import MiningRules, MineType, Milestone, RiskLabel
+from cococap.registry.models import MiningRules, MineSite, MineType, Milestone, RiskLabel
 from cococap.services.equipment import equipped_stats
 from cococap.services.loot import roll_table, skewed_roll
-from cococap.services import pets, scrolls
+from cococap.services import areas, pets, scrolls
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -163,8 +163,11 @@ class MineRun:
         rare_reroll: float = 0.0,
         mine_type: MineType | None = None,
         mini_wyrmhole: bool = False,
+        site: MineSite | None = None,
     ):
         self.rules, self.registry, self.rng = rules, registry, rng
+        self.site = site or rules.mines[0]  # which named mine this is (its ore tables, yield and hardness)
+        self.tables = rules.tables_of(self.site)
         self.mine_type = mine_type or rules.mine_type("standard")  # the kind of mine (effects: ore boost, yield, rich lodes; pressure and xp are applied by start/settle)
         self.mini_wyrmhole = mini_wyrmhole  # this mine has a small wyrmhole (decided when it starts): you can enter it any time before the run ends
         self.cursors = list(cursors)
@@ -204,10 +207,10 @@ class MineRun:
 
     # ---- the rows ahead -------------------------------------------------------------------------
     def tier(self, depth: int) -> int:
-        return min(depth // self.rules.descent.rows_per_tier, len(self.rules.depth_tables) - 1)
+        return min(depth // self.rules.descent.rows_per_tier, len(self.tables) - 1)
 
     def _quantity_factor(self, depth: int) -> float:
-        return self.yield_factor * self.mine_type.yield_mult * (1 + self.rules.descent.depth_bonus_per_row * depth)
+        return self.yield_factor * self.mine_type.yield_mult * self.site.yield_mult * (1 + self.rules.descent.depth_bonus_per_row * depth)
 
     def _quantity(self, item_id: str, base: float, depth: int) -> int:
         """How many of an item a cell holds: the roll, the pickaxe and mine type, depth, and a mine type's bonus on that very ore."""
@@ -235,7 +238,7 @@ class MineRun:
     def row(self, depth: int) -> list[Cell]:
         """The cells of row `depth` (rolled the first time they're needed, then fixed)."""
         if depth not in self._rows:
-            table = self.rules.depth_tables[self.tier(depth)]
+            table = self.tables[self.tier(depth)]
             cells: list[Cell] = []
             for _ in range(self.rules.columns):
                 rolled = self._roll(table)
@@ -255,7 +258,7 @@ class MineRun:
     def _rich_cell(self, depth: int) -> Cell:
         """A rich lode: the next tier's table, and more of it. Never empty."""
         d = self.rules.descent
-        table = self.rules.depth_tables[min(self.tier(depth) + 1, len(self.rules.depth_tables) - 1)]
+        table = self.tables[min(self.tier(depth) + 1, len(self.tables) - 1)]
         for _ in range(12):
             rolled = self._roll(table)
             if rolled:
@@ -379,7 +382,7 @@ class MineRun:
                 found[scroll] += 1
             if self.geode and self.rng.random() < self.geode:  # Geode Cracker: a geode with a reactor gem inside
                 found[self.rng.choice(self.geode_gems)] += 1
-            hardness += self.hardness(cells[col])
+            hardness += self.hardness(cells[col]) * self.site.hardness_mult  # (the soft/firm/hard hint stays the same: it is the ore's own rock)
         self.haul.update(found)
         self.lodes += len(columns)
         self.history.append(DugRow(self.depth, list(cells), tuple(columns), self.signs(self.depth)))
@@ -645,13 +648,28 @@ def roll_mini_wyrmhole(rules: MiningRules, rng: random.Random) -> bool:
     return rng.randint(1, rules.mini_wyrmhole.odds) == 1
 
 
+async def open_mines(user: User, registry: Registry | None = None) -> list[MineSite]:
+    """The named mines you can dig in right now: open by mining level AND by area (areas.open_location_list), first mine first."""
+    reg = registry or get_registry()
+    ids = {loc.id for loc in await areas.open_location_list(user, "mining", reg)}
+    return [s for s in reg.mining.mines if s.id in ids]
+
+
 async def start_run(user: User, rng: random.Random, registry: Registry | None = None, *, mine_type: MineType | str | None = None,
-                    mini_wyrmhole: bool | None = None) -> MineRun:
+                    mini_wyrmhole: bool | None = None, location: str | None = None) -> MineRun:
     """Begin a mine. A full magnet is spent here; the pickaxe, reactor and gems shape the run. The kind of mine is rolled by weight
     (`mine_type` forces one, for tests) and shown on the mine page before you dig. One mine in `mini_wyrmhole.odds` has a small wyrmhole
-    (`mini_wyrmhole=` forces it either way, for tests)."""
+    (`mini_wyrmhole=` forces it either way, for tests). `location` is the named mine (a mining location id) you dig in; it must be open
+    to you, and None means the newest one you have opened."""
     reg = registry or get_registry()
     rules = reg.mining
+    open_sites = await open_mines(user, reg)
+    if location is None:
+        site = open_sites[-1]
+    else:
+        site = next((s for s in open_sites if s.id == location), None)
+        if site is None:
+            raise MiningError("You haven't opened that mine yet.")
     kind = rules.mine_type(mine_type) if isinstance(mine_type, str) else mine_type or roll_mine_type(rules, rng)
     has_mini = roll_mini_wyrmhole(rules, rng) if mini_wyrmhole is None else mini_wyrmhole
     d = rules.descent
@@ -691,6 +709,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         rare_reroll=pet.get("rare_reroll", 0.0),
         mine_type=kind,
         mini_wyrmhole=has_mini,
+        site=site,
     )
     _LIVE_RUNS[user.id] = (run, time.time())
     return run

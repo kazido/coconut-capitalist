@@ -612,10 +612,21 @@ class MineType(_Data):
         return emojis.for_id("mine", self.id, self.emoji_raw)
 
 
+class MineSite(_Data):
+    """One of the 14 named mines ([[mines]] in mining.toml, in the order of the mining locations in locations.toml; the name and emoji come from there).
+    `tables` are its own 5 depth tables (rarest first); leave them out to use the shared `depth_tables` (mine 1)."""
+
+    id: str
+    tables: list[list[str]] | None = Field(default=None, min_length=1)
+    yield_mult: float = Field(default=1.0, gt=0)  # x the quantity of every cell here (deeper mines pay more per dig)
+    hardness_mult: float = Field(default=1.0, gt=0)  # x the pressure every dig adds here (deeper rock is harder)
+
+
 class MiningRules(_Data):
     columns: int = Field(ge=1)
     xp_per_column: int = Field(ge=0)
-    depth_tables: list[list[str]] = Field(min_length=1)
+    depth_tables: list[list[str]] = Field(min_length=1)  # the tables of the first mine (and of the reactor's auto-mining)
+    mines: list[MineSite] = Field(min_length=1)
     mine_types: list[MineType] = Field(min_length=1)
     wyrmhole: WyrmholeRules
     mini_wyrmhole: MiniWyrmholeRules
@@ -640,6 +651,13 @@ class MiningRules(_Data):
 
     def mine_type(self, type_id: str) -> MineType:
         return next(t for t in self.mine_types if t.id == type_id)
+
+    def site(self, site_id: str) -> MineSite:
+        return next(s for s in self.mines if s.id == site_id)
+
+    def tables_of(self, site: "MineSite | None") -> list[list[str]]:
+        """The 5 depth tables a mine digs through (the shared ones when it has none of its own)."""
+        return site.tables if site is not None and site.tables else self.depth_tables
 
 
 class MarketRules(_Data):

@@ -83,7 +83,9 @@ def mining(reg: Registry | None = None, depth: int | None = None) -> Lookup:
     def lookup(item_id: str) -> Odds | None:
         if found := _scroll("mining", item_id, reg):
             return found
-        tiers = rules.depth_tables if depth is None else rules.depth_tables[: min(depth // rules.descent.rows_per_tier, len(rules.depth_tables) - 1) + 1]
+        tiers = []  # every mine's tables count: the quote is the best chance anywhere
+        for tables in [rules.depth_tables, *(s.tables for s in rules.mines if s.tables)]:
+            tiers += tables if depth is None else tables[: min(depth // rules.descent.rows_per_tier, len(tables) - 1) + 1]
         best = max((table_chance(t, item_id, reg) for t in tiers), default=0.0)
         return Odds(1 / best, "cells dug") if best > 0 else None
 

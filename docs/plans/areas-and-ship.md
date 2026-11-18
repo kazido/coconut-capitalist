@@ -107,7 +107,7 @@ a dropdown like fishing's water select. RISK: forest 14 (old zone 20, which used
 - The star table (`economy.toml [stars]`, `starrable`) is being built by someone else right now: coordinate before touching it.
 
 **Build order (replaces steps 3-6):** 3. DONE shared `Location` model + schedule + `areas.open_locations(skill)` helper + tests.
-4. DONE Foraging forests (rebalance). 5. DONE Fishing 14 waters. 6. TODO Mining locations. 7. TODO Farming fields + seed shop gating. 8. TODO Ship screen.
+4. DONE Foraging forests (rebalance). 5. DONE Fishing 14 waters. 6. DONE Mining locations (`[[mines]]` in mining.toml: own 5 tables + yield/hardness scale per mine; mine 1 = shared tables; picker on the Mining page). 7. TODO Farming fields + seed shop gating. 8. TODO Ship screen.
 
 ---
 # Decisions, round 3 (2026-11-17)

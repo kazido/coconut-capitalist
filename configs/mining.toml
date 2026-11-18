@@ -14,6 +14,211 @@ depth_tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
+# ---- The 14 mines (names and emoji: configs/locations.toml, same order). A mine digs through its own 5 depth tables (leave `tables` out to use the
+# shared `depth_tables` above, as mine 1 does), and scales what every cell pays (yield_mult) and the pressure every dig adds (hardness_mult).
+# Every mine's deepest tables hold all four reactor gems (a test checks it). Deeper mines start further up the ore ladder: mine k's tier t table is the
+# shared table min(t + shift, 4) with shift = (k - 1) * 4 // 13 (0 for mines 1-4 ... 4 for mine 14).  TODO(balance): yield/hardness steps and the shifts
+
+[[mines]]
+id = "slimy_burrow"
+
+
+[[mines]]
+id = "gumdrop_quarry"
+
+tables = [
+  ["material_amber", "material_clay", "material_coal", "material_copper_ore"],
+  ["material_amber", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["seed_dusty_dandelion", "material_amber", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.06
+hardness_mult = 1.02
+
+
+[[mines]]
+id = "duskstone_quarry"
+
+tables = [
+  ["material_amber", "material_clay", "material_coal", "material_copper_ore"],
+  ["material_amber", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["seed_dusty_dandelion", "material_amber", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.12
+hardness_mult = 1.04
+
+
+[[mines]]
+id = "glassfall_caverns"
+
+tables = [
+  ["material_amber", "material_clay", "material_coal", "material_copper_ore"],
+  ["material_amber", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["seed_dusty_dandelion", "material_amber", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.18
+hardness_mult = 1.06
+
+
+[[mines]]
+id = "scrapheap_tunnels"
+
+tables = [
+  ["material_amber", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["seed_dusty_dandelion", "material_amber", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.24
+hardness_mult = 1.08
+
+
+[[mines]]
+id = "foundry_depths"
+
+tables = [
+  ["material_amber", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["seed_dusty_dandelion", "material_amber", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.3
+hardness_mult = 1.1
+
+
+[[mines]]
+id = "subway_catacombs"
+
+tables = [
+  ["material_amber", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["seed_dusty_dandelion", "material_amber", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.36
+hardness_mult = 1.12
+
+
+[[mines]]
+id = "clockwork_vaults"
+
+tables = [
+  ["seed_dusty_dandelion", "material_amber", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.42
+hardness_mult = 1.14
+
+
+[[mines]]
+id = "cloudstone_crags"
+
+tables = [
+  ["seed_dusty_dandelion", "material_amber", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.48
+hardness_mult = 1.16
+
+
+[[mines]]
+id = "stormvein_rift"
+
+tables = [
+  ["seed_dusty_dandelion", "material_amber", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.54
+hardness_mult = 1.18
+
+
+[[mines]]
+id = "meteor_pits"
+
+tables = [
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.6
+hardness_mult = 1.2
+
+
+[[mines]]
+id = "stardust_lode"
+
+tables = [
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.66
+hardness_mult = 1.22
+
+
+[[mines]]
+id = "hollow_seams"
+
+tables = [
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.72
+hardness_mult = 1.24
+
+
+[[mines]]
+id = "core_of_nothing"
+
+tables = [
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+  ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
+]
+
+yield_mult = 1.78
+hardness_mult = 1.26
+
+
+
 # ---- Mine types: every time you head down the game rolls one by weight and shows it before you dig. Standard is the plain mine (no effects).
 # Weights are relative (they add up to 100 here, so a weight is a percent). Effects: pressure_mult (x pressure per dig), xp_mult (x the run's xp),
 # yield_mult (x the quantity of every cell), rich_chance_add (added to the chance a cell is a rich lode), ore_boost (item = x its drop chance; the

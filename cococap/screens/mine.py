@@ -113,7 +113,8 @@ def render_shaft(run: mining.MineRun) -> str:
 def type_line(run: mining.MineRun) -> str:
     """The kind of mine this is: just its name for a Standard mine, the name and what it does for any other."""
     t = run.mine_type
-    return f"{t.emoji} **{t.name}**" + ("" if t.id == "standard" else f"  ·  {t.description}")
+    place = next((loc for loc in run.registry.locations.get("mining", []) if loc.id == run.site.id), None)
+    return (f"{place.emoji} **{place.name}**  ·  " if place else "") + f"{t.emoji} **{t.name}**" + ("" if t.id == "standard" else f"  ·  {t.description}")
 
 
 def risk_text(risk: float) -> str:
@@ -348,7 +349,7 @@ class MineScreen(Screen):
         await self.refresh(interaction)
 
     async def _again(self, interaction: discord.Interaction) -> None:
-        self.run = await mining.start_run(self.user, random.Random())
+        self.run = await mining.start_run(self.user, random.Random(), location=self.run.site.id)  # (the same mine again)
         self.summary = self.challenge = self.scarab_result = None
         await self.refresh(interaction)
 

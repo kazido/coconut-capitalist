@@ -332,23 +332,31 @@ def _validate_mining_items(reg: "Registry", rules: MiningRules) -> list[str]:
         if item_id not in reg.items:
             problems.append(f"mining.toml {where}: unknown item '{item_id}'")
 
-    for row, table in enumerate(rules.depth_tables):
-        previous_rate = None
-        for item_id in table:
-            need(item_id, f"depth_tables[{row}]")
-            item = reg.items.get(item_id)
-            if item is None:
-                continue
-            if item.drop is None:
-                problems.append(f"mining.toml depth_tables[{row}]: '{item_id}' has no drop table")
-                continue
-            if previous_rate is not None and item.drop.rate > previous_rate:
-                problems.append(
-                    f"mining.toml depth_tables[{row}]: '{item_id}' (1/{item.drop.rate}) must come "
-                    f"before more common items (list rarest first)"
-                )
-            previous_rate = item.drop.rate
-    in_tables = {i for table in rules.depth_tables for i in table}
+    all_tables = [("depth_tables", rules.depth_tables)] + [(f"mine '{s.id}' tables", s.tables) for s in rules.mines if s.tables]
+    for label, tables in all_tables:
+        if len(tables) != len(rules.depth_tables):
+            problems.append(f"mining.toml {label}: needs {len(rules.depth_tables)} tables (one per depth tier), has {len(tables)}")
+        for row, table in enumerate(tables):
+            previous_rate = None
+            for item_id in table:
+                need(item_id, f"{label}[{row}]")
+                item = reg.items.get(item_id)
+                if item is None:
+                    continue
+                if item.drop is None:
+                    problems.append(f"mining.toml {label}[{row}]: '{item_id}' has no drop table")
+                    continue
+                if previous_rate is not None and item.drop.rate > previous_rate:
+                    problems.append(
+                        f"mining.toml {label}[{row}]: '{item_id}' (1/{item.drop.rate}) must come "
+                        f"before more common items (list rarest first)"
+                    )
+                previous_rate = item.drop.rate
+        if not set(rules.reactor.core_gems) <= set(tables[-1]):  # (the reactor must always be feedable, in every mine)
+            problems.append(f"mining.toml {label}: the deepest table must hold all the reactor core gems")
+    if [s.id for s in rules.mines] != [loc.id for loc in reg.locations.get("mining", [])]:
+        problems.append("mining.toml: [[mines]] must be one per mining location, in locations.toml order")
+    in_tables = {i for _, tables in all_tables for table in tables for i in table}
     for t in rules.mine_types:
         for item_id in (*t.ore_boost, *t.ore_yield):
             need(item_id, f"mine type '{t.id}' ore_boost/ore_yield")
