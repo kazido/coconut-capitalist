@@ -10,12 +10,20 @@ from cococap.models.skills.farming import Farming
 from cococap.registry import get_registry
 from cococap.services import farming as f
 from cococap.user import Cooldowns, User
+from tests.test_farm_fields import open_all_zones
 from tests.test_hub import all_text, choose, click, hub, select_named
 
 REG = get_registry()
 RULES = REG.farming
 HOUR = 3600
 T0 = 1_800_000_000 // HOUR * HOUR  # a clean hour boundary
+
+
+@pytest.fixture(autouse=True)
+async def every_zone_open(db):
+    """Most tests here plant any crop, so open every farm zone and work the last one (for both test players)."""
+    for user_id in (1, 2):
+        await open_all_zones(await User.get(user_id))
 
 
 async def with_can(user, template="tool_can_tin"):
@@ -854,9 +862,8 @@ async def test_with_no_byproduct_rolls_tending_finds_nothing(db):
 def test_byproducts_are_a_fair_share_of_what_each_crop_earns_an_hour():
     """Guard: tending is worth about 10-50% of the crop's own watered income an hour, so farming stays in line with the other skills (see scripts.balance)."""
     assert len(RULES.byproduct_rolls) == len(RULES.field_seeds)
-    one_roll = sum(REG.item(i).sell_price * (i_d.min + i_d.max) / 2 / i_d.rate
-                   for i in REG.items if (i_d := REG.item(i).drop) and REG.item(i).skill == "farming" and REG.item(i).category == "material")
-    for seed_id, rolls in zip(RULES.field_seeds, RULES.byproduct_rolls, strict=True):
+    for seed_id, rolls, materials in zip(RULES.field_seeds, RULES.byproduct_rolls, RULES.zone_materials, strict=True):
+        one_roll = sum(REG.item(i).sell_price * (d.min + d.max) / 2 / d.rate for i in materials if (d := REG.item(i).drop))  # this zone's table
         seed = REG.item(seed_id)
         crop = REG.item(seed.seed.grows_into)
         per_hour = crop.sell_price * (crop.crop.min_harvest + crop.crop.max_harvest) / 2 / seed.seed.cycles  # watered: one cycle an hour

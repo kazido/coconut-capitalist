@@ -239,6 +239,38 @@ async def locked_seeds(user: User, registry: Registry | None = None) -> dict[str
     return {seed: fields[n].name for n, seed in enumerate(reg.farming.field_seeds) if n >= opened}
 
 
+def seed_zone(seed_id: str, rules) -> int:
+    """The farm zone (1-based) whose own crop this seed is. A seed that opens no field (a drop or trade) counts as zone 1: it plants anywhere."""
+    return rules.field_seeds.index(seed_id) + 1 if seed_id in rules.field_seeds else 1
+
+
+def plot_zone(plot: Plot, rules) -> int:
+    """The zone a plot's crop was planted in (old plots, planted before zones, use their seed's own zone)."""
+    return plot.zone or seed_zone(plot.crop_id, rules)
+
+
+def zone_materials(zone: int, registry: Registry) -> list:
+    """The byproduct materials a plot planted in this zone rolls (Tend and harvest)."""
+    tables = registry.farming.zone_materials
+    return [registry.item(i) for i in tables[min(max(zone, 1), len(tables)) - 1]]
+
+
+async def open_zones(user: User, registry: Registry | None = None) -> int:
+    """How many farm zones you can work right now (always at least the first): zone N is field N, opened by farming level and area."""
+    return max(1, await areas.open_locations(user, "farming", registry))
+
+
+async def current_zone(user: User, registry: Registry | None = None) -> int:
+    """The zone you are working, never past the ones that are open."""
+    return min((await user.skill("farming")).zone, await open_zones(user, registry))
+
+
+async def set_zone(user: User, zone: int, registry: Registry | None = None) -> None:
+    if not 1 <= zone <= await open_zones(user, registry):
+        raise FarmingError("That zone isn't open to you yet.")
+    await user.update_skill("farming", lambda m: setattr(m, "zone", zone))
+
+
 async def starter_gift(user: User, registry: Registry | None = None) -> dict[str, int]:
     """The free seeds every farmer gets the first time they open their farm (once). Returns what was given."""
     reg = registry or get_registry()
@@ -346,6 +378,9 @@ async def plant(
         raise FarmingError("That isn't a seed.")
     if not 1 <= number <= PLOTS:
         raise FarmingError("There is no such plot.")
+    zone = await current_zone(user, reg)
+    if seed_zone(seed_id, reg.farming) > zone:
+        raise FarmingError(f"{seed.name} grows in zone {seed_zone(seed_id, reg.farming)} and up: you are working zone {zone}.")
     try:
         await user.remove_item(seed_id, 1)
     except ValueError:
@@ -360,7 +395,7 @@ async def plant(
             raise FarmingError("You don't own that plot yet.")
         if plot.crop_id:
             raise FarmingError("Something is already growing there.")
-        plot.crop_id, plot.cycle, plot.can_harvest, plot.since, plot.tended = seed_id, 0, False, hour_of(now), 0
+        plot.crop_id, plot.cycle, plot.can_harvest, plot.since, plot.tended, plot.zone = seed_id, 0, False, hour_of(now), 0, zone
 
     try:
         await user.update_skill("farming", sow)
@@ -389,9 +424,8 @@ class TendReport:
 
 
 def _byproduct_rolls(seed_id: str, rules) -> int:
-    """Rolls of the farming drop table per growth cycle of this crop: its field's number (a seed that opens no field uses the first)."""
-    fields = rules.field_seeds
-    return rules.byproduct_rolls[fields.index(seed_id)] if seed_id in fields else rules.byproduct_rolls[0]
+    """Rolls of the zone's drop table per growth cycle of this crop: its field's number (a seed that opens no field uses the first)."""
+    return rules.byproduct_rolls[seed_zone(seed_id, rules) - 1]
 
 
 def tend_waiting(farm: Farming, rules) -> int:
@@ -408,8 +442,7 @@ async def tend(user: User, rng: random.Random, now: float | None = None, registr
     can = await equipped_stats(user, "farming", reg)
     luck = can.stats.get("drop_luck", 0.0) if can else 0.0
     pet = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
-    materials = [i for i in reg.items_for_skill("farming") if i.category == "material" and i.drop]
-    waiting: list[tuple[str, int]] = []  # (seed, cycles) per plot with something to collect
+    waiting: list[tuple[str, int, int]] = []  # (seed, cycles, zone) per plot with something to collect
 
     def collect(m: Farming) -> None:
         apply_rain(m, user.id, now, reg, pet)
@@ -417,28 +450,27 @@ async def tend(user: User, rng: random.Random, now: float | None = None, registr
             plot = plot_of(m, number)
             if not plot.crop_id or plot.cycle <= plot.tended:
                 continue
-            waiting.append((plot.crop_id, min(rules.byproduct_max_cycles, plot.cycle - plot.tended)))
+            waiting.append((plot.crop_id, min(rules.byproduct_max_cycles, plot.cycle - plot.tended), plot_zone(plot, rules)))
             plot.tended = plot.cycle  # (cycles past the cap are lost: that is the price of not checking in)
 
     await user.update_skill("farming", collect)
     if not waiting:
         raise FarmingError("Nothing has grown since you last tended.")
     await user.inc_stat("tends")  # stats page
-    await user.inc_stat("cycles_tended", sum(cycles for _, cycles in waiting))
+    await user.inc_stat("cycles_tended", sum(cycles for _, cycles, _ in waiting))
     found: Counter = Counter()
-    for seed_id, cycles in waiting:
+    for seed_id, cycles, zone in waiting:
         expected = cycles * _byproduct_rolls(seed_id, rules) * (1 + luck)
         rolls = int(expected) + (1 if rng.random() < expected - int(expected) else 0)
         part: Counter = Counter()
         for _ in range(rolls):
-            for item in materials:
+            for item in zone_materials(zone, reg):
                 if quantity := roll_drop(item, rng):
                     part[item.id] += quantity
-        field_no = rules.field_seeds.index(seed_id) + 1 if seed_id in rules.field_seeds else 1
-        found.update(stars.apply(part, stars.progress(field_no, len(rules.field_seeds)), rng, reg))
+        found.update(stars.apply(part, stars.progress(zone, len(rules.field_seeds)), rng, reg))
     for item_id, quantity in found.items():
         await user.add_item(item_id, quantity)
-    return TendReport(len(waiting), sum(c for _, c in waiting), found)
+    return TendReport(len(waiting), sum(c for _, c, _ in waiting), found)
 
 
 def drop_rolls(cycles: int, rules, rng: random.Random, luck: float = 0.0) -> int:
@@ -449,10 +481,10 @@ def drop_rolls(cycles: int, rules, rng: random.Random, luck: float = 0.0) -> int
     return min(rules.max_drop_rolls, whole + (1 if rng.random() < expected - whole else 0))
 
 
-def harvest_extras(rng: random.Random, registry: Registry, cycles: int = 4, luck: float = 0.0) -> Counter:
-    """Materials that come along with a harvest (items of the farming skill that have a drop table): longer crops roll more."""
+def harvest_extras(rng: random.Random, registry: Registry, cycles: int = 4, luck: float = 0.0, zone: int = 1) -> Counter:
+    """Materials that come along with a harvest (the planted zone's own table): longer crops roll more."""
     found: Counter = Counter()
-    materials = [i for i in registry.items_for_skill("farming") if i.category == "material" and i.drop]
+    materials = zone_materials(zone, registry)
     for _ in range(drop_rolls(cycles, registry.farming, rng, luck)):
         for item in materials:
             if quantity := roll_drop(item, rng):
@@ -484,14 +516,14 @@ async def harvest(
         amount = max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield) * (2 if rng.random() < transmute else 1) * (1.6 if heirloom and rng.random() < heirloom else 1)))
         if extra_harvest and rng.random() < extra_harvest:
             amount += max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield)))
-        taken.update(seed=plot.crop_id, crop=crop.id, amount=amount,
+        taken.update(seed=plot.crop_id, zone=plot_zone(plot, rules), crop=crop.id, amount=amount,
                      xp=round(reg.item(plot.crop_id).seed.cycles * rules.xp_per_cycle * party_bonus))
         replant = bool(evergreen) and rng.random() < evergreen
         taken["replanted"] = replant
         if replant:  # Evergreen: the same crop is growing again, no seed spent
             plot.cycle, plot.can_harvest, plot.since, plot.tended = 0, False, hour_of(now), 0
         else:
-            plot.crop_id, plot.cycle, plot.can_harvest, plot.tended = None, 0, False, 0  # the plot is empty from this moment: once only
+            plot.crop_id, plot.cycle, plot.can_harvest, plot.tended, plot.zone = None, 0, False, 0, 0  # the plot is empty from this moment: once only
         m.xp += taken["xp"]
         m.stats.crops_grown += taken["amount"]
 
@@ -501,14 +533,13 @@ async def harvest(
     except Exception:
         def restore(m: Farming) -> None:
             plot = plot_of(m, number)
-            plot.crop_id, plot.can_harvest = taken["seed"], True
+            plot.crop_id, plot.can_harvest, plot.zone = taken["seed"], True, taken["zone"]
 
         await user.update_skill("farming", restore)  # the crop never arrived: the plot is still ripe
         raise
     await user.inc_stat(f"harvested:{taken['crop']}", taken["amount"])  # stats page: harvests by crop
-    extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0)
-    field_no = reg.farming.field_seeds.index(taken["seed"]) + 1 if taken["seed"] in reg.farming.field_seeds else 1
-    extras = stars.apply(extras, stars.progress(field_no, len(reg.farming.field_seeds)), rng, reg)  # starred materials: the further the field, the better the star
+    extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0, taken["zone"])
+    extras = stars.apply(extras, stars.progress(taken["zone"], len(reg.farming.field_seeds)), rng, reg)  # starred materials: the further the field, the better the star
     if scroll := scrolls.roll("farming", rng, reg, reg.item(taken["seed"]).seed.cycles):  # a rare scroll: one chance per growth cycle of what you harvest
         extras[scroll] += 1
     if can and rng.random() < can.stats.get("seed_back", 0.0):  # a good can lets a plant go to seed: the seed comes back

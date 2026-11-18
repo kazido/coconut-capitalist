@@ -63,6 +63,18 @@ class FarmScreen(Screen):
         ]
         for start in range(0, len(shown), PER_ROW):
             body.append(row(*(self._plot_button(v, reg, deeds) for v in shown[start:start + PER_ROW])))
+        zones = await farming.open_zones(self.user, reg)
+        zone = await farming.current_zone(self.user, reg)
+        names = reg.locations["farming"]
+        body.insert(2, text(f"{names[zone - 1].emoji} **Zone {zone}: {names[zone - 1].name}**"))
+        if zones > 1:
+            body.insert(3, row(select("Zone to work...", [
+                discord.SelectOption(label=f"{n}. {names[n - 1].name}", value=str(n), emoji=names[n - 1].emoji, default=n == zone,
+                                     description=f"Plants {reg.item(reg.farming.field_seeds[n - 1]).name} and cheaper") for n in range(1, zones + 1)], self._pick_zone)))
+        if seeds:
+            seeds = {i: q for i, q in seeds.items() if farming.seed_zone(i, reg.farming) <= zone}  # only what grows in this zone
+            if self.seed not in seeds:
+                self.seed = next(iter(seeds), None)
         if seeds:
             body.append(row(select(
                 "Seed to plant",
@@ -182,6 +194,10 @@ class FarmScreen(Screen):
                 await farming.plant(self.user, v.number, self.seed)
                 planted += 1
         await self.refresh(interaction, f"Planted {planted} plot(s) with {get_registry().item(self.seed).name}." if planted else "No seeds or no empty plots.")
+
+    async def _pick_zone(self, interaction: discord.Interaction, values: list[str]) -> None:
+        await farming.set_zone(self.user, int(values[0]))
+        await self.refresh(interaction)
 
     async def _pick_seed(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.seed = values[0]

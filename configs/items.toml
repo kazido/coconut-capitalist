@@ -2938,6 +2938,230 @@ rate = 150  # TODO(balance): 1 in 150 per drop roll
 min = 1
 max = 1
 
+[material_slime_goo]
+name = "Slime Goo"
+description = "Sticky green goo from the garden's wetter corners."
+wiki = "A byproduct of tending Farm zone 1: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "🟢"
+rarity = 1
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 900
+
+[material_slime_goo.drop]
+rate = 3  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_meadow_clover]
+name = "Meadow Clover"
+description = "A lucky-looking sprig from the farmstead."
+wiki = "A byproduct of tending Farm zone 2: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "☘️"
+rarity = 1
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 900
+
+[material_meadow_clover.drop]
+rate = 3  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_dusk_petal]
+name = "Dusk Petal"
+description = "A petal that glows faintly at twilight."
+wiki = "A byproduct of tending Farm zone 3: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "🌸"
+rarity = 1
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 900
+
+[material_dusk_petal.drop]
+rate = 3  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_oasis_date]
+name = "Oasis Date"
+description = "Sweet, sticky and sun-warmed."
+wiki = "A byproduct of tending Farm zone 4: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "🌴"
+rarity = 2
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 2350
+
+[material_oasis_date.drop]
+rate = 6  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_scrap_sprout]
+name = "Scrap Sprout"
+description = "A sprout that grew right through a rusted bolt."
+wiki = "A byproduct of tending Farm zone 5: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "🔩"
+rarity = 2
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 2350
+
+[material_scrap_sprout.drop]
+rate = 6  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_hydro_nutrient]
+name = "Hydro Nutrient"
+description = "A vial of bright green feed from the bays."
+wiki = "A byproduct of tending Farm zone 6: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "🧪"
+rarity = 2
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 2350
+
+[material_hydro_nutrient.drop]
+rate = 6  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_market_seedpack]
+name = "Market Seedpack"
+description = "A tidy packet of mixed seed, fresh from the stalls."
+wiki = "A byproduct of tending Farm zone 7: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "📦"
+rarity = 2
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 2350
+
+[material_market_seedpack.drop]
+rate = 6  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_rooftop_honey]
+name = "Rooftop Honey"
+description = "Collected from hives the city forgot."
+wiki = "A byproduct of tending Farm zone 8: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "🍯"
+rarity = 3
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 4850
+
+[material_rooftop_honey.drop]
+rate = 12  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_cloud_cotton]
+name = "Cloud Cotton"
+description = "Fluff you can nearly stand on."
+wiki = "A byproduct of tending Farm zone 9: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "☁️"
+rarity = 3
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 4850
+
+[material_cloud_cotton.drop]
+rate = 12  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_windmill_grain]
+name = "Windmill Grain"
+description = "Ground fine by the turning sails."
+wiki = "A byproduct of tending Farm zone 10: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "🌾"
+rarity = 3
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 4850
+
+[material_windmill_grain.drop]
+rate = 12  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_stardew_pollen]
+name = "Stardew Pollen"
+description = "Pollen that twinkles when you sneeze."
+wiki = "A byproduct of tending Farm zone 11: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "✨"
+rarity = 3
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 4850
+
+[material_stardew_pollen.drop]
+rate = 12  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_comet_ember]
+name = "Comet Ember"
+description = "A still-warm seed husk from a fallen comet."
+wiki = "A byproduct of tending Farm zone 12: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "☄️"
+rarity = 4
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 10650
+
+[material_comet_ember.drop]
+rate = 25  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_pale_bloom]
+name = "Pale Bloom"
+description = "A bloom with no colour and a lot of opinions."
+wiki = "A byproduct of tending Farm zone 13: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "🤍"
+rarity = 4
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 10650
+
+[material_pale_bloom.drop]
+rate = 25  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
+[material_ambrosia_nectar]
+name = "Ambrosia Nectar"
+description = "Gods once fought over this. Now it is a byproduct."
+wiki = "A byproduct of tending Farm zone 14: only crops planted there make it. Placeholder use. TODO(balance)"
+emoji = "🍷"
+rarity = 4
+skill = "farming"
+category = "material"
+price = 0
+sell_price = 10650
+
+[material_ambrosia_nectar.drop]
+rate = 25  # TODO(balance): placeholder, tuned so one zone roll is worth about as much as every other zone's
+min = 1
+max = 1
+
 [tool_can_tin]
 name = "Tin Watering Can"
 description = "Dented, leaky, and yours. It waters three plots an hour."
