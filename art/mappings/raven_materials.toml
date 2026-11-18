@@ -1,6 +1,5 @@
 material_feather = [0, 6]
 material_amber = [10, 10]
-material_beeswax = [9, 5]  # WEAK: plain gold block; no wax icon
 material_compost = [26, 8]  # WEAK: dark specks stand in for compost
 material_coral_shard = [23, 11]
 material_dewdrop = [43, 5]
