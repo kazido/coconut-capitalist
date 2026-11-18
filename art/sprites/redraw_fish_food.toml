@@ -244,23 +244,23 @@ rows = [
 
 [food_honeycomb]
 rarity = 4
-palette = { y = "#ffd24a", h = "#fff3a8", z = "#e8a020", a = "#d98410", d = "#8a4a0e", H = "#ffb020", o = "#2e1c2c" }
+palette = { h = "#fff0a0", y = "#ffd24a", z = "#e09a20", a = "#a8600c", d = "#5e300a", o = "#2e1c2c" }
 rows = [
   "................",
-  "................",
-  ".....oooooo.....",
-  "...oodhhddhoo...",
-  "..ohdayydayhdo..",
-  ".ohyyyyyyyyyyho.",
-  ".oddyyddyyddyzo.",
-  ".odayydayydayzo.",
-  ".ohyyyyyyyyyyzo.",
-  "..ohddyyddyzdo..",
-  "...ooazzdazoo...",
-  "....oHHoooHo....",
-  "....oHo..oHo....",
-  ".....o....o.....",
-  "................",
+  ".....ooooo......",
+  "...oohaaayoo....",
+  "..oahdhaydyao...",
+  ".oahdaaydaaydo..",
+  ".oahaaayaaayao..",
+  ".ohdhaydyaydzo..",
+  ".odaaydaaydaao..",
+  ".oaaayaaayaaao..",
+  ".oyaydyaydzazo..",
+  ".oaydaaydaazdo..",
+  ".oayaaazaaazao..",
+  "..odyazdzazdo...",
+  "...oozdaazoo....",
+  ".....ooooo......",
   "................",
 ]
 

@@ -90,23 +90,23 @@ rows = [
 
 [material_aged_feather]
 rarity = 5
-palette = { w = "#ffffff", h = "#d6ecf0", m = "#9cc6d4", s = "#5f8fb0", d = "#3e5878", q = "#f3e6bd", Q = "#c8b068", o = "#2e1c2c" }
+palette = { h = "#e4f4f8", m = "#a4cad8", s = "#6492b4", d = "#3e5878", q = "#f6e8bd", Q = "#c4a85c", o = "#2e1c2c" }
 rows = [
-  "................",
-  "................",
-  "...........oo...",
-  ".........oohho..",
-  ".......oohhhmso.",
-  "......ohhhhmmso.",
-  ".....ohhhhmmsdo.",
-  "....ohhhhmmssdo.",
-  "...ohhhhmmssdo..",
-  "...ohhhmmsddo...",
-  "..oqhhmmssdo....",
-  "..oqqhmsddoo....",
-  ".oQqqooooo......",
-  ".oQqo...........",
-  "................",
+  "............oo..",
+  "..........oohho.",
+  "........oohmmo..",
+  ".......ohhmmdo..",
+  "......ohhmmso...",
+  ".....ohhmmsdo...",
+  "....ohhmmsdo....",
+  "....ohmmsdo.....",
+  "....ommsdo......",
+  "...oomdoo.......",
+  "..oqQoo.........",
+  ".oqqqo..........",
+  "oqqqo...........",
+  "oqoo............",
+  ".o..............",
   "................",
 ]
 
