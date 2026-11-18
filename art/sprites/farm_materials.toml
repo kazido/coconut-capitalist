@@ -1,0 +1,45 @@
+# Farming byproducts (zone materials).
+
+[material_meadow_clover]
+rarity = 1
+palette = { l = "#e0ffb0", g = "#7ed860", G = "#3fa84a", L = "#a8f080", d = "#256a36", s = "#3a8a40", o = "#2e1c2c" }
+rows = [
+  "....oo....oo....",
+  "...olgo..oglo...",
+  "..olggGooGgglo..",
+  "..oggGGooGGggo..",
+  "...oGdoooodGo...",
+  "....oooGGooo....",
+  "...olgoGdoglo...",
+  "..olggGooggglo..",
+  "..oggGGooGGggo..",
+  "...oGdoo.odGo...",
+  "....oooso.oo....",
+  ".....ooso.......",
+  "....osso........",
+  ".....oo.........",
+  "................",
+  "................",
+]
+
+[material_market_seedpack]
+rarity = 2
+palette = { P = "#f4dca4", p = "#e0b878", q = "#c08e54", S = "#8e603a", w = "#fbf3dc", g = "#7ed860", G = "#3fa84a", d = "#6a4026", o = "#2e1c2c" }
+rows = [
+  "................",
+  "....oooooooo....",
+  "...oPpPpPpPpo...",
+  "...oppppppqSo...",
+  "...oppppppqSo...",
+  "...opwwwwwwSo...",
+  "...opwgwwgwSo...",
+  "...opwggggwSo...",
+  "...opwwGGwwSo...",
+  "...opwwGGwwSo...",
+  "...opwwddwwSo...",
+  "...opwwwwwwSo...",
+  "...oppppppqSo...",
+  "...opqqqqqqSo...",
+  "....oooooooo....",
+  "................",
+]
