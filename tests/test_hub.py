@@ -1122,6 +1122,7 @@ async def test_inviting_uses_the_party_rules_and_posts_nothing_in_the_chat(db):
 
 # ---- farming -------------------------------------------------------------------------------------------------------
 FRIDAY = 1_794_571_200  # 2026-11-13 12:00 UTC
+MARKET_OPEN = FRIDAY - 12 * 3600 + get_registry().farming.market.opens[0] * 3600 + 60  # a minute after the market opens
 
 
 async def ripen(user, plot=1, seed="seed_apple"):
@@ -1215,7 +1216,7 @@ async def test_market_is_locked_until_level_five_then_follows_the_calendar(db, m
     user = await User.get(1)
     await user.add_xp("farming", User.level_to_xp(5) + 1)
     await user.add_item("crop_apple", 10)
-    clock = SimpleNamespace(time=lambda: FRIDAY)
+    clock = SimpleNamespace(time=lambda: MARKET_OPEN)
     monkeypatch.setattr("cococap.screens.market.time", clock)
     monkeypatch.setattr("cococap.services.farming.time", clock)
     nav, inter = await hub("market")
@@ -1243,7 +1244,7 @@ async def test_depositing_blessings_from_the_market(db, monkeypatch):
     user = await User.get(1)
     await user.add_xp("farming", User.level_to_xp(5) + 1)
     await user.update_skill("farming", lambda m: setattr(m, "rain_god_blessings", 3))
-    clock = SimpleNamespace(time=lambda: FRIDAY)
+    clock = SimpleNamespace(time=lambda: MARKET_OPEN)
     monkeypatch.setattr("cococap.screens.market.time", clock)
     monkeypatch.setattr("cococap.services.farming.time", clock)
     nav, inter = await hub("market")
@@ -1295,7 +1296,7 @@ async def stock_the_player(user):
 @pytest.mark.parametrize("screen_id", list(SCREENS))
 async def test_every_screen_payload_obeys_discords_nesting_rules_for_a_stocked_player(db, screen_id, monkeypatch):
     await stock_the_player(await User.get(1))
-    clock = SimpleNamespace(time=lambda: FRIDAY)
+    clock = SimpleNamespace(time=lambda: MARKET_OPEN)
     monkeypatch.setattr("cococap.screens.market.time", clock)
     monkeypatch.setattr("cococap.services.farming.time", clock)
     nav, _ = await hub(screen_id)

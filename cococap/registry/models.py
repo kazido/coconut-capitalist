@@ -665,11 +665,11 @@ class MiningRules(_Data):
 
 
 class MarketRules(_Data):
-    """The Farmer's Market: open every day for a few hours (UTC), better prices, blessings for land deeds."""
+    """The Farmer's Market: open a couple of times a day (UTC), better prices, blessings for land deeds."""
 
     min_level: int = Field(ge=1)
-    open_hour: int = Field(ge=0, le=23)  # UTC hour of day the market opens
-    open_hours: int = Field(ge=1, le=23)  # how many hours it stays open (may run past midnight)
+    opens: list[int] = Field(min_length=1)  # UTC hours of day the market opens (each day, each of them)
+    open_hours: int = Field(ge=1, le=12)  # how many hours it stays open each time (may run past midnight)
     price_bonus: float = Field(ge=0)  # +50% -> 0.5
     deed_chance: float = Field(ge=0, le=1)  # per blessing deposited
 
