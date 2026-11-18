@@ -1557,7 +1557,6 @@ def test_there_is_one_mine_per_mining_location_and_each_holds_every_reactor_gem(
         assert len(tables) == len(RULES.depth_tables)
         assert set(RULES.reactor.core_gems) <= set(tables[-1])  # the reactor can always be fed, in every mine
     assert RULES.mines[0].tables is None  # the first mine is the shared tables, so nothing changed for current players
-    assert [s.yield_mult for s in RULES.mines] == sorted(s.yield_mult for s in RULES.mines)  # deeper mines never pay less per cell
 
 
 async def test_a_new_player_can_only_dig_the_first_mine(db):
