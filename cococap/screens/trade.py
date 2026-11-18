@@ -1,6 +1,7 @@
 import discord
 
 from cococap.errors import CustomError
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import trade
 from cococap.ui import Page, PromptModal, Screen
@@ -13,7 +14,7 @@ def describe(items: dict[str, int], bit_amount: int) -> str:
     reg = get_registry()
     parts = [f"{reg.item(i).display} ×{q:,}" for i, q in items.items()]
     if bit_amount:
-        parts.append(f"💸 **{bits(bit_amount)}** bits")
+        parts.append(f"{emojis.currency('bits')} **{bits(bit_amount)}** bits")
     return "\n".join(parts) if parts else "*nothing yet*"
 
 
@@ -67,7 +68,7 @@ class TradeScreen(Screen):
             body.append(row(select("Add an item...", [
                 discord.SelectOption(label=get_registry().item(i).name[:90], description=f"you have {q:,}", value=i) for i, q in stacks], self._add_item)))
         accepted = me in window.accepted
-        body.append(row(button("Add bits", emoji="💸", on_click=self._add_bits),
+        body.append(row(button("Add bits", emoji=emojis.currency("bits"), on_click=self._add_bits),
                         button("Empty my side", disabled=not (mine[0] or mine[1]), on_click=self._empty),
                         button("Accepted: undo" if accepted else "Accept", emoji="✅", style=discord.ButtonStyle.secondary if accepted else discord.ButtonStyle.success,
                                disabled=not (mine[0] or mine[1] or theirs[0] or theirs[1]) and not accepted, on_click=self._unaccept if accepted else self._accept(window.version)),

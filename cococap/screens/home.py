@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services.party import Party
 from cococap.services import economy, party_invites, trade
@@ -17,8 +18,8 @@ PARTY_NAMES_SHOWN = 4
 
 def balance_line(user) -> str:
     return (
-        f"💸 **{bits(user.purse)}**  ·  "
-        f"🪙 **{bits(user.tokens)}**  ·  🍀 **{bits(user.luckbucks)}**"
+        f"{emojis.currency('bits')} **{bits(user.purse)}**  ·  "
+        f"{emojis.currency('tokens')} **{bits(user.tokens)}**  ·  {emojis.currency('luckbucks')} **{bits(user.luckbucks)}**"
     )
 
 

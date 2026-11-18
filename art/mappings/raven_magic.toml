@@ -15,3 +15,5 @@ spirit_of_the_sea = {cell = [69, 8], hue = 100, sat = 0.5, val = 0.95}
 spirit_of_the_forest = {cell = [69, 8], hue = -85, sat = 0.5, val = 0.9}
 spirit_of_the_mines = {cell = [69, 8], ramp = ["#241c20", "#5a5058", "#9a9094", "#e6dede"]}
 ui_bits = {cell = [8, 6], framed = false}
+ui_tokens = {cell = [8, 2], framed = false}
+ui_luckbucks = {cell = [41, 11], framed = false}
