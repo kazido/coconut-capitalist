@@ -33,14 +33,12 @@ KIND_ORDER = ("pickaxe", "axe", "sword", "rod", "can")
 KIND_SKILL = {"pickaxe": "Mining", "axe": "Foraging", "sword": "Combat", "rod": "Fishing", "can": "Farming"}
 
 
-class UpgradeScreen(Screen):
-    """One tool per page: a button per skill switches between your tools, so each one's costs are easy to read on their own."""
+class UpgradePane(Screen):
+    """One tool per page: a button per skill switches between your tools, so each one's costs are easy to read on their own.
+    A tab of the Tools page (screens/tools.py)."""
 
-    id = "upgrade"
-    label = "Upgrade Tools"
+    label = "Upgrade"
     emoji = emojis.Lazy("ui_craft", "🔨")
-    description = "Turn a tool into the next one up"
-    links = ("tools",)
 
     def __init__(self, nav):
         super().__init__(nav)

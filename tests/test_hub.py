@@ -135,6 +135,24 @@ async def test_every_pets_tab_renders_valid_layout(db, tab):
     assert nav.content_length() <= 4000
 
 
+@pytest.mark.parametrize("tab", list(SCREENS["tools"].panes))
+async def test_every_tools_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("tools", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
+@pytest.mark.parametrize("tab", list(SCREENS["player"].panes))
+async def test_every_player_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("player", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
 
 # ---- navigation -------------------------------------------------------------------------------
 async def test_home_buttons_open_screens_and_back_returns(db):
@@ -244,7 +262,7 @@ async def test_settings_page_lists_each_setting_with_a_toggle_that_saves(db):
 
 
 async def test_profile_and_home_show_balances_and_levels(db):
-    nav, _ = await hub("profile")
+    nav, _ = await hub("player", tab="profile")
     text = all_text(nav)
     assert "1,000" in text and "Mining" in text and "Lv 1" in text
     home, _ = await hub("home")
@@ -254,7 +272,7 @@ async def test_profile_and_home_show_balances_and_levels(db):
 async def test_stats_pages_switch_with_the_select(db):
     user = await User.get(1)
     await user.inc_stat("hl_wins", 3)
-    nav, inter = await hub("stats")
+    nav, inter = await hub("player", tab="stats")
     await choose(nav, inter, select_named(nav, "Pick a page"), "gambling")
     assert "Wins: `3`" in all_text(nav)
 
@@ -263,11 +281,11 @@ async def test_top_select_changes_category_and_shortcut_preselects_it(db):
     from cococap.exts.economy.top import TopCategories
 
     await set_columns(await User.get(1), luckbucks=77)
-    nav, inter = await hub("top")
+    nav, inter = await hub("player", tab="top")
     assert "tester" in all_text(nav)
     await choose(nav, inter, select_named(nav, "Pick a leaderboard"), "luckbucks")
     assert "77" in all_text(nav) and "Luckbucks" in all_text(nav)
-    nav2, _ = await hub("top", category=TopCategories.LUCKBUCKS)
+    nav2, _ = await hub("player", tab="top", category=TopCategories.LUCKBUCKS)
     assert nav2.screen.category is TopCategories.LUCKBUCKS
 
 
@@ -401,8 +419,8 @@ async def test_the_tools_page_is_a_compact_list_without_equip_buttons_and_leads_
     text = all_text(nav)
     assert "Starter Axe" in text and "Tin Watering Can" in text and "Farming" in text and "Foraging" in text and "power" in text
     assert "✅" not in text and not [b for b in buttons(nav) if b.label in ("Equip", "Equipped")]
-    await click(nav, inter, "Upgrade")
-    assert nav.screen.id == "upgrade"
+    await choose(nav, inter, select_named(nav, "Choose a tab"), "upgrade")
+    assert nav.screen.tab == "upgrade"
     await click(nav, inter, "Back to tools")
     assert nav.screen.id == "tools"
 
@@ -492,7 +510,7 @@ async def test_home_links_really_open_the_declared_screens(db):
         nav, inter = await hub(parent)
         openers = [c.accessory for c in nav.walk_children() if isinstance(c, ui.Section) and isinstance(c.accessory, ui.Button)
                    and not c.accessory.disabled and c.accessory.label == "Open"]
-        quick = [b for b in buttons(nav) if b.emoji and b.label in ("Check-in", "Inventory", "Shop", "Trade", "Party", "Pets", "More", "Profile", "Ranks", "Leaderboards")]
+        quick = [b for b in buttons(nav) if b.emoji and b.label in ("Check-in", "Inventory", "Shop", "Trade", "Party", "Pets", "More", "Player", "Ranks")]
         opened = set()
         for opener in openers + quick:
             nav.stack, nav.screen = ["home"], None
@@ -1001,18 +1019,18 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
         assert moved not in text, moved
     assert "Party" not in text.split("Skills")[0]  # (no party line unless the player is in a party)
     assert all(name in text for name in ("Check-in", "Inventory", "Shop", "Pets"))  # the main things are sections, one Open button each
-    assert {b.label for b in buttons(nav)} >= {"Party", "More", "Profile", "Ranks", "Travel"}  # one row of smaller things at the bottom
+    assert {b.label for b in buttons(nav)} >= {"Party", "More", "Player", "Ranks", "Travel"}  # one row of smaller things at the bottom
     assert len(text.splitlines()) <= 18  # (six main sections: a title and a line each)
     await click(nav, inter, "More")
     assert nav.screen.id == "more"
     text = all_text(nav)
-    assert all(name in text for name in ("Trade", "Minigames", "Stats", "Settings"))
+    assert all(name in text for name in ("Trade", "Minigames", "Settings"))
     await click(nav, inter, "Back")
     assert nav.screen.id == "home"
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("top", "trade", "minigames", "stats", "wiki", "settings")):
+    for index, expected in enumerate(("trade", "minigames", "wiki", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)
@@ -1554,7 +1572,7 @@ async def test_the_house_earns_luckbucks_not_bits_on_the_boards(db):
     assert "bits in the economy" in bits_line and bits_footer is None  # no "the house has made N bits"
     _, _, luck_footer = await leaderboard_view(TopCategories.LUCKBUCKS, 1)
     assert luck_footer == "The house has made: 1,234 luckbucks"
-    nav, inter = await hub("top")
+    nav, inter = await hub("player", tab="top")
     assert "house" not in all_text(nav).lower()
     await choose(nav, inter, select_named(nav, "Pick a leaderboard"), "luckbucks")
     assert "The house has made: 1,234 luckbucks" in all_text(nav)

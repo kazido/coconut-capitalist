@@ -15,7 +15,6 @@ from .farm import FarmScreen
 from .fight import FightScreen
 from .flashcard import FlashcardScreen
 from .fish import FishLogScreen, FishPotsScreen, FishScreen
-from .enchant import EnchantScreen
 from .forage import ForageScreen, TreesScreen
 from .releaf import ReleafScreen
 from .sequence import SequenceScreen
@@ -30,7 +29,7 @@ from .minigames import MinigamesScreen
 from .mining import MiningScreen
 from .party import PartyScreen
 from .pets import PetsScreen
-from .profile import ProfileScreen
+from .player import PlayerScreen
 from .reactor import ReactorScreen
 from .radar import RadarScreen
 from .rank import RankScreen
@@ -40,11 +39,8 @@ from .ship import ShipScreen
 from .shipments import ShipmentsScreen
 from .shop import ShopScreen
 from .skills import SkillsScreen
-from .stats import StatsScreen
 from .tools import ToolsScreen
-from .top import TopScreen
 from .trade import TradeScreen
-from .upgrade import UpgradeScreen
 from .wiki import WikiScreen
 from .wyrmhole import WyrmholeScreen
 
@@ -55,7 +51,7 @@ SCREENS: dict[str, type[Screen]] = {
         MoreScreen,
         PartyScreen,
         PetsScreen,
-        ProfileScreen,
+        PlayerScreen,
         BestiaryScreen,
         ToolsScreen,
         SellAllScreen,
@@ -89,13 +85,9 @@ SCREENS: dict[str, type[Screen]] = {
         BlackjackScreen,
         InventoryScreen,
         CraftScreen,
-        UpgradeScreen,
         WikiScreen,
-        EnchantScreen,
         ShopScreen,
         RankScreen,
-        TopScreen,
-        StatsScreen,
         SettingsScreen,
     )
 }

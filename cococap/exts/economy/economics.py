@@ -89,7 +89,7 @@ class EconomyCog(BaseCog, name="Economy"):
     @app_commands.command(name="profile", description="Check your profile and balances.")
     async def bits(self, interaction: Interaction):
         """Display your profile with all your balances."""
-        await open_screen(interaction, "profile")
+        await open_screen(interaction, "player", tab="profile")
 
     @app_commands.command(name="beg", description="Beg for some money, poor freak.")
     async def beg(self, interaction: Interaction):

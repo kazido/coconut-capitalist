@@ -6,8 +6,9 @@ from cococap.ui import Page, Screen
 from cococap.ui.components import row, select, sep, text
 
 
-class TopScreen(Screen):
-    id = "top"
+class TopPane(Screen):
+    """The leaderboards. A tab of the Player page (screens/player.py)."""
+
     label = "Leaderboards"
     emoji = emojis.Lazy("ui_record", "🏆")
     description = "See who's on top"

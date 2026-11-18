@@ -8,12 +8,11 @@ from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, select, sep, text
 
 
-class EnchantScreen(Screen):
-    id = "enchant"
+class EnchantPane(Screen):
+    """Put a scroll on a tool. A tab of the Tools page (screens/tools.py)."""
+
     label = "Enchant"
     emoji = emojis.Lazy("ui_scroll", "📜")
-    description = "Use a scroll to enchant a tool"
-    links = ("inventory",)
 
     def __init__(self, nav):
         super().__init__(nav)

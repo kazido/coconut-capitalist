@@ -369,6 +369,6 @@ async def test_the_tool_upgrade_page_shows_what_you_have_against_what_you_need(d
     inst = await user.give_instance("tool_axe_starter")
     await equip(user, "foraging", inst.id)
     await user.add_item("material_feather", 10)
-    nav, _ = await hub("upgrade")
+    nav, _ = await hub("tools", tab="upgrade")
     page = all_text(nav)
     assert "**10/40**" in page and "❌" in page and "(you have" in page

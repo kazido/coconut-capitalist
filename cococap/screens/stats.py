@@ -6,8 +6,9 @@ from cococap.ui.components import row, select, sep, text
 from cococap import emojis
 
 
-class StatsScreen(Screen):
-    id = "stats"
+class StatsPane(Screen):
+    """Number go up: the stat pages. A tab of the Player page (screens/player.py)."""
+
     label = "Stats"
     emoji = emojis.Lazy("ui_milestone", "📊")
     description = "Number go up, man happy"
