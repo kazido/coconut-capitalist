@@ -5,6 +5,7 @@
     .venv/bin/python scripts/upload_emojis.py --only ui_ --yes # only names starting with a prefix
     .venv/bin/python scripts/upload_emojis.py --only-suffix _pickaxe --replace-all --yes  # only names ending in a suffix
     .venv/bin/python scripts/upload_emojis.py --replace iron_ore --yes   # delete + recreate one emoji (new art)
+    .venv/bin/python scripts/upload_emojis.py --only zzz --delete flame_ash --yes   # delete one emoji from Discord (--only zzz = upload nothing)
     .venv/bin/python scripts/upload_emojis.py --limit 50 --yes # at most 50 uploads this run (rerun for the rest)
 
 A file ``art/out/<name>.png`` (static) or ``.webp`` / ``.gif`` (animated) becomes the emoji ``<name>``. Only names
@@ -171,9 +172,20 @@ async def run(args: argparse.Namespace, token: str) -> int:
             replace += [f.name for f in files if f.name in by_name and f.name not in replace]
         plan = plan_upload(by_name, files, only=args.only, only_suffix=args.only_suffix, replace=replace, limit=args.limit)
         print_plan(plan, len(existing))
+        doomed = [n for n in (args.delete or ()) if n in by_name]
+        for n in args.delete or ():
+            print(f"  delete   {n}" + ("" if n in by_name else "  (not on Discord)"))
         if not args.yes:
             print("Dry run: nothing was changed. Add --yes to upload.")
             return 1 if plan.invalid else 0
+        for name in doomed:
+            try:
+                await _with_backoff(by_name[name].delete, f"delete {name}")
+                print(f"  deleted  {name}")
+            except Exception as e:
+                failed.append((name, str(e)[:120]))
+                print(f"  FAILED   delete {name}: {e}")
+            await asyncio.sleep(args.pause)
         for kind, f in plan.actions:
             try:
                 if kind == "replace":
@@ -208,6 +220,7 @@ def main(argv=None) -> int:
     ap.add_argument("--only-suffix", metavar="SUFFIX", help="only names ending with SUFFIX (e.g. _pickaxe)")
     ap.add_argument("--replace", metavar="NAME", action="append", help="delete and recreate this emoji (repeatable)")
     ap.add_argument("--replace-all", action="store_true", help="delete and recreate EVERY emoji that already exists on Discord and has a file here (use after the art changed)")
+    ap.add_argument("--delete", metavar="NAME", action="append", help="delete this emoji from Discord (repeatable; needs --yes). Use with --only so nothing else uploads")
     ap.add_argument("--limit", type=int, metavar="N", help="at most N uploads/replacements this run")
     ap.add_argument("--pause", type=float, default=1.5, help="seconds to wait between uploads (default 1.5)")
     args = ap.parse_args(argv)

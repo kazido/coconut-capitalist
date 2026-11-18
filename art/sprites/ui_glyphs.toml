@@ -1,0 +1,674 @@
+# Glyph replacements drawn by hand in the Raven look: plum outline, light top-left edge, dark bottom-right edge.
+# Generated once by a script; edit the rows freely. Diagonals are exactly 45 degrees (1:2 for the warning triangle).
+
+[ui_check]
+palette = { o = "#2e1c2c", a = "#c8ffd0", b = "#48d068", c = "#2a8c48" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "............ooo.",
+  "...........oaabo",
+  "..........oabco.",
+  ".........oabco..",
+  "........oabco...",
+  ".ooo...oabco....",
+  "obabo.oabco.....",
+  ".obbboabco......",
+  "..obbabco.......",
+  "...obcco........",
+  "....ooo.........",
+  "................",
+  "................",
+]
+
+[ui_cross]
+palette = { o = "#2e1c2c", a = "#ffa8a8", b = "#e04848", c = "#a02838" }
+rows = [
+  "................",
+  "..oo........oo..",
+  ".oabo......oabo.",
+  ".obbbo....oabco.",
+  "..obbbo..oabco..",
+  "...obbbooabco...",
+  "....obbaabco....",
+  ".....oabbco.....",
+  ".....oabbco.....",
+  "....oabccbbo....",
+  "...oabcoobbbo...",
+  "..oabco..obbbo..",
+  ".oabco....obbbo.",
+  ".obco......obco.",
+  "..oo........oo..",
+  "................",
+]
+
+[ui_warn]
+palette = { o = "#2e1c2c", a = "#fff4a8", b = "#ffc83a", c = "#c8842a", d = "#3a2a3a", e = "#3a2a3a", f = "#3a2a3a" }
+rows = [
+  "................",
+  ".......oo.......",
+  "......oabo......",
+  "......oaco......",
+  ".....oabbbo.....",
+  ".....oaccco.....",
+  "....oacdeabo....",
+  "....oacdfaco....",
+  "...oabcdfabbo...",
+  "...oabcdfabco...",
+  "..oabbcefabbbo..",
+  "..oabbbbbbbbco..",
+  ".oabbbcdeabbbbo.",
+  ".oabbbcefabbbco.",
+  "obcccccbbcccccbo",
+  ".oooooooooooooo.",
+]
+
+[ui_crown]
+palette = { o = "#2e1c2c", a = "#fff4a8", b = "#ffc83a", c = "#c8842a", d = "#ffe070", e = "#e0a02a", f = "#a8681e", g = "#ffa8a8", h = "#e04848", i = "#a02838", j = "#f0fcff", k = "#b8e4f8", l = "#78a8d8" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "..o....oo....o..",
+  ".obo..oabo..obo.",
+  ".obo..oaco..obo.",
+  "oabbooabbbooabbo",
+  "oabcooabbcooabco",
+  "oabbaabbbbaabbco",
+  "oabbbbbbbbbbbbco",
+  "obccccccccccccco",
+  "oddedddeedddedeo",
+  "odfhdefkkdefhdfo",
+  "oefefffeefffeffo",
+  ".oooooooooooooo.",
+  "................",
+]
+
+[ui_lock]
+palette = { o = "#2e1c2c", a = "#f0f4fc", b = "#aab6ca", c = "#6a7690", d = "#fff4a8", e = "#ffc83a", f = "#c8842a", g = "#5a4a64", h = "#3a2a3a", i = "#2a1c2a" }
+rows = [
+  "......oooo......",
+  ".....oaaabo.....",
+  "....oabbbbbo....",
+  "....oaccccco....",
+  "...oacooooabo...",
+  "...oaco..oaco...",
+  "...obcoooobco...",
+  "..odddddddddeo..",
+  "..odeeeffeeefo..",
+  "..odeefghdeefo..",
+  "..odeefgideefo..",
+  "..odeefgideefo..",
+  "..odeefhideefo..",
+  "..odeeeddeeefo..",
+  "..oefffffffffo..",
+  "...oooooooooo...",
+]
+
+[ui_unlock]
+palette = { o = "#2e1c2c", a = "#f0f4fc", b = "#aab6ca", c = "#6a7690", d = "#fff4a8", e = "#ffc83a", f = "#c8842a", g = "#5a4a64", h = "#3a2a3a", i = "#2a1c2a" }
+rows = [
+  "......oooo......",
+  ".....oaaabo.....",
+  "....oabbbbbo....",
+  "....oaccccco....",
+  "...oacoooobbo...",
+  "...oaco...oo....",
+  "...obcooooooo...",
+  "..odddddddddeo..",
+  "..odeeeffeeefo..",
+  "..odeefghdeefo..",
+  "..odeefgideefo..",
+  "..odeefgideefo..",
+  "..odeefhideefo..",
+  "..odeeeddeeefo..",
+  "..oefffffffffo..",
+  "...oooooooooo...",
+]
+
+[ui_timer]
+palette = { o = "#2e1c2c", a = "#e8b878", b = "#b87840", c = "#7a4a28", d = "#f0fcff", e = "#b8e4f8", f = "#78a8d8", g = "#fff4a8", h = "#ffc83a", i = "#c8842a" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  ".obccccccccccco.",
+  "..oeddddddddeo..",
+  "...oefffffffo...",
+  "....ohggggho....",
+  ".....ohhhio.....",
+  "......ohio......",
+  "......oeeo......",
+  ".....oegheo.....",
+  "....oeghhheo....",
+  "...oeghhhhheo...",
+  "..oehiiiiiiheo..",
+  ".oaaaaaaaaaaabo.",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_suit_heart]
+palette = { o = "#2e1c2c", a = "#ffa8a8", b = "#e04848", c = "#a02838" }
+rows = [
+  "................",
+  "...oooo..oooo...",
+  "..oaaabooaaabo..",
+  ".oabbbbaabbbbbo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obbbbbbbbbbbco.",
+  "..obbbbbbbbbco..",
+  "...obbbbbbbco...",
+  "....obbbbbco....",
+  ".....obbbco.....",
+  "......obco......",
+  ".......oo.......",
+  "................",
+  "................",
+]
+
+[ui_diamond]
+palette = { o = "#2e1c2c", a = "#ffa8a8", b = "#e04848", c = "#a02838" }
+rows = [
+  ".......oo.......",
+  "......oabo......",
+  ".....oabbbo.....",
+  "....oabbbbbo....",
+  "...oabbbbbbbo...",
+  "..oabbbbbbbbbo..",
+  ".oabbbbbbbbbbbo.",
+  "oabbbbbbbbbbbbbo",
+  "obbbbbbbbbbbbbco",
+  ".obbbbbbbbbbbco.",
+  "..obbbbbbbbbco..",
+  "...obbbbbbbco...",
+  "....obbbbbco....",
+  ".....obbbco.....",
+  "......obco......",
+  ".......oo.......",
+]
+
+[ui_spade]
+palette = { o = "#2e1c2c", a = "#9a8ac0", b = "#5c4c84", c = "#3a2a5a" }
+rows = [
+  ".......oo.......",
+  "......oabo......",
+  ".....oabbbo.....",
+  "....oabbbbbo....",
+  "...oabbbbbbbo...",
+  "..oabbbbbbbbbo..",
+  ".oabbbbbbbbbbbo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "obbbbbcbbcbbbbco",
+  ".obcccoacobccco.",
+  "..oooooacooooo..",
+  ".....oabbbo.....",
+  "....obccccbo....",
+  ".....oooooo.....",
+  "................",
+]
+
+[ui_club]
+palette = { o = "#2e1c2c", a = "#9a8ac0", b = "#5c4c84", c = "#3a2a5a" }
+rows = [
+  "................",
+  "......oooo......",
+  ".....oaaabo.....",
+  "....oabbbbbo....",
+  "....oabbbbco....",
+  "...ooabbbbcoo...",
+  "..oaabbbbbbabo..",
+  ".oabbbbbbbbbbbo.",
+  ".oabbbbbbbbbbco.",
+  ".oabbbbbbbbbbco.",
+  ".obbbbbbbbbbbco.",
+  "..obcbbbbbbcco..",
+  "...ooabbbbcoo...",
+  "...obccccccbo...",
+  "....oooooooo....",
+  "................",
+]
+
+[ui_dice]
+palette = { o = "#2e1c2c", a = "#ffffff", b = "#eee8de", c = "#b4aca6", d = "#5a4a64", e = "#3a2a3a", f = "#2a1c2a" }
+rows = [
+  "................",
+  "...oooooooooo...",
+  "..oaaaaaaaaabo..",
+  ".oabccbbbbccbbo.",
+  ".oacdeabbcdeaco.",
+  ".oacefabbcefaco.",
+  ".oabaabccbaabco.",
+  ".oabbbcdeabbbco.",
+  ".oabbbcefabbbco.",
+  ".oabccbaabccbco.",
+  ".oacdeabbcdeaco.",
+  ".oacefabbcefaco.",
+  ".obbaabbbbaabco.",
+  "..obccccccccco..",
+  "...oooooooooo...",
+  "................",
+]
+
+[ui_cards]
+palette = { o = "#2e1c2c", a = "#ffffff", b = "#eee8de", c = "#b4aca6", d = "#ffa8a8", e = "#e04848", f = "#a02838" }
+rows = [
+  "....oooooooo....",
+  "...oaaaaaaabo...",
+  "..oabbbbbbbbbo..",
+  "..oabbbbbbbbco..",
+  "..oabccbccbbco..",
+  "..oacdebdebbco..",
+  "..oaceedeeeaco..",
+  "..oabbeeefabco..",
+  "..oabbbefabbco..",
+  "..oabbbaabbbco..",
+  "..oabbbbbbbbco..",
+  "..oabbbbbbbbco..",
+  "..oabbbbbbbbco..",
+  "..obbbbbbbbbco..",
+  "...obccccccco...",
+  "....oooooooo....",
+]
+
+[ui_pip]
+palette = { o = "#2e1c2c", a = "#ffffff", b = "#eee8de", c = "#b4aca6" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "................",
+  ".....oooooo.....",
+  "....oaaaaabo....",
+  "....oabbbbco....",
+  "....oabbbbco....",
+  "....oabbbbco....",
+  "....oabbbbco....",
+  "....obccccco....",
+  ".....oooooo.....",
+  "................",
+  "................",
+  "................",
+  "................",
+]
+
+[ui_sq_black]
+palette = { o = "#2e1c2c", a = "#646473", b = "#46465c", c = "#2f2f3f" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_sq_white]
+palette = { o = "#2e1c2c", a = "#fdfdff", b = "#f2f2f6", c = "#a4a4a7" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_sq_brown]
+palette = { o = "#2e1c2c", a = "#c09a7d", b = "#9a6238", c = "#694123" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_sq_green]
+palette = { o = "#2e1c2c", a = "#95f0ae", b = "#3cc060", c = "#24833e" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_sq_blue]
+palette = { o = "#2e1c2c", a = "#98c3ff", b = "#3c80e0", c = "#235498" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_sq_orange]
+palette = { o = "#2e1c2c", a = "#ffc78f", b = "#f09030", c = "#a35f1a" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_sq_red]
+palette = { o = "#2e1c2c", a = "#ff9b9b", b = "#e04040", c = "#982626" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_sq_yellow]
+palette = { o = "#2e1c2c", a = "#ffec98", b = "#f0d040", c = "#a38c26" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_sq_purple]
+palette = { o = "#2e1c2c", a = "#d4a9ff", b = "#9050d0", c = "#60328d" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_dot_green]
+palette = { o = "#2e1c2c", a = "#95f0ae", b = "#3cc060", c = "#24833e" }
+rows = [
+  "......oooo......",
+  "....ooaaaboo....",
+  "...oaabbbbabo...",
+  "..oabbbbbbbbbo..",
+  ".oabbbbbbbbbbbo.",
+  ".oabbbbbbbbbbco.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".oabbbbbbbbbbco.",
+  ".obbbbbbbbbbbco.",
+  "..obbbbbbbbbco..",
+  "...obcbbbbcco...",
+  "....oobcccoo....",
+  "......oooo......",
+]
+
+[ui_dot_red]
+palette = { o = "#2e1c2c", a = "#ff9b9b", b = "#e04040", c = "#982626" }
+rows = [
+  "......oooo......",
+  "....ooaaaboo....",
+  "...oaabbbbabo...",
+  "..oabbbbbbbbbo..",
+  ".oabbbbbbbbbbbo.",
+  ".oabbbbbbbbbbco.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".oabbbbbbbbbbco.",
+  ".obbbbbbbbbbbco.",
+  "..obbbbbbbbbco..",
+  "...obcbbbbcco...",
+  "....oobcccoo....",
+  "......oooo......",
+]
+
+[ui_dot_yellow]
+palette = { o = "#2e1c2c", a = "#ffec98", b = "#f0d040", c = "#a38c26" }
+rows = [
+  "......oooo......",
+  "....ooaaaboo....",
+  "...oaabbbbabo...",
+  "..oabbbbbbbbbo..",
+  ".oabbbbbbbbbbbo.",
+  ".oabbbbbbbbbbco.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".oabbbbbbbbbbco.",
+  ".obbbbbbbbbbbco.",
+  "..obbbbbbbbbco..",
+  "...obcbbbbcco...",
+  "....oobcccoo....",
+  "......oooo......",
+]
+
+[ui_dot_orange]
+palette = { o = "#2e1c2c", a = "#ffc78f", b = "#f09030", c = "#a35f1a" }
+rows = [
+  "......oooo......",
+  "....ooaaaboo....",
+  "...oaabbbbabo...",
+  "..oabbbbbbbbbo..",
+  ".oabbbbbbbbbbbo.",
+  ".oabbbbbbbbbbco.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".oabbbbbbbbbbco.",
+  ".obbbbbbbbbbbco.",
+  "..obbbbbbbbbco..",
+  "...obcbbbbcco...",
+  "....oobcccoo....",
+  "......oooo......",
+]
+
+[ui_dot_black]
+palette = { o = "#2e1c2c", a = "#646473", b = "#46465c", c = "#2f2f3f" }
+rows = [
+  "......oooo......",
+  "....ooaaaboo....",
+  "...oaabbbbabo...",
+  "..oabbbbbbbbbo..",
+  ".oabbbbbbbbbbbo.",
+  ".oabbbbbbbbbbco.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".oabbbbbbbbbbco.",
+  ".obbbbbbbbbbbco.",
+  "..obbbbbbbbbco..",
+  "...obcbbbbcco...",
+  "....oobcccoo....",
+  "......oooo......",
+]
+
+[ui_dot_white]
+palette = { o = "#2e1c2c", a = "#fdfdff", b = "#f2f2f6", c = "#a4a4a7" }
+rows = [
+  "......oooo......",
+  "....ooaaaboo....",
+  "...oaabbbbabo...",
+  "..oabbbbbbbbbo..",
+  ".oabbbbbbbbbbbo.",
+  ".oabbbbbbbbbbco.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".oabbbbbbbbbbco.",
+  ".obbbbbbbbbbbco.",
+  "..obbbbbbbbbco..",
+  "...obcbbbbcco...",
+  "....oobcccoo....",
+  "......oooo......",
+]
+
+[ui_dot_brown]
+palette = { o = "#2e1c2c", a = "#c09a7d", b = "#9a6238", c = "#694123" }
+rows = [
+  "......oooo......",
+  "....ooaaaboo....",
+  "...oaabbbbabo...",
+  "..oabbbbbbbbbo..",
+  ".oabbbbbbbbbbbo.",
+  ".oabbbbbbbbbbco.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbbbbbbbbco",
+  "oabbbbbbbbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".oabbbbbbbbbbco.",
+  ".obbbbbbbbbbbco.",
+  "..obbbbbbbbbco..",
+  "...obcbbbbcco...",
+  "....oobcccoo....",
+  "......oooo......",
+]
+
+[ui_paw]
+palette = { o = "#2e1c2c", a = "#f8d090", b = "#d8984e", c = "#a8683a" }
+rows = [
+  "................",
+  ".....oo..oo.....",
+  "....oabooabo....",
+  "...obbcooabbo...",
+  "..ooobcoobcooo..",
+  ".oabooo..oooabo.",
+  "oabco......oabbo",
+  "obcco......obcco",
+  ".ooo.oooooo.ooo.",
+  "....oaaaaabo....",
+  "...oabbbbbbbo...",
+  "..oabbbbbbbbbo..",
+  "..obbbbbbbbbco..",
+  "...obcbbbbcco...",
+  "....oobcccoo....",
+  "......oooo......",
+]
+
+[ui_people]
+palette = { o = "#2e1c2c", a = "#ffe0c0", b = "#f0b888", c = "#c08460", d = "#a8c8ff", e = "#4a78d8", f = "#2c4a98" }
+rows = [
+  "................",
+  "......oooo......",
+  ".....oaaabo.....",
+  "....oabbbbbo....",
+  "....oabbbbco....",
+  "....oabbbbco....",
+  "....obbbbbco....",
+  ".....obbbco.....",
+  ".....oobcoo.....",
+  "...oodddddeoo...",
+  "..oddeeeeeedeo..",
+  ".odeeeeeeeeeeeo.",
+  ".odeeeeeeeeeefo.",
+  "odeeeeeeeeeeeeeo",
+  "oefffffffffffffo",
+  ".oooooooooooooo.",
+]

@@ -15,3 +15,11 @@ Audit list: `docs/plans/ui_emoji_audit.md`. Art mappings: `art/mappings/raven_ma
 2. 56 location icons (`location_<id>`): waiting on the user's choice (tinted skill icons vs one icon each). Ship tier icons (`ship_<slug>`) not drawn.
 3. Uncommitted art awaiting the user's OK: new crops/seeds, redone clover, area icons, chest, hook, star, the action icons.
 4. MERGE: master only has the early art merge (currency/skill icons). Skills menu + fishing/foraging icons need `art` merged into master (full tests first).
+
+## Glyph sweep (art branch): NO plain unicode emoji anywhere
+`cococap/glyphs.py` maps every glyph the code writes (about 300 distinct, screens/cogs/configs) to an icon, and `glyphs.install()` (called in
+`bot.py` after `emojis.refresh`) swaps them for the custom emoji on the way to Discord (HTTP layer: message text, embeds, button/select emoji;
+a label's leading glyph moves into the component's emoji field, other glyphs are dropped where custom emoji cannot render). A glyph whose icon is
+not uploaded stays plain. `tests/test_glyphs.py` fails on an unmapped glyph or an icon name without art. New art: Raven cells in
+`art/mappings/raven_magic.toml` ("Glyph replacements"), hand drawn in `art/sprites/ui_glyphs.toml` (check, cross, crown, lock, timer, suits, dice,
+board squares/dots...), 17 `enchant_*` icons. To see it: build, upload `ui_` + `enchant_`, restart the bot.

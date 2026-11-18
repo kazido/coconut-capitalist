@@ -247,6 +247,10 @@ def load_raven(mapping: Path, pack: Path | None) -> list[Sprite]:
             cell = _ramp_recolor(cell, opts["ramp"])
         elif any(k in opts for k in ("hue", "sat", "val")):
             cell = _recolor(cell, float(opts.get("hue", 0)), float(opts.get("sat", 1.0)), float(opts.get("val", 1.0)))
+        if opts.get("flip") in ("h", "hv"):  # mirror left-right (a right arrow becomes a left one)
+            cell = cell.transpose(Image.FLIP_LEFT_RIGHT)
+        if opts.get("flip") in ("v", "hv"):
+            cell = cell.transpose(Image.FLIP_TOP_BOTTOM)
         dx, dy = opts.get("nudge", [0, 0])
         if dx or dy:
             moved = Image.new("RGBA", cell.size, (0, 0, 0, 0))

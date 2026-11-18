@@ -5,49 +5,9 @@
 # otherwise: a silhouette (art/wisp.py SHAPES) + one base colour; shading, eyes and plum outline are automatic.
 #   inverted = dark body, bright rim, white eyes (the ghostly ones). Add `rarity = 1-7` to put one in a cell.
 #
-# The first eight are the approved samples. The `pet_<id>` entries below are the 25 pets (pet ids stay the old animal ids in the DB;
+# The `pet_<id>` entries below are the 25 pets (pet ids stay the old animal ids in the DB;
 # only the display names changed). Hue = skill theme (fishing blue, mining violet, foraging green, farming lime, combat red, global greys),
 # saturation and brightness grow with rarity. `accent` = a dual-toned tip.
-
-[flame_teal]
-kind = "flame"
-face = "skull"
-base = "#20c8b0"
-
-[flame_gold]
-kind = "flame"
-face = "core"
-base = "#ffb81c"
-
-[flame_ember]
-kind = "flame"
-face = "core"
-base = "#f2561d"
-
-[flame_violet]
-kind = "flame"
-face = "skull"
-base = "#9b5cf0"
-
-[flame_blue]
-kind = "flame"
-face = "eyes"
-base = "#3d8bff"
-
-[flame_rose]
-kind = "flame"
-face = "core"
-base = "#f870b0"
-
-[flame_green]
-kind = "flame"
-face = "skull"
-base = "#4cc04a"
-
-[flame_ash]
-kind = "flame"
-face = "core"
-base = "#8a8ab0"
 
 # ---- Pets ----
 

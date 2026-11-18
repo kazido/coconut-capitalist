@@ -85,7 +85,7 @@ class HomeScreen(Screen):
             target = self.nav.screens[screen_id]
             lit = screen_id == "checkin" and ready
             body.append(section(
-                f"### {target.emoji} {target.label}\n{target.description}",
+                f"### {target.emoji} {target.label}",
                 accessory=button("Open", style=discord.ButtonStyle.success if lit else discord.ButtonStyle.primary, on_click=_opener(self, screen_id)),
             ))
         second = [button(self.nav.screens[i].label, emoji=self.nav.screens[i].emoji, on_click=_opener(self, i)) for i in SECOND_ROW]

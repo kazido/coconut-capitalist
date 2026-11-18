@@ -4,7 +4,7 @@ from logging import getLogger
 from discord.ext import commands, tasks
 from pydis_core import BotBase, StartupError
 
-from cococap import emojis, exts
+from cococap import emojis, exts, glyphs
 from cococap.constants import DATABASE_PATH, DISABLED_EXTENSIONS
 from cococap.db import Database, close_database, init_database
 from cococap.services import activity
@@ -31,6 +31,7 @@ class Bot(BotBase):
 
         # The bot's own (application) emojis, looked up by name everywhere else.
         await emojis.refresh(self)
+        glyphs.install()  # plain unicode emoji in any message become our own icons on the way out
 
         self.idle_sweep.start()
 
