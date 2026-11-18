@@ -16,6 +16,7 @@ from cococap.services.economy import OnCooldown
 from cococap.ui import Navigator, PromptModal
 from cococap.user import User
 from tests.conftest import set_columns
+from tests.test_farm_fields import open_all_zones
 
 
 def fake_interaction(user_id=1, name="tester"):
@@ -1179,6 +1180,7 @@ async def test_harvesting_a_ripe_plot_from_the_farm(db):
 async def test_harvest_all_and_plant_all(db):
     user = await User.get(1)
     await user.update_skill("farming", lambda m: setattr(m, "starter_given", True))  # (no free seeds mixed in)
+    await open_all_zones(user)  # lemon is zone 2's crop
     await user.add_item("key_land_deed", 1)
     await ripen(user, 1)
     nav, inter = await hub("farm")

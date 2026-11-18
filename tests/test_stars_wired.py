@@ -7,6 +7,7 @@ from cococap.registry import get_registry
 from cococap.services import farming as f
 from cococap.services import mining as m
 from cococap.user import User
+from tests.test_farm_fields import skip_zone_gate, work_zone
 from tests.test_farming import HOUR, SURE, T0, ripe_farm
 
 REG = get_registry()
@@ -49,7 +50,9 @@ async def harvest_extras_stars(seed, tries):
     return {i: await user.item_quantity(i) for i in ("material_beeswax", "material_beeswax_s2", "material_beeswax_s3")}
 
 
-async def test_early_fields_pay_one_star_and_late_fields_pay_more(db):
+async def test_early_fields_pay_one_star_and_late_fields_pay_more(db, monkeypatch):
     # seed_ambrosia (field 14, 777 cycles) rolls the drop table 60 times a harvest; seed_coconut (field 12) is nearly as deep
+    skip_zone_gate(monkeypatch)
+    await work_zone(await User.get(1), len(get_registry().farming.field_seeds))  # the planted zone sets the star depth
     late = await harvest_extras_stars("seed_ambrosia", 3)
     assert late["material_beeswax_s2"] + late["material_beeswax_s3"] > 0

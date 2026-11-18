@@ -579,7 +579,8 @@ async def test_a_harvest_can_bring_plant_fiber(db):
             return 0.0
 
     assert farming.harvest_extras(Lucky(1), REG, cycles=REG.farming.drop_cycles_per_roll)["material_plant_fiber"] == 1
-    assert sum(farming.harvest_extras(Random(2), REG, cycles=REG.farming.drop_cycles_per_roll)["material_plant_fiber"] for _ in range(1000)) > 500
+    rng = Random(2)  # one stream for all rolls: a fresh Random(2) per call would repeat the same roll
+    assert sum(farming.harvest_extras(rng, REG, cycles=REG.farming.drop_cycles_per_roll)["material_plant_fiber"] for _ in range(1000)) > 500
 
 
 # ---- the collection book ----------------------------------------------------------------------------------------------

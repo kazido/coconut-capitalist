@@ -175,7 +175,8 @@ async def test_a_bee_gives_free_extra_harvests_and_more_often_with_strength(db):
     young = await _harvests(await with_pet("pollen", user_id=2, xp=0), 300, 1)
     bee = await _harvests(await with_pet("pollen", user_id=3), 300, 1)
     star3 = await _harvests(await with_pet("pollen", user_id=4, stars=3), 300, 1)
-    assert plain < young < bee < star3
+    assert abs(young - plain) / plain < 0.05  # a young pet gives no real bonus (300 plots of noise)
+    assert plain < bee < star3
     assert bee / plain == pytest.approx(1 + value("pollen"), abs=0.06)  # about one plot in ten gives a second harvest
 
 

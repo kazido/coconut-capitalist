@@ -63,7 +63,27 @@ async def test_a_field_opens_at_its_level_and_stays_open_after_travelling_back(d
     assert "seed_rustroot" not in await farming.locked_seeds(user)
 
 
+async def open_all_zones(user):
+    """Reach the last field's area and level so every farm zone is open, then work the last zone (zone gating has its own tests)."""
+    n = len(SEEDS)
+    await go_to(user, areas.area_of_location(n), LEVELS[n - 1])
+    await user.update_skill("farming", lambda s: setattr(s, "zone", n))
+
+
+def skip_zone_gate(monkeypatch):
+    """Harvest and planting tests that are not about zones: every field counts as open (test_farm_zones.py tests the real gate)."""
+    async def all_open(user, registry=None):
+        return len(SEEDS)
+
+    monkeypatch.setattr(farming, "open_zones", all_open)
+
+
+async def work_zone(user, zone):
+    await user.update_skill("farming", lambda s: setattr(s, "zone", zone))
+
+
 async def test_owned_seeds_still_plant_whatever_the_field(db):
     user = await User.get(1)
+    await open_all_zones(user)
     await user.add_item("seed_voidbloom", 1)
     await farming.plant(user, 1, "seed_voidbloom")

@@ -15,6 +15,7 @@ class Plot(BaseModel):
     unlocked: bool = False
     since: int = 0  # the last rain (hour number) already counted for this plot
     watered: int = -1  # the hour you last watered this plot (once per hour)
+    zone: int = 0  # the farm zone (1-based) this crop was planted in: its byproducts and stars come from there, even if you move on. 0 = planted before zones: use the seed's own zone
     tended: int = 0  # growth cycles whose byproducts you have already collected (Tend); back to 0 when the plot is planted or harvested
 
 
@@ -62,4 +63,5 @@ class Farming(Skill):
     stats: Stats = Field(default_factory=Stats)
     applied_fertilizer: Optional[str] = None
     rain_god_blessings: int = 0
+    zone: int = 1  # the farm zone (1-based) you are working: new plantings go there
     starter_given: bool = False  # you have had your free starter seeds

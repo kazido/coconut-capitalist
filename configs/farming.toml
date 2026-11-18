@@ -19,6 +19,24 @@ deed_item = "key_land_deed"
 # the crop itself earns an hour (a guard test keeps it). Later fields also roll starred materials (services/stars.py). Xp is NOT paid for tending: it stays at xp_per_cycle per cycle at harvest.
 byproduct_max_cycles = 3
 byproduct_rolls = [4, 6, 8, 10, 10, 10, 12, 12, 4, 14, 14, 14, 16, 18]
+# FARM ZONES: zone N (= field N) rolls ONLY these materials for its plots' byproducts (Tend and harvest). Each has its own signature material (placeholder, TODO(balance)).
+# One roll of any zone's table is worth about 618 bits (a guard test checks it), so byproduct_rolls still sets the size.
+zone_materials = [
+    ["material_slime_goo", "material_plant_fiber", "material_compost"],
+    ["material_meadow_clover", "material_plant_fiber", "material_compost"],
+    ["material_dusk_petal", "material_plant_fiber", "material_compost"],
+    ["material_oasis_date", "material_compost", "material_dewdrop"],
+    ["material_scrap_sprout", "material_compost", "material_dewdrop"],
+    ["material_hydro_nutrient", "material_compost", "material_dewdrop"],
+    ["material_market_seedpack", "material_compost", "material_dewdrop"],
+    ["material_rooftop_honey", "material_dewdrop", "material_beeswax"],
+    ["material_cloud_cotton", "material_dewdrop", "material_beeswax"],
+    ["material_windmill_grain", "material_dewdrop", "material_beeswax"],
+    ["material_stardew_pollen", "material_dewdrop", "material_beeswax"],
+    ["material_comet_ember", "material_beeswax", "material_living_vine"],
+    ["material_pale_bloom", "material_beeswax", "material_living_vine"],
+    ["material_ambrosia_nectar", "material_beeswax", "material_living_vine"],
+]
 # The crop each of the 14 fields (configs/locations.toml [farming], in order) opens. A field is open once you have the farming level
 # (areas.toml [locations]) AND have reached its area; until then its seed is not sold. Seeds you got from drops or trades still plant.
 field_seeds = [

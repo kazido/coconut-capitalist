@@ -186,6 +186,11 @@ class Registry:
         if len(seeds) != per_skill:
             problems.append(f"farming.toml field_seeds: needs {per_skill} seeds (one per field), has {len(seeds)}")
         problems += [f"farming.toml field_seeds: '{s}' is not a seed item" for s in seeds if not (self.items.get(s) and self.items[s].seed)]
+        if len(self.farming.zone_materials) != len(seeds):
+            problems.append(f"farming.toml zone_materials: needs one list per field ({len(seeds)}), has {len(self.farming.zone_materials)}")
+        for n, ids in enumerate(self.farming.zone_materials, 1):
+            problems += [f"farming.toml zone_materials zone {n}: '{i}' is not a farming material with a drop table"
+                         for i in ids if not ((it := self.items.get(i)) and it.drop and it.category == "material" and it.skill == "farming")]
         problems += [f"farming.toml field_seeds: duplicate '{s}'" for s in sorted({s for s in seeds if seeds.count(s) > 1})]
         return problems
 

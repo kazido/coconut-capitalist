@@ -10,12 +10,21 @@ from cococap.models.skills.farming import Farming
 from cococap.registry import get_registry
 from cococap.services import farming as f
 from cococap.user import Cooldowns, User
+from tests.test_farm_fields import skip_zone_gate, work_zone
 from tests.test_hub import all_text, choose, click, hub, select_named
 
 REG = get_registry()
 RULES = REG.farming
 HOUR = 3600
 T0 = 1_800_000_000 // HOUR * HOUR  # a clean hour boundary
+
+
+@pytest.fixture(autouse=True)
+async def every_zone_open(db, monkeypatch):
+    """Most tests here plant any crop, so skip the zone gate and work the last zone (for both test players)."""
+    skip_zone_gate(monkeypatch)
+    for user_id in (1, 2, 3):
+        await work_zone(await User.get(user_id), len(RULES.field_seeds))
 
 
 async def with_can(user, template="tool_can_tin"):
@@ -394,6 +403,7 @@ async def test_a_watering_grows_a_plot_about_as_often_as_the_water_chance_says_a
     for uid in range(1, 301):
         user = await User.get(uid)
         await with_can(user)
+        await work_zone(user, len(RULES.field_seeds))
         await user.add_item("seed_coconut", 1)
         await f.plant(user, 1, "seed_coconut", now=T0, registry=REG)
         before = (await user.skill("farming")).farm.plot_1.cycle
@@ -594,6 +604,7 @@ async def test_a_harvest_pays_farming_materials_in_proportion_to_the_crop(db):
     found = {}
     for seed in ("seed_apple", "seed_watermelon"):
         total = Counter()
+        await work_zone(user, f.seed_zone(seed, RULES))  # a crop's byproducts come from the zone it was planted in
         for i in range(60):
             await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
             await user.add_item(seed, 1)
@@ -602,7 +613,8 @@ async def test_a_harvest_pays_farming_materials_in_proportion_to_the_crop(db):
             total += (await f.harvest(user, 1, Random(i), T0, SURE)).extras
         found[seed] = total
     assert sum(found["seed_watermelon"].values()) > 8 * sum(found["seed_apple"].values())
-    assert {"material_compost", "material_plant_fiber"} <= set(found["seed_watermelon"])  # the common ones come first
+    table = {i.id for i in f.zone_materials(f.seed_zone("seed_watermelon", RULES), REG)}
+    assert "material_compost" in found["seed_watermelon"] and {i.removesuffix("_s2").removesuffix("_s3") for i in found["seed_watermelon"] if i.startswith("material_")} <= table  # only its own zone's table
 
 
 def test_the_farming_materials_are_used_by_upgrades_across_the_game():
@@ -854,9 +866,8 @@ async def test_with_no_byproduct_rolls_tending_finds_nothing(db):
 def test_byproducts_are_a_fair_share_of_what_each_crop_earns_an_hour():
     """Guard: tending is worth about 10-50% of the crop's own watered income an hour, so farming stays in line with the other skills (see scripts.balance)."""
     assert len(RULES.byproduct_rolls) == len(RULES.field_seeds)
-    one_roll = sum(REG.item(i).sell_price * (i_d.min + i_d.max) / 2 / i_d.rate
-                   for i in REG.items if (i_d := REG.item(i).drop) and REG.item(i).skill == "farming" and REG.item(i).category == "material")
-    for seed_id, rolls in zip(RULES.field_seeds, RULES.byproduct_rolls, strict=True):
+    for seed_id, rolls, materials in zip(RULES.field_seeds, RULES.byproduct_rolls, RULES.zone_materials, strict=True):
+        one_roll = sum(REG.item(i).sell_price * (d.min + d.max) / 2 / d.rate for i in materials if (d := REG.item(i).drop))  # this zone's table
         seed = REG.item(seed_id)
         crop = REG.item(seed.seed.grows_into)
         per_hour = crop.sell_price * (crop.crop.min_harvest + crop.crop.max_harvest) / 2 / seed.seed.cycles  # watered: one cycle an hour

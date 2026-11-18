@@ -169,6 +169,16 @@ lemon seed 8,000), and there is a **Water** button: once an hour each growing pl
 chance on top of the rain (the roll is fixed by you, the plot and the hour, so looking again can't redo it). An apple needs one
 cycle, so a new farmer can plant, water and harvest straight away; the long crops (20 to 777 cycles) still take days.
 
+### Farm zones
+
+One set of plots, a **zone** dropdown on the Farm page (zone N = farm field N, opened by farming level and area, like the mining picker;
+`Farming.zone` is the one you are working). Zone N plants its own seed and cheaper ones (`farming.seed_zone`; a seed that opens no field plants
+anywhere). Each plot remembers the zone it was planted in (`Plot.zone`, 0 = planted before zones: derived from its seed), so switching never wastes a
+crop. Byproducts (Tend and a harvest's extras) roll only that zone's table, `farming.toml zone_materials[N-1]`: one signature material per zone
+(`material_slime_goo` ... `material_ambrosia_nectar`, placeholders, TODO(balance)) plus two of the five old farming materials by tier. One roll of any
+zone's table is worth about 618 bits, so `byproduct_rolls` still sizes a Tend (guard test). Star depth = the planted zone. A plot keeps at most
+`byproduct_max_cycles` (3) cycles waiting, so a Tend stays small.
+
 ## Areas and locations (v3)
 
 Every skill has an ordered list of **named locations**, 14 per skill (`configs/locations.toml`, keyed `[skill.id]`: forests, mines, waters,
