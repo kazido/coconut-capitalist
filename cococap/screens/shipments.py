@@ -11,7 +11,7 @@ class ShipmentsScreen(Screen):
     """Fill crates with materials from the skills and ship them for xp and bits; and a weekly one the whole server fills together."""
 
     id = "shipments"
-    label = "Shipments"
+    label = "Crates"
     emoji = emojis.Lazy("ui_crate", "📦")
     description = "Fill crates with materials from your skills and ship them for xp and bits"
     links = ()

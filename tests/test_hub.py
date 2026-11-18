@@ -459,7 +459,7 @@ def reachable_from_home():
 
 
 def test_every_screen_is_reachable_by_following_links_from_home():
-    assert reachable_from_home() == set(SCREENS) - {"fight"}  # (combat is paused: nothing links to it until it is reworked)
+    assert reachable_from_home() == set(SCREENS) - {"fight", "bestiary"}  # (combat is paused: nothing links to these until it is reworked)
 
 
 async def test_home_links_really_open_the_declared_screens(db):
@@ -976,7 +976,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
         assert moved not in text, moved
     assert "Party" not in text.split("Skills")[0]  # (no party line unless the player is in a party)
     assert all(name in text for name in ("Check-in", "Inventory", "Shop", "Pets"))  # the main things are sections, one Open button each
-    assert {b.label for b in buttons(nav)} >= {"Party", "More", "Profile", "Ranks", "Ship"}  # one row of smaller things at the bottom
+    assert {b.label for b in buttons(nav)} >= {"Party", "More", "Profile", "Ranks", "Travel"}  # one row of smaller things at the bottom
     assert len(text.splitlines()) <= 18  # (six main sections: a title and a line each)
     await click(nav, inter, "More")
     assert nav.screen.id == "more"
@@ -987,7 +987,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("top", "trade", "minigames", "stats", "bestiary", "wiki", "settings")):
+    for index, expected in enumerate(("top", "trade", "minigames", "stats", "wiki", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)
