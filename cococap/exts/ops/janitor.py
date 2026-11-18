@@ -1,0 +1,137 @@
+"""Deletes the bot's old messages from the play channels, on startup and every few minutes, plus an owner-only /cleanup."""
+
+import asyncio
+from datetime import datetime, timezone
+from logging import getLogger
+
+import discord
+from discord import Interaction, app_commands, ui
+from discord.ext import commands, tasks
+
+from cococap.constants import OWNER_ID
+from cococap.services.janitor import JanitorConfig, can_bulk, load_config, should_delete
+
+log = getLogger("janitor")
+
+
+def _age_minutes(message: discord.Message) -> float:
+    return (datetime.now(timezone.utc) - message.created_at).total_seconds() / 60
+
+
+async def collect(channel, bot_id: int, cfg: JanitorConfig) -> list[discord.Message]:
+    return [
+        m
+        async for m in channel.history(limit=None)
+        if should_delete(age_minutes=_age_minutes(m), from_bot=m.author.id == bot_id, is_menu=m.flags.components_v2, cfg=cfg)
+    ]
+
+
+async def delete_all(channel, messages: list[discord.Message], cfg: JanitorConfig) -> int:
+    """Bulk delete the recent ones; delete the rest one by one, slowly."""
+    recent = [m for m in messages if can_bulk(_age_minutes(m) / 1440)]
+    old = [m for m in messages if m not in recent]
+    done = 0
+    for i in range(0, len(recent), 100):
+        chunk = recent[i : i + 100]
+        if len(chunk) == 1:
+            old.append(chunk[0])
+            continue
+        await channel.delete_messages(chunk)
+        done += len(chunk)
+        await asyncio.sleep(cfg.delete_delay_seconds)
+    for m in old:
+        try:
+            await m.delete()
+            done += 1
+        except discord.NotFound:
+            pass
+        await asyncio.sleep(cfg.delete_delay_seconds)
+    return done
+
+
+class ConfirmView(ui.View):
+    def __init__(self, cfg: JanitorConfig, plan: dict):
+        super().__init__(timeout=120)
+        self.cfg, self.plan = cfg, plan
+
+    @ui.button(label="Delete them", style=discord.ButtonStyle.danger)
+    async def confirm(self, interaction: Interaction, button: ui.Button):
+        await interaction.response.edit_message(content="Cleaning up... this can take a while.", view=None)
+        total = 0
+        for channel, messages in self.plan.items():
+            try:
+                total += await delete_all(channel, messages, self.cfg)
+            except discord.HTTPException as e:
+                log.warning("cleanup failed in %s: %s", channel.id, e)
+        await interaction.edit_original_response(content=f"Deleted {total} messages.")
+
+    @ui.button(label="Cancel", style=discord.ButtonStyle.secondary)
+    async def cancel(self, interaction: Interaction, button: ui.Button):
+        await interaction.response.edit_message(content="Cancelled. Nothing was deleted.", view=None)
+
+
+class Janitor(commands.Cog):
+    def __init__(self, bot):
+        self.bot = bot
+        self.cfg = load_config()
+
+    async def cog_load(self):
+        if self.cfg.enabled:
+            self.sweep.change_interval(minutes=self.cfg.interval_minutes)
+            self.sweep.start()
+
+    async def cog_unload(self):
+        self.sweep.cancel()
+
+    @tasks.loop(minutes=5)
+    async def sweep(self):
+        for cid in self.cfg.channel_ids:
+            channel = self.bot.get_channel(cid)
+            if channel is None:
+                continue
+            try:
+                messages = await collect(channel, self.bot.user.id, self.cfg)
+                if messages:
+                    n = await delete_all(channel, messages, self.cfg)
+                    log.info("janitor deleted %s message(s) in %s", n, cid)
+            except discord.Forbidden:
+                log.warning("janitor lacks Manage Messages / Read Message History in %s", cid)
+            except Exception:  # noqa: BLE001 - a failed sweep must not stop the loop
+                log.exception("janitor sweep failed in %s", cid)
+
+    @sweep.before_loop
+    async def _wait(self):
+        await self.bot.wait_until_ready()  # the first run is the startup pass
+
+    @app_commands.command(name="cleanup", description="Owner only: delete the bot's old messages in the play channels.")
+    @app_commands.describe(dry_run="Only count what would be deleted (default yes).")
+    async def cleanup(self, interaction: Interaction, dry_run: bool = True):
+        if interaction.user.id != OWNER_ID:
+            await interaction.response.send_message("Owner only.", ephemeral=True)
+            return
+        await interaction.response.defer(ephemeral=True)
+        # One-time pass: every bot message goes, whatever its age (limits of 0).
+        cfg = JanitorConfig(True, self.cfg.channel_ids, 0, 0, 0, self.cfg.delete_delay_seconds)
+        plan, lines = {}, []
+        for cid in cfg.channel_ids:
+            channel = self.bot.get_channel(cid)
+            if channel is None:
+                lines.append(f"<#{cid}>: not visible to the bot")
+                continue
+            try:
+                messages = await collect(channel, self.bot.user.id, cfg)
+            except discord.Forbidden:
+                lines.append(f"<#{cid}>: missing Read Message History / Manage Messages")
+                continue
+            plan[channel] = messages
+            old = sum(not can_bulk(_age_minutes(m) / 1440) for m in messages)
+            lines.append(f"<#{cid}>: {len(messages)} to delete ({old} older than 14 days, slow)")
+        text = "\n".join(lines)
+        if dry_run:
+            await interaction.followup.send(f"Dry run, nothing deleted:\n{text}\nRun again with dry_run: False.")
+        else:
+            await interaction.followup.send(f"This will delete:\n{text}", view=ConfirmView(cfg, plan))
+
+
+async def setup(bot):
+    await bot.add_cog(Janitor(bot))
