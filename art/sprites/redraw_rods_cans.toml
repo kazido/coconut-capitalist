@@ -483,3 +483,47 @@ rows = [
   "...ooooooo......",
   "................",
 ]
+
+[tool_rod_starter]
+rarity = 1
+palette = { o = "#2e1c2c", a = "#d9a066", b = "#a8693c", c = "#5e3a3c", t = "#efe6cc", r = "#e0603c", w = "#ffffff" }
+rows = [
+  "................",
+  "............oo..",
+  "...........oabo.",
+  "..........oabto.",
+  ".........oaboto.",
+  "........oabooto.",
+  ".......oabo.oto.",
+  "......ocbo..oto.",
+  "......oabo..oto.",
+  ".....oabo...oto.",
+  "....oabo....oto.",
+  "...oabo....orrro",
+  "..ocbo.....owwwo",
+  ".ocbo.......ooo.",
+  "occo............",
+  ".oo.............",
+]
+
+[tool_rod_reinforced]
+rarity = 3
+palette = { o = "#2e1c2c", h = "#e2f6fb", k = "#6fb6d4", c = "#3a4a63", w = "#eef4f6", g = "#b9bfcc", G = "#6a7385", s = "#c9ced8", r = "#e0603c" }
+rows = [
+  "................",
+  ".............oo.",
+  "............ohko",
+  "...........ohkwo",
+  "..........ohkowo",
+  ".........ohkoowo",
+  "........ohko.owo",
+  ".......ohko..owo",
+  "......ohko...owo",
+  ".....ohko....owo",
+  "....ohko....oowo",
+  "...ohkoo...orrso",
+  "..ohkGggo...osso",
+  ".occogGGo....oo.",
+  "occo.ooo........",
+  ".oo.............",
+]

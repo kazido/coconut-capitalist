@@ -34,8 +34,6 @@ tool_axe_elderwood = [101, 10]
 tool_axe_wilted = {cell = [101, 9], sat = 0.4, val = 0.6}
 
 # --- Fishing rods ---
-tool_rod_starter = [21, 0]
-tool_rod_reinforced = [21, 1]
 tool_rod_sturdy = [98, 6]
 tool_rod_masterwork = [98, 7]
 tool_rod_tidecaller = [103, 5]
