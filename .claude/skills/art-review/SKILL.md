@@ -5,7 +5,7 @@ description: Art review loop for Coconut Capitalist emoji/sprites. When the user
 
 # Art review loop (keep tokens low)
 
-Work only on the `art` branch/worktree. Python: the master venv (see CLAUDE.md Environment).
+Art work is done directly on `master` (no art branch). Python: the master venv (see CLAUDE.md Environment).
 
 ## 1. Show the current state (first pass)
 1. One command, no exploring first: `python -m art.review <names or patterns> [--context N]`
@@ -38,6 +38,6 @@ Work only on the `art` branch/worktree. Python: the master venv (see CLAUDE.md E
 - Reference images the user pastes are the style target: match their silhouette first, then recolour.
 
 ## 3. Upload (only when the user says so)
-`scripts/upload_emojis.py` needs `BOT_TOKEN`; the art worktree has no `.env`, so load it from the master checkout without
+`scripts/upload_emojis.py` needs `BOT_TOKEN`; the `.env` lives in the master checkout; load it without
 printing it: `set -a; . <master>/.env; set +a`. Dry run first. Replace changed emoji with repeated `--replace <name>`
 plus `--only <prefix>` so unrelated new emoji (e.g. `flame_*`) are not uploaded. Tell the user to restart the bot.

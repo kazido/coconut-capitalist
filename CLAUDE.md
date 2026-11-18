@@ -22,14 +22,14 @@ decision) before building on. Do NOT do bounded work yourself: delegate it, then
 
 ## Hard rules (the user set these; do not break them)
 
-- **Branches (4 total, no others without asking).** `master` = stable and public; its checkout (`C:\Users\Bryson\Documents\Coding\coconut-capitalist`) is the
+- **Branches (3 total, no others without asking).** `master` = stable and public; its checkout (`C:\Users\Bryson\Documents\Coding\coconut-capitalist`) is the
   integration point and the ONLY place the bot runs and `data/` lives. `design` (game features, systems, balance, configs, services; worktree
-  `..\coconut-capitalist-design`) `art` (emoji, sprites, the art pipeline; worktree `..\coconut-capitalist-art`) and `ops` (Discord server upkeep: channel cleanup, janitor jobs, bot startup hooks; worktree `..\coconut-capitalist-ops`) are the work branches. One Claude
+  `..\coconut-capitalist-design`) and `ops` (Discord server upkeep: channel cleanup, janitor jobs, bot startup hooks; worktree `..\coconut-capitalist-ops`) are the work branches. ART (emoji, sprites, the art pipeline) has no branch: art work is done directly on `master` (small, easy-to-see changes); the owner still approves a sprite before it is committed. One Claude
   session per folder, never two in the same folder. `history/pre-ai` is never changed. Only `master` is ever pushed, and only when the user says so.
 - **Landing work:** in your worktree `git merge master` often (small diffs). To land: merge master in, run the FULL tests and ruff, show the user
   the summary, and on their yes run `git merge --no-ff <branch>` in the master checkout. A change that removes/renames item ids or changes the
   registry shape lands on `master` FIRST and alone, then the other branch syncs. Art may PROPOSE removing items; design decides.
-- **Ownership:** `art` owns `art/` and emoji files; `ops` owns the janitor/cleanup code and its startup hook; `design` owns everything else. `configs/items.toml` is shared: keep edits small and land them soon.
+- **Ownership:** art work on `master` owns `art/` and emoji files; `ops` owns the janitor/cleanup code and its startup hook; `design` owns everything else. `configs/items.toml` is shared: keep edits small and land them soon.
 - **Commit after every commit-worthy change without asking.** Detailed messages. End them with the attribution line the harness gives you.
 - **Never push unless the user says so.** Push only `master`: `git push origin master`.
 - **Design before big features** (use plan mode: explore, write the plan, get approval, then build). Small fixes: just do them.
