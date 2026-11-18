@@ -56,6 +56,7 @@ materials from all skills) moves you to the next one. Each area raises difficult
   and `tests/test_economy_guard.py` before/after.
 
 ## Build order (each step shippable)
+Status (2026-11-17): step 1 DONE; steps 3 (foraging forests) and 4 (fishing waters) DONE; 2 (ship screen), 5 (mining), 6 (farming), 7 (docs/wiki) OPEN. The REWORK "Build order" below is the current list.
 Step 1 DONE: `configs/areas.toml` (areas + ship tiers), 6 fuel items + recipes, `services/areas.py` (state kept in `services.community`
 key `ship:<id>`, no migration), `tests/test_areas.py`. Not yet wired into any skill or screen.
 1. Areas + ship state + `areas.toml`/`ship.toml` + services + tests (no skill effect yet).
@@ -105,8 +106,8 @@ a dropdown like fishing's water select. RISK: forest 14 (old zone 20, which used
   materials (e.g. one per 3 forests) or each forest keeps its species' signature drop (species `drops` already exist, currently empty).
 - The star table (`economy.toml [stars]`, `starrable`) is being built by someone else right now: coordinate before touching it.
 
-**Build order (replaces steps 3-6):** 3. shared `Location` model + schedule + `areas.open_locations(skill)` helper + tests.
-4. Foraging forests (rebalance). 5. Fishing 14 waters. 6. Mining locations. 7. Farming fields + seed shop gating. 8. Ship screen.
+**Build order (replaces steps 3-6):** 3. DONE shared `Location` model + schedule + `areas.open_locations(skill)` helper + tests.
+4. DONE Foraging forests (rebalance). 5. DONE Fishing 14 waters. 6. TODO Mining locations. 7. TODO Farming fields + seed shop gating. 8. TODO Ship screen.
 
 ---
 # Decisions, round 3 (2026-11-17)

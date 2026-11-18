@@ -1,6 +1,7 @@
 """Star quality of starrable drops: the curve in economy.toml, never the majority at 3 stars, deeper = better."""
 
 import random
+from collections import Counter
 
 import pytest
 
@@ -69,3 +70,63 @@ def test_a_curve_with_a_majority_three_star_is_refused(tmp_path):
     path.write_text(path.read_text().replace("weights = [15, 65, 20]", "weights = [10, 30, 60]"))
     with pytest.raises(RegistryError, match="majority"):
         load_registry(tmp_path / "c")
+
+
+# ---- apply: a whole drop bundle at once ----------------------------------------------------------------------------
+class _Fixed:
+    """An rng whose every roll is the same number: forces the tier band it falls in."""
+
+    def __init__(self, x: float):
+        self.x = x
+
+    def random(self) -> float:
+        return self.x
+
+
+def _top_band_x(at: float) -> float:
+    """A roll that lands in the 2-star band or above, the top one that exists at this depth (3-star only when it has weight)."""
+    w = stars.weights(at)
+    return (1.0 + w[0] + w[1]) / 2 if w[2] > 0 else 1.0 - w[1] / 2
+
+
+def test_apply_leaves_non_starrable_drops_alone():
+    drops = Counter({"material_copper_ore": 3, "fish_cod": 2})
+    assert stars.apply(drops, 1.0, random.Random(4), REG) == drops
+
+
+def test_apply_conserves_counts():
+    starrable = REG.economy.stars.starrable
+    drops = Counter({starrable[0]: 5, starrable[1]: 3, "material_copper_ore": 2})
+    for seed in range(50):
+        out = stars.apply(drops, 0.5, random.Random(seed), REG)
+        assert sum(out.values()) == sum(drops.values())
+        assert all(REG.find_item(i) for i in out)
+
+
+def test_apply_at_the_deepest_depth_can_give_a_higher_star():
+    gold = REG.economy.stars.starrable[0]
+    got = {k for seed in range(500) for k in stars.apply(Counter({gold: 1}), 1.0, random.Random(seed), REG)}
+    assert got & {stars.star_id(gold, 2), stars.star_id(gold, 3)}
+    assert stars.apply(Counter({gold: 1}), 1.0, _Fixed(_top_band_x(1.0)), REG) != Counter({gold: 1})
+
+
+def test_apply_at_the_start_never_gives_three_star():
+    gold = REG.economy.stars.starrable[0]
+    assert stars.weights(0.0)[2] == 0  # the curve has no 3-star at the start
+    for seed in range(500):
+        out = stars.apply(Counter({gold: 1}), 0.0, random.Random(seed), REG)
+        assert stars.star_id(gold, 3) not in out
+
+
+def test_apply_gives_the_whole_stack_one_star():
+    gold = REG.economy.stars.starrable[0]
+    for seed in range(30):
+        out = stars.apply(Counter({gold: 7}), 0.6, random.Random(seed), REG)
+        assert len(out) == 1 and sum(out.values()) == 7
+
+
+def test_apply_is_deterministic_for_a_seed():
+    starrable = REG.economy.stars.starrable
+    drops = Counter({starrable[0]: 4, starrable[1]: 2, "material_copper_ore": 1})
+    first = stars.apply(drops, 0.6, random.Random(9), REG)
+    assert all(stars.apply(drops, 0.6, random.Random(9), REG) == first for _ in range(3))

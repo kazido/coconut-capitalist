@@ -160,12 +160,21 @@ lemon seed 8,000), and there is a **Water** button: once an hour each growing pl
 chance on top of the rain (the roll is fixed by you, the plot and the hour, so looking again can't redo it). An apple needs one
 cycle, so a new farmer can plant, water and harvest straight away; the long crops (20 to 777 cycles) still take days.
 
+## Areas and locations (v3)
+
+Every skill has an ordered list of **named locations**, 14 per skill (`configs/locations.toml`, keyed `[skill.id]`: forests, mines, waters,
+fields). Two locations make an **area** (`configs/areas.toml`; the ship travels between areas, see `docs/plans/areas-and-ship.md`), and the
+location levels are one shared schedule (`location_levels`: 1, 3, 8, 15, 19, 23, 27, 31, 35, 39, 42, 45, 48, 50). A location is open when your
+skill level AND your area reach it (`services/areas.py`: `open_location_list`, `location`, `next_location_hint`). Stars use the location
+number as progress (`services/stars.py`). Built so far: foraging (forests) and fishing (waters). Not yet: mining locations, farming fields
+(4 new crops planned), the ship screen.
+
 ## Foraging
 
 **Solo always works; friends are better.** The wiki's "two players at zone 7" rule is replaced so nobody is ever
 stuck waiting for another player online:
 
-- **Private trees** (any time, in your own panel): pick a zone you've unlocked (level `1 + 2 x (zone - 1)`), chop it
+- **Private trees** (any time, in your own panel): pick a forest you've unlocked (level and area gated), chop it
   down. From zone 7 up a lone chopper swings at half power (never below 1) unless their axe has the **Soloist**
   enchant, which removes that penalty.
 - **The community tree**: one grows every hour and stands for 30 minutes. It is the same for everyone (zone and hp come
@@ -245,11 +254,12 @@ in `configs/foraging.toml`. It is reached from a button on the Foraging page (fr
   The old per-player fields (`releaf_meter`, `donations_made_today`, `donation_day`, `double_ready`, `stats.double_trees_chopped`) stay on the Foraging model as unused legacy
   so old saves load; `stats.releaf_donations` now counts your gifts to the Foundation.
 
-### Zones and the community tree (v2)
+### Forests (locations) and the community tree (v3)
 
-There are **20 zones**; zone N needs the foraging level `zone_levels[N-1]` in `configs/foraging.toml` (1, 4, 7, 11, 15, 20, 25, 31, ...
-136). The gaps grow, so each zone takes longer than the last (the level curve is quadratic: level 20 is about 74k xp, level 100 about
-2M). Trees from zone 8 are heavy. Deeper zones pay only +7% per hp each (zone 20: x2.3), so depth does not run away from other skills.
+There are **14 forests** (the shared location model, see "Locations" below). Forest N opens at its location level from `configs/areas.toml`
+(`location_levels`), and only inside its area. Forests replaced the old 20 zones; `zone_levels` is gone. `zone_hp_growth` 0.6346 and
+`zone_reward_growth` 0.0592 keep forest 14 about as strong as the old zone 12. Trees from forest 6 are heavy (`heavy_zone`).
+The picker is a dropdown of open forests. Community and party trees stay level-only (no area limit).
 
 The **community tree** now follows the crowd. When an hour's tree is made (and stored, so everyone sees the same one) the server
 looks at who chopped a community tree in the last 24 hours: the zone is picked around what the *median* of them can reach
@@ -470,8 +480,9 @@ without changing the rules a player sees:
 
 ### Waters
 
-You fish in one of the **waters** your fishing level has opened, picked from a menu on the Fishing page (it defaults to
-your deepest): the **Quiet Pond** (level 1), **Winding River** (3), **Coral Reef** (8) and **The Deep Sea** (15). Each has
+You fish in one of the **waters** your fishing level and area have opened (14 waters, one per fishing location; `fishing.open_waters`),
+picked from a menu on the Fishing page (it defaults to your deepest): the **Quiet Pond** (level 1), **Winding River** (3), **Coral Reef** (8)
+and **The Deep Sea** (15) are the first four; waters 5-14 reuse existing fish as placeholders (`TODO(balance)`). Each has
 its own fish and its own odds (`[[waters]]` in `configs/fishing.toml`, `fish = N` meaning 1 in N, rarest first), and
 deeper water takes longer to bite (x1.0, 1.0, 1.2, 1.5). An average catch is worth about 3,000 bits in the pond,
 5,400 in the river, 7,000 on the reef and 17,000 in the deep, so there is always somewhere to climb to. Daily and weekly
@@ -963,9 +974,9 @@ rarity sets its xp curve, so an owned Mole (2 -> 3) now levels slower and a Bee 
 
 ## Tree species
 
-Every tree has a **species**, set by its zone when the tree is rolled (`[[species]]` in `configs/foraging.toml`: id, name, emoji, `zone_min`..`zone_max`,
-`weight`, `drops`). Nine species cover zones 1-20 with bands that overlap a little (2-3 species grow in any zone): Birch 1-5, Oak 1-7, Willow 3-9, Pine 6-12,
-Chestnut 8-13, Cherry 10-15, Palm 13-18, Redwood 14-20, Emberwood 16-20. **Material cull (2026-11-17): every species' signature items were removed (nothing used them), so `drops` is empty for all species and they are flavour only. The mechanic below is kept in code and tests (`tests/conftest.py::with_signature_drops`); add `drops` back to a species when a use for one appears.** A species could add its own **signature drops** on top of the normal drop pool: each drop
+Every tree has a **species**, set by its forest when the tree is rolled (`[[species]]` in `configs/foraging.toml`: id, name, emoji, `zone_min`..`zone_max`
+(now forest numbers, 1-14), `weight`, `drops`). Nine species cover forests 1-14 with bands that overlap a little (2-3 species grow in any forest). The
+old zone bands (Birch 1-5, Oak 1-7, Willow 3-9, Pine 6-12, Chestnut 8-13, Cherry 10-15, Palm 13-18, Redwood 14-20, Emberwood 16-20) were remapped to forests. **Material cull (2026-11-17): every species' signature items were removed (nothing used them), so `drops` is empty for all species and they are flavour only. The mechanic below is kept in code and tests (`tests/conftest.py::with_signature_drops`); add `drops` back to a species when a use for one appears.** A species could add its own **signature drops** on top of the normal drop pool: each drop
 roll of the tree also rolls every signature drop at its `rate` (a chance 0..1 per roll, then `min`..`max` of them), so they are far likelier than the pool's
 rare items. A signature item is a foraging item with no `[drop]` block, so it never joins the global pool.
 - Who picks the species: private trees roll it in `roll_tree` (after the hp, so seeded hp rolls did not change); community trees derive it from the window and zone

@@ -9,6 +9,7 @@ Stars are only ever dropped, never crafted up.
 from __future__ import annotations
 
 import random
+from collections import Counter
 
 from cococap.registry import Registry, get_registry
 
@@ -48,6 +49,15 @@ def _pick(w: tuple[float, float, float], rng: random.Random) -> int:
 def star_id(item_id: str, stars: int) -> str:
     """The inventory id of `item_id` at that many stars (the plain id for 1)."""
     return item_id if stars <= 1 else f"{item_id}_s{stars}"
+
+
+def apply(drops: Counter[str], at: float, rng: random.Random, registry: Registry | None = None) -> Counter[str]:
+    """Turn a drop bundle's starrable ids into their real stars. ONE roll per item stack: the whole quantity of that item gets the same star
+    (decided in drop order, so the rng use is deterministic). Non-starrable ids pass through; counts merge by the final id."""
+    out: Counter[str] = Counter()
+    for item_id, quantity in drops.items():
+        out[roll_item(item_id, at, rng, registry)] += quantity
+    return out
 
 
 def roll_item(item_id: str, at: float, rng: random.Random, registry: Registry | None = None) -> str:

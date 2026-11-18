@@ -28,14 +28,14 @@ Keep this file current: update the "Open work" list at the end of every session.
 ## What is built (all committed)
 
 Mining (descent, wyrmholes, reactor, magnet), farming (plots, hourly rain, water, market, crop time estimate, 10 crops),
-foraging (20 zones, stance patterns + grain notes, community tree scaled by recent crowd, party trees, the Releaf Foundation (server-wide meter,
-temporary Bloom)), fishing (cast/reel/❓ tells, field notes page, quests, books, community goals, bosses, records, crab pots, 8 waters... see
+foraging (14 forests, stance patterns + grain notes, community tree scaled by recent crowd, party trees, the Releaf Foundation (server-wide meter,
+temporary Bloom)), fishing (cast/reel/❓ tells, field notes page, quests, books, community goals, bosses, records, crab pots, 14 waters... see
 config), pets (orbs, stars, hunting a target, skill food drops in 3 tiers, pet skills), ranks 0-15 with +1% xp per rank, party idle
 kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools with 8 levels for axe/pickaxe/rod.
 
 ## Recently decided numbers (tune in configs)
 
-- Zones: `zone_levels` in `configs/foraging.toml` (zone 20 = level 136). Community tree: hp = typical tree x 5 x recent choppers.
+- Locations: 14 per skill (forests, mines, waters, fields) in `configs/locations.toml`; area and min level come from `configs/areas.toml` (`location_levels`). Community tree: hp = typical tree x 5 x recent choppers.
 - Tool income target per level: x1, 1.5, 2.6, 4, 6, 9, 13, 18. Axe power 3..54, pickaxe 1..69 (+25% ore per power), rod 3..120
   (faster bites, rarer fish, extra fish). Each upgrade costs ~5x the last.
 - Pet food xp 200 / 1,000 / 5,000 by tier; a pet has ONE fixed skill (`skill` in pets.toml, emoji after its name; 🌐 global = Dog, Koala,
@@ -50,6 +50,7 @@ kick (24 h), wiki (topics + item lookup with where-to-catch for fish), tools wit
 
 - **One branch only: `master`** (the audit branch was deleted; the bot runs from the main checkout). Push only when asked (`git push origin master`). The old pre-AI code is preserved on `history/pre-ai`.
 - **Material cull (2026-11-17)**: 19 unused materials removed (the 18 foraging species items and golden pollen); migration `0008` refunds holders at sell price and deletes the stacks. Iron/Gilded wedge recipes now use hardwood + ores (amounts are guesses, `TODO(balance)`). Reactor gemstones were kept (they feed the reactor). Next: **starred materials** (plan: `docs/plans/starred-materials.md`): 1/2/3-star drops as separate item ids, only later LOCATIONS (forests, waters, ...) drop higher stars, never depth; wiring drops (step 4) is on hold for the areas work, only late upgrades need them.
+- **Areas and locations (in progress, `docs/plans/areas-and-ship.md`)**: shared Location model done; foraging forests (14) and fishing waters (14) done. Stars wired for foraging and fishing only. Next: mining locations (every mine drops the reactor gems), farming fields + 4 new crops, ship screen. Forest 14 has no new unlock yet; waters 5-14 reuse fish as placeholders (`TODO(balance)`).
 - Done since the list below was written: shipments by skill (basic at level 10, hard at 30; community off), trading (shared window, both Accept), settings (keep upgrade
   materials, confirm upgrades, fishing estimate), combat PAUSED (button disabled, `/fight` says so; code and tests kept), tool lines (3 plain upgrades then the split at the
   4th: axe = Lumberjack/Forager, can = Sprinkler/Alchemist), mastery trees for mining/fishing/foraging/farming with a tuned capstone per branch, the fishing radar, Home

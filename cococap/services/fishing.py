@@ -17,7 +17,7 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.fishing import TreasureState
 from cococap.registry import Item, Registry, get_registry
 from cococap.registry.models import FishingRules, WaterRules
-from cococap.services import areas, shop
+from cococap.services import areas, shop, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop, roll_table
 from cococap.services import pets
@@ -714,6 +714,9 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     if bycatch is not None:
         await user.add_item(bycatch.id, 1)
     extras = catch_extras(rng or random.Random(), reg)
+    if cast.water is not None:  # starred materials: the deeper the water (its place in the list), the likelier a better star
+        location = next(i for i, w in enumerate(rules.waters) if w.id == cast.water.id) + 1
+        extras = stars.apply(extras, stars.progress(location, len(rules.waters)), rng or random.Random(), reg)
     for item_id, quantity in extras.items():
         await user.add_item(item_id, quantity)
     finished: list[Quest] = []
