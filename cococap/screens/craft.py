@@ -36,11 +36,11 @@ class CraftScreen(Screen):
         options = []
         for r in listed:
             can = await crafting.craftable_count(self.user, r)
-            options.append(discord.SelectOption(label=r.name, value=r.id, emoji=r.emoji or None, default=r.id == recipe.id,
+            options.append(discord.SelectOption(label=r.name, value=r.id, emoji=reg.item(r.output).emoji or r.emoji or None, default=r.id == recipe.id,
                                                 description=(f"you can make {can:,}" if can else "missing something")[:100]))
         output = reg.item(recipe.output)
         made = f"**{recipe.quantity:,}** {output.display}" if recipe.quantity > 1 else output.display
-        lines = [f"### {emojis.icon('craft', '🛠️')} {recipe.emoji or ''} {recipe.name}", f"Makes {made}", f"-# {output.description}" if output.description else "",
+        lines = [f"### {emojis.icon('craft', '🛠️')} {reg.item(recipe.output).emoji or recipe.emoji or ''} {recipe.name}", f"Makes {made}", f"-# {output.description}" if output.description else "",
                  "", needs_text(recipe.bits, self.user.purse, recipe.inputs, owned, reg)]
         if recipe.min_level:
             lines.append(f"{emojis.icon('check', '✅') if not locked else emojis.icon('cross', '❌')} {recipe.skill.title()} level **{recipe.min_level}** (you are level {level})")
