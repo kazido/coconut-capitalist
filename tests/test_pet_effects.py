@@ -221,4 +221,5 @@ async def test_a_raven_makes_shipments_pay_more_bits(db):
     bits, base = await shipped(await with_pet("umbra", user_id=2))
     assert plain_paid == plain_base and bits == round(base * (1 + value("umbra"))) > base
     star3, star3_base = await shipped(await with_pet("umbra", user_id=3, stars=3))
-    assert star3 == round(star3_base * (1 + value("umbra") * (1 + 2 * RULES.star_bonus))) > bits
+    assert star3 == round(star3_base * (1 + value("umbra") * (1 + 2 * RULES.star_bonus)))
+    assert star3 / star3_base > bits / base  # (each player's crate is rolled on their own, so compare the bonus, not the bits)

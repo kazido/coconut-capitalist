@@ -3,7 +3,7 @@ import discord
 from cococap import emojis
 from cococap.errors import CustomError
 from cococap.registry import get_registry
-from cococap.services import shop
+from cococap.services import farming, shop
 from cococap.ui import Page, Screen, PromptModal
 from cococap.ui.components import bits, button, row, section, section_art, select, sep, text
 
@@ -33,7 +33,8 @@ class ShopScreen(Screen):
     async def _entries(self):
         reg = get_registry()
         if self.mode == "buy":
-            items = sorted(reg.shop_items(), key=lambda i: (i.skill or "", i.price, i.name))
+            locked = await farming.locked_seeds(self.user, reg)
+            items = sorted((i for i in reg.shop_items() if i.id not in locked), key=lambda i: (i.skill or "", i.price, i.name))
             return [(i, None) for i in items]
         owned = await self.user.items()
         sellable = [(reg.find_item(k), q) for k, q in owned.items()]

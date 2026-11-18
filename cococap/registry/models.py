@@ -612,10 +612,21 @@ class MineType(_Data):
         return emojis.for_id("mine", self.id, self.emoji_raw)
 
 
+class MineSite(_Data):
+    """One of the 14 named mines ([[mines]] in mining.toml, in the order of the mining locations in locations.toml; the name and emoji come from there).
+    `tables` are its own 5 depth tables (rarest first); leave them out to use the shared `depth_tables` (mine 1)."""
+
+    id: str
+    tables: list[list[str]] | None = Field(default=None, min_length=1)
+    yield_mult: float = Field(default=1.0, gt=0)  # x the quantity of every cell here (deeper mines pay more per dig)
+    hardness_mult: float = Field(default=1.0, gt=0)  # x the pressure every dig adds here (deeper rock is harder)
+
+
 class MiningRules(_Data):
     columns: int = Field(ge=1)
     xp_per_column: int = Field(ge=0)
-    depth_tables: list[list[str]] = Field(min_length=1)
+    depth_tables: list[list[str]] = Field(min_length=1)  # the tables of the first mine (and of the reactor's auto-mining)
+    mines: list[MineSite] = Field(min_length=1)
     mine_types: list[MineType] = Field(min_length=1)
     wyrmhole: WyrmholeRules
     mini_wyrmhole: MiniWyrmholeRules
@@ -641,6 +652,13 @@ class MiningRules(_Data):
     def mine_type(self, type_id: str) -> MineType:
         return next(t for t in self.mine_types if t.id == type_id)
 
+    def site(self, site_id: str) -> MineSite:
+        return next(s for s in self.mines if s.id == site_id)
+
+    def tables_of(self, site: "MineSite | None") -> list[list[str]]:
+        """The 5 depth tables a mine digs through (the shared ones when it has none of its own)."""
+        return site.tables if site is not None and site.tables else self.depth_tables
+
 
 class MarketRules(_Data):
     """The Farmer's Market: open every day for a few hours (UTC), better prices, blessings for land deeds."""
@@ -663,6 +681,7 @@ class FarmingRules(_Data):
     anomaly_odds: int = Field(ge=1)  # 1 in N per harvest
     xp_per_cycle: int = Field(ge=0)  # xp for a harvest = the seed's growth cycles x this: a long crop pays for the waiting
     deed_item: str
+    field_seeds: list[str]  # the seed each field opens, in field order (14, one per farming location)
     market: MarketRules
 
 
@@ -1049,13 +1068,13 @@ class RecordRules(_Data):
 
 
 class WaterRules(_Data):
-    """A place to fish: unlocked by fishing level, with its own fish (each `fish = N` means 1 in N, rarest rolled first)."""
+    """A place to fish (one per fishing location, same order as configs/locations.toml): its own fish (each `fish = N` means 1 in N,
+    rarest rolled first). Its name and emoji come from the location (the loader fills them in), and its unlock level from areas."""
 
     id: str
-    name: str
+    name: str = ""
     emoji_raw: str = Field(default="🌊", alias="emoji")
     description: str = ""
-    min_level: int = Field(ge=1)
     wait_multiplier: float = Field(gt=0)  # deeper water takes longer to bite
     xp: int = Field(ge=0)  # xp for every fish landed here: deeper waters pay more, a better rod never does
     fish: dict[str, int] = Field(min_length=1)

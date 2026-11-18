@@ -287,6 +287,7 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
     def item_buy_buttons(nav):  # the per-item buttons (green), not the Buy/Sell mode toggle
         return [b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success]
 
+    await set_columns(await User.get(1), purse=500)  # enough for the cheapest item (an apple seed), not the priciest
     nav, inter = await hub("shop")
     # the page is a list + one dropdown + ONE Buy button, however many items it lists
     assert len(item_buy_buttons(nav)) == 1 and select_named(nav, "Pick an item").options
@@ -494,7 +495,8 @@ async def test_shop_has_a_section_per_skill_and_filters(db):
             continue  # (a skill with nothing in the shop gets no section: mining's Scarab Bomb is crafted now)
         await click(nav, inter, emoji=emoji)
         shown = all_text(nav)
-        expected = sorted((i for i in reg.shop_items() if i.skill == skill), key=lambda i: (i.price, i.name))
+        locked = await farming.locked_seeds(await User.get(1))  # seeds of fields not reached yet are not on sale
+        expected = sorted((i for i in reg.shop_items() if i.skill == skill and i.id not in locked), key=lambda i: (i.price, i.name))
         assert expected and all(i.name in shown for i in expected[:4]), skill
         others = [i for i in reg.shop_items() if i.skill != skill]
         assert not any(f"### {i.name}" in shown for i in others), skill
@@ -574,6 +576,7 @@ async def test_casino_rejects_a_bad_bet_without_opening_a_game(db):
 from collections import Counter  # noqa: E402
 from random import Random  # noqa: E402
 
+from cococap.services import farming  # noqa: E402
 from cococap.services import mining as mine_service  # noqa: E402
 
 
@@ -961,7 +964,7 @@ async def test_reaching_the_floor_shows_the_vault_and_banks_it(db):
     assert run.outcome == "floor" and "reached the vault" in all_text(nav)
     user = await User.get(1)
     for ore, quantity in get_registry().mining.descent.vault_ore.items():
-        assert await user.item_quantity(ore) >= quantity
+        assert sum([await user.item_quantity(i) for i in (ore, f"{ore}_s2", f"{ore}_s3")]) >= quantity  # (a starrable ore may be starred)
 
 
 # ---- the two-page home and the party ------------------------------------------------------------------------

@@ -28,7 +28,7 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.foraging import Foraging
 from cococap.registry import Registry, get_registry
 from cococap.registry.models import ForagingRules, Grain, Species, Wedge
-from cococap.services import releaf, scrolls
+from cococap.services import releaf, scrolls, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services import pets
 from cococap.services.loot import roll_drop, skewed_roll
@@ -449,6 +449,7 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     fox = (await pets.bonuses(user, reg)).get("rare_reroll", 0.0)
     drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus + final_cut), rng), rng, reg, fox, tree.species,
                        await releaf.drop_boost(reg))
+    drops = stars.apply(drops, stars.progress(tree.zone, rules.zones), rng, reg)  # starred materials: how deep the forest is
     if scroll := scrolls.roll("foraging", rng, reg):  # (a rare scroll, one chance per tree whatever its size)
         drops[scroll] += 1
     bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules) * (1 + tree.bonus + final_cut))
@@ -646,7 +647,7 @@ def community_shares(
             paid_share = min(damage / max_hp, c.max_share)
             pool = community_pool(len(qualifying), rules)
             rolls = whole_rolls(total_rolls * paid_share * (1 + bonus) * factor, rng)
-            drops = dict(roll_drops(rolls, rng, registry, species=species, boost=boost))
+            drops = dict(stars.apply(roll_drops(rolls, rng, registry, species=species, boost=boost), stars.progress(zone, rules.zones), rng, registry))
             bits = round(paid_share * max_hp * rules.bits_per_hp * pay * pool * (1 + bonus) * factor)
         shares[user_id] = Share(damage, drops, bits, round((efforts or {}).get(user_id, 0.0) * rules.xp_per_swing))
     return shares

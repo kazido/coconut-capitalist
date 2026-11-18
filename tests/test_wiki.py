@@ -1,7 +1,7 @@
 import pytest
 
 from cococap.registry import get_registry
-from cococap.services import wiki
+from cococap.services import fishing, wiki
 from tests.test_hub import all_text, choose, click, find_button, hub, select_named
 
 REG = get_registry()
@@ -27,13 +27,13 @@ def test_the_wiki_covers_every_skill_and_the_systems_around_them():
 
 
 def test_the_fish_pages_list_every_fish_with_its_value_and_where_to_find_it():
-    page = all_blocks("fish")
+    page = all_blocks("fish") + all_blocks("fish2")
     for fish in (i for i in REG.items.values() if i.category == "fish"):
         assert fish.name in page and f"{fish.sell_price:,}" in page, fish.id
-    assert "Quiet Pond" in page and "The Deep Sea" in page  # and where they live
-    waters = all_blocks("waters")
+    assert "Slime Pond" in page and "Slimeflow River" in page and "The Bottomless" in page  # and where they live
+    waters = all_blocks("waters") + all_blocks("waters2")
     for water in REG.fishing.waters:
-        assert water.name in waters and f"level {water.min_level}" in waters
+        assert water.name in waters and f"level {fishing.water_level(REG, water.id)}" in waters
         for fish_id in water.fish:
             assert REG.item(fish_id).name in waters
 

@@ -1236,21 +1236,24 @@ WATERS = RULES.waters
 
 
 def test_waters_open_in_order_and_every_fish_has_a_home():
-    assert [w.min_level for w in WATERS] == sorted(w.min_level for w in WATERS) and WATERS[0].min_level == 1
+    levels = [f.water_level(REG, w.id) for w in WATERS]
+    assert levels == sorted(levels) and levels[0] == 1
+    assert [w.id for w in WATERS] == [loc.id for loc in REG.locations["fishing"]]  # one water per location, in order
     assert [w.wait_multiplier for w in WATERS] == sorted(w.wait_multiplier for w in WATERS)
     in_some_water = {fish_id for w in WATERS for fish_id in w.fish}
     assert in_some_water == {i.id for i in f.fish_pool(REG)}  # nothing is uncatchable, nothing is homeless
 
 
-def test_the_first_water_is_open_to_everyone_and_levels_open_the_next():
-    assert [w.id for w in f.unlocked_waters(1, RULES)] == ["pond"]
-    assert [w.id for w in f.unlocked_waters(WATERS[2].min_level, RULES)] == ["pond", "river", "reef"]
-    assert len(f.unlocked_waters(999, RULES)) == len(WATERS)
-    assert f.require_water(1, "pond", RULES).id == "pond"
-    with pytest.raises(f.FishingError, match="opens at fishing level"):
-        f.require_water(1, "deep_sea", RULES)
-    with pytest.raises(f.FishingError, match="no such water"):
-        f.require_water(99, "moon", RULES)
+async def test_the_first_water_is_open_to_everyone_and_levels_and_areas_open_the_next(db):
+    user, _, _ = await open_fishing()
+    assert [w.id for w in await f.open_waters(user, REG)] == ["pond"]
+    assert (await f.require_water(user, "pond", REG)).id == "pond"
+    await user.add_xp("fishing", User.level_to_xp(f.water_level(REG, "reef")) + 1)
+    assert [w.id for w in await f.open_waters(user, REG)] == ["pond", "river"]  # the reef is in area 2: the ship has to get you there
+    with pytest.raises(f.FishingError, match="haven't opened"):
+        await f.require_water(user, "reef", REG)
+    with pytest.raises(f.FishingError, match="haven't opened"):
+        await f.require_water(user, "deep_sea", REG)
 
 
 def test_each_water_only_gives_its_own_fish_and_rarest_first():
@@ -1277,7 +1280,7 @@ def test_deeper_water_pays_more_per_cast_and_takes_longer_to_bite():
 
 def test_quests_and_community_goals_only_ask_for_fish_from_the_first_waters():
     pool = {i.id for i in f.quest_pool(REG)}
-    first = {fish_id for w in WATERS if w.min_level <= RULES.quests.min_level for fish_id in w.fish}
+    first = {fish_id for w in WATERS if f.water_level(REG, w.id) <= RULES.quests.min_level for fish_id in w.fish}
     assert pool == first and "fish_marlin" not in pool and "fish_tuna" not in pool
     for slot in (*RULES.quests.daily, *RULES.quests.weekly, *[s for s in RULES.community.monthly if s.kind == "fish"]):
         assert any(REG.item(i).rarity == slot.rarity for i in pool), slot
@@ -1297,28 +1300,27 @@ async def test_the_page_defaults_to_your_best_water_lets_you_pick_and_hints_at_t
 
     monkeypatch.setattr(f, "roll_fish", spy)
     user, nav, inter = await open_fishing()
-    assert "Quiet Pond" in all_text(nav) and "Winding River opens at fishing level 3" in all_text(nav)
+    assert "Slime Pond" in all_text(nav) and "Needs level 3 fishing" in all_text(nav)
     assert not [s for s in nav.walk_children() if isinstance(s, __import__("discord").ui.Select)]  # nothing to choose yet
-    await user.add_xp("fishing", User.level_to_xp(WATERS[1].min_level) + 1)
+    await user.add_xp("fishing", User.level_to_xp(f.water_level(REG, WATERS[1].id)) + 1)
     nav, inter = await hub("fish")
-    assert "Winding River" in all_text(nav)  # a new water is where you head next
+    assert "Slimeflow River" in all_text(nav)  # a new water is where you head next
     await click(nav, inter, "Cast")
     assert seen == ["river"]
     await click(nav, inter, "Cancel cast")
     from tests.test_hub import choose, select_named
 
     await choose(nav, inter, select_named(nav, "Where to fish"), "pond")
-    assert "Quiet Pond" in all_text(nav)
+    assert "Slime Pond" in all_text(nav)
     await click(nav, inter, "Cast")
     assert seen == ["river", "pond"]
 
 
-async def test_a_locked_water_cannot_be_cast_into_even_with_a_stale_menu(db):
+async def test_a_locked_water_falls_back_to_the_newest_open_one_even_with_a_stale_menu(db):
     user, nav, inter = await open_fishing()
     nav.screen.water = "deep_sea"  # (e.g. picked, then the level somehow dropped)
-    with pytest.raises(f.FishingError, match="opens at fishing level 15"):
-        await click(nav, inter, "Cast")
-    assert nav.screen.cast is None
+    await click(nav, inter, "Cast")
+    assert nav.screen.cast.water.id == "pond"
 
 
 async def test_the_records_page_is_one_click_from_the_fishing_page_and_shows_server_records_for_every_fish(db):
@@ -2320,4 +2322,4 @@ def test_megaladegalodon_is_a_rare_deep_sea_fish_priced_between_its_neighbours()
     assert "fish_megaladegalodon" in deep.fish and shark in f.fish_pool(REG)
     same_rarity = [i.sell_price for i in f.fish_pool(REG) if i.rarity == shark.rarity and i.id != shark.id]
     assert min(same_rarity) / 4 < shark.sell_price <= max(same_rarity)
-    assert [w.id for w, _ in f.where_to_catch("fish_megaladegalodon", REG)] == ["deep_sea"]
+    assert "deep_sea" in [w.id for w, _ in f.where_to_catch("fish_megaladegalodon", REG)]

@@ -17,7 +17,7 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.fishing import TreasureState
 from cococap.registry import Item, Registry, get_registry
 from cococap.registry.models import FishingRules, WaterRules
-from cococap.services import shop
+from cococap.services import areas, shop, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop, roll_table
 from cococap.services import pets
@@ -43,17 +43,23 @@ def water_by_id(registry: Registry, water_id: str) -> WaterRules:
     return next(w for w in registry.fishing.waters if w.id == water_id)
 
 
-def unlocked_waters(level: int, rules: FishingRules) -> list[WaterRules]:
-    return [w for w in rules.waters if level >= w.min_level]
+def water_level(registry: Registry, water_id: str) -> int:
+    """The fishing level a water opens at: its location's level (areas.location_levels), never written on the water."""
+    return next(loc.min_level for loc in registry.locations.get("fishing", []) if loc.id == water_id)
 
 
-def require_water(level: int, water_id: str, rules: FishingRules) -> WaterRules:
-    water = next((w for w in rules.waters if w.id == water_id), None)
-    if water is None:
-        raise FishingError("There is no such water.")
-    if level < water.min_level:
-        raise FishingError(f"{water.name} opens at fishing level {water.min_level}.")
-    return water
+async def open_waters(user: User, registry: Registry | None = None) -> list[WaterRules]:
+    """The waters you can fish right now: open by level AND by area (areas.open_location_list), shallowest first."""
+    reg = registry or get_registry()
+    ids = {loc.id for loc in await areas.open_location_list(user, "fishing", reg)}
+    return [w for w in reg.fishing.waters if w.id in ids]
+
+
+async def require_water(user: User, water_id: str, registry: Registry | None = None) -> WaterRules:
+    for water in await open_waters(user, registry):
+        if water.id == water_id:
+            return water
+    raise FishingError("You haven't opened that water yet.")
 
 
 def quest_pool(registry: Registry) -> list[Item]:
@@ -61,7 +67,7 @@ def quest_pool(registry: Registry) -> list[Item]:
     that unlocks quests), so everybody who has quests can actually finish them."""
     rules = registry.fishing
     open_at = rules.quests.min_level
-    ids = {f for w in rules.waters if w.min_level <= open_at for f in w.fish}
+    ids = {f for w in rules.waters if water_level(registry, w.id) <= open_at for f in w.fish}
     return [i for i in fish_pool(registry) if i.id in ids]
 
 
@@ -708,6 +714,9 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     if bycatch is not None:
         await user.add_item(bycatch.id, 1)
     extras = catch_extras(rng or random.Random(), reg)
+    if cast.water is not None:  # starred materials: the deeper the water (its place in the list), the likelier a better star
+        location = next(i for i, w in enumerate(rules.waters) if w.id == cast.water.id) + 1
+        extras = stars.apply(extras, stars.progress(location, len(rules.waters)), rng or random.Random(), reg)
     for item_id, quantity in extras.items():
         await user.add_item(item_id, quantity)
     finished: list[Quest] = []

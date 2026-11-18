@@ -8,7 +8,7 @@ import discord
 from cococap.constants import Rarities
 from cococap.registry import get_registry
 from cococap.screens.sellall import start_sell_all
-from cococap.services import fishing, fishing_community, party_boss, pets, pots
+from cococap.services import areas, fishing, fishing_community, party_boss, pets, pots
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
 from cococap.services import odds
@@ -157,18 +157,17 @@ class FishScreen(Screen):
                                  + (f"  ·  bites in ~**{wait:.0f}s**" if self.user.settings.fishing_estimate else "")
                                  + (f"  ·  forgives **{slips}** slip(s)" if slips else "")))
             level = User.xp_to_level(skill.xp)
-            open_waters = fishing.unlocked_waters(level, reg.fishing)
+            open_waters = await fishing.open_waters(self.user, reg)
             if self.water not in {w.id for w in open_waters}:
-                self.water = open_waters[-1].id  # a newly opened water is where you head next
+                self.water = open_waters[-1].id  # a closed or unknown water falls back to the newest one you can fish
             here = fishing.water_by_id(reg, self.water)
             body.append(text(f"{here.emoji} **{here.name}**" + (f"  ·  {here.description}" if len(open_waters) == 1 else "")))  # (with a menu, it says what each water is like)
             if len(open_waters) > 1:
                 body.append(row(select("Where to fish...", [
                     discord.SelectOption(label=w.name, value=w.id, emoji=w.emoji, default=w.id == self.water,
                                          description=w.description[:100]) for w in open_waters], self._pick_water)))
-            if len(open_waters) < len(reg.fishing.waters):
-                nxt = reg.fishing.waters[len(open_waters)]
-                body.append(text(f"-# {nxt.emoji} {nxt.name} opens at fishing level {nxt.min_level}."))
+            if (hint := await areas.next_location_hint(self.user, "fishing", reg)) is not None:
+                body.append(text(f"-# Next water: {hint}."))
             if await fishing.chests_possible(self.user, now()):
                 body.append(text("-# 🌀 The hallucination lingers… something shiny may be down there."))
             haul = await fishing.stock(self.user)
@@ -318,9 +317,8 @@ class FishScreen(Screen):
     async def _cast(self, interaction: discord.Interaction) -> None:
         stats = await fishing.rod_stats(self.user)
         armed = await fishing.chests_possible(self.user, now())
-        level = User.xp_to_level((await self.user.skill("fishing")).xp)
-        water = fishing.require_water(level, self.water or fishing.unlocked_waters(level, get_registry().fishing)[-1].id,
-                                      get_registry().fishing)
+        open_waters = await fishing.open_waters(self.user)
+        water = next((w for w in open_waters if w.id == self.water), open_waters[-1])  # closed or unknown: the newest open one
         self.missed, self.offer = None, None
         self.cast = fishing.cast_line(stats, self.rng, now(), armed=armed, water=water, pet=await pets.bonuses(self.user), chase=await fishing.use_radar(self.user, water))
         await self.refresh(interaction)
@@ -836,7 +834,7 @@ class FishPotsScreen(Screen):
                 body.append(text("-# You have no bait. Buy some in the shop (fishing)."))
             body.append(row(select("Move pot to...", [
                 discord.SelectOption(label=w.name, value=w.id, emoji=w.emoji, default=w.id == skill.pots[self.index].water)
-                for w in fishing.unlocked_waters(level, rules)], self._water)))
+                for w in await fishing.open_waters(self.user, reg)], self._water)))
         return Page("Crab Pots", body, accent=0xD35400)
 
     async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:

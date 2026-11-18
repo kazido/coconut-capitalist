@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from cococap.errors import GameRuleError
 from cococap.models.skills.farming import Farming, Plot
 from cococap.registry import Registry, get_registry
-from cococap.services import pets, scrolls
+from cococap.services import areas, pets, scrolls, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
@@ -230,6 +230,14 @@ async def sync(user: User, now: float | None = None, registry: Registry | None =
     return farming, seen[0]
 
 
+async def locked_seeds(user: User, registry: Registry | None = None) -> dict[str, str]:
+    """Seeds the shop will not sell you yet, as {seed id: the field that opens it}. Fields open by farming level and the farthest area reached."""
+    reg = registry or get_registry()
+    opened = await areas.reached_locations(user, "farming", reg)
+    fields = reg.locations["farming"]
+    return {seed: fields[n].name for n, seed in enumerate(reg.farming.field_seeds) if n >= opened}
+
+
 async def starter_gift(user: User, registry: Registry | None = None) -> dict[str, int]:
     """The free seeds every farmer gets the first time they open their farm (once). Returns what was given."""
     reg = registry or get_registry()
@@ -433,6 +441,8 @@ async def harvest(
         await user.update_skill("farming", restore)  # the crop never arrived: the plot is still ripe
         raise
     extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0)
+    field_no = reg.farming.field_seeds.index(taken["seed"]) + 1 if taken["seed"] in reg.farming.field_seeds else 1
+    extras = stars.apply(extras, stars.progress(field_no, len(reg.farming.field_seeds)), rng, reg)  # starred materials: the further the field, the better the star
     if scroll := scrolls.roll("farming", rng, reg, reg.item(taken["seed"]).seed.cycles):  # a rare scroll: one chance per growth cycle of what you harvest
         extras[scroll] += 1
     if can and rng.random() < can.stats.get("seed_back", 0.0):  # a good can lets a plant go to seed: the seed comes back

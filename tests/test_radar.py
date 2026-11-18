@@ -33,7 +33,7 @@ def test_each_radar_level_is_stronger_and_costlier_and_the_battery_is_crafted():
     assert [l.multiplier for l in levels] == sorted(l.multiplier for l in levels) and [l.slots for l in levels] == sorted(l.slots for l in levels)
     assert [l.bits for l in levels] == sorted(l.bits for l in levels) and levels[-1].multiplier <= 8 and levels[-1].slots <= 3
     battery = REG.item(R.battery)
-    assert battery.price == 0 and R.battery in REG.recipes and battery.skill == "fishing" and R.unlock_level > REG.fishing.waters[-1].min_level
+    assert battery.price == 0 and R.battery in REG.recipes and battery.skill == "fishing" and R.unlock_level > f.water_level(REG, "deep_sea")
     for level in levels:
         assert all(REG.find_item(i) for i in level.items)  # (every ask is a real item)
 
@@ -145,8 +145,8 @@ async def test_the_fishing_page_has_a_radar_button_that_opens_at_its_level_and_t
     await with_radar(user, level=3, targets=(), on=False)
     nav, inter = await hub("radar")
     menu = select_named(nav, "Chase up to 2")
-    await choose(nav, inter, menu, "fish_marlin")
-    assert (await f.radar(user, REG)).targets == ("fish_marlin",) and "1 in" in all_text(nav)
+    await choose(nav, inter, menu, "fish_golden_koi")  # (a fish of a water this angler can reach: marlin is in the deep sea)
+    assert (await f.radar(user, REG)).targets == ("fish_golden_koi",) and "1 in" in all_text(nav)
     await find_button(nav, "Turn on").callback(inter)
     assert (await f.radar(user, REG)).on and find_button(nav, "Turn off")
 

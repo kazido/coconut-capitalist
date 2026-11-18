@@ -792,7 +792,7 @@ async def test_reaching_the_floor_banks_the_vault(db):
         run.danger = 0
         run.dig()
     summary = await m.settle_run(user, run)
-    assert summary.outcome == "floor" and all([await user.item_quantity(ore) >= q for ore, q in D.vault_ore.items()])
+    assert summary.outcome == "floor" and all([sum([await user.item_quantity(i) for i in (ore, f"{ore}_s2", f"{ore}_s3")]) >= q for ore, q in D.vault_ore.items()])  # (a starrable ore may come up starred)
 
 
 async def test_settling_an_unfinished_run_is_refused_and_abandoning_climbs_out_safely(db):
@@ -1547,3 +1547,40 @@ def test_small_wyrmhole_config_is_validated():
         MiniWyrmholeRules(**{**good, "gem_chance": [0.05] * 5})  # far too many gems
     with pytest.raises(ValidationError):
         MiniWyrmholeRules(**{**good, "odds": 1})
+
+
+# ---- the 14 named mines -----------------------------------------------------------------------------
+def test_there_is_one_mine_per_mining_location_and_each_holds_every_reactor_gem():
+    assert [s.id for s in RULES.mines] == [loc.id for loc in REG.locations["mining"]]
+    for site in RULES.mines:
+        tables = RULES.tables_of(site)
+        assert len(tables) == len(RULES.depth_tables)
+        assert set(RULES.reactor.core_gems) <= set(tables[-1])  # the reactor can always be fed, in every mine
+    assert RULES.mines[0].tables is None  # the first mine is the shared tables, so nothing changed for current players
+
+
+async def test_a_new_player_can_only_dig_the_first_mine(db):
+    user = await player()
+    assert [s.id for s in await m.open_mines(user, REG)] == [RULES.mines[0].id]
+    assert (await m.start_run(user, Random(1))).site.id == RULES.mines[0].id
+    with pytest.raises(m.MiningError, match="haven't opened"):
+        await m.start_run(user, Random(1), location=RULES.mines[1].id)
+
+
+def test_a_mine_scales_its_yield_and_the_pressure_of_its_digs():
+    plain = RULES.mines[0]
+    rich = plain.model_copy(update={"yield_mult": 2.0, "hardness_mult": 2.0})
+    base, scaled = make_run(site=plain), make_run(site=rich)
+    assert scaled._quantity_factor(0) == pytest.approx(2 * base._quantity_factor(0))
+    for run in (base, scaled):
+        force_row(run, [COPPER] * RULES.columns)
+    base_cost, scaled_cost = base._mine([2])[3], scaled._mine([2])[3]
+    assert scaled_cost == pytest.approx(2 * base_cost)
+
+
+def test_a_mine_with_its_own_tables_digs_only_from_them():
+    only_gold = ["material_gold_ore"]
+    site = RULES.mines[0].model_copy(update={"tables": [only_gold] * len(RULES.depth_tables)})
+    run = make_run(site=site)
+    cells = [c for d in range(D.floor) for c in run.row(d)]
+    assert all(c is None or c[0] == "material_gold_ore" for c in cells)

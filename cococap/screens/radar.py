@@ -33,13 +33,14 @@ class RadarScreen(Screen):
             body.append(text(f"### 📡 Radar  ·  level {view.level}/{len(rules.levels)}\n"
                              f"Chased fish are **{view.multiplier:g}x** likelier  ·  **{view.slots}** target slot(s)  ·  🔋 **{view.batteries:,}** batteries\n"
                              + ("🟢 **On**" if view.on else "⚪ **Off**") + (" (it uses one battery a cast, when a target lives in the water)" if view.on else "")))
-            fish = sorted({f for w in fishing.unlocked_waters(level, reg.fishing) for f in w.fish}, key=lambda f: (-reg.item(f).rarity, reg.item(f).name))[:25]
+            open_waters = await fishing.open_waters(self.user, reg)
+            fish = sorted({f for w in open_waters for f in w.fish}, key=lambda f: (-reg.item(f).rarity, reg.item(f).name))[:25]
             body.append(row(select(f"Chase up to {view.slots}...", [
                 discord.SelectOption(label=reg.item(f).name, value=f, emoji=reg.item(f).emoji or None, default=f in view.targets,
                                      description=f"worth {bits(reg.item(f).sell_price)}") for f in fish],
                 self._targets)))
             lines = []
-            for water in fishing.unlocked_waters(level, reg.fishing):
+            for water in open_waters:
                 for fish_id, chance in fishing.radar_chances(water, view.targets, view.multiplier, reg).items():
                     base = fishing.water_chances(water)[fish_id]
                     lines.append(f"{water.emoji} {water.name}: {reg.item(fish_id).display}  1 in **{round(1 / chance):,}** (was 1 in {round(1 / base):,})")

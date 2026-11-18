@@ -302,16 +302,15 @@ min = 1
 max = 1
 chance = 0.03
 
-# Waters. You fish where you like among the waters your fishing level has opened; each has its own fish (`fish = N` is
-# 1 in N, rarest rolled first, and the commonest is the catch-all) and deeper water takes longer to bite. Listed
-# shallowest first. The community goals and quests only ask for fish from the first waters, so everyone can finish them.
-# TODO(balance): all of it. Average catch per cast: pond ~3,000 bits, river ~5,400, reef ~7,000, deep sea ~17,000.
+# Waters: one per fishing location (configs/locations.toml, same order). You fish where you like among the waters you have opened
+# (fishing level AND area, see areas.toml). A water's name, emoji and unlock level come from its location, not from here. Each
+# has its own fish (`fish = N` is 1 in N, rarest rolled first, and the commonest is the catch-all at 1). Deeper water takes longer
+# to bite and pays more xp. The community goals and quests only ask for fish from the first waters, so everyone can finish them.
+# TODO(balance): waters 5-14 are first drafts. Average catch per cast (sell price): pond ~3,000 bits, river ~5,400, reef ~7,000,
+# deep sea ~18,700, then rising water to water to ~50,500 in the bottomless (about 2.7x deep sea).
 [[waters]]
 id = "pond"
-name = "Quiet Pond"
-emoji = "🏞️"
 description = "Calm water and common fish."
-min_level = 1
 wait_multiplier = 1.0
 xp = 46
 [waters.fish]
@@ -327,10 +326,7 @@ fish_pufferfish = 150
 
 [[waters]]
 id = "river"
-name = "Winding River"
-emoji = "🌊"
 description = "Faster water, bigger fish, and the odd golden surprise."
-min_level = 3
 wait_multiplier = 1.0
 xp = 55
 [waters.fish]
@@ -346,10 +342,7 @@ fish_golden_koi = 4000
 
 [[waters]]
 id = "reef"
-name = "Coral Reef"
-emoji = "🪸"
 description = "Bright, busy water. Fish take a little longer to find you."
-min_level = 8
 wait_multiplier = 1.2
 xp = 65
 [waters.fish]
@@ -364,10 +357,7 @@ fish_oarfish = 600
 
 [[waters]]
 id = "deep_sea"
-name = "The Deep Sea"
-emoji = "🐋"
 description = "Dark, cold and slow. Only the big ones live here."
-min_level = 15
 wait_multiplier = 1.5
 xp = 90
 [waters.fish]
@@ -378,6 +368,152 @@ fish_giant_squid = 120
 fish_abyssal_angler = 350
 fish_megaladegalodon = 400  # TODO(balance): Ahna's mega shark
 fish_leviathan_pup = 2500
+
+[[waters]]
+id = "oilslick_canal"
+description = "Slick, warm and stinking. Mutant fish bite wherever the oil spreads."
+wait_multiplier = 1.55
+xp = 97  # TODO(balance)
+[waters.fish]
+fish_golden_koi = 3000
+fish_sturgeon = 150
+fish_swordfish = 10
+fish_pike = 8
+fish_muskie = 6
+fish_moray_eel = 4
+fish_pufferfish = 3
+fish_tuna = 1
+
+[[waters]]
+id = "rustwater_reservoir"
+description = "Old pipes and rusty water. The big muskie hide under the scrap."
+wait_multiplier = 1.6
+xp = 103  # TODO(balance)
+[waters.fish]
+fish_golden_koi = 4000
+fish_oarfish = 1500
+fish_sturgeon = 120
+fish_muskie = 6
+fish_pike = 6
+fish_moray_eel = 4
+fish_swordfish = 3
+fish_tuna = 1
+
+[[waters]]
+id = "cadrega_canals"
+description = "Narrow canals and busy gondola lanes. Swordfish cruise the traffic."
+wait_multiplier = 1.65
+xp = 111  # TODO(balance)
+[waters.fish]
+fish_golden_koi = 2500
+fish_marlin = 250
+fish_sturgeon = 150
+fish_muskie = 5
+fish_moray_eel = 3
+fish_swordfish = 2
+fish_tuna = 1
+
+[[waters]]
+id = "grand_harbor"
+description = "Anchors, nets and wet rope. Giant squid come in on the tide."
+wait_multiplier = 1.7
+xp = 119  # TODO(balance)
+[waters.fish]
+fish_golden_koi = 1500
+fish_giant_squid = 800
+fish_sturgeon = 100
+fish_pike = 15
+fish_moray_eel = 3
+fish_tuna = 2
+fish_swordfish = 1
+
+[[waters]]
+id = "cloud_pools"
+description = "Floating pools high above the mist. Strange deep fish drift up here."
+wait_multiplier = 1.75
+xp = 127  # TODO(balance)
+[waters.fish]
+fish_abyssal_angler = 1500
+fish_golden_koi = 1500
+fish_giant_squid = 900
+fish_marlin = 600
+fish_sturgeon = 100
+fish_moray_eel = 5
+fish_muskie = 2
+fish_swordfish = 1
+
+[[waters]]
+id = "skyfall_lake"
+description = "A lake that fell from the sky. Something pale glows under the surface."
+wait_multiplier = 1.8
+xp = 136  # TODO(balance)
+[waters.fish]
+fish_megaladegalodon = 1200
+fish_abyssal_angler = 900
+fish_giant_squid = 600
+fish_sturgeon = 90
+fish_moray_eel = 6
+fish_muskie = 3
+fish_swordfish = 1
+
+[[waters]]
+id = "moonwell"
+description = "Silver water that only shines at night. Oarfish drift past in the moonlight."
+wait_multiplier = 1.85
+xp = 146  # TODO(balance)
+[waters.fish]
+fish_leviathan_pup = 8000
+fish_oarfish = 2000
+fish_abyssal_angler = 1500
+fish_marlin = 400
+fish_sturgeon = 80
+fish_giant_squid = 12
+fish_swordfish = 1
+
+[[waters]]
+id = "starlit_stream"
+description = "A stream of fallen stars. Golden koi and the odd giant shark swim here."
+wait_multiplier = 1.9
+xp = 157  # TODO(balance)
+[waters.fish]
+fish_megaladegalodon = 2000
+fish_golden_koi = 1500
+fish_oarfish = 1500
+fish_marlin = 300
+fish_sturgeon = 60
+fish_giant_squid = 8
+fish_swordfish = 1
+
+[[waters]]
+id = "black_tide"
+description = "Black, oily water that rolls in at dusk. Only the monsters swim in it."
+wait_multiplier = 1.95
+xp = 168  # TODO(balance)
+[waters.fish]
+fish_leviathan_pup = 6000
+fish_oarfish = 1200
+fish_abyssal_angler = 700
+fish_sturgeon = 50
+fish_giant_squid = 20
+fish_marlin = 8
+fish_swordfish = 1
+
+[[waters]]
+id = "the_bottomless"
+description = "No floor and no bottom. Everything from the deep lives down there, and something bigger."
+wait_multiplier = 2.0
+xp = 180  # TODO(balance)
+[waters.fish]
+fish_leviathan_pup = 2000
+fish_golden_koi = 900
+fish_oarfish = 600
+fish_megaladegalodon = 300
+fish_abyssal_angler = 200
+fish_sturgeon = 40
+fish_giant_squid = 15
+fish_marlin = 10
+fish_swordfish = 1
+
 [[boss.loot]]
 item = "bait_golden_roe"
 min = 1

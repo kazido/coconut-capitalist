@@ -13,7 +13,9 @@ TOPICS: list[tuple[str, str, str]] = [  # (id, title, emoji)
     ("foraging", "Foraging", "🌳"),
     ("fishing", "Fishing", "🎣"),
     ("fish", "Fish", "🐟"),
+    ("fish2", "Fish: the common ones", "🐟"),
     ("waters", "Waters", "🌊"),
+    ("waters2", "Waters: the deep ones", "🌊"),
     ("pots", "Crab pots and bait", "🦀"),
     ("crafting", "Crafting: the Workbench", "🛠️"),
     ("tools", "Tools and upgrades: axes and cans", "🔨"),
@@ -155,13 +157,14 @@ def where_to_catch_text(fish: Item, reg: Registry) -> str:
         return "not found in any water yet"
     best, chance = places[0]
     text = f"Max odds in {best.emoji} {best.name} ({_one_in(chance)})"
-    others = ", ".join(f"{w.name} ({_one_in(c)})" for w, c in places[1:])
-    return text + (f"; also {others}" if others else "") + f". Needs fishing level {min(w.min_level for w, _ in places)}."
+    others = ", ".join(f"{w.name} ({_one_in(c)})" for w, c in places[1:3])  # (the best two others; a fish in many waters says "and N more")
+    more = f" and {len(places) - 3} more" if len(places) > 3 else ""
+    return text + (f"; also {others}{more}" if others else "") + f". Needs fishing level {min(fishing.water_level(reg, w.id) for w, _ in places)}."
 
 
-def _fish(reg: Registry) -> list[str]:
-    out = []
-    for rarity in range(7, 0, -1):
+def _fish(reg: Registry, top: int = 7, bottom: int = 1) -> list[str]:
+    out = []  # two pages (rarest first) so each fits one Discord message
+    for rarity in range(top, bottom - 1, -1):
         fish = [i for i in reg.items.values() if i.category == "fish" and i.rarity == rarity]
         if not fish:
             continue
@@ -170,11 +173,11 @@ def _fish(reg: Registry) -> list[str]:
     return out
 
 
-def _waters(reg: Registry) -> list[str]:
+def _waters(reg: Registry, start: int = 0, stop: int | None = None) -> list[str]:
     out = []
-    for w in reg.fishing.waters:
+    for w in reg.fishing.waters[start:stop]:  # split over two pages, so each fits one Discord message
         odds = ", ".join(f"{reg.item(i).name} {_one_in(c).replace(' casts', '')}" for i, c in sorted(fishing.water_chances(w).items(), key=lambda kv: kv[1]))
-        out.append(f"**{w.emoji} {w.name}** (level {w.min_level}, waits ×{w.wait_multiplier:g})\n{w.description}\n-# {odds}")
+        out.append(f"**{w.emoji} {w.name}** (level {fishing.water_level(reg, w.id)}, waits ×{w.wait_multiplier:g})\n{w.description}\n-# {odds}")
     return out
 
 
@@ -300,8 +303,8 @@ def _crafting(reg: Registry) -> list[str]:
     ]
 
 
-_PAGES = {"start": _start, "mining": _mining, "farming": _farming, "foraging": _foraging, "fishing": _fishing, "fish": _fish,
-          "waters": _waters, "pots": _pots, "crafting": _crafting, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "party": _party, "items": _items}
+_PAGES = {"start": _start, "mining": _mining, "farming": _farming, "foraging": _foraging, "fishing": _fishing, "fish": lambda reg: _fish(reg, 7, 4), "fish2": lambda reg: _fish(reg, 3, 1),
+          "waters": lambda reg: _waters(reg, 0, 7), "waters2": lambda reg: _waters(reg, 7), "pots": _pots, "crafting": _crafting, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "party": _party, "items": _items}
 
 SKILL_FILTERS = ["mining", "farming", "foraging", "fishing", "combat", "general"]
 
