@@ -976,7 +976,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
         assert moved not in text, moved
     assert "Party" not in text.split("Skills")[0]  # (no party line unless the player is in a party)
     assert all(name in text for name in ("Check-in", "Inventory", "Shop", "Pets"))  # the main things are sections, one Open button each
-    assert {b.label for b in buttons(nav)} >= {"Party", "More", "Profile", "Ranks", "Leaderboards"}  # one row of smaller things at the bottom
+    assert {b.label for b in buttons(nav)} >= {"Party", "More", "Profile", "Ranks", "Ship"}  # one row of smaller things at the bottom
     assert len(text.splitlines()) <= 18  # (six main sections: a title and a line each)
     await click(nav, inter, "More")
     assert nav.screen.id == "more"
@@ -987,7 +987,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("ship", "trade", "minigames", "stats", "bestiary", "wiki", "settings")):
+    for index, expected in enumerate(("top", "trade", "minigames", "stats", "bestiary", "wiki", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)
