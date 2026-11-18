@@ -38,7 +38,7 @@ class ReactorScreen(Screen):
             else:
                 slots.append(f"{number}. {emojis.get('cell', '⬛')} *empty: {reg.item(wanted).name}*")
         if not status["gem_slots_open"]:
-            slots.append(f"-# 🔒 Gem slots unlock at mining level {rules.reactor.gem_slot_level}.")
+            slots.append(f"-# Gem slots unlock at mining level {rules.reactor.gem_slot_level}.")
 
         slowdown = min(d.max_reduction, d.reactor_reduction * (reactor.level - 1))
         braces = d.braces_base + (reactor.level - 1) // d.braces_per_reactor_levels
@@ -47,8 +47,8 @@ class ReactorScreen(Screen):
         per = rules.reactor.prestige_per_extra_column
         next_column = f" (next: Lv {((reactor.level - 1) // per + 1) * per + 1})" if columns < rules.columns else ""
         perks = (
-            f"⛏️ **{columns}** column(s){next_column}  ·  🛡️ **{braces}** brace(s)\n"
-            f"🧯 **{slowdown:.0%}** slower pressure  ·  🌀 wyrmhole **1 in {odds:,}**"
+            f"{emojis.skill('mining', '⛏️')} **{columns}** column(s){next_column}  ·  **{braces}** brace(s)\n"
+            f"**{slowdown:.0%}** slower pressure  ·  {emojis.get('wyrmhole', '🕳️')} wyrmhole **1 in {odds:,}**"
         )
 
         tool = await equipped_stats(self.user, "mining")
@@ -56,15 +56,15 @@ class ReactorScreen(Screen):
         auto = (
             f"{emojis.get('autominer', '⚙️')} **Auto-miner**: **{round(reactor.level * (1 + speed))}** lode(s) / {duration(rules.reactor.automine_seconds)}"
             f"  ·  holds {rules.reactor.automine_cap_hours + extra_hours:g}h\n"
-            f"📦 **{status['pending_lodes']:,}** waiting"
+            f"**{status['pending_lodes']:,}** waiting"
         )
         imp = reg.item(rules.wyrmhole.implosion_item).display
         if reactor.level >= rules.reactor.max_prestige:
-            prestige = "🏆 Max level."
+            prestige = "Max level."
         elif status["prestige_unlocked"]:
-            prestige = f"✅ All cores lit: an {imp} raises the reactor a level."
+            prestige = f"All cores lit: an {imp} raises the reactor a level."
         else:
-            prestige = f"🔒 Prestige: fill all four cores, then spend an {imp}."
+            prestige = f"Prestige: fill all four cores, then spend an {imp}."
 
         body = [
             *self.note_block(),
@@ -73,13 +73,13 @@ class ReactorScreen(Screen):
             text(auto + "\n-# " + prestige),
         ]
         body.append(row(
-            button("Claim lodes", emoji="📦", style=discord.ButtonStyle.success, disabled=status["pending_lodes"] == 0, on_click=self._claim),
-            button("Insert gems", emoji="💎", on_click=self._insert, disabled=not status["gem_slots_open"]),
-            button("Prestige", emoji="⭐", on_click=self._prestige, disabled=not status["prestige_unlocked"]),
+            button("Claim lodes", emoji=emojis.skill("mining", "⛏️"), style=discord.ButtonStyle.success, disabled=status["pending_lodes"] == 0, on_click=self._claim),
+            button("Insert gems", emoji=reg.item(rules.reactor.core_gems[0]).emoji or None, on_click=self._insert, disabled=not status["gem_slots_open"]),
+            button("Prestige", emoji=reg.item(rules.wyrmhole.implosion_item).emoji or None, on_click=self._prestige, disabled=not status["prestige_unlocked"]),
         ))
         if tool and tool.stats.get("lifeline"):
             wait = skill.lifeline_wait
-            body.append(text("🛟 **Lifeline**: " + ("ready" if wait <= 0 else f"recharging, **{wait}** more mine(s)")))
+            body.append(text("**Lifeline**: " + ("ready" if wait <= 0 else f"recharging, **{wait}** more mine(s)")))
         if level >= rules.magnet.level:
             body += [sep(), *self._magnet_parts(reg, skill, tool)]
         return Page("Reactor", body, accent=0x4FC3F7)
@@ -115,7 +115,7 @@ class ReactorScreen(Screen):
         drain = magnet.drain_per_row * (1 - save)
         rows = int(skill.magnet_meter // drain) if drain else 0
         meter = skill.magnet_meter
-        parts = [text(f"### 🧲 Magnet\n{bar(meter / magnet.capacity)}  {meter:,}/{magnet.capacity:,}  ·  ~**{rows}** rows\n"
+        parts = [text(f"### Magnet\n{bar(meter / magnet.capacity)}  {meter:,}/{magnet.capacity:,}  ·  ~**{rows}** rows\n"
                       f"-# Marks the richest column of each row: **{drain:g}** meter a row. Feed it outside a mine.")]
         owned = self._owned
         options = [discord.SelectOption(label=reg.item(ore).name, value=ore, emoji=reg.item(ore).emoji or None, default=ore == self.ore,
@@ -143,7 +143,7 @@ class ReactorScreen(Screen):
             parts.append(row(*(button(f"Feed {n}", on_click=feed(n), disabled=have < 1 or fits < 1 or n > min(have, fits)) for n in (1, 10, 100)),
                               button(f"Fill ({fill:,})", style=discord.ButtonStyle.success, on_click=feed(fill), disabled=fill < 1)))
         parts.append(row(
-            button(f"Magnet {'on' if skill.magnet_on else 'off'}", emoji="🧲", style=discord.ButtonStyle.primary if skill.magnet_on else discord.ButtonStyle.secondary,
+            button(f"Magnet {'on' if skill.magnet_on else 'off'}", style=discord.ButtonStyle.primary if skill.magnet_on else discord.ButtonStyle.secondary,
                    on_click=self._toggle("magnet_on", skill.magnet_on)),
             button(f"Auto-feed {'on' if skill.magnet_auto_feed else 'off'}", emoji=emojis.get("autominer", "⚙️"),
                    style=discord.ButtonStyle.primary if skill.magnet_auto_feed else discord.ButtonStyle.secondary,

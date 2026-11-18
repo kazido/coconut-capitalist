@@ -331,7 +331,7 @@ class Cast:
 
     def press(self, arrow: str, now: float) -> str:
         """Press an arrow. Returns ``ok | echo | slip | landed | escaped``.  ("echo" = the same arrow pressed twice
-        in a moment, usually because the panel was slow to show the first press: ignored.)"""
+        in a moment, usually because the panel was slow to show the first press: ignored. Never when a Reel step is next: that is a miss.)"""
         status = self.status(now)
         if status in ("waiting", "bite"):
             raise FishingError("Nothing is biting yet." if status == "waiting" else "Pull up the line first!")
@@ -342,7 +342,7 @@ class Cast:
         if status == "landed":
             raise FishingError("You already landed that one.")
         right = arrow == self.next_arrow
-        if not right and self.last_press and arrow == self.last_press[0] and 0 <= now - self.last_press[1] <= self.echo_window:
+        if not right and self.next_arrow != REEL and self.last_press and arrow == self.last_press[0] and 0 <= now - self.last_press[1] <= self.echo_window:
             return "echo"
         if self.pattern[self.progress] == MYSTERY and self.progress not in self.revealed:  # right or wrong, the ❓ is now known
             before = next((self.wanted(i) for i in range(self.progress - 1, -1, -1) if self.wanted(i) != REEL), LEFT)

@@ -2323,3 +2323,10 @@ def test_megaladegalodon_is_a_rare_deep_sea_fish_priced_between_its_neighbours()
     same_rarity = [i.sell_price for i in f.fish_pool(REG) if i.rarity == shark.rarity and i.id != shark.id]
     assert min(same_rarity) / 4 < shark.sell_price <= max(same_rarity)
     assert "deep_sea" in [w.id for w, _ in f.where_to_catch("fish_megaladegalodon", REG)]
+
+
+def test_a_repeated_arrow_on_a_reel_step_costs_slack_not_ignored():
+    from cococap.services.fishing import LEFT, REEL, Cast
+    cast = Cast(fish=None, bite_at=0, expires_at=100, pattern=[LEFT, REEL, LEFT], truth=[LEFT, REEL, LEFT], slips_left=2, hooked=True, echo_window=2.0)
+    assert cast.press(LEFT, 0.0) == "ok"
+    assert cast.press(LEFT, 0.5) == "slip" and cast.slips_left == 1  # the Reel step is up: pressing the arrow again is a miss, not an echo
