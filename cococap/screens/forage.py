@@ -12,6 +12,7 @@ from cococap.services.equipment import equipped_stats
 from cococap.services.party import Party, xp_bonus
 from cococap.services import odds
 from cococap.ui.rewards import rewards_result
+from cococap.ui.tabs import TabsScreen
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bar, bits, button, row, sep, select, text, xp_bar
 from cococap.user import User
@@ -158,7 +159,7 @@ class ForageScreen(Screen):
     label = "Foraging"
     emoji = emojis.Lazy("ui_tree", "🌳")
     description = "Chop trees alone or join the community tree"
-    links = ("tree", "grove", "partygrove", "sellall", "mastery", "releaf")
+    links = ("trees", "mastery", "releaf")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -274,14 +275,14 @@ class ForageScreen(Screen):
         party = await Party.for_user(self.user.id)
         best = await party_tree.unlocked_zone(party) if party else 1
         await party_tree.start(self.user, min(self.zone or 1, best))
-        await self.go(interaction, "partygrove")
+        await self.go(interaction, "trees", tab="party")
 
     async def _releaf(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "releaf")
 
     async def _join_party(self, interaction: discord.Interaction) -> None:
         await foraging.axe_stats(self.user)
-        await self.go(interaction, "partygrove")
+        await self.go(interaction, "trees", tab="party")
 
     async def _pick_zone(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.zone = int(values[0])
@@ -290,20 +291,19 @@ class ForageScreen(Screen):
     async def _chop(self, interaction: discord.Interaction) -> None:
         await foraging.axe_stats(self.user)
         tree = foraging.roll_tree(self.zone, random.Random(), get_registry().foraging)
-        await self.go(interaction, "tree", tree=tree)
+        await self.go(interaction, "trees", tab="own", tree=tree)
 
     async def _join(self, interaction: discord.Interaction) -> None:
         await foraging.axe_stats(self.user)
-        await self.go(interaction, "grove")
+        await self.go(interaction, "trees", tab="grove")
 
 
 class TreeScreen(Screen):
     """A private tree: chop it down on your own."""
 
-    id = "tree"
     label = "Tree"
+    emoji = f"{emojis.icon('tree', '🌳')}"
     description = "Your own tree"
-    links = ("forage",)
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -382,10 +382,9 @@ class TreeScreen(Screen):
 class GroveScreen(Screen):
     """The community tree: everyone's chops add up, and the panel refreshes itself so you see it fall."""
 
-    id = "grove"
     label = "Community Tree"
+    emoji = f"{emojis.icon('tree', '🌲')}"
     description = "Chop the hourly tree together"
-    links = ("forage",)
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -466,10 +465,9 @@ class GroveScreen(Screen):
 class PartyGroveScreen(Screen):
     """Your party's tree: only members can chop it, everyone's chops add up, and it pays a little better for teamwork."""
 
-    id = "partygrove"
     label = "Party Tree"
+    emoji = f"{emojis.icon('people', '👥')}"
     description = "Chop your party's tree together"
-    links = ("forage",)
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -539,3 +537,14 @@ class PartyGroveScreen(Screen):
 
     async def _back(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "forage")
+
+
+class TreesScreen(TabsScreen):
+    """Trees: your own tree, the community tree and your party's tree, as tabs of one page."""
+
+    id = "trees"
+    label = "Trees"
+    emoji = emojis.Lazy("ui_tree", "🌳")
+    description = "Chop your own tree, the community tree or your party's tree"
+    links = ("forage",)
+    panes = {"own": TreeScreen, "grove": GroveScreen, "party": PartyGroveScreen}

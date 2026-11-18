@@ -8,19 +8,18 @@ from cococap.services import shop
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
-from cococap.screens.upgrade import describe_stats
+from cococap.screens.enchant import EnchantPane
+from cococap.screens.upgrade import UpgradePane, describe_stats
+from cococap.ui.tabs import TabsScreen
 
 KIND_LABEL = {"pickaxe": "Mining", "axe": "Foraging", "sword": "Combat", "rod": "Fishing", "can": "Farming"}
 
 
-class ToolsScreen(Screen):
-    """Your tool for each skill, as a compact list, with ways to upgrade or enchant them."""
+class ToolsPane(Screen):
+    """Your tool for each skill, as a compact list. Upgrade and Enchant are the other tabs of the Tools page."""
 
-    id = "tools"
     label = "Tools"
     emoji = emojis.Lazy("ui_anvil", "🧰")
-    description = "Your tools: upgrade and enchant them"
-    links = ("inventory", "upgrade", "enchant")
 
     async def _equipped_ids(self) -> set[int]:
         ids = set()
@@ -53,9 +52,7 @@ class ToolsScreen(Screen):
             body.append(text("\n".join(lines)))
         if await self._unclaimed():
             body += [sep(), row(button("Claim free starter tools", emoji=emojis.icon("gift", "🎁"), style=discord.ButtonStyle.success, on_click=self._claim))]
-        body += [sep(), row(button("Upgrade", emoji=emojis.icon("craft", "🔨"), style=discord.ButtonStyle.primary, on_click=self._upgrades),
-                            button("Enchant", emoji=emojis.icon("scroll", "📜"), on_click=self._enchant),
-                            button("Inventory", emoji=emojis.icon("bag", "🎒"), on_click=self._inventory))]
+        body += [sep(), row(button("Inventory", emoji=emojis.icon("bag", "🎒"), on_click=self._inventory))]
         return Page("Tools", body, accent=0xB8860B)
 
     async def _unclaimed(self) -> bool:
@@ -71,11 +68,16 @@ class ToolsScreen(Screen):
         names = ", ".join(get_registry().item(i).name for i in got)
         await self.refresh(interaction, f"{emojis.icon('gift', '🎁')} You got: {names}." if got else "You have no starter tools to claim.")
 
-    async def _upgrades(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "upgrade")
-
-    async def _enchant(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "enchant")
-
     async def _inventory(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "inventory")
+
+
+class ToolsScreen(TabsScreen):
+    """The Tools page: your tools (the list), then Upgrade and Enchant as tabs of the same page."""
+
+    id = "tools"
+    label = "Tools"
+    emoji = emojis.Lazy("ui_anvil", "🧰")
+    description = "Your tools: upgrade and enchant them"
+    links = ("inventory",)
+    panes = {"tools": ToolsPane, "upgrade": UpgradePane, "enchant": EnchantPane}

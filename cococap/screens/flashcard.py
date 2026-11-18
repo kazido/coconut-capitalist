@@ -10,15 +10,13 @@ from cococap.ui.components import button, row, sep, text
 
 from .games import reward_line, streak_line
 
-INTRO = "Solve the sum before the clock runs out. Wins pay luckbucks, and a streak pays more."
+INTRO = "Solve the sum before the clock runs out. Wins pay luckbucks (up to a daily limit), and a streak pays more."
 
 
-class FlashcardScreen(Screen):
-    id = "flashcard"
+class FlashcardPane(Screen):
     label = "Flashcard"
     emoji = emojis.Lazy("ui_scroll", "🔢")
     description = "Quick sums against the clock"
-    links = ("minigames",)
 
     def __init__(self, nav):
         super().__init__(nav)

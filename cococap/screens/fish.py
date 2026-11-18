@@ -15,6 +15,7 @@ from cococap.services.party import xp_bonus
 from cococap.services import odds
 from cococap.ui.rewards import rewards_result
 from cococap.ui import Page, PromptModal, Result, Screen
+from cococap.ui.tabs import TabsScreen
 from cococap.ui.components import bar, bits, button, needs_text, row, select, sep, text, xp_bar
 from cococap.user import User
 
@@ -78,7 +79,7 @@ class FishScreen(Screen):
     label = "Fishing"
     emoji = ROD
     description = "Cast a line and reel in fish"
-    links = ("fishquests", "fishbook", "fishcommunity", "fishrecords", "fishnotes", "fishpots", "mastery", "sellall", "radar")
+    links = ("fishlog", "fishpots", "mastery", "radar")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -185,13 +186,10 @@ class FishScreen(Screen):
             body.append(row(
                 button("Cast", emoji=ROD, style=discord.ButtonStyle.primary, disabled=stats is None, on_click=self._cast),
                 button("Sell fish", emoji=emojis.icon("sell", "💰"), disabled=not haul.count, on_click=self._sell),
-                button("Quests", emoji=emojis.icon("quest", "📜"), disabled=not fishing.quests_unlocked(level, reg.fishing), on_click=self._quests),
-                button("Book", emoji=emojis.icon("book", "📖"), disabled=not fishing.book_unlocked(level, reg.fishing), on_click=self._book),
-                button("Community", emoji=emojis.icon('world', '🌍'), disabled=not fishing.quests_unlocked(level, reg.fishing), on_click=self._community),
+                button("Collection", emoji=emojis.icon('book', '📖'), disabled=not (fishing.quests_unlocked(level, reg.fishing) or fishing.book_unlocked(level, reg.fishing)),
+                       on_click=self._collection),
             ))
-            body.append(row(button("Records", emoji=emojis.icon("record", "📏"), on_click=self._records),
-                            button("Field notes", emoji=emojis.icon('search', '🔍'), on_click=self._notes),
-                            button("Crab pots", emoji=emojis.icon("crab", "🦀"), disabled=level < reg.fishing.pots.min_level, on_click=self._pots),
+            body.append(row(button("Crab pots", emoji=emojis.icon("crab", "🦀"), disabled=level < reg.fishing.pots.min_level, on_click=self._pots),
                             button("Mastery", emoji=emojis.icon("star", "🌟"), on_click=self._mastery),
                             button("Sell all", emoji=emojis.icon("sell", "💰"), on_click=self._sell_all)))
             body.append(row(button("Radar", emoji=emojis.icon('radar', '📡'), disabled=level < reg.fishing.radar.unlock_level, on_click=self._radar)))
@@ -485,20 +483,11 @@ class FishScreen(Screen):
         self.result = Result("Field notes", [intro, lines], emoji=emojis.icon('search', '🔍'), accent=0x2980B9, back_label="Back to reeling")
         await self.refresh(interaction)
 
-    async def _quests(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "fishquests")
-
-    async def _book(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "fishbook")
-
-    async def _community(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "fishcommunity")
-
-    async def _records(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "fishrecords")
-
-    async def _notes(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "fishnotes")
+    async def _collection(self, interaction: discord.Interaction) -> None:
+        # open on Quests when they are unlocked, else on the Book (the dropdown switches tabs either way)
+        level = User.xp_to_level((await self.user.skill("fishing")).xp)
+        tab = "quests" if fishing.quests_unlocked(level, get_registry().fishing) else "book"
+        await self.go(interaction, "fishlog", tab=tab)
 
     async def _pots(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishpots")
@@ -518,11 +507,11 @@ class FishScreen(Screen):
 
 
 class FishQuestsScreen(Screen):
-    id = "fishquests"
-    label = "Fishing Quests"
+    """A pane of the Collection (fishlog): daily and weekly quests."""
+
+    label = "Quests"
     emoji = f"{emojis.icon('quest', '📜')}"
     description = "Daily and weekly fishing quests"
-    links = ("fish",)
 
     async def build(self) -> Page:
         quests = await fishing.quests(self.user, now())
@@ -552,11 +541,11 @@ def unknown_summary(rarities: list[int], what: str) -> str:
 
 
 class FishBookScreen(Screen):
-    id = "fishbook"
-    label = "Collection Book"
+    """A pane of the Collection (fishlog): turn in fish and level the book up."""
+
+    label = "Book"
     emoji = f"{emojis.icon('book', '📖')}"
     description = "Turn in fish for rewards and level the book up"
-    links = ("fish", "fishrecords")
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -596,7 +585,8 @@ class FishBookScreen(Screen):
         await self.refresh(interaction, f"{emojis.icon('book', '📖')} You added {done.quantity:,} {done.fish.display} to the book  ·  +{emojis.bits(done.bits)}, +{done.xp} xp")
 
     async def _records(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "fishrecords")
+        self.nav.screen.tab = "records"  # a tab of the same page, not a new page
+        await self.nav.refresh(interaction)
 
     async def _finish(self, interaction: discord.Interaction) -> None:
         done = await fishing.complete_book(self.user)
@@ -609,12 +599,10 @@ class FishBookScreen(Screen):
 class FishCommunityScreen(Screen):
     """The server's collection book and this month's goals. Redraws itself so you see everyone's progress."""
 
-    id = "fishcommunity"
-    label = "Fishing Community"
+    label = "Community"
     emoji = emojis.icon('world', '🌍')
     description = "The community book and this month's goals"
-    links = ("fish", "fishrecords")
-    refresh_every = 10.0
+    refresh_every = 10.0  # the host (TabsScreen) passes this on to the page while this tab is open
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -670,7 +658,8 @@ class FishCommunityScreen(Screen):
         return Page("Fishing Community", body, accent=0x16A085)
 
     async def _records(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "fishrecords")
+        self.nav.screen.tab = "records"  # a tab of the same page, not a new page
+        await self.nav.refresh(interaction)
 
     async def _donate(self, interaction: discord.Interaction, values: list[str]) -> None:
         done = await fishing_community.donate(self.user, values[0])
@@ -686,11 +675,9 @@ class FishCommunityScreen(Screen):
 class FishRecordsScreen(Screen):
     """The biggest of every fish: yours, and the biggest ever caught on the server."""
 
-    id = "fishrecords"
-    label = "Fish Records"
+    label = "Records"
     emoji = f"{emojis.icon('record', '📏')}"
     description = "Your biggest catches and the server records"
-    links = ("fish",)
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -717,7 +704,8 @@ class FishRecordsScreen(Screen):
         await self.go(interaction, "fish")
 
     async def _notes(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "fishnotes")
+        self.nav.screen.tab = "notes"
+        await self.nav.refresh(interaction)
 
 
 async def notes_content(user) -> tuple[str, str]:
@@ -748,11 +736,9 @@ async def notes_content(user) -> tuple[str, str]:
 class FishNotesScreen(Screen):
     """What each ❓ turned out to be, fish by fish: only the patterns that are confirmed."""
 
-    id = "fishnotes"
-    label = "Field notes"
+    label = "Notes"
     emoji = emojis.icon('search', '🔍')
     description = f"What the hidden arrows ({emojis.icon('unknown', '❓')}) turned out to be"
-    links = ("fish",)
 
     async def build(self) -> Page:
         intro, lines = await notes_content(self.user)
@@ -761,6 +747,18 @@ class FishNotesScreen(Screen):
 
     async def _back(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fish")
+
+
+class FishLogScreen(TabsScreen):
+    """The fishing Collection: quests, the book, the community book, records and field notes, as tabs of one page."""
+
+    id = "fishlog"
+    label = "Collection"
+    emoji = emojis.icon('book', '📖')
+    description = "Fishing quests, the collection book, community, records and field notes"
+    links = ("fish",)
+    panes = {"quests": FishQuestsScreen, "book": FishBookScreen, "community": FishCommunityScreen,
+             "records": FishRecordsScreen, "notes": FishNotesScreen}
 
 
 class FishPotsScreen(Screen):

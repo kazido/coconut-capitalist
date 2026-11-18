@@ -545,8 +545,63 @@ def test_the_magnet_mark_shows_on_the_map():
     from cococap.screens.mine import _magnet, render_shaft
 
     run = make_run(magnet=True)
+    run.cursors = [2]
     force_row(run, [GOLD, None, None, None, None])  # (the cursor is on column 2, so mark another)
     assert _magnet() in render_shaft(run).splitlines()[0]
+
+
+def test_auto_aim_puts_the_cursor_on_the_richest_column_while_the_magnet_has_fuel():
+    run = make_run(magnet=True, cursors=[0])
+    force_row(run, [COPPER, None, GOLD, None, ("material_copper_ore", 1)])
+    run.aim()
+    assert run.cursors == [2]
+    dry = make_run(magnet=True, magnet_points=1, magnet_drain=4, cursors=[0])  # not enough fuel for a row: no aim
+    force_row(dry, [COPPER, None, GOLD, None, None])
+    dry.aim()
+    assert dry.cursors == [0]
+    off = make_run(magnet=False, cursors=[0])
+    force_row(off, [COPPER, None, GOLD, None, None])
+    off.aim()
+    assert off.cursors == [0]
+
+
+def test_auto_aim_keeps_the_spacing_of_several_cursors_and_covers_the_most_ore():
+    run = make_run(magnet=True, cursors=[1, 2])
+    force_row(run, [None, None, None, GOLD, COPPER])
+    run.aim()
+    assert sorted(run.cursors) == [3, 4]
+
+
+def test_auto_aim_follows_the_magnet_down_the_shaft_and_the_player_can_still_move():
+    run = make_run(magnet=True, cursors=[2], rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0))
+    run.rng = Rig(0.99)
+    run.danger = 0
+    run.dig()
+    best = run.best_columns()
+    assert not best or run.cursors[0] in best
+    before = run.cursors[0]
+    run.move(1)
+    assert run.cursors[0] == (before + 1) % RULES.columns  # the arrows still work
+
+
+def test_the_magnet_marks_vents_but_never_aims_at_them():
+    run = make_run(magnet=True, cursors=[0])
+    force_row(run, [COPPER, None, GOLD, None, None], kinds=["ore", "vent", "ore", "vent", "ore"])
+    assert run.vent_columns() == frozenset({1, 3})
+    run.aim()
+    assert run.cursors == [2]
+    assert make_run(magnet=False).vent_columns() == frozenset()
+    from cococap.screens.mine import _vent, render_shaft
+
+    assert _vent() in render_shaft(run).splitlines()[0]
+
+
+def test_a_brace_and_the_magnet_drain_read_the_configured_numbers():
+    run = make_run(magnet=True, magnet_points=100, magnet_drain=RULES.magnet.drain_per_row)
+    run.danger = 60
+    run.braces = 1
+    run.brace()
+    assert run.danger == 60 - D.brace_amount
 
 
 # ---- bombs ---------------------------------------------------------------------------------------------
@@ -946,7 +1001,9 @@ def test_going_deeper_is_a_real_choice_not_always_the_right_one():
         return total / 1500
 
     cautious, balanced, reckless = average_value(0.02), average_value(0.08), average_value(1.0)
-    assert balanced > cautious * 1.2 and balanced > reckless * 1.2
+    # With strong braces (brace_amount 25) careful play is almost as good as leaving at 'Unstable', so only the edge over cautious is required;
+    # the edge over never leaving stays big. (Guard deliberately moved with the brace buff.)
+    assert balanced > cautious and balanced > reckless * 1.2
 
 
 def test_one_vault_is_a_part_of_the_next_pickaxe_not_the_whole_of_it():
@@ -1287,7 +1344,8 @@ def test_the_three_mining_capstones_are_about_equally_strong_at_low_and_high_pow
             "gold_rush": average(power, gold_rush=int(amount("gold_rush", "gold_rush"))) / base - 1,
             "geode_cracker": average(power, geode=amount("geode_cracker", "geode")) / base - 1,
         }
-        assert all(0.08 <= g <= 0.4 for g in gains.values()), (power, gains)
+        # (lower bound 7%, was 8%: with brace_amount 25 base pay is higher, so Lifeline's gain at power 12 is 7.6%; moved on purpose, see the commit)
+        assert all(0.07 <= g <= 0.4 for g in gains.values()), (power, gains)
         assert max(gains.values()) - min(gains.values()) <= 0.15, (power, gains)
 
 

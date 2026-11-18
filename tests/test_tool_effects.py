@@ -55,7 +55,7 @@ async def test_the_upgrade_page_says_what_the_tool_does_and_what_the_next_one_ch
     user = await User.get(1)
     for kind, item in STARTERS.items():
         await user.give_instance(item)
-    nav, inter = await hub("upgrade")
+    nav, inter = await hub("tools", tab="upgrade")
     seen = {}
     for skill in ("Mining", "Foraging", "Combat", "Fishing", "Farming"):
         await click(nav, inter, skill)
@@ -76,7 +76,7 @@ async def test_an_enchant_or_rolled_bonus_is_counted_in_the_before_and_after(db)
     user = await User.get(1)
     await set_columns(user, purse=10**9)
     await user.give_instance("tool_pickaxe_rookie", rolled={"power": 2})
-    nav, _ = await hub("upgrade")
+    nav, _ = await hub("tools", tab="upgrade")
     # now 3 + 2 = 5 (x1.50), after 5 + 2 = 7 (x2.00): the bonus carries over to the better pickaxe
     assert "Power **5** → **7**" in all_text(nav) and "Ore per lode: ×1.50 → **×2.00**" in all_text(nav)
 
@@ -84,9 +84,9 @@ async def test_an_enchant_or_rolled_bonus_is_counted_in_the_before_and_after(db)
 async def test_a_new_ability_is_announced_on_the_upgrade_that_gives_it(db):
     user = await User.get(1)
     await user.give_instance("tool_rustedbroadsword")
-    nav, _ = await hub("upgrade")
+    nav, _ = await hub("tools", tab="upgrade")
     assert "New ability" in all_text(nav) and REG.item("tool_dreamnail").tool.ability_name in all_text(nav)
-    nav2, _ = await hub("upgrade", user_id=2)  # (nobody has anything to upgrade: no page)
+    nav2, _ = await hub("tools", tab="upgrade", user_id=2)  # (nobody has anything to upgrade: no page)
     assert "Nothing to upgrade" in all_text(nav2)
 
 
@@ -106,7 +106,7 @@ async def test_each_requirement_of_an_upgrade_is_on_its_own_line(db):
 
     user = await User.get(1)
     await user.give_instance("tool_axe_starter")
-    nav, _ = await hub("upgrade")
+    nav, _ = await hub("tools", tab="upgrade")
     lines = all_text(nav).split("\n")
     cost = cost_of("tool_axe_starter")
     wanted = [f"{REG.item(i).display}  **0/{q}**" for i, q in cost.items.items()]
@@ -206,7 +206,7 @@ async def test_the_upgrade_page_lists_each_of_the_several_changes_for_every_tool
     user = await User.get(1)
     for item in STARTERS.values():
         await user.give_instance(item)
-    nav, inter = await hub("upgrade")
+    nav, inter = await hub("tools", tab="upgrade")
     for skill in ("Mining", "Foraging", "Combat", "Fishing", "Farming"):
         await click(nav, inter, skill)
         arrows = [line for line in all_text(nav).split("\n") if "→ **" in line and ":" in line and "Power" not in line]

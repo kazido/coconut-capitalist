@@ -25,6 +25,11 @@ Keep this file current: update the "Open work" list at the end of every session.
   credentials into files, docs or commits. The old-player migration (copy only rank + tokens; give pet owners one basic pet; leave
   bits and everything else fresh; restore bry's and zennor's old rank, both were Weathered = rank 6) is waiting on a working login.
 
+## Screens were consolidated (2026-11-18): 49 -> 33 registered
+Tabs pages (`ui/tabs.py` TabsScreen + panes): fishlog (quests/book/community/records/notes), trees (own/grove/party), pets (+orbs), tools (+upgrade/enchant),
+player (profile/stats/top), shop (+sell all by skill), reactor (+wyrmholes), games (high-low, blackjack, flashcard, unscramble, sequence, trivia). "Ship" is now Travel, "Shipments" is Crates; fight/bestiary are hidden from menus (combat paused).
+Older notes below that name `tree`, `grove`, `upgrade`, `enchant`, `stats`, `top`, `casino`, `minigames`, `sellall`, `wyrmhole`, `fishbook`... mean the matching tab. Plan: docs/plans/screen-consolidation.md.
+
 ## What is built (all committed)
 
 Mining (descent, wyrmholes, reactor, magnet), farming (plots, hourly rain, water, market, crop time estimate, 10 crops),

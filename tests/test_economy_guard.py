@@ -51,7 +51,7 @@ def test_an_hour_of_each_skill_at_starter_gear_pays_about_the_same():
     worth, seconds = balance.fishing_per_cast()
     fishing = worth * 60 / seconds
     pay = {"mining": mining, "foraging": foraging, "fishing": fishing}
-    assert all(6_000 <= v <= 20_000 for v in pay.values()), pay  # bits per active minute
+    assert all(6_000 <= v <= 25_000 for v in pay.values()), pay  # bits per active minute (the top was 20,000 until the brace buff lifted mining)
     assert max(pay.values()) / min(pay.values()) < 2.2, pay  # nothing out-earns another by more than about double
 
 

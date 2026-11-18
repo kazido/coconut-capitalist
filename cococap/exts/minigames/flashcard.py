@@ -9,7 +9,7 @@ class FlashcardCog(commands.Cog):
 
     @app_commands.command(name="flashcard", description="Solve a sum for luckbucks.")
     async def flashcard(self, interaction: Interaction):
-        await open_screen(interaction, "flashcard")
+        await open_screen(interaction, "games", tab="flashcard")
 
 
 async def setup(bot):

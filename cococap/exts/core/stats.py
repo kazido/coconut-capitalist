@@ -10,7 +10,7 @@ class Stats(commands.Cog):
     @app_commands.command(name="stats", description="Number go up man happy.")
     async def stats(self, interaction: Interaction):
         """Display your various metrics."""
-        await open_screen(interaction, "stats")
+        await open_screen(interaction, "player", tab="stats")
 
 
 async def setup(bot):

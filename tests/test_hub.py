@@ -108,6 +108,76 @@ async def test_every_screen_renders_valid_layout_within_discord_limits(db, scree
     assert inter.response.send_message.await_args.kwargs["view"] is nav
 
 
+@pytest.mark.parametrize("tab", list(SCREENS["fishlog"].panes))
+async def test_every_fishlog_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("fishlog", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
+@pytest.mark.parametrize("tab", list(SCREENS["trees"].panes))
+async def test_every_trees_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("trees", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
+@pytest.mark.parametrize("tab", list(SCREENS["pets"].panes))
+async def test_every_pets_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("pets", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
+@pytest.mark.parametrize("tab", list(SCREENS["tools"].panes))
+async def test_every_tools_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("tools", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
+@pytest.mark.parametrize("tab", list(SCREENS["player"].panes))
+async def test_every_player_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("player", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
+@pytest.mark.parametrize("tab", list(SCREENS["shop"].panes))
+async def test_every_shop_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("shop", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
+@pytest.mark.parametrize("tab", list(SCREENS["games"].panes))
+async def test_every_games_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("games", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
+@pytest.mark.parametrize("tab", list(SCREENS["reactor"].panes))
+async def test_every_reactor_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("reactor", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
 
 
 
@@ -219,7 +289,7 @@ async def test_settings_page_lists_each_setting_with_a_toggle_that_saves(db):
 
 
 async def test_profile_and_home_show_balances_and_levels(db):
-    nav, _ = await hub("profile")
+    nav, _ = await hub("player", tab="profile")
     text = all_text(nav)
     assert "1,000" in text and "Mining" in text and "Lv 1" in text
     home, _ = await hub("home")
@@ -229,7 +299,7 @@ async def test_profile_and_home_show_balances_and_levels(db):
 async def test_stats_pages_switch_with_the_select(db):
     user = await User.get(1)
     await user.inc_stat("hl_wins", 3)
-    nav, inter = await hub("stats")
+    nav, inter = await hub("player", tab="stats")
     await choose(nav, inter, select_named(nav, "Pick a page"), "gambling")
     assert "Wins: `3`" in all_text(nav)
 
@@ -238,11 +308,11 @@ async def test_top_select_changes_category_and_shortcut_preselects_it(db):
     from cococap.exts.economy.top import TopCategories
 
     await set_columns(await User.get(1), luckbucks=77)
-    nav, inter = await hub("top")
+    nav, inter = await hub("player", tab="top")
     assert "tester" in all_text(nav)
     await choose(nav, inter, select_named(nav, "Pick a leaderboard"), "luckbucks")
     assert "77" in all_text(nav) and "Luckbucks" in all_text(nav)
-    nav2, _ = await hub("top", category=TopCategories.LUCKBUCKS)
+    nav2, _ = await hub("player", tab="top", category=TopCategories.LUCKBUCKS)
     assert nav2.screen.category is TopCategories.LUCKBUCKS
 
 
@@ -376,8 +446,8 @@ async def test_the_tools_page_is_a_compact_list_without_equip_buttons_and_leads_
     text = all_text(nav)
     assert "Starter Axe" in text and "Tin Watering Can" in text and "Farming" in text and "Foraging" in text and "power" in text
     assert "✅" not in text and not [b for b in buttons(nav) if b.label in ("Equip", "Equipped")]
-    await click(nav, inter, "Upgrade")
-    assert nav.screen.id == "upgrade"
+    await choose(nav, inter, select_named(nav, "Choose a tab"), "upgrade")
+    assert nav.screen.tab == "upgrade"
     await click(nav, inter, "Back to tools")
     assert nav.screen.id == "tools"
 
@@ -442,7 +512,7 @@ async def test_mining_screen_reactor_buttons(db):
 
 
 
-# ---- navigation without a menu; skills / minigames; shop sections --------------------------------
+# ---- navigation without a menu; skills / games; shop sections --------------------------------
 async def test_no_go_anywhere_menu_remains(db):
     nav, _ = await hub("home")
     assert selects(nav) == []
@@ -463,11 +533,11 @@ def test_every_screen_is_reachable_by_following_links_from_home():
 
 
 async def test_home_links_really_open_the_declared_screens(db):
-    for parent in ("home", "more", "skills", "minigames"):
+    for parent in ("home", "more", "skills"):
         nav, inter = await hub(parent)
         openers = [c.accessory for c in nav.walk_children() if isinstance(c, ui.Section) and isinstance(c.accessory, ui.Button)
                    and not c.accessory.disabled and c.accessory.label == "Open"]
-        quick = [b for b in buttons(nav) if b.emoji and b.label in ("Check-in", "Inventory", "Shop", "Trade", "Party", "Pets", "More", "Profile", "Ranks", "Leaderboards")]
+        quick = [b for b in buttons(nav) if b.emoji and b.label in ("Check-in", "Inventory", "Shop", "Trade", "Party", "Pets", "More", "Player", "Ranks")]
         opened = set()
         for opener in openers + quick:
             nav.stack, nav.screen = ["home"], None
@@ -504,11 +574,10 @@ async def test_shop_has_a_section_per_skill_and_filters(db):
     assert "Tin Watering Can" not in all_text(nav)
 
 
-# ---- the in-window casino --------------------------------------------------------------------------
-async def start_from_casino(game_button_index, bet="100", user_id=1):
-    nav, inter = await hub("casino", user_id=user_id)
-    plays = [b for b in buttons(nav) if b.label == "Play"]
-    await plays[game_button_index].callback(inter)
+# ---- the in-window casino (on the Games page) ---------------------------------------------------------
+async def start_from_casino(game, bet="100", user_id=1):
+    nav, inter = await hub("games", tab=game, user_id=user_id)
+    await find_button(nav, "Play").callback(inter)
     modal = await submit(inter, bet)
     modal_inter = fake_interaction(user_id)
     await modal.on_submit(modal_inter)
@@ -516,8 +585,8 @@ async def start_from_casino(game_button_index, bet="100", user_id=1):
 
 
 async def test_highlow_plays_inside_the_hub_window(db):
-    nav, inter = await start_from_casino(0)
-    assert nav.screen.id == "highlow" and nav.screen.locked
+    nav, inter = await start_from_casino("highlow")
+    assert nav.screen.id == "games" and nav.screen.tab == "highlow" and nav.screen.locked
     assert (await User.get(1)).luckbucks == 0
     assert find_button(nav, "Home").disabled and find_button(nav, "Back").disabled  # can't walk out mid-game
     nav.screen.game.roll = 9
@@ -531,18 +600,17 @@ async def test_highlow_plays_inside_the_hub_window(db):
     assert nav.screen.game.bet == 100 and (await User.get(1)).luckbucks == 200 - 100
 
 
-async def test_highlow_loss_screen_and_return_to_casino(db):
-    nav, inter = await start_from_casino(0)
+async def test_highlow_loss_screen_leaves_the_hub_free(db):
+    nav, inter = await start_from_casino("highlow")
     nav.screen.game.roll = 2
     await find_button(nav, "High").callback(inter)
     assert "You lost" in all_text(nav)
-    await click(nav, inter, "Casino")
-    assert nav.screen.id == "casino"
+    assert not nav.screen.locked and not find_button(nav, "Home").disabled
 
 
 async def test_blackjack_plays_inside_the_hub_window(db):
     for seed_user in range(20, 60):
-        nav, inter = await start_from_casino(1, user_id=seed_user)
+        nav, inter = await start_from_casino("blackjack", user_id=seed_user)
         if not nav.screen.game.finished:
             break
     else:
@@ -555,7 +623,7 @@ async def test_blackjack_plays_inside_the_hub_window(db):
 
 
 async def test_leaving_by_timeout_mid_game_settles_the_bet(db):
-    nav, inter = await start_from_casino(0)
+    nav, inter = await start_from_casino("highlow")
     assert (await User.get(1)).luckbucks == 0  # the whole 100-luckbuck stake is on the table
     nav.message = SimpleNamespace(edit=AsyncMock())
     await nav.on_timeout()
@@ -563,13 +631,12 @@ async def test_leaving_by_timeout_mid_game_settles_the_bet(db):
 
 
 async def test_casino_rejects_a_bad_bet_without_opening_a_game(db):
-    nav, inter = await hub("casino")
-    await [b for b in buttons(nav) if b.label == "Play"][0].callback(inter)
+    nav, inter = await hub("games", tab="highlow")
+    await find_button(nav, "Play").callback(inter)
     modal = await submit(inter, "999999")
     with pytest.raises(Exception, match="Not enough"):
         await modal.on_submit(fake_interaction())
-    assert nav.screen.id == "casino" and (await User.get(1)).luckbucks == 100
-
+    assert nav.screen.id == "games" and nav.screen.tab == "highlow" and (await User.get(1)).luckbucks == 100
 
 
 # ---- the mines (in-window) ----------------------------------------------------------------------------
@@ -620,7 +687,7 @@ async def test_brace_button_lowers_danger_and_then_disables(db):
     run = nav.screen.run
     run.danger = 40
     await click(nav, inter, "Brace (1)")
-    assert run.danger == 25 and run.braces == 0
+    assert run.danger == 40 - run.rules.descent.brace_amount and run.braces == 0
     assert find_button(nav, "Brace (0)").disabled
 
 
@@ -667,7 +734,7 @@ async def test_a_wyrmhole_leads_to_a_one_pick_screen_and_banks_it(db):
     assert run.outcome == "wyrmhole" and "wyrmhole" in all_text(nav)
     await continue_through(nav, inter)
     await find_button(nav, "Enter the wyrmhole").callback(inter)
-    assert nav.screen.id == "wyrmhole" and nav.screen.locked
+    assert nav.screen.id == "reactor" and nav.screen.tab == "wyrmholes" and nav.screen.locked
     await find_button(nav, "Dig").callback(inter)
     assert nav.screen.id == "result" and sum((await user.items()).values()) > 0  # the pick is a reward screen like any other
     await continue_through(nav, inter, "Back to the mines")
@@ -701,11 +768,11 @@ async def test_entering_the_small_wyrmhole_banks_the_pack_then_one_pick_per_row_
     assert run.outcome == "mini_wyrmhole" and await user.item_quantity("material_copper_ore") == 7  # banked first, like the big wyrmhole
     await continue_through(nav, inter)
     await find_button(nav, "Enter the small wyrmhole").callback(inter)
-    assert nav.screen.id == "wyrmhole" and nav.screen.locked
+    assert nav.screen.id == "reactor" and nav.screen.tab == "wyrmholes" and nav.screen.locked
     hole = nav.screen.hole
     assert hole.small and "Row **1** of 5" in all_text(nav)
     for r in range(5):
-        assert nav.screen.id == "wyrmhole" and hole.row == r and nav.screen.locked
+        assert nav.screen.id == "reactor" and hole.row == r and nav.screen.locked
         await find_button(nav, "Dig").callback(inter)
     assert nav.screen.id == "result" and hole.finished and hole.banked
     for item_id, qty in hole.loot().items():
@@ -783,22 +850,14 @@ from cococap.registry import get_registry as _reg  # noqa: E402
 START_LUCK = _reg().economy.starting_luckbucks
 
 
-async def test_minigames_page_links_to_every_brain_game(db):
-    nav, inter = await hub("minigames")
-    for label in ("Flashcard", "Unscramble", "Sequence", "Trivia"):
-        assert label in all_text(nav)
-    plays = [b for b in buttons(nav) if b.label == "Play"]
-    assert len(plays) == 4
-    seen = set()
-    for i in range(4):
-        nav, inter = await hub("minigames")
-        await [b for b in buttons(nav) if b.label == "Play"][i].callback(inter)
-        seen.add(nav.screen.id)
-    assert seen == {"flashcard", "unscramble", "sequence", "trivia"}
+async def test_games_dropdown_lists_every_game(db):
+    nav, _ = await hub("games")
+    options = [o.label for o in select_named(nav, "Choose a game").options]
+    assert options == ["High-Low", "Blackjack", "Flashcard", "Unscramble", "Sequence", "Trivia"]
 
 
 async def test_flashcard_round_trip_pays_luckbucks(db):
-    nav, inter = await hub("flashcard")
+    nav, inter = await hub("games", tab="flashcard")
     await click(nav, inter, "Start")
     game = nav.screen.game
     assert "= ?" in all_text(nav) and len([b for b in buttons(nav) if b.label.lstrip("-").isdigit()]) == 4
@@ -813,7 +872,7 @@ async def test_flashcard_round_trip_pays_luckbucks(db):
 
 
 async def test_unscramble_uses_a_modal_answer(db):
-    nav, inter = await hub("unscramble")
+    nav, inter = await hub("games", tab="unscramble")
     await click(nav, inter, "Start")
     word = nav.screen.game.word
     await find_button(nav, "Answer").callback(inter)
@@ -823,7 +882,7 @@ async def test_unscramble_uses_a_modal_answer(db):
 
 
 async def test_sequence_full_game_in_the_window(db):
-    nav, inter = await hub("sequence")
+    nav, inter = await hub("games", tab="sequence")
     nav.screen.pause = 0
     await click(nav, inter, "Easy")
     screen = nav.screen
@@ -841,7 +900,7 @@ async def test_sequence_full_game_in_the_window(db):
 
 
 async def test_sequence_walking_away_still_pays_what_you_remembered(db):
-    nav, inter = await hub("sequence")
+    nav, inter = await hub("games", tab="sequence")
     nav.screen.pause = 0
     await click(nav, inter, "Medium")
     await find_button(nav, emoji=nav.screen.game.pattern[0]).callback(inter)
@@ -860,7 +919,7 @@ async def test_trivia_round_trip_and_outage_message(db, monkeypatch):
         return raw
 
     monkeypatch.setattr(trivia_service, "fetch_from_api", ok)
-    nav, inter = await hub("trivia")
+    nav, inter = await hub("games", tab="trivia")
     await click(nav, inter, "Start")
     assert "Red planet?" in all_text(nav)
     letter = trivia_service.LETTERS[nav.screen.game.answers.index("Mars")]
@@ -872,7 +931,7 @@ async def test_trivia_round_trip_and_outage_message(db, monkeypatch):
         raise trivia_service.TriviaUnavailable("down")
 
     monkeypatch.setattr(trivia_service, "fetch_from_api", down)
-    nav, inter = await hub("trivia")
+    nav, inter = await hub("games", tab="trivia")
     with pytest.raises(trivia_service.TriviaUnavailable):
         await find_button(nav, "Start").callback(inter)
 
@@ -972,22 +1031,22 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
     nav, inter = await hub("home")
     text = all_text(nav)
     assert "Skills" in text
-    for moved in ("Minigames", "Stats", "Settings", "Trade"):
+    for moved in ("Games", "Stats", "Settings", "Trade"):
         assert moved not in text, moved
     assert "Party" not in text.split("Skills")[0]  # (no party line unless the player is in a party)
     assert all(name in text for name in ("Check-in", "Inventory", "Shop", "Pets"))  # the main things are sections, one Open button each
-    assert {b.label for b in buttons(nav)} >= {"Party", "More", "Profile", "Ranks", "Ship"}  # one row of smaller things at the bottom
+    assert {b.label for b in buttons(nav)} >= {"Party", "More", "Player", "Ranks", "Travel"}  # one row of smaller things at the bottom
     assert len(text.splitlines()) <= 18  # (six main sections: a title and a line each)
     await click(nav, inter, "More")
     assert nav.screen.id == "more"
     text = all_text(nav)
-    assert all(name in text for name in ("Trade", "Minigames", "Stats", "Settings"))
+    assert all(name in text for name in ("Trade", "Games", "Settings"))
     await click(nav, inter, "Back")
     assert nav.screen.id == "home"
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("top", "trade", "minigames", "stats", "bestiary", "wiki", "settings")):
+    for index, expected in enumerate(("trade", "games", "bestiary", "wiki", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)
@@ -1308,13 +1367,13 @@ async def test_chopping_a_private_tree_to_the_ground_pays_out(db, monkeypatch):
     user = await with_axe()
     nav, inter = await hub("forage")
     await click(nav, inter, "Chop a tree")
-    assert nav.screen.id == "tree" and "hp" in all_text(nav)
+    assert nav.screen.tab == "own" and "hp" in all_text(nav)
     nav.screen.tree = foraging_service.Tree(1, 1, 1)  # a one-chop tree, so the test is short
     await chop(nav, inter)
     assert nav.screen.id == "result" and nav.screen.origin.reward is not None and "TIMBER" in all_text(nav)
     assert (await user.skill("foraging")).stats.trees_chopped == 1 and (await user.skill("foraging")).xp > 0  # (it pays xp and drops, not bits)
     await click(nav, inter, "Another tree")
-    assert nav.screen.id == "tree" and nav.screen.reward is None and nav.screen.tree.hp == nav.screen.tree.max_hp
+    assert nav.screen.tab == "own" and nav.screen.reward is None and nav.screen.tree.hp == nav.screen.tree.max_hp
     await click(nav, inter, "Leave")
     assert nav.screen.id == "forage"
 
@@ -1322,7 +1381,7 @@ async def test_chopping_a_private_tree_to_the_ground_pays_out(db, monkeypatch):
 async def test_a_second_chop_click_on_a_fallen_tree_does_not_pay_twice(db, monkeypatch):
     freeze_time(monkeypatch)
     await with_axe()
-    nav, inter = await hub("tree", tree=foraging_service.Tree(1, 1, 1))
+    nav, inter = await hub("trees", tab="own", tree=foraging_service.Tree(1, 1, 1))
     stale = find_button(nav, "Overhead")
     await stale.callback(inter)
     purse = (await User.get(1)).purse
@@ -1334,10 +1393,10 @@ async def test_heavy_trees_are_slower_for_a_lone_chopper_and_soloist_fixes_it(db
     freeze_time(monkeypatch)
     heavy = get_registry().foraging.heavy_zone
     await with_axe(1, template="tool_axe_reinforced")
-    nav, _ = await hub("tree", tree=foraging_service.Tree(heavy, 100, 100))
+    nav, _ = await hub("trees", tab="own", tree=foraging_service.Tree(heavy, 100, 100))
     assert "Heavy tree" in all_text(nav)
     await with_axe(2, flags=("soloist",), template="tool_axe_reinforced")
-    nav, _ = await hub("tree", tree=foraging_service.Tree(heavy, 100, 100), user_id=2)
+    nav, _ = await hub("trees", tab="own", tree=foraging_service.Tree(heavy, 100, 100), user_id=2)
     assert "Heavy tree" not in all_text(nav)
 
 
@@ -1364,7 +1423,7 @@ async def test_two_players_chop_the_community_tree_together(db, monkeypatch):
     assert "Community tree" in all_text(a_nav)
     await click(a_nav, a_inter, "Join the community tree")
     await click(b_nav, b_inter, "Join the community tree")
-    assert a_nav.screen.id == "grove" and b_nav.screen.id == "grove"
+    assert a_nav.screen.tab == "grove" and b_nav.screen.tab == "grove"
     await chop(a_nav, a_inter)
     await chop(a_nav, a_inter)
     await chop(b_nav, b_inter)
@@ -1380,7 +1439,7 @@ async def test_the_community_panel_refreshes_itself_so_you_see_others_work(db, m
 
     freeze_time(monkeypatch)
     watcher, worker = await with_axe(1), await with_axe(2)
-    nav, _ = await hub("grove")
+    nav, _ = await hub("trees", tab="grove")
     nav.screen.refresh_every = 0.02
     nav._restart_ticker()
     before = all_text(nav)
@@ -1396,7 +1455,7 @@ async def test_the_self_refresh_stops_when_you_leave_the_screen(db, monkeypatch)
 
     freeze_time(monkeypatch)
     await with_axe()
-    nav, inter = await hub("grove")
+    nav, inter = await hub("trees", tab="grove")
     nav.screen.refresh_every = 0.02
     nav._restart_ticker()
     await click(nav, inter, "Leave")
@@ -1412,7 +1471,7 @@ async def test_felling_the_community_tree_pays_everyone_from_their_own_panel(db,
     alice, bob = await with_axe(1), await with_axe(2)
     tree = await foraging_service.community_tree(alice, OPEN_HOUR)
     await foraging_service.chop_community(alice, tree.max_hp // 2, OPEN_HOUR)
-    nav, inter = await hub("grove", user_id=2)
+    nav, inter = await hub("trees", tab="grove", user_id=2)
     await foraging_service.chop_community(bob, tree.max_hp - tree.max_hp // 2, OPEN_HOUR)  # bob's chop fells it
     await nav.screen.refresh(inter)
     assert nav.screen.id == "result" and "TIMBER" in all_text(nav) and (await bob.skill("foraging")).xp > 0  # bob's share arrived (xp and drops: chopping pays no bits)
@@ -1425,7 +1484,7 @@ async def test_felling_the_community_tree_pays_everyone_from_their_own_panel(db,
 async def test_the_tree_falling_over_unfinished_ends_the_panel_gracefully(db, monkeypatch):
     freeze_time(monkeypatch)
     user = await with_axe()
-    nav, inter = await hub("grove")
+    nav, inter = await hub("trees", tab="grove")
     await chop(nav, inter)
     freeze_time(monkeypatch, OPEN_HOUR + 40 * 60)  # 40 minutes in: it fell over
     await nav.screen.refresh(inter)
@@ -1457,7 +1516,7 @@ async def test_a_spot_wears_out_and_moves_on_by_itself_and_a_wrong_style_only_gl
     freeze_time(monkeypatch)
     user = await with_axe(template="tool_axe_reinforced")
     power = get_registry().item("tool_axe_reinforced").tool.power
-    nav, inter = await hub("tree", tree=foraging_service.Tree(1, 1_000_000, 1_000_000))
+    nav, inter = await hub("trees", tab="own", tree=foraging_service.Tree(1, 1_000_000, 1_000_000))
     rules = get_registry().foraging
     right = nav.screen.spot.stance(rules)
     wrong = next(letter for letter in "osu" if letter != right)
@@ -1476,12 +1535,12 @@ async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
     freeze_time(monkeypatch, good_chops=True)
     await with_axe(template="tool_axe_reinforced")
     power = get_registry().item("tool_axe_reinforced").tool.power
-    nav, inter = await hub("tree", tree=foraging_service.Tree(1, 10_000, 10_000))
+    nav, inter = await hub("trees", tab="own", tree=foraging_service.Tree(1, 10_000, 10_000))
     await chop(nav, inter)
     bonus = round(power * (1 + RULES_CHOP.good_chop_bonus))
     assert "Good chop" in all_text(nav) and nav.screen.tree.hp == 10_000 - bonus
     freeze_time(monkeypatch, good_chops=False)
-    nav2, inter2 = await hub("tree", tree=foraging_service.Tree(1, 10_000, 10_000))
+    nav2, inter2 = await hub("trees", tab="own", tree=foraging_service.Tree(1, 10_000, 10_000))
     await chop(nav2, inter2)
     assert "Good chop" not in all_text(nav2) and nav2.screen.tree.hp == 10_000 - power
 
@@ -1490,7 +1549,7 @@ async def test_the_community_tree_has_the_same_spot_and_wear(db, monkeypatch):
     freeze_time(monkeypatch)
     user = await with_axe(template="tool_axe_reinforced")
     power = get_registry().item("tool_axe_reinforced").tool.power
-    nav, inter = await hub("grove")
+    nav, inter = await hub("trees", tab="grove")
     assert "left (about" in all_text(nav) and "per swing" in all_text(nav)
     await chop(nav, inter, zone=3)
     nav.screen.spot.wear = 0.9
@@ -1529,7 +1588,7 @@ async def test_the_house_earns_luckbucks_not_bits_on_the_boards(db):
     assert "bits in the economy" in bits_line and bits_footer is None  # no "the house has made N bits"
     _, _, luck_footer = await leaderboard_view(TopCategories.LUCKBUCKS, 1)
     assert luck_footer == "The house has made: 1,234 luckbucks"
-    nav, inter = await hub("top")
+    nav, inter = await hub("player", tab="top")
     assert "house" not in all_text(nav).lower()
     await choose(nav, inter, select_named(nav, "Pick a leaderboard"), "luckbucks")
     assert "The house has made: 1,234 luckbucks" in all_text(nav)
@@ -1780,14 +1839,14 @@ async def test_a_private_tree_hides_home_and_back_but_a_plain_page_shows_them(db
     assert {"Home", "Back"} <= _nav_labels(nav)  # no leave button here, so the controller is shown
     await with_axe()
     await click(nav, inter, "Chop a tree")
-    assert nav.screen.id == "tree" and nav.screen.locked and "Leave" in _nav_labels(nav) and not {"Home", "Back"} & _nav_labels(nav)
+    assert nav.screen.tab == "own" and nav.screen.locked and "Leave" in _nav_labels(nav) and not {"Home", "Back"} & _nav_labels(nav)
     await click(nav, inter, "Leave")
     assert nav.screen.id == "forage" and {"Home", "Back"} <= _nav_labels(nav)
 
 
-@pytest.mark.parametrize("screen_id", ["grove", "partygrove"])
+@pytest.mark.parametrize("screen_id", ["grove", "party"])
 async def test_shared_tree_pages_hide_home_and_back(db, screen_id):
-    nav, inter = await hub(screen_id)
+    nav, inter = await hub("trees", tab=screen_id)
     assert nav.screen.locked and not {"Home", "Back"} & _nav_labels(nav)
     await nav.screen.on_abandon()  # nothing half-done to settle: must not raise
 
@@ -1879,7 +1938,7 @@ async def test_the_community_tree_lists_only_the_top_three_choppers(db, monkeypa
     users = [await with_axe(i) for i in range(1, 6)]
     for i, user in enumerate(users):  # player 1 chops least, player 5 most
         await foraging_service.chop_community(user, 10 * (i + 1), OPEN_HOUR)
-    nav, _ = await hub("grove", user_id=1)
+    nav, _ = await hub("trees", tab="grove", user_id=1)
     text_ = all_text(nav)
     assert "**5** chopper" in text_ and text_.count("🥇") == 1 and text_.count("🥈") == 1 and text_.count("🥉") == 1
     assert "**50** hp" in text_ and "**40** hp" in text_ and "**30** hp" in text_

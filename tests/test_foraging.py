@@ -699,7 +699,7 @@ async def test_the_panel_shows_the_spot_and_its_wear_but_never_the_style(db, mon
 
     freeze_time(monkeypatch)
     user = await with_axe()
-    nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
+    nav, inter = await hub("trees", tab="own", tree=f.Tree(1, 10_000, 10_000))
     text_now = lambda: " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))  # noqa: E731
     page = text_now()
     assert "Plain" in page and "grain" in page and "left (about" in page and "chops" in page and "per swing" in page
@@ -720,7 +720,7 @@ async def test_the_grain_notes_page_lists_every_grain_what_you_know_and_what_you
     user = await with_axe()
     await f.note_style(user, "plain", "s", True)
     await f.note_style(user, "knotty", "o", False)
-    nav, inter = await hub("tree", tree=f.Tree(1, 5_000, 4_000))
+    nav, inter = await hub("trees", tab="own", tree=f.Tree(1, 5_000, 4_000))
     tree = nav.screen.tree
     await click(nav, inter, "Grain notes")
     assert nav.screen.id == "result"
@@ -729,7 +729,7 @@ async def test_the_grain_notes_page_lists_every_grain_what_you_know_and_what_you
         assert grain.name in page
     assert f"{f.STANCES['s'][1]} {f.STANCES['s'][0]}" in page and f"✖️{f.STANCES['o'][1]}" in page
     await click(nav, inter, "Back to chopping")
-    assert nav.screen.id == "tree" and nav.screen.tree is tree  # the very same tree: nothing was lost
+    assert nav.screen.tab == "own" and nav.screen.tree is tree  # the very same tree: nothing was lost
     forage, forage_inter = await hub("forage")
     await click(forage, forage_inter, "Grain notes")
     assert forage.screen.id == "result"
@@ -740,10 +740,10 @@ async def test_a_wedge_button_appears_with_a_wedge_and_moves_you_to_a_new_spot(d
 
     freeze_time(monkeypatch)
     user = await with_axe()
-    nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
+    nav, inter = await hub("trees", tab="own", tree=f.Tree(1, 10_000, 10_000))
     assert not [b for b in buttons(nav) if "Wedge" in (b.label or "")]  # none held: no button
     await user.add_item("material_iron_wedge", 2)
-    nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
+    nav, inter = await hub("trees", tab="own", tree=f.Tree(1, 10_000, 10_000))
     nav.screen.spot.wear = 0.5
     assert [b.label for b in buttons(nav) if "Wedge" in (b.label or "")] == ["Iron Wedge ×2"]
     await click(nav, inter, "Iron Wedge ×2")
@@ -756,7 +756,7 @@ async def test_a_heartwood_spot_on_screen_shows_itself_and_hits_the_tree_hard_an
     freeze_time(monkeypatch)
     await with_axe()
     power = REG.item("tool_axe_starter").tool.power
-    nav, inter = await hub("tree", tree=f.Tree(1, 100_000, 100_000))
+    nav, inter = await hub("trees", tab="own", tree=f.Tree(1, 100_000, 100_000))
     nav.screen.spot = f.Spot("Plain", 1.0, "plain", special="heartwood")
     await nav._render()
     text_now = lambda: " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))  # noqa: E731
@@ -1116,7 +1116,7 @@ async def test_a_new_tree_clears_the_streak_before_the_panel_is_drawn(db, monkey
 
     freeze_time(monkeypatch)
     await with_axe()
-    nav, inter = await hub("tree", tree=f.Tree(1, 10_000, 10_000))
+    nav, inter = await hub("trees", tab="own", tree=f.Tree(1, 10_000, 10_000))
     text_now = lambda: " ".join(c.content for c in nav.walk_children() if hasattr(c, "content"))  # noqa: E731
     nav.screen.spot.on_tree(id(nav.screen.tree))
     nav.screen.spot.streak = 2

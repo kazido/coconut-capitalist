@@ -324,7 +324,7 @@ automine_cap_hours = 24            # lodes stop piling up after this long
 [magnet]
 level = 5                          # mining level needed
 capacity = 1000                    # the meter holds this many points
-drain_per_row = 4                  # while it is on, every row you dig uses this many (a mine is about 20 rows, so a full meter is about 12 mines)
+drain_per_row = 6                  # while it is on, every row you dig uses this many (a mine is 30 rows, so a full meter is about 5 mines)
 # Meter points per ore, set so a point costs about the same in bits whatever you feed (50 bits a point at today's prices): a full meter is about 50,000 bits of ore
 # (1,000 copper, 167 iron or 26 gold), and following the marker is worth several times what its rows cost.  TODO(balance)
 [magnet.values]
@@ -370,7 +370,7 @@ lifeline_loss = 0.25               # ...it costs this share of what you carry (a
 lifeline_runs = 8                  # ...and it needs this many mines to recharge (the one it saved counts as the first)
 reactor_reduction = 0.02           # each reactor level above 1 slows pressure gains by 2%...
 max_reduction = 0.5                # ...up to 50%
-brace_amount = 15                  # pressure removed by one brace (a brace skips the dig)
+brace_amount = 25                  # pressure removed by one brace (a brace skips the dig)
 braces_base = 1
 braces_per_reactor_levels = 5      # +1 brace for every 5 reactor levels
 

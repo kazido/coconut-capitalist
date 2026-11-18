@@ -9,8 +9,9 @@ from cococap.ui.components import bar, bits, section, sep, text, xp_bar
 from cococap.user import User
 
 
-class ProfileScreen(Screen):
-    id = "profile"
+class ProfilePane(Screen):
+    """Your balances and skill levels. A tab of the Player page (screens/player.py)."""
+
     label = "Profile"
     emoji = emojis.Lazy("ui_people", "👤")
     description = "Your balances, rank and skill levels"

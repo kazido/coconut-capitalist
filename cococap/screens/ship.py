@@ -11,9 +11,9 @@ class ShipScreen(Screen):
     """The ship: where you are, build/upgrade the ship, sail to an area, and craft the fuel the next new area burns."""
 
     id = "ship"
-    label = "Ship"
+    label = "Travel"
     emoji = emojis.icon('ship', '🚢')
-    description = "Travel between areas and upgrade your ship"
+    description = "Sail to new areas and upgrade your ship"
     links = ("craft",)
 
     async def build(self) -> Page:

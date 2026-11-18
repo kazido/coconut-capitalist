@@ -6,7 +6,7 @@ from cococap.services import shop, upgrades
 from cococap.services.equipment import add_enchant, effective_stats, equip
 from cococap.user import User
 from tests.conftest import set_columns
-from tests.test_hub import all_text, buttons, click, find_button, hub
+from tests.test_hub import all_text, buttons, choose, click, find_button, hub, select_named
 
 REG = get_registry()
 
@@ -149,8 +149,8 @@ async def test_the_upgrade_screen_lists_tools_and_upgrades_one(db):
     up = cost_of("tool_axe_starter")
     user, inst = await with_tool(purse=up.bits, materials=dict(up.items))
     nav, inter = await hub("tools")
-    await click(nav, inter, "Upgrade")
-    assert nav.screen.id == "upgrade" and "Thornwhip Axe" in all_text(nav)
+    await choose(nav, inter, select_named(nav, "Choose a tab"), "upgrade")
+    assert nav.screen.tab == "upgrade" and "Thornwhip Axe" in all_text(nav)
     await click(nav, inter, "Upgrade")
     assert "became a **Thornwhip Axe**" in all_text(nav)
     assert (await user.instance(inst.id)).template_id == "tool_axe_thornwhip"
@@ -159,7 +159,7 @@ async def test_the_upgrade_screen_lists_tools_and_upgrades_one(db):
 
 async def test_an_unaffordable_upgrade_is_disabled_and_a_stale_click_is_refused(db):
     user, inst = await with_tool(purse=1)
-    nav, inter = await hub("upgrade")
+    nav, inter = await hub("tools", tab="upgrade")
     button = find_button(nav, "Upgrade")
     assert button.disabled
     with pytest.raises(upgrades.UpgradeError):
@@ -167,7 +167,7 @@ async def test_an_unaffordable_upgrade_is_disabled_and_a_stale_click_is_refused(
 
 
 async def test_the_upgrade_screen_with_nothing_to_upgrade(db):
-    nav, _ = await hub("upgrade")
+    nav, _ = await hub("tools", tab="upgrade")
     assert "Nothing to upgrade" in all_text(nav)
 
 
@@ -342,7 +342,7 @@ async def test_a_fork_shows_one_path_at_a_time_and_a_dropdown_swaps_between_them
     from tests.test_hub import choose, select_named
 
     user, inst = await forked_pickaxe()
-    nav, inter = await hub("upgrade")
+    nav, inter = await hub("tools", tab="upgrade")
     menu = select_named(nav, "Pick a path")
     assert [o.label for o in menu.options] == ["Warden path", "Prospector path"] and sum(o.default for o in menu.options) == 1
     text = all_text(nav)
@@ -362,7 +362,7 @@ async def test_each_path_page_has_its_own_ability_materials_and_numbers(db):
     from tests.test_hub import choose, select_named
 
     await forked_pickaxe()
-    nav, inter = await hub("upgrade")
+    nav, inter = await hub("tools", tab="upgrade")
     seen = {}
     for option in select_named(nav, "Pick a path").options:
         menu = select_named(nav, "Pick a path")
@@ -395,7 +395,7 @@ def tool_page_title(nav) -> str:
 async def test_the_upgrade_page_shows_one_tool_at_a_time_with_a_button_per_skill(db):
     user = await User.get(1)
     await own_every_kind(user)
-    nav, inter = await hub("upgrade")
+    nav, inter = await hub("tools", tab="upgrade")
     skills = ("Mining", "Foraging", "Combat", "Fishing", "Farming")
     assert not any(b.label in ("Prev", "Next") for b in buttons(nav))
 
@@ -424,7 +424,7 @@ async def test_a_page_has_that_tools_costs_and_upgrading_it_keeps_you_on_it(db):
     axe_cost = cost_of("tool_axe_starter")
     for item, quantity in axe_cost.items.items():
         await user.add_item(item, quantity)
-    nav, inter = await hub("upgrade")
+    nav, inter = await hub("tools", tab="upgrade")
     await click(nav, inter, "Foraging")  # to the axe
     assert "Starter Axe" in tool_page_title(nav) and f"{axe_cost.items['material_feather']}" in all_text(nav)
     await click(nav, inter, "Upgrade")
@@ -435,17 +435,17 @@ async def test_a_single_tool_has_no_skill_buttons_and_only_a_fork_has_a_dropdown
     from tests.test_hub import selects
 
     user, inst = await forked_pickaxe()
-    nav, _ = await hub("upgrade")
-    assert not any(b.label in ("Mining", "Foraging") for b in buttons(nav)) and len(selects(nav)) == 1  # (one tool: nothing to switch between)
+    nav, _ = await hub("tools", tab="upgrade")
+    assert not any(b.label in ("Mining", "Foraging") for b in buttons(nav)) and len(selects(nav)) == 2  # (one tool: nothing to switch between; the 2nd select is the tab menu)
     await user.give_instance("tool_axe_starter")
-    nav, _ = await hub("upgrade")
+    nav, _ = await hub("tools", tab="upgrade")
     assert {"Mining", "Foraging"} <= {b.label for b in buttons(nav)}
 
 
 async def test_an_unknown_skill_falls_back_to_the_first_tool(db):
     user = await User.get(1)
     await user.give_instance("tool_axe_starter")
-    nav, inter = await hub("upgrade")
+    nav, inter = await hub("tools", tab="upgrade")
     nav.screen.kind = "sword"
     await nav.screen.nav.refresh(inter)
     assert nav.screen.kind == "axe" and "Starter Axe" in tool_page_title(nav)
@@ -454,7 +454,7 @@ async def test_an_unknown_skill_falls_back_to_the_first_tool(db):
 async def test_confirm_upgrades_needs_a_second_press_and_moving_away_cancels_it(db):
     user, inst = await forked_pickaxe()
     await user.set_setting("confirm_upgrades", True)
-    nav, inter = await hub("upgrade")
+    nav, inter = await hub("tools", tab="upgrade")
     up = [b for b in buttons(nav) if b.label == "Upgrade"][0]
     await up.callback(inter)
     assert (await user.instance(inst.id)).template_id != "tool_pickaxe_prospector" and any(b.label == "Sure?" for b in buttons(nav))
@@ -470,7 +470,7 @@ async def test_confirm_upgrades_needs_a_second_press_and_moving_away_cancels_it(
 
 async def test_upgrades_are_one_press_by_default(db):
     user, inst = await forked_pickaxe()
-    nav, inter = await hub("upgrade")
+    nav, inter = await hub("tools", tab="upgrade")
     await [b for b in buttons(nav) if b.label == "Upgrade"][0].callback(inter)
     assert (await user.instance(inst.id)).template_id != inst.template_id
 

@@ -89,7 +89,7 @@ class LeaderboardCog(commands.Cog):
     async def top(self, interaction: Interaction, category: TopCategories = TopCategories.BITS):
         from cococap.screens import open_screen
 
-        await open_screen(interaction, "top", category=category)
+        await open_screen(interaction, "player", tab="top", category=category)
 
 
 async def setup(bot):

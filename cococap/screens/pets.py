@@ -6,6 +6,7 @@ from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import pets, shop
 from cococap.ui import Page, PromptModal, Result, Screen
+from cococap.ui.tabs import TabsScreen
 from cococap.ui.components import button, row, select, sep, text, xp_bar
 from cococap.user import User
 
@@ -21,11 +22,9 @@ def skill_line(pet) -> str:
 class PetScreen(Screen):
     """Looking after your pets: who they are, who is active, feeding and Spirits. Orbs have their own page."""
 
-    id = "pets"
     label = "Pets"
     emoji = emojis.Lazy("ui_paw", "🐾")
     description = "Your pets: look at them, feed them, pick who helps you"
-    links = ("orbs",)
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -89,7 +88,7 @@ class PetScreen(Screen):
         return Page("Pets", body, accent=0x27AE60)
 
     async def _to_orbs(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "orbs")
+        await self.go(interaction, "pets", tab="orbs")
 
     @staticmethod
     def _food_note(food, pet, reg) -> str:
@@ -142,11 +141,9 @@ def orb_items(reg=None):
 class OrbScreen(Screen):
     """Familiar Orbs: open them and aim them at the pet you are hunting."""
 
-    id = "orbs"
     label = "Familiar Orbs"
     emoji = emojis.Lazy("ui_orb", "🔮")
     description = "Open orbs to hatch pets, and hunt a pet you want"
-    links = ("pets",)
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -200,7 +197,7 @@ class OrbScreen(Screen):
         await self.refresh(interaction, f"Bought {purchase.quantity:,} × {get_registry().item(item_id).name} for {emojis.bits(purchase.total)}.")
 
     async def _to_pets(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "pets")
+        await self.go(interaction, "pets", tab="pets")
 
     async def _hunt(self, interaction: discord.Interaction, values: list[str]) -> None:
         pet = await pets.set_target(self.user, None if values[0] == "none" else values[0])
@@ -226,3 +223,13 @@ class OrbScreen(Screen):
         self.result = Result("The orb hatches!", lines, emoji=orb.emoji, accent=0x27AE60, again=self._open_orb(orb_id), again_label="Another orb",
                              back_label="Back to the orbs")
         await self.refresh(interaction)
+
+
+class PetsScreen(TabsScreen):
+    """Pets: looking after them, and the Familiar Orbs that hatch new ones, as tabs of one page."""
+
+    id = "pets"
+    label = "Pets"
+    emoji = emojis.Lazy("ui_paw", "🐾")
+    description = "Your pets: look at them, feed them, pick who helps you"
+    panes = {"pets": PetScreen, "orbs": OrbScreen}

@@ -17,12 +17,10 @@ def blank() -> str:
     return emojis.icon("sq_black", "⬛")
 
 
-class SequenceScreen(Screen):
-    id = "sequence"
+class SequencePane(Screen):
     label = "Sequence"
     emoji = emojis.Lazy("ui_brain", "🧠")
     description = "Remember the pattern; it grows every round"
-    links = ("minigames",)
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -44,7 +42,7 @@ class SequenceScreen(Screen):
     async def build(self) -> Page:
         game, body = self.game, [*self.note_block()]
         if self.phase == "choose":
-            body += [text("Watch the pattern, then repeat it. It grows by one each round. Harder levels pay more per element."),
+            body += [text("Watch the pattern, then repeat it. It grows by one each round. Harder levels pay more per element. Luckbucks, up to a daily limit."),
                      row(*(button(d.title(), style=discord.ButtonStyle.primary, on_click=self._begin(d)) for d in sequence.DIFFICULTIES))]
             return Page("Sequence", body, accent=0xA0A39D)
         body.append(text(f"Round **{game.score + 1}**  ·  score **{game.score}**"))

@@ -296,7 +296,7 @@ async def test_the_pet_house_for_someone_with_no_pets_explains_orbs(db):
     nav, inter = await hub("pets")
     assert "No pets yet" in all_text(nav) and "Familiar Orb" in all_text(nav)
     await click(nav, inter, "Familiar Orbs")
-    assert nav.screen.id == "orbs" and find_button(nav, f"Buy Familiar Orb ({REG.item(pets.ORB).price:,} bits)").disabled
+    assert nav.screen.tab == "orbs" and find_button(nav, f"Buy Familiar Orb ({REG.item(pets.ORB).price:,} bits)").disabled
 
 
 async def test_orbs_are_bought_on_the_orbs_page_for_the_configured_price(db):
@@ -307,7 +307,7 @@ async def test_orbs_are_bought_on_the_orbs_page_for_the_configured_price(db):
     assert orb in orb_items(REG) and orb.buyable
     user = await User.get(1)
     await set_columns(user, purse=orb.price * 4)
-    nav, inter = await hub("orbs")
+    nav, inter = await hub("pets", tab="orbs")
     assert not [b for b in buttons(nav) if b.label == "Buy several"]
     await click(nav, inter, f"Buy {orb.name} ({orb.price:,} bits)")  # (opens a popup asking how many)
     modal = await submit(inter, "4")
@@ -322,13 +322,13 @@ async def test_opening_an_orb_from_the_orbs_page_shows_a_result_page(db, monkeyp
     monkeypatch.setattr(pets, "roll_pet", lambda rng, reg, target=None, misses=0, orb=pets.ORB: REG.pets["drizzle"])
     user = await User.get(1)
     await user.add_item(pets.ORB, 2)
-    nav, inter = await hub("orbs")
+    nav, inter = await hub("pets", tab="orbs")
     await click(nav, inter, "Open Familiar Orb (2)")
     assert nav.screen.id == "result" and "Drizzle" in all_text(nav) and "A new friend" in all_text(nav) and "waiting for a bite" in all_text(nav)
     await click(nav, inter, "Another orb")
     assert "Another Drizzle" in all_text(nav) and "2" in all_text(nav)
     await click(nav, inter, "Back to the orbs")
-    assert nav.screen.id == "orbs"
+    assert nav.screen.tab == "orbs"
     await click(nav, inter, "Your pets")
     assert nav.screen.id == "pets" and "Drizzle" in all_text(nav) and "⭐⭐" in all_text(nav)
 
@@ -449,7 +449,7 @@ async def test_choosing_a_new_target_starts_the_count_again_and_nonsense_is_refu
 async def test_the_pet_house_lets_you_aim_and_shows_your_chances(db):
     user = await User.get(1)
     await user.add_item(pets.ORB, 1)
-    nav, inter = await hub("orbs")
+    nav, inter = await hub("pets", tab="orbs")
     await choose(nav, inter, select_named(nav, "Hunt a pet"), "tempest")
     await user.refresh()
     assert user.pethouse.target == "tempest"
@@ -593,7 +593,7 @@ async def test_the_orbs_and_pet_pages_link_to_each_other(db):
     await with_pet("drizzle")
     nav, inter = await hub("pets")
     await click(nav, inter, "Familiar Orbs")
-    assert nav.screen.id == "orbs"
+    assert nav.screen.tab == "orbs"
     await click(nav, inter, "Your pets")
     assert nav.screen.id == "pets"
 
@@ -714,7 +714,7 @@ async def test_the_orbs_page_lets_you_buy_and_open_every_kind(db, monkeypatch):
     user = await User.get(1)
     for orb in pets.orb_ids(REG):
         await user.add_item(orb, 1)
-    nav, inter = await hub("orbs")
+    nav, inter = await hub("pets", tab="orbs")
     for orb in pets.orb_ids(REG):
         item = REG.item(orb)
         await click(nav, inter, f"Open {item.name} (1)")

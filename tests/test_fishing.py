@@ -476,7 +476,7 @@ async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
     monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_pufferfish"))
     clock[0] = DAY0 + 100
     user, nav, inter = await open_fishing()
-    assert find_button(nav, "Quests").disabled and "unlock at fishing level" in all_text(nav)
+    assert find_button(nav, "Collection").disabled and "unlock at fishing level" in all_text(nav)
     await level_up(user)
     await click(nav, inter, "Cast")
     clock[0] = nav.screen.cast.bite_at + 1
@@ -486,9 +486,9 @@ async def test_the_quests_page_and_the_catch_message(db, clock, monkeypatch):
     await reel_in(nav, inter, cast)
     assert "You caught a" in all_text(nav)
     await click(nav, inter, "Continue")
-    assert not find_button(nav, "Quests").disabled
-    await click(nav, inter, "Quests")
-    assert nav.screen.id == "fishquests" and "Daily" in all_text(nav) and "Weekly" in all_text(nav)
+    assert not find_button(nav, "Collection").disabled
+    await click(nav, inter, "Collection")  # opens on Quests
+    assert nav.screen.id == "fishlog" and nav.screen.tab == "quests" and "Daily" in all_text(nav) and "Weekly" in all_text(nav)
     await click(nav, inter, "Back to fishing")
     assert nav.screen.id == "fish"
 
@@ -690,7 +690,7 @@ async def test_the_book_stops_at_its_top_level(db):
 
 async def test_the_book_screen_turns_fish_in_and_finishes_the_book(db):
     user = await book_player(fish={i.id: 2 for i in f.book_fish(REG)})
-    nav, inter = await hub("fishbook")
+    nav, inter = await hub("fishlog", tab="book")
     text_now = all_text(nav)
     assert "Book level 1" in text_now and "0/1" in text_now
     from tests.test_hub import choose, select_named
@@ -707,12 +707,14 @@ async def test_the_book_screen_turns_fish_in_and_finishes_the_book(db):
 async def test_the_fishing_page_shows_the_book_button_once_unlocked(db):
     user = await player()
     nav, _ = await hub("fish")
-    assert find_button(nav, "Book").disabled
+    assert find_button(nav, "Collection").disabled
     await user.add_xp("fishing", User.level_to_xp(B.min_level) + 1)
     nav, inter = await hub("fish")
-    assert not find_button(nav, "Book").disabled
-    await click(nav, inter, "Book")
-    assert nav.screen.id == "fishbook"
+    assert not find_button(nav, "Collection").disabled
+    await click(nav, inter, "Collection")
+    nav.screen.tab = "book"
+    await nav.refresh(inter)
+    assert nav.screen.id == "fishlog" and nav.screen.tab == "book"
 
 
 async def test_a_stale_second_click_gets_its_fish_back_when_the_page_filled_in_the_meantime(db, monkeypatch):
@@ -1129,7 +1131,7 @@ async def test_a_catch_says_its_size_and_a_record_and_the_records_page_lists_the
     await reel_in(nav, inter, nav.screen.cast)
     text_now = all_text(nav)
     assert f"{size:g} cm" in text_now and "NEW SERVER RECORD" in text_now
-    nav2, inter2 = await hub("fishrecords")
+    nav2, inter2 = await hub("fishlog", tab="records")
     page = all_text(nav2)
     assert "Salmon" in page and f"{size:g} cm" in page and "Ahna" in page and "👑" in page and "fish nobody has caught yet" in page  # unseen fish stay hidden, in one line
 
@@ -1137,10 +1139,10 @@ async def test_a_catch_says_its_size_and_a_record_and_the_records_page_lists_the
 async def test_the_records_page_is_reachable_from_the_book_and_the_community(db):
     user = await User.get(1)
     await user.add_xp("fishing", User.level_to_xp(RULES.book.min_level) + 1)
-    for screen in ("fishbook", "fishcommunity"):
-        nav, inter = await hub(screen)
+    for tab in ("book", "community"):
+        nav, inter = await hub("fishlog", tab=tab)
         await click(nav, inter, "Records")
-        assert nav.screen.id == "fishrecords"
+        assert nav.screen.id == "fishlog" and nav.screen.tab == "records"
         await click(nav, inter, "Back to fishing")
         assert nav.screen.id == "fish"
 
@@ -1328,8 +1330,10 @@ async def test_the_records_page_is_one_click_from_the_fishing_page_and_shows_ser
 
     await community.update(f.RECORDS_KEY, {}, lambda r: r.update({"fish_tuna": {"size": 188.5, "uid": 7, "name": "Ahna"}}))
     user, nav, inter = await open_fishing()
-    await click(nav, inter, "Records")  # at level 1, straight from the main page
-    assert nav.screen.id == "fishrecords"
+    await click(nav, inter, "Collection")  # at level 1 it opens on the Book
+    nav.screen.tab = "records"
+    await nav.refresh(inter)
+    assert nav.screen.id == "fishlog" and nav.screen.tab == "records"
     page = all_text(nav)
     assert "Tuna" in page and "188.5 cm (Ahna)" in page and "you: not caught yet" in page  # someone's record, not hers yet
     assert "fish nobody has caught yet" in page and "???" not in page  # fish nobody has caught stay a mystery (one line, not one each)
@@ -1510,8 +1514,10 @@ async def test_the_screen_has_a_reel_button_shows_breaks_and_mysteries_and_the_r
     assert nav.screen.id == "result" and "The ❓ was" in all_text(nav) and "field notes" in all_text(nav)
     assert (await user.skill("fishing")).notes["fish_moray_eel"]
     nav2, inter2 = await hub("fish")
-    await click(nav2, inter2, "Field notes")  # a button on the fishing page itself
-    assert nav2.screen.id == "fishnotes" and "Moray Eel" in all_text(nav2) and "after ◄" not in all_text(nav2)  # (nothing is confirmed from one ❓)
+    await click(nav2, inter2, "Collection")  # the fishing page's Collection button
+    nav2.screen.tab = "notes"
+    await nav2.refresh(inter2)
+    assert nav2.screen.id == "fishlog" and nav2.screen.tab == "notes" and "Moray Eel" in all_text(nav2) and "after ◄" not in all_text(nav2)  # (nothing is confirmed from one ❓)
 
 
 async def test_losing_at_a_mystery_still_shows_it_on_the_result_page(db, clock, monkeypatch):
@@ -1718,28 +1724,30 @@ def test_a_pattern_is_only_written_down_once_it_is_confirmed():
 
 async def test_the_field_notes_page_is_a_button_on_the_fishing_page_even_with_nothing_in_it_yet(db):
     nav, inter = await hub("fish")
-    await click(nav, inter, "Field notes")
-    assert nav.screen.id == "fishnotes"
+    await click(nav, inter, "Collection")
+    nav.screen.tab = "notes"
+    await nav.refresh(inter)
+    assert nav.screen.id == "fishlog" and nav.screen.tab == "notes"
     page = all_text(nav)
     assert "Field notes" in page and "not caught yet" in page and "FIRST arrow" in page  # it explains itself and shows what is still unknown
     await click(nav, inter, "Back to fishing")
     assert nav.screen.id == "fish"
-    nav2, inter2 = await hub("fishrecords")
+    nav2, inter2 = await hub("fishlog", tab="records")
     await click(nav2, inter2, "Field notes")
-    assert nav2.screen.id == "fishnotes"
+    assert nav2.screen.id == "fishlog" and nav2.screen.tab == "notes"
 
 
 async def test_the_page_shows_what_a_caught_fish_has_taught_you_and_what_it_adds_up_to(db):
     user = await User.get(1)
     fish = next(i for i in f.fish_pool(REG) if i.rarity >= RL.mystery_from_rarity and i.reel and i.reel.tell == "opposite")
     await user.update_skill("fishing", lambda s: (s.records.update({fish.id: 30.0}), s.notes.update({fish.id: ["◄>►|◄", "►>◄|►"]})))
-    nav, _ = await hub("fishnotes")
+    nav, _ = await hub("fishlog", tab="notes")
     assert fish.name in all_text(nav) and "**2** ❓ seen" in all_text(nav) and "confirmed:" not in all_text(nav)
     await user.update_skill("fishing", lambda s: s.notes[fish.id].extend(["◄>►|◄", "►>◄|►"] * f.MIN_NOTES_FOR_VERDICT))
-    nav, _ = await hub("fishnotes")
+    nav, _ = await hub("fishlog", tab="notes")
     assert "confirmed: **the opposite of the last arrow" in all_text(nav)
     await user.update_skill("fishing", lambda s: s.notes[fish.id].append("◄>◄|◄"))  # a note nothing explains
-    nav, _ = await hub("fishnotes")
+    nav, _ = await hub("fishlog", tab="notes")
     assert "no pattern fits" in all_text(nav) and "confirmed:" not in all_text(nav)
 
 

@@ -153,8 +153,8 @@ async def test_the_enchant_screen_picks_a_scroll_then_a_tool(db):
     user, rod = await with_tool("tool_rod_starter", "fishing", scrolls={"scroll_lure": 1})
     axe = await user.give_instance("tool_axe_starter")
     nav, inter = await hub("tools")
-    await click(nav, inter, "Enchant")
-    assert nav.screen.id == "enchant"
+    await choose(nav, inter, select_named(nav, "Choose a tab"), "enchant")
+    assert nav.screen.tab == "enchant"
     await choose(nav, inter, select_named(nav, "Pick a scroll"), "scroll_lure")
     menu = select_named(nav, "Put it on")
     assert [o.value for o in menu.options] == [str(rod.id)]  # the axe can't take it
@@ -165,7 +165,7 @@ async def test_the_enchant_screen_picks_a_scroll_then_a_tool(db):
 
 
 async def test_the_enchant_screen_without_scrolls_says_where_to_find_them(db):
-    nav, _ = await hub("enchant")
+    nav, _ = await hub("tools", tab="enchant")
     assert "no scrolls" in all_text(nav) and "treasure chests" in all_text(nav)
 
 

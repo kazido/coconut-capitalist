@@ -294,7 +294,7 @@ class Navigator(ui.LayoutView):
         if screen_id not in self.screens:
             raise KeyError(f"unknown screen {screen_id!r}")
         self.screen = self.screens[screen_id](self)
-        for key, value in state.items():  # e.g. open the leaderboard on a chosen category
+        for key, value in sorted(state.items(), key=lambda item: item[0] != "tab"):  # e.g. open the leaderboard on a chosen category (tab first: a tab host's pane takes the rest)
             setattr(self.screen, key, value)
         if push:
             # The stack is the way DOWN from Home, so Back goes UP one level, not "undo the last click". Opening a screen that is already on the way

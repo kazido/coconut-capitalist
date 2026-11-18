@@ -9,7 +9,7 @@ class TriviaCog(commands.Cog):
 
     @app_commands.command(name="trivia", description="Answer trivia for luckbucks.")
     async def trivia(self, interaction: Interaction):
-        await open_screen(interaction, "trivia")
+        await open_screen(interaction, "games", tab="trivia")
 
 
 async def setup(bot):
