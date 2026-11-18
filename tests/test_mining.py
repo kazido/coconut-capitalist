@@ -1344,9 +1344,8 @@ def test_the_three_mining_capstones_are_about_equally_strong_at_low_and_high_pow
             "gold_rush": average(power, gold_rush=int(amount("gold_rush", "gold_rush"))) / base - 1,
             "geode_cracker": average(power, geode=amount("geode_cracker", "geode")) / base - 1,
         }
-        # The lower bound is -5%, not 8%: with brace_amount 25 the Geode Cracker pays about nothing at high power. Deliberately moved with the brace buff;
-        # TODO(balance): retune the Geode Cracker (or raise this bound back) so the three capstones are equally strong again.
-        assert all(-0.05 <= g <= 0.4 for g in gains.values()), (power, gains)
+        # (lower bound 7%, was 8%: with brace_amount 25 base pay is higher, so Lifeline's gain at power 12 is 7.6%; moved on purpose, see the commit)
+        assert all(0.07 <= g <= 0.4 for g in gains.values()), (power, gains)
         assert max(gains.values()) - min(gains.values()) <= 0.15, (power, gains)
 
 
