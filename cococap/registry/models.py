@@ -1446,9 +1446,14 @@ class Location(_Data):
     n: int = Field(ge=1)
     id: str
     name: str
-    emoji: str
+    emoji_raw: str = Field(alias="emoji")
     area: str  # area id
     min_level: int = Field(ge=1)
+
+    @property
+    def emoji(self) -> str:
+        """The bot's emoji named `location_<id>` if uploaded, else the one in the data file (see `cococap.emojis`)."""
+        return emojis.for_id("location", self.id, self.emoji_raw)
 
 
 class Recipe(_Data):

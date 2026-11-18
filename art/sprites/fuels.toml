@@ -1,0 +1,134 @@
+# Ship fuel: one steel drum with a glowing, themed top and a flame; bands and glow take the destination colour.
+
+[material_twilight_fuel]
+rarity = 2
+palette = { a = "#eef2f8", b = "#aab4c6", k = "#6a748c", m = "#b87c48", M = "#8e5c34", s = "#6a4026", d = "#46281a", D = "#241038", B = "#6a3a9a", C = "#c07ad8", W = "#ffd8f0", o = "#2e1c2c" }
+rows = [
+  "................",
+  "........o.......",
+  ".......oBo......",
+  "......oBCBo.....",
+  ".....oooooo.....",
+  "....oCWCCCCo....",
+  "....omMMMsso....",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "....omMMMsso....",
+  ".....oooooo.....",
+  "................",
+]
+
+[material_rust_fuel]
+rarity = 3
+palette = { a = "#eef2f8", b = "#aab4c6", k = "#6a748c", m = "#b87c48", M = "#8e5c34", s = "#6a4026", d = "#46281a", D = "#2a1410", B = "#8a3a1c", C = "#d8702c", W = "#ffd09a", o = "#2e1c2c" }
+rows = [
+  "................",
+  "........o.......",
+  ".......oBo......",
+  "......oBCBo.....",
+  ".....oooooo.....",
+  "....oCWCCCCo....",
+  "....omMMMsso....",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "....omMMMsso....",
+  ".....oooooo.....",
+  "................",
+]
+
+[material_cadrega_fuel]
+rarity = 4
+palette = { a = "#eef2f8", b = "#aab4c6", k = "#6a748c", m = "#b87c48", M = "#8e5c34", s = "#6a4026", d = "#46281a", D = "#0e2a30", B = "#1f7a88", C = "#5ad0d0", W = "#e0ffff", o = "#2e1c2c" }
+rows = [
+  "................",
+  "........o.......",
+  ".......oBo......",
+  "......oBCBo.....",
+  ".....oooooo.....",
+  "....oCWCCCCo....",
+  "....omMMMsso....",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "....omMMMsso....",
+  ".....oooooo.....",
+  "................",
+]
+
+[material_glade_fuel]
+rarity = 5
+palette = { a = "#eef2f8", b = "#aab4c6", k = "#6a748c", m = "#b87c48", M = "#8e5c34", s = "#6a4026", d = "#46281a", D = "#10281a", B = "#2f8a3a", C = "#7ee06a", W = "#eaffd8", o = "#2e1c2c" }
+rows = [
+  "................",
+  "........o.......",
+  ".......oBo......",
+  "......oBCBo.....",
+  ".....oooooo.....",
+  "....oCWCCCCo....",
+  "....omMMMsso....",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "....omMMMsso....",
+  ".....oooooo.....",
+  "................",
+]
+
+[material_star_fuel]
+rarity = 6
+palette = { a = "#eef2f8", b = "#aab4c6", k = "#6a748c", m = "#b87c48", M = "#8e5c34", s = "#6a4026", d = "#46281a", D = "#3a2a08", B = "#c8982a", C = "#ffe05a", W = "#fffbe0", o = "#2e1c2c" }
+rows = [
+  "................",
+  "........o.......",
+  ".......oBo......",
+  "......oBCBo.....",
+  ".....oooooo.....",
+  "....oCWCCCCo....",
+  "....omMMMsso....",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "....omMMMsso....",
+  ".....oooooo.....",
+  "................",
+]
+
+[material_void_fuel]
+rarity = 7
+palette = { a = "#eef2f8", b = "#aab4c6", k = "#6a748c", m = "#b87c48", M = "#8e5c34", s = "#6a4026", d = "#46281a", D = "#0a0614", B = "#2a1a4a", C = "#5a3a8a", W = "#b8a0e8", o = "#2e1c2c" }
+rows = [
+  "................",
+  "........o.......",
+  ".......oBo......",
+  "......oBCBo.....",
+  ".....oooooo.....",
+  "....oCWCCCCo....",
+  "....omMMMsso....",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...ommMMMssdo...",
+  "...oaabbbbkko...",
+  "....omMMMsso....",
+  ".....oooooo.....",
+  "................",
+]
+

@@ -1,45 +1,34 @@
 # Living group: fish, bait, crops, seeds (Raven Fantasy Icons 16x16 cells [row, col])
 
 # --- fish ---
-fish_cod = [22, 12]
+fish_cod = {cell = [22, 12], ramp = ["#2e2418", "#6a5a38", "#a89868", "#e4dcb4"]}
 fish_herring = {cell = [21, 15], hue = 160, sat = 0.35, val = 1.15}  # WEAK: recoloured clownfish
 fish_sardine = [34, 15]  # WEAK: fish-on-a-diagonal icon, small
 fish_perch = [21, 12]
-fish_trout = [21, 9]
-fish_bass = [22, 15]
 fish_pike = [22, 9]
-fish_muskie = {cell = [21, 14], hue = 40, sat = 0.7, val = 0.75}
-fish_salmon = [22, 13]
-fish_catfish = {cell = [21, 10], hue = 55, sat = 0.55, val = 0.85}
-fish_tuna = {cell = [21, 11], hue = -12, sat = 1.1, val = 0.75}
-fish_swordfish = [22, 11]
+fish_muskie = {cell = [21, 14], ramp = ["#2a2420", "#5c5040", "#968a70", "#d8d0bc"]}
+fish_salmon = {cell = [22, 13], ramp = ["#2e1c2c", "#8a4a46", "#e4755a", "#ffc4a8"]}
+fish_catfish = {cell = [21, 10], ramp = ["#2a2024", "#5a4a46", "#8e7a6c", "#cdbfae"]}
 fish_marlin = {cell = [22, 10], hue = 175, sat = 1.1, val = 1.0}
 fish_sturgeon = {cell = [21, 13], hue = 0, sat = 0.5, val = 0.85}  # WEAK: just a brown fish, no armour plates
 fish_pufferfish = [21, 8]  # WEAK: spotted yellow blob, not clearly puffed
-fish_moray_eel = {cell = [22, 2], hue = 50, sat = 0.8, val = 0.8}
 fish_oarfish = {cell = [22, 3], hue = 0, sat = 0.25, val = 1.25}  # WEAK: silver eel coil, not a long ribbon
 fish_giant_squid = {cell = [23, 0], hue = -40, sat = 1.1, val = 1.0}  # WEAK: octopus shape
 fish_abyssal_angler = {cell = [22, 1], hue = 190, sat = 0.9, val = 0.8}  # WEAK: no lure/angler icon
 fish_golden_koi = [22, 14]
-fish_leviathan_pup = [22, 0]  # WEAK: blue creature, not clearly a sea-monster pup
 fish_megaladegalodon = {cell = [22, 8], hue = 200, sat = 1.6, val = 0.55}  # WEAK: shark-like silver fish recoloured dark
 
 # --- bait ---
 bait_worm = [21, 5]
-bait_shrimp = [23, 11]
+bait_shrimp = [22, 2]
 bait_squid_chunk = [23, 9]  # WEAK: pink shell/chunk
 bait_golden_roe = [26, 0]
 
 # --- crops ---
 crop_apple = [27, 2]
-crop_blueberry = [36, 7]
-crop_coconut = {cell = [34, 3], hue = -5, sat = 0.7, val = 0.6}
 crop_dusty_dandelion = {cell = [15, 4], hue = 15, sat = 0.35, val = 1.1}  # WEAK: teal sprig with bud, dulled
 crop_hot_pepper = [27, 5]
-crop_lemon = [35, 0]
-crop_starfruit = {cell = [23, 7], hue = 10, sat = 1.0, val = 1.0}  # WEAK: starfish shape
 crop_watermelon = [27, 12]
-crop_wilted_rose = {cell = [16, 6], hue = 0, sat = 0.6, val = 0.6}
 crop_ambrosia = [24, 1]  # WEAK: plain golden orb
 
 # --- seeds ---

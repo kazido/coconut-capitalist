@@ -20,6 +20,7 @@ server). At startup ``refresh(bot)`` fetches them, so data files and code only n
   mine type    ``mine_<id>``     ``mine_crystal``
   water        ``water_<id>``    ``water_lake``
   rank         ``rank_<id>``     ``rank_3``
+  location     ``location_<id>`` ``location_slimewood_thicket``
   ui icon      ``ui_<name>``     ``ui_releaf``
   ===========  ================  ===========================
 
@@ -45,7 +46,7 @@ LEGACY = (
 # Every custom-emoji name the bot's own code or data may mention.
 KNOWN = LEGACY
 
-KINDS = ("item", "pet", "species", "enchant", "mine", "water", "rank", "ui")
+KINDS = ("item", "pet", "species", "enchant", "mine", "water", "rank", "location", "ui")
 NAME_RE = re.compile(r"^[a-z0-9_]{2,32}$")  # Discord's rule for application emoji names
 
 _TOKEN = re.compile(r"<a?:(\w+):\d+>")
@@ -113,6 +114,32 @@ def image_url(kind: str, id, size: int = 128) -> str | None:
 def ui(name: str, fallback: str = "") -> str:
     """A UI icon: the application emoji ``ui_<name>``, else `fallback`."""
     return for_id("ui", name, fallback)
+
+
+# Currency icons. Screens never hard-code these glyphs: call ``currency("bits")`` etc. so one art change is a one-file edit.
+# Art: ui_bits / ui_tokens / ui_luckbucks (art/mappings/raven_magic.toml).
+CURRENCY = {"bits": "💸", "tokens": "🪙", "luckbucks": "🍀"}
+
+
+def currency(name: str) -> str:
+    """The icon for a currency (``bits``, ``tokens`` or ``luckbucks``): its ``ui_<name>`` emoji, else the plain glyph."""
+    return ui(name, CURRENCY[name])
+
+
+# Skill icons are the skill's starter tool (art already exists for them), with a plain glyph until it is uploaded.
+SKILL_ICONS = {
+    "mining": ("tool_pickaxe_rookie", "⛏️"),
+    "fishing": ("tool_rod_starter", "🎣"),
+    "foraging": ("tool_axe_starter", "🌳"),
+    "farming": ("tool_can_tin", "🌽"),
+    "combat": ("tool_largebranch", "⚔️"),
+}
+
+
+def skill(name: str, fallback: str = "") -> str:
+    """The icon for a skill (mining, fishing, foraging, farming, combat): its starter tool's emoji, else the glyph."""
+    item_id, glyph = SKILL_ICONS.get(name, (None, fallback))
+    return for_id("item", item_id, glyph or fallback) if item_id else (glyph or fallback)
 
 
 def resolve(text: str | None) -> str | None:

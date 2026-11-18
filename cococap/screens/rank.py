@@ -1,6 +1,7 @@
 import discord
 
 from cococap.errors import CustomError
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.ui import Page, Screen
 from cococap.ui.components import bits, button, section, sep, text
@@ -28,10 +29,10 @@ class RankScreen(Screen):
             body.append(
                 section(
                     f"### Next: {nxt.emoji} {nxt.display_name}",
-                    f"Wage **{bits(nxt.wage)}** bits  ·  XP +{nxt.xp_bonus:.0%}  ·  costs **{bits(nxt.token_price)}** 🪙 (you have {bits(self.user.tokens)})",
+                    f"Wage **{bits(nxt.wage)}** bits  ·  XP +{nxt.xp_bonus:.0%}  ·  costs **{bits(nxt.token_price)}** {emojis.currency('tokens')} (you have {bits(self.user.tokens)})",
                     accessory=button(
                         "Rank up",
-                        emoji="🪙",
+                        emoji=emojis.currency("tokens"),
                         style=discord.ButtonStyle.success if affordable else discord.ButtonStyle.secondary,
                         disabled=not affordable,
                         on_click=self._rank_up,

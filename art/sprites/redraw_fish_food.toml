@@ -2,46 +2,46 @@
 
 [fish_sardine]
 rarity = 1
-palette = { B = "#3b4f9a", b = "#5b86c8", s = "#b5c9e6", h = "#e6eef8", y = "#f3dfd2", d = "#7a78b8", t = "#6f78c0", e = "#1a1030", w = "#ffffff", o = "#2e1c2c" }
+palette = { D = "#2e5470", M = "#6896b0", L = "#c4dae6", W = "#f2f8fb", s = "#2a4a64", f = "#3a6280", F = "#5a8aa6", e = "#1a1030", o = "#2e1c2c" }
 rows = [
   "................",
   "................",
   "................",
-  "...ooooooo...oo.",
-  "..oBBBBBBBo.otto",
-  ".oBBBBBBBBBottto",
-  "oBBbbbbbbbbttto.",
-  "oBebbbbbbbbtto..",
-  "osswssssssdttto.",
-  "ohhhhsssssdottto",
-  ".ooyyyyyyyo.otto",
-  "...ooooooo...oo.",
-  "................",
-  "................",
-  "................",
-  "................",
+  ".........ooo....",
+  "........oDDMo...",
+  ".....oooDeeWo...",
+  "....offDsMLWo...",
+  ".....oDsMLWo....",
+  "....oDsMLWo.....",
+  "....oDsLWo......",
+  "...oDMLWo.......",
+  ".oofMWoo........",
+  "offofo..........",
+  ".oofo...........",
+  "..ofo...........",
+  "...o............",
 ]
 
 [fish_herring]
 rarity = 1
-palette = { T = "#2d5f86", g = "#3f8fa6", b = "#6fb7d0", s = "#bcd6e6", h = "#eef6fa", y = "#f4e8d8", d = "#4a5c9a", t = "#5a7ab8", e = "#1a1030", w = "#ffffff", o = "#2e1c2c" }
+palette = { D = "#2a4a7c", M = "#5c8cba", L = "#bcd2e6", W = "#f2f8fb", f = "#34588a", F = "#4a74a4", e = "#1a1030", o = "#2e1c2c" }
 rows = [
   "................",
   "................",
-  "....oooo........",
-  "..ooddddooo.oo..",
-  ".oTTTTTTTTTotto.",
-  "oTTTTTTTTTTttto.",
-  "oTTggggggggtttto",
-  "oTebbbbbbbbttoo.",
-  "osswsssssssttto.",
-  "ohhhhsssssdtttto",
-  "oyyhhhhhhhhdotto",
-  ".oyyyyyyyyyo.oo.",
-  "..ooooooooo.....",
-  "................",
-  "................",
-  "................",
+  "...........o....",
+  ".........ooDo...",
+  ".......ooDeMWo..",
+  ".....ooDDMeLo...",
+  "....ofDDMMLWo...",
+  ".....oDMMLWo....",
+  "....oDMMLWWo....",
+  "...oDMMLWWo.....",
+  "...oDMLWoo......",
+  ".ooDMLWo........",
+  "offFWoo.........",
+  "ofofo...........",
+  ".offo...........",
+  "..oo............",
 ]
 
 [fish_megaladegalodon]
@@ -90,44 +90,44 @@ rows = [
 
 [fish_leviathan_pup]
 rarity = 7
-palette = { T = "#2f8fa8", t = "#5fc4c8", u = "#a6ecdc", d = "#2f5f9a", f = "#ff8fa8", F = "#c8506e", e = "#1a1030", w = "#ffffff", b = "#e8fff0", o = "#2e1c2c" }
+palette = { t = "#7fd8d0", T = "#3aa0b4", m = "#2c78a0", d = "#265488", u = "#bff2e0", f = "#ffb0c0", F = "#cc5878", e = "#1a1030", w = "#ffffff", o = "#2e1c2c" }
 rows = [
-  "...o..o.o.......",
-  "..ofoofofo......",
-  ".oFfTTTTfFo.....",
-  "otTTTTTTTTTo....",
-  "otTTeeTTTTTTo...",
-  "otTTewTTTTTTo...",
-  "ouTTTTTTTbbbo...",
-  ".ouTTTTTTTbbo...",
-  "..ouTTTTTdooo.o.",
-  ".ottTTTTTTTTtofo",
-  "otTTTTddddTTTfFo",
-  "ouTTTTTTTTTTTfFo",
-  ".ouuTTTTTTTTTto.",
-  "..oouuuuuuuuoo..",
-  "....oooooooo....",
-  "................",
+  "....o....o......",
+  "...ofo..ofo.....",
+  "...oFfooFfo.....",
+  "..ootttTTTooo...",
+  ".ottttTTTTmmmo..",
+  ".otteeTTTmeemo..",
+  ".ottewTTmmewdo..",
+  ".otTTTTmmmmddo..",
+  ".ouuuuwuuwuuuo..",
+  "..ouuuuuuuuuo...",
+  "..oTmmmmdddddo..",
+  ".oTmmmmdddddddo.",
+  ".ommmmddddddddo.",
+  "..oodddddddddo..",
+  "....oooooddddo..",
+  "..........ooo...",
 ]
 
 [fish_pufferfish]
 rarity = 4
-palette = { y = "#f6e27a", Y = "#e8c040", c = "#fff6d0", e = "#1a1030", w = "#ffffff", p = "#e07a5a", t = "#d49a40", k = "#fffbe8", o = "#2e1c2c" }
+palette = { u = "#fff2a8", y = "#f6e27a", Y = "#e8c040", t = "#c8903c", T = "#9a6a2c", c = "#fff6d0", k = "#fffbe8", b = "#e8d098", e = "#1a1030", w = "#ffffff", p = "#e07a5a", o = "#2e1c2c" }
 rows = [
-  "....o..o..o.....",
-  "...okookooko....",
-  ".o.ooyyyyyyyoo..",
-  "okoyyYYYYYYYyko.",
-  ".oyYYYYYYYYYYyo.",
-  "okYYewYYYYYYYYko",
-  ".oYYeYYYYYYYYYto",
-  "okYpYYYYYYYYYttt",
-  ".oycccccccccYkoo",
-  "okyccccccccccyo.",
-  ".occcccccccccco.",
-  "..occcccccccco..",
-  "..okookookooko..",
-  "...o..o..o..o...",
+  "................",
+  "................",
+  "......o...o.....",
+  ".....okoooYo....",
+  ".....ouuuuo.....",
+  "..o.ouuuuyyoo...",
+  ".oTouuuuuuwYko..",
+  "..oYuuuuuyeYo...",
+  "..ottTuuyyYYo...",
+  "..oYobkkkcccpo..",
+  ".oToocbcccboo...",
+  "..o..obbbbo.....",
+  ".....oYoooko....",
+  "......o...o.....",
   "................",
   "................",
 ]
@@ -225,84 +225,84 @@ rarity = 4
 palette = { b = "#e6a04c", B = "#b86a30", h = "#f8d088", w = "#fff0c8", g = "#5aa84a", G = "#3a7a46", l = "#8ad060", r = "#e0402e", R = "#a02a3a", y = "#ffd23c", k = "#6a3a2c", K = "#44243a", o = "#2e1c2c" }
 rows = [
   "................",
+  "................",
   "....oooooooo....",
-  "..oohhbbbbbboo..",
-  ".ohhbbwbbbwbbbo.",
-  "ohbbbbbbbbwbbbBo",
-  "oBBBBBBBBBBBBBBo",
-  "ogGlgGlgGlgGlgGo",
-  "orrRrrrrRrrrrrRo",
-  "oyyyyyyyyyyyyyyo",
-  "okkkKkkkkKkkkkKo",
-  "oKKKKKKKKKKKKKKo",
-  "ohbbbbbbbbbbbbBo",
-  ".oBBBBBBBBBBBBo.",
-  "..oooooooooooo..",
+  "..oohhbbwbbboo..",
+  "..obbbbbbwbbBo..",
+  "..oBBBBBBBBBBo..",
+  "..ogGlgGlgGlGo..",
+  "..orrRrrrRrrro..",
+  "..oyyyyyyyyyyo..",
+  "..okkKkkkkKkko..",
+  "..oKKKKKKKKKKo..",
+  "..ohbbbbbbbbBo..",
+  "...oBBBBBBBBo...",
+  "....oooooooo....",
   "................",
   "................",
 ]
 
 [food_honeycomb]
 rarity = 4
-palette = { y = "#ffd24a", h = "#fff0a0", a = "#e8a020", d = "#b86a14", H = "#ffb020", o = "#2e1c2c" }
+palette = { h = "#fff0a0", y = "#ffd24a", z = "#e09a20", a = "#a8600c", d = "#5e300a", o = "#2e1c2c" }
 rows = [
-  "....oooooooo....",
-  "..oohhyyyyyyoo..",
-  ".ohhyyyyyyyyyyo.",
-  "ohyaayaayaayaayo",
-  "oyyaayaayaayaayo",
-  "oyyyyyyyyyyyyyyo",
-  "oyayaayaayaayyyo",
-  "oyayaayaayaayydo",
-  "oyyyyyyyyyyyyydo",
-  ".oyyaayaayaaydo.",
-  ".oydaaydaayddo..",
-  "..oyyyyyyydoo...",
-  "...oHHooHHo.....",
-  "...oHHooHHo.....",
-  "....oHo.oo......",
-  ".....o..........",
+  "................",
+  ".....ooooo......",
+  "...oohaaayoo....",
+  "..oahdhaydyao...",
+  ".oahdaaydaaydo..",
+  ".oahaaayaaayao..",
+  ".ohdhaydyaydzo..",
+  ".odaaydaaydaao..",
+  ".oaaayaaayaaao..",
+  ".oyaydyaydzazo..",
+  ".oaydaaydaazdo..",
+  ".oayaaazaaazao..",
+  "..odyazdzazdo...",
+  "...oozdaazoo....",
+  ".....ooooo......",
+  "................",
 ]
 
 [food_crystal_chew]
 rarity = 4
-palette = { P = "#ffb8d8", p = "#e888b8", h = "#ffe8f4", L = "#c8b0f8", l = "#a888e0", m = "#a8f0d8", M = "#70c8b0", k = "#d8a868", K = "#a8703c", w = "#ffffff", o = "#2e1c2c" }
+palette = { h = "#ffe8f4", p = "#ffb8d8", P = "#f08cc4", q = "#c85aa8", Q = "#8a3a80", k = "#d8a868", K = "#a8703c", w = "#ffffff", o = "#2e1c2c" }
 rows = [
-  "......oo........",
-  ".....ohpo...oo..",
-  "....ohPPpo.ohlo.",
-  "...ohPPPPpohLLlo",
-  "..ohPPwPPppLLLlo",
-  ".omhPPPPPppLLLlo",
-  ".ommPPPPPppLLlo.",
-  ".omMPPPPPppplo..",
-  "..oMMppppppoo...",
-  "...ooookKoo.....",
-  "......okKo......",
-  "......okKo......",
-  "......okKo......",
-  "......oKKo......",
-  ".......oo.......",
   "................",
+  ".......o........",
+  ".....oohoo......",
+  "....owphPqo.....",
+  ".....ohPPqo.o...",
+  "....oohPPqoowo..",
+  "...oPopPPqooo...",
+  "..ohPqpPPqoPo...",
+  "..ohPqpPPqhPqo..",
+  "..opPqpPPqhPqo..",
+  "..opPqpPPqpPqo..",
+  "..oPqQPqqQPqQo..",
+  "..oPqQPqqQPqQo..",
+  "...oookkKKooo...",
+  "......okKo......",
+  ".......oo.......",
 ]
 
 [food_stone_biscuit]
 rarity = 2
-palette = { h = "#c8bcb0", t = "#b8a088", m = "#9a8f8c", s = "#7a707e", d = "#5a5068", c = "#3e3550", o = "#2e1c2c" }
+palette = { H = "#e6dccd", h = "#cfc3b4", m = "#a99f9a", s = "#867c88", d = "#5f5670", o = "#2e1c2c" }
 rows = [
   "................",
   ".....oooooo.....",
-  "...oohhhhhhoo...",
-  "..ohhhttmmmmmo..",
-  ".ohhttmmsmmsmmo.",
-  "ohhtmmmmmmmmmmmo",
-  "ohtmsmmmmmmcmmso",
-  "ohtmmmmmsmmcmmso",
-  "ohmmsmmmmmcmmsso",
-  "ohmmmmmmmcmmmsso",
-  ".ommsmmmcmmmsso.",
-  ".ommmmmmmmmssso.",
-  "..osssssssssdo..",
+  "...ooHHHhhhoo...",
+  "..oHHHHhhhhmmo..",
+  ".oHHHHhhhsmmmmo.",
+  "oHHHHshhhmmsssso",
+  "oHHHhhmmmmssdsdo",
+  "ohhhhmsmmssdsddo",
+  "ohhhmmmmssssdddo",
+  "ohhmsmmsssdddddo",
+  ".ommmmssdsddddo.",
+  ".ommmssdddddddo.",
+  "..omssdddddddo..",
   "...ooddddddoo...",
   ".....oooooo.....",
   "................",
@@ -332,23 +332,23 @@ rows = [
 
 [crop_starfruit]
 rarity = 4
-palette = { l = "#f4f8a0", y = "#d8e860", g = "#a8d040", G = "#78a830", o = "#2e1c2c" }
+palette = { W = "#fcfdd0", l = "#f0f68c", y = "#d4e655", g = "#a2c93a", G = "#6e9a2c", o = "#2e1c2c" }
 rows = [
+  "................",
   ".......oo.......",
-  "......olyo......",
-  ".....olyyyo.....",
-  "..oooolyygoooo..",
-  ".olllyyyGyyyyyo.",
-  "olyyyyyyGyyyyggo",
-  ".oyyyyyyGGgyygo.",
-  "..oyyyyGGGgyggo.",
-  "...oyyygGGgygo..",
-  "...oyyygggggo...",
-  "..oyyygooogggo..",
-  "..oyygo...oggo..",
-  ".oyygo.....oggo.",
-  ".oygo.......ogo.",
-  "..oo.........o..",
+  "......oygo......",
+  "......oygo......",
+  ".....oWlgGo.....",
+  ".oooooWlgGooooo.",
+  "oGGgGGWWgGWlyGGo",
+  ".oyyggGWGWlGgGo.",
+  "..oWWWWWgGGGGo..",
+  "...oWGGlgWWGo...",
+  "...oGGGWGgWWo...",
+  "...oGglWGGylo...",
+  "...oGGlooGGyo...",
+  "...oGyo..oGGo...",
+  "....oo....oo....",
   "................",
 ]
 
@@ -378,20 +378,219 @@ rows = [
 rarity = 3
 palette = { h = "#e8e0d0", g = "#b8ad9c", m = "#8a8078", c = "#5a4a40", s = "#7a8a6a", S = "#5a6a5a", o = "#2e1c2c" }
 rows = [
-  "......oo.o......",
-  "....oohhoho.....",
-  "...ohhgggghoo...",
-  "..ohggmgggggho..",
-  ".ohgggmgggmggho.",
-  ".ohggmmcmmggggo.",
-  ".ohgmgmcmgmggmo.",
-  "..oggggmgggggmo.",
-  "...ogggggggmmo..",
-  "....ommmmmmoo...",
-  ".....oosoooo....",
-  "......osooSSo...",
+  "................",
+  "................",
+  ".....o..o.......",
+  "....ogooho......",
+  ".....ohhhho.....",
+  "....ohhhhgho....",
+  "...oghhcmgo.....",
+  "....ohhhgggo....",
+  ".....ogggoo.....",
+  "......oso.......",
+  "......oso.oo....",
+  "......ossoSSo...",
   "......osSSoo....",
   "......osoo......",
   ".......o........",
   "................",
 ]
+
+[fish_swordfish]
+rarity = 4
+palette = { D = "#1c3466", d = "#2b5390", B = "#3f7cc0", M = "#66aae0", H = "#b4e2f6", L = "#dcf0fa", s = "#e4e8ee", S = "#a0aabc", f = "#22407a", e = "#1a1030", w = "#ffffff", o = "#2e1c2c" }
+rows = [
+  "..............oS",
+  "..............os",
+  ".....oo......oSo",
+  "....offooo..oso.",
+  "...offfoDDooSo..",
+  "..offddfdBBso...",
+  "..ofoDddBBLo....",
+  "...oDddBHMeo....",
+  "..oDDdBHMLLo....",
+  "..oDdBHMMLo.....",
+  ".oDdBBMMLo......",
+  "ooDBBMLLo.......",
+  "fddBMLLfdo......",
+  "ofdLLoofo.......",
+  "ofddo..o........",
+  "fdfo............",
+]
+
+[fish_moray_eel]
+rarity = 4
+palette = { l = "#b4d070", g = "#7c9c40", G = "#556f2c", d = "#34451e", Y = "#e6c446", e = "#1a1030", w = "#ffffff", r = "#c8506e", o = "#2e1c2c" }
+rows = [
+  "...........ooo..",
+  ".........oolgGo.",
+  ".......oollgGYdo",
+  ".....oollYgeGddo",
+  "....ollgggGGYwro",
+  "...olggGGGGddro.",
+  "..olYgGGdddYoo..",
+  "..oggGdddooo....",
+  ".olgGGdoo.......",
+  ".olgGGGo........",
+  ".oYGGGGgooo.....",
+  "..oGGYGGggloo...",
+  "...oGGGGYgGgGo..",
+  "....odGGGGGGGGo.",
+  ".....oooddoooGdo",
+  "........oo...oo.",
+]
+
+[fish_trout]
+rarity = 2
+palette = { D = "#46663a", M = "#7a9c58", L = "#c2d0a6", W = "#f2eecc", p = "#e07a8c", s = "#2c4426", f = "#34502c", F = "#58743c", e = "#1a1030", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "..........oo....",
+  "........ooDDo...",
+  "......ooDDeMWo..",
+  "....oofDsMeLWo..",
+  "...offDDpMLWo...",
+  "....oDDpMLWWo...",
+  "....osMsLWWfo...",
+  "...oDMMLWWofo...",
+  "..oDMMLWWo.o....",
+  "oooDMLWoo.......",
+  "FffMLWo.........",
+  "ofofoo..........",
+  ".offo...........",
+  "..oFo...........",
+]
+
+[fish_tuna]
+rarity = 4
+palette = { D = "#1c3668", M = "#3868a8", L = "#9cbad6", W = "#e6eef2", Y = "#f0d048", f = "#162a54", F = "#2a4a84", e = "#1a1030", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  ".........ooo....",
+  ".......ooDDDo...",
+  "....oooDDDeMWo..",
+  "...offDDDMeLWo..",
+  "....oDDDMMLWWo..",
+  "...ooDDMMLLWo...",
+  "..ofDDMMLLWWo...",
+  "..oYDMMLLWWfo...",
+  "..oYMMLWWWofo...",
+  "oooDMLWWoo.o....",
+  "FffMWYYo........",
+  "ffofooo.........",
+  "ooffo...........",
+  ".ofFo...........",
+]
+
+[fish_bass]
+rarity = 3
+palette = { D = "#2c5636", M = "#58884a", L = "#aac46c", W = "#eee8b4", p = "#243e2c", f = "#294a2e", F = "#4a7a40", e = "#1a1030", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "..........oo....",
+  "........ooDDo...",
+  "......ooDDeMWo..",
+  "....oofDDMeLWo..",
+  "...offDDppLWo...",
+  "...ofDDppLWWo...",
+  "....oDMpLWWfo...",
+  "...oDMpLWWofo...",
+  "..oDMpLWWo.o....",
+  "oooDpLWoo.......",
+  "FffMLWo.........",
+  "ofofoo..........",
+  ".offo...........",
+  "..oFo...........",
+]
+
+[crop_coconut]
+rarity = 4
+palette = { w = "#f0d8b8", H = "#c88c5a", h = "#a8703f", m = "#875232", s = "#653b25", d = "#432618", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  ".......oo.......",
+  ".....ooHhoo.....",
+  "....oHHHhhmo....",
+  "...oHHHHHhmmo...",
+  "...oHwHHHhmho...",
+  "..oHHHHhhhhmso..",
+  "..ohHHhHHmmmso..",
+  "..oHmhHhhHmdmo..",
+  "...ohhmhmmmso...",
+  "...ommmmsssdo...",
+  "....oosmsdoo....",
+  "......oooo......",
+  "................",
+  "................",
+]
+
+[crop_lemon]
+rarity = 2
+palette = { W = "#fff6a0", y = "#ffe84a", g = "#f4c820", s = "#d49a18", d = "#a87012", l = "#7ac848", L = "#4a9a3a", k = "#7a5a2a", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "...........oo...",
+  "......ooooolLo..",
+  ".....oWWyyglLo..",
+  "....oWWWWygsso..",
+  "...oWWWWyygso...",
+  "..oyWWWWyygso...",
+  "..oyyyyyyggso...",
+  ".ogggyygggso....",
+  ".ossggggsso.....",
+  "..oooooooo......",
+  "................",
+  "................",
+  "................",
+]
+
+[crop_blueberry]
+rarity = 2
+palette = { h = "#9fb4f8", b = "#5c78d8", m = "#3a52b0", d = "#243480", k = "#141c50", l = "#7ac848", L = "#4a9a3a", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "............o...",
+  "......oooo.oLo..",
+  ".....ohhhbollo..",
+  "....ohhhkbmoLo..",
+  "....ohhhbbmmo...",
+  "...ohhbbbmhbo...",
+  "..ohhkmmmhkbmo..",
+  "..ohhhbmhhhbmo..",
+  "..obbbbmbbbmmo..",
+  "...ommmoommmo...",
+  "....ooo..ooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[crop_wilted_rose]
+rarity = 5
+palette = { a = "#7a454d", b = "#564a50", c = "#9e5456", d = "#665458", e = "#755f5f", f = "#bd8e4c", g = "#806d67", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "......ooo.......",
+  ".....occcoo.....",
+  "....occcccao....",
+  "...oaccffccco...",
+  "...oacccaacao...",
+  "....oocccaao....",
+  "...oggaaaao.....",
+  "...oeddgdooo....",
+  "....ooodbddeo...",
+  "...obdebooeo....",
+  "....oooo..o.....",
+  "................",
+  "................",
+  "................",
+]
+

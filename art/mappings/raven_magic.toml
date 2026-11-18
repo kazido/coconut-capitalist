@@ -4,14 +4,16 @@ key_orb_lesser = [23, 14]
 key_graveyard = [4, 9]
 key_land_deed = [6, 9]
 food_acorn_mix = [29, 4]
-food_burger = [31, 14]  # WEAK: reads as a sandwich
-food_crystal_chew = [10, 8]  # WEAK: gem stands in for rock candy
 food_dried_squid = [21, 5]
 food_fish_flakes = [26, 10]  # WEAK: generic flakes
 food_geode_feast = [29, 12]
 food_golden_sap = {cell = [7, 9], hue = 85, val = 1.1}
-food_honeycomb = [33, 7]  # WEAK: honey jar
 food_sea_feast = [32, 14]
-food_stone_biscuit = {cell = [32, 4], sat = 0.2, val = 0.75}  # WEAK: grey cookie
-spirit_of_the_fields = [69, 8]
-spirit_of_the_sword = [69, 12]
+spirit_of_the_fields = {cell = [69, 8], sat = 0.6, val = 0.95}
+spirit_of_the_sword = {cell = [69, 12], sat = 0.6, val = 0.95}
+spirit_of_the_sea = {cell = [69, 8], hue = 100, sat = 0.5, val = 0.95}
+spirit_of_the_forest = {cell = [69, 8], hue = -85, sat = 0.5, val = 0.9}
+spirit_of_the_mines = {cell = [69, 8], ramp = ["#241c20", "#5a5058", "#9a9094", "#e6dede"]}
+ui_bits = {cell = [8, 6], framed = false}
+ui_tokens = {cell = [8, 2], framed = false}
+ui_luckbucks = {cell = [41, 11], framed = false}

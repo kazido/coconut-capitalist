@@ -1,69 +1,9 @@
-# Tools: pickaxes, axes, rods, watering cans, bombs, swords. Cells are [row, col] in the Raven 16x16 sheet.
-
-# --- Pickaxes: ALL superseded by the hand-drawn family in art/sprites/pickaxes.toml (same names win over these mappings).
-#     Kept only as the raw Raven source cells; Veinhunter/Motherlode there are pixel copies of cells [110,2]/[110,3]. ---
-# --- Pickaxes (mining chain: rookie..worldsplitter) ---
-tool_pickaxe_rookie = [91, 0]
-tool_pickaxe_reinforced = [91, 1]
-tool_pickaxe_steel = [101, 0]
-tool_pickaxe_masterwork = [96, 1]
-tool_pickaxe_ironbound = {cell = [91, 1], val = 0.55}
-tool_pickaxe_crystal = {cell = [101, 1], hue = 150}
-tool_pickaxe_deepdelver = [109, 2]
-tool_pickaxe_mythril = [109, 3]
-tool_pickaxe_worldsplitter = [105, 14]
-# --- Pickaxes (prospector chain) ---
-tool_pickaxe_prospector = [96, 0]
-tool_pickaxe_geode = [109, 4]
-tool_pickaxe_seekers = {cell = [101, 0], hue = -100}
-tool_pickaxe_veinhunter = [110, 2]
-tool_pickaxe_motherlode = [110, 3]
-
-# --- Axes ---
-tool_axe_starter = [91, 7]
-tool_axe_thornwhip = [91, 8]
-tool_axe_reinforced = [91, 9]
-tool_broadaxe_bastards = [91, 10]
-tool_axe_masterwork = [96, 10]
-tool_hatchet_sovereign = [96, 9]
-tool_axe_gatherers = [96, 7]
-tool_hatchet_foragers = [96, 8]
-tool_axe_mosswood = [101, 7]
-tool_axe_canopy = [101, 8]
-tool_axe_elderwood = [101, 10]
-tool_axe_wilted = {cell = [101, 9], sat = 0.4, val = 0.6}
-
-# --- Fishing rods ---
-tool_rod_starter = [21, 0]
-tool_rod_reinforced = [21, 1]
-tool_rod_sturdy = [98, 6]
-tool_rod_masterwork = [98, 7]
-tool_rod_tidecaller = [103, 5]
-tool_rod_moonlit = [103, 6]
-tool_rod_lantern = [24, 7]
-tool_rod_leviathan = [103, 7]
-tool_rod_siren = {cell = [93, 8], hue = 100}
-tool_rod_trident = {cell = [91, 5], hue = 0}
-tool_rod_abyssal = {cell = [103, 8], val = 0.6}
-tool_rod_kraken = [101, 5]
-tool_rod_poseidon = [96, 5]
-tool_rod_trophy = [98, 9]
+# Tools: fishing rods, watering cans, bombs, swords (pickaxes and axes are hand-drawn: art/sprites/pickaxes.toml, axes.toml). Cells are [row, col] in the Raven 16x16 sheet.
 
 # --- Watering cans ---
-tool_can_tin = {cell = [3, 1], val = 0.8}
-tool_can_copper = [3, 5]
-tool_can_iron = {cell = [3, 1], val = 0.5}
-tool_can_silver = [3, 2]
-tool_can_gold = [3, 6]
-tool_can_crystal = [3, 10]
-tool_can_moonwell = [3, 14]
-tool_can_cauldron = [58, 7]
-tool_can_retort = [3, 7]
-tool_can_athanor = [56, 14]
 
 # --- Bomb and swords ---
-tool_scarab_bomb = [48, 9]
-tool_dreamnail = {cell = [100, 3], hue = 20}
 tool_largebranch = [91, 11]
 tool_rustedbroadsword = {cell = [90, 7], hue = 15, sat = 0.7, val = 0.75}
 tool_shiningsilver = [94, 5]
+tool_scarab_bomb = [48, 2]
