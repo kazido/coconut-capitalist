@@ -31,9 +31,10 @@ class WikiScreen(Screen):
         reg = get_registry()
         titles = {t: (name, emoji) for t, name, emoji in wiki.TOPICS}
         name, emoji = titles[self.topic]
+        emoji = emojis.skill(self.topic, emoji)
         body = [*self.note_block()]
         body.append(row(select("Pick a topic...", [
-            discord.SelectOption(label=title, value=topic, emoji=icon, default=topic == self.topic) for topic, title, icon in wiki.TOPICS],
+            discord.SelectOption(label=title, value=topic, emoji=emojis.skill(topic, icon), default=topic == self.topic) for topic, title, icon in wiki.TOPICS],
             self._pick_topic)))
         body.append(sep())
         if self.topic == "items":

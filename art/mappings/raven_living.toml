@@ -41,3 +41,7 @@ seed_starfruit = [28, 1]
 seed_watermelon = [28, 15]
 seed_wilted_rose = [26, 7]
 seed_ambrosia = [26, 15]
+seed_rustroot = {cell = [28, 3], ramp = ["#2a1410", "#8a3a1c", "#d8702c", "#ffd09a"]}
+seed_marketfig = {cell = [28, 5], ramp = ["#241038", "#6a3a9a", "#b078d8", "#f0d8ff"]}
+seed_cloudberry = {cell = [28, 10], ramp = ["#1c3050", "#5a8ac8", "#a8d0f4", "#fcffff"]}
+seed_voidbloom = {cell = [28, 12], ramp = ["#0a0614", "#2a1a4a", "#6a3aa8", "#c090ff"]}

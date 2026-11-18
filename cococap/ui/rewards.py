@@ -8,6 +8,7 @@ buttons) wait on the last page.
 
 from collections.abc import Callable, Iterable, Mapping, Sequence
 
+from cococap import emojis
 from cococap.constants import Rarities
 from cococap.registry import Item, get_registry
 from cococap.services.odds import Lookup, Odds
@@ -29,7 +30,7 @@ def items_block(drops: Mapping[str, int]) -> str:
 
 
 def totals_line(bits: int = 0, xp: int = 0) -> str:
-    parts = ([f"💰 **+{bits_text(bits)}** bits"] if bits else []) + ([f"✨ **+{xp:,}** xp"] if xp else [])
+    parts = ([f"💰 **+{emojis.bits(bits)}**"] if bits else []) + ([f"✨ **+{xp:,}** xp"] if xp else [])
     return "  ·  ".join(parts)
 
 
@@ -76,7 +77,7 @@ def rewards_result(
     plain = {i: q for i, q in items.items() if i not in {f[1].id for f in rare}}
     lines = list(headline)
     if block := items_block(plain):
-        lines.append("🎁 **You got**\n" + block)
+        lines.append(f"{emojis.ui('chest', '🧰')} **You got**\n" + block)
     if totals := totals_line(bits, xp):
         lines.append(totals)
     lines += list(notes)
@@ -87,6 +88,6 @@ def rewards_result(
     ending = dict(again=again, again_label=again_label, back=back, back_label=back_label, actions=list(actions))
     if pages:
         pages[-1] = Result(**{**pages[-1].__dict__, **ending})
-        lines = lines or ["🎁 Something special turned up…"]
+        lines = lines or [f"{emojis.ui('chest', '🧰')} Something special turned up…"]
         return Result(title, lines, emoji=emoji, accent=accent, live=live, then=pages)
     return Result(title, lines, emoji=emoji, accent=accent, live=live, **ending)

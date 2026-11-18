@@ -113,7 +113,7 @@ async def test_each_requirement_of_an_upgrade_is_on_its_own_line(db):
     assert len(wanted) >= 2
     for requirement in wanted:
         assert sum(requirement in line for line in lines) == 1
-    bits_line = next(line for line in lines if "bits (you have" in line)
+    bits_line = next(line for line in lines if "(you have" in line)
     assert all(requirement not in bits_line for requirement in wanted) and "·" not in bits_line  # (the bits are not squeezed onto the same line)
     assert len({lines.index(next(line for line in lines if r in line)) for r in wanted}) == len(wanted)
 

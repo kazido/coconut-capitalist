@@ -5,6 +5,7 @@ from collections import Counter
 
 import discord
 
+from cococap import emojis
 from cococap.constants import Rarities
 from cococap.registry import get_registry
 from cococap.screens.sellall import start_sell_all
@@ -69,7 +70,7 @@ def reel_buttons(cast: fishing.Cast, rng, handler, style) -> list[discord.ui.But
 def quest_line(q: fishing.Quest) -> str:
     mark = "✅" if q.done else "⬜"
     progress = "done" if q.done else f"{q.progress}/{q.count}"
-    return f"{mark} {q.text}  ·  {progress}  ·  +{bits(q.bits)} bits, +{q.xp} xp"
+    return f"{mark} {q.text}  ·  {progress}  ·  +{emojis.bits(q.bits)}, +{q.xp} xp"
 
 
 class FishScreen(Screen):
@@ -143,9 +144,9 @@ class FishScreen(Screen):
             body.append(text(header))
             if fight is not None and fight.is_open:
                 if fight.you is None:
-                    body += [text(f"### 💀 **{fight.boss}** is on your party's line!\n**{fight.reeling}** reeling · closes <t:{int(fight.closes_at)}:R>\n"
+                    body += [text(f"### {emojis.icon('boss', '💀')} **{fight.boss}** is on your party's line!\n**{fight.reeling}** reeling · closes <t:{int(fight.closes_at)}:R>\n"
                                   "-# Join with your own set of arrows. Everyone who lands theirs is paid, and more for every teammate who does too."),
-                             row(button("Join the fight", emoji="💀", style=discord.ButtonStyle.danger, disabled=stats is None, on_click=self._join_boss))]
+                             row(button("Join the fight", emoji=emojis.icon("boss", "💀"), style=discord.ButtonStyle.danger, disabled=stats is None, on_click=self._join_boss))]
                 elif fight.you == "done":
                     body.append(text(f"### ✅ You landed your part of the fight with **{fight.boss}**\n**{fight.reeling}** still reeling · closes <t:{int(fight.closes_at)}:R>"))
             if stats is None:
@@ -176,23 +177,23 @@ class FishScreen(Screen):
             body.append(sep())
             if quests:
                 daily = [q for q in quests if q.kind == "daily"]
-                body.append(text(f"📜 Quests: **{sum(q.done for q in daily)}/{len(daily)}** daily  ·  "
+                body.append(text(f"{emojis.icon('quest', '📜')} Quests: **{sum(q.done for q in daily)}/{len(daily)}** daily  ·  "
                                  f"**{sum(q.done for q in quests if q.kind == 'weekly')}/1** weekly"))
             else:
-                body.append(text(f"-# 📜 Quests unlock at fishing level {reg.fishing.quests.min_level}."))
-            body.append(text(f"🧺 **{haul.count:,}** fish  ·  worth **{bits(haul.worth)}** bits" if haul.count else "🧺 No fish yet."))
+                body.append(text(f"-# {emojis.icon('quest', '📜')} Quests unlock at fishing level {reg.fishing.quests.min_level}."))
+            body.append(text(f"🧺 **{haul.count:,}** fish  ·  worth **{emojis.bits(haul.worth)}**" if haul.count else f"{emojis.icon('haul', '🧺')} No fish yet."))
             body.append(row(
                 button("Cast", emoji=ROD, style=discord.ButtonStyle.primary, disabled=stats is None, on_click=self._cast),
-                button("Sell fish", emoji="💰", disabled=not haul.count, on_click=self._sell),
-                button("Quests", emoji="📜", disabled=not fishing.quests_unlocked(level, reg.fishing), on_click=self._quests),
-                button("Book", emoji="📖", disabled=not fishing.book_unlocked(level, reg.fishing), on_click=self._book),
+                button("Sell fish", emoji=emojis.icon("sell", "💰"), disabled=not haul.count, on_click=self._sell),
+                button("Quests", emoji=emojis.icon("quest", "📜"), disabled=not fishing.quests_unlocked(level, reg.fishing), on_click=self._quests),
+                button("Book", emoji=emojis.icon("book", "📖"), disabled=not fishing.book_unlocked(level, reg.fishing), on_click=self._book),
                 button("Community", emoji="🌍", disabled=not fishing.quests_unlocked(level, reg.fishing), on_click=self._community),
             ))
-            body.append(row(button("Records", emoji="📏", on_click=self._records),
+            body.append(row(button("Records", emoji=emojis.icon("record", "📏"), on_click=self._records),
                             button("Field notes", emoji="🔍", on_click=self._notes),
-                            button("Crab pots", emoji="🦀", disabled=level < reg.fishing.pots.min_level, on_click=self._pots),
-                            button("Mastery", emoji="🌟", on_click=self._mastery),
-                            button("Sell all", emoji="💰", on_click=self._sell_all)))
+                            button("Crab pots", emoji=emojis.icon("crab", "🦀"), disabled=level < reg.fishing.pots.min_level, on_click=self._pots),
+                            button("Mastery", emoji=emojis.icon("star", "🌟"), on_click=self._mastery),
+                            button("Sell all", emoji=emojis.icon("sell", "💰"), on_click=self._sell_all)))
             body.append(row(button("Radar", emoji="📡", disabled=level < reg.fishing.radar.unlock_level, on_click=self._radar)))
             return Page("Fishing", body, accent=ACCENT)
 
@@ -209,19 +210,19 @@ class FishScreen(Screen):
 
         if status == "chest":
             t = reg.fishing.treasure
-            body += [text(f"### 🧰 A treasure chest!\nIt is locked with **{t.code_length}** numbers. Do you remember them?\n"
+            body += [text(f"### {emojis.ui('chest', '🧰')} A treasure chest!\nIt is locked with **{t.code_length}** numbers. Do you remember them?\n"
                           f"Tries left: **{cast.attempts_left}**"),
-                     row(button("Enter the numbers", emoji="🔑", style=discord.ButtonStyle.success, on_click=self._enter_code),
+                     row(button("Enter the numbers", emoji=emojis.icon("key", "🔑"), style=discord.ButtonStyle.success, on_click=self._enter_code),
                          button("Leave it", on_click=self._cancel))]
             return Page("Fishing", body, accent=0xF1C40F)
 
         rules = reg.fishing
-        slack = (f"\n🧵 Slack left: **{cast.slips_left}**  ·  each one unused pays a bonus" if cast.slips_left else "")
+        slack = (f"\n{emojis.ui('hook', '🪝')} Slack left: **{cast.slips_left}**  ·  each one unused pays a bonus" if cast.slips_left else "")
         arrows = sum(t != fishing.REEL for t in cast.pattern)
         if cast.boss:
             twists = "\n".join(rules.boss.modifier_text[m] for m in cast.modifiers)
             body += [
-                text(f"### 💀 **{cast.boss}** is on the line!\nA boss! No fish this time, but a mountain of loot if you land it.\n{twists}"
+                text(f"### {emojis.icon('boss', '💀')} **{cast.boss}** is on the line!\nA boss! No fish this time, but a mountain of loot if you land it.\n{twists}"
                      + ("\n👥 **Party fight:** you reel your own set of arrows, and everyone who lands theirs is paid." if cast.party_fight is not None else "") + "\n"
                      f"{pattern_line(cast, rules)}{slack}\n-# {arrows} arrows, and some of them turn into **Reel** when you get there. Don't slip!"),
                 row(*reel_buttons(cast, self.rng, self._press, discord.ButtonStyle.danger), button("Let it go", on_click=self._cancel)),
@@ -233,7 +234,7 @@ class FishScreen(Screen):
         body += [
             text(f"### 🎣 A {cast.fish.display} is on the line!  ·  **{colour.rarity_name}**\n{pattern_line(cast, rules)}{slack}\n"
                  f"-# ◄ ► are the arrows. A step can turn into 🌀 as you reach it: press **Reel**"
-                 + (", and ❓ is hidden: it follows this fish's own pattern. Check your field notes!"
+                 + (f", and {emojis.icon('unknown', '❓')} is hidden: it follows this fish's own pattern. Check your field notes!"
                     if fishing.MYSTERY in cast.pattern else ".")),
             row(*reel_buttons(cast, self.rng, self._press, discord.ButtonStyle.primary), button("Let it go", on_click=self._cancel)),
             row(button("Field notes", emoji="🔍", on_click=self._reel_notes)),
@@ -261,18 +262,18 @@ class FishScreen(Screen):
     @staticmethod
     def _tell_lines(reveals) -> list[str]:
         """What each ❓ turned out to be: written in your field notes, and shown here so you can start working it out."""
-        return [f"🔍 The ❓ was **{truth}** (the arrow before it was {before}; 🌀 steps do not count). Added to your field notes." for before, truth, _first in reveals]
+        return [f"🔍 The {emojis.icon('unknown', '❓')} was **{truth}** (the arrow before it was {before}; 🌀 steps do not count). Added to your field notes." for before, truth, _first in reveals]
 
     def _catch_result(self, catch: fishing.Catch) -> Result:
         reg = get_registry()
         rarity = Rarities.from_value(catch.fish.rarity)
-        lines = [f"**{rarity.rarity_name}**  ·  📏 **{catch.size:g} cm**  ·  worth **{bits(catch.fish.sell_price)}** bits"]
+        lines = [f"**{rarity.rarity_name}**  ·  📏 **{catch.size:g} cm**  ·  worth **{emojis.bits(catch.fish.sell_price)}**"]
         if catch.slack_bits:
-            lines.append(f"🧵 **Clean reel!** {catch.slack_left} slack unused: **+{bits(catch.slack_bits)}** bits")
+            lines.append(f"{emojis.ui('hook', '🪝')} **Clean reel!** {catch.slack_left} slack unused: **+{bits(catch.slack_bits)}** bits")
         if catch.streak_bits:
-            lines.append(f"🔥 **Hot streak!** **+{bits(catch.streak_bits)}** bits for your clean reels in a row")
+            lines.append(f"{emojis.icon('flame', '🔥')} **Hot streak!** **+{bits(catch.streak_bits)}** bits for your clean reels in a row")
         if catch.server_record:
-            lines.append(f"🏆 **NEW SERVER RECORD!** +{bits(catch.record_bits)} bits"
+            lines.append(f"🏆 **NEW SERVER RECORD!** +{emojis.bits(catch.record_bits)}"
                          + (f" (you beat {catch.record_holder})" if catch.record_holder else ""))
         elif catch.personal_best:
             lines.append("🏅 New personal best!")
@@ -282,7 +283,7 @@ class FishScreen(Screen):
         if catch.extra_fish:
             lines.append(f"🎣 Your rod hauled in **{catch.extra_fish}** more: **{catch.extra_fish + 1}** {catch.fish.display} in all!")
         for q in catch.finished:
-            lines.append(f"📜 **Quest complete:** {q.text}  ·  +{bits(q.bits)} bits, +{q.xp} xp")
+            lines.append(f"📜 **Quest complete:** {q.text}  ·  +{emojis.bits(q.bits)}, +{q.xp} xp")
         faded = []
 
         def flash_live() -> tuple[list[str], bool]:
@@ -297,10 +298,10 @@ class FishScreen(Screen):
 
         def offer_live() -> tuple[list[str], bool]:
             if self.offer is not None and now() < self.offer[0]:
-                return [f"### ⚡ Quick cast! A second line is already biting.\n-# {max(1, round(self.offer[0] - now()))}s left to take it. Ignoring it costs nothing."], True
+                return [f"### {emojis.icon('bolt', '⚡')} Quick cast! A second line is already biting.\n-# {max(1, round(self.offer[0] - now()))}s left to take it. Ignoring it costs nothing."], True
             return [], False
 
-        actions = [("Quick cast!", "⚡", self._quick_cast)] if self.offer is not None else []
+        actions = [("Quick cast!", f"{emojis.icon('bolt', '⚡')}", self._quick_cast)] if self.offer is not None else []
         if catch.hallucination and self.offer is not None:
             def live() -> tuple[list[str], bool]:
                 (a, ticking_a), (b, ticking_b) = flash_live(), offer_live()
@@ -310,7 +311,7 @@ class FishScreen(Screen):
         else:
             live = offer_live if self.offer is not None else None
         return rewards_result(f"You caught a {catch.fish.display}!", items=Counter({catch.fish.id: 1 + catch.extra_fish}) + Counter(catch.extras), xp=catch.xp,
-                              notes=lines[1:], headline=lines[:1], odds=odds.fishing_catch(), emoji="🎣", accent=int(rarity.color, 16),
+                              notes=lines[1:], headline=lines[:1], odds=odds.fishing_catch(), emoji=emojis.skill("fishing", "🎣"), accent=int(rarity.color, 16),
                               again=self._cast, again_label="Cast again", live=live, actions=actions)
 
     # ---- handlers --------------------------------------------------------------------------------
@@ -328,11 +329,11 @@ class FishScreen(Screen):
         offer, self.offer = self.offer, None
         rules = get_registry().fishing
         if offer is None or clicked_at(interaction) > offer[0] + rules.bite.grace:
-            return await self.refresh(interaction, "⚡ The quick cast has passed.")
+            return await self.refresh(interaction, f"{emojis.icon('bolt', '⚡')} The quick cast has passed.")
         stats = await fishing.rod_stats(self.user)
         self.missed = None
         self.cast = fishing.quick_cast(stats, self.rng, now(), offer[1], get_registry(), await pets.bonuses(self.user))
-        await self.refresh(interaction, "⚡ A second line is biting! Pull it up.")
+        await self.refresh(interaction, f"{emojis.icon('bolt', '⚡')} A second line is biting! Pull it up.")
 
     async def _pick_water(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.water = values[0]
@@ -349,11 +350,11 @@ class FishScreen(Screen):
         headline, notes = [], []
         for p in paid:
             team = f"  ·  👥 team bonus **+{p.bonus:.0%}** ({p.teammates} teammate(s) landed theirs)" if p.teammates else ""
-            headline.append(f"💀 **{p.boss}** is beaten!{team}")
+            headline.append(f"{emojis.icon('boss', '💀')} **{p.boss}** is beaten!{team}")
             if p.slack_bits:
-                notes.append(f"🧵 Clean reel bonus included: **+{bits(p.slack_bits)}** bits")
+                notes.append(f"{emojis.ui('hook', '🪝')} Clean reel bonus included: **+{bits(p.slack_bits)}** bits")
         self.result = rewards_result("The party beat the boss!", items=sum((p.items for p in paid), Counter()), bits=sum(p.bits for p in paid), xp=sum(p.xp for p in paid),
-                                     headline=headline, notes=notes, odds=odds.fishing_boss(), emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
+                                     headline=headline, notes=notes, odds=odds.fishing_boss(), emoji=emojis.icon("boss", "💀"), accent=0x7B241C, again=self._cast, again_label="Cast again")
         return True
 
     async def _join_boss(self, interaction: discord.Interaction) -> None:
@@ -365,7 +366,7 @@ class FishScreen(Screen):
         cast = fishing.join_boss_cast(stats, self.rng, now(), fight.boss, get_registry(), await pets.bonuses(self.user))
         cast.party_fight = fight.number
         self.cast, self.missed = cast, None
-        await self.refresh(interaction, f"💀 You join the fight with **{fight.boss}**! Reel your own set of arrows.")
+        await self.refresh(interaction, f"{emojis.icon('boss', '💀')} You join the fight with **{fight.boss}**! Reel your own set of arrows.")
 
     async def _cancel(self, interaction: discord.Interaction) -> None:
         if self.cast is not None and self.cast.party_fight is not None:
@@ -412,17 +413,17 @@ class FishScreen(Screen):
                 await party_boss.report(self.user, "done", cast.slips_left, now())
                 if await self._collect_party_boss():  # you were the last one: the fight is over and you are paid right now
                     return await self.refresh(interaction)
-                self.result = Result("You landed your part!", [f"💀 **{cast.boss}** is hooked! Your reel is done."
-                                                                 + (f"\n🧵 Clean reel: **{cast.slips_left}** slack unused." if cast.slips_left else "")
+                self.result = Result("You landed your part!", [f"{emojis.icon('boss', '💀')} **{cast.boss}** is hooked! Your reel is done."
+                                                                 + (f"\n{emojis.ui('hook', '🪝')} Clean reel: **{cast.slips_left}** slack unused." if cast.slips_left else "")
                                                                  + "\nYour reward comes when your party's reels are all in (or the fight ends): it is on your Fishing page."],
-                                     emoji="💀", accent=0x7B241C, back_label="Back to fishing")
+                                     emoji=emojis.icon("boss", "💀"), accent=0x7B241C, back_label="Back to fishing")
                 return await self.refresh(interaction)
             if result == "landed" and cast.boss:
                 self.cast = None
                 won = await fishing.defeat_boss(self.user, cast, self.rng)
-                slack = [f"🧵 Clean reel: **{won.slack_left}** slack unused  ·  **+{bits(won.slack_bits)}** bits"] if won.slack_bits else []
+                slack = [f"{emojis.ui('hook', '🪝')} Clean reel: **{won.slack_left}** slack unused  ·  **+{bits(won.slack_bits)}** bits"] if won.slack_bits else []
                 self.result = rewards_result(f"You beat {won.name}!", items=won.items, bits=won.bits, xp=won.xp, notes=slack, odds=odds.fishing_boss(),
-                                             emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
+                                             emoji=emojis.icon("boss", "💀"), accent=0x7B241C, again=self._cast, again_label="Cast again")
                 return await self.refresh(interaction)
             if result == "landed":
                 self.cast = None
@@ -444,7 +445,7 @@ class FishScreen(Screen):
                 await fishing.note_tells(self.user, cast)
                 self.result = self._lost("🌊 It got away!", lines)
                 return await self.refresh(interaction)
-            await self.refresh(interaction, "🧵 Wrong way! The line goes slack, but you hold on." if result == "slip" else None)  # (an "echo" is ignored)
+            await self.refresh(interaction, f"{emojis.ui('hook', '🪝')} Wrong way! The line goes slack, but you hold on." if result == "slip" else None)  # (an "echo" is ignored)
 
         return press
 
@@ -513,13 +514,13 @@ class FishScreen(Screen):
 
     async def _sell(self, interaction: discord.Interaction) -> None:
         total = await fishing.sell_all(self.user)
-        await self.refresh(interaction, f"💰 You sold your fish for **{bits(total)}** bits.")
+        await self.refresh(interaction, f"💰 You sold your fish for **{emojis.bits(total)}**.")
 
 
 class FishQuestsScreen(Screen):
     id = "fishquests"
     label = "Fishing Quests"
-    emoji = "📜"
+    emoji = f"{emojis.icon('quest', '📜')}"
     description = "Daily and weekly fishing quests"
     links = ("fish",)
 
@@ -547,13 +548,13 @@ def unknown_summary(rarities: list[int], what: str) -> str:
     counts: dict[int, int] = {}
     for rarity in rarities:
         counts[rarity] = counts.get(rarity, 0) + 1
-    return f"❓ **{len(rarities)}** {what}: " + " · ".join(f"{Rarities.from_value(r).rarity_name} {n}" for r, n in sorted(counts.items()))
+    return f"{emojis.icon('unknown', '❓')} **{len(rarities)}** {what}: " + " · ".join(f"{Rarities.from_value(r).rarity_name} {n}" for r, n in sorted(counts.items()))
 
 
 class FishBookScreen(Screen):
     id = "fishbook"
     label = "Collection Book"
-    emoji = "📖"
+    emoji = f"{emojis.icon('book', '📖')}"
     description = "Turn in fish for rewards and level the book up"
     links = ("fish", "fishrecords")
 
@@ -573,8 +574,8 @@ class FishBookScreen(Screen):
         wanted = [e for e in view.entries if not e.done and owned.get(e.fish.id)]
         body = [
             *self.note_block(),
-            text(f"### 📖 Book level {view.level}\n+**{rules.bits_per_sell:.0%}** value and xp on fish you turn in  ·  "
-                 f"finishing pays **{bits(rules.completion_bits * view.level)}** bits"),
+            text(f"### {emojis.icon('book', '📖')} Book level {view.level}\n+**{rules.bits_per_sell:.0%}** value and xp on fish you turn in  ·  "
+                 f"finishing pays **{emojis.bits(rules.completion_bits * view.level)}**"),
             text("\n".join("  ·  ".join(lines[i:i + 2]) for i in range(0, len(lines), 2))),
         ]
         if wanted:
@@ -583,23 +584,23 @@ class FishBookScreen(Screen):
                                      description=f"You have {owned[e.fish.id]:,}, the book needs {e.need - e.given:,} more")
                 for e in wanted[:25]], self._turn_in)))
         body.append(row(
-            button("Finish the book", emoji="🏆", style=discord.ButtonStyle.success, disabled=not view.complete or view.level >= rules.max_level,
+            button("Finish the book", emoji=emojis.icon("record", "🏆"), style=discord.ButtonStyle.success, disabled=not view.complete or view.level >= rules.max_level,
                    on_click=self._finish),
-            button("Records", emoji="📏", on_click=self._records),
+            button("Records", emoji=emojis.icon("record", "📏"), on_click=self._records),
             button("Back to fishing", emoji=ROD, on_click=self._back),
         ))
         return Page("Collection Book", body, accent=0x8E44AD)
 
     async def _turn_in(self, interaction: discord.Interaction, values: list[str]) -> None:
         done = await fishing.turn_in(self.user, values[0])
-        await self.refresh(interaction, f"📖 You added {done.quantity:,} {done.fish.display} to the book  ·  +{bits(done.bits)} bits, +{done.xp} xp")
+        await self.refresh(interaction, f"📖 You added {done.quantity:,} {done.fish.display} to the book  ·  +{emojis.bits(done.bits)}, +{done.xp} xp")
 
     async def _records(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fishrecords")
 
     async def _finish(self, interaction: discord.Interaction) -> None:
         done = await fishing.complete_book(self.user)
-        await self.refresh(interaction, f"🏆 **Book complete!** It is now level {done.new_level}  ·  +{bits(done.bits)} bits, +{done.xp} xp")
+        await self.refresh(interaction, f"🏆 **Book complete!** It is now level {done.new_level}  ·  +{emojis.bits(done.bits)}, +{done.xp} xp")
 
     async def _back(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fish")
@@ -627,22 +628,22 @@ class FishCommunityScreen(Screen):
         notes = []
         if paid := await fishing_community.claim_book_rewards(self.user):
             notes.append(f"🌍 **The community finished its book** (level {', '.join(map(str, paid.levels))})  ·  "
-                         f"+{bits(paid.bits)} bits, +{paid.xp:,} xp for you")
+                         f"+{emojis.bits(paid.bits)}, +{paid.xp:,} xp for you")
         if paid := await fishing_community.claim_monthly(self.user, now()):
             notes.append("🗓️ **Community goal reached:** " + ", ".join(g.text for g in paid.goals)
-                         + f"  ·  +{bits(paid.bits)} bits, +{paid.xp:,} xp")
+                         + f"  ·  +{emojis.bits(paid.bits)}, +{paid.xp:,} xp")
         if notes:
             self.note = "\n".join(filter(None, [self.note, *notes]))
         body = [*self.note_block()]
 
         view = await fishing_community.book(self.user)
         owned = await self.user.items()
-        body.append(text(f"### 📖 Community Book · level {view.level}\n"
+        body.append(text(f"### {emojis.icon('book', '📖')} Community Book · level {view.level}\n"
                          + "\n".join(f"{'✅' if p.done else '⬜'} {p.fish.display}  ·  **{p.given}/{p.need}**"
                                       + (f"  ·  you have {owned[p.fish.id]:,}" if not p.done and owned.get(p.fish.id) else "")
                                       for p in view.pages)
                          + f"\n-# You have donated **{view.donated_by_you}** this level. Finishing it pays everyone "
-                           f"{bits(rules.community.book.completion_bits * view.level)} bits."))
+                           f"{emojis.bits(rules.community.book.completion_bits * view.level)}."))
         wanted = [p for p in view.pages if not p.done and owned.get(p.fish.id)]
         if not fishing.book_unlocked(level, rules):
             body.append(text(f"-# Donating opens at fishing level {rules.book.min_level}."))
@@ -657,14 +658,14 @@ class FishCommunityScreen(Screen):
         for g in goals:
             share = g.goal.slot.count
             mark = "✅" if g.done else "⬜"
-            pay = "" if g.done else f"  ·  +{bits(g.goal.slot.bits)} bits"
+            pay = "" if g.done else f"  ·  +{emojis.bits(g.goal.slot.bits)}"
             lines.append(f"{mark} {g.goal.text}\n{bar(min(1.0, g.progress / share), 8)}  **{min(g.progress, share):,}/{share:,}**"
                          f"  ·  you: {g.yours:,}{pay}")
         ends = fishing_community.month_ends_at(fishing_community.month_of(now()))
         body += [sep(), text("### 🗓️ This month's goals\n" + "\n".join(lines)
                              + f"\n-# Everyone fishing adds up. Do at least {rules.community.min_share:.0%} of a goal to be paid when "
                                f"it is reached. New goals <t:{int(ends)}:R>."),
-                 row(button("Records", emoji="📏", on_click=self._records),
+                 row(button("Records", emoji=emojis.icon("record", "📏"), on_click=self._records),
                      button("Back to fishing", emoji=ROD, on_click=self._back))]
         return Page("Fishing Community", body, accent=0x16A085)
 
@@ -673,7 +674,7 @@ class FishCommunityScreen(Screen):
 
     async def _donate(self, interaction: discord.Interaction, values: list[str]) -> None:
         done = await fishing_community.donate(self.user, values[0])
-        note = f"📖 You gave {done.quantity:,} {done.fish.display} to the community book  ·  +{bits(done.bits)} bits, +{done.xp:,} xp"
+        note = f"📖 You gave {done.quantity:,} {done.fish.display} to the community book  ·  +{emojis.bits(done.bits)}, +{done.xp:,} xp"
         if done.finished_level:
             note += f"\n🎉 **That finished the book!** It is now level {done.finished_level + 1} and everyone will be paid."
         await self.refresh(interaction, note)
@@ -687,7 +688,7 @@ class FishRecordsScreen(Screen):
 
     id = "fishrecords"
     label = "Fish Records"
-    emoji = "📏"
+    emoji = f"{emojis.icon('record', '📏')}"
     description = "Your biggest catches and the server records"
     links = ("fish",)
 
@@ -702,13 +703,13 @@ class FishRecordsScreen(Screen):
                 unknown.append(fish.rarity)
                 continue
             yours = f"you **{best:g} cm**" if best is not None else "you: not caught yet"
-            record = f"  ·  🏆 {held['size']:g} cm ({held['name']})" if held else ""
+            record = f"  ·  {emojis.icon('record', '🏆')} {held['size']:g} cm ({held['name']})" if held else ""
             crown = " 👑" if held and best is not None and held["uid"] == self.user.id and held["size"] == best else ""
             lines.append(f"{fish.display}  ·  {yours}{crown}{record}")
         if unknown:
             lines.append(unknown_summary(unknown, "fish nobody has caught yet"))
-        return Page("Fish Records", [*self.note_block(), text("### 📏 Biggest catches\n" + "\n".join(lines)
-                    + "\n-# 🏆 server record  ·  👑 that's you  ·  beat a record to be paid."),
+        return Page("Fish Records", [*self.note_block(), text(f"### {emojis.icon('record', '📏')} Biggest catches\n" + "\n".join(lines)
+                    + f"\n-# {emojis.icon('record', '🏆')} server record  ·  👑 that's you  ·  beat a record to be paid."),
                     row(button("Back to fishing", emoji=ROD, on_click=self._back),
                         button("Field notes", emoji="🔍", on_click=self._notes))], accent=0x2980B9)
 
@@ -729,16 +730,17 @@ async def notes_content(user) -> tuple[str, str]:
         entries = skill.notes.get(fish.id, [])
         if entries:
             verdict = fishing.notes_verdict(entries)
-            lines.append(f"{fish.display}: {verdict or f'**{len(entries)}** ❓ seen, no pattern confirmed yet'}")
+            qmark = emojis.icon('unknown', '❓')
+            lines.append(f"{fish.display}: {verdict or f'**{len(entries)}** {qmark} seen, no pattern confirmed yet'}")
         elif fish.id in skill.records:
-            lines.append(f"{fish.display}: no ❓ revealed yet. Press the ❓ (or lose at one) to find out what it was.")
+            lines.append(f"{fish.display}: no {emojis.icon('unknown', '❓')} revealed yet. Press the {emojis.icon('unknown', '❓')} (or lose at one) to find out what it was.")
         else:
             unknown.append(fish.rarity)
     if unknown:
         lines.append(unknown_summary(unknown, "not caught yet"))
-    intro = ("Rare fish hide arrows behind a ❓. Each fish has its own rule for it: always ◄, always ►, the opposite of the last arrow before it, "
+    intro = (f"Rare fish hide arrows behind a {emojis.icon('unknown', '❓')}. Each fish has its own rule for it: always ◄, always ►, the opposite of the last arrow before it, "
              "the same as the last arrow before it, or the same as the FIRST arrow of the reel. 🌀 Reel steps are skipped when looking back, and a Reel step's "
-             "disguise arrow does not count. Every ❓ you see is counted here, and a rule is only written down once "
+             f"disguise arrow does not count. Every {emojis.icon('unknown', '❓')} you see is counted here, and a rule is only written down once "
              f"**{fishing.MIN_NOTES_FOR_VERDICT}** of them agree on it.")
     return intro, "\n".join(lines)
 
@@ -749,7 +751,7 @@ class FishNotesScreen(Screen):
     id = "fishnotes"
     label = "Field notes"
     emoji = "🔍"
-    description = "What the hidden arrows (❓) turned out to be"
+    description = f"What the hidden arrows ({emojis.icon('unknown', '❓')}) turned out to be"
     links = ("fish",)
 
     async def build(self) -> Page:
@@ -766,7 +768,7 @@ class FishPotsScreen(Screen):
 
     id = "fishpots"
     label = "Crab Pots"
-    emoji = "🦀"
+    emoji = f"{emojis.icon('crab', '🦀')}"
     description = "Pots that catch rare fish while you are away"
     links = ("fish",)
 
@@ -797,32 +799,32 @@ class FishPotsScreen(Screen):
                 status += f"  ·  next <t:{int(here + eta)}:R>"
             elif pot.bait_left and waiting:
                 status += "  ·  full" if waiting >= lvl.capacity else "  ·  out of bait soon"
-            lines.append(f"{'➤ ' if i == self.index else ''}🦀 **Pot {i + 1}**  ·  Lv {pot.level}  ·  {water.emoji} {water.name}  ·  {bait}  ·  {status}")
+            lines.append(f"{'➤ ' if i == self.index else ''}{emojis.icon('crab', '🦀')} **Pot {i + 1}**  ·  Lv {pot.level}  ·  {water.emoji} {water.name}  ·  {bait}  ·  {status}")
         owned_now = await self.user.items()
-        body.append(text(f"### 🦀 Crab pots ({len(skill.pots)}/{slots})\n" + ("\n".join(lines) if lines else "You have no pots yet.")
+        body.append(text(f"### {emojis.icon('crab', '🦀')} Crab pots ({len(skill.pots)}/{slots})\n" + ("\n".join(lines) if lines else "You have no pots yet.")
                     + f"\n-# Pots only catch {Rarities.from_value(rules.pots.min_rarity).rarity_name} fish and better, one at a time, while you are away."))
         if len(skill.pots) < slots:
-            body.append(text("**🔨 Craft a pot**\n" + needs_text(rules.pots.craft_bits, self.user.purse, rules.pots.craft_items, owned_now, reg)))
+            body.append(text(f"**{emojis.icon('craft', '🔨')} Craft a pot**\n" + needs_text(rules.pots.craft_bits, self.user.purse, rules.pots.craft_items, owned_now, reg)))
         elif len(skill.pots) < len(rules.pots.slot_levels):
             body.append(text(f"-# Another pot opens at fishing level {rules.pots.slot_levels[len(skill.pots)]}."))
         if len(skill.pots) > 1:
             body.append(row(select("Pick a pot...", [
                 discord.SelectOption(label=f"Pot {i + 1} · Lv {p.level}", value=str(i), default=i == self.index,
                                      description=fishing.water_by_id(reg, p.water).name) for i, p in enumerate(skill.pots)], self._pick)))
-        buttons = [button("Collect all", emoji="🧺", style=discord.ButtonStyle.success,
+        buttons = [button("Collect all", emoji=emojis.icon("haul", "🧺"), style=discord.ButtonStyle.success,
                           disabled=not any(pots.ready(p, here, reg, pet) for p in skill.pots), on_click=self._collect)]
         if skill.pots:
             pot = skill.pots[self.index]
             if pot.level < len(rules.pots.levels):
                 cost = rules.pots.levels[pot.level]
-                buttons.append(button(f"Upgrade pot {self.index + 1}", emoji="⬆️", on_click=self._upgrade))
-                body.append(text(f"**⬆️ Upgrade pot {self.index + 1} to level {pot.level + 1}**\n"
+                buttons.append(button(f"Upgrade pot {self.index + 1}", emoji=emojis.icon("upgrade", "⬆️"), on_click=self._upgrade))
+                body.append(text(f"**{emojis.icon('upgrade', '⬆️')} Upgrade pot {self.index + 1} to level {pot.level + 1}**\n"
                                  + needs_text(cost.upgrade_bits, self.user.purse, cost.upgrade_items, owned_now, reg)))
             worth = pots.hourly_value(pot, reg, pet)
             body.append(text(f"-# Pot {self.index + 1} catches about one fish every **{pots.interval_seconds(pot, reg, pet) / 60:.0f}** minutes "
-                             f"(holds {pots.level_rules(pot, rules).capacity}), worth about **{bits(round(worth))}** bits an hour. "
+                             f"(holds {pots.level_rules(pot, rules).capacity}), worth about **{emojis.bits(round(worth))}** an hour. "
                              f"Fishing yourself earns far more."))
-        buttons.append(button("Craft a pot", emoji="🔨", disabled=len(skill.pots) >= slots, on_click=self._craft))
+        buttons.append(button("Craft a pot", emoji=emojis.icon("craft", "🔨"), disabled=len(skill.pots) >= slots, on_click=self._craft))
         body.append(row(*buttons))
         if skill.pots:
             owned = await self.user.items()
@@ -845,11 +847,11 @@ class FishPotsScreen(Screen):
     async def _craft(self, interaction: discord.Interaction) -> None:
         await pots.craft(self.user, now())
         self.index = len((await self.user.skill("fishing")).pots) - 1
-        await self.refresh(interaction, "🦀 You crafted a crab pot! Load some bait to get it fishing.")
+        await self.refresh(interaction, f"{emojis.icon('crab', '🦀')} You crafted a crab pot! Load some bait to get it fishing.")
 
     async def _upgrade(self, interaction: discord.Interaction) -> None:
         pot = await pots.upgrade(self.user, self.index)
-        await self.refresh(interaction, f"⬆️ Pot {self.index + 1} is now level {pot.level}.")
+        await self.refresh(interaction, f"{emojis.icon('upgrade', '⬆️')} Pot {self.index + 1} is now level {pot.level}.")
 
     async def _bait(self, interaction: discord.Interaction, values: list[str]) -> None:
         bait_id, index = values[0], self.index
@@ -869,14 +871,14 @@ class FishPotsScreen(Screen):
 
     async def _water(self, interaction: discord.Interaction, values: list[str]) -> None:
         await pots.set_water(self.user, self.index, values[0], now())
-        await self.refresh(interaction, f"🦀 Pot {self.index + 1} moved to {fishing.water_by_id(get_registry(), values[0]).name}.")
+        await self.refresh(interaction, f"{emojis.icon('crab', '🦀')} Pot {self.index + 1} moved to {fishing.water_by_id(get_registry(), values[0]).name}.")
 
     async def _collect(self, interaction: discord.Interaction) -> None:
         reg = get_registry()
         haul = await pots.collect_all(self.user, now())
         if not haul.catches:
-            return await self.refresh(interaction, "🦀 Nothing has been caught yet.")
+            return await self.refresh(interaction, f"{emojis.icon('crab', '🦀')} Nothing has been caught yet.")
         worth = sum(reg.item(i).sell_price * q for i, q in haul.fish.items())
-        self.result = rewards_result("The pots are emptied!", items=haul.fish, xp=haul.xp, notes=[f"Worth about **{bits(worth)}** bits"],
-                                     emoji="🦀", accent=0xD35400, back_label="Back to the pots")
+        self.result = rewards_result("The pots are emptied!", items=haul.fish, xp=haul.xp, notes=[f"Worth about **{emojis.bits(worth)}**"],
+                                     emoji=emojis.icon("crab", "🦀"), accent=0xD35400, back_label="Back to the pots")
         await self.refresh(interaction)

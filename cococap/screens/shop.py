@@ -54,7 +54,7 @@ class ShopScreen(Screen):
         self.page = min(self.page, pages - 1)
         body = [
             *self.note_block(),
-            text(f"{emojis.currency('bits')} You have **{bits(self.user.purse)}** bits"),
+            text(f"You have **{emojis.bits(self.user.purse)}**"),
             row(
                 button("Buy", emoji="🛒", style=discord.ButtonStyle.primary if self.mode == "buy" else discord.ButtonStyle.secondary, on_click=self._set_mode("buy")),
                 button("Sell", emoji="💰", style=discord.ButtonStyle.primary if self.mode == "sell" else discord.ButtonStyle.secondary, on_click=self._set_mode("sell")),
@@ -81,8 +81,8 @@ class ShopScreen(Screen):
 
     def _line(self, item, owned) -> str:
         if self.mode == "buy":
-            return f"{item.display}  ·  **{bits(item.price)}** bits"
-        return f"{item.display}  ·  ×{owned:,}  ·  {bits(item.sell_price * owned)} bits"
+            return f"{item.display}  ·  **{emojis.bits(item.price)}**"
+        return f"{item.display}  ·  ×{owned:,}  ·  {emojis.bits(item.sell_price * owned)}"
 
     def _listing(self, shown) -> list:
         """A markdown list of this page, one dropdown to pick from it, and one button for the picked item."""
@@ -97,7 +97,7 @@ class ShopScreen(Screen):
             for i, q in shown
         ]
         if buy:
-            detail = f"### {picked.display}\n**{bits(picked.price)}** bits  ·  {picked.description}"[:600]
+            detail = f"### {picked.display}\n**{emojis.bits(picked.price)}**  ·  {picked.description}"[:600]
             action = button("Buy", style=discord.ButtonStyle.success, disabled=self.user.purse < picked.price, on_click=self._ask_quantity(picked.id, "buy", 1))
         else:
             detail = f"### {picked.display}\n×{owned:,}  ·  {bits(picked.sell_price)} each  ·  **{bits(picked.sell_price * owned)}** for all"
@@ -111,8 +111,6 @@ class ShopScreen(Screen):
         self.selected = values[0]
         await self.refresh(interaction)
 
-    CATEGORY_EMOJI = {"mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishing": "🐟", "combat": "⚔️", "general": "📦"}
-
     def _category_rows(self, categories: list[str]) -> list:
         """Buttons to filter the list: All, then one per skill that has something to show."""
         if len(categories) < 2:
@@ -122,7 +120,7 @@ class ShopScreen(Screen):
             buttons.append(
                 button(
                     c.title() if self.category == c else None,
-                    emoji=self.CATEGORY_EMOJI.get(c, "📦"),
+                    emoji=emojis.skill(c, "📦"),
                     style=discord.ButtonStyle.primary if self.category == c else discord.ButtonStyle.secondary,
                     on_click=self._set_category(c),
                 )
@@ -158,10 +156,10 @@ class ShopScreen(Screen):
                 quantity = parse_quantity(raw)
                 if action == "buy":
                     purchase = await shop.buy(self.user, item_id, quantity)
-                    note = f"Bought {purchase.quantity:,} × {name} for {bits(purchase.total)} bits."
+                    note = f"Bought {purchase.quantity:,} × {name} for {emojis.bits(purchase.total)}."
                 else:
                     earned = await shop.sell(self.user, item_id, quantity)
-                    note = f"Sold {quantity:,} × {name} for {bits(earned)} bits."
+                    note = f"Sold {quantity:,} × {name} for {emojis.bits(earned)}."
                 await self.refresh(modal_interaction, note)
 
             await interaction.response.send_modal(

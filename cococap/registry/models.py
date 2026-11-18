@@ -170,7 +170,10 @@ class Item(_Data):
     @property
     def emoji(self) -> str | None:
         """The bot's emoji named `<item id>` if uploaded, else the data file's (tokens resolve by name; see `cococap.emojis`)."""
-        return emojis.for_id("item", self.id, emojis.resolve(self.emoji_raw))
+        base = emojis.resolve(self.emoji_raw)
+        if self.star_of:  # a starred variant shows its own art if it has any, else the plain material's
+            base = emojis.for_id("item", self.star_of, base)
+        return emojis.for_id("item", self.id, base)
 
     @property
     def is_instance(self) -> bool:
@@ -187,8 +190,9 @@ class Item(_Data):
 
     @property
     def display(self) -> str:
-        """Emoji (if any) followed by the name."""
-        return f"{self.emoji} {self.name}" if self.emoji else self.name
+        """Emoji (if any) followed by the name; a starred material shows star icons instead of the ★ marks in its name."""
+        name = self.name.rsplit(" ", 1)[0] + " " + emojis.stars(self.stars) if self.star_of and self.stars > 1 else self.name
+        return f"{self.emoji} {name}" if self.emoji else name
 
 
 class PetBonus(_Data):
@@ -1417,19 +1421,29 @@ class Area(_Data):
 
     id: str
     name: str
-    emoji: str
+    emoji_raw: str = Field(alias="emoji")
     description: str
     fuel: dict[str, int] = Field(default_factory=dict)  # item -> quantity burned on the first trip here
+
+    @property
+    def emoji(self) -> str:
+        """The bot's emoji named `area_<id>` if uploaded, else the one in the data file (see `cococap.emojis`)."""
+        return emojis.for_id("area", self.id, self.emoji_raw)
 
 
 class ShipTier(_Data):
     """One ship upgrade: tier N lets you sail to area N (tier 1 builds the ship). Costs bits, materials and a level floor in each skill."""
 
     name: str
-    emoji: str
+    emoji_raw: str = Field(alias="emoji")
     bits: int = Field(ge=0)
     parts: dict[str, int]
     skill_floors: dict[str, int]  # skill -> the level you need in it
+
+    @property
+    def emoji(self) -> str:
+        """The bot's emoji named `ship_<name as a slug>` if uploaded, else the one in the data file (see `cococap.emojis`)."""
+        return emojis.for_id("ship", re.sub(r"[^a-z0-9]+", "_", self.name.lower()).strip("_"), self.emoji_raw)
 
 
 LOCATIONS_PER_AREA = 2

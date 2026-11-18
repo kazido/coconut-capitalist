@@ -3,6 +3,7 @@ import time
 
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import farming
 from cococap.ui import Page, Screen
@@ -31,7 +32,7 @@ class MarketScreen(Screen):
         crops = {i: q for i, q in (await self.user.items()).items() if (it := reg.find_item(i)) and it.category == "crop" and it.sellable}
         total = sum(farming.market_price(i, q, reg) for i, q in crops.items())
         status = (f"🟢 **Open** until <t:{changes}:R>" if is_open else f"🔴 **Closed.** Opens <t:{changes}:R>")
-        lines = [f"{reg.item(i).display} x{q:,}  →  **{bits(farming.market_price(i, q, reg))}** bits" for i, q in crops.items()]
+        lines = [f"{reg.item(i).display} x{q:,}  →  **{emojis.bits(farming.market_price(i, q, reg))}**" for i, q in crops.items()]
         body = [
             *self.note_block(),
             text(f"{status}\nCrops sell for **+{rules.market.price_bonus:.0%}** while the market is open."),
@@ -49,7 +50,7 @@ class MarketScreen(Screen):
 
     async def _sell(self, interaction: discord.Interaction) -> None:
         earned, sold = await farming.sell_crops(self.user)
-        await self.refresh(interaction, f"Sold {sum(sold.values()):,} crop(s) for **{bits(earned)}** bits.")
+        await self.refresh(interaction, f"Sold {sum(sold.values()):,} crop(s) for **{emojis.bits(earned)}**.")
 
     async def _deposit(self, interaction: discord.Interaction) -> None:
         used, deeds = await farming.deposit_blessings(self.user, random.Random())

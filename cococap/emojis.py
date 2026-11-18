@@ -21,6 +21,8 @@ server). At startup ``refresh(bot)`` fetches them, so data files and code only n
   water        ``water_<id>``    ``water_lake``
   rank         ``rank_<id>``     ``rank_3``
   location     ``location_<id>`` ``location_slimewood_thicket``
+  area         ``area_<id>``     ``area_rust_belt``
+  ship tier    ``ship_<slug>``   ``ship_dune_skiff`` (slug = the tier's name)
   ui icon      ``ui_<name>``     ``ui_releaf``
   ===========  ================  ===========================
 
@@ -46,7 +48,7 @@ LEGACY = (
 # Every custom-emoji name the bot's own code or data may mention.
 KNOWN = LEGACY
 
-KINDS = ("item", "pet", "species", "enchant", "mine", "water", "rank", "location", "ui")
+KINDS = ("item", "pet", "species", "enchant", "mine", "water", "rank", "location", "area", "ship", "ui")
 NAME_RE = re.compile(r"^[a-z0-9_]{2,32}$")  # Discord's rule for application emoji names
 
 _TOKEN = re.compile(r"<a?:(\w+):\d+>")
@@ -121,9 +123,47 @@ def ui(name: str, fallback: str = "") -> str:
 CURRENCY = {"bits": "💸", "tokens": "🪙", "luckbucks": "🍀"}
 
 
+def bits(amount: int) -> str:
+    """Bits written the way the game says them in text: "1,234 <bits icon> bits". Only for message text and headings: custom emoji
+    do not render in button labels or select options/descriptions, so those keep the plain "1,234 bits"."""
+    return f"{amount:,} {currency('bits')} bits"
+
+
+def stars(count: int) -> str:
+    """`count` star icons in a row (pets' stars, starred materials). Message text only: the plain ⭐ is the fallback."""
+    return ui("star", "⭐") * max(0, count)
+
+
+def tokens(amount: int) -> str:
+    """Tokens in message text: "3 <icon> tokens" ("1 <icon> token"). Message text only, like `bits`."""
+    return f"{amount:,} {currency('tokens')} token{'' if amount == 1 else 's'}"
+
+
+def luckbucks(amount: int) -> str:
+    """Luckbucks in message text: "5 <icon> luckbucks" ("1 <icon> luckbuck"). Message text only, like `bits`."""
+    return f"{amount:,} {currency('luckbucks')} luckbuck{'' if amount == 1 else 's'}"
+
+
 def currency(name: str) -> str:
     """The icon for a currency (``bits``, ``tokens`` or ``luckbucks``): its ``ui_<name>`` emoji, else the plain glyph."""
     return ui(name, CURRENCY[name])
+
+
+# Icons that reuse a finished item's art (no separate ui_ emoji needed): name -> item id.
+ITEM_ICONS = {
+    "axe": "tool_axe_starter", "pickaxe": "tool_pickaxe_rookie", "rod": "tool_rod_starter", "can": "tool_can_tin",
+    "wood": "material_hardwood", "wedge": "material_iron_wedge", "wedge_gold": "material_gilded_wedge", "leaf": "material_maple_leaf",
+    "worm": "bait_worm", "battery": "material_radar_battery",
+}
+
+
+def icon(name: str, glyph: str = "") -> str:
+    """An action/UI icon: a finished item's art for the names in ITEM_ICONS, else the application emoji ``ui_<name>``
+    (art/mappings/raven_magic.toml), else the plain `glyph`. Use in message text and ``emoji=`` arguments, never in button
+    labels or select text (custom emoji do not render there)."""
+    if name in ITEM_ICONS:
+        return for_id("item", ITEM_ICONS[name], glyph)
+    return ui(name, glyph)
 
 
 # Skill icons are the skill's starter tool (art already exists for them), with a plain glyph until it is uploaded.

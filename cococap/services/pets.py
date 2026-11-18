@@ -11,6 +11,7 @@ import math
 import random
 from dataclasses import dataclass
 
+from cococap import emojis
 from cococap.errors import GameRuleError
 from cococap.models.pethouse import CURVE_VERSION, OwnedPet, Pethouse
 from cococap.registry import Item, Pet, Registry, get_registry
@@ -61,7 +62,7 @@ SKILL_EMOJI = {"global": "🌐", "mining": "⛏️", "farming": "🌽", "foragin
 
 
 def skill_emoji(pet: Pet) -> str:
-    return SKILL_EMOJI[pet.skill]
+    return emojis.skill(pet.skill, SKILL_EMOJI[pet.skill])
 
 
 def food_xp(item: Item, registry: Registry | None = None) -> int:

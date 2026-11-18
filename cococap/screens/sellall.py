@@ -1,11 +1,11 @@
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import crafting, shop, upgrades
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bits, button, row, text
 
-SKILL_EMOJI = {"mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishing": "🐟"}
 SHOWN = 8
 
 
@@ -35,7 +35,7 @@ async def start_sell_all(screen: Screen, interaction: discord.Interaction, skill
         return await screen.go(interaction, "sellall", skill=skill)
     keep = await upgrade_needs(screen.user) if screen.user.settings.keep_upgrade_materials else None
     earned, sold = await shop.sell_all_for_skill(screen.user, skill, keep=keep)
-    await screen.refresh(interaction, f"💰 Sold {sum(sold.values()):,} items for **{bits(earned)}** bits." if sold else "You have nothing from this skill to sell.")
+    await screen.refresh(interaction, f"💰 Sold {sum(sold.values()):,} items for **{emojis.bits(earned)}**." if sold else "You have nothing from this skill to sell.")
 
 
 class SellAllScreen(Screen):
@@ -56,7 +56,7 @@ class SellAllScreen(Screen):
         owned = await self.user.items()
         everything = shop.sellable_for_skill(owned, self.skill, reg)
         if not everything:
-            return Page("Sell all", [*self.note_block(), text(f"{SKILL_EMOJI.get(self.skill, '')} You have nothing from **{self.skill}** to sell."),
+            return Page("Sell all", [*self.note_block(), text(f"{emojis.skill(self.skill)} You have nothing from **{self.skill}** to sell."),
                                      row(button("Back", on_click=self._cancel))], accent=0xD4A017)
         needs = await upgrade_needs(self.user)
         kept = shop.sellable_for_skill(owned, self.skill, reg, needs)
@@ -81,8 +81,8 @@ class SellAllScreen(Screen):
             first = button(f"Sell everything ({bits(worth)})", emoji="💰", style=discord.ButtonStyle.danger, on_click=self._sell(False))
             second = button(f"Sell, keep upgrade materials ({bits(keep_worth)})", emoji="🔨", disabled=not kept, on_click=self._sell(True))
         body = [*self.note_block(),
-                text(f"### {SKILL_EMOJI.get(self.skill, '💰')} Sell everything from {self.skill.title()}?\n{lines}" + (f"\n-# …and {more} more kinds" if more > 0 else "")
-                     + f"\n**{sum(everything.values()):,}** items for **{bits(worth)}** bits{warn}"),
+                text(f"### {emojis.skill(self.skill, '💰')} Sell everything from {self.skill.title()}?\n{lines}" + (f"\n-# …and {more} more kinds" if more > 0 else "")
+                     + f"\n**{sum(everything.values()):,}** items for **{emojis.bits(worth)}**{warn}"),
                 row(*[b for b in (first, second) if b], button("Cancel", on_click=self._cancel))]
         return Page("Sell all", body, accent=0xD4A017)
 
@@ -90,7 +90,7 @@ class SellAllScreen(Screen):
         async def go(interaction: discord.Interaction) -> None:
             keep = await upgrade_needs(self.user) if keep_for_upgrades else None
             earned, sold = await shop.sell_all_for_skill(self.user, self.skill, keep=keep)
-            self.result = Result("Sold!", [f"💰 You sold **{sum(sold.values()):,}** items for **{bits(earned)}** bits." if sold else "Nothing was left to sell."]
+            self.result = Result("Sold!", [f"💰 You sold **{sum(sold.values()):,}** items for **{emojis.bits(earned)}**." if sold else "Nothing was left to sell."]
                                  + (["🔨 Your upgrade materials were kept."] if keep_for_upgrades and sold else []),
                                  emoji="💰", accent=0xD4A017, back=self._cancel, back_label="Back")
             await self.refresh(interaction)
