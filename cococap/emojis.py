@@ -129,6 +129,16 @@ def bits(amount: int) -> str:
     return f"{amount:,} {currency('bits')} bits"
 
 
+def tokens(amount: int) -> str:
+    """Tokens in message text: "3 <icon> tokens" ("1 <icon> token"). Message text only, like `bits`."""
+    return f"{amount:,} {currency('tokens')} token{'' if amount == 1 else 's'}"
+
+
+def luckbucks(amount: int) -> str:
+    """Luckbucks in message text: "5 <icon> luckbucks" ("1 <icon> luckbuck"). Message text only, like `bits`."""
+    return f"{amount:,} {currency('luckbucks')} luckbuck{'' if amount == 1 else 's'}"
+
+
 def currency(name: str) -> str:
     """The icon for a currency (``bits``, ``tokens`` or ``luckbucks``): its ``ui_<name>`` emoji, else the plain glyph."""
     return ui(name, CURRENCY[name])

@@ -217,7 +217,7 @@ class FishScreen(Screen):
             return Page("Fishing", body, accent=0xF1C40F)
 
         rules = reg.fishing
-        slack = (f"\n🧵 Slack left: **{cast.slips_left}**  ·  each one unused pays a bonus" if cast.slips_left else "")
+        slack = (f"\n{emojis.ui('hook', '🪝')} Slack left: **{cast.slips_left}**  ·  each one unused pays a bonus" if cast.slips_left else "")
         arrows = sum(t != fishing.REEL for t in cast.pattern)
         if cast.boss:
             twists = "\n".join(rules.boss.modifier_text[m] for m in cast.modifiers)
@@ -269,7 +269,7 @@ class FishScreen(Screen):
         rarity = Rarities.from_value(catch.fish.rarity)
         lines = [f"**{rarity.rarity_name}**  ·  📏 **{catch.size:g} cm**  ·  worth **{emojis.bits(catch.fish.sell_price)}**"]
         if catch.slack_bits:
-            lines.append(f"🧵 **Clean reel!** {catch.slack_left} slack unused: **+{bits(catch.slack_bits)}** bits")
+            lines.append(f"{emojis.ui('hook', '🪝')} **Clean reel!** {catch.slack_left} slack unused: **+{bits(catch.slack_bits)}** bits")
         if catch.streak_bits:
             lines.append(f"🔥 **Hot streak!** **+{bits(catch.streak_bits)}** bits for your clean reels in a row")
         if catch.server_record:
@@ -352,7 +352,7 @@ class FishScreen(Screen):
             team = f"  ·  👥 team bonus **+{p.bonus:.0%}** ({p.teammates} teammate(s) landed theirs)" if p.teammates else ""
             headline.append(f"💀 **{p.boss}** is beaten!{team}")
             if p.slack_bits:
-                notes.append(f"🧵 Clean reel bonus included: **+{bits(p.slack_bits)}** bits")
+                notes.append(f"{emojis.ui('hook', '🪝')} Clean reel bonus included: **+{bits(p.slack_bits)}** bits")
         self.result = rewards_result("The party beat the boss!", items=sum((p.items for p in paid), Counter()), bits=sum(p.bits for p in paid), xp=sum(p.xp for p in paid),
                                      headline=headline, notes=notes, odds=odds.fishing_boss(), emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
         return True
@@ -414,14 +414,14 @@ class FishScreen(Screen):
                 if await self._collect_party_boss():  # you were the last one: the fight is over and you are paid right now
                     return await self.refresh(interaction)
                 self.result = Result("You landed your part!", [f"💀 **{cast.boss}** is hooked! Your reel is done."
-                                                                 + (f"\n🧵 Clean reel: **{cast.slips_left}** slack unused." if cast.slips_left else "")
+                                                                 + (f"\n{emojis.ui('hook', '🪝')} Clean reel: **{cast.slips_left}** slack unused." if cast.slips_left else "")
                                                                  + "\nYour reward comes when your party's reels are all in (or the fight ends): it is on your Fishing page."],
                                      emoji="💀", accent=0x7B241C, back_label="Back to fishing")
                 return await self.refresh(interaction)
             if result == "landed" and cast.boss:
                 self.cast = None
                 won = await fishing.defeat_boss(self.user, cast, self.rng)
-                slack = [f"🧵 Clean reel: **{won.slack_left}** slack unused  ·  **+{bits(won.slack_bits)}** bits"] if won.slack_bits else []
+                slack = [f"{emojis.ui('hook', '🪝')} Clean reel: **{won.slack_left}** slack unused  ·  **+{bits(won.slack_bits)}** bits"] if won.slack_bits else []
                 self.result = rewards_result(f"You beat {won.name}!", items=won.items, bits=won.bits, xp=won.xp, notes=slack, odds=odds.fishing_boss(),
                                              emoji="💀", accent=0x7B241C, again=self._cast, again_label="Cast again")
                 return await self.refresh(interaction)
@@ -445,7 +445,7 @@ class FishScreen(Screen):
                 await fishing.note_tells(self.user, cast)
                 self.result = self._lost("🌊 It got away!", lines)
                 return await self.refresh(interaction)
-            await self.refresh(interaction, "🧵 Wrong way! The line goes slack, but you hold on." if result == "slip" else None)  # (an "echo" is ignored)
+            await self.refresh(interaction, f"{emojis.ui('hook', '🪝')} Wrong way! The line goes slack, but you hold on." if result == "slip" else None)  # (an "echo" is ignored)
 
         return press
 

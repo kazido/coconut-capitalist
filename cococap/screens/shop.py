@@ -54,7 +54,7 @@ class ShopScreen(Screen):
         self.page = min(self.page, pages - 1)
         body = [
             *self.note_block(),
-            text(f"{emojis.currency('bits')} You have **{emojis.bits(self.user.purse)}**"),
+            text(f"You have **{emojis.bits(self.user.purse)}**"),
             row(
                 button("Buy", emoji="🛒", style=discord.ButtonStyle.primary if self.mode == "buy" else discord.ButtonStyle.secondary, on_click=self._set_mode("buy")),
                 button("Sell", emoji="💰", style=discord.ButtonStyle.primary if self.mode == "sell" else discord.ButtonStyle.secondary, on_click=self._set_mode("sell")),

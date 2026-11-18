@@ -29,7 +29,7 @@ class RankScreen(Screen):
             body.append(
                 section(
                     f"### Next: {nxt.emoji} {nxt.display_name}",
-                    f"Wage **{emojis.bits(nxt.wage)}**  ·  XP +{nxt.xp_bonus:.0%}  ·  costs **{bits(nxt.token_price)}** {emojis.currency('tokens')} (you have {bits(self.user.tokens)})",
+                    f"Wage **{emojis.bits(nxt.wage)}**  ·  XP +{nxt.xp_bonus:.0%}  ·  costs **{emojis.tokens(nxt.token_price)}** (you have {emojis.tokens(self.user.tokens)})",
                     accessory=button(
                         "Rank up",
                         emoji=emojis.currency("tokens"),

@@ -27,24 +27,24 @@ class CheckInScreen(Screen):
             *self.note_block(),
             section("### 💼 Work", f"Your wage: **{emojis.bits(wage)}**  ·  every {Cooldowns.WORK.value}h",
                     accessory=self._claim_button(Cooldowns.WORK, self._work)),
-            section("### 🌅 Daily", f"Interest on your bits + **{economy.DAILY_TOKENS}** token  ·  every {Cooldowns.DAILY.value}h",
+            section("### 🌅 Daily", f"Interest on your bits + **{emojis.tokens(economy.DAILY_TOKENS)}**  ·  every {Cooldowns.DAILY.value}h",
                     accessory=self._claim_button(Cooldowns.DAILY, self._daily)),
-            section("### 🗓️ Weekly", f"**{get_registry().economy.weekly_luckbucks}** luckbucks  ·  every {Cooldowns.WEEKLY.value}h",
+            section("### 🗓️ Weekly", f"**{emojis.luckbucks(get_registry().economy.weekly_luckbucks)}**  ·  every {Cooldowns.WEEKLY.value}h",
                     accessory=self._claim_button(Cooldowns.WEEKLY, self._weekly)),
         ]
         return Page("Check-in", body, accent=discord.Colour.dark_blue().value)
 
     async def _work(self, interaction: discord.Interaction) -> None:
         reward = await economy.claim_work(self.user)
-        await self.refresh(interaction, f"{emojis.currency('bits')} Work: +{emojis.bits(reward.wage)}.")
+        await self.refresh(interaction, f"Work: +{emojis.bits(reward.wage)}.")
 
     async def _daily(self, interaction: discord.Interaction) -> None:
         reward = await economy.claim_daily(self.user)
         await self.refresh(
             interaction,
-            f"🌅 Daily: +{emojis.bits(reward.interest)} interest, +{reward.tokens} token.\n> 💡 {randfacts.get_fact()}",
+            f"🌅 Daily: +{emojis.bits(reward.interest)} interest, +{emojis.tokens(reward.tokens)}.\n> 💡 {randfacts.get_fact()}",
         )
 
     async def _weekly(self, interaction: discord.Interaction) -> None:
         luck = await economy.claim_weekly(self.user)
-        await self.refresh(interaction, f"🍀 Weekly: +{luck} luckbucks.")
+        await self.refresh(interaction, f"Weekly: +{emojis.luckbucks(luck)}.")

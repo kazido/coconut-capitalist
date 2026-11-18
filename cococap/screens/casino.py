@@ -23,7 +23,7 @@ class CasinoScreen(Screen):
         body = [
             *self.note_block(),
             text(
-                f"{emojis.currency('luckbucks')} **{emojis.bits(self.user.luckbucks)}** luckbucks  ·  {emojis.currency('bits')} **{bits(self.user.purse)}**\n"
+                f"**{emojis.luckbucks(self.user.luckbucks)}**  ·  **{emojis.bits(self.user.purse)}**\n"
                 f"The casino stakes **{name}**. "
                 "Bet a number, `2k`, a percent like `25%`, or `max`."
             ),
@@ -34,7 +34,7 @@ class CasinoScreen(Screen):
                     accessory=button("Play", style=discord.ButtonStyle.primary, on_click=self._ask("blackjack", "Blackjack"))),
             sep(),
             section(
-                f"### 💱 Exchange\n{emojis.bits(rate.bits_per_luckbuck)} = 1 luckbuck  ·  up to {bits(rate.daily_limit)}/day",
+                f"### 💱 Exchange\n{emojis.bits(rate.bits_per_luckbuck)} = {emojis.luckbucks(1)}  ·  up to {bits(rate.daily_limit)}/day",
                 accessory=button("Exchange", on_click=self._ask_exchange),
             ),
         ]
@@ -43,7 +43,7 @@ class CasinoScreen(Screen):
     async def _ask_exchange(self, interaction: discord.Interaction) -> None:
         async def submitted(modal_interaction: discord.Interaction, raw: str) -> None:
             got, spent = await exchange_bits(self.user, parse_quantity(raw))
-            await self.refresh(modal_interaction, f"Exchanged {emojis.bits(spent)} for {bits(got)} luckbucks.")
+            await self.refresh(modal_interaction, f"Exchanged {emojis.bits(spent)} for {emojis.luckbucks(got)}.")
 
         await interaction.response.send_modal(
             PromptModal("Exchange bits for luckbucks", "How many luckbucks?", submitted, default="10", max_length=7)

@@ -77,7 +77,7 @@ def rewards_result(
     plain = {i: q for i, q in items.items() if i not in {f[1].id for f in rare}}
     lines = list(headline)
     if block := items_block(plain):
-        lines.append("🎁 **You got**\n" + block)
+        lines.append(f"{emojis.ui('chest', '🧰')} **You got**\n" + block)
     if totals := totals_line(bits, xp):
         lines.append(totals)
     lines += list(notes)
@@ -88,6 +88,6 @@ def rewards_result(
     ending = dict(again=again, again_label=again_label, back=back, back_label=back_label, actions=list(actions))
     if pages:
         pages[-1] = Result(**{**pages[-1].__dict__, **ending})
-        lines = lines or ["🎁 Something special turned up…"]
+        lines = lines or [f"{emojis.ui('chest', '🧰')} Something special turned up…"]
         return Result(title, lines, emoji=emoji, accent=accent, live=live, then=pages)
     return Result(title, lines, emoji=emoji, accent=accent, live=live, **ending)
