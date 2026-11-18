@@ -849,7 +849,7 @@ def test_byproducts_are_a_fair_share_of_what_each_crop_earns_an_hour():
     assert len(RULES.byproduct_rolls) == len(RULES.field_seeds)
     one_roll = sum(REG.item(i).sell_price * (i_d.min + i_d.max) / 2 / i_d.rate
                    for i in REG.items if (i_d := REG.item(i).drop) and REG.item(i).skill == "farming" and REG.item(i).category == "material")
-    for seed_id, rolls in zip(RULES.field_seeds, RULES.byproduct_rolls):
+    for seed_id, rolls in zip(RULES.field_seeds, RULES.byproduct_rolls, strict=True):
         seed = REG.item(seed_id)
         crop = REG.item(seed.seed.grows_into)
         per_hour = crop.sell_price * (crop.crop.min_harvest + crop.crop.max_harvest) / 2 / seed.seed.cycles  # watered: one cycle an hour
