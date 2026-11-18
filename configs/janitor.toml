@@ -8,8 +8,8 @@ channel_ids = [858549045613035541, 959271607241683044, 961471869725343834, 96104
 # How often the sweep runs (it also runs once at startup).
 interval_minutes = 5
 
-# Play menus (Components V2 messages) older than this are deleted. Must be well above a real session: a menu is
-# idle-deleted at 5 minutes, but a busy menu is edited in place and keeps its original timestamp.
+# Play menus (Components V2 messages) untouched for this long are deleted. "Touched" means posted OR last edited, and a menu in use is
+# edited on every click, so one somebody is still playing is never swept; an abandoned one goes quiet and is.
 menu_max_age_minutes = 30
 
 # Any other bot message (drops, game results, replies) older than this is deleted. Longer so a claimable drop is not swept early.

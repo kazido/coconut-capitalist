@@ -9,13 +9,14 @@ from discord import Interaction, app_commands, ui
 from discord.ext import commands, tasks
 
 from cococap.constants import OWNER_ID
-from cococap.services.janitor import JanitorConfig, can_bulk, load_config, should_delete
+from cococap.services.janitor import JanitorConfig, can_bulk, idle_minutes, load_config, should_delete
 
 log = getLogger("janitor")
 
 
 def _age_minutes(message: discord.Message) -> float:
-    return (datetime.now(timezone.utc) - message.created_at).total_seconds() / 60
+    """Minutes since the message was last touched (edits count), so a menu in use is not deleted from under a player."""
+    return idle_minutes(message.created_at, message.edited_at, datetime.now(timezone.utc))
 
 
 async def collect(channel, bot_id: int, cfg: JanitorConfig) -> list[discord.Message]:
@@ -78,6 +79,7 @@ class Janitor(commands.Cog):
     async def cog_load(self):
         if self.cfg.enabled:
             self.sweep.change_interval(minutes=self.cfg.interval_minutes)
+            self.sweep.change_interval(minutes=self.cfg.interval_minutes)  # the config sets how often, not the decorator
             self.sweep.start()
 
     async def cog_unload(self):

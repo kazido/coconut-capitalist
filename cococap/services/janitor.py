@@ -39,5 +39,12 @@ def should_delete(*, age_minutes: float, from_bot: bool, is_menu: bool, cfg: Jan
     return age_minutes >= limit
 
 
+def idle_minutes(created_at, edited_at, now) -> float:
+    """Minutes since a message was last touched: its last edit if it has one, else when it was posted. A play menu that is edited on every
+    click keeps being touched, so a menu somebody is still using is never swept; an abandoned one goes quiet and is."""
+    last = edited_at or created_at
+    return (now - last).total_seconds() / 60
+
+
 def can_bulk(age_days: float) -> bool:
     return age_days < BULK_LIMIT_DAYS - 0.01  # a small margin so a message cannot cross the line mid-request
