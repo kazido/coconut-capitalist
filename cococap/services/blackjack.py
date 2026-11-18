@@ -3,12 +3,14 @@ the async functions take the bet and settle it exactly once."""
 
 import random
 
-from cococap import constants
+from cococap import constants, emojis
 from cococap.constants import BOT_ID
 from cococap.services.casino import GameOver, place_bet
 from cococap.user import User
 
-SUITS = "♠♥♦♣"
+SUITS = "♠♥♦♣"  # the plain suit characters stay the card identity; show() swaps them for icons
+_SUIT_ICONS = {"♠": lambda: emojis.icon("spade", "♠"), "♥": lambda: emojis.icon("suit_heart", "♥"),
+               "♦": lambda: emojis.icon("diamond", "♦"), "♣": lambda: emojis.icon("club", "♣")}
 RANKS = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
 Card = tuple[str, str]  # (rank, suit)
 
@@ -31,7 +33,7 @@ def hand_total(hand: list[Card]) -> int:
 
 
 def show(hand: list[Card]) -> str:
-    return " ".join(f"{rank}{suit}" for rank, suit in hand)
+    return " ".join(f"{rank}{_SUIT_ICONS[suit]()}" for rank, suit in hand)
 
 
 class BlackjackGame:

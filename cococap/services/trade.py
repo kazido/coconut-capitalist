@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from cococap.errors import GameRuleError
 from cococap.registry import Registry, get_registry
 from cococap.user import InsufficientFunds, User
+from cococap import emojis
 
 INVITE_SECONDS = 60
 IDLE_SECONDS = 600
@@ -260,4 +261,4 @@ async def _complete(window: Window) -> None:
         if bits:
             await receiver.add_bits(bits)
         await giver.inc_stat("trades_done")
-    _close(window, "🤝 Trade complete!")
+    _close(window, f"{emojis.icon('trade', '🤝')} Trade complete!")

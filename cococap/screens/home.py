@@ -29,7 +29,7 @@ def anything_ready(user) -> bool:
 
 
 def check_in_line(user) -> str:
-    return "✅ Check-in ready" if anything_ready(user) else "⏳ Check-in not ready yet"
+    return f"{emojis.icon('check', '✅')} Check-in ready" if anything_ready(user) else f"{emojis.icon('timer', '⏳')} Check-in not ready yet"
 
 
 def _opener(screen: Screen, screen_id: str):
@@ -42,7 +42,7 @@ def _opener(screen: Screen, screen_id: str):
 class HomeScreen(Screen):
     id = "home"
     label = "Home"
-    emoji = "🥥"
+    emoji = emojis.icon('coconut', '🥥')
     description = "Where everything starts"
     links = (*FEATURED, *SECOND_ROW, "more")
 
@@ -52,23 +52,23 @@ class HomeScreen(Screen):
         if party is None:
             return None
         shown = [
-            f"{await self.nav.name_of(member_id)}{' 👑' if party.is_owner(member_id) else ''}"
+            f"{await self.nav.name_of(member_id)}{(' ' + emojis.icon('crown', '👑')) if party.is_owner(member_id) else ''}"
             for member_id in party.members[:PARTY_NAMES_SHOWN]
         ]
         extra = party.member_count() - len(shown)
-        return f"👥 **Party:** {', '.join(shown)}" + (f" +{extra} more" if extra > 0 else "")
+        return f"{emojis.icon('people', '👥')} **Party:** {', '.join(shown)}" + (f" +{extra} more" if extra > 0 else "")
 
     async def invite_sections(self) -> list:
         """A line and a button for a waiting party invite and for a waiting trade invite."""
         out = []
         if (invite := party_invites.pending_for(self.user.id)) is not None:
             out.append(section(
-                f"### 👥 Party invite\n{await self.nav.name_of(invite.inviter_id)} invited you to their party.",
+                f"### {emojis.icon('people', '👥')} Party invite\n{await self.nav.name_of(invite.inviter_id)} invited you to their party.",
                 accessory=button("Accept", style=discord.ButtonStyle.success, on_click=_opener(self, "party")),
             ))
         if (offer := trade.invite_for(self.user.id)) is not None:
             out.append(section(
-                f"### 🤝 Trade invite\n{await self.nav.name_of(offer.sender_id)} wants to trade with you.",
+                f"### {emojis.icon('trade', '🤝')} Trade invite\n{await self.nav.name_of(offer.sender_id)} wants to trade with you.",
                 accessory=button("Open", style=discord.ButtonStyle.success, on_click=_opener(self, "trade")),
             ))
         return out
@@ -89,7 +89,7 @@ class HomeScreen(Screen):
                 accessory=button("Open", style=discord.ButtonStyle.success if lit else discord.ButtonStyle.primary, on_click=_opener(self, screen_id)),
             ))
         second = [button(self.nav.screens[i].label, emoji=self.nav.screens[i].emoji, on_click=_opener(self, i)) for i in SECOND_ROW]
-        second.append(button("More", emoji="➡️", on_click=_opener(self, "more")))
+        second.append(button("More", emoji=emojis.icon('next', '➡️'), on_click=_opener(self, "more")))
         body.append(row(*second))
         return Page("Coconut Capitalist", body, accent=0xE6B34A)
 
@@ -99,7 +99,7 @@ class MoreScreen(Screen):
 
     id = "more"
     label = "More"
-    emoji = "➡️"
+    emoji = emojis.icon('next', '➡️')
     description = "Trade, minigames, stats, bestiary, wiki and settings"
     links = tuple(MORE_LINKS)
 

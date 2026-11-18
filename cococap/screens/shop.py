@@ -20,7 +20,7 @@ def parse_quantity(raw: str) -> int:
 class ShopScreen(Screen):
     id = "shop"
     label = "Shop"
-    emoji = "🛒"
+    emoji = emojis.Lazy("ui_sell", "🛒")
     description = "Buy seeds and supplies, sell what you've gathered"
 
     def __init__(self, nav):
@@ -56,8 +56,8 @@ class ShopScreen(Screen):
             *self.note_block(),
             text(f"You have **{emojis.bits(self.user.purse)}**"),
             row(
-                button("Buy", emoji="🛒", style=discord.ButtonStyle.primary if self.mode == "buy" else discord.ButtonStyle.secondary, on_click=self._set_mode("buy")),
-                button("Sell", emoji="💰", style=discord.ButtonStyle.primary if self.mode == "sell" else discord.ButtonStyle.secondary, on_click=self._set_mode("sell")),
+                button("Buy", emoji=emojis.icon('sell', '🛒'), style=discord.ButtonStyle.primary if self.mode == "buy" else discord.ButtonStyle.secondary, on_click=self._set_mode("buy")),
+                button("Sell", emoji=emojis.icon('sell', '💰'), style=discord.ButtonStyle.primary if self.mode == "sell" else discord.ButtonStyle.secondary, on_click=self._set_mode("sell")),
             ),
             *self._category_rows(categories),
             sep(),
@@ -72,9 +72,9 @@ class ShopScreen(Screen):
         if pages > 1:
             body.append(
                 row(
-                    button(emoji="◀️", on_click=self._turn(-1), disabled=self.page == 0),
+                    button(emoji=emojis.icon('prev', '◀️'), on_click=self._turn(-1), disabled=self.page == 0),
                     button(f"{self.page + 1}/{pages}", disabled=True),
-                    button(emoji="▶️", on_click=self._turn(1), disabled=self.page >= pages - 1),
+                    button(emoji=emojis.icon('next', '▶️'), on_click=self._turn(1), disabled=self.page >= pages - 1),
                 )
             )
         return Page("Shop", body, accent=discord.Colour.gold().value)
@@ -88,7 +88,7 @@ class ShopScreen(Screen):
         """A markdown list of this page, one dropdown to pick from it, and one button for the picked item."""
         buy = self.mode == "buy"
         picked, owned = next((i, q) for i, q in shown if i.id == self.selected)
-        lines = [("▶ **" if i.id == self.selected else "") + self._line(i, q).replace("**", "") + ("**" if i.id == self.selected else "") for i, q in shown]
+        lines = [(f"{emojis.icon('next', '▶')} **" if i.id == self.selected else "") + self._line(i, q).replace("**", "") + ("**" if i.id == self.selected else "") for i, q in shown]
         options = [
             discord.SelectOption(
                 label=i.name, value=i.id, emoji=i.emoji or None, default=i.id == self.selected,
@@ -119,7 +119,7 @@ class ShopScreen(Screen):
             buttons.append(
                 button(
                     c.title() if self.category == c else None,
-                    emoji=emojis.skill(c, "📦"),
+                    emoji=emojis.skill(c, emojis.icon('crate', '📦')),
                     style=discord.ButtonStyle.primary if self.category == c else discord.ButtonStyle.secondary,
                     on_click=self._set_category(c),
                 )

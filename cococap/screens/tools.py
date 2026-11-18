@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.constants import STARTER_TOOLS
 from cococap.registry import get_registry
 from cococap.services.equipment import TOOL_FOR_SKILL, effective_stats
@@ -17,7 +18,7 @@ class ToolsScreen(Screen):
 
     id = "tools"
     label = "Tools"
-    emoji = "🧰"
+    emoji = emojis.Lazy("ui_anvil", "🧰")
     description = "Your tools: upgrade and enchant them"
     links = ("inventory", "upgrade", "enchant")
 
@@ -46,15 +47,15 @@ class ToolsScreen(Screen):
             item = reg.item(inst.template_id)
             tool = item.tool
             extra = ([f"{tool.path} path"] if tool.path else []) + ([describe_stats(tool.stats)] if tool.stats else [])
-            lines.append(f"{item.emoji or '🔨'} **{instance_label(inst)}**  ·  {KIND_LABEL[kind]}  ·  power **{effective_stats(inst, reg).power}**"
-                         + "".join(f"  ·  {e}" for e in extra) + (f"  ·  ✨ {tool.ability_name}" if tool.ability_name else ""))
+            lines.append(f"{item.emoji or emojis.icon('craft', '🔨')} **{instance_label(inst)}**  ·  {KIND_LABEL[kind]}  ·  power **{effective_stats(inst, reg).power}**"
+                         + "".join(f"  ·  {e}" for e in extra) + (f"  ·  {emojis.icon('sparkle', '✨')} {tool.ability_name}" if tool.ability_name else ""))
         if lines:
             body.append(text("\n".join(lines)))
         if await self._unclaimed():
-            body += [sep(), row(button("Claim free starter tools", emoji="🎁", style=discord.ButtonStyle.success, on_click=self._claim))]
-        body += [sep(), row(button("Upgrade", emoji="🔨", style=discord.ButtonStyle.primary, on_click=self._upgrades),
-                            button("Enchant", emoji="📜", on_click=self._enchant),
-                            button("Inventory", emoji="🎒", on_click=self._inventory))]
+            body += [sep(), row(button("Claim free starter tools", emoji=emojis.icon("gift", "🎁"), style=discord.ButtonStyle.success, on_click=self._claim))]
+        body += [sep(), row(button("Upgrade", emoji=emojis.icon("craft", "🔨"), style=discord.ButtonStyle.primary, on_click=self._upgrades),
+                            button("Enchant", emoji=emojis.icon("scroll", "📜"), on_click=self._enchant),
+                            button("Inventory", emoji=emojis.icon("bag", "🎒"), on_click=self._inventory))]
         return Page("Tools", body, accent=0xB8860B)
 
     async def _unclaimed(self) -> bool:
@@ -68,7 +69,7 @@ class ToolsScreen(Screen):
     async def _claim(self, interaction: discord.Interaction) -> None:
         got = await shop.claim_starter_tools(self.user)
         names = ", ".join(get_registry().item(i).name for i in got)
-        await self.refresh(interaction, f"🎁 You got: {names}." if got else "You have no starter tools to claim.")
+        await self.refresh(interaction, f"{emojis.icon('gift', '🎁')} You got: {names}." if got else "You have no starter tools to claim.")
 
     async def _upgrades(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "upgrade")

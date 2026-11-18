@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 from sqlalchemy import delete, select, update
 
+from cococap import emojis
 from cococap.db import get_database
 from cococap.db.tables import PartyMemberRow, PartyRow, SkillRow, UserRow
 from cococap.registry import Registry, get_registry
@@ -28,7 +29,7 @@ async def touch(user_id: int, now: float | None = None, registry: Registry | Non
     async with get_database().session() as session:
         await session.execute(update(UserRow).where(UserRow.discord_id == user_id).values(last_active=now))
     if await roll_token(user_id, now, registry):
-        notices.setdefault(user_id, []).append("🪙 You found a **token** while you were out and about!")
+        notices.setdefault(user_id, []).append(f"{emojis.icon('tokens', '🪙')} You found a **token** while you were out and about!")
 
 
 notices: dict[int, list[str]] = {}  # things to tell a player the next time a screen is drawn (e.g. a token they found)

@@ -10,6 +10,7 @@ from datetime import datetime
 from pytz import timezone
 
 import cococap
+from cococap import emojis
 from cococap.user import User
 from cococap.constants import GamblingChannels
 from cococap.db import queries
@@ -62,7 +63,7 @@ class ClaimDropButtons(discord.ui.View):
                 }
             )
 
-    @discord.ui.button(label="CLAIM", emoji="📦", style=discord.ButtonStyle.green)
+    @discord.ui.button(label="CLAIM", emoji=emojis.icon("crate", "📦"), style=discord.ButtonStyle.green)
     async def claim_button(self, claim_interaction: discord.Interaction, button: discord.ui.Button):
         # First click wins: flip the flag before any await so a second click can't also pay out.
         if self.claimed:
@@ -79,9 +80,9 @@ class ClaimDropButtons(discord.ui.View):
 
         if self.is_megadrop:
             claimed_embed = discord.Embed(
-                title="🎉 THE MEGADROP HAS BEEN CLAIMED! 🎉",
+                title=f"{emojis.icon('party', '🎉')} THE MEGADROP HAS BEEN CLAIMED! {emojis.icon('party', '🎉')}",
                 description=f"{claim_interaction.user.name} {self.drop.description}\n"
-                f"You have claimed **{drops_claimed:,}** drops 📦",
+                f"You have claimed **{drops_claimed:,}** drops {emojis.icon('crate', '📦')}",
                 color=self.drop.color,
             )
             claimed_embed.add_field(
@@ -121,7 +122,7 @@ class ClaimDropButtons(discord.ui.View):
             claimed_embed = discord.Embed(
                 title="This drop has been claimed!",
                 description=f"{claim_interaction.user.name} {self.drop.description}\n"
-                f"You have claimed **{drops_claimed:,}** drops 📦",
+                f"You have claimed **{drops_claimed:,}** drops {emojis.icon('crate', '📦')}",
                 color=self.drop.color,
             )
             claimed_embed.set_footer(text="Drops happen randomly and last for 30 minutes!")
@@ -137,7 +138,7 @@ class Drop:
         self.description, self.amount, self.color = drop_double(amount)
 
         self.embed = discord.Embed(  # Embed for a new drop appearing
-            title="A drop has appeared! 📦",
+            title=f"A drop has appeared! {emojis.icon('crate', '📦')}",
             description=f"This drop contains **{amount:,}** bits!",
             color=0x946C44,
         )
@@ -165,7 +166,7 @@ class MegaDrop(Drop):
         # Get the megadrop from the database
 
         self.embed = discord.Embed(
-            title="⚠️ THE MEGADROP HAS APPEARED ⚠️",
+            title=f"{emojis.icon('warn', '⚠️')} THE MEGADROP HAS APPEARED {emojis.icon('warn', '⚠️')}",
             description=f"This drop contains **{amount:,}** bits!!",
             color=0x946C44,
         )
@@ -244,7 +245,7 @@ class DropsCog(commands.Cog, name="Drops"):
     async def megadrop_status(self, interaction: discord.Interaction):
         """Check the current status of the Mega Drop"""
         megadrop = await queries.get_megadrop()
-        status_embed = discord.Embed(title="📦 MEGADROP STATUS 📦", color=0x45FFB1)
+        status_embed = discord.Embed(title=f"{emojis.icon('crate', '📦')} MEGADROP STATUS {emojis.icon('crate', '📦')}", color=0x45FFB1)
         status_embed.add_field(name="Current Pot", value=f"{megadrop.amount:,} bits")
         status_embed.add_field(
             name="Drops Cumulated",

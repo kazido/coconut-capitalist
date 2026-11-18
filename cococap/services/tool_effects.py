@@ -5,17 +5,18 @@ kind is in that skill's own rules."""
 
 from dataclasses import dataclass
 
+from cococap import emojis
 from cococap.registry import Registry, get_registry
 
 BASE_POWER = 3  # every tool starts here; the extras count only the points above it
 
 # one line on what power means for each kind (shown on the upgrade page)
 HOW = {
-    "pickaxe": "⛏️ Power = more ore per lode, slower pressure, more rich lodes and a spare brace now and then.",
-    "axe": "🪓 Power = a bigger bite out of a tree, more good chops, and spots that last longer.",
-    "rod": "🎣 Power = faster bites, more forgiven arrows, and rarer and extra fish.",
-    "can": "🚿 Power = more plots watered an hour, bigger harvests, more drops, and seeds that come back.",
-    "sword": "⚔️ Power = a harder hit, and a tougher you: more hp and defense in a fight.",
+    "pickaxe": f"{emojis.icon('pickaxe', '⛏️')} Power = more ore per lode, slower pressure, more rich lodes and a spare brace now and then.",
+    "axe": f"{emojis.icon('axe', '🪓')} Power = a bigger bite out of a tree, more good chops, and spots that last longer.",
+    "rod": f"{emojis.icon('rod', '🎣')} Power = faster bites, more forgiven arrows, and rarer and extra fish.",
+    "can": f"{emojis.icon('can', '🚿')} Power = more plots watered an hour, bigger harvests, more drops, and seeds that come back.",
+    "sword": f"{emojis.icon('sword', '⚔️')} Power = a harder hit, and a tougher you: more hp and defense in a fight.",
 }
 
 

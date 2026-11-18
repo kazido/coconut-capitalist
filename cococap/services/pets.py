@@ -58,11 +58,12 @@ def default_skill(pet: Pet) -> str:
     return "global"
 
 
-SKILL_EMOJI = {"global": "🌐", "mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishing": "🎣", "combat": "⚔️"}
+SKILL_EMOJI = {"global": ("world", "🌐"), "mining": ("pickaxe", "⛏️"), "farming": ("can", "🌽"), "foraging": ("tree", "🌳"), "fishing": ("rod", "🎣"), "combat": ("sword", "⚔️")}  # icon name, plain glyph
 
 
 def skill_emoji(pet: Pet) -> str:
-    return emojis.skill(pet.skill, SKILL_EMOJI[pet.skill])
+    name, glyph = SKILL_EMOJI[pet.skill]
+    return emojis.skill(pet.skill, emojis.icon(name, glyph))
 
 
 def food_xp(item: Item, registry: Registry | None = None) -> int:

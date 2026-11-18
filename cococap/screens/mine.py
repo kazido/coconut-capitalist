@@ -27,7 +27,11 @@ def _cursor() -> str: return emojis.icon("cursor", "🔻")
 def _soft() -> str: return emojis.icon("rock_soft", "🟫")
 def _firm() -> str: return emojis.icon("rock_firm", "🟧")
 def _hard() -> str: return emojis.icon("rock_hard", "🟥")  # the rock from above: soft (little pressure, copper), firm (iron), hard (a lot of pressure, the top ore)
-NOTCH = "▪️"
+NOTCH = "▪️"  # plain fallback kept for importers; mine.py itself draws _notch()
+
+
+def _notch() -> str:
+    return emojis.icon("pip", "▪️")
 def _milestone() -> str: return emojis.icon("milestone", "🏁")  # a landmark row: finish it and the tunnel is shored up
 def _vault() -> str: return emojis.icon("vault", "🏆")  # the last row: the vault is worth getting to
 def _magnet() -> str: return emojis.icon("magnet", "✨")
@@ -41,7 +45,7 @@ def _words() -> list[str]:
 
 
 def item_emoji(item_id: str) -> str:
-    return get_registry().item(item_id).emoji or "🟫"
+    return get_registry().item(item_id).emoji or emojis.icon('sq_brown', '🟫')
 
 
 def loot_lines(loot: Counter) -> str:
@@ -98,7 +102,7 @@ def render_shaft(run: mining.MineRun) -> str:
             for c in range(columns)
         ))
     if not run.finished:
-        header = [NOTCH] * columns
+        header = [_notch()] * columns
         for col in run.best_columns():
             header[col] = _magnet()
         for col in run.cursors:
@@ -143,7 +147,7 @@ HELP = (
 class MineScreen(Screen):
     id = "mine"
     label = "The Mines"
-    emoji = "⛏️"
+    emoji = emojis.Lazy("tool_pickaxe_rookie", "⛏️")
     description = "Dig deeper for rarer loot, but watch the danger meter"
     links = ("mining", "wyrmhole")
 
@@ -189,9 +193,9 @@ class MineScreen(Screen):
         if self.show_help:
             body.append(text(HELP.replace("cell_upgraded", _rich()).replace("wyrmhole:", f"{_hole()}:")))
         body.append(row(
-            button(emoji="⬅️", on_click=self._move(-1)),
+            button(emoji=emojis.icon('prev', '⬅️'), on_click=self._move(-1)),
             button("Dig", emoji=emojis.icon("pickaxe", "⛏️"), style=discord.ButtonStyle.primary, on_click=self._dig),
-            button(emoji="➡️", on_click=self._move(1)),
+            button(emoji=emojis.icon('next', '➡️'), on_click=self._move(1)),
         ))
         extra = [button(f"Brace ({run.braces})", emoji=emojis.icon("brace", "🛡️"), disabled=run.braces == 0 or run.danger == 0, on_click=self._brace)]
         if run.bombs or run.bombs_used:

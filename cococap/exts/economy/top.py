@@ -6,28 +6,33 @@ from discord.ext import commands
 
 from cococap.constants import BOT_ID
 from cococap.db import queries
+from cococap import emojis
 
 
 class TopCategories(Enum):
     # value, emoji, display name, leaderboard key (see cococap.db.queries.leaderboard), color
-    BITS = ("💸", "Bits", "bits", "0xbbd6ed")
-    LUCKBUCKS = ("🍀", "Luckbucks", "luckbucks", "0x47d858")
-    FARMING = ("🌽", "Farming", "skill:farming", "0x2f919e")
-    FORAGING = ("🌳", "Foraging", "skill:foraging", "0x2f9e47")
-    FISHING = ("🐟", "Fishing", "skill:fishing", "0x2f3a9e")
-    MINING = ("⛏️", "Mining", "skill:mining", "0x9e492f")
-    COMBAT = ("⚔️", "Combat", "skill:combat", "0x9e2f2f")
+    BITS = (("bits", "💸"), "Bits", "bits", "0xbbd6ed")
+    LUCKBUCKS = (("luckbucks", "🍀"), "Luckbucks", "luckbucks", "0x47d858")
+    FARMING = (("can", "🌽"), "Farming", "skill:farming", "0x2f919e")
+    FORAGING = (("tree", "🌳"), "Foraging", "skill:foraging", "0x2f9e47")
+    FISHING = (("fish", "🐟"), "Fishing", "skill:fishing", "0x2f3a9e")
+    MINING = (("pickaxe", "⛏️"), "Mining", "skill:mining", "0x9e492f")
+    COMBAT = (("sword", "⚔️"), "Combat", "skill:combat", "0x9e2f2f")
     # SHEPHERDING = ("🐑", "Shepherding", "skill:shepherding", "0x5f2f9e")  # TO BE ADDED
-    DROPS = ("📦", "Drops", "stat:drops_claimed", "0x8b9a9e")
+    DROPS = (("crate", "📦"), "Drops", "stat:drops_claimed", "0x8b9a9e")
 
     def __new__(cls, emoji, name, key: str, color):
         obj = object.__new__(cls)
         obj._value_ = name.lower()
-        obj.emoji = emoji
+        obj._icon = emoji
         obj.display_name = name
         obj.key = key
         obj.color = color
         return obj
+
+    @property
+    def emoji(self) -> str:
+        return emojis.icon(*self._icon)
 
     @classmethod
     def from_name(cls, name: str):
@@ -46,7 +51,8 @@ class TopCategories(Enum):
         return {"bits": "bits", "luckbucks": "luckbucks", "stat:drops_claimed": "drops claimed"}.get(self.key, "")
 
 
-MEDALS = ["🥇", "🥈", "🥉"]
+MEDALS = ["medal_gold", "medal_silver", "medal_bronze"]  # icon names, resolved when a board is drawn
+MEDAL_GLYPHS = ["🥇", "🥈", "🥉"]
 
 
 async def leaderboard_view(category: TopCategories, caller_id: int) -> tuple[str, str | None, str | None]:
@@ -55,7 +61,7 @@ async def leaderboard_view(category: TopCategories, caller_id: int) -> tuple[str
     top = await queries.leaderboard(category.key, limit=10, exclude=BOT_ID)
     lines, caller_listed = [], False
     for entry in top:
-        medal = MEDALS[entry.rank - 1] if entry.rank <= 3 else f"{entry.rank}."
+        medal = emojis.icon(MEDALS[entry.rank - 1], MEDAL_GLYPHS[entry.rank - 1]) if entry.rank <= 3 else f"{entry.rank}."
         if entry.discord_id == caller_id:
             caller_listed = True
             lines.append(f"{medal} **{entry.name} — {category.format(entry.value)} (you)**")

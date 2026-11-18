@@ -3,6 +3,7 @@ import random
 
 import discord
 
+from cococap import emojis
 from cococap.services import sequence
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
@@ -10,13 +11,16 @@ from cococap.ui.components import button, row, sep, text
 from .games import reward_line
 
 SHOW_SECONDS = 1.1  # one frame per element; Discord allows roughly 5 edits per 5 seconds
-BLANK = "⬛"
+
+
+def blank() -> str:
+    return emojis.icon("sq_black", "⬛")
 
 
 class SequenceScreen(Screen):
     id = "sequence"
     label = "Sequence"
-    emoji = "🧠"
+    emoji = emojis.Lazy("brain", "🧠")
     description = "Remember the pattern; it grows every round"
     links = ("minigames",)
 
@@ -24,7 +28,7 @@ class SequenceScreen(Screen):
         super().__init__(nav)
         self.game: sequence.SequenceGame | None = None
         self.phase = "choose"  # choose -> showing -> recall -> over
-        self.frame = BLANK
+        self.frame = blank()
         self.reward = None
         self.pause = SHOW_SECONDS  # tests set this to 0
 
@@ -52,9 +56,9 @@ class SequenceScreen(Screen):
             body += [text(f"Repeat the pattern ({game.index + 1}/{len(game.pattern)})\n{progress}"),
                      *self._option_rows()]
             return Page("Sequence", body, accent=0x3498DB)
-        body += [sep(), text(f"## 💥 Game over\nYou remembered **{game.score}** round(s). The pattern was:\n{' '.join(game.pattern)}"),
+        body += [sep(), text(f"## {emojis.icon('boom', '💥')} Game over\nYou remembered **{game.score}** round(s). The pattern was:\n{' '.join(game.pattern)}"),
                  text(reward_line(self.reward) or "Nothing earned this time."),
-                 row(button("Play again", emoji="🔁", style=discord.ButtonStyle.primary, on_click=self._reset))]
+                 row(button("Play again", emoji=emojis.icon("again", "🔁"), style=discord.ButtonStyle.primary, on_click=self._reset))]
         return Page("Sequence", body, accent=0xE74C3C)
 
     def _option_rows(self):
@@ -71,7 +75,7 @@ class SequenceScreen(Screen):
 
     async def _show(self, interaction: discord.Interaction, first: bool = False) -> None:
         """Flash the pattern one element at a time, then hand over to the player."""
-        self.phase, self.frame = "showing", BLANK
+        self.phase, self.frame = "showing", blank()
         if first:
             await self.refresh(interaction)
         else:
@@ -79,7 +83,7 @@ class SequenceScreen(Screen):
         previous = None
         for element in self.game.pattern:
             if element == previous:  # a blank frame so repeated elements are visibly separate
-                self.frame = BLANK
+                self.frame = blank()
                 await asyncio.sleep(self.pause)
                 await self.nav.update(interaction)
             self.frame = element
@@ -97,7 +101,7 @@ class SequenceScreen(Screen):
                 self.reward = await sequence.finish(self.user, self.game)
                 await self.refresh(interaction)
             elif result == "round":
-                await self.refresh(interaction, "✅ Pattern remembered! Here comes the next round...")
+                await self.refresh(interaction, f"{emojis.icon('check', '✅')} Pattern remembered! Here comes the next round...")
                 await asyncio.sleep(self.pause)
                 await self._show_next(interaction)
             else:

@@ -14,6 +14,7 @@ A `Battle` is driven by `start()` (runs until it is a player's turn) and then `p
 import random
 from dataclasses import dataclass, field
 
+from cococap import emojis
 from cococap.errors import GameRuleError
 from cococap.registry import Registry, get_registry
 from cococap.registry.models import BUFFS, CombatRules, CombatSkill, Enemy, Phase, SkillEffect
@@ -22,11 +23,25 @@ from cococap.user import User
 
 TIMED = frozenset({"attack_up", "attack_down", "defense_up", "defense_down", "speed_up", "speed_down", "stun", "bleed", "empower", "reveal"})
 STAT_PAIRS = {"attack": ("attack_up", "attack_down"), "defense": ("defense_up", "defense_down"), "speed": ("speed_up", "speed_down")}
-EFFECT_LABELS = {
-    "attack_up": "⬆️ Attack", "attack_down": "⬇️ Attack", "defense_up": "🛡️ Defense", "defense_down": "💔 Defense",
-    "speed_up": "⚡ Speed", "speed_down": "🐌 Slow", "stun": "💫 Stun", "bleed": "🩸 Bleed", "empower": "🔥 Primed",
-    "reveal": "👁️ Insight",
+_EFFECT_LABEL_PARTS = {  # effect -> (icon name, glyph fallback, label)
+    "attack_up": ("up", "⬆️", "Attack"), "attack_down": ("down", "⬇️", "Attack"), "defense_up": ("shield", "🛡️", "Defense"),
+    "defense_down": ("heart", "💔", "Defense"), "speed_up": ("bolt", "⚡", "Speed"), "speed_down": ("bug", "🐌", "Slow"),
+    "stun": ("sparkle", "💫", "Stun"), "bleed": ("blood", "🩸", "Bleed"), "empower": ("flame", "🔥", "Primed"), "reveal": ("eye", "👁️", "Insight"),
 }
+
+
+class _EffectLabels:
+    """EFFECT_LABELS[kind] / .get(kind): "<icon> Label", with the icon looked up when read (custom emoji load after import)."""
+
+    def __getitem__(self, kind: str) -> str:
+        name, glyph, label = _EFFECT_LABEL_PARTS[kind]
+        return f"{emojis.icon(name, glyph)} {label}"
+
+    def get(self, kind: str, default=None):
+        return self[kind] if kind in _EFFECT_LABEL_PARTS else default
+
+
+EFFECT_LABELS = _EffectLabels()
 
 
 class CombatError(GameRuleError):
@@ -57,7 +72,7 @@ class Unit:
     skills: list[str]
     hp: int = 0
     shield: int = 0
-    emoji: str = "🧑"
+    emoji: str = field(default_factory=lambda: emojis.icon("people", "🧑"))
     immune: frozenset[str] = frozenset()
     xp: int = 0
     meter: float = 0.0
@@ -179,7 +194,7 @@ class Battle:
         """Plan the enemies' first moves and run until it is the first player's turn."""
         for u in self.living("enemy"):
             u.next_skill = self._choose_skill(u)
-        self.log.append("⚔️ The fight begins!")
+        self.log.append(f"{emojis.icon('sword', '⚔️')} The fight begins!")
         self._advance()
 
     def play(self, skill_id: str, target_id: str | None = None) -> None:
@@ -213,7 +228,7 @@ class Battle:
                 break
             if self.turns >= self.rules.max_rounds:
                 self.outcome = "loss"
-                self.log.append("⌛ The fight dragged on too long. You retreat.")
+                self.log.append(f"{emojis.icon('timer', '⌛')} The fight dragged on too long. You retreat.")
                 break
             actor = self._next_actor()
             self.active = actor
@@ -241,14 +256,14 @@ class Battle:
         self.turns += 1
         for e in [e for e in actor.effects if e.kind == "bleed"]:
             actor.hp = max(0, actor.hp - round(e.value))
-            self.log.append(f"🩸 {actor.name} bleeds for **{round(e.value)}**.")
+            self.log.append(f"{emojis.icon('blood', '🩸')} {actor.name} bleeds for **{round(e.value)}**.")
             self._check_phase(actor)
         if not actor.alive:
-            self.log.append(f"💀 {actor.name} bled out.")
+            self.log.append(f"{emojis.icon('skull', '💀')} {actor.name} bled out.")
             actor.meter = 0
             return False
         if actor.has("stun"):
-            self.log.append(f"💫 {actor.name} is stunned and loses the turn.")
+            self.log.append(f"{emojis.icon('sparkle', '💫')} {actor.name} is stunned and loses the turn.")
             self._end_turn(actor)
             return False
         return True
@@ -290,10 +305,10 @@ class Battle:
             return
         if not self.living("enemy"):
             self.outcome = "win"
-            self.log.append("🏆 Victory!")
+            self.log.append(f"{emojis.icon('record', '🏆')} Victory!")
         elif not self.living("player"):
             self.outcome = "loss"
-            self.log.append("💀 You were defeated.")
+            self.log.append(f"{emojis.icon('skull', '💀')} You were defeated.")
 
     # --- skills ----------------------------------------------------------------------------------
     def _use(self, actor: Unit, skill: CombatSkill, targets: list[Unit]) -> None:
@@ -307,7 +322,7 @@ class Battle:
             if empower:
                 power *= empower.value
                 actor.effects.remove(empower)
-                self.log.append("🔥 The primed blade bites twice as deep!")
+                self.log.append(f"{emojis.icon('flame', '🔥')} The primed blade bites twice as deep!")
         for target in targets:
             for _ in range(skill.hits):
                 if power and target.alive:
@@ -329,11 +344,11 @@ class Battle:
         absorbed = min(target.shield, damage)
         target.shield -= absorbed
         target.hp = max(0, target.hp - (damage - absorbed))
-        tag = " 💥 **CRIT**" if crit else ""
+        tag = f" {emojis.icon('boom', '💥')} **CRIT**" if crit else ""
         shield = f" ({absorbed} absorbed)" if absorbed else ""
-        self.log.append(f"　→ {target.name} takes **{damage}**{shield}{tag}.")
+        self.log.append(f"　{emojis.icon('next', '→')} {target.name} takes **{damage}**{shield}{tag}.")
         if not target.alive:
-            self.log.append(f"　💀 {target.name} falls.")
+            self.log.append(f"　{emojis.icon('skull', '💀')} {target.name} falls.")
             target.meter = 0
         else:
             self._check_phase(target)
@@ -343,7 +358,7 @@ class Battle:
         while unit.alive and unit.phase < len(unit.phases) and unit.hp / unit.max_hp < unit.phases[unit.phase].below:
             phase = unit.phases[unit.phase]
             unit.phase += 1
-            self.log.append(f"🔥 **{unit.name}**: {phase.message}")
+            self.log.append(f"{emojis.icon('flame', '🔥')} **{unit.name}**: {phase.message}")
             if phase.skills:
                 unit.skills = list(phase.skills)
                 unit.cooldowns.clear()
@@ -353,24 +368,24 @@ class Battle:
 
     def _apply(self, effect: SkillEffect, caster: Unit, target: Unit) -> None:
         if effect.kind in target.immune:
-            self.log.append(f"　🚫 {target.name} is immune to {EFFECT_LABELS.get(effect.kind, effect.kind)}.")
+            self.log.append(f"　{emojis.icon('cross', '🚫')} {target.name} is immune to {EFFECT_LABELS.get(effect.kind, effect.kind)}.")
             return
         if self.rng.random() * 100 >= effect.chance:
-            self.log.append(f"　🙅 {target.name} resisted.")
+            self.log.append(f"　{emojis.icon('cross', '🙅')} {target.name} resisted.")
             return
         kind = effect.kind
         if kind == "heal":
             gained = min(target.max_hp - target.hp, round(target.max_hp * effect.value))
             target.hp += gained
-            self.log.append(f"　💚 {target.name} heals **{gained}**.")
+            self.log.append(f"　{emojis.icon('heart_green', '💚')} {target.name} heals **{gained}**.")
         elif kind == "shield":
             amount = round(caster.max_hp * effect.value)
             target.shield += amount
-            self.log.append(f"　🔰 {target.name} gains a **{amount}** shield.")
+            self.log.append(f"　{emojis.icon('shield', '🔰')} {target.name} gains a **{amount}** shield.")
         elif kind == "meter":
             full = self.rules.meter_full
             target.meter = min(float(full), max(0.0, target.meter + full * effect.value))
-            self.log.append(f"　{'⏩' if effect.value > 0 else '⏪'} {target.name}'s turn meter {'fills' if effect.value > 0 else 'drains'}.")
+            self.log.append(f"　{emojis.icon('next', '⏩') if effect.value > 0 else emojis.icon('prev', '⏪')} {target.name}'s turn meter {'fills' if effect.value > 0 else 'drains'}.")
         else:
             value = round(caster.eff_attack * effect.value) if kind == "bleed" else effect.value
             fresh = target is caster and self.active is caster

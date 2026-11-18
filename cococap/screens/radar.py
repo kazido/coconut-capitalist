@@ -14,7 +14,7 @@ class RadarScreen(Screen):
 
     id = "radar"
     label = "Radar"
-    emoji = "📡"
+    emoji = emojis.Lazy("ui_radar", "📡")
     description = "Make the fish you chase likelier"
     links = ("fish",)
 
@@ -25,15 +25,15 @@ class RadarScreen(Screen):
         level = User.xp_to_level((await self.user.skill("fishing")).xp)
         body = [*self.note_block()]
         if not view.unlocked:
-            body.append(text(f"### 📡 Radar\n🔒 The radar opens at **fishing level {rules.unlock_level}** (you are level {level})."))
+            body.append(text(f"### {emojis.icon('radar', '📡')} Radar\n{emojis.icon('lock', '🔒')} The radar opens at **fishing level {rules.unlock_level}** (you are level {level})."))
             return Page("Radar", body, accent=0x3A7CA5)
         if not view.level:
-            body.append(text("### 📡 Radar\nYou have not built one yet. A radar makes the fish you pick **several times likelier**, for a battery a cast. "
+            body.append(text(f"### {emojis.icon('radar', '📡')} Radar\nYou have not built one yet. A radar makes the fish you pick **several times likelier**, for a battery a cast. "
                              "It needs batteries from the shop (Fishing section)."))
         else:
-            body.append(text(f"### 📡 Radar  ·  level {view.level}/{len(rules.levels)}\n"
-                             f"Chased fish are **{view.multiplier:g}x** likelier  ·  **{view.slots}** target slot(s)  ·  🔋 **{view.batteries:,}** batteries\n"
-                             + ("🟢 **On**" if view.on else "⚪ **Off**") + (" (it uses one battery a cast, when a target lives in the water)" if view.on else "")))
+            body.append(text(f"### {emojis.icon('radar', '📡')} Radar  ·  level {view.level}/{len(rules.levels)}\n"
+                             f"Chased fish are **{view.multiplier:g}x** likelier  ·  **{view.slots}** target slot(s)  ·  {emojis.icon('battery', '🔋')} **{view.batteries:,}** batteries\n"
+                             + (f"{emojis.icon('dot_green', '🟢')} **On**" if view.on else f"{emojis.icon('dot_white', '⚪')} **Off**") + (" (it uses one battery a cast, when a target lives in the water)" if view.on else "")))
             open_waters = await fishing.open_waters(self.user, reg)
             fish = sorted({f for w in open_waters for f in w.fish}, key=lambda f: (-reg.item(f).rarity, reg.item(f).name))[:25]
             body.append(row(select(f"Chase up to {view.slots}...", [
@@ -71,7 +71,7 @@ class RadarScreen(Screen):
                 await fishing.set_radar(self.user, on=on)
             except FishingError as error:
                 return await self.refresh(interaction, str(error))
-            await self.refresh(interaction, "📡 Radar on." if on else "📡 Radar off.")
+            await self.refresh(interaction, f"{emojis.icon('radar', '📡')} Radar on." if on else f"{emojis.icon('radar', '📡')} Radar off.")
 
         return go
 
@@ -81,7 +81,7 @@ class RadarScreen(Screen):
         except FishingError as error:
             return await self.refresh(interaction, str(error))
         await self.user.refresh()
-        await self.refresh(interaction, f"📡 Your radar is level **{level}**!")
+        await self.refresh(interaction, f"{emojis.icon('radar', '📡')} Your radar is level **{level}**!")
 
     async def _back(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "fish")

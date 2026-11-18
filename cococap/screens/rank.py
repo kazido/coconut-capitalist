@@ -10,7 +10,7 @@ from cococap.ui.components import bits, button, section, sep, text
 class RankScreen(Screen):
     id = "rank"
     label = "Ranks"
-    emoji = "🏅"
+    emoji = emojis.Lazy("ui_medal", "🏅")
     description = "Spend tokens on a higher wage"
 
     async def build(self) -> Page:
@@ -23,7 +23,7 @@ class RankScreen(Screen):
             sep(),
         ]
         if nxt is None:
-            body.append(text("🏆 **You've reached the max rank!** Nice job!"))
+            body.append(text(f"{emojis.icon('record', '🏆')} **You've reached the max rank!** Nice job!"))
         else:
             affordable = self.user.tokens >= nxt.token_price
             body.append(

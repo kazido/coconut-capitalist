@@ -14,7 +14,7 @@ class MasteryScreen(Screen):
 
     id = "mastery"
     label = "Mastery"
-    emoji = "🌟"
+    emoji = emojis.Lazy("star", "🌟")
     description = "Spend mastery points on how you play a skill"
     links = ("mining", "fish", "farm", "forage")
 
@@ -36,7 +36,7 @@ class MasteryScreen(Screen):
             next_node = None
             for state in mastery.branch_state(branch, owned, level, free):
                 node = state.node
-                mark = "✅" if state.owned else "🔓" if state.available else "🔒"
+                mark = emojis.icon("check", "✅") if state.owned else emojis.icon("unlock", "🔓") if state.available else emojis.icon("lock", "🔒")
                 why = f"  *({state.reason})*" if state.reason and state.reason != "locked" and not state.owned else ""
                 lines.append(f"{mark} **{node.name}** · {node.cost}pt · lv{node.level} · {node.description}{why}")
                 if next_node is None and not state.owned:
@@ -48,7 +48,7 @@ class MasteryScreen(Screen):
         body += [sep(), *([row(*take)] if take else [])]
         body.append(row(*(button(skill.title(), emoji=emojis.skill(skill) or None, style=discord.ButtonStyle.primary if skill == self.skill else discord.ButtonStyle.secondary,
                                  on_click=self._switch(skill)) for skill in [t.skill for t in reg.mastery.trees]),
-                        button(f"Respec ({bits(reg.mastery.respec_bits)} bits)", emoji="♻️", disabled=not owned, on_click=self._respec)))
+                        button(f"Respec ({bits(reg.mastery.respec_bits)} bits)", emoji=emojis.icon("again", "♻️"), disabled=not owned, on_click=self._respec)))
         return Page("Mastery", body, accent=0xD4A017)
 
     def _take(self, node_id: str):
@@ -57,7 +57,7 @@ class MasteryScreen(Screen):
                 node = await mastery.buy(self.user, self.skill, node_id)
             except MasteryError as error:
                 return await self.refresh(interaction, str(error))
-            await self.refresh(interaction, f"🌟 You took **{node.name}**!")
+            await self.refresh(interaction, f"{emojis.icon('star', '🌟')} You took **{node.name}**!")
 
         return go
 
@@ -73,4 +73,4 @@ class MasteryScreen(Screen):
             given = await mastery.respec(self.user, self.skill)
         except MasteryError as error:
             return await self.refresh(interaction, str(error))
-        await self.refresh(interaction, f"♻️ Your tree is cleared: {given} point(s) back.")
+        await self.refresh(interaction, f"{emojis.icon('again', '♻️')} Your tree is cleared: {given} point(s) back.")
