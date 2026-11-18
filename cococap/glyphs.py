@@ -151,8 +151,11 @@ for _name, _chars in _GROUPS.items():
     for _g in re.findall(r"[^️‍][️]?", _chars):
         GLYPHS.setdefault(_g.replace("️", ""), _name)
 
+for _d in range(1, 9):  # keycap digits (a digit, VS16, U+20E3); built here because the splitter above would cut them apart
+    GLYPHS[f"{_d}⃣"] = f"num_{_d}"
+
 _KEYS = sorted(GLYPHS, key=len, reverse=True)
-_PATTERN = re.compile("(?:" + "|".join(re.escape(k) for k in _KEYS) + ")️?")
+_PATTERN = re.compile("(?:" + "|".join((re.escape(k[0]) + "️?" + re.escape(k[1:])) if len(k) == 2 and k[1] == "⃣" else re.escape(k) for k in _KEYS) + ")️?")
 
 
 def _name(glyph: str) -> str | None:
@@ -168,9 +171,26 @@ def custom_for(glyph: str) -> str | None:
     return found if found and found.startswith("<") else None
 
 
-def swap(text: str) -> str:
-    """`text` with every glyph that has an uploaded icon turned into that icon."""
-    return _PATTERN.sub(lambda m: custom_for(m.group(0)) or m.group(0), text) if text else text
+def swap(text: str, budget: list[int] | None = None) -> str:
+    """`text` with every glyph that has an uploaded icon turned into that icon.
+
+    `budget` (a one-item list: spare characters) caps how much longer the text may grow: once spent, the remaining glyphs stay plain.
+    """
+    if not text:
+        return text
+
+    def one(m: re.Match[str]) -> str:
+        custom = custom_for(m.group(0))
+        if not custom:
+            return m.group(0)
+        if budget is not None:
+            grow = len(custom) - len(m.group(0))
+            if grow > budget[0]:
+                return m.group(0)
+            budget[0] -= grow
+        return custom
+
+    return _PATTERN.sub(one, text)
 
 
 def strip(text: str) -> str:
@@ -192,8 +212,8 @@ def _plain_glyph(emoji: Any) -> str | None:
     return None
 
 
-def _walk(obj: Any, text: bool) -> Any:
-    """A copy of a Discord message payload with glyphs swapped. `text` False leaves message text alone (the size guard below)."""
+def _walk(obj: Any, text: list[int] | None) -> Any:
+    """A copy of a Discord message payload with glyphs swapped. `text` is the growth budget for message text (see `swap`)."""
     if isinstance(obj, list):
         return [_walk(v, text) for v in obj]
     if not isinstance(obj, dict):
@@ -206,8 +226,8 @@ def _walk(obj: Any, text: bool) -> Any:
             custom = custom_for(g)
             out[key] = _emoji_dict(custom) if custom else value
         elif key == "content" and isinstance(value, str):
-            out[key] = swap(value) if text else value
-        elif key in ("label", "placeholder", "description") and isinstance(value, str):
+            out[key] = swap(value, text)
+        elif (key in ("label", "placeholder", "description") or (key == "title" and "custom_id" in obj)) and isinstance(value, str):
             out[key] = strip(value)
         else:
             out[key] = _walk(value, text)
@@ -225,13 +245,13 @@ def _walk(obj: Any, text: bool) -> Any:
     return out
 
 
-def _embed(e: dict[str, Any], text: bool) -> dict[str, Any]:
+def _embed(e: dict[str, Any], text: list[int] | None) -> dict[str, Any]:
     out = dict(e)
     for key in ("title", "description"):
         if isinstance(e.get(key), str):
-            out[key] = swap(e[key]) if text else e[key]
+            out[key] = swap(e[key], text)
     out["fields"] = [
-        {**f, "name": swap(f.get("name", "")) if text else f.get("name"), "value": swap(f.get("value", "")) if text else f.get("value")}
+        {**f, "name": swap(f.get("name", ""), text), "value": swap(f.get("value", ""), text)}
         for f in e.get("fields", [])
     ] if "fields" in e else None
     if out["fields"] is None:
@@ -256,11 +276,9 @@ _TEXT_LIMIT = 3900
 
 
 def convert(payload: Any) -> Any:
-    """The payload with glyphs swapped for our icons (see the module doc). Never makes a message too long to send."""
-    swapped = _walk(payload, True)
-    if _text_size(swapped) > _TEXT_LIMIT >= _text_size(payload):
-        return _walk(payload, False)
-    return swapped
+    """The payload with glyphs swapped for our icons (see the module doc). Never makes a message too long to send: when the
+    icons would not all fit, the later glyphs stay plain."""
+    return _walk(payload, [max(0, _TEXT_LIMIT - _text_size(payload))])
 
 
 _installed = False
@@ -273,6 +291,26 @@ def install() -> None:
         return
     import discord.http as http
 
+    from discord.webhook.async_ import AsyncWebhookAdapter
+
+    def parts(form):
+        return [
+            {**part, "value": json.dumps(convert(json.loads(part["value"])))} if part.get("name") == "payload_json" else part
+            for part in form
+        ]
+
+    # Button clicks and slash replies (interaction callbacks, followups, edit-original) use the webhook adapter, not the HTTP client.
+    original_hook = AsyncWebhookAdapter.request
+
+    async def hook_request(self, route, session, *, payload=None, multipart=None, **kwargs):
+        if isinstance(payload, (dict, list)):
+            payload = convert(payload)
+        if multipart:
+            multipart = parts(multipart)
+        return await original_hook(self, route, session, payload=payload, multipart=multipart, **kwargs)
+
+    AsyncWebhookAdapter.request = hook_request  # type: ignore[method-assign]
+
     original = http.HTTPClient.request
 
     async def request(self, route, *, files=None, form=None, **kwargs):
@@ -281,10 +319,7 @@ def install() -> None:
             if "json" in kwargs and isinstance(kwargs["json"], (dict, list)):
                 kwargs["json"] = convert(kwargs["json"])
             if form:
-                form = [
-                    {**part, "value": json.dumps(convert(json.loads(part["value"])))} if part.get("name") == "payload_json" else part
-                    for part in form
-                ]
+                form = parts(form)
         return await original(self, route, files=files, form=form, **kwargs)
 
     http.HTTPClient.request = request  # type: ignore[method-assign]

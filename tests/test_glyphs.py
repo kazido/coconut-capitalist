@@ -28,6 +28,16 @@ def loaded():
     emojis.load([])
 
 
+def test_no_joined_or_odd_emoji_sequences_in_the_code():
+    """A zero width joiner sequence (🧟‍♂️) would be swapped only in part, leaving a stray plain glyph."""
+    bad = {}
+    for folder in ("cococap", "configs"):
+        for path in (ROOT / folder).rglob("*"):
+            if path.suffix in (".py", ".toml") and path.name != "glyphs.py" and "‍" in path.read_text(encoding="utf8"):
+                bad[path.name] = "contains a zero width joiner"
+    assert not bad, bad
+
+
 def test_every_glyph_in_the_code_has_an_icon():
     missing = {}
     for folder in ("cococap", "utils"):
@@ -79,11 +89,6 @@ def test_text_and_embeds_are_swapped(loaded):
     assert out["embeds"][0]["footer"]["text"] == "foot"
 
 
-def test_a_huge_panel_keeps_plain_glyphs_instead_of_going_over_the_limit(loaded):
-    text = "🏆" * 400  # 800 chars as glyphs, far more as mentions
-    assert glyphs.convert({"content": text})["content"] == text
-
-
 def _leftover_glyphs(payload) -> set[str]:
     """Mapped glyphs still present in the text, labels or emoji of a converted payload."""
     found: set[str] = set()
@@ -121,3 +126,26 @@ async def test_no_screen_shows_a_plain_emoji_once_the_icons_are_uploaded(db):
     finally:
         emojis.load([])
     assert not left, left
+
+
+def test_keycap_digits_map_but_plain_digits_do_not(loaded):
+    assert glyphs.swap("3️⃣ and 3") == f"{emojis.icon('num_3')} and 3"
+
+
+def test_the_interaction_reply_path_is_hooked_too():
+    """Button clicks and slash replies use discord.py's webhook adapter, not the HTTP client: both must swap."""
+    from discord.webhook.async_ import AsyncWebhookAdapter
+
+    glyphs.install()
+    assert AsyncWebhookAdapter.request.__name__ == "hook_request"
+
+
+def test_a_long_message_keeps_what_fits_and_stays_under_the_limit(loaded):
+    payload = {"content": "🏆" * 400}
+    out = glyphs.convert(payload)["content"]
+    assert len(out) <= 3900 and "🏆" in out and emojis.icon("record") in out
+
+
+def test_modal_titles_lose_glyphs(loaded):
+    out = glyphs.convert({"type": 9, "data": {"title": "🏆 Name it", "custom_id": "m", "components": []}})
+    assert out["data"]["title"] == "Name it"
