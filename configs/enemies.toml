@@ -14,7 +14,7 @@ drop_chance = 60
 
 [armored_zombie]
 name = "Armored Zombie"
-emoji = "🧟‍♂️"
+emoji = "🧟"
 attack = 12
 hp = 90
 shield = 60

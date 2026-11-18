@@ -672,3 +672,173 @@ rows = [
   "oefffffffffffffo",
   ".oooooooooooooo.",
 ]
+
+# Keycap digits for the sequence game (generated: blue tile, white 3x5 digit scaled 2x).
+
+[ui_num_1]
+palette = { o = "#2e1c2c", a = "#9bc4ff", b = "#4070e0", c = "#264a98", w = "#ffffff" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbwwwwbbbbbco",
+  "oabbbwwwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbwwwwwwbbbco",
+  "oabbbwwwwwwbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_num_2]
+palette = { o = "#2e1c2c", a = "#9bc4ff", b = "#4070e0", c = "#264a98", w = "#ffffff" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbwwwwbbbbbco",
+  "oabbbwwwwbbbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbwwbbbbbbbco",
+  "oabbbwwbbbbbbbco",
+  "oabbbwwwwwwbbbco",
+  "oabbbwwwwwwbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_num_3]
+palette = { o = "#2e1c2c", a = "#9bc4ff", b = "#4070e0", c = "#264a98", w = "#ffffff" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbwwwwbbbbbco",
+  "oabbbwwwwbbbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbwwwwbbbbbco",
+  "oabbbwwwwbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_num_4]
+palette = { o = "#2e1c2c", a = "#9bc4ff", b = "#4070e0", c = "#264a98", w = "#ffffff" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbwwbbwwbbbco",
+  "oabbbwwbbwwbbbco",
+  "oabbbwwbbwwbbbco",
+  "oabbbwwbbwwbbbco",
+  "oabbbwwwwwwbbbco",
+  "oabbbwwwwwwbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbbbbbwwbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_num_5]
+palette = { o = "#2e1c2c", a = "#9bc4ff", b = "#4070e0", c = "#264a98", w = "#ffffff" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbwwwwwwbbbco",
+  "oabbbwwwwwwbbbco",
+  "oabbbwwbbbbbbbco",
+  "oabbbwwbbbbbbbco",
+  "oabbbwwwwbbbbbco",
+  "oabbbwwwwbbbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbwwwwbbbbbco",
+  "oabbbwwwwbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_num_6]
+palette = { o = "#2e1c2c", a = "#9bc4ff", b = "#4070e0", c = "#264a98", w = "#ffffff" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbwwwwbbbco",
+  "oabbbbbwwwwbbbco",
+  "oabbbwwbbbbbbbco",
+  "oabbbwwbbbbbbbco",
+  "oabbbwwwwbbbbbco",
+  "oabbbwwwwbbbbbco",
+  "oabbbwwbbwwbbbco",
+  "oabbbwwbbwwbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_num_7]
+palette = { o = "#2e1c2c", a = "#9bc4ff", b = "#4070e0", c = "#264a98", w = "#ffffff" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbwwwwwwbbbco",
+  "oabbbwwwwwwbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbbbbbwwbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
+
+[ui_num_8]
+palette = { o = "#2e1c2c", a = "#9bc4ff", b = "#4070e0", c = "#264a98", w = "#ffffff" }
+rows = [
+  "..oooooooooooo..",
+  ".oaaaaaaaaaaabo.",
+  "oabbbbbbbbbbbbbo",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbwwbbwwbbbco",
+  "oabbbwwbbwwbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbwwbbwwbbbco",
+  "oabbbwwbbwwbbbco",
+  "oabbbbbwwbbbbbco",
+  "oabbbbbwwbbbbbco",
+  "obbbbbbbbbbbbbco",
+  ".obccccccccccco.",
+  "..oooooooooooo..",
+]
