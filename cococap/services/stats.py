@@ -14,7 +14,6 @@ class StatPage:
     title: str
     emoji: str
     groups: list[tuple[str, list[tuple[str, int | str]]]]  # [(group name, [(label, value)])]
-    note: str = ""  # a line under the title, e.g. which counters only count from the day they were added
 
 
 def seen(stats: dict[str, int], name: str, seed: int = 0) -> int:
@@ -23,7 +22,7 @@ def seen(stats: dict[str, int], name: str, seed: int = 0) -> int:
 
 
 # One page per skill, built by services/stats_<name>.py (`async def page(user, stats) -> StatPage`). A page reads numbers the game already stores
-# directly (so existing players keep theirs) and counters that only exist from the update on (and say so in `note`).
+# directly (so existing players keep theirs) and counters that only exist from the update on (they start at 0, silently).
 PAGE_MODULES = ("mining", "fishing", "foraging", "farming", "pets", "shipments", "casino")
 
 

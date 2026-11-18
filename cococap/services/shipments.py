@@ -269,6 +269,8 @@ async def ship(user: User, slot_id: str, registry: Registry | None = None) -> Sh
             await user.add_xp(skill, amount)
         paid[skill] = amount
     await user.inc_stat("shipments_shipped")
+    await user.inc_stat(f"shipped_{crate.theme}")  # for the Shipments stats page (per skill, from this update on)
+    await user.inc_stat("shipment_bits", bits)
     return Shipped(crate.theme, bits, paid)
 
 
