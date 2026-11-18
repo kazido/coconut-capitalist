@@ -1381,6 +1381,8 @@ class ShipmentTier(_Data):
 
 class PersonalShipments(_Data):
     rate_per_level: int = Field(ge=1)
+    foreign_share: float = Field(ge=0, lt=0.5)  # the share of a crate's value that may come from OTHER skills' materials, all together
+    foreign_max_quantity: int = Field(ge=1)  # the most of any one foreign material (so it is never a pile of the cheapest thing)
     tiers: dict[str, ShipmentTier] = Field(min_length=1)  # in page order: basic first
 
 

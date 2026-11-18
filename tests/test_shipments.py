@@ -322,3 +322,20 @@ async def test_higher_level_players_are_asked_for_more(db):
     high = await activity.recent_players(sh.SKILLS, 7, NOW)
     assert low == (1, 1.0) and high[0] == 1 and high[1] > 5
     assert await activity.recent_players(sh.SKILLS, 7, NOW + 30 * 86400) == (0, 0.0)
+
+
+def test_the_home_skills_materials_are_the_bulk_of_every_crate_and_the_rest_is_small_and_varied():
+    """A foraging crate is mostly foraging finds; other skills add a small, varied slice (never a pile of the same cheap ore)."""
+    for tier in P.tiers:
+        for skill in sh.SKILLS:
+            foreign_seen = set()
+            for seed in range(120):
+                crate = sh.make_shipment(Random(seed), skill, LEVELS(unlock := P.tiers[tier].unlock_level), REG, tier)
+                total = sh.worth(crate.need, REG)
+                home = sum(REG.item(i).sell_price * q for i, q in crate.need.items() if REG.item(i).skill == skill)
+                assert home / total >= 0.7, (skill, tier, seed, crate.need)
+                for i, q in crate.need.items():
+                    if REG.item(i).skill != skill:
+                        foreign_seen.add(i)
+                        assert q <= P.foreign_max_quantity, (skill, tier, i, q)
+            assert len(foreign_seen) >= 6, (skill, tier, foreign_seen)  # varied: not the same one or two materials every time

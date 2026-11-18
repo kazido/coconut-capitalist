@@ -80,18 +80,27 @@ def make_shipment(rng: random.Random, theme: str, levels: dict[str, int], regist
     p = reg.shipments.personal
     t = p.tiers[tier]
     total = t.value_base + t.value_per_level * levels[theme]
-    per_kind = total / t.kinds
+    foreign_kinds = t.kinds - t.theme_kinds
+    # The home skill is the bulk: its kinds share (1 - foreign_share) of the value, the other skills' kinds only a small, varied slice.
+    home_value = total * (1 - p.foreign_share) / t.theme_kinds
+    foreign_value = total * p.foreign_share / foreign_kinds
     others = [s for s in SKILLS if s != theme]
-    skills = [theme] * t.theme_kinds + [rng.choice(others) for _ in range(t.kinds - t.theme_kinds)]
     need: dict[str, int] = {}
-    for skill in skills:
-        options = [i for i in pool(skill, levels.get(skill, 1), reg, round(per_kind * 3), round(per_kind / MAX_QUANTITY)) if i.id not in need]
+
+    def add(skill: str, per_kind: float, cheapest: int, most: int = 10**9) -> None:
+        level = levels.get(skill, 1)
+        options = [i for i in pool(skill, level, reg, round(per_kind * 3), cheapest) if i.id not in need]
         if not options:  # (a low level with little to choose from: allow cheaper things first, and only then rarer ones, rather than ask for nothing)
-            options = [i for i in pool(skill, levels.get(skill, 1), reg, round(per_kind * 3)) if i.id not in need]
+            options = [i for i in pool(skill, level, reg, round(per_kind * 3)) if i.id not in need]
         if not options:
             options = [i for i in pool(skill, 100, reg, round(per_kind * 3)) if i.id not in need]
         item = rng.choice(options)
-        need[item.id] = max(1, round(per_kind / item.sell_price))
+        need[item.id] = min(most, max(1, round(per_kind / item.sell_price)))  # (a cap, so even the cheapest fallback is never a pile)
+
+    for _ in range(t.theme_kinds):
+        add(theme, home_value, round(home_value / MAX_QUANTITY))
+    for skill in rng.sample(others, min(foreign_kinds, len(others))) + [rng.choice(others) for _ in range(max(0, foreign_kinds - len(others)))]:
+        add(skill, foreign_value, round(foreign_value / p.foreign_max_quantity), p.foreign_max_quantity)  # (a different skill each time, so it is not always the same ore)
     return Shipment(theme, need, tier=tier)
 
 
