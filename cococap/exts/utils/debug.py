@@ -141,7 +141,15 @@ class DebuggingCommands(commands.Cog, name="Debugging Commands"):
 
     @commands.command(name="sync")
     async def sync(self, ctx, scope: str = None):
-        if scope == "global":
+        if scope == "clean":
+            # Fixes "every command shows twice": commands were synced BOTH globally and to this guild. Keep the guild copy, remove the global one.
+            guild = ctx.guild
+            self.bot.tree.copy_global_to(guild=guild)
+            await self.bot.tree.sync(guild=guild)
+            self.bot.tree.clear_commands(guild=None)  # (in memory; the next start loads them again)
+            await self.bot.tree.sync()  # an empty global list removes the global copies from Discord
+            embed = SuccessEmbed(title="Cleaned", desc="Commands now exist only in this server. Restart the bot, then use `sync` (no argument) from now on. It can take a minute for Discord to drop the duplicates.")
+        elif scope == "global":
             sync = await self.bot.tree.sync()
             embed = discord.Embed(
                 title="Syncing...",
