@@ -184,6 +184,7 @@ class MineRun:
         self.cells_mined = 0
         self.auto_counter = 0  # rows dug since the last Auto-Bomb
         self.bombs_used = 0
+        self.vents_dug = self.braces_used = self.magnet_rows = 0  # for the Mining stats page (settle_run banks them)
         self.xp_awarded = 0
         self.last_risk = self.last_pressure = 0.0
         self.wyrmhole_odds = wyrmhole_odds_value or rules.wyrmhole.odds
@@ -407,6 +408,7 @@ class MineRun:
                 found[self.rng.choice(self.geode_gems)] += 1
             hardness += self.hardness(cells[col]) * self.site.hardness_mult  # (the soft/firm/hard hint stays the same: it is the ore's own rock)
         self.haul.update(found)
+        self.vents_dug += vents
         self.lodes += len(columns)
         self.history.append(DugRow(self.depth, list(cells), tuple(columns), self.signs(self.depth)))
         return found, vents, caches, hardness
@@ -469,6 +471,7 @@ class MineRun:
             return self._blow(auto=True)
         if self.magnet_active:  # the magnet marked this row, so it burns some of its meter
             self.magnet_used += self.magnet_drain
+            self.magnet_rows += 1
         self.last_risk, self.last_pressure = self.risk, self.danger  # kept for the log when something goes wrong
         saved: Counter[str] | None = None
         if self.rng.random() < self.risk:
@@ -518,6 +521,7 @@ class MineRun:
         if self.braces <= 0:
             raise MiningError("You're out of braces.")
         self.braces -= 1
+        self.braces_used += 1
         self.danger = max(0.0, self.danger - self.rules.descent.brace_amount)
 
     def leave(self) -> None:
@@ -795,8 +799,43 @@ async def settle_run(user: User, run: MineRun, registry: Registry | None = None)
             m.lifeline_wait -= 1
 
     await user.update_skill("mining", record)
+    await _record_run_stats(user, run, registry or get_registry())
     _LIVE_RUNS.pop(user.id, None)
     return summary
+
+
+async def _record_run_stats(user: User, run: MineRun, registry: Registry) -> None:
+    """Count what this mine did, for the Mining stats page. Called once per run from settle_run, so each counter is written once per run.
+    Only nonzero counts are written; a counter with no row reads as 0 (these are new, so nothing older to backfill)."""
+    counts: Counter[str] = Counter({"mining_mines_entered": 1})
+    if run.outcome == "left":
+        counts["mining_safe_exits"] += 1
+    if run.outcome == "collapse":
+        counts["mining_collapses"] += 1
+    if run.outcome == "floor":
+        counts["mining_vault_floors"] += 1
+    if run.outcome in ("wyrmhole", "mini_wyrmhole"):
+        counts["mining_wyrmholes_found"] += 1
+    if run.lifeline_fired:
+        counts["mining_lifeline_saves"] += 1
+    counts["mining_vents_dug"] += run.vents_dug
+    counts["mining_braces_used"] += run.braces_used
+    counts["mining_bombs_used"] += run.bombs_used
+    counts["mining_magnet_rows"] += run.magnet_rows
+    bits = 0
+    implosion = run.rules.wyrmhole.implosion_item
+    for item_id, quantity in run.haul.items():
+        item = registry.item(item_id)
+        bits += item.sell_price * quantity
+        if item_id == implosion:
+            counts["mining_implosion_gems"] += quantity
+        elif item.category == "material" and item.skill == "mining":
+            counts[f"mining_ore_{item_id}"] += quantity  # one counter per ore id; the page groups them
+    for name, amount in counts.items():
+        if amount:
+            await user.inc_stat(name, amount)
+    await user.stat_best("mining_deepest_row", run.depth)
+    await user.stat_best("mining_biggest_haul", bits)
 
 
 async def abandon_run(user: User, run: MineRun, registry: Registry | None = None) -> None:
