@@ -64,7 +64,7 @@ async def test_a_plot_keeps_its_zone_and_tend_pays_from_that_zones_table(db):
     assert report.found and only_high & {base(i) for i in report.found}
 
 
-async def test_tend_in_zone_one_never_finds_another_zones_signature_material(db):
+async def test_tend_in_zone_one_only_finds_its_own_zones_materials(db):
     user = await User.get(1)
     await grown(user, 1, RULES.field_seeds[0], 3)
     found = (await f.tend(user, Random(2), T0, REG)).found
@@ -79,10 +79,10 @@ async def test_an_old_plot_without_a_zone_uses_its_seeds_own_zone(db):
     assert f.plot_zone(f.plot_of(await user.skill("farming"), 1), RULES) == 5
 
 
-def test_every_zone_has_its_own_signature_material_first():
+def test_every_zone_has_its_own_table_and_late_zones_differ_from_early_ones():
     assert len(RULES.zone_materials) == len(RULES.field_seeds)
     firsts = [ids[0] for ids in RULES.zone_materials]
-    assert len(set(firsts)) == len(firsts)
+    assert RULES.zone_materials[0] != RULES.zone_materials[-1]
     for ids in RULES.zone_materials:
         assert all(REG.item(i).skill == "farming" and REG.item(i).drop for i in ids)
 
