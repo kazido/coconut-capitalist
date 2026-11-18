@@ -143,7 +143,7 @@ from dataclasses import dataclass, field  # noqa: E402
 from cococap.id_rename import ITEMS  # noqa: E402
 from cococap.models.skills.base import Skill  # noqa: E402
 
-# Item ids that were renamed when the item registry was introduced (docs/AUDIT.md).
+# Item ids that were renamed when the item registry was introduced.
 ITEM_ID_ALIASES = {
     "sanity": "sanity_gemstone",
     "rage": "rage_gemstone",

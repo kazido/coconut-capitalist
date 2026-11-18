@@ -37,7 +37,7 @@ GUILD_ID = int(os.getenv("GUILD_ID", "856915776345866240"))
 
 # Extensions that still depend on the pre-migration SQLite/peewee item database (`Master`,
 # `cococap.item_models`, `get_items_from_db`) or on removed helpers. They are skipped at startup
-# instead of failing noisily; remove an entry once its module has been ported. See docs/AUDIT.md.
+# instead of failing noisily; remove an entry once its module has been ported.
 DISABLED_EXTENSIONS: frozenset[str] = frozenset()  # extensions skipped at startup (none right now)
 
 # Discord ID of the bot's owner/admin (receives reports, may use the debug commands).

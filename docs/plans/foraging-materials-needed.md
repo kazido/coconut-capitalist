@@ -1,7 +1,7 @@
 # Foraging materials: what the designer needs to come up with
 
 Foraging is the thinnest skill for materials. The cull (commit 1a51fb4) removed the 18 species drops and golden pollen, so a forest has
-almost nothing to find. With 14 forests (2 per area, see `areas-and-ship.md`) we need more things for foraging to drop and for other
+almost nothing to find. With 14 forests (2 per area, see `configs/areas.toml`) we need more things for foraging to drop and for other
 systems to ask for. Placeholders will be used until these exist.
 
 ## What exists now (foraging items)

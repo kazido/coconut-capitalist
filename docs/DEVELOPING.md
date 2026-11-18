@@ -63,7 +63,7 @@ Rules of thumb:
 reference slice; port the remaining skills (farming, foraging, fishing, combat) the same way.
 Extensions still waiting for a port are listed in `constants.DISABLED_EXTENSIONS` and skipped at startup.
 
-See [AUDIT.md](AUDIT.md) for the full architecture review, known issues and roadmap.
+The long history of why things are built this way is in git (`git log`) and `docs/DESIGN.md`.
 
 ## Database
 
@@ -84,3 +84,15 @@ uv pip install -e ".[mongo-import]"
 python -m scripts.import_mongo --uri "mongodb+srv://..." --db discordbot           # report only
 python -m scripts.import_mongo --uri "mongodb+srv://..." --db discordbot --write   # create data/cococap.db
 ```
+
+## Moving to a new machine (2026-11-16: the owner moved from the Mac to a PC for good)
+
+Git carries the code, configs, art sources and docs. It does NOT carry these; copy them by hand if you need them:
+- `.env` (BOT_TOKEN; use the token of the SAME Discord application the bot runs as: emoji belong to one application).
+- `data/cococap.db` (the player database; back it up first) and `data/backups/`.
+- `configs/local/*.toml` (the owner's private balance tuning, git-ignored).
+- `art/out/` (built emoji; zip made with `cd art/out && zip -r ../emoji-out.zip . -x "sheets/*"`), `art/local.toml` and `art/vendor/` (the Raven Fantasy Icons pack and an atlas of it,
+  local only because of its license; without them `python -m art.build` skips the ~110 Raven-mapped items).
+- the owner's untracked `ideas` notes file (its open items are copied into "Open work" below).
+
+Secrets: never write tokens or DB logins into files, docs or commits. The one-time old-player migration (`scripts/import_mongo.py`: copy only rank + tokens, give pet owners one basic pet, leave the rest fresh) waits on a working Mongo login.

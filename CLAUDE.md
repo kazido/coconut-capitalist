@@ -4,8 +4,8 @@ A Discord game bot (discord.py 2.7, Components V2). Skills (mining, fishing, for
 trading, parties, casino and minigames, one shared economy. Everything below is the short version; the long ones are in `docs/`.
 
 > **Usage tip:** this file is loaded every turn, so it is deliberately lean. Do NOT read `docs/` files up front. Look things up on demand:
-> `docs/HANDOFF.md` (current state; read only its "Latest state" part when resuming work), `docs/DESIGN.md` (HUGE, ~120 KB: Grep for the system's
-> heading, then read only that section), `docs/ROADMAP.md`, `docs/AUDIT.md` (history, rarely needed). Plans for new work go in `docs/plans/`.
+> `docs/STATUS.md` (current state, short; read it when resuming work), `docs/DESIGN.md` (HUGE, ~120 KB: Grep for the system's
+> heading, then read only that section), `docs/IDEAS.md` (the user's inbox). Plans for new work go in `docs/plans/` (one file each, with a `Status:` line). **Staleness rule:** when work merges, in the same commit delete its plan, remove its line from STATUS.md and fix any doc it made wrong. History lives in git, not in docs.
 
 ## Team (automatic delegation; the user pre-approved this, no need to ask)
 
@@ -108,7 +108,7 @@ add the id to any test list that enumerates a category (e.g. `FOODS` in `tests/t
 **A new feature goes into an existing page as a tab or dropdown, not a new screen** (`cococap/ui/tabs.py`: `TabsScreen` hosts unregistered `Screen` panes behind one dropdown; open a tab with `go(i, "page", tab="x")`; see `screens/player.py`). Only add a registered screen for a genuinely new top-level area.
 **A new screen**: subclass `Screen` in `cococap/screens/`, set `id/label/emoji/description/links`, import it in `screens/__init__.py`, link it from
 Home/More/another screen. `tests/test_hub.py::test_every_screen_renders_valid_layout_within_discord_limits` covers layout limits automatically.
-**A new rule/system**: service module (no discord) + registry model + config TOML + screen + tests + DESIGN.md section + HANDOFF "Latest state".
+**A new rule/system**: service module (no discord) + registry model + config TOML + screen + tests + DESIGN.md section + STATUS.md line.
 **A DB change**: new Alembic migration in `migrations/versions/` (and update `cococap/db/tables.py`); `tests/test_db_migrations.py` checks the schema matches.
 **A balance change**: edit the TOML, run `scripts.balance` or the relevant guard test, never hard-code the number in a test.
 

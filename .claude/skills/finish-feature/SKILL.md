@@ -10,7 +10,7 @@ description: Wrap up a Coconut Capitalist change safely: lint, run the tests tha
 2. Lint: `.venv/bin/ruff check .` must say "All checks passed!".
 3. Tests: run only the files that cover what changed (`.venv/bin/python -m pytest -q tests/test_x.py`). Run the full suite only if the user asked,
    something they reported is broken, or the change touched shared code (registry models, `User`, nav/ui, db). Say which you ran.
-4. Docs: append/refresh a `docs/DESIGN.md` section for a new system or rule; update the "Latest state" part of `docs/HANDOFF.md` and the checklists in
+4. Docs: append/refresh a `docs/DESIGN.md` section for a new system or rule; update `docs/STATUS.md` (add/remove its line), delete the feature's plan in `docs/plans/` if it is fully built, and update the checklists in
    `CLAUDE.md` if the way of working changed.
 5. Commit on `claude/discord-bot-audit-modernize-4dd6c5` with a message that says what the player will notice, ending with the attribution line the
    harness provides. Do NOT push unless the user said so.

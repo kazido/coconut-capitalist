@@ -4,7 +4,7 @@
 Upgrades should eventually need higher-quality materials. The user's decisions:
 - Stars are quality tiers 1★/2★/3★. Each tier is its OWN inventory slot (1★ and 2★ never stack), so players can bulk-sell lower stars once they are past that stage.
 - Stars can NOT be crafted up. They only drop.
-- Higher stars depend on the LOCATION, never on depth: each skill moves between locations (forests, waters, ...; see docs/plans/areas-and-ship.md) and only the later locations drop higher stars. 2★ can drop early but rarely; by mid-progression (e.g. foraging forest 10 of 14) 2★ is the main drop. 3★ is never the majority drop anywhere.
+- Higher stars depend on the LOCATION, never on depth: each skill moves between locations (forests, waters, ...; see `configs/areas.toml`) and only the later locations drop higher stars. 2★ can drop early but rarely; by mid-progression (e.g. foraging forest 10 of 14) 2★ is the main drop. 3★ is never the majority drop anywhere.
 - Only LATER upgrades (the fork and top tiers) ask for 2★/3★ materials. Early upgrades stay plain.
 - Rename foraging "zones" to "forests" (player-facing text only; keep code identifiers).
 
@@ -20,7 +20,7 @@ Table = per progress step, weights for 1★/2★/3★, e.g. step 1: 97/3/0; mid:
 
 **Upgrade costs.** `ToolUpgrade.items` keys may be `<id>_s2`/`<id>_s3`; `upgrades._missing` already reads by id so it works unchanged. Edit late-chain tools in `configs/items.toml` (fork and top tiers) to swap part of the plain cost for 2★/3★. Numbers go through `scripts.balance` / `balance-check` so each skill's time-to-upgrade stays equal.
 
-**UI.** Names show stars (★ text now; art stars stay paused per HANDOFF). Sell-all keeps working per id; the "keep upgrade materials" rule already holds back per item id, so lower stars not needed by any owned tool's next upgrade can be sold in bulk. Wiki/shop list the variants under the base item.
+**UI.** Names show stars (★ text now; art stars stay paused). Sell-all keeps working per id; the "keep upgrade materials" rule already holds back per item id, so lower stars not needed by any owned tool's next upgrade can be sold in bulk. Wiki/shop list the variants under the base item.
 
 ## Steps (each bounded, delegable)
 1. TODO Rename zone -> forest in player-facing text (screens/forage.py still has 33 "zone" mentions). Small, separate commit.
