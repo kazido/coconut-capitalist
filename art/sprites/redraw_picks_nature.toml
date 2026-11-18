@@ -22,28 +22,6 @@ rows = [
   "oooo............",
 ]
 
-[tool_scarab_bomb]
-rarity = 4
-palette = { w = "#ffffff", h = "#6b5c9a", m = "#3d3363", s = "#241c42", d = "#140f28", Y = "#ffd24a", y = "#fff2a0", g = "#b9761c", e = "#e89a2c", t = "#8a8aa8", T = "#55557a", f = "#b08a5a", q = "#ff9a2a", x = "#ffe14a", o = "#2e1c2c" }
-rows = [
-  "...........oo...",
-  ".........ooqxo..",
-  ".......ooffoo...",
-  ".....ootToo.....",
-  "....ohhhhhmo....",
-  "...ohhhhhhmmo...",
-  "..ohhwwhhhmmso..",
-  "..ohhwhhhhmmso..",
-  "..ohhhhhghmmso..",
-  "..ohhhhgYgmmmo..",
-  "..omhhheyemsmo..",
-  "..ommmmmgmsmmo..",
-  "...ommmmssmmo...",
-  "....osssmmmo....",
-  ".....oooooo.....",
-  "................",
-]
-
 [material_compost]
 rarity = 1
 palette = { w = "#ffffff", h = "#6c4a3c", m = "#4a3028", s = "#35201f", d = "#241418", x = "#8a6a48", l = "#7cc04c", L = "#3f8a3c", v = "#2f6a38", o = "#2e1c2c", O = "#e0701c", e = "#f4ecd8", E = "#c8bca0" }
@@ -110,28 +88,6 @@ rows = [
   "................",
 ]
 
-[material_maple_leaf]
-rarity = 4
-palette = { w = "#ffb060", l = "#f0703a", r = "#d23a2a", R = "#8c1c28", s = "#7a4a2a", o = "#2e1c2c" }
-rows = [
-  ".......o........",
-  "......oro.......",
-  ".....orRro......",
-  "..oo.olRlo.oo...",
-  ".oRrollRllorRo..",
-  ".orRlllRlllRro..",
-  "..olRRwRwRRlo...",
-  "..oRllRwRllRo...",
-  "...ollRRRllo....",
-  "....oRRRRRo.....",
-  "...orRrRrRro....",
-  "...oRrrorrRo....",
-  "....ooosooo.....",
-  "......oso.......",
-  ".....oso........",
-  "......o.........",
-]
-
 [material_radar_battery]
 rarity = 2
 palette = { w = "#ffffff", W = "#c8fff0", t = "#dfe5ee", T = "#8a94ac", c = "#3a4a6a", C = "#5d6e92", h = "#6ae8d0", m = "#2fb0b0", s = "#1e7a9a", S = "#155a80", y = "#ffee6a", Y = "#f0b428", o = "#2e1c2c" }
@@ -152,5 +108,27 @@ rows = [
   "................",
   "................",
   "................",
+]
+
+[material_maple_leaf]
+rarity = 4
+palette = { w = "#ffb060", l = "#f0703a", r = "#d23a2a", R = "#8c1c28", s = "#7a4a2a", o = "#2e1c2c" }
+rows = [
+  ".......o........",
+  "......oro.......",
+  ".....orRro......",
+  "..oo.olRlo.oo...",
+  ".oRrollRllorRo..",
+  ".orRlllRlllRro..",
+  "..olRRwRwRRlo...",
+  "..oRllRwRllRo...",
+  "...ollRRRllo....",
+  "....oRRRRRo.....",
+  "...orRrRrRro....",
+  "...oRrrorrRo....",
+  "....ooosooo.....",
+  "......oso.......",
+  ".....oso........",
+  "......o.........",
 ]
 

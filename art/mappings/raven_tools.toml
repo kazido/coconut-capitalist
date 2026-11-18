@@ -6,3 +6,4 @@
 tool_largebranch = [91, 11]
 tool_rustedbroadsword = {cell = [90, 7], hue = 15, sat = 0.7, val = 0.75}
 tool_shiningsilver = [94, 5]
+tool_scarab_bomb = [48, 2]
