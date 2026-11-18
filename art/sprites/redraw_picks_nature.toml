@@ -90,24 +90,46 @@ rows = [
 
 [material_aged_feather]
 rarity = 5
-palette = { w = "#ffffff", h = "#bfdcd8", m = "#86aab0", s = "#5a7e94", d = "#3e5878", g = "#a8b4ba", q = "#efe3c8", Q = "#c8b894", o = "#2e1c2c" }
+palette = { w = "#ffffff", h = "#d6ecf0", m = "#9cc6d4", s = "#5f8fb0", d = "#3e5878", q = "#f3e6bd", Q = "#c8b068", o = "#2e1c2c" }
+rows = [
+  "..............oo",
+  "............ooho",
+  "..........oohhmo",
+  "........oohhhmso",
+  "......oohhhhmmso",
+  ".....ohhhhhmmsso",
+  "....ohhhhhmmssdo",
+  "...ohhhhhmmmssdo",
+  "..ohhhhhmmmssdo.",
+  "..ohhhhmmmsssdo.",
+  ".oqhhhmmmssddo..",
+  ".oqqhmmssddoo...",
+  "oQqqoossooo.....",
+  "oQqoooo.........",
+  "ooQo............",
+  ".oo.............",
+]
+
+[material_maple_leaf]
+rarity = 4
+palette = { w = "#ffd8a0", l = "#f0703a", r = "#d23a2a", R = "#9a2024", s = "#7a4a2a", o = "#2e1c2c" }
 rows = [
   "................",
-  "........ooo.oooo",
-  "........owoooqqo",
-  ".......oommmqdoo",
-  ".....ooommhqqdo.",
-  "....oomghhqmmso.",
-  "...oommhhhqmooo.",
-  "...ommghqqmoso..",
-  "...oghhhqmmsoo..",
-  "...ohhqqmmsso...",
-  "...ooqmmmssoo...",
-  "..oooqmmssoo....",
-  ".ooqqoosooo.....",
-  "ooqqooooo.......",
-  "oQqoo...........",
-  "oooo............",
+  ".......oo.......",
+  "......olro......",
+  "..oo..olrro.oo..",
+  "..olooolrrooRro.",
+  "..olllrlrrrrRRo.",
+  "...ollrlrrrRRo..",
+  "....ollrlrrRo...",
+  "...olllrlrrRRo..",
+  "..ollrrrlrrRRRo.",
+  "...ooorrrrRooo..",
+  ".......rsRo.....",
+  "......osoo......",
+  ".....os.........",
+  "....os..........",
+  "................",
 ]
 
 [material_radar_battery]
