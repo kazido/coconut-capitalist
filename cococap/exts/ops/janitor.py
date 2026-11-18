@@ -102,8 +102,8 @@ def find_channels(bot, cfg: JanitorConfig) -> tuple[list, list[str]]:
         problems.append(f"{len(missing)} channel id(s) are not visible to the bot ({', '.join(missing)})")
     if cfg.category_names and not any(n in c.name.lower() for n in cfg.category_names for g in bot.guilds for c in g.categories):
         problems.append(f"no category named {', '.join(cfg.category_names)} found in any server the bot is in")
-    if problems:
-        # The usual cause is that this bot account is not in the server that holds the play channels (the dev bot and the real bot are different
+    if problems and not found:
+        # Only when NOTHING was found (so the janitor is doing nothing): say what this bot can see. The usual cause is that this bot account is not in the server that holds the play channels (the dev bot and the real bot are different
         # accounts), so say exactly what this one can see.
         seen = "; ".join(f"{g.name} ({g.id}): categories {', '.join(repr(c.name) for c in g.categories) or 'none'}" for g in bot.guilds)
         problems.append(f"this bot ({bot.user}) can see {len(bot.guilds)} server(s): {seen or 'none'}")
@@ -129,8 +129,9 @@ class Janitor(commands.Cog):
         limit = 0 if self._startup else self.cfg.idle_minutes
         self._startup = False
         channels, problems = find_channels(self.bot, self.cfg)
-        for problem in problems:
-            log.warning("janitor: %s", problem)
+        if limit == 0 or not channels:  # say it once at startup (or while it has nothing to do), not every 5 minutes
+            for problem in problems:
+                log.warning("janitor: %s", problem)
         if limit == 0:
             log.info("janitor startup pass over %s channel(s): %s", len(channels), ", ".join(f"#{c.name}" for c in channels) or "none")
         for channel in channels:
