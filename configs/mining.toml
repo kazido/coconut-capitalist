@@ -17,7 +17,7 @@ depth_tables = [
 # ---- The 14 mines (names and emoji: configs/locations.toml, same order). A mine digs through its own 5 depth tables (leave `tables` out to use the
 # shared `depth_tables` above, as mine 1 does), and scales what every cell pays (yield_mult) and the pressure every dig adds (hardness_mult).
 # Every mine's deepest tables hold all four reactor gems (a test checks it). Deeper mines start further up the ore ladder: mine k's tier t table is the
-# shared table min(t + shift, 4) with shift = (k - 1) * 4 // 13 (0 for mines 1-4 ... 4 for mine 14).  TODO(balance): yield/hardness steps and the shifts
+# shared table min(t + shift, 4) with shift = (k - 1) * 4 // 13 (0 for mines 1-4 ... 4 for mine 14).  yield_mult is fitted (scratch sim, bits per click) so income climbs +7% per mine (mine 14 = x1.9 of mine 1); hardness_mult stays 1.0 because harder rock only shortens runs.  TODO(balance)
 
 [[mines]]
 id = "slimy_burrow"
@@ -34,8 +34,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.06
-hardness_mult = 1.02
+yield_mult = 1.122
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -49,8 +49,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.12
-hardness_mult = 1.04
+yield_mult = 1.276
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -64,8 +64,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.18
-hardness_mult = 1.06
+yield_mult = 1.397
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -79,8 +79,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.24
-hardness_mult = 1.08
+yield_mult = 1.331
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -94,8 +94,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.3
-hardness_mult = 1.1
+yield_mult = 1.44
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -109,8 +109,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.36
-hardness_mult = 1.12
+yield_mult = 1.53
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -124,8 +124,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.42
-hardness_mult = 1.14
+yield_mult = 1.17
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -139,8 +139,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.48
-hardness_mult = 1.16
+yield_mult = 1.223
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -154,8 +154,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.54
-hardness_mult = 1.18
+yield_mult = 1.317
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -169,8 +169,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.6
-hardness_mult = 1.2
+yield_mult = 1.362
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -184,8 +184,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.66
-hardness_mult = 1.22
+yield_mult = 1.434
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -199,8 +199,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.72
-hardness_mult = 1.24
+yield_mult = 1.507
+hardness_mult = 1.0
 
 
 [[mines]]
@@ -214,8 +214,8 @@ tables = [
   ["key_gemstone_sanity", "key_gemstone_rage", "key_gemstone_peace", "key_gemstone_balance", "spirit_of_the_mines", "material_emerald", "material_sapphire", "seed_dusty_dandelion", "material_garnet", "material_amber", "material_platinum_ore", "material_silver_ore", "material_obsidian", "material_gold_ore", "material_clay", "material_iron_ore", "material_tin_ore", "material_coal", "material_copper_ore"],
 ]
 
-yield_mult = 1.78
-hardness_mult = 1.26
+yield_mult = 1.347
+hardness_mult = 1.0
 
 
 

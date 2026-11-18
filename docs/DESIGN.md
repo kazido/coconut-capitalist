@@ -88,7 +88,7 @@ Living record of how the game is meant to play. Update it when a decision change
 
 ## Mining: the shaft (v3)
 
-**The 14 mines (named locations).** `[[mines]]` in `configs/mining.toml`, one per mining location (names/emoji in `locations.toml`). A mine has its own 5 depth tables (none = the shared `depth_tables`, mine 1), `yield_mult` (x every cell) and `hardness_mult` (x pressure per dig). Open by mining level AND area (`mining.open_mines`); pick on the Mining page, `start_run(location=)`. Every mine's deepest table holds all reactor gems (loader check). Auto-mining still uses the shared tables. Mines 2-14 are first drafts (tables = shared ladder shifted up, yield +6%/mine, rock +2%/mine): TODO(balance).
+**The 14 mines (named locations).** `[[mines]]` in `configs/mining.toml`, one per mining location (names/emoji in `locations.toml`). A mine has its own 5 depth tables (none = the shared `depth_tables`, mine 1), `yield_mult` (x every cell) and `hardness_mult` (x pressure per dig). Open by mining level AND area (`mining.open_mines`); pick on the Mining page, `start_run(location=)`. Every mine's deepest table holds all reactor gems (loader check). Auto-mining still uses the shared tables. Mines 2-14 are first drafts (tables = shared ladder shifted up, yield fitted so income climbs +7% per mine, rock hardness 1.0): balanced by simulation, see mining.toml.
 
 A run is a shaft of `floor` rows (30). Digging the last row opens the **vault** (150 gold, and a small `vault_gem_chance` of one reactor gem: gems are rare).
 
