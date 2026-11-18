@@ -16,7 +16,7 @@ from .fight import FightScreen
 from .flashcard import FlashcardScreen
 from .fish import FishLogScreen, FishPotsScreen, FishScreen
 from .enchant import EnchantScreen
-from .forage import ForageScreen, GroveScreen, PartyGroveScreen, TreeScreen
+from .forage import ForageScreen, TreesScreen
 from .releaf import ReleafScreen
 from .sequence import SequenceScreen
 from .trivia import TriviaScreen
@@ -29,7 +29,7 @@ from .mastery import MasteryScreen
 from .minigames import MinigamesScreen
 from .mining import MiningScreen
 from .party import PartyScreen
-from .pets import OrbScreen, PetScreen
+from .pets import PetsScreen
 from .profile import ProfileScreen
 from .reactor import ReactorScreen
 from .radar import RadarScreen
@@ -54,8 +54,7 @@ SCREENS: dict[str, type[Screen]] = {
         HomeScreen,
         MoreScreen,
         PartyScreen,
-        PetScreen,
-        OrbScreen,
+        PetsScreen,
         ProfileScreen,
         BestiaryScreen,
         ToolsScreen,
@@ -73,9 +72,7 @@ SCREENS: dict[str, type[Screen]] = {
         FishScreen,
         FishLogScreen,
         FishPotsScreen,
-        TreeScreen,
-        GroveScreen,
-        PartyGroveScreen,
+        TreesScreen,
         MarketScreen,
         MiningScreen,
         ReactorScreen,

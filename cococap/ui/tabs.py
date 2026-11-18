@@ -45,6 +45,19 @@ class TabsScreen(Screen):
             self._live[key] = self.panes[key](self.nav)
         return self._live[key]
 
+    # The hub hands a pane its state (open the Tree tab on tree X) by setting it on the host, and tests read it back: anything the host
+    # does not own is the active pane's. "_"-names, `nav`, `tab` and `result` (which has its own pass-through) stay on the host.
+    def __getattr__(self, name: str):
+        if name.startswith("_") or "_live" not in self.__dict__:
+            raise AttributeError(name)
+        return getattr(self.pane, name)
+
+    def __setattr__(self, name: str, value) -> None:
+        if name.startswith("_") or name in ("nav", "tab", "result") or "_live" not in self.__dict__:
+            super().__setattr__(name, value)
+        else:
+            setattr(self.pane, name, value)
+
     # The navigator reads these from the screen it shows: pass them through to the active pane.
     @property
     def result(self):  # type: ignore[override]

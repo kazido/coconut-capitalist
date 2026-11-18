@@ -258,12 +258,12 @@ async def test_a_party_can_start_and_chop_a_tree_from_the_foraging_page(db, cloc
     nav, inter = await hub("forage")
     assert "Party tree" in all_text(nav)
     await click(nav, inter, "Start a party tree")
-    assert nav.screen.id == "partygrove" and "Forest 1" in all_text(nav) and "Nobody has chopped yet" in all_text(nav)
+    assert nav.screen.tab == "party" and "Forest 1" in all_text(nav) and "Nobody has chopped yet" in all_text(nav)
     for label in ("Overhead", "Sidecut", "Undercut", "Grain notes", "Leave"):
         assert find_button(nav, label)
     await chop(nav, inter)
     assert "you" in all_text(nav) and "hp (" in all_text(nav)
-    other, other_inter = await hub("partygrove", user_id=2)
+    other, other_inter = await hub("trees", tab="party", user_id=2)
     await chop(other, other_inter)
     assert "(you)" in all_text(other) and "hp (" in all_text(other)
     await click(nav, inter, "Leave")
@@ -320,7 +320,7 @@ async def stale_panel():
     """Two players; player 2 is looking at the standing tree when player 1 fells it (after player 2 did their share)."""
     users = await team(2)
     tree = await pt.start(users[0], 1, T0, REG)
-    mine, mine_inter = await hub("partygrove", user_id=2)
+    mine, mine_inter = await hub("trees", tab="party", user_id=2)
     assert "hp" in all_text(mine)
     await pt.chop(users[1], tree.max_hp // 2, T0 + 2, REG)
     await pt.chop(users[0], tree.max_hp, T0 + 3, REG)  # a teammate fells it: your panel is now out of date

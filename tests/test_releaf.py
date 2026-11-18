@@ -296,7 +296,7 @@ async def test_the_old_donate_buttons_are_gone_from_the_reward_pages(db, monkeyp
     from cococap.services.equipment import equip
 
     await equip(user, "foraging", inst.id)
-    nav, inter = await hub("tree", tree=f.Tree(1, 1, 1))
+    nav, inter = await hub("trees", tab="own", tree=f.Tree(1, 1, 1))
 
     class Lucky(Random):
         def random(self):

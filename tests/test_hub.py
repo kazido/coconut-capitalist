@@ -117,6 +117,24 @@ async def test_every_fishlog_tab_renders_valid_layout(db, tab):
     assert nav.content_length() <= 4000
 
 
+@pytest.mark.parametrize("tab", list(SCREENS["trees"].panes))
+async def test_every_trees_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("trees", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
+@pytest.mark.parametrize("tab", list(SCREENS["pets"].panes))
+async def test_every_pets_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("pets", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
 
 # ---- navigation -------------------------------------------------------------------------------
 async def test_home_buttons_open_screens_and_back_returns(db):
@@ -1315,13 +1333,13 @@ async def test_chopping_a_private_tree_to_the_ground_pays_out(db, monkeypatch):
     user = await with_axe()
     nav, inter = await hub("forage")
     await click(nav, inter, "Chop a tree")
-    assert nav.screen.id == "tree" and "hp" in all_text(nav)
+    assert nav.screen.tab == "own" and "hp" in all_text(nav)
     nav.screen.tree = foraging_service.Tree(1, 1, 1)  # a one-chop tree, so the test is short
     await chop(nav, inter)
     assert nav.screen.id == "result" and nav.screen.origin.reward is not None and "TIMBER" in all_text(nav)
     assert (await user.skill("foraging")).stats.trees_chopped == 1 and (await user.skill("foraging")).xp > 0  # (it pays xp and drops, not bits)
     await click(nav, inter, "Another tree")
-    assert nav.screen.id == "tree" and nav.screen.reward is None and nav.screen.tree.hp == nav.screen.tree.max_hp
+    assert nav.screen.tab == "own" and nav.screen.reward is None and nav.screen.tree.hp == nav.screen.tree.max_hp
     await click(nav, inter, "Leave")
     assert nav.screen.id == "forage"
 
@@ -1329,7 +1347,7 @@ async def test_chopping_a_private_tree_to_the_ground_pays_out(db, monkeypatch):
 async def test_a_second_chop_click_on_a_fallen_tree_does_not_pay_twice(db, monkeypatch):
     freeze_time(monkeypatch)
     await with_axe()
-    nav, inter = await hub("tree", tree=foraging_service.Tree(1, 1, 1))
+    nav, inter = await hub("trees", tab="own", tree=foraging_service.Tree(1, 1, 1))
     stale = find_button(nav, "Overhead")
     await stale.callback(inter)
     purse = (await User.get(1)).purse
@@ -1341,10 +1359,10 @@ async def test_heavy_trees_are_slower_for_a_lone_chopper_and_soloist_fixes_it(db
     freeze_time(monkeypatch)
     heavy = get_registry().foraging.heavy_zone
     await with_axe(1, template="tool_axe_reinforced")
-    nav, _ = await hub("tree", tree=foraging_service.Tree(heavy, 100, 100))
+    nav, _ = await hub("trees", tab="own", tree=foraging_service.Tree(heavy, 100, 100))
     assert "Heavy tree" in all_text(nav)
     await with_axe(2, flags=("soloist",), template="tool_axe_reinforced")
-    nav, _ = await hub("tree", tree=foraging_service.Tree(heavy, 100, 100), user_id=2)
+    nav, _ = await hub("trees", tab="own", tree=foraging_service.Tree(heavy, 100, 100), user_id=2)
     assert "Heavy tree" not in all_text(nav)
 
 
@@ -1371,7 +1389,7 @@ async def test_two_players_chop_the_community_tree_together(db, monkeypatch):
     assert "Community tree" in all_text(a_nav)
     await click(a_nav, a_inter, "Join the community tree")
     await click(b_nav, b_inter, "Join the community tree")
-    assert a_nav.screen.id == "grove" and b_nav.screen.id == "grove"
+    assert a_nav.screen.tab == "grove" and b_nav.screen.tab == "grove"
     await chop(a_nav, a_inter)
     await chop(a_nav, a_inter)
     await chop(b_nav, b_inter)
@@ -1387,7 +1405,7 @@ async def test_the_community_panel_refreshes_itself_so_you_see_others_work(db, m
 
     freeze_time(monkeypatch)
     watcher, worker = await with_axe(1), await with_axe(2)
-    nav, _ = await hub("grove")
+    nav, _ = await hub("trees", tab="grove")
     nav.screen.refresh_every = 0.02
     nav._restart_ticker()
     before = all_text(nav)
@@ -1403,7 +1421,7 @@ async def test_the_self_refresh_stops_when_you_leave_the_screen(db, monkeypatch)
 
     freeze_time(monkeypatch)
     await with_axe()
-    nav, inter = await hub("grove")
+    nav, inter = await hub("trees", tab="grove")
     nav.screen.refresh_every = 0.02
     nav._restart_ticker()
     await click(nav, inter, "Leave")
@@ -1419,7 +1437,7 @@ async def test_felling_the_community_tree_pays_everyone_from_their_own_panel(db,
     alice, bob = await with_axe(1), await with_axe(2)
     tree = await foraging_service.community_tree(alice, OPEN_HOUR)
     await foraging_service.chop_community(alice, tree.max_hp // 2, OPEN_HOUR)
-    nav, inter = await hub("grove", user_id=2)
+    nav, inter = await hub("trees", tab="grove", user_id=2)
     await foraging_service.chop_community(bob, tree.max_hp - tree.max_hp // 2, OPEN_HOUR)  # bob's chop fells it
     await nav.screen.refresh(inter)
     assert nav.screen.id == "result" and "TIMBER" in all_text(nav) and (await bob.skill("foraging")).xp > 0  # bob's share arrived (xp and drops: chopping pays no bits)
@@ -1432,7 +1450,7 @@ async def test_felling_the_community_tree_pays_everyone_from_their_own_panel(db,
 async def test_the_tree_falling_over_unfinished_ends_the_panel_gracefully(db, monkeypatch):
     freeze_time(monkeypatch)
     user = await with_axe()
-    nav, inter = await hub("grove")
+    nav, inter = await hub("trees", tab="grove")
     await chop(nav, inter)
     freeze_time(monkeypatch, OPEN_HOUR + 40 * 60)  # 40 minutes in: it fell over
     await nav.screen.refresh(inter)
@@ -1464,7 +1482,7 @@ async def test_a_spot_wears_out_and_moves_on_by_itself_and_a_wrong_style_only_gl
     freeze_time(monkeypatch)
     user = await with_axe(template="tool_axe_reinforced")
     power = get_registry().item("tool_axe_reinforced").tool.power
-    nav, inter = await hub("tree", tree=foraging_service.Tree(1, 1_000_000, 1_000_000))
+    nav, inter = await hub("trees", tab="own", tree=foraging_service.Tree(1, 1_000_000, 1_000_000))
     rules = get_registry().foraging
     right = nav.screen.spot.stance(rules)
     wrong = next(letter for letter in "osu" if letter != right)
@@ -1483,12 +1501,12 @@ async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
     freeze_time(monkeypatch, good_chops=True)
     await with_axe(template="tool_axe_reinforced")
     power = get_registry().item("tool_axe_reinforced").tool.power
-    nav, inter = await hub("tree", tree=foraging_service.Tree(1, 10_000, 10_000))
+    nav, inter = await hub("trees", tab="own", tree=foraging_service.Tree(1, 10_000, 10_000))
     await chop(nav, inter)
     bonus = round(power * (1 + RULES_CHOP.good_chop_bonus))
     assert "Good chop" in all_text(nav) and nav.screen.tree.hp == 10_000 - bonus
     freeze_time(monkeypatch, good_chops=False)
-    nav2, inter2 = await hub("tree", tree=foraging_service.Tree(1, 10_000, 10_000))
+    nav2, inter2 = await hub("trees", tab="own", tree=foraging_service.Tree(1, 10_000, 10_000))
     await chop(nav2, inter2)
     assert "Good chop" not in all_text(nav2) and nav2.screen.tree.hp == 10_000 - power
 
@@ -1497,7 +1515,7 @@ async def test_the_community_tree_has_the_same_spot_and_wear(db, monkeypatch):
     freeze_time(monkeypatch)
     user = await with_axe(template="tool_axe_reinforced")
     power = get_registry().item("tool_axe_reinforced").tool.power
-    nav, inter = await hub("grove")
+    nav, inter = await hub("trees", tab="grove")
     assert "left (about" in all_text(nav) and "per swing" in all_text(nav)
     await chop(nav, inter, zone=3)
     nav.screen.spot.wear = 0.9
@@ -1787,14 +1805,14 @@ async def test_a_private_tree_hides_home_and_back_but_a_plain_page_shows_them(db
     assert {"Home", "Back"} <= _nav_labels(nav)  # no leave button here, so the controller is shown
     await with_axe()
     await click(nav, inter, "Chop a tree")
-    assert nav.screen.id == "tree" and nav.screen.locked and "Leave" in _nav_labels(nav) and not {"Home", "Back"} & _nav_labels(nav)
+    assert nav.screen.tab == "own" and nav.screen.locked and "Leave" in _nav_labels(nav) and not {"Home", "Back"} & _nav_labels(nav)
     await click(nav, inter, "Leave")
     assert nav.screen.id == "forage" and {"Home", "Back"} <= _nav_labels(nav)
 
 
-@pytest.mark.parametrize("screen_id", ["grove", "partygrove"])
+@pytest.mark.parametrize("screen_id", ["grove", "party"])
 async def test_shared_tree_pages_hide_home_and_back(db, screen_id):
-    nav, inter = await hub(screen_id)
+    nav, inter = await hub("trees", tab=screen_id)
     assert nav.screen.locked and not {"Home", "Back"} & _nav_labels(nav)
     await nav.screen.on_abandon()  # nothing half-done to settle: must not raise
 
@@ -1886,7 +1904,7 @@ async def test_the_community_tree_lists_only_the_top_three_choppers(db, monkeypa
     users = [await with_axe(i) for i in range(1, 6)]
     for i, user in enumerate(users):  # player 1 chops least, player 5 most
         await foraging_service.chop_community(user, 10 * (i + 1), OPEN_HOUR)
-    nav, _ = await hub("grove", user_id=1)
+    nav, _ = await hub("trees", tab="grove", user_id=1)
     text_ = all_text(nav)
     assert "**5** chopper" in text_ and text_.count("🥇") == 1 and text_.count("🥈") == 1 and text_.count("🥉") == 1
     assert "**50** hp" in text_ and "**40** hp" in text_ and "**30** hp" in text_
