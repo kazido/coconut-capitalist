@@ -434,8 +434,8 @@ async def test_mining_screen_reactor_buttons(db):
     await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")
     await click(nav, inter, "Feed 10")
     assert "Fed the magnet **10 Copper Ore**" in all_text(nav) and (await user.skill("mining")).magnet_meter == 10 and await user.item_quantity("material_copper_ore") == 20
-    await click(nav, inter, "Magnet: on")
-    assert (await user.skill("mining")).magnet_on is False and find_button(nav, "Magnet: off")
+    await click(nav, inter, "Magnet on")
+    assert (await user.skill("mining")).magnet_on is False and find_button(nav, "Magnet off")
     assert find_button(nav, "Claim lodes").disabled
 
 
