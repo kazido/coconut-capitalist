@@ -123,10 +123,10 @@ class Bait(_Data):
 
 
 class ReelTell(_Data):
-    """How a fish's mystery arrow (❓) behaves. left/right: always that arrow. same/opposite: the arrow before it, or its
-    opposite. random: a fresh coin flip every time (can't be learned, only gambled on)."""
+    """How a fish's mystery arrow (❓) behaves. left/right: always that arrow. last: the same as the arrow just before it.
+    opposite: the opposite of the arrow just before it. first: the same as the FIRST arrow of the reel. Every tell can be learned."""
 
-    tell: Literal["left", "right", "same", "opposite", "random"]
+    tell: Literal["left", "right", "last", "first", "opposite"]
 
 
 class Item(_Data):
@@ -930,7 +930,6 @@ class ReelRules(_Data):
     mystery_from_rarity: int = Field(ge=1)  # fish of this rarity and up hide some arrows behind a ❓
     window: int = Field(ge=1)  # how many upcoming steps you can see at once
     fog_window: int = Field(ge=1)  # ...and how many in a fog (a boss twist)
-    max_random_mysteries: int = Field(ge=1)  # a coin-flip ❓ can't be learned, so a fish has at most this many of them
     echo_window: float = Field(ge=0)  # pressing the arrow you JUST pressed again within this many seconds is ignored
 
 

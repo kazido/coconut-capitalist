@@ -107,7 +107,7 @@ a dropdown like fishing's water select. RISK: forest 14 (old zone 20, which used
 - The star table (`economy.toml [stars]`, `starrable`) is being built by someone else right now: coordinate before touching it.
 
 **Build order (replaces steps 3-6):** 3. DONE shared `Location` model + schedule + `areas.open_locations(skill)` helper + tests.
-4. DONE Foraging forests (rebalance). 5. DONE Fishing 14 waters. 6. DONE Mining locations (`[[mines]]` in mining.toml: own 5 tables + yield/hardness scale per mine; mine 1 = shared tables; picker on the Mining page). 7. DONE Farming fields + seed shop gating (`field_seeds`, `farming.locked_seeds`). 8. TODO Ship screen.
+4. DONE Foraging forests (rebalance). 5. DONE Fishing 14 waters. 6. DONE Mining locations (`[[mines]]` in mining.toml: own 5 tables + yield/hardness scale per mine; mine 1 = shared tables; picker on the Mining page). 7. DONE Farming fields + seed shop gating (`field_seeds`, `farming.locked_seeds`). 8. DONE Ship screen (`screens/ship.py`, linked from More; floor = any one skill).
 
 ---
 # Decisions, round 3 (2026-11-17)
@@ -166,3 +166,11 @@ New crops need: id, name, emoji, wiki, seed price, growth time/yield like their 
 - Foraging: 5 materials for 14 forests: needs 9 new (brief updated).
 
 **Step 3 (shared location model) DONE:** `[locations] min_levels` in areas.toml (2 per area); `foraging_max_zone`/`fishing_max_water` removed; `services/areas.py`: `open_locations(user, skill)` (how many open: level AND area), `next_location_hint`, `area_of_location`. Skills are not wired to it yet (next: foraging forests).
+
+---
+# Ship screen decisions (2026-11-17)
+- **Skill floor = ANY ONE skill at the level** (not all four). Other skills stay gated by their own location `min_level`, so nothing opens too early.
+  Needs: `services/areas.py` `upgrade` check (currently requires every skill in `skill_floors`) and the `areas.toml` comments.
+- **Existing players restart in Slime Hill (area 1)**, no grandfathering by level. NO refund (user's call, deliberately harsh).
+- Single-page screen: area + tier, next-upgrade parts, Travel dropdown, fuel craft only when short.
+- LATER: rework the reactor screen (cluttered; use emojis, less text).

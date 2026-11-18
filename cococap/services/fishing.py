@@ -161,9 +161,9 @@ def _other(arrow: str) -> str:
     return RIGHT if arrow == LEFT else LEFT
 
 
-def _mystery_arrow(tell: str, previous: str, rng: random.Random) -> str:
-    """What a fish's ❓ turns out to be, given the arrow before it."""
-    return {"left": LEFT, "right": RIGHT, "same": previous, "opposite": _other(previous)}.get(tell) or rng.choice((LEFT, RIGHT))
+def _mystery_arrow(tell: str, previous: str, first: str) -> str:
+    """What a fish's ❓ turns out to be, given the arrow just before it and the first arrow of the reel."""
+    return {"left": LEFT, "right": RIGHT, "last": previous, "first": first, "opposite": _other(previous)}[tell]
 
 
 def build_reel(fish: Item, rules: FishingRules, rng: random.Random, *, arrows: int | None = None,
@@ -181,10 +181,8 @@ def build_reel(fish: Item, rules: FishingRules, rng: random.Random, *, arrows: i
             hidden.add(pos)
     elif mysteries and fish.reel is not None and fish.rarity >= r.mystery_from_rarity and n > 1:
         count = fish.rarity - r.mystery_from_rarity + 1
-        if fish.reel.tell == "random":
-            count = min(count, r.max_random_mysteries)
         for pos in sorted(rng.sample(range(1, n), min(count, n - 1))):
-            actual[pos] = _mystery_arrow(fish.reel.tell, actual[pos - 1], rng)
+            actual[pos] = _mystery_arrow(fish.reel.tell, actual[pos - 1], actual[0])
             hidden.add(pos)
     shown = [MYSTERY if i in hidden else a for i, a in enumerate(actual)]
     breaks = n // r.arrows_per_break if fish.rarity >= r.break_from_rarity else 0
@@ -202,7 +200,7 @@ def _remember(skill, cast: "Cast") -> None:
     """Add what this cast's ❓ steps turned out to be to your field notes for that fish."""
     if cast.reveals:
         notes = skill.notes.setdefault(cast.fish.id, [])
-        notes.extend(f"{before}>{truth}" for before, truth in cast.reveals)
+        notes.extend(f"{before}>{truth}|{first}" for before, truth, first in cast.reveals)
         del notes[:-NOTES_KEPT]
 
 
@@ -212,19 +210,25 @@ async def note_tells(user: User, cast: "Cast") -> None:
         await user.update_skill("fishing", lambda skill: _remember(skill, cast))
 
 
-_RULES = {"left": ("always ◄", lambda before: LEFT), "right": ("always ►", lambda before: RIGHT),
-          "same": ("the same arrow as the one before it", lambda before: before),
-          "opposite": ("the opposite of the arrow before it", lambda before: _other(before))}
-MIN_NOTES_FOR_VERDICT = 6  # a pure-luck fish fits a given rule by chance 1 time in 2**6: this many notes before a rule counts as CONFIRMED
+_RULES = {"left": ("always ◄", lambda before, first: LEFT), "right": ("always ►", lambda before, first: RIGHT),
+          "last": ("the same as the last arrow before it", lambda before, first: before),
+          "first": ("the same as the FIRST arrow of the reel", lambda before, first: first),
+          "opposite": ("the opposite of the last arrow before it", lambda before, first: _other(before))}
+MIN_NOTES_FOR_VERDICT = 6  # a rule can fit by chance 1 time in 2**6: this many notes before a rule counts as CONFIRMED
+
+
+def _fits(rule, entry: str) -> bool:
+    """Does this note ("before>truth|first"; older notes have no "|first") agree with the rule? A note without the first arrow cannot rule "first" out."""
+    before, truth, first = entry[0], entry[2], (entry[4] if len(entry) > 4 else None)
+    return first is None and rule is _RULES["first"][1] or rule(before, first) == truth
 
 
 def notes_verdict(entries: list[str]) -> str | None:
     """What your field notes add up to. A pattern is only ever stated once it is CONFIRMED: at least ``MIN_NOTES_FOR_VERDICT`` notes and exactly
-    one rule explains every one of them. "luck" as soon as the notes contradict every rule (a rule-following fish never does that), with no
-    pattern shown. None while it is still unclear (too few notes, or two rules still fit)."""
-    fits = [text for text, rule in _RULES.values() if all(rule(e[0]) == e[2] for e in entries)]
+    one rule explains every one of them. None while it is still unclear (too few notes, or two rules still fit)."""
+    fits = [text for text, rule in _RULES.values() if all(_fits(rule, e) for e in entries)]
     if entries and not fits:
-        return "pure luck: no pattern to find"
+        return "no pattern fits these notes (an old note may be mixed in)"
     if len(entries) >= MIN_NOTES_FOR_VERDICT and len(fits) == 1:
         return f"confirmed: **{fits[0]}**"
     return None
@@ -251,7 +255,7 @@ class Cast:
     grace: float = 0.0  # quiet extra seconds to pull up the line (laggy connections)
     echo_window: float = 0.0  # a repeat of the arrow just pressed within this long is ignored
     truth: list[str] = field(default_factory=list)  # what each step really wants (differs from `pattern` only at a ❓)
-    reveals: list[tuple[str, str]] = field(default_factory=list)  # (the arrow before, what the ❓ was) for each ❓ you pressed
+    reveals: list[tuple[str, str, str]] = field(default_factory=list)  # (the arrow before, what the ❓ was, the first arrow of the reel) for each ❓ you pressed
     revealed: set[int] = field(default_factory=set)
     size: float = 0.0  # in cm, fixed when you cast like everything else
     timed_out: bool = False  # it got away because the time ran out (as opposed to a wrong arrow)
@@ -331,7 +335,7 @@ class Cast:
 
     def press(self, arrow: str, now: float) -> str:
         """Press an arrow. Returns ``ok | echo | slip | landed | escaped``.  ("echo" = the same arrow pressed twice
-        in a moment, usually because the panel was slow to show the first press: ignored.)"""
+        in a moment, usually because the panel was slow to show the first press: ignored. Never when a Reel step is next: that is a miss.)"""
         status = self.status(now)
         if status in ("waiting", "bite"):
             raise FishingError("Nothing is biting yet." if status == "waiting" else "Pull up the line first!")
@@ -342,11 +346,11 @@ class Cast:
         if status == "landed":
             raise FishingError("You already landed that one.")
         right = arrow == self.next_arrow
-        if not right and self.last_press and arrow == self.last_press[0] and 0 <= now - self.last_press[1] <= self.echo_window:
+        if not right and self.next_arrow != REEL and self.last_press and arrow == self.last_press[0] and 0 <= now - self.last_press[1] <= self.echo_window:
             return "echo"
         if self.pattern[self.progress] == MYSTERY and self.progress not in self.revealed:  # right or wrong, the ❓ is now known
             before = next((self.wanted(i) for i in range(self.progress - 1, -1, -1) if self.wanted(i) != REEL), LEFT)
-            self.reveals.append((before, self.wanted(self.progress)))
+            self.reveals.append((before, self.wanted(self.progress), self.wanted(0)))
             self.revealed.add(self.progress)
         if right:
             self.progress += 1
@@ -666,7 +670,7 @@ class Catch:
     quest_bits: int = 0
     extras: Counter = field(default_factory=Counter)  # things that came up with the fish (coral shards...)
     hallucination: str | None = None  # the numbers you saw, if this catch made you hallucinate
-    reveals: tuple[tuple[str, str], ...] = ()  # what each ❓ in the reel turned out to be
+    reveals: tuple[tuple[str, str, str], ...] = ()  # what each ❓ in the reel turned out to be
     extra_fish: int = 0  # more of the same fish that came up with it
     size: float = 0.0
     personal_best: bool = False  # your biggest of this fish so far (including your first one)

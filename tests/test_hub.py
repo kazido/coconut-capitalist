@@ -428,14 +428,14 @@ async def test_mining_screen_reactor_buttons(db):
     assert (await user.skill("mining")).reactor.core_1.gem_id == "key_gemstone_sanity"
     assert "Inserted: Sanity" in all_text(nav)
     await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")  # picking an ore says exactly what feeding it does
-    assert "A full meter needs" in all_text(nav) and find_button(nav, "Feed 1").disabled  # (no copper to feed)
+    assert "full needs" in all_text(nav) and find_button(nav, "Feed 1").disabled  # (no copper to feed)
     await user.add_item("material_copper_ore", 30)
     nav, inter = await hub("reactor")
     await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")
     await click(nav, inter, "Feed 10")
     assert "Fed the magnet **10 Copper Ore**" in all_text(nav) and (await user.skill("mining")).magnet_meter == 10 and await user.item_quantity("material_copper_ore") == 20
-    await click(nav, inter, "Magnet: on")
-    assert (await user.skill("mining")).magnet_on is False and find_button(nav, "Magnet: off")
+    await click(nav, inter, "Magnet on")
+    assert (await user.skill("mining")).magnet_on is False and find_button(nav, "Magnet off")
     assert find_button(nav, "Claim lodes").disabled
 
 
@@ -908,7 +908,7 @@ async def test_the_reactor_has_its_own_page_reachable_from_mining(db):
     assert nav.screen.id == "reactor"
     text = all_text(nav)
     assert "Reactor Level 1" in text and "Auto-miner" in text and "empty: Sanity" in text
-    assert "Digs **1** column" in text and "Wyrmholes: 1 in" in text
+    assert "**1** column" in text and "wyrmhole **1 in" in text
     assert {b.label for b in buttons(nav)} >= {"Claim lodes", "Insert gems", "Prestige"}
     assert find_button(nav, "Back")  # Back returns to Mining
     await click(nav, inter, "Back")
@@ -976,7 +976,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
         assert moved not in text, moved
     assert "Party" not in text.split("Skills")[0]  # (no party line unless the player is in a party)
     assert all(name in text for name in ("Check-in", "Inventory", "Shop", "Pets"))  # the main things are sections, one Open button each
-    assert {b.label for b in buttons(nav)} >= {"Party", "More", "Profile", "Ranks", "Leaderboards"}  # one row of smaller things at the bottom
+    assert {b.label for b in buttons(nav)} >= {"Party", "More", "Profile", "Ranks", "Ship"}  # one row of smaller things at the bottom
     assert len(text.splitlines()) <= 18  # (six main sections: a title and a line each)
     await click(nav, inter, "More")
     assert nav.screen.id == "more"
@@ -987,7 +987,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("trade", "minigames", "stats", "bestiary", "wiki", "settings")):
+    for index, expected in enumerate(("top", "trade", "minigames", "stats", "bestiary", "wiki", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)

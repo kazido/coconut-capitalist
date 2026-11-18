@@ -11,8 +11,8 @@ from cococap.user import Cooldowns
 # The main things to do, each its own section with an Open button; one row of smaller things at the bottom (then More, which also
 # holds Trade and the Minigames).
 FEATURED = ["skills", "shipments", "shop", "inventory", "pets", "checkin"]
-SECOND_ROW = ["profile", "rank", "top", "party"]
-MORE_LINKS = ["trade", "minigames", "stats", "bestiary", "wiki", "settings"]
+SECOND_ROW = ["ship", "profile", "rank", "party"]
+MORE_LINKS = ["top", "trade", "minigames", "stats", "bestiary", "wiki", "settings"]
 PARTY_NAMES_SHOWN = 4
 
 
