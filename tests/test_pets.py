@@ -350,7 +350,7 @@ async def test_the_pet_house_switches_pets_feeds_crops_and_hands_over_spirits(db
     before = user.pethouse.pets["drizzle"].xp
     feed = select_named(nav, "Feed Drizzle")  # the menu names the pet it is for
     hint = next(o.description for o in feed.options if o.value == "crop_lemon")
-    assert f"{REG.item('crop_lemon').crop.pet_xp:,} xp each" in hint and "Drizzle" in hint
+    assert f"{REG.item('crop_lemon').crop.pet_xp:,} xp each" in hint
     await choose(nav, inter, feed, "crop_lemon")
     modal = inter.response.send_modal.await_args.args[0]
     assert "xp each" in modal.children[0].description

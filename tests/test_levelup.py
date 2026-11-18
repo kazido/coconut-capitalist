@@ -4,8 +4,8 @@ from cococap.user import User
 
 def test_message_names_the_skill_the_level_and_the_next_goal():
     xp = User.level_to_xp(12)
-    text = levelup.message("mining", 12, xp)
-    assert "Mining" in text and "level 12" in text and "to level 13" in text
+    text = levelup.message("mining", 11, 12, xp)
+    assert "Mining" in text and "11 -> 12" in text and "to level 13" in text
 
 
 def test_notification_removes_itself_after_a_few_seconds():
@@ -20,7 +20,6 @@ async def test_a_click_that_levels_you_up_sends_the_notification(db, monkeypatch
     from cococap.services import foraging
     from tests.test_hub import chop, click, freeze_time, hub, with_axe
 
-    monkeypatch.setattr(levelup, "SETTLE", 0)
     freeze_time(monkeypatch)
     user = await with_axe()
     nav, inter = await hub("forage")
@@ -32,21 +31,22 @@ async def test_a_click_that_levels_you_up_sends_the_notification(db, monkeypatch
     await click(nav, inter, "Chop a tree")
     nav.screen.tree = foraging.Tree(1, 1, 1)
     await chop(nav, inter)
-    await levelup.flush(user.id)
     assert inter.followup.send.await_count == 1
+    assert inter.followup.send.await_args.kwargs["wait"] is True  # (Webhook.send has no delete_after; the message is deleted after sending)
 
 
-async def test_a_burst_of_level_ups_is_announced_once_at_the_final_level(db, monkeypatch):
+async def test_jumping_several_levels_in_one_click_is_one_notice_old_to_new(db):
     from types import SimpleNamespace
     from unittest.mock import AsyncMock, MagicMock
 
-    monkeypatch.setattr(levelup, "SETTLE", 0.3)
     user = await User.get(1)
     seen = await levelup.snapshot(user)
-    inter = MagicMock(followup=MagicMock(send=AsyncMock()))
-    for bump in (1, 3, 6):  # three clicks, each a higher level, before the timer fires
-        await user.update_skill("mining", lambda s, n=bump: setattr(s, "xp", User.level_to_xp(seen["mining"] + n)))
-        await levelup.check(inter, user, seen)
-    await levelup.flush(user.id)
+    await user.update_skill("mining", lambda s: setattr(s, "xp", User.level_to_xp(seen["mining"] + 5)))
+    sent = SimpleNamespace(delete=AsyncMock())
+    inter = MagicMock(followup=MagicMock(send=AsyncMock(return_value=sent)))
+    await levelup.check(inter, user, seen)
     assert inter.followup.send.await_count == 1
-    assert f"level {seen['mining'] + 6}" in inter.followup.send.await_args.args[0]
+    new = (await levelup.snapshot(user))["mining"]
+    assert new > seen["mining"] + 1  # a real multi-level jump
+    assert f"{seen['mining']} -> {new}" in inter.followup.send.await_args.args[0]
+    sent.delete.assert_awaited_once_with(delay=levelup.LIFETIME)

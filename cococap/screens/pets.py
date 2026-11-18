@@ -87,7 +87,8 @@ class PetScreen(Screen):
     def _food_note(food, pet, reg) -> str:
         """What one of this food is worth to THIS pet: the hint shown while you pick what to feed."""
         base, boost = pets.food_xp(food, reg), pets.food_multiplier(pet, food, reg)
-        return (f"{base:,} xp each" + (f" {emojis.icon('next', '→')} {round(base * boost):,} for {pet.name} (x{boost:g})" if boost != 1 else f" for {pet.name}"))[:100]
+        skill = pets.food_skill(food)  # a dropdown description cannot show custom emoji: plain words only
+        return f"{base:,} xp each" + (f" (x{boost:g} {skill})" if boost != 1 and skill else f" (x{boost:g})" if boost != 1 else "")
 
     async def _switch(self, interaction: discord.Interaction, values: list[str]) -> None:
         """Picking a pet in the menu looks at it AND makes it your active pet."""
