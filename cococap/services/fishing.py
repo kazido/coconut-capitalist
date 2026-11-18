@@ -845,15 +845,6 @@ async def stock(user: User, registry: Registry | None = None) -> FishStock:
     return FishStock(fish, sum(reg.item(i).sell_price * q for i, q in fish.items()))
 
 
-async def sell_all(user: User, registry: Registry | None = None) -> int:
-    """Sell every fish in the inventory. Returns the bits received."""
-    reg = registry or get_registry()
-    total = 0
-    for item_id, quantity in (await stock(user, reg)).items.items():
-        total += await shop.sell(user, item_id, quantity, reg)
-    return total
-
-
 # ---- the personal collection book -------------------------------------------------------------------------
 @dataclass(frozen=True)
 class BookEntry:

@@ -184,7 +184,6 @@ class FishScreen(Screen):
             body.append(text(f"{emojis.icon('basket', '🧺')} **{haul.count:,}** fish  ·  worth **{emojis.bits(haul.worth)}**" if haul.count else f"{emojis.icon('haul', '🧺')} No fish yet."))
             body.append(row(
                 button("Cast", emoji=ROD, style=discord.ButtonStyle.primary, disabled=stats is None, on_click=self._cast),
-                button("Sell fish", emoji=emojis.icon("sell", "💰"), disabled=not haul.count, on_click=self._sell),
                 button("Collection", emoji=emojis.icon('book', '📖'), disabled=not (fishing.quests_unlocked(level, reg.fishing) or fishing.book_unlocked(level, reg.fishing)),
                        on_click=self._collection),
             ))
@@ -495,11 +494,6 @@ class FishScreen(Screen):
 
     async def _mastery(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "mastery", skill="fishing")
-
-    async def _sell(self, interaction: discord.Interaction) -> None:
-        total = await fishing.sell_all(self.user)
-        await self.refresh(interaction, f"{emojis.icon('sell', '💰')} You sold your fish for **{emojis.bits(total)}**.")
-
 
 class FishQuestsScreen(Screen):
     """A pane of the Collection (fishlog): daily and weekly quests."""

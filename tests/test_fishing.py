@@ -203,19 +203,13 @@ async def test_fishing_xp_is_boosted_in_a_party(db):
     assert await catch() == round(base * (1 + REG.economy.party_xp_bonus_by_size[0]))
 
 
-async def test_selling_the_catch_empties_the_bag_and_pays(db):
+async def test_the_fish_stock_counts_fish_only_and_what_they_would_sell_for(db):
     user = await player()
     await user.add_item("fish_cod", 3)
     await user.add_item("fish_salmon", 1)
-    await user.add_item("crop_apple", 5)  # not a fish: stays
+    await user.add_item("crop_apple", 5)  # not a fish
     haul = await f.stock(user, REG)
     assert haul.count == 4 and haul.worth == 3 * REG.item("fish_cod").sell_price + REG.item("fish_salmon").sell_price
-    before = user.purse
-    earned = await f.sell_all(user, REG)
-    await user.refresh()
-    assert earned == haul.worth and user.purse == before + earned
-    assert await user.item_quantity("fish_cod") == 0 and await user.item_quantity("crop_apple") == 5
-    assert await f.sell_all(user, REG) == 0
 
 
 # ---- starting out: tools cost money, and your first one equips itself -------------------------------------------
@@ -311,9 +305,7 @@ async def test_casting_waits_then_a_bite_then_reeling_lands_the_fish(db, clock, 
     await click(nav, inter, "Continue")
     assert nav.screen.id == "fish" and nav.screen.cast is None and nav.screen.refresh_every is None
     assert await user.item_quantity("fish_cod") == 1 and (await user.skill("fishing")).xp > 0
-    await click(nav, inter, "Sell fish")
-    await user.refresh()
-    assert await user.item_quantity("fish_cod") == 0 and "You sold" in all_text(nav)
+    assert not any(b.label == "Sell fish" for b in buttons(nav))  # selling is only done in the Shop
 
 
 async def test_a_wrong_arrow_on_the_screen_loses_the_fish_and_a_stale_click_is_harmless(db, clock, monkeypatch):

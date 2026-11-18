@@ -435,7 +435,7 @@ bait items (`TODO(balance)`).
    them in order (rarity + 2 arrows). A wrong arrow loses the fish,
    unless your rod forgives it (one slip per 8 power). Timing buttons don't work well over Discord, so reeling is
    about order, not speed.
-3. **Land it.** The fish goes in your bag, xp is rarity x 30 (plus the party bonus), and **Sell fish** sells the whole
+3. **Land it.** The fish goes in your bag, xp is rarity x 30 (plus the party bonus), and fish are sold in the Shop.
    bag. Nothing is spent to cast, and cancelling a cast costs nothing.
 
 Numbers: `configs/fishing.toml` and the fish/rod entries in `configs/items.toml` (`TODO(balance)`). A test pins the
@@ -853,7 +853,7 @@ so the choice is also a choice of what you go out and collect.
 
 ## Shop selling, accomplishments, shipments (latest)
 
-- **Selling is one item at a time, in the Shop** (Sell mode: pick an item, then Sell 1x, Sell 10x or Sell custom; custom is prefilled with what you own and clamped to it). The per-skill Sell all button and its page were removed; the Fish page's Sell fish still sells the fish you hold.
+- **Selling is one item at a time, in the Shop** (Sell mode: pick an item, then Sell 1x, Sell 10x or Sell custom; custom is prefilled with what you own and clamped to it). The per-skill Sell all button and its page were removed, and so was the Fish page's Sell fish: no skill page has a sell button (the Farmer's Market is its own market page).
 - **Bits come mainly from selling.** Daily interest and some accomplishments still pay bits, but big accomplishments (quests, books, community goals, bosses) now pay much more *xp*. The double-tree jackpot pays foraging xp (`double_xp`) instead of a million bits.
 - **Shipments** (`configs/shipments.toml`, `services/shipments.py`): tasks you fill with materials from several skills, then ship for bits (1.3x their sell value) and xp in the skills involved. Each player has 3 crates: two themed on a skill (a few of its materials plus others) and one mixed. Shipping replaces the crate in the same slot. A weekly *community* shipment is filled by everyone; once full, everyone who gave at least 2% of it claims 1.5x what they gave plus xp. State lives in the community store (`shipments:{uid}`, `shipment_community`), so there are no migrations.
 - **Settings audit** and **combat redesign** are still open (see HANDOFF).
@@ -861,7 +861,7 @@ so the choice is also a choice of what you go out and collect.
 ## Combat paused, settings, upgrade paths
 
 - **Combat is paused** while it is redesigned: the Skills page shows a disabled "Paused" button, `/fight` says so, and nothing links to the fight screen (code and tests stay). Ideas for the rework: stance/counters, a resource/combo system, interrupts and targeting.
-- **Settings** (Settings page, all saved per player): `confirm_sell_all` and `keep_upgrade_materials` are still stored but no longer read by any sell path (left in place; remove when convenient), `confirm_upgrades` (off: upgrades take a second "Sure?" press), `fishing_estimate` (on). A test keeps the page's list equal to the `Settings` model.
+- **Settings** (Settings page, all saved per player): (`confirm_sell_all` and `keep_upgrade_materials` were removed with the Sell all buttons; old saved values are ignored) `confirm_upgrades` (off: upgrades take a second "Sure?" press), `fishing_estimate` (on). A test keeps the page's list equal to the `Settings` model.
 - **Upgrade paths**: a tool at a fork shows one path at a time, swapped with a "Pick a path" dropdown; tools are still one per page.
 - **Shipments cooldown**: deliberately none. Materials are the limit and shipping only pays a modest premium over selling.
 
