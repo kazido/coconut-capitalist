@@ -47,8 +47,9 @@ def at(year, month, day, hour=12):
 
 
 FRIDAY, THURSDAY, SATURDAY, SUNDAY = at(2026, 11, 13), at(2026, 11, 12), at(2026, 11, 14), at(2026, 11, 15)  # all 12:00 UTC (open)
-OPEN_HOUR, OPEN_HOURS = REG.farming.market.open_hour, REG.farming.market.open_hours
+OPENS, OPEN_HOURS = sorted(REG.farming.market.opens), REG.farming.market.open_hours
 CLOSED = FRIDAY - 12 * 3600  # midnight UTC
+MARKET_OPEN = FRIDAY - 12 * 3600 + OPENS[0] * 3600 + 60  # a minute after the first opening
 
 
 async def farmer(**items):
@@ -281,25 +282,31 @@ async def test_harvest_all_takes_every_ripe_plot(db):
 
 # ---- the Farmer's Market -----------------------------------------------------------------------------------------
 @pytest.mark.parametrize("day", [THURSDAY, FRIDAY, SATURDAY, SUNDAY])
-def test_the_market_is_open_every_day_for_a_few_hours(day):
-    start = day - 12 * 3600 + OPEN_HOUR * 3600  # that day's opening
-    assert f.market_window(start, REG)[0] is True
-    assert f.market_window(start + OPEN_HOURS * 3600 - 1, REG)[0] is True
-    assert f.market_window(start + OPEN_HOURS * 3600, REG)[0] is False
-    assert f.market_window(start - 1, REG)[0] is False
+def test_the_market_is_open_every_day_for_a_few_hours_at_each_opening(day):
+    for hour in OPENS:
+        start = day - 12 * 3600 + hour * 3600  # that day's opening
+        assert f.market_window(start, REG)[0] is True
+        assert f.market_window(start + OPEN_HOURS * 3600 - 1, REG)[0] is True
+        assert f.market_window(start + OPEN_HOURS * 3600, REG)[0] is False
+        assert f.market_window(start - 1, REG)[0] is False
 
 
 def test_the_market_says_when_it_next_changes():
-    start = FRIDAY - 12 * 3600 + OPEN_HOUR * 3600
-    assert f.market_window(start, REG)[1] == start + OPEN_HOURS * 3600  # closes
-    assert f.market_window(start + OPEN_HOURS * 3600, REG)[1] == start + 86400  # opens tomorrow
-    assert f.market_window(start - 1, REG)[1] == start  # opens today
+    first, second = (FRIDAY - 12 * 3600 + h * 3600 for h in (OPENS[0], OPENS[-1]))
+    assert f.market_window(first, REG)[1] == first + OPEN_HOURS * 3600  # closes
+    assert f.market_window(first + OPEN_HOURS * 3600, REG)[1] == second  # opens again later today
+    assert f.market_window(second + OPEN_HOURS * 3600, REG)[1] == first + 86400  # opens tomorrow
+    assert f.market_window(first - 1, REG)[1] == first  # opens today
+
+
+def test_the_market_opens_twice_a_day_without_overlapping():
+    assert len(OPENS) == 2 and OPENS[1] - OPENS[0] >= OPEN_HOURS and 24 - OPENS[1] + OPENS[0] >= OPEN_HOURS
 
 
 async def test_the_market_needs_level_five_and_an_open_day(db):
     user = await farmer(crop_apple=10)
     with pytest.raises(f.FarmingError, match="level 5"):
-        await f.sell_crops(user, FRIDAY)
+        await f.sell_crops(user, MARKET_OPEN)
     await user.add_xp("farming", User.level_to_xp(5) + 1)
     with pytest.raises(f.FarmingError, match="closed"):
         await f.sell_crops(user, CLOSED)
@@ -310,14 +317,14 @@ async def test_selling_at_the_market_pays_the_bonus_and_only_takes_crops(db):
     user = await farmer(crop_apple=10, crop_lemon=2, material_copper_ore=7, seed_apple=3)
     await user.add_xp("farming", User.level_to_xp(5) + 1)
     before = (await User.get(1)).purse
-    earned, sold = await f.sell_crops(user, FRIDAY)
+    earned, sold = await f.sell_crops(user, MARKET_OPEN)
     expected = int(REG.item("crop_apple").sell_price * 10 * 1.5) + int(REG.item("crop_lemon").sell_price * 2 * 1.5)
     assert earned == expected and sold == Counter(crop_apple=10, crop_lemon=2)
     await user.refresh()
     assert user.purse == before + earned
     assert await user.item_quantity("material_copper_ore") == 7 and await user.item_quantity("seed_apple") == 3  # untouched
     with pytest.raises(f.FarmingError, match="no crops"):
-        await f.sell_crops(user, FRIDAY)
+        await f.sell_crops(user, MARKET_OPEN)
 
 
 async def test_market_prices_beat_the_shop(db):
@@ -331,18 +338,18 @@ async def test_blessings_turn_into_land_deeds_at_the_market(db):
     with pytest.raises(f.FarmingError, match="closed"):
         await f.deposit_blessings(user, Random(1), CLOSED)
     lucky = registry_with(market={"deed_chance": 1.0})
-    used, deeds = await f.deposit_blessings(user, Random(1), FRIDAY, lucky)
+    used, deeds = await f.deposit_blessings(user, Random(1), MARKET_OPEN, lucky)
     assert (used, deeds) == (5, 5) and await user.item_quantity("key_land_deed") == 5
     assert (await user.skill("farming")).rain_god_blessings == 0
     with pytest.raises(f.FarmingError, match="no rain god"):
-        await f.deposit_blessings(user, Random(1), FRIDAY, lucky)
+        await f.deposit_blessings(user, Random(1), MARKET_OPEN, lucky)
 
 
 async def test_blessings_only_sometimes_become_deeds(db):
     user = await farmer()
     await user.add_xp("farming", User.level_to_xp(5) + 1)
     await user.update_skill("farming", lambda m: setattr(m, "rain_god_blessings", 400))
-    used, deeds = await f.deposit_blessings(user, Random(3), FRIDAY)
+    used, deeds = await f.deposit_blessings(user, Random(3), MARKET_OPEN)
     assert used == 400 and 15 < deeds < 70  # about 1 in 10
 
 
