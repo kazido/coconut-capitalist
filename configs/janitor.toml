@@ -2,7 +2,11 @@
 # It only ever deletes messages the bot itself posted.
 enabled = true
 
-# Channels swept (the Gambling category). Edit here; no code change needed.
+# Every text channel inside a category with one of these names is swept. This is the main way: it follows the real server, so a new
+# or renamed play channel is picked up without editing ids.
+category_names = ["Gambling"]
+
+# Extra channels swept by id (the old hard-coded six). Optional. Ids the bot cannot see are reported, not silently skipped.
 channel_ids = [858549045613035541, 959271607241683044, 961471869725343834, 961045401803317299, 962171274073899038, 962171351794327562]
 
 # How often the sweep runs (it also runs once at startup).

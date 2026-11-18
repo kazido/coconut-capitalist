@@ -12,6 +12,7 @@ BULK_LIMIT_DAYS = 14  # Discord refuses to bulk delete anything older than this
 class JanitorConfig:
     enabled: bool
     channel_ids: tuple[int, ...]
+    category_names: tuple[str, ...]  # every text channel in a category with one of these names is swept too (case ignored)
     interval_minutes: int
     idle_minutes: float  # a bot message untouched for this long is swept (the startup pass ignores it: everything goes)
     delete_delay_seconds: float
@@ -22,7 +23,8 @@ def load_config(path: Path = CONFIG_PATH) -> JanitorConfig:
         raw = tomllib.load(f)
     return JanitorConfig(
         enabled=bool(raw["enabled"]),
-        channel_ids=tuple(int(i) for i in raw["channel_ids"]),
+        channel_ids=tuple(int(i) for i in raw.get("channel_ids", [])),
+        category_names=tuple(str(n).lower() for n in raw.get("category_names", [])),
         interval_minutes=int(raw["interval_minutes"]),
         idle_minutes=float(raw["idle_minutes"]),
         delete_delay_seconds=float(raw["delete_delay_seconds"]),
