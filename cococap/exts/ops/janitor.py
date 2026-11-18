@@ -1,6 +1,7 @@
 """Deletes the bot's old messages from the play channels, on startup and every few minutes, plus an owner-only /cleanup."""
 
 import asyncio
+from collections import Counter
 from datetime import datetime, timedelta, timezone
 from logging import getLogger
 
@@ -28,7 +29,14 @@ async def collect(channel, bot_id: int, limit: float, lookback_hours: float | No
     """The bot's messages in `channel` untouched for `limit` minutes (0 = all of them). `lookback_hours` reads only recent history (the
     5-minute sweeps); None reads the whole channel (the startup pass and /cleanup, once)."""
     after = None if lookback_hours is None else datetime.now(timezone.utc) - timedelta(hours=lookback_hours)
-    return [m async for m in channel.history(limit=None, after=after) if should_delete(idle=_age_minutes(m), from_bot=m.author.id == bot_id, limit=limit)]
+    found, scanned, authors = [], 0, Counter()
+    async for m in channel.history(limit=None, after=after):
+        scanned += 1
+        authors[f"{m.author} ({'the bot' if m.author.id == bot_id else 'other'})"] += 1
+        if should_delete(idle=_age_minutes(m), from_bot=m.author.id == bot_id, limit=limit):
+            found.append(m)
+    collect.last = (scanned, authors)  # for the report: what was in the channel, and who posted it
+    return found
 
 
 async def delete_all(channel, messages: list[discord.Message], cfg: JanitorConfig) -> int:
@@ -80,7 +88,7 @@ def find_channels(bot, cfg: JanitorConfig) -> tuple[list, list[str]]:
     found, problems = {}, []
     for guild in bot.guilds:
         for category in guild.categories:
-            if category.name.lower() in cfg.category_names:
+            if any(n in category.name.lower() for n in cfg.category_names):
                 for channel in category.text_channels:
                     found[channel.id] = channel
     for cid in cfg.channel_ids:
@@ -89,7 +97,7 @@ def find_channels(bot, cfg: JanitorConfig) -> tuple[list, list[str]]:
             problems.append(f"channel id {cid} is not visible to the bot (wrong id, or the bot cannot see it)")
         else:
             found[cid] = channel
-    if cfg.category_names and not any(c.name.lower() in cfg.category_names for g in bot.guilds for c in g.categories):
+    if cfg.category_names and not any(n in c.name.lower() for n in cfg.category_names for g in bot.guilds for c in g.categories):
         problems.append(f"no category named {', '.join(cfg.category_names)} found in any server the bot is in")
     return list(found.values()), problems
 
@@ -124,6 +132,10 @@ class Janitor(commands.Cog):
                 continue
             try:
                 messages = await collect(channel, self.bot.user.id, limit, None if limit == 0 else self.cfg.lookback_hours)
+                if limit == 0:
+                    scanned, authors = collect.last
+                    log.info("janitor #%s: read %s messages, %s are the bot's to delete. Posted by: %s", channel.name, scanned, len(messages),
+                             ", ".join(f"{a} x{n}" for a, n in authors.most_common(4)))
                 if messages:
                     n = await delete_all(channel, messages, self.cfg)
                     log.info("janitor deleted %s message(s) in #%s", n, channel.name)
@@ -163,7 +175,9 @@ class Janitor(commands.Cog):
                 continue
             plan[channel] = messages
             old = sum(not can_bulk(_created_days(m)) for m in messages)
-            lines.append(f"<#{cid}>: {len(messages)} to delete ({old} older than 14 days, slow)")
+            scanned, authors = collect.last
+            who = ", ".join(f"{a} x{n}" for a, n in authors.most_common(3))
+            lines.append(f"<#{cid}>: read {scanned} messages, {len(messages)} to delete ({old} older than 14 days, slow). Posted by: {who or 'nobody'}")
         text = "\n".join(lines)
         if dry_run:
             await interaction.followup.send(f"Dry run, nothing deleted:\n{text}\nRun again with dry_run: False.")
