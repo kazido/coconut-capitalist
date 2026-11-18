@@ -20,18 +20,18 @@ tool_pickaxe_veinhunter = [110, 2]
 tool_pickaxe_motherlode = [110, 3]
 
 # --- Axes ---
-tool_axe_starter = [91, 7]
-tool_axe_thornwhip = [91, 8]
-tool_axe_reinforced = [91, 9]
-tool_broadaxe_bastards = [91, 10]
-tool_axe_masterwork = [96, 10]
-tool_hatchet_sovereign = [96, 9]
-tool_axe_gatherers = [96, 7]
-tool_hatchet_foragers = [96, 8]
-tool_axe_mosswood = [101, 7]
-tool_axe_canopy = [101, 8]
-tool_axe_elderwood = [101, 10]
-tool_axe_wilted = {cell = [101, 9], sat = 0.4, val = 0.6}
+#tool_axe_starter = [91, 7]
+#tool_axe_thornwhip = [91, 8]
+#tool_axe_reinforced = [91, 9]
+#tool_broadaxe_bastards = [91, 10]
+#tool_axe_masterwork = [96, 10]
+#tool_hatchet_sovereign = [96, 9]
+#tool_axe_gatherers = [96, 7]
+#tool_hatchet_foragers = [96, 8]
+#tool_axe_mosswood = [101, 7]
+#tool_axe_canopy = [101, 8]
+#tool_axe_elderwood = [101, 10]
+#tool_axe_wilted = {cell = [101, 9], sat = 0.4, val = 0.6}
 
 # --- Fishing rods ---
 tool_rod_sturdy = [98, 6]
