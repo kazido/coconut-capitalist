@@ -266,24 +266,24 @@ rows = [
 
 [food_crystal_chew]
 rarity = 4
-palette = { P = "#ffb8d8", p = "#e888b8", h = "#ffe8f4", L = "#c8b0f8", l = "#a888e0", m = "#a8f0d8", M = "#70c8b0", k = "#d8a868", K = "#a8703c", w = "#ffffff", o = "#2e1c2c" }
+palette = { h = "#ffe8f4", p = "#ffb8d8", P = "#f08cc4", q = "#c85aa8", Q = "#8a3a80", k = "#d8a868", K = "#a8703c", w = "#ffffff", o = "#2e1c2c" }
 rows = [
-  "......oo........",
-  ".....ohpo...oo..",
-  "....ohPPpo.ohlo.",
-  "...ohPPPPpohLLlo",
-  "..ohPPwPPppLLLlo",
-  ".omhPPPPPppLLLlo",
-  ".ommPPPPPppLLlo.",
-  ".omMPPPPPppplo..",
-  "..oMMppppppoo...",
-  "...ooookKoo.....",
-  "......okKo......",
-  "......okKo......",
-  "......okKo......",
-  "......oKKo......",
-  ".......oo.......",
   "................",
+  ".......o........",
+  ".....oohoo......",
+  "....owphPqo.....",
+  ".....ohPPqo.o...",
+  "....oohPPqoowo..",
+  "...oPopPPqooo...",
+  "..ohPqpPPqoPo...",
+  "..ohPqpPPqhPqo..",
+  "..opPqpPPqhPqo..",
+  "..opPqpPPqpPqo..",
+  "..oPqQPqqQPqQo..",
+  "..oPqQPqqQPqQo..",
+  "...oookkKKooo...",
+  "......okKo......",
+  ".......oo.......",
 ]
 
 [food_stone_biscuit]
