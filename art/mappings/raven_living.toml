@@ -26,12 +26,9 @@ bait_golden_roe = [26, 0]
 
 # --- crops ---
 crop_apple = [27, 2]
-crop_blueberry = [36, 7]
 crop_dusty_dandelion = {cell = [15, 4], hue = 15, sat = 0.35, val = 1.1}  # WEAK: teal sprig with bud, dulled
 crop_hot_pepper = [27, 5]
-crop_lemon = [35, 0]
 crop_watermelon = [27, 12]
-crop_wilted_rose = {cell = [16, 6], hue = 0, sat = 0.6, val = 0.6}
 crop_ambrosia = [24, 1]  # WEAK: plain golden orb
 
 # --- seeds ---

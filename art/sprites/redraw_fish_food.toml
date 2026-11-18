@@ -528,3 +528,69 @@ rows = [
   "................",
 ]
 
+[crop_lemon]
+rarity = 2
+palette = { W = "#fff6a0", y = "#ffe84a", g = "#f4c820", s = "#d49a18", d = "#a87012", l = "#7ac848", L = "#4a9a3a", k = "#7a5a2a", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "...........oo...",
+  "......ooooolLo..",
+  ".....oWWyyglLo..",
+  "....oWWWWygsso..",
+  "...oWWWWyygso...",
+  "..oyWWWWyygso...",
+  "..oyyyyyyggso...",
+  ".ogggyygggso....",
+  ".ossggggsso.....",
+  "..oooooooo......",
+  "................",
+  "................",
+  "................",
+]
+
+[crop_blueberry]
+rarity = 2
+palette = { h = "#9fb4f8", b = "#5c78d8", m = "#3a52b0", d = "#243480", k = "#141c50", l = "#7ac848", L = "#4a9a3a", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "............o...",
+  "......oooo.oLo..",
+  ".....ohhhbollo..",
+  "....ohhhkbmoLo..",
+  "....ohhhbbmmo...",
+  "...ohhbbbmhbo...",
+  "..ohhkmmmhkbmo..",
+  "..ohhhbmhhhbmo..",
+  "..obbbbmbbbmmo..",
+  "...ommmoommmo...",
+  "....ooo..ooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[crop_wilted_rose]
+rarity = 5
+palette = { a = "#7a454d", b = "#564a50", c = "#9e5456", d = "#665458", e = "#755f5f", f = "#bd8e4c", g = "#806d67", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "......ooo.......",
+  ".....occcoo.....",
+  "....occcccao....",
+  "...oaccffccco...",
+  "...oacccaacao...",
+  "....oocccaao....",
+  "...oggaaaao.....",
+  "...oeddgdooo....",
+  "....ooodbddeo...",
+  "...obdebooeo....",
+  "....oooo..o.....",
+  "................",
+  "................",
+  "................",
+]
+
