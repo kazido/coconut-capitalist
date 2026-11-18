@@ -175,8 +175,12 @@ class FarmScreen(Screen):
 
     async def _tend(self, interaction: discord.Interaction) -> None:
         report = await farming.tend(self.user, random.Random())
-        got = ", ".join(f"{q:,} × {get_registry().item(i).name}" for i, q in report.found.items()) or "nothing this time"
-        await self.refresh(interaction, f"{emojis.icon('sprout', '🌿')} You tended {report.plots} plot(s) ({report.cycles} growth cycle(s)): {got}.")
+        if not report.found:
+            return await self.refresh(interaction, f"{emojis.icon('sprout', '🌿')} You tended {report.plots} plot(s) ({report.cycles} growth cycle(s)): nothing this time.")
+        self.result = rewards_result(  # the same list view as a harvest: every item with its own emoji
+            "Tended!", items=report.found, headline=[f"{emojis.icon('sprout', '🌿')} You tended **{report.plots}** plot(s) ({report.cycles} growth cycle(s))."],
+            odds=odds.farming(), emoji=emojis.icon('sprout', '🌿'), accent=0x2F919E, back_label="Back to the farm")
+        await self.refresh(interaction)
 
     def _turn(self, step: int):
         async def go(interaction: discord.Interaction) -> None:

@@ -885,7 +885,10 @@ async def test_the_farm_page_has_a_tend_button_that_wakes_up_when_something_grew
     nav, inter = await hub("farm")
     assert not find_button_named(nav, "Tend").disabled
     await click(nav, inter, "Tend")
-    assert "You tended" in all_text(nav) and find_button_named(nav, "Tend").disabled
+    assert "You tended" in all_text(nav)  # the list page (or the plain note when nothing dropped)
+    if nav.screen.id == "result":
+        await click(nav, inter, "Back to the farm")
+    assert find_button_named(nav, "Tend").disabled
 
 
 def find_button_named(nav, label):
