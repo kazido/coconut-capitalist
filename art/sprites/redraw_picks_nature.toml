@@ -66,28 +66,6 @@ rows = [
   "................",
 ]
 
-[material_aged_feather]
-rarity = 5
-palette = { h = "#e4f4f8", m = "#a4cad8", s = "#6492b4", d = "#3e5878", q = "#f6e8bd", Q = "#c4a85c", o = "#2e1c2c" }
-rows = [
-  "..........ooo...",
-  "........oohhho..",
-  ".......ohhhmmdo.",
-  "......ohhhqqsdo.",
-  ".....ohhhqqsso..",
-  "....ohhhqqssdo..",
-  "....ohhqqssdo...",
-  "....ohqqssddo...",
-  "....oqqssddo....",
-  "...oqqdddoo.....",
-  "..oqqoooo.......",
-  ".oqqo...........",
-  "oqqqo...........",
-  "qqqo............",
-  "ooo.............",
-  "................",
-]
-
 [material_radar_battery]
 rarity = 2
 palette = { w = "#ffffff", W = "#c8fff0", t = "#dfe5ee", T = "#8a94ac", c = "#3a4a6a", C = "#5d6e92", h = "#6ae8d0", m = "#2fb0b0", s = "#1e7a9a", S = "#155a80", y = "#ffee6a", Y = "#f0b428", o = "#2e1c2c" }
@@ -112,23 +90,45 @@ rows = [
 
 [material_maple_leaf]
 rarity = 4
-palette = { w = "#ffb060", l = "#f0703a", r = "#d23a2a", R = "#8c1c28", s = "#7a4a2a", o = "#2e1c2c" }
+palette = { R = "#9a5318", r = "#d3341d", O = "#d15e2d", A = "#eb4d26", a = "#c6901b", Y = "#f16127", B = "#f57629", b = "#f88d2a", o = "#2e1c2c" }
 rows = [
-  ".......o........",
-  "......oro.......",
-  ".....orRro......",
-  "..oo.olRlo.oo...",
-  ".oRrollRllorRo..",
-  ".orRlllRlllRro..",
-  "..olRRwRwRRlo...",
-  "..oRllRwRllRo...",
-  "...ollRRRllo....",
-  "....oRRRRRo.....",
-  "...orRrRrRro....",
-  "...oRrrorrRo....",
-  "....ooosooo.....",
-  "......oso.......",
-  ".....oso........",
-  "......o.........",
+  ".....oo.........",
+  "....oAAo........",
+  "...oABYBo.oooo..",
+  "...oYYBBYoBYAAo.",
+  "...oAYBBBOYYYAo.",
+  "..oYYYbYYYBYBro.",
+  ".orYYBbbBBBBYo..",
+  ".orAYYbbBBBbOo..",
+  "..orAYbbBABao...",
+  "...oooYbBBAaao..",
+  "...oYYbbBBRaRo..",
+  "...oAYObbaRoo...",
+  "....ooooooRRo...",
+  "........o.oRo...",
+  "...........o....",
+  "................",
+]
+
+[material_aged_feather]
+rarity = 5
+palette = { h = "#e4f4f8", m = "#a4cad8", s = "#6492b4", d = "#3e5878", q = "#f6e8bd", Q = "#c4a85c", o = "#2e1c2c" }
+rows = [
+  "..........ooo...",
+  "........oohhho..",
+  ".......ohhhmmdo.",
+  "......ohhhqqsdo.",
+  ".....ohhhqqsso..",
+  "....ohhhqqssdo..",
+  "....ohhqqssdo...",
+  "....ohqqssddo...",
+  "....oqqssddo....",
+  "...oqqdddoo.....",
+  "..oqqoooo.......",
+  ".oqqo...........",
+  "oqqqo...........",
+  "qqqo............",
+  "ooo.............",
+  "................",
 ]
 
