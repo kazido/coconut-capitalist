@@ -1,11 +1,11 @@
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import crafting, shop, upgrades
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bits, button, row, text
 
-SKILL_EMOJI = {"mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishing": "🐟"}
 SHOWN = 8
 
 
@@ -56,7 +56,7 @@ class SellAllScreen(Screen):
         owned = await self.user.items()
         everything = shop.sellable_for_skill(owned, self.skill, reg)
         if not everything:
-            return Page("Sell all", [*self.note_block(), text(f"{SKILL_EMOJI.get(self.skill, '')} You have nothing from **{self.skill}** to sell."),
+            return Page("Sell all", [*self.note_block(), text(f"{emojis.skill(self.skill)} You have nothing from **{self.skill}** to sell."),
                                      row(button("Back", on_click=self._cancel))], accent=0xD4A017)
         needs = await upgrade_needs(self.user)
         kept = shop.sellable_for_skill(owned, self.skill, reg, needs)
@@ -81,7 +81,7 @@ class SellAllScreen(Screen):
             first = button(f"Sell everything ({bits(worth)})", emoji="💰", style=discord.ButtonStyle.danger, on_click=self._sell(False))
             second = button(f"Sell, keep upgrade materials ({bits(keep_worth)})", emoji="🔨", disabled=not kept, on_click=self._sell(True))
         body = [*self.note_block(),
-                text(f"### {SKILL_EMOJI.get(self.skill, '💰')} Sell everything from {self.skill.title()}?\n{lines}" + (f"\n-# …and {more} more kinds" if more > 0 else "")
+                text(f"### {emojis.skill(self.skill, '💰')} Sell everything from {self.skill.title()}?\n{lines}" + (f"\n-# …and {more} more kinds" if more > 0 else "")
                      + f"\n**{sum(everything.values()):,}** items for **{bits(worth)}** bits{warn}"),
                 row(*[b for b in (first, second) if b], button("Cancel", on_click=self._cancel))]
         return Page("Sell all", body, accent=0xD4A017)

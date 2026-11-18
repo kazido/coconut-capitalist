@@ -26,7 +26,8 @@ class ProfileScreen(Screen):
             accessory=ui.Thumbnail(getattr(avatar, "url", str(avatar))),
         )
         skills = []
-        for name, icon in SKILL_ICONS.items():
+        for name, glyph in SKILL_ICONS.items():
+            icon = emojis.skill(name, glyph)
             xp = (await user.skill(name)).xp
             overflow, needed = User.xp_for_next_level(xp)
             skills.append(f"{icon} **{name.title()}** Lv {User.xp_to_level(xp)}  {xp_bar(overflow / needed if needed else 0, 8)}")

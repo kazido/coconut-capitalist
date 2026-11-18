@@ -111,8 +111,6 @@ class ShopScreen(Screen):
         self.selected = values[0]
         await self.refresh(interaction)
 
-    CATEGORY_EMOJI = {"mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishing": "🐟", "combat": "⚔️", "general": "📦"}
-
     def _category_rows(self, categories: list[str]) -> list:
         """Buttons to filter the list: All, then one per skill that has something to show."""
         if len(categories) < 2:
@@ -122,7 +120,7 @@ class ShopScreen(Screen):
             buttons.append(
                 button(
                     c.title() if self.category == c else None,
-                    emoji=self.CATEGORY_EMOJI.get(c, "📦"),
+                    emoji=emojis.skill(c, "📦"),
                     style=discord.ButtonStyle.primary if self.category == c else discord.ButtonStyle.secondary,
                     on_click=self._set_category(c),
                 )

@@ -5,6 +5,7 @@ from collections import Counter
 
 import discord
 
+from cococap import emojis
 from cococap.constants import Rarities
 from cococap.registry import get_registry
 from cococap.screens.sellall import start_sell_all
@@ -209,7 +210,7 @@ class FishScreen(Screen):
 
         if status == "chest":
             t = reg.fishing.treasure
-            body += [text(f"### 🧰 A treasure chest!\nIt is locked with **{t.code_length}** numbers. Do you remember them?\n"
+            body += [text(f"### {emojis.ui('chest', '🧰')} A treasure chest!\nIt is locked with **{t.code_length}** numbers. Do you remember them?\n"
                           f"Tries left: **{cast.attempts_left}**"),
                      row(button("Enter the numbers", emoji="🔑", style=discord.ButtonStyle.success, on_click=self._enter_code),
                          button("Leave it", on_click=self._cancel))]

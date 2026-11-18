@@ -1,11 +1,10 @@
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import shipments
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bar, bits, button, row, select, sep, text
-
-EMOJI = {"mining": "⛏️", "farming": "🌽", "foraging": "🌳", "fishing": "🐟"}
 
 
 class ShipmentsScreen(Screen):
@@ -36,7 +35,7 @@ class ShipmentsScreen(Screen):
             body.append(text(f"### 📦 Shipments\nEach skill unlocks its first shipment at level **{first}**. Keep gathering!"))
             return Page("Shipments", body, accent=0xB8860B)
         view = await shipments.community_now(self.user) if community_on else None
-        names = {c.id: (self._name(c), EMOJI.get(c.theme, "📦")) for c in crates}
+        names = {c.id: (self._name(c), emojis.skill(c.theme, "📦")) for c in crates}
         ids = [c.id for c in crates] + (["community"] if community_on else [])
         if self.page not in ids:
             self.page = ids[0]
@@ -47,7 +46,7 @@ class ShipmentsScreen(Screen):
         if self.page != "community":
             ship = next(c for c in crates if c.id == self.page)
             reward_bits, reward_xp = shipments.reward(ship, reg)
-            xp_text = ", ".join(f"{EMOJI.get(s, '')} {x:,}" for s, x in sorted(reward_xp.items(), key=lambda kv: -kv[1]) if x)
+            xp_text = ", ".join(f"{emojis.skill(s)} {x:,}" for s, x in sorted(reward_xp.items(), key=lambda kv: -kv[1]) if x)
             lines = []
             for item_id, need in ship.need.items():
                 have = ship.have.get(item_id, 0)
@@ -98,7 +97,7 @@ class ShipmentsScreen(Screen):
                 sent = await shipments.ship(self.user, slot_id)
             except shipments.ShipmentError as error:
                 return await self.refresh(interaction, str(error))
-            xp = ", ".join(f"{EMOJI.get(s, '')} {x:,} {s} xp" for s, x in sent.xp.items() if x)
+            xp = ", ".join(f"{emojis.skill(s)} {x:,} {s} xp" for s, x in sent.xp.items() if x)
             self.result = Result("Shipped!", [f"🚚 **+{bits(sent.bits)}** bits  ·  {xp}", "A new crate is waiting in its place."], emoji="📦", accent=0xB8860B)
             await self.refresh(interaction)
 
