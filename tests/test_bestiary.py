@@ -138,4 +138,4 @@ async def test_the_fight_lobby_and_the_more_page_lead_to_the_bestiary(db):
     await click(nav, inter, "Bestiary")
     assert nav.screen.id == "bestiary" and buttons(nav)
     nav, inter = await hub("more")
-    assert "Bestiary" not in all_text(nav)  # hidden from the menus while combat is paused
+    assert "Bestiary" in all_text(nav)

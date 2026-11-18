@@ -529,7 +529,7 @@ def reachable_from_home():
 
 
 def test_every_screen_is_reachable_by_following_links_from_home():
-    assert reachable_from_home() == set(SCREENS) - {"fight", "bestiary"}  # (combat is paused: nothing links to these until it is reworked)
+    assert reachable_from_home() == set(SCREENS) - {"fight"}  # (combat is paused: nothing links to it until it is reworked)
 
 
 async def test_home_links_really_open_the_declared_screens(db):
@@ -687,7 +687,7 @@ async def test_brace_button_lowers_danger_and_then_disables(db):
     run = nav.screen.run
     run.danger = 40
     await click(nav, inter, "Brace (1)")
-    assert run.danger == 25 and run.braces == 0
+    assert run.danger == 40 - run.rules.descent.brace_amount and run.braces == 0
     assert find_button(nav, "Brace (0)").disabled
 
 
@@ -1046,7 +1046,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("trade", "games", "wiki", "settings")):
+    for index, expected in enumerate(("trade", "games", "bestiary", "wiki", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)
