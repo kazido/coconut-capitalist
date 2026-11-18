@@ -70,6 +70,18 @@ async def open_all_zones(user):
     await user.update_skill("farming", lambda s: setattr(s, "zone", n))
 
 
+def skip_zone_gate(monkeypatch):
+    """Harvest and planting tests that are not about zones: every field counts as open (test_farm_zones.py tests the real gate)."""
+    async def all_open(user, registry=None):
+        return len(SEEDS)
+
+    monkeypatch.setattr(farming, "open_zones", all_open)
+
+
+async def work_zone(user, zone):
+    await user.update_skill("farming", lambda s: setattr(s, "zone", zone))
+
+
 async def test_owned_seeds_still_plant_whatever_the_field(db):
     user = await User.get(1)
     await open_all_zones(user)

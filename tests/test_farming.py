@@ -10,7 +10,7 @@ from cococap.models.skills.farming import Farming
 from cococap.registry import get_registry
 from cococap.services import farming as f
 from cococap.user import Cooldowns, User
-from tests.test_farm_fields import open_all_zones
+from tests.test_farm_fields import skip_zone_gate, work_zone
 from tests.test_hub import all_text, choose, click, hub, select_named
 
 REG = get_registry()
@@ -20,10 +20,11 @@ T0 = 1_800_000_000 // HOUR * HOUR  # a clean hour boundary
 
 
 @pytest.fixture(autouse=True)
-async def every_zone_open(db):
-    """Most tests here plant any crop, so open every farm zone and work the last one (for both test players)."""
-    for user_id in (1, 2):
-        await open_all_zones(await User.get(user_id))
+async def every_zone_open(db, monkeypatch):
+    """Most tests here plant any crop, so skip the zone gate and work the last zone (for both test players)."""
+    skip_zone_gate(monkeypatch)
+    for user_id in (1, 2, 3):
+        await work_zone(await User.get(user_id), len(RULES.field_seeds))
 
 
 async def with_can(user, template="tool_can_tin"):
@@ -402,6 +403,7 @@ async def test_a_watering_grows_a_plot_about_as_often_as_the_water_chance_says_a
     for uid in range(1, 301):
         user = await User.get(uid)
         await with_can(user)
+        await work_zone(user, len(RULES.field_seeds))
         await user.add_item("seed_coconut", 1)
         await f.plant(user, 1, "seed_coconut", now=T0, registry=REG)
         before = (await user.skill("farming")).farm.plot_1.cycle
@@ -602,6 +604,7 @@ async def test_a_harvest_pays_farming_materials_in_proportion_to_the_crop(db):
     found = {}
     for seed in ("seed_apple", "seed_watermelon"):
         total = Counter()
+        await work_zone(user, f.seed_zone(seed, RULES))  # a crop's byproducts come from the zone it was planted in
         for i in range(60):
             await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
             await user.add_item(seed, 1)
@@ -610,7 +613,8 @@ async def test_a_harvest_pays_farming_materials_in_proportion_to_the_crop(db):
             total += (await f.harvest(user, 1, Random(i), T0, SURE)).extras
         found[seed] = total
     assert sum(found["seed_watermelon"].values()) > 8 * sum(found["seed_apple"].values())
-    assert {"material_compost", "material_plant_fiber"} <= set(found["seed_watermelon"])  # the common ones come first
+    table = {i.id for i in f.zone_materials(f.seed_zone("seed_watermelon", RULES), REG)}
+    assert "material_compost" in found["seed_watermelon"] and {i.removesuffix("_s2").removesuffix("_s3") for i in found["seed_watermelon"] if i.startswith("material_")} <= table  # only its own zone's table
 
 
 def test_the_farming_materials_are_used_by_upgrades_across_the_game():
