@@ -1,7 +1,7 @@
 """Deletes the bot's old messages from the play channels, on startup and every few minutes, plus an owner-only /cleanup."""
 
 import asyncio
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from logging import getLogger
 
 import discord
@@ -24,9 +24,11 @@ def _created_days(message: discord.Message) -> float:
     return (datetime.now(timezone.utc) - message.created_at).total_seconds() / 86400
 
 
-async def collect(channel, bot_id: int, limit: float) -> list[discord.Message]:
-    """The bot's messages in `channel` untouched for `limit` minutes (0 = all of them)."""
-    return [m async for m in channel.history(limit=None) if should_delete(idle=_age_minutes(m), from_bot=m.author.id == bot_id, limit=limit)]
+async def collect(channel, bot_id: int, limit: float, lookback_hours: float | None = None) -> list[discord.Message]:
+    """The bot's messages in `channel` untouched for `limit` minutes (0 = all of them). `lookback_hours` reads only recent history (the
+    5-minute sweeps); None reads the whole channel (the startup pass and /cleanup, once)."""
+    after = None if lookback_hours is None else datetime.now(timezone.utc) - timedelta(hours=lookback_hours)
+    return [m async for m in channel.history(limit=None, after=after) if should_delete(idle=_age_minutes(m), from_bot=m.author.id == bot_id, limit=limit)]
 
 
 async def delete_all(channel, messages: list[discord.Message], cfg: JanitorConfig) -> int:
@@ -121,7 +123,7 @@ class Janitor(commands.Cog):
                 log.warning("janitor: the bot lacks Manage Messages and/or Read Message History in #%s", channel.name)
                 continue
             try:
-                messages = await collect(channel, self.bot.user.id, limit)
+                messages = await collect(channel, self.bot.user.id, limit, None if limit == 0 else self.cfg.lookback_hours)
                 if messages:
                     n = await delete_all(channel, messages, self.cfg)
                     log.info("janitor deleted %s message(s) in #%s", n, channel.name)
