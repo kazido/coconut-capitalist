@@ -5,7 +5,7 @@ from cococap.services.janitor import can_bulk, idle_minutes, load_config, should
 
 def test_config_loads_and_has_channels():
     cfg = load_config()
-    assert cfg.channel_ids and cfg.idle_minutes > 0 and cfg.interval_minutes > 0
+    assert (cfg.channel_ids or cfg.category_names) and cfg.idle_minutes > 0 and cfg.interval_minutes > 0
 
 
 def test_never_deletes_other_authors():
@@ -45,6 +45,6 @@ def test_channels_are_found_by_category_name_and_missing_ids_are_reported():
     bot = NS(guilds=[NS(name="x", id=5, categories=guild.categories)], get_channel=lambda cid: None, user="bot")
     cfg = JanitorConfig(True, (999,), ("gamble",), 5, 24, 5, 0.1)
     channels, problems = find_channels(bot, cfg)
-    assert channels == [play] and "999" in problems[0] and "can see" in problems[-1]
+    assert channels == [play] and len(problems) == 1 and "999" in problems[0]  # (something was found: no long "what I can see" line)
     none_found, problems = find_channels(NS(guilds=[], get_channel=lambda cid: None, user="bot"), JanitorConfig(True, (), ("gamble",), 5, 24, 5, 0.1))
-    assert none_found == [] and "no category" in problems[0]
+    assert none_found == [] and "no category" in problems[0] and "can see" in problems[-1]  # (nothing found: say what this bot can see)

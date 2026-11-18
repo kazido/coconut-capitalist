@@ -7,7 +7,7 @@ enabled = true
 category_names = ["gamble"]  # matches any category whose name CONTAINS this, e.g. "🎲︱21 gamble st."
 
 # Extra channels swept by id (the old hard-coded six). Optional. Ids the bot cannot see are reported, not silently skipped.
-channel_ids = [858549045613035541, 959271607241683044, 961471869725343834, 961045401803317299, 962171274073899038, 962171351794327562]
+channel_ids = []
 
 # How often the sweep runs (it also runs once at startup).
 interval_minutes = 5
