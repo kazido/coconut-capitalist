@@ -129,6 +129,11 @@ def bits(amount: int) -> str:
     return f"{amount:,} {currency('bits')} bits"
 
 
+def stars(count: int) -> str:
+    """`count` star icons in a row (pets' stars, starred materials). Message text only: the plain ⭐ is the fallback."""
+    return ui("star", "⭐") * max(0, count)
+
+
 def tokens(amount: int) -> str:
     """Tokens in message text: "3 <icon> tokens" ("1 <icon> token"). Message text only, like `bits`."""
     return f"{amount:,} {currency('tokens')} token{'' if amount == 1 else 's'}"

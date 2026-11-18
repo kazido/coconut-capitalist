@@ -170,7 +170,10 @@ class Item(_Data):
     @property
     def emoji(self) -> str | None:
         """The bot's emoji named `<item id>` if uploaded, else the data file's (tokens resolve by name; see `cococap.emojis`)."""
-        return emojis.for_id("item", self.id, emojis.resolve(self.emoji_raw))
+        base = emojis.resolve(self.emoji_raw)
+        if self.star_of:  # a starred variant shows its own art if it has any, else the plain material's
+            base = emojis.for_id("item", self.star_of, base)
+        return emojis.for_id("item", self.id, base)
 
     @property
     def is_instance(self) -> bool:
@@ -187,8 +190,9 @@ class Item(_Data):
 
     @property
     def display(self) -> str:
-        """Emoji (if any) followed by the name."""
-        return f"{self.emoji} {self.name}" if self.emoji else self.name
+        """Emoji (if any) followed by the name; a starred material shows star icons instead of the ★ marks in its name."""
+        name = self.name.rsplit(" ", 1)[0] + " " + emojis.stars(self.stars) if self.star_of and self.stars > 1 else self.name
+        return f"{self.emoji} {name}" if self.emoji else name
 
 
 class PetBonus(_Data):

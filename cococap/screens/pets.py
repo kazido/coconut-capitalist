@@ -9,11 +9,8 @@ from cococap.ui import Page, PromptModal, Result, Screen
 from cococap.ui.components import button, row, select, sep, text, xp_bar
 from cococap.user import User
 
-STARS = "⭐"
-
-
 def stars_text(n: int) -> str:
-    return STARS * n
+    return emojis.stars(n)
 
 
 def skill_line(pet) -> str:
