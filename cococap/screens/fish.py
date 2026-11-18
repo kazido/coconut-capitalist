@@ -262,7 +262,7 @@ class FishScreen(Screen):
     @staticmethod
     def _tell_lines(reveals) -> list[str]:
         """What each ❓ turned out to be: written in your field notes, and shown here so you can start working it out."""
-        return [f"🔍 The {emojis.icon('unknown', '❓')} was **{truth}** (after {before}). Added to your field notes." for before, truth in reveals]
+        return [f"🔍 The {emojis.icon('unknown', '❓')} was **{truth}** (the arrow before it was {before}; 🌀 steps do not count). Added to your field notes." for before, truth, _first in reveals]
 
     def _catch_result(self, catch: fishing.Catch) -> Result:
         reg = get_registry()
@@ -738,8 +738,9 @@ async def notes_content(user) -> tuple[str, str]:
             unknown.append(fish.rarity)
     if unknown:
         lines.append(unknown_summary(unknown, "not caught yet"))
-    intro = (f"Rare fish hide arrows behind a {emojis.icon('unknown', '❓')}. Each fish has its own rule for it: always ◄, always ►, the same as the arrow "
-             f"before it, or the opposite (a few are pure luck). Every {emojis.icon('unknown', '❓')} you see is counted here, and a rule is only written down once "
+    intro = (f"Rare fish hide arrows behind a {emojis.icon('unknown', '❓')}. Each fish has its own rule for it: always ◄, always ►, the opposite of the last arrow before it, "
+             "the same as the last arrow before it, or the same as the FIRST arrow of the reel. 🌀 Reel steps are skipped when looking back, and a Reel step's "
+             f"disguise arrow does not count. Every {emojis.icon('unknown', '❓')} you see is counted here, and a rule is only written down once "
              f"**{fishing.MIN_NOTES_FOR_VERDICT}** of them agree on it.")
     return intro, "\n".join(lines)
 

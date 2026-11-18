@@ -139,9 +139,11 @@ async def upgrade_ship(user: User, registry: Registry | None = None) -> ShipTier
     if tier is None:
         raise AreaError("Your ship is fully upgraded.")
     levels = await _levels(user)
-    short = [f"{skill} {need} (you are {levels[skill]})" for skill, need in tier.skill_floors.items() if levels[skill] < need]
-    if short:
-        raise AreaError(f"The {tier.name} needs: " + ", ".join(short) + ".")
+    # ANY ONE skill at its floor is enough; the other skills stay gated by their own location levels.
+    if not any(levels[skill] >= need for skill, need in tier.skill_floors.items()):
+        floor = min(tier.skill_floors.values())
+        best = max(levels.values())
+        raise AreaError(f"The {tier.name} needs level {floor} in any one skill (your best is {best}).")
     await payment.pay(user, tier.bits, tier.parts, reg, AreaError)
 
     def bump(data: dict) -> None:

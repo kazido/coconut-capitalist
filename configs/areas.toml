@@ -4,7 +4,7 @@
 # (or a later one) AND have the level: the area is a ceiling, so a maxed skill still waits on the ship.
 # Going to an area you have already reached is free; the FIRST trip to a new area burns its `fuel` (crafted at the Workbench,
 # configs/recipes.toml) and needs ship tier N for area N. Ship tier 1 builds the ship; tier N+1 is an upgrade of tier N.
-# skill_floors = the level that opens the first location of the area you are sailing to (docs/plans/areas-and-ship.md).
+# skill_floors = the level that opens (ANY ONE skill at it is enough) the first location of the area you are sailing to (docs/plans/areas-and-ship.md).
 # Fuel and ship parts mix materials from every skill on purpose, so no skill can be skipped.
 # Plan: docs/plans/areas-and-ship.md.  TODO(balance): every number here is a first guess.
 
