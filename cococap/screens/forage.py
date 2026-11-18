@@ -6,7 +6,6 @@ import discord
 
 from cococap import emojis
 from cococap.registry import get_registry
-from cococap.screens.sellall import start_sell_all
 from cococap.services import areas, foraging, party_tree, pets, releaf
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import Party, xp_bonus
@@ -238,7 +237,6 @@ class ForageScreen(Screen):
                                on_click=self._chop),
                         button("Grain notes", emoji=emojis.icon("book", "📖"), on_click=self._notes),
                         button("Mastery", emoji=emojis.icon("star", "🌟"), on_click=self._mastery),
-                        button("Sell all", emoji=emojis.icon("sell", "💰"), on_click=self._sell_all),
                         *([button("Releaf Foundation", emoji=emojis.icon("sprout", "🌱"), on_click=self._releaf)] if level >= rules.releaf.min_level else [])))
         return Page("Foraging", body, accent=0x4C8C4A)
 
@@ -264,9 +262,6 @@ class ForageScreen(Screen):
     async def _notes(self, interaction: discord.Interaction) -> None:
         self.result = await notes_result(self.user)
         await self.refresh(interaction)
-
-    async def _sell_all(self, interaction: discord.Interaction) -> None:
-        await start_sell_all(self, interaction, "foraging")
 
     async def _mastery(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "mastery", skill="foraging")

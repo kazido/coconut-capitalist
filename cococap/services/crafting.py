@@ -1,7 +1,6 @@
 """The Workbench: make things from materials (configs/recipes.toml). No Discord here.
 
-A craft takes the recipe's bits and items and gives the output in one go: if anything is short, nothing is taken. `needed_items` is
-what Sell All must not sell (every recipe's inputs, and the crab pot's materials).
+A craft takes the recipe's bits and items and gives the output in one go: if anything is short, nothing is taken.
 """
 
 from dataclasses import dataclass
@@ -72,20 +71,3 @@ async def craft(user: User, recipe_id: str, times: int = 1, registry: Registry |
     return Crafted(recipe, times, made, bits)
 
 
-def needed_items(registry: Registry | None = None) -> dict[str, tuple[int, list[str]]]:
-    """What Sell All holds back for crafting: item -> (the most ONE craft needs, what it is for). Crafts happen one at a time,
-    so like tool upgrades this is the max over everything, not the sum (and not times 10: Craft max is your own call)."""
-    reg = registry or get_registry()
-    needs: dict[str, tuple[int, list[str]]] = {}
-
-    def add(item_id: str, quantity: int, label: str) -> None:
-        have, labels = needs.get(item_id, (0, []))
-        needs[item_id] = (max(have, quantity), [*labels, label])
-
-    for recipe in reg.recipes.values():
-        for item_id, quantity in recipe.inputs.items():
-            add(item_id, quantity, recipe.name)
-    if reg.fishing is not None:
-        for item_id, quantity in reg.fishing.pots.craft_items.items():
-            add(item_id, quantity, "Crab pot")
-    return needs

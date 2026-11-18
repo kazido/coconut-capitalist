@@ -27,7 +27,7 @@ Keep this file current: update the "Open work" list at the end of every session.
 
 ## Screens were consolidated (2026-11-18): 49 -> 33 registered
 Tabs pages (`ui/tabs.py` TabsScreen + panes): fishlog (quests/book/community/records/notes), trees (own/grove/party), pets (+orbs), tools (+upgrade/enchant),
-player (profile/stats/top), shop (+sell all by skill), reactor (+wyrmholes), games (high-low, blackjack, flashcard, unscramble, sequence, trivia). "Ship" is now Travel, "Shipments" is Crates; fight/bestiary are hidden from menus (combat paused).
+player (profile/stats/top), shop (buy, and sell one item at a time: 1x / 10x / custom), reactor (+wyrmholes), games (high-low, blackjack, flashcard, unscramble, sequence, trivia). "Ship" is now Travel, "Shipments" is Crates; fight/bestiary are hidden from menus (combat paused).
 Older notes below that name `tree`, `grove`, `upgrade`, `enchant`, `stats`, `top`, `casino`, `minigames`, `sellall`, `wyrmhole`, `fishbook`... mean the matching tab. Plan: docs/plans/screen-consolidation.md.
 
 ## What is built (all committed)

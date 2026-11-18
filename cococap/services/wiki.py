@@ -300,7 +300,7 @@ def _crafting(reg: Registry) -> list[str]:
         "**The Workbench** (Inventory, then Workbench) makes things from materials you gathered, instead of buying them. Pick a recipe, see what you have against "
         "what it needs, and craft one, ten or as many as you can. Everything is used up and the result given together: if anything is short, nothing is taken.",
         "**Recipes.**\n" + "\n".join(lines),
-        "**Sell all keeps the inputs** of every recipe (and the crab pot's materials) while Keep upgrade materials is on in Settings.",
+        "**Selling** is one item at a time: open the Shop, switch to Sell, pick an item, then sell 1x, 10x or a custom amount.",
     ]
 
 

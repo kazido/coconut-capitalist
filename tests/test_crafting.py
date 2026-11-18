@@ -1,4 +1,4 @@
-"""The Workbench: recipes (data), the craft rules, Sell All keeping craft inputs, and the screen end to end."""
+"""The Workbench: recipes (data), the craft rules, and the screen end to end."""
 
 import shutil
 
@@ -145,48 +145,6 @@ async def test_unknown_recipe_and_zero_times_are_refused(db):
         await crafting.craft(user, "nope")
     with pytest.raises(CraftError):
         await crafting.craft(user, "material_radar_battery", 0)
-
-
-# ---- Sell all keeps the inputs ----------------------------------------------------------------------------------------------------------
-async def test_sell_all_keeps_every_recipe_input_and_the_crab_pot_materials(db):
-    from cococap.screens.sellall import upgrade_needs
-
-    user = await User.get(1)
-    needed = crafting.needed_items()
-    for recipe in REG.recipes.values():
-        assert all(i in needed and needed[i][0] >= q for i, q in recipe.inputs.items())
-    pots = REG.fishing.pots.craft_items
-    assert all(needed[i][0] >= q for i, q in pots.items())  # (hardwood, plant fiber, coral shard)
-    held = await upgrade_needs(user)
-    assert all(held[i] >= q for i, (q, _) in needed.items())
-    for item_id, (quantity, _) in needed.items():
-        await user.add_item(item_id, quantity + 3)
-    for skill in ("mining", "foraging", "fishing", "farming"):
-        await shop.sell_all_for_skill(user, skill, keep=await upgrade_needs(user))
-    for item_id, (quantity, _) in needed.items():
-        assert await user.item_quantity(item_id) >= quantity, item_id  # (what was spare may be sold, what a craft needs stays)
-
-
-async def test_the_setting_off_sells_them_like_anything_else(db):
-    from cococap.screens.sellall import start_sell_all  # noqa: F401  (the same path the button takes)
-
-    user = await User.get(1)
-    await user.add_item("material_hardwood", 5)
-    await user.set_setting("confirm_sell_all", False)
-    await user.set_setting("keep_upgrade_materials", False)
-    nav, inter = await hub("forage")
-    await click(nav, inter, "Sell all")
-    assert await user.item_quantity("material_hardwood") == 0
-
-
-async def test_the_sell_all_button_leaves_the_spare_only(db):
-    user = await User.get(1)
-    need = crafting.needed_items()["material_hardwood"][0]
-    await user.add_item("material_hardwood", need + 4)
-    await user.set_setting("confirm_sell_all", False)
-    nav, inter = await hub("forage")
-    await click(nav, inter, "Sell all")
-    assert await user.item_quantity("material_hardwood") == need
 
 
 # ---- the screen --------------------------------------------------------------------------------------------------------------------------

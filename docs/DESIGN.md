@@ -851,9 +851,9 @@ so the choice is also a choice of what you go out and collect.
   theirs, up to double**, plus their own clean-reel bonus. Slipping off the hook (or letting it go, or running out of time) only loses your own share; if nobody lands theirs it is lost.
   One fight at a time per party (a second boss is a solo fight). The fight is settled once in one transaction and each member collects their payout from their Fishing page, like a party tree.
 
-## Sell all, accomplishments, shipments (latest)
+## Shop selling, accomplishments, shipments (latest)
 
-- **Sell all** button on every skill page sells that skill's rewards in one click. It asks first unless the player turns off the `confirm_sell_all` setting (on by default). It can keep what your next upgrade still needs.
+- **Selling is one item at a time, in the Shop** (Sell mode: pick an item, then Sell 1x, Sell 10x or Sell custom; custom is prefilled with what you own and clamped to it). The per-skill Sell all button and its page were removed; the Fish page's Sell fish still sells the fish you hold.
 - **Bits come mainly from selling.** Daily interest and some accomplishments still pay bits, but big accomplishments (quests, books, community goals, bosses) now pay much more *xp*. The double-tree jackpot pays foraging xp (`double_xp`) instead of a million bits.
 - **Shipments** (`configs/shipments.toml`, `services/shipments.py`): tasks you fill with materials from several skills, then ship for bits (1.3x their sell value) and xp in the skills involved. Each player has 3 crates: two themed on a skill (a few of its materials plus others) and one mixed. Shipping replaces the crate in the same slot. A weekly *community* shipment is filled by everyone; once full, everyone who gave at least 2% of it claims 1.5x what they gave plus xp. State lives in the community store (`shipments:{uid}`, `shipment_community`), so there are no migrations.
 - **Settings audit** and **combat redesign** are still open (see HANDOFF).
@@ -861,7 +861,7 @@ so the choice is also a choice of what you go out and collect.
 ## Combat paused, settings, upgrade paths
 
 - **Combat is paused** while it is redesigned: the Skills page shows a disabled "Paused" button, `/fight` says so, and nothing links to the fight screen (code and tests stay). Ideas for the rework: stance/counters, a resource/combo system, interrupts and targeting.
-- **Settings** (Settings page, all saved per player): `confirm_sell_all` (on), `keep_upgrade_materials` (off: Sell all always holds back what your next upgrades need), `confirm_upgrades` (off: upgrades take a second "Sure?" press), `fishing_estimate` (on). A test keeps the page's list equal to the `Settings` model.
+- **Settings** (Settings page, all saved per player): `confirm_sell_all` and `keep_upgrade_materials` are still stored but no longer read by any sell path (left in place; remove when convenient), `confirm_upgrades` (off: upgrades take a second "Sure?" press), `fishing_estimate` (on). A test keeps the page's list equal to the `Settings` model.
 - **Upgrade paths**: a tool at a fork shows one path at a time, swapped with a "Pick a path" dropdown; tools are still one per page.
 - **Shipments cooldown**: deliberately none. Materials are the limit and shipping only pays a modest premium over selling.
 
@@ -908,7 +908,7 @@ A gadget (an upgrade level on your fishing skill, like the mining reactor, not a
 ## Seasoning trade-off, everything sells, rare scrolls, no chop bits, Back = up one level
 
 - **Wear-slowing gear is a trade.** `wear_slow` (Seasoned, axe stats, mastery) slows plain and good grains and speeds BAD grains (grain wear above 1: knotty, twisted) up by the same amount, so you leave bad spots sooner.
-- **Everything but tools can be sold** (seeds, bait, keys, deeds, orbs, scrolls, pet food; a test enforces it). **Sell all** still leaves the things you keep to use (`KEPT_BY_SELL_ALL` in `services/shop.py`: seeds, bait, key items, scrolls, pet food, pet items).
+- **Everything but tools can be sold** (seeds, bait, keys, deeds, orbs, scrolls, pet food; a test enforces it). The Shop's Buy amounts are capped by `services/shop.max_affordable` (what the bits pay for and what you may own: one tool per kind, 1000 per purchase).
 - **Scrolls are rare**: foraging 1-in-3,500 to 1-in-6,000 per drop roll, mining 1-in-6,000 (moved ahead of the gemstones in the depth tables so the list stays rarest-first), fishing chest/boss chances quartered, combat weights cut. They sell for 400,000+.
 - **Chopping pays no bits** (`bits_per_hp = 0`): foraging pays xp and drops (sell them). It was only about 5% of foraging pay, so no other number changed. The bit-sharing rules still exist and are tested with the value turned on.
 - **Back goes up one level.** The nav stack is the path down from Home; opening a screen that is already on it cuts the path back to that screen instead of stacking a second copy, so Back is never an "undo".
@@ -1146,8 +1146,7 @@ willow growing together):
 The rare signature drops sell for more (60k-90k each) than the old 50k price, so a Gilded Wedge costs more in forgone sales than it did in the shop;
 it is meant for foragers who keep their rares for it. Lower the quantities or the rares' sell prices if that feels wrong.
 
-**Sell all keeps craft inputs.** `screens/sellall.upgrade_needs_by_tool` adds `crafting.needed_items()` (every recipe's inputs and the crab pot's
-craft materials, the MAX any one craft needs, not the sum) to what the tool upgrades hold back. It follows the same "Keep upgrade materials" setting.
+**Selling keeps nothing back.** Sell all (and its craft-input and upgrade-material holds) was removed with the skill pages' bulk sell; selling is one item at a time in the Shop.
 
 ## Double Hook (fishing): the first effect built with the "where does it belong" rule
 

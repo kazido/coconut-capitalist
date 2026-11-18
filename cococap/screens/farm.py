@@ -5,7 +5,6 @@ import time
 import discord
 
 from cococap.registry import get_registry
-from cococap.screens.sellall import start_sell_all
 from cococap.services import farming
 from cococap.services.equipment import equipped_stats
 from cococap.services import odds
@@ -80,7 +79,6 @@ class FarmScreen(Screen):
                    disabled=can is None or not any(v.growing and not v.watered for v in views), on_click=self._water),
             button("Plant page" if pages > 1 else "Plant all", emoji=emojis.icon('sprout', '🌱'), disabled=not (self.seed and empty), on_click=self._plant_all),
             button("Market", emoji=emojis.icon('sell', '🛒'), on_click=self._market),
-            button("Sell all", emoji=emojis.icon('sell', '💰'), on_click=self._sell_all),
         ))
         if pages > 1:
             body.append(row(button("Prev", emoji=emojis.icon('prev', '◀️'), disabled=self.page == 0, on_click=self._turn(-1)),
@@ -182,9 +180,6 @@ class FarmScreen(Screen):
     async def _pick_seed(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.seed = values[0]
         await self.refresh(interaction)
-
-    async def _sell_all(self, interaction: discord.Interaction) -> None:
-        await start_sell_all(self, interaction, "farming")
 
     async def _mastery(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "mastery", skill="farming")

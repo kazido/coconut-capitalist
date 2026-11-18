@@ -1,7 +1,6 @@
 # The Workbench (screens/craft.py, services/crafting.py): things you MAKE from materials instead of buying them.
 # Each recipe uses up `inputs` (item = how many) and `bits` (a small workbench fee) and makes `quantity` of `output`.
 # `skill` + `min_level` (optional) ask for a level first. Outputs are plain stackable items (never tools).
-# Sell All keeps the inputs of every recipe while "Keep upgrade materials" is on (screens/sellall.py).
 # Balance: each used to be a shop item; the inputs' sell value sits a little under the old shop price, but how fast you find them matters
 # more (see DESIGN.md "Crafting").  TODO(balance): all numbers
 

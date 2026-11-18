@@ -44,7 +44,7 @@ class CraftScreen(Screen):
                  "", needs_text(recipe.bits, self.user.purse, recipe.inputs, owned, reg)]
         if recipe.min_level:
             lines.append(f"{emojis.icon('check', '✅') if not locked else emojis.icon('cross', '❌')} {recipe.skill.title()} level **{recipe.min_level}** (you are level {level})")
-        lines.append(f"-# You can make **{count:,}** right now. Sell All keeps what recipes use while \"Keep upgrade materials\" is on.")
+        lines.append(f"-# You can make **{count:,}** right now.")
         body = [*self.note_block(), text("\n".join(lines)), row(select("Pick a recipe...", options, self._pick)),
                 row(button("Craft 1", emoji=emojis.icon("craft", "🛠️"), style=discord.ButtonStyle.success, disabled=count < 1, on_click=self._craft(1)),
                     button("Craft 10", disabled=count < 10, on_click=self._craft(10)),
