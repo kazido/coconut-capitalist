@@ -84,7 +84,7 @@ def test_built_png_is_64x64_rgba(tmp_path):
 
 
 def test_build_is_deterministic(tmp_path):
-    sprite = next(s for s in load_all() if s.name == "flame_ember")  # (an animated one: webp output is deterministic too)
+    sprite = next(s for s in load_all() if s.name == "pet_cinder")  # (an animated one: webp output is deterministic too)
     a, b = build.build_one(sprite, tmp_path / "a"), build.build_one(sprite, tmp_path / "b")
     assert a.read_bytes() == b.read_bytes()
 

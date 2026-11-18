@@ -90,7 +90,7 @@ rows = [
 ]
 
 [tool_pickaxe_ironbound]
-rarity = 4
+rarity = 5
 palette = { h = "#b4b4c0", m = "#707080", s = "#44444f", o = "#2e1c2c", 1 = "#a07858", 2 = "#7a5240", 3 = "#4a3030", r = "#ff4d5e" }
 rows = [
   "................",
@@ -112,7 +112,7 @@ rows = [
 ]
 
 [tool_pickaxe_crystal]
-rarity = 5
+rarity = 6
 palette = { h = "#d8fff4", m = "#4cd8c0", s = "#1e8a8a", o = "#2e1c2c", 1 = "#fbb853", 2 = "#f57d4a", 3 = "#e68f4e", g = "#ffffff" }
 rows = [
   "................",
@@ -156,7 +156,7 @@ rows = [
 ]
 
 [tool_pickaxe_mythril]
-rarity = 6
+rarity = 7
 palette = { h = "#e8fffa", m = "#7ee8d0", s = "#2a8f94", o = "#2e1c2c", 1 = "#e6e8ee", 2 = "#9cacb3", 3 = "#7f718a", g = "#ffffff", k = "#1e5a70", y = "#c8f0ff" }
 rows = [
   "......ooo.......",
@@ -200,7 +200,7 @@ rows = [
 ]
 
 [tool_pickaxe_prospector]
-rarity = 4
+rarity = 5
 palette = { h = "#ffe9a0", m = "#e8a838", s = "#a0601c", o = "#2e1c2c", 1 = "#e8a860", 2 = "#c9894f", 3 = "#8a4f3a" }
 rows = [
   "................",
@@ -222,7 +222,7 @@ rows = [
 ]
 
 [tool_pickaxe_geode]
-rarity = 5
+rarity = 6
 palette = { h = "#e8d8ff", m = "#a070e0", s = "#6a3fa8", o = "#2e1c2c", 1 = "#e8a860", 2 = "#c9894f", 3 = "#8a4f3a", v = "#d8c0ff" }
 rows = [
   "................",
@@ -266,7 +266,7 @@ rows = [
 ]
 
 [tool_pickaxe_veinhunter]
-rarity = 6
+rarity = 7
 palette = { a = "#8ff8e2", b = "#cf657f", c = "#a984f4", d = "#6b3f75", e = "#30e1b9", f = "#a34b70", g = "#a14b6f", h = "#2e2230", i = "#6b3e74", j = "#a24c70", k = "#2e222f", l = "#313638", m = "#303637", n = "#753c54", p = "#966b6b", q = "#fbb853", r = "#09b09c", s = "#fbb955", t = "#30e1ba", u = "#f57d4a", v = "#e68f4e", w = "#e6904e", x = "#6b3e75", o = "#2e1c2c" }
 rows = [
   "......ooooo..oo.",

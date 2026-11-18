@@ -265,7 +265,7 @@ rows = [
 ]
 
 [tool_can_tin]
-rarity = 2
+rarity = 1
 palette = { a = "#f4f8ff", b = "#b8c4d8", c = "#7e8ca8", d = "#525c7c", f = "#8a96b0", g = "#c8d2e4", o = "#2e1c2c", w = "#ffffff" }
 rows = [
   "................",
@@ -353,7 +353,7 @@ rows = [
 ]
 
 [tool_can_gold]
-rarity = 6
+rarity = 5
 palette = { a = "#fff6a8", b = "#f6c444", c = "#c47c2c", d = "#80443c", f = "#e04a5c", g = "#ff9aa8", o = "#2e1c2c", p = "#ffd0d8", r = "#e04a5c", w = "#ffffff" }
 rows = [
   "................",
@@ -375,7 +375,7 @@ rows = [
 ]
 
 [tool_can_crystal]
-rarity = 7
+rarity = 6
 palette = { a = "#f0feff", b = "#8ce4f8", c = "#5a90f0", d = "#4a3cb0", f = "#e86cd8", g = "#ffb4f4", o = "#2e1c2c", p = "#fff0ff", r = "#e86cd8", w = "#ffffff" }
 rows = [
   "................",
@@ -419,7 +419,7 @@ rows = [
 ]
 
 [tool_can_cauldron]
-rarity = 6
+rarity = 5
 palette = { a = "#8a92b8", b = "#4e5680", c = "#343c64", d = "#222648", f = "#52e87c", g = "#b8ffc8", h = "#1ea060", k = "#c8d0e8", o = "#2e1c2c", w = "#ffffff" }
 rows = [
   "................",
@@ -441,7 +441,7 @@ rows = [
 ]
 
 [tool_can_retort]
-rarity = 7
+rarity = 6
 palette = { a = "#f0ffff", b = "#a8ecf0", c = "#5eb8d8", f = "#c06cf0", g = "#e8b4ff", h = "#7a38b8", o = "#2e1c2c", s = "#7c6048", t = "#b08860", w = "#ffffff" }
 rows = [
   "................",

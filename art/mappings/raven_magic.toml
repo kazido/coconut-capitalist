@@ -63,3 +63,80 @@ ui_small_wyrmhole = {cell = [43, 11], framed = false}
 ui_magnet = {cell = [7, 4], framed = false}
 ui_lifeline = {cell = [41, 2], framed = false}
 ui_cache = {cell = [9, 13], framed = false}
+
+# Glyph replacements (cococap/glyphs.py): every plain unicode emoji the bot writes maps to one of these.
+ui_next = {cell = [0, 2], framed = false}
+ui_prev = {cell = [0, 2], flip = "h", framed = false}
+ui_up = {cell = [39, 6], framed = false}
+ui_down = {cell = [39, 7], framed = false}
+ui_home = {cell = [2, 0], framed = false}
+ui_gear = {cell = [0, 1], framed = false}
+ui_crate = {cell = [0, 8], framed = false}
+ui_gift = {cell = [0, 8], hue = 300, framed = false}
+ui_bag = {cell = [0, 13], framed = false}
+ui_skull = {cell = [14, 0], framed = false}
+ui_swirl = {cell = [46, 0], framed = false}
+ui_sparkle = {cell = [61, 10], framed = false}
+ui_party = {cell = [65, 6], framed = false}
+ui_money = {cell = [9, 15], framed = false}
+ui_anvil = {cell = [7, 12], framed = false}
+ui_search = {cell = [7, 6], framed = false}
+ui_fish = {cell = [25, 13], framed = false}
+ui_drop = {cell = [40, 14], ramp = ["#10284a", "#3a8ae0", "#9ad8ff", "#f0ffff"], framed = false}
+ui_wave = {cell = [49, 1], framed = false}
+ui_mist = {cell = [49, 5], framed = false}
+ui_world = {cell = [133, 7], framed = false}
+ui_radar = {cell = [133, 6], framed = false}
+ui_target = {cell = [132, 10], framed = false}
+ui_ruler = {cell = [93, 5], framed = false}
+ui_flag = {cell = [2, 10], framed = false}
+ui_flag_white = {cell = [2, 8], framed = false}
+ui_brain = {cell = [14, 10], framed = false}
+ui_gem = {cell = [10, 0], framed = false}
+ui_bug = {cell = [23, 3], framed = false}
+ui_orb = {cell = [10, 5], framed = false}
+ui_sun = {cell = [64, 15], framed = false}
+ui_heart = {cell = [41, 2], framed = false}
+ui_heart_green = {cell = [37, 2], framed = false}
+ui_blood = {cell = [46, 5], framed = false}
+ui_eye = {cell = [44, 14], framed = false}
+ui_coconut = {cell = [1, 5], framed = false}
+ui_ship = {cell = [24, 13], framed = false}
+ui_cart = {cell = [1, 8], framed = false}
+ui_basket = {cell = [3, 5], framed = false}
+ui_wheat = {cell = [58, 10], framed = false}
+ui_flower = {cell = [16, 6], framed = false}
+ui_sprout = {cell = [15, 4], framed = false}
+ui_herb = {cell = [15, 2], framed = false}
+ui_door = {cell = [1, 7], framed = false}
+ui_sword = {cell = [45, 0], framed = false}
+ui_shield = {cell = [41, 8], framed = false}
+ui_fist = {cell = [41, 6], framed = false}
+ui_medal = {cell = [8, 14], framed = false}
+ui_medal_gold = {cell = [8, 11], framed = false}
+ui_medal_silver = {cell = [8, 10], framed = false}
+ui_medal_bronze = {cell = [8, 9], framed = false}
+ui_page = {cell = [6, 8], framed = false}
+ui_trade = {cell = [7, 11], framed = false}
+ui_food = {cell = [29, 3], framed = false}
+ui_apple = {cell = [27, 2], framed = false}
+ui_box = {cell = [25, 10], framed = false}
+
+# Enchant icons (one each; they had only a plain glyph before)
+enchant_soloist = {cell = [67, 0], framed = false}
+enchant_keen = {cell = [90, 7], framed = false}
+enchant_lure = {cell = [24, 8], framed = false}
+enchant_steady_line = {cell = [24, 2], framed = false}
+enchant_double_hook = {cell = [24, 9], framed = false}
+enchant_sharp_eye = {cell = [44, 14], framed = false}
+enchant_iron_frame = {cell = [41, 7], framed = false}
+enchant_seasoned = {cell = [29, 3], framed = false}
+enchant_double_strike = {cell = [64, 0], framed = false}
+enchant_scholar = {cell = [18, 0], framed = false}
+enchant_appraiser = {cell = [7, 11], framed = false}
+enchant_veinfinder = {cell = [7, 6], framed = false}
+enchant_bounty = {cell = [3, 5], framed = false}
+enchant_deepcall = {cell = [49, 1], framed = false}
+enchant_fertile = {cell = [58, 10], framed = false}
+enchant_seedkeeper = {cell = [28, 1], framed = false}
+enchant_gleaner = {cell = [58, 13], framed = false}
