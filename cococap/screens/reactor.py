@@ -80,7 +80,7 @@ class ReactorScreen(Screen):
         ))
         if tool and tool.stats.get("lifeline"):
             wait = skill.lifeline_wait
-            body.append(text("🛟 **Lifeline**: " + ("ready: the reactor will hold the tunnel once when a dig would collapse it." if wait <= 0
+            body.append(text(f"{emojis.icon('lifeline', '🛟')} **Lifeline**: " + ("ready: the reactor will hold the tunnel once when a dig would collapse it." if wait <= 0
                                                     else f"recharging: ready again after **{wait}** more mine(s).")))
         if level >= rules.magnet.level:
             body += [sep(), *self._magnet_parts(reg, skill, tool)]
@@ -146,7 +146,7 @@ class ReactorScreen(Screen):
             parts.append(row(*(button(f"Feed {n}", on_click=feed(n), disabled=have < 1 or fits < 1 or n > min(have, fits)) for n in (1, 10, 100)),
                               button(f"Fill ({fill:,})", style=discord.ButtonStyle.success, on_click=feed(fill), disabled=fill < 1)))
         parts.append(row(
-            button(f"Magnet: {'on' if skill.magnet_on else 'off'}", emoji="✨", style=discord.ButtonStyle.primary if skill.magnet_on else discord.ButtonStyle.secondary,
+            button(f"Magnet: {'on' if skill.magnet_on else 'off'}", emoji=emojis.icon("magnet", "✨"), style=discord.ButtonStyle.primary if skill.magnet_on else discord.ButtonStyle.secondary,
                    on_click=self._toggle("magnet_on", skill.magnet_on)),
             button(f"Auto-miner feeds it: {'on' if skill.magnet_auto_feed else 'off'}", emoji=emojis.get("autominer", "⚙️"),
                    style=discord.ButtonStyle.primary if skill.magnet_auto_feed else discord.ButtonStyle.secondary,

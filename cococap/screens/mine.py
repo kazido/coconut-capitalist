@@ -20,15 +20,17 @@ def _cell() -> str: return emojis.get("cell", "⬛")
 def _cell_empty() -> str: return emojis.get("cell_empty", "▫️")
 def _rich() -> str: return emojis.get("cell_upgraded", "🟦")
 def _hole() -> str: return emojis.get("wyrmhole", "🌀")
-VENT = "💨"
-CACHE = "📦"
-BOMB = "💣"
-CURSOR = "🔻"
-SOFT, FIRM, HARD = "🟫", "🟧", "🟥"  # the rock from above: soft (little pressure, copper), firm (iron), hard (a lot of pressure, the top ore)
+def _vent() -> str: return emojis.icon("vent", "💨")
+def _cache() -> str: return emojis.icon("cache", "📦")
+def _bomb() -> str: return emojis.icon("bomb", "💣")
+def _cursor() -> str: return emojis.icon("cursor", "🔻")
+def _soft() -> str: return emojis.icon("rock_soft", "🟫")
+def _firm() -> str: return emojis.icon("rock_firm", "🟧")
+def _hard() -> str: return emojis.icon("rock_hard", "🟥")  # the rock from above: soft (little pressure, copper), firm (iron), hard (a lot of pressure, the top ore)
 NOTCH = "▪️"
-MILESTONE = "🏁"  # a landmark row: finish it and the tunnel is shored up
-VAULT = "🏆"  # the last row: the vault is worth getting to
-MAGNET = "✨"
+def _milestone() -> str: return emojis.icon("milestone", "🏁")  # a landmark row: finish it and the tunnel is shored up
+def _vault() -> str: return emojis.icon("vault", "🏆")  # the last row: the vault is worth getting to
+def _magnet() -> str: return emojis.icon("magnet", "✨")
 ACCENT = {"Calm": 0x2ECC71, "Tremors": 0xF1C40F, "Unstable": 0xE67E22, "Critical": 0xE74C3C}
 SHOWN_ROWS = 1  # rows you've already passed that stay on screen
 
@@ -56,24 +58,24 @@ def loot_lines(loot: Counter) -> str:
 def cell_emoji(feel: str) -> str:
     """A cell as it feels from above: soft, firm or hard rock, a highlighted rich lode, or a wyrmhole. You cannot tell ore, nothing, vents and
     caches apart inside the same kind of rock, only how hard it is."""
-    return {"rich": _rich(), "hole": _hole(), "soft": SOFT, "firm": FIRM, "hard": HARD}.get(feel) or _cell()
+    return {"rich": _rich(), "hole": _hole(), "soft": _soft(), "firm": _firm(), "hard": _hard()}.get(feel) or _cell()
 
 
 def dug_emoji(sign: str, cell) -> str:
     """A cell you dug, now revealed: its vent, its cache, its ore, or nothing."""
     if sign == "vent":
-        return VENT
+        return _vent()
     if sign == "cache":
-        return CACHE
+        return _cache()
     return item_emoji(cell[0]) if cell else _cell_empty()
 
 
 def row_mark(run: mining.MineRun, depth: int) -> str:
     """A landmark beside a row you can see ahead: 🏁 on a milestone row, 🏆 on the last one (the vault)."""
     if depth == run.floor - 1:
-        return f"  {VAULT} vault"
+        return f"  {_vault()} vault"
     if any(m.row == depth + 1 for m in run.rules.descent.milestones):
-        return f"  {MILESTONE} checkpoint"
+        return f"  {_milestone()} checkpoint"
     return ""
 
 
@@ -81,8 +83,8 @@ def next_landmark(run: mining.MineRun) -> str:
     """"🏁 row 10 (3 to go)" or "🏆 the vault (12 to go)": what you are digging toward."""
     for m in run.rules.descent.milestones:
         if m.row > run.depth:
-            return f"{MILESTONE} checkpoint at row {m.row} ({m.row - run.depth} to go)"
-    return f"{VAULT} the vault ({run.floor - run.depth} to go)"
+            return f"{_milestone()} checkpoint at row {m.row} ({m.row - run.depth} to go)"
+    return f"{_vault()} the vault ({run.floor - run.depth} to go)"
 
 
 def render_shaft(run: mining.MineRun) -> str:
@@ -98,9 +100,9 @@ def render_shaft(run: mining.MineRun) -> str:
     if not run.finished:
         header = [NOTCH] * columns
         for col in run.best_columns():
-            header[col] = MAGNET
+            header[col] = _magnet()
         for col in run.cursors:
-            header[col] = CURSOR
+            header[col] = _cursor()
         lines.append("".join(header))
         for ahead in range(run.rules.descent.lookahead):
             depth = run.depth + ahead
@@ -127,14 +129,14 @@ def risk_text(risk: float) -> str:
 def carrying(haul: Counter) -> str:
     if not haul:
         return "-# Nothing in your pack yet."
-    return "🎒 " + "  ".join(f"{item_emoji(i)} {q:,}" for i, q in haul.items())
+    return f"{emojis.icon('haul', '🎒')} " + "  ".join(f"{item_emoji(i)} {q:,}" for i, q in haul.items())
 
 
 HELP = (
-    f"Read the rock: {SOFT} **soft** (little pressure, mostly copper)  ·  {FIRM} **firm** (iron)  ·  {HARD} **hard** (a lot of pressure, the top ore).\n"
+    f"Read the rock: {_soft()} **soft** (little pressure, mostly copper)  ·  {_firm()} **firm** (iron)  ·  {_hard()} **hard** (a lot of pressure, the top ore).\n"
     "Inside it hides ore, nothing, a **vent** that cools the tunnel, or a **cache** with a brace.\n"
     "cell_upgraded: a **rich lode**, a mystery with better loot  ·  wyrmhole: a way out, if you dig it\n"
-    f"{BOMB} **bomb**: clears a whole row  ·  {MAGNET} the magnet marks the richest column while it has fuel"
+    f"{_bomb()} **bomb**: clears a whole row  ·  {_magnet()} the magnet marks the richest column while it has fuel"
 )
 
 
@@ -176,11 +178,11 @@ class MineScreen(Screen):
         warning = run.warning
         body = [
             *self.note_block(),
-            text(type_line(run) + ("\n🕳️ **A small wyrmhole has opened in this mine!**" if run.mini_wyrmhole else "")),
+            text(type_line(run) + (f"\n{emojis.icon('small_wyrmhole', '🕳️')} **A small wyrmhole has opened in this mine!**" if run.mini_wyrmhole else "")),
             text(f"**Row {run.depth + 1} of {run.floor}**  ·  {next_landmark(run)}     {warning.emoji} **{risk_text(run.risk)}** collapse risk"
-                 + (f"\n💣 Auto-Bomb: **{'this dig!' if run.auto_bomb_in == 1 else f'in {run.auto_bomb_in} rows'}**" if run.auto_bomb_every else "")
-                 + (f"\n{MAGNET} Magnet: **{run.magnet_rows_left}** rows of fuel" if run.magnet_rows_left is not None else "")
-                 + (("\n🛟 Lifeline: **used**" if run.lifeline_fired else "\n🛟 Lifeline: **ready**" if run.lifeline_ready else "\n🛟 Lifeline: recharging (not this mine)") if run.lifeline else "")),
+                 + (f"\n{emojis.icon('bomb', '💣')} Auto-Bomb: **{'this dig!' if run.auto_bomb_in == 1 else f'in {run.auto_bomb_in} rows'}**" if run.auto_bomb_every else "")
+                 + (f"\n{_magnet()} Magnet: **{run.magnet_rows_left}** rows of fuel" if run.magnet_rows_left is not None else "")
+                 + ((f"\n{emojis.icon('lifeline', '🛟')} Lifeline: **used**" if run.lifeline_fired else f"\n{emojis.icon('lifeline', '🛟')} Lifeline: **ready**" if run.lifeline_ready else f"\n{emojis.icon('lifeline', '🛟')} Lifeline: recharging (not this mine)") if run.lifeline else "")),
             text(render_shaft(run)),
             text(carrying(run.haul)),
         ]
@@ -188,17 +190,17 @@ class MineScreen(Screen):
             body.append(text(HELP.replace("cell_upgraded", _rich()).replace("wyrmhole:", f"{_hole()}:")))
         body.append(row(
             button(emoji="⬅️", on_click=self._move(-1)),
-            button("Dig", emoji="⛏️", style=discord.ButtonStyle.primary, on_click=self._dig),
+            button("Dig", emoji=emojis.icon("pickaxe", "⛏️"), style=discord.ButtonStyle.primary, on_click=self._dig),
             button(emoji="➡️", on_click=self._move(1)),
         ))
-        extra = [button(f"Brace ({run.braces})", emoji="🛡️", disabled=run.braces == 0 or run.danger == 0, on_click=self._brace)]
+        extra = [button(f"Brace ({run.braces})", emoji=emojis.icon("brace", "🛡️"), disabled=run.braces == 0 or run.danger == 0, on_click=self._brace)]
         if run.bombs or run.bombs_used:
-            extra.append(button(f"Bomb ({run.bombs})", emoji=BOMB, disabled=run.bombs == 0, on_click=self._bomb))
+            extra.append(button(f"Bomb ({run.bombs})", emoji=_bomb(), disabled=run.bombs == 0, on_click=self._bomb))
         if run.mini_wyrmhole:
-            extra.append(button("Enter the small wyrmhole", emoji="🕳️", style=discord.ButtonStyle.success, on_click=self._enter_small))
-        extra.append(button("Leave & bank", emoji="🎒", style=discord.ButtonStyle.success, on_click=self._leave))
+            extra.append(button("Enter the small wyrmhole", emoji=emojis.icon("small_wyrmhole", "🕳️"), style=discord.ButtonStyle.success, on_click=self._enter_small))
+        extra.append(button("Leave & bank", emoji=emojis.icon("haul", "🎒"), style=discord.ButtonStyle.success, on_click=self._leave))
         extra.append(button(
-            "Hide tips" if self.show_help else "Tips", emoji="❔",
+            "Hide tips" if self.show_help else "Tips", emoji=emojis.icon("tips", "❔"),
             style=discord.ButtonStyle.primary if self.show_help else discord.ButtonStyle.secondary,
             on_click=self._toggle_help,
         ))
@@ -207,11 +209,11 @@ class MineScreen(Screen):
 
     async def _finished_page(self) -> Page:
         run, summary = self.run, self.summary
-        titles = {"left": ("🎒 You climbed out safely", 0x2ECC71),
-                  "collapse": ("💥 The mine collapsed!", 0xE74C3C),
-                  "wyrmhole": ("🌀 You broke into a wyrmhole!", 0x9B59B6),
-                  "mini_wyrmhole": ("🕳️ You slipped into the small wyrmhole!", 0x9B59B6),
-                  "floor": ("🏆 You reached the vault!", 0xF1C40F)}
+        titles = {"left": (f"{emojis.icon('haul', '🎒')} You climbed out safely", 0x2ECC71),
+                  "collapse": (f"{emojis.icon('boom', '💥')} The mine collapsed!", 0xE74C3C),
+                  "wyrmhole": (f"{emojis.icon('wyrmhole', '🌀')} You broke into a wyrmhole!", 0x9B59B6),
+                  "mini_wyrmhole": (f"{emojis.icon('small_wyrmhole', '🕳️')} You slipped into the small wyrmhole!", 0x9B59B6),
+                  "floor": (f"{_vault()} You reached the vault!", 0xF1C40F)}
         title, accent = titles[run.outcome]
         body = [*self.note_block(), text(f"## {title}")]
         if summary is not None:
@@ -219,17 +221,17 @@ class MineScreen(Screen):
             if not summary.haul:
                 body.append(text("Nothing to bank this time."))
         if self.challenge is not None:
-            body += [sep(), text(f"🪲 **A subterranean scarab appears!** It holds a scroll: **{self.challenge.scrambled}**\n"
+            body += [sep(), text(f"{emojis.icon('scarab', '🪲')} **A subterranean scarab appears!** It holds a scroll: **{self.challenge.scrambled}**\n"
                                  f"Unscramble it before <t:{int(self.challenge_deadline)}:R> and it will reward you!"),
-                     row(button("Answer", emoji="📜", style=discord.ButtonStyle.primary, on_click=self._ask_scarab),
+                     row(button("Answer", emoji=emojis.icon("scroll", "📜"), style=discord.ButtonStyle.primary, on_click=self._ask_scarab),
                          button("Ignore", on_click=self._skip_scarab))]
         elif self.scarab_result:
             body += [sep(), text(self.scarab_result)]
-        actions = [button("Mine again", emoji="🔄", style=discord.ButtonStyle.primary, on_click=self._again)]
+        actions = [button("Mine again", emoji=emojis.icon("again", "🔄"), style=discord.ButtonStyle.primary, on_click=self._again)]
         if run.outcome == "wyrmhole":
-            actions.insert(0, button("Enter the wyrmhole", emoji="🌀", style=discord.ButtonStyle.success, on_click=self._wyrmhole))
+            actions.insert(0, button("Enter the wyrmhole", emoji=emojis.icon("wyrmhole", "🌀"), style=discord.ButtonStyle.success, on_click=self._wyrmhole))
         elif run.outcome == "mini_wyrmhole":
-            actions.insert(0, button("Enter the small wyrmhole", emoji="🕳️", style=discord.ButtonStyle.success, on_click=self._wyrmhole_small))
+            actions.insert(0, button("Enter the small wyrmhole", emoji=emojis.icon("small_wyrmhole", "🕳️"), style=discord.ButtonStyle.success, on_click=self._wyrmhole_small))
         body.append(row(*actions))
         return Page("The Mines", body, accent=accent)
 
@@ -256,16 +258,16 @@ class MineScreen(Screen):
     async def _after(self, interaction: discord.Interaction, result: mining.DigResult) -> None:
         reg = get_registry()
         found = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.found.items())
-        auto = "💣 **Auto-Bomb!** " if result.auto_bombed else ""
-        multi = f"⛏️⛏️ **Multi-Mine!** (+{len(result.multi)} column) " if result.multi else ""
+        auto = f"{emojis.icon('bomb', '💣')} **Auto-Bomb!** " if result.auto_bombed else ""
+        multi = f"{emojis.icon('pickaxe', '⛏️')}{emojis.icon('pickaxe', '⛏️')} **Multi-Mine!** (+{len(result.multi)} column) " if result.multi else ""
         if result.collapsed:
             lost = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.lost.items())
             note = "The tunnel gave way!" + (f" You lost {lost}." if lost else "")
         else:
-            note = auto + multi + ("💥 BOOM! " if result.bombed and not result.auto_bombed else "") + (f"Found {found}." if found else ("" if result.wyrmhole else "Nothing here."))
+            note = auto + multi + (f"{emojis.icon('boom', '💥')} BOOM! " if result.bombed and not result.auto_bombed else "") + (f"Found {found}." if found else ("" if result.wyrmhole else "Nothing here."))
             if result.lifeline:
                 lost_text = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.lifeline_lost.items())
-                note = "🛟 **Lifeline!** The reactor held the tunnel when it would have collapsed" + (f" (it cost you {lost_text})" if lost_text else "") + ". " + note
+                note = f"{emojis.icon('lifeline', '🛟')} **Lifeline!** The reactor held the tunnel when it would have collapsed" + (f" (it cost you {lost_text})" if lost_text else "") + ". " + note
             if not self.run.finished and (fanfare := flair.banner(result.found)):  # (a mine that just ended shows its finds on the reward screen)
                 note += "\n" + fanfare + "\n"
             if result.vented:
@@ -281,7 +283,7 @@ class MineScreen(Screen):
                     extra += f" +{m.braces} brace."
                 if result.milestone_haul:
                     extra += " A taste of the vault: " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.milestone_haul.items()) + "."
-                note += f" {MILESTONE} **Row {m.row}: checkpoint!** What is in your pack is safe from a collapse now.{extra}"
+                note += f" {_milestone()} **Row {m.row}: checkpoint!** What is in your pack is safe from a collapse now.{extra}"
             if result.vault:
                 note += " The vault opens: " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.vault.items()) + "."
         if self.run.finished:
@@ -319,7 +321,7 @@ class MineScreen(Screen):
         self.result = rewards_result(
             titles[self.run.outcome], items=summary.haul, xp=summary.xp,
             headline=[f"Row **{summary.depth}** of {self.run.floor}  ·  **{summary.lodes}** lodes dug", *filter(None, [note])],
-            odds=odds.mining(depth=summary.depth), emoji="⛏️", accent=0x2ECC71 if self.run.outcome != "collapse" else 0xE74C3C, back_label="Continue")
+            odds=odds.mining(depth=summary.depth), emoji=emojis.icon("pickaxe", "⛏️"), accent=0x2ECC71 if self.run.outcome != "collapse" else 0xE74C3C, back_label="Continue")
         rules = get_registry().mining
         if mining.scarab_appears(rules, random.Random()):
             self.challenge = mining.make_scarab(_words(), rules, random.Random())
@@ -331,15 +333,15 @@ class MineScreen(Screen):
             if challenge is None:
                 return await self.refresh(modal_interaction)
             if time.time() > self.challenge_deadline:
-                self.scarab_result = f"🪲 Too slow! The scarab scuttled away. (It was **{challenge.word}**.)"
+                self.scarab_result = f"{emojis.icon('scarab', '🪲')} Too slow! The scarab scuttled away. (It was **{challenge.word}**.)"
             elif challenge.check(answer):
                 win = await mining.claim_scarab_reward(self.user, random.Random())
                 gifts = [loot_lines(win.items)] if win.items else []
                 if win.xp:
-                    gifts.append(f"✨ +{win.xp:,} mining xp")
-                self.scarab_result = f"🪲 The scarab is pleased! **{win.name}**:\n" + "\n".join(gifts)
+                    gifts.append(f"{emojis.icon('star', '✨')} +{win.xp:,} mining xp")
+                self.scarab_result = f"{emojis.icon('scarab', '🪲')} The scarab is pleased! **{win.name}**:\n" + "\n".join(gifts)
             else:
-                self.scarab_result = f"🪲 Wrong! The scarab scuttles away. (It was **{challenge.word}**.)"
+                self.scarab_result = f"{emojis.icon('scarab', '🪲')} Wrong! The scarab scuttles away. (It was **{challenge.word}**.)"
             await self.refresh(modal_interaction)
 
         await interaction.response.send_modal(PromptModal("Unscramble the scroll", "Your answer", submitted, max_length=40))
