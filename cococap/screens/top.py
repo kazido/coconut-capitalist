@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.exts.economy.top import TopCategories, leaderboard_view
 from cococap.ui import Page, Screen
 from cococap.ui.components import row, select, sep, text
@@ -8,7 +9,7 @@ from cococap.ui.components import row, select, sep, text
 class TopScreen(Screen):
     id = "top"
     label = "Leaderboards"
-    emoji = "🏆"
+    emoji = emojis.Lazy("ui_record", "🏆")
     description = "See who's on top"
 
     def __init__(self, nav):

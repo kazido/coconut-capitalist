@@ -2,6 +2,7 @@
 price, a pet's bonus or a water's fish in ``configs/`` and the wiki changes with it. No Discord here: a page is a list of
 text blocks."""
 
+from cococap import emojis
 from cococap.constants import Rarities
 from cococap.registry import Item, Registry, get_registry
 from cococap.services import fishing
@@ -112,14 +113,14 @@ def _foraging(reg: Registry) -> list[str]:
         f"**Foraging** needs an axe. Chop a tree down for drops (sell them for bits) and xp. There are **{f.zones} forests**: forest 2 needs level {reg.areas.location_levels[1]}, forest 10 level {reg.areas.location_levels[9]} and forest {f.zones} level {reg.areas.location_levels[f.zones - 1]}, and each opens at a higher level than the last (and needs you to have travelled to its area); "
         f"from forest {f.heavy_zone} alone, trees are heavy and you swing at half power unless your axe has **Soloist**.",
         "**Learn the grain.** Every spot has a grain (Plain, Knotty, Clean, Twisted, Split or Burl), and every grain likes **one chop style** "
-        "(⬆️ Overhead, ↔️ Sidecut or ⬇️ Undercut). Chop in that style for full strength; any other glances off at half. "
+        f"({emojis.icon('up', '⬆️')} Overhead, {emojis.icon('again', '↔️')} Sidecut or {emojis.icon('down', '⬇️')} Undercut). Chop in that style for full strength; any other glances off at half. "
         "Your **Grain notes** (a button on the foraging pages) remember the style you have found and cross off the ones that failed, so you learn each grain once. "
         "The spot never tells you its style, so you have to remember it.",
         "**Spots wear out.** Every chop wears the spot, and a worn spot chops weaker. Good grains (Clean, Burl) wear slowly and bad ones (Knotty, Twisted) "
         "go quickly; when a spot is gone you move to a new random grain by yourself. An axe with **Seasoned** makes spots last longer. "
         "Stuck on a bad grain? Use a **rotation wedge** (find it chopping or buy it in the shop) to move off at once: the Iron and Gilded wedges, made at the Workbench, lean toward the good grains. A good chop hits extra hard.",
-        "**Special spots** are rare and wear out fast, but chopped in the right style they pay off: 💎 **Heartwood** hits the tree several times harder, ✨ **Golden Knot** pays double xp, "
-        "and 🏷️ **Rich Seam** marks a tree of your own for more drops when it falls. Better wedges make them likelier. An axe with **Double Strike** sometimes chops twice.",
+        f"**Special spots** are rare and wear out fast, but chopped in the right style they pay off: {emojis.icon('gem', '💎')} **Heartwood** hits the tree several times harder, {emojis.icon('sparkle', '✨')} **Golden Knot** pays double xp, "
+        f"and {emojis.icon('page', '🏷️')} **Rich Seam** marks a tree of your own for more drops when it falls. Better wedges make them likelier. An axe with **Double Strike** sometimes chops twice.",
         f"**Releaf Foundation** (level {f.releaf.min_level}, a button on the foraging page): the whole server gives **rare** foraging drops (rarity {f.releaf.min_rarity} or more; the item is gone for good) "
         f"to one shared meter, worth {', '.join(f'{p} for rarity {r}' for r, p in sorted(f.releaf.points.items()))}. At **{f.releaf.meter_goal}** a **Bloom** starts for {f.releaf.bloom_hours:g} hours: "
         f"**+{f.releaf.bloom_xp:.0%}** foraging xp and **+{f.releaf.bloom_drops:.0%}** drop chances for EVERYONE, whether they gave or not. Giving is closed during a Bloom, "
@@ -135,7 +136,7 @@ def _fishing(reg: Registry) -> list[str]:
     return [
         "**Fishing** needs a rod. **Cast** and wait for a bite, then you have a few seconds to **pull up the line** (a little forgiveness is built in). "
         "Then you **reel**: press the arrows shown, in order. A few steps turn into **Reel** as you reach them, and the toughest fish hide arrows "
-        "behind a **❓** that follows that fish's own secret pattern: your **field notes** (Records page) record what each ❓ turned out to be.",
+        f"behind a **{emojis.icon('unknown', '❓')}** that follows that fish's own secret pattern: your **field notes** (Records page) record what each {emojis.icon('unknown', '❓')} turned out to be.",
         f"**Quests** (level {r.quests.min_level}): daily and weekly catches of specific fish. **Collection books** (level {r.book.min_level}): turn fish in "
         "for rewards and level the book up. The **community book** and **monthly goals** are shared by the whole server.",
         f"**Extras.** About 1 in {r.treasure.hallucination_odds} catches brings a **hallucination**: remember the four numbers, because a **treasure chest** "
@@ -200,7 +201,7 @@ def _pots(reg: Registry) -> list[str]:
 
 def _tools(reg: Registry, only: tuple[str, ...] = ("axe", "can"), intro: bool = True) -> list[str]:
     out = ["**One tool of each kind.** The shop sells no tools: you start with a free starter tool of each kind. Everything better comes from "
-           "**Inventory → Tools → Upgrade**: your tool keeps its enchants and becomes the next one up for bits and materials. The first steps "
+           f"**Inventory {emojis.icon('next', '→')} Tools {emojis.icon('next', '→')} Upgrade**: your tool keeps its enchants and becomes the next one up for bits and materials. The first steps "
            "use only the tool's own skill; later ones add a little from others. Each level earns clearly more than the last: about x1.5 at "
            "level 2, x2.6 at level 3, x4 at level 4 and x18 at level 8, and a better rod also brings rarer fish and more of them."] if intro else []
     kinds: dict[str, list[Item]] = {}
@@ -220,7 +221,7 @@ def _tools(reg: Registry, only: tuple[str, ...] = ("axe", "can"), intro: bool = 
                     if road is not None:
                         nxt = reg.item(road.to)
                         tag = f" [{nxt.tool.path} path]" if forked and nxt.tool.path else ""
-                        lines.append(f"{tool.name} → **{nxt.name}** (power {nxt.tool.power}){tag}: {_n(road.bits)} bits, {_materials(road.items, reg)}")
+                        lines.append(f"{tool.name} {emojis.icon('next', '→')} **{nxt.name}** (power {nxt.tool.power}){tag}: {_n(road.bits)} bits, {_materials(road.items, reg)}")
                 if forked:
                     walk(reg.item(tool.tool.fork.to), lines)
                 tool = reg.item(tool.tool.upgrade.to)
@@ -236,7 +237,7 @@ def _enchants(reg: Registry) -> list[str]:
         scroll = next((i for i in reg.items.values() if i.scroll and i.scroll.enchant == e.id), None)
         lines.append(f"{e.emoji} **{e.name}** (max {e.max_level}, {'/'.join(e.applies_to)}): {e.description}"
                      + (f"  ·  {scroll.display}" if scroll else ""))
-    return ["**Enchants** are put on a tool with a one-use **scroll** (Inventory → Enchant). Scrolls turn up in play: chopping, deep mining, "
+    return [f"**Enchants** are put on a tool with a one-use **scroll** (Inventory {emojis.icon('next', '→')} Enchant). Scrolls turn up in play: chopping, deep mining, "
             "treasure chests and boss loot.", "\n".join(lines)]
 
 
@@ -263,9 +264,9 @@ def _pets(reg: Registry) -> list[str]:
         f"Familiar Orbs page and orbs favour it (×{rules.target_boost:g}, more with each miss).",
         f"**Feeding.** Pets level up on **food**: crops (farming's food) and what each skill drops in three tiers (worth {', '.join(f'{x:,}' for x in rules.food_xp)} pet xp): "
         "foraging drops **Acorn Mix, Honeycomb and Golden Sap**, mining **Stone Biscuit, Crystal Chew and Geode Feast**, fishing **Fish Flakes, Dried Squid and Sea Feast**. "
-        "Every pet has **one skill**, shown as an emoji after its name: 🎣 fishing, ⛏️ mining, 🌳 foraging, 🌽 farming, ⚔️ combat, or 🌐 **global** "
+        f"Every pet has **one skill**, shown as an emoji after its name: {emojis.icon('rod', '🎣')} fishing, {emojis.icon('pickaxe', '⛏️')} mining, {emojis.icon('tree', '🌳')} foraging, {emojis.icon('can', '🌽')} farming, {emojis.icon('sword', '⚔️')} combat, or {emojis.icon('world', '🌐')} **global** "
         f"for pets whose bonus works everywhere ({', '.join(p.name for p in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)) if p.skill == 'global')}). "
-        f"Food of **a pet's own skill is worth x{rules.matched_food_multiplier:g}** to it, a 🌐 global pet gets **x{rules.global_food_multiplier:g}** from any food, "
+        f"Food of **a pet's own skill is worth x{rules.matched_food_multiplier:g}** to it, a {emojis.icon('world', '🌐')} global pet gets **x{rules.global_food_multiplier:g}** from any food, "
         "and food of another skill is worth the plain amount. "
         "A pet's numbers are shown at its current level (a fresh pet gives a tenth) with the max level in brackets.",
         "**Orbs** come in three kinds, bought on the Familiar Orbs page. A cheaper orb mostly gives common pets, a pricier one mostly rare ones "

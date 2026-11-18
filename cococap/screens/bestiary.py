@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import bestiary
 from cococap.ui import Page, Screen
@@ -11,7 +12,7 @@ class BestiaryScreen(Screen):
 
     id = "bestiary"
     label = "Bestiary"
-    emoji = "📖"
+    emoji = emojis.Lazy("ui_book", "📖")
     description = "Every creature you have met, and how many you have slain, caught or beaten"
     links = ()
 
@@ -26,30 +27,30 @@ class BestiaryScreen(Screen):
         blocks = [*self.note_block()]
         if self.group == "combat":
             for c in mine:
-                blocks.append(text(self._combat_entry(c, reg) if c.count else "### ❓ Unknown\n-# Slay one to learn about it."))
+                blocks.append(text(self._combat_entry(c, reg) if c.count else f"### {emojis.icon('unknown', '❓')} Unknown\n-# Slay one to learn about it."))
         else:
-            blocks.append(text("### 🐟 Fish\n" + "\n".join(self._line(c) for c in mine if not c.boss)))
-            blocks.append(text("### 👑 Sea bosses\n" + "\n".join(self._line(c) for c in mine if c.boss)))
+            blocks.append(text(f"### {emojis.icon('fish', '🐟')} Fish\n" + "\n".join(self._line(c) for c in mine if not c.boss)))
+            blocks.append(text(f"### {emojis.icon('crown', '👑')} Sea bosses\n" + "\n".join(self._line(c) for c in mine if c.boss)))
         blocks.append(sep())
         blocks.append(text(f"-# {sum(1 for c in every if c.count)} of {len(every)} creatures found"))
         blocks.append(row(select("Show...", [
-            discord.SelectOption(label=name, value=key, emoji=emoji, default=key == self.group) for key, (emoji, name) in bestiary.GROUPS.items()
+            discord.SelectOption(label=name, value=key, emoji=emojis.skill(key, "⚔️" if key == "combat" else "🎣"), default=key == self.group) for key, name in bestiary.GROUPS.items()
         ], self._pick)))
         return Page("Bestiary", blocks, accent=0x8E44AD)
 
     @staticmethod
     def _goal(c: bestiary.Creature) -> str:
-        return f"next goal {c.next_goal:,}" if c.next_goal else "every goal reached ✅"
+        return f"next goal {c.next_goal:,}" if c.next_goal else f"every goal reached {emojis.icon('check', '✅')}"
 
     def _line(self, c: bestiary.Creature) -> str:
         if not c.count:
-            return "❓ Unknown"
+            return f"{emojis.icon('unknown', '❓')} Unknown"
         return f"{c.emoji} **{c.name}**  ·  {c.count:,} {c.verb}  ·  {self._goal(c)}" + (f"  ·  {c.detail}" if c.detail else "")
 
     def _combat_entry(self, c: bestiary.Creature, reg) -> str:
         enemy = reg.enemies[c.id]
-        lines = [f"### {enemy.emoji} {enemy.name}" + ("  ·  👑 boss" if enemy.boss else ""),
-                 f"❤️ {enemy.hp}  ⚔️ {enemy.attack}  🛡️ {enemy.defense}  ⚡ {enemy.speed}" + (f"  🔰 {enemy.shield}" if enemy.shield else ""),
+        lines = [f"### {enemy.emoji} {enemy.name}" + (f"  ·  {emojis.icon('crown', '👑')} boss" if enemy.boss else ""),
+                 f"{emojis.icon('heart', '❤️')} {enemy.hp}  {emojis.icon('sword', '⚔️')} {enemy.attack}  {emojis.icon('shield', '🛡️')} {enemy.defense}  {emojis.icon('bolt', '⚡')} {enemy.speed}" + (f"  {emojis.icon('shield', '🔰')} {enemy.shield}" if enemy.shield else ""),
                  f"Slain **{c.count:,}**  ·  {self._goal(c)}"]
         if c.count >= reg.bestiary.steps[min(1, len(reg.bestiary.steps) - 1)] or enemy.boss:  # you know a monster's moves once you have fought a few
             lines.append("Moves: " + ", ".join(reg.combat.skills[s].name for s in enemy.skills))

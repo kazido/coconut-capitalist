@@ -19,6 +19,7 @@ from cococap.errors import CustomError, GameRuleError
 from cococap.user import InsufficientFunds, User
 
 from .components import button, row, sep, text
+from cococap import emojis
 
 log = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ class Result:
 
     title: str  # "You caught a Cod!"
     lines: list[str] = field(default_factory=list)  # markdown, one block each
-    emoji: str = "🎉"
+    emoji: str = field(default_factory=lambda: emojis.icon("party", "🎉"))
     accent: int = BLURPLE
     again: Handler | None = None  # "do it again": a handler of the screen it came from
     again_label: str = "Again"
@@ -347,8 +348,8 @@ class Navigator(ui.LayoutView):
     def _controls(self) -> ui.ActionRow:
         locked = self.screen.locked
         return row(
-            button("Home", emoji="🏠", on_click=self._on_home, disabled=locked or self.screen.id == "home"),
-            button("Back", emoji="⬅️", on_click=self.back, disabled=locked or len(self.stack) <= 1),
+            button("Home", emoji=emojis.icon('home', '🏠'), on_click=self._on_home, disabled=locked or self.screen.id == "home"),
+            button("Back", emoji=emojis.icon('prev', '⬅️'), on_click=self.back, disabled=locked or len(self.stack) <= 1),
         )
 
     async def _on_home(self, interaction: discord.Interaction) -> None:
@@ -425,8 +426,8 @@ class ResultScreen(Screen):
         body = [text(line) for line in lines]  # (the panel header already shows the title)
         buttons = [] if r.then else [button(label, emoji=emoji, on_click=self._act(handler)) for label, emoji, handler in r.actions]
         if r.again is not None and not r.then:  # (with more pages to come, the choices wait for the last one)
-            buttons.append(button(r.again_label, emoji="🔁", style=discord.ButtonStyle.primary, on_click=self._again))
-        buttons.append(button(r.back_label, emoji="➡️", on_click=self._back))
+            buttons.append(button(r.again_label, emoji=emojis.icon('again', '🔁'), style=discord.ButtonStyle.primary, on_click=self._again))
+        buttons.append(button(r.back_label, emoji=emojis.icon('next', '➡️'), on_click=self._back))
         body.append(row(*buttons))
         return Page(r.title, body, accent=r.accent)
 

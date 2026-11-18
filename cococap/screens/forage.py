@@ -16,9 +16,6 @@ from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bar, bits, button, row, sep, select, text, xp_bar
 from cococap.user import User
 
-TREE = "🌳"
-
-
 def new_rng() -> random.Random:
     """Each chopping screen's dice (tests replace this to make good chops predictable)."""
     return random.Random()
@@ -53,7 +50,7 @@ async def spot_panel(screen, power: int) -> str:
     streak = ""
     if rules.streak_max and spot.streak:  # (one short bit on the swing line: no warnings, no sentences)
         streak = f"  {emojis.icon('flame', '🔥')} **+{rules.streak_bonus * min(spot.streak, rules.streak_max):.0%}**" + (" max" if spot.streak >= rules.streak_max else "")
-    return (f"🪵 **{spot.title(reg.foraging)}** grain{quality}  \n{bar(left, 6)} **{left:.0%}** left (about {chops} chops)   {emojis.icon('axe', '🪓')} **{spot.preview(power, reg.foraging)}** per swing{streak}"
+    return (f"{emojis.icon('wood', '🪵')} **{spot.title(reg.foraging)}** grain{quality}  \n{bar(left, 6)} **{left:.0%}** left (about {chops} chops)   {emojis.icon('axe', '🪓')} **{spot.preview(power, reg.foraging)}** per swing{streak}"
             + (f"   ·   {emojis.icon('wedge', '🔩')} {wedges} wedge(s)" if wedges else "")
             + (f"\n{emojis.icon('wedge_gold', '🪚')} Wedge bonus: **{spot.boost:+.0%}** for **{spot.boost_chops}** more chops" if spot.boost_chops else ""))
 
@@ -66,11 +63,11 @@ async def notes_result(user) -> Result:
         if note.known:
             what = f"{foraging.STANCES[note.known][1]} {foraging.STANCES[note.known][0]}"
         elif note.ruled_out:
-            what = "❔ " + " ".join(f"✖️{foraging.STANCES[c][1]}" for c in note.ruled_out)
+            what = f"{emojis.icon('unknown', '❔')} " + " ".join(f"{emojis.icon('cross', '✖️')}{foraging.STANCES[c][1]}" for c in note.ruled_out)
         else:
-            what = "❔"
+            what = emojis.icon("unknown", "❔")
         lines.append(f"**{g.name}** ({g.multiplier - 1:+.0%}, wears {'slowly' if g.wear < 0.95 else 'quickly' if g.wear > 1.05 else 'normally'}): {what}")
-    return Result("Grain notes", ["Every grain likes one chop style. Chop in any other and the swing glances off at half strength. ✖️ marks "
+    return Result("Grain notes", [f"Every grain likes one chop style. Chop in any other and the swing glances off at half strength. {emojis.icon('cross', '✖️')} marks "
                                   "styles you have seen fail, so two crossed off give away the third. The spot you are chopping never "
                                   "tells you its style: remember it!", "\n".join(lines)],
                   emoji=emojis.icon("book", "📖"), accent=0x8D6E63, back_label="Back to chopping")
@@ -81,11 +78,12 @@ def swing_note(swing: foraging.Swing, stance: str | None = None, applied: int | 
     icon = foraging.STANCES[stance][1] if stance in foraging.STANCES else f"{emojis.icon('axe', '🪓')}"
     good = f"  {emojis.icon('star', '✨')} **Good chop!**" if swing.good else ""
     extra = f"  {emojis.icon('axe', '🪓')}{emojis.icon('axe', '🪓')} **Double chop!**" if swing.doubled else ""
-    extra += {"damage": "  💎 **Heartwood: a huge hit!**", "xp": f"  {emojis.icon('star', '✨')} **Golden Knot: double xp!**",
-              "mark": f"  🏷️ **Marked: +{swing.mark:.0%} rewards**"}.get(swing.special, "")
+    extra += {"damage": f"  {emojis.icon('gem', '💎')} **Heartwood: a huge hit!**", "xp": f"  {emojis.icon('star', '✨')} **Golden Knot: double xp!**",
+              "mark": f"  {emojis.icon('page', '🏷️')} **Marked: +{swing.mark:.0%} rewards**"}.get(swing.special, "")
     if swing.correct is None:
         return (f"{emojis.icon('star', '✨')} **Good chop!** {dealt}" if swing.good else f"{emojis.icon('axe', '🪓')} {dealt}") + extra
-    return f"{'✅' if swing.correct else '❌ glanced off'} {icon}  ·  {dealt}{good}{extra}"
+    verdict = emojis.icon('check', '✅') if swing.correct else f"{emojis.icon('cross', '❌')} glanced off"
+    return f"{verdict} {icon}  ·  {dealt}{good}{extra}"
 
 
 def species_label(species_id: str) -> str:
@@ -138,7 +136,7 @@ async def swing_at(screen: Screen, power: int, stance: str, tree_key: object, sp
     note = swing_note(swing, stance)
     if swing.correct is not None and await foraging.note_style(screen.user, grain, stance, swing.correct):
         note += (f"  {emojis.icon('book', '📖')} Learned: the **{name}** grain likes **{foraging.STANCES[stance][0]}**!" if swing.correct
-                 else f"  ✖️ {foraging.STANCES[stance][0]} crossed off the **{name}** grain in your notes")
+                 else f"  {emojis.icon('cross', '✖️')} {foraging.STANCES[stance][0]} crossed off the **{name}** grain in your notes")
     shaken = await foraging.shake(screen.user, stats.stats.get("shake", 0.0), screen.rng) + await foraging.windfall(screen.user, int(stats.stats.get("windfall", 0)), screen.rng, grain_done=swing.clean_grain, species=species)
     if shaken:
         note += f"  {emojis.icon('leaf', '🍃')} Shook loose " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in shaken.items()) + "!"
@@ -158,7 +156,7 @@ async def collect_community_rewards(screen: Screen) -> None:
 class ForageScreen(Screen):
     id = "forage"
     label = "Foraging"
-    emoji = TREE
+    emoji = emojis.Lazy("ui_tree", "🌳")
     description = "Chop trees alone or join the community tree"
     links = ("tree", "grove", "partygrove", "sellall", "mastery", "releaf")
 
@@ -188,7 +186,7 @@ class ForageScreen(Screen):
 
         header = f"**Level {level}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp"
         if bonus := await xp_bonus(self.user.id):
-            header += f"\n👥 Party bonus: **+{bonus:.0%}** xp"
+            header += f"\n{emojis.icon('people', '👥')} Party bonus: **+{bonus:.0%}** xp"
         body = [*self.note_block(), text(header)]
 
         if stats is None:
@@ -196,7 +194,7 @@ class ForageScreen(Screen):
         else:
             body.append(text(f"{emojis.icon('axe', '🪓')} Axe power **{stats.power}**" + (f"  ·  {emojis.icon('star', '✨')} Soloist" if stats.has("soloist") else "")))
         if (found := await releaf.foundation()).bloom_active:
-            body.append(text(f"🌸 **Bloom** is up for everyone: **+{get_registry().foraging.releaf.bloom_xp:.0%}** foraging xp and **+{get_registry().foraging.releaf.bloom_drops:.0%}** drop chances, "
+            body.append(text(f"{emojis.icon('flower', '🌸')} **Bloom** is up for everyone: **+{get_registry().foraging.releaf.bloom_xp:.0%}** foraging xp and **+{get_registry().foraging.releaf.bloom_drops:.0%}** drop chances, "
                              f"ends <t:{int(found.bloom_until)}:R>"))
         body.append(sep())
 
@@ -209,7 +207,7 @@ class ForageScreen(Screen):
             if view.yours:
                 line += f"\nYou have chopped **{view.share:.0%}** of it."
             body.append(text(line))
-            body.append(row(button("Join the community tree", emoji=TREE, style=discord.ButtonStyle.success,
+            body.append(row(button("Join the community tree", emoji=emojis.icon("tree", "🌳"), style=discord.ButtonStyle.success,
                                    disabled=stats is None, on_click=self._join)))
         else:
             ended = ("It was felled!" if view is not None and view.status == "felled" else "No tree is standing.")
@@ -240,26 +238,26 @@ class ForageScreen(Screen):
                         button("Grain notes", emoji=emojis.icon("book", "📖"), on_click=self._notes),
                         button("Mastery", emoji=emojis.icon("star", "🌟"), on_click=self._mastery),
                         button("Sell all", emoji=emojis.icon("sell", "💰"), on_click=self._sell_all),
-                        *([button("Releaf Foundation", emoji="🌱", on_click=self._releaf)] if level >= rules.releaf.min_level else [])))
+                        *([button("Releaf Foundation", emoji=emojis.icon("sprout", "🌱"), on_click=self._releaf)] if level >= rules.releaf.min_level else [])))
         return Page("Foraging", body, accent=0x4C8C4A)
 
     async def _party_section(self, stats) -> list:
         party = await Party.for_user(self.user.id)
         self.watching_party = party is not None and party.member_count() >= 2
         if party is None or party.member_count() < 2:
-            return [text("-# 👥 In a party you can start a **party tree** (pays better).")]
+            return [text(f"-# {emojis.icon('people', '👥')} In a party you can start a **party tree** (pays better).")]
         pt = await party_tree.view(self.user)
         bonus = get_registry().foraging.party_tree
         if pt is not None and pt.standing:
-            line = (f"### 👥 Party tree: {species_label(pt.species) or 'forest ' + str(pt.zone)}  ·  forest {pt.zone}\n{bar(pt.fraction_left)}  **{pt.hp:,}**/{pt.max_hp:,} hp  ·  "
+            line = (f"### {emojis.icon('people', '👥')} Party tree: {species_label(pt.species) or 'forest ' + str(pt.zone)}  ·  forest {pt.zone}\n{bar(pt.fraction_left)}  **{pt.hp:,}**/{pt.max_hp:,} hp  ·  "
                     f"**{len(pt.chops)}** chopping  ·  falls over <t:{int(pt.closes_at)}:R>")
-            return [text(line), row(button("Join the party tree", emoji="👥", style=discord.ButtonStyle.success,
+            return [text(line), row(button("Join the party tree", emoji=emojis.icon("people", "👥"), style=discord.ButtonStyle.success,
                                           disabled=stats is None, on_click=self._join_party))]
         best = await party_tree.unlocked_zone(party)
         zone = min(self.zone or 1, best)
-        return [text(f"### 👥 Party tree\nNo tree is up. Start one for your party of **{party.member_count()}**: **forest {zone}**, "
+        return [text(f"### {emojis.icon('people', '👥')} Party tree\nNo tree is up. Start one for your party of **{party.member_count()}**: **forest {zone}**, "
                      f"up to **+{bonus.max_group_bonus:.0%}** reward for working together.\n-# The whole party needs an axe and the forest unlocked."),
-                row(button("Start a party tree", emoji="👥", style=discord.ButtonStyle.primary, disabled=stats is None,
+                row(button("Start a party tree", emoji=emojis.icon("people", "👥"), style=discord.ButtonStyle.primary, disabled=stats is None,
                            on_click=self._start_party))]
 
     async def _notes(self, interaction: discord.Interaction) -> None:
@@ -332,7 +330,7 @@ class TreeScreen(Screen):
         self.spot.on_tree(id(tree))  # (a new tree starts the right-style streak over before the panel draws it)
         body = [*self.note_block()]
         body.append(text(f"**Forest {tree.zone}**{self._species_line(tree.species)}\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
-                         f"\n{await spot_panel(self, power)}" + (f"\n🏷️ Marked: **+{tree.bonus:.0%}** drops when it falls" if tree.bonus else "") + (
+                         f"\n{await spot_panel(self, power)}" + (f"\n{emojis.icon('page', '🏷️')} Marked: **+{tree.bonus:.0%}** drops when it falls" if tree.bonus else "") + (
                              f"\n-# Heavy tree: alone you swing at half your axe's {stats.power}. A Soloist axe fixes that."
                              if power < stats.power else "")))
         body.append(row(*stance_buttons(self._chop)))
@@ -417,13 +415,13 @@ class GroveScreen(Screen):
             return Page("Community Tree", body, accent=0x2E7D32)
 
         need = rules.community.min_share
-        status = "✅ you qualify for drops" if view.share >= need else f"keep going: **{need:.0%}** of the tree qualifies you for drops"
+        status = f"{emojis.icon('check', '✅')} you qualify for drops" if view.share >= need else f"keep going: **{need:.0%}** of the tree qualifies you for drops"
         if view.share >= rules.community.max_share:
-            status = f"✅ max: you are paid for {rules.community.max_share:.0%} of the tree"
+            status = f"{emojis.icon('check', '✅')} max: you are paid for {rules.community.max_share:.0%} of the tree"
         stats = await equipped_stats(self.user, "foraging")
         power = foraging.swing_power(stats, view.zone, rules, community=True) if stats else 1
         self.spot.on_tree(("shared", view.closes_at))
-        medals = ("🥇", "🥈", "🥉")
+        medals = (emojis.icon("medal_gold", "🥇"), emojis.icon("medal_silver", "🥈"), emojis.icon("medal_bronze", "🥉"))
         top = [f"{medals[i]} {await self.nav.name_of(uid)}{' (you)' if uid == self.user.id else ''}: **{damage:,}** hp ({damage / view.max_hp:.0%})"
                for i, (uid, damage) in enumerate(view.top)]
         body += [
@@ -499,7 +497,7 @@ class PartyGroveScreen(Screen):
             body += [text(ended), row(button("Back to foraging", on_click=self._back))]
             return Page("Party Tree", body, accent=0x1F8A70)
         need = rules.party_tree.min_share
-        status = "✅ you qualify for drops" if view.share >= need else f"keep going: **{need:.0%}** of the tree qualifies you for drops"
+        status = f"{emojis.icon('check', '✅')} you qualify for drops" if view.share >= need else f"keep going: **{need:.0%}** of the tree qualifies you for drops"
         stats = await equipped_stats(self.user, "foraging")
         power = foraging.swing_power(stats, view.zone, rules, community=True) if stats else 1
         self.spot.on_tree(("shared", view.closes_at))

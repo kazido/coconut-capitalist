@@ -117,9 +117,9 @@ def needs_text(bits_needed: int, bits_have: int, items: dict[str, int], owned: d
     "❌ Hardwood 4/10". Used wherever you craft or upgrade, so you can see what is missing before you try."""
     lines = []
     if bits_needed:
-        lines.append(f"{'✅' if bits_have >= bits_needed else '❌'} **{emojis.bits(bits_needed)}** (you have {bits(bits_have)})")
+        lines.append(f"{emojis.icon('check', '✅') if bits_have >= bits_needed else emojis.icon('cross', '❌')} **{emojis.bits(bits_needed)}** (you have {bits(bits_have)})")
     for item_id, quantity in items.items():
         have = owned.get(item_id, 0)
         item = registry.item(item_id)
-        lines.append(f"{'✅' if have >= quantity else '❌'} {item.display}  **{have:,}/{quantity:,}**")
+        lines.append(f"{emojis.icon('check', '✅') if have >= quantity else emojis.icon('cross', '❌')} {item.display}  **{have:,}/{quantity:,}**")
     return "\n".join(lines)

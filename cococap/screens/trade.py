@@ -30,7 +30,7 @@ class TradeScreen(Screen):
 
     id = "trade"
     label = "Trade"
-    emoji = "🤝"
+    emoji = emojis.Lazy("ui_trade", "🤝")
     description = "Swap items and bits with another player"
     links = ()
     refresh_every = 3  # so the other player's changes (and a request sent to you) show up on their own
@@ -43,12 +43,12 @@ class TradeScreen(Screen):
             return Page("Trade", [*body, *await self._window(window)], accent=0xE67E73)
         if invite := trade.invite_for(self.user.id):
             who = await self.nav.name_of(invite.sender_id)
-            body += [text(f"### 🤝 {who} wants to trade\n-# Expires <t:{int(invite.expires_at)}:R>."),
-                     row(button("Accept", emoji="✅", style=discord.ButtonStyle.success, on_click=self._accept_invite),
+            body += [text(f"### {emojis.icon('trade', '🤝')} {who} wants to trade\n-# Expires <t:{int(invite.expires_at)}:R>."),
+                     row(button("Accept", emoji=emojis.icon('check', '✅'), style=discord.ButtonStyle.success, on_click=self._accept_invite),
                          button("Decline", on_click=self._decline))]
         if waiting := trade.invite_from(self.user.id):
             who = await self.nav.name_of(waiting.recipient_id)
-            body.append(section(f"### ⏳ Waiting for {who}\n-# Expires <t:{int(waiting.expires_at)}:R>.", accessory=button("Cancel", on_click=self._withdraw)))
+            body.append(section(f"### {emojis.icon('timer', '⏳')} Waiting for {who}\n-# Expires <t:{int(waiting.expires_at)}:R>.", accessory=button("Cancel", on_click=self._withdraw)))
         body += [sep(), text("### Start a trade\nPick a player. When they accept, you both get a window to add items and bits, and a trade happens when you both press Accept. "
                              "One of you adding nothing makes it a gift."),
                  row(user_select("Trade with...", self._ask))]
@@ -59,8 +59,8 @@ class TradeScreen(Screen):
         me, them = self.user.id, window.other(self.user.id)
         name = await self.nav.name_of(them)
         mine, theirs = window.offer(me), window.offer(them)
-        tick = lambda uid: " ✅ accepted" if uid in window.accepted else ""  # noqa: E731
-        body = [text(f"### 🤝 Trading with {name}\n"
+        tick = lambda uid: f" {emojis.icon('check', '✅')} accepted" if uid in window.accepted else ""  # noqa: E731
+        body = [text(f"### {emojis.icon('trade', '🤝')} Trading with {name}\n"
                      f"**You**{tick(me)}\n{describe(*mine)}\n\n**{name}**{tick(them)}\n{describe(*theirs)}"
                      f"\n-# Any change takes both Accepts back. Tools and gear can't be traded. Closes <t:{int(window.expires_at)}:R> if nothing changes.")]
         stacks = sorted((await trade.tradable(self.user)).items(), key=lambda kv: -get_registry().item(kv[0]).sell_price * kv[1])[:SHOWN_ITEMS]
@@ -70,9 +70,9 @@ class TradeScreen(Screen):
         accepted = me in window.accepted
         body.append(row(button("Add bits", emoji=emojis.currency("bits"), on_click=self._add_bits),
                         button("Empty my side", disabled=not (mine[0] or mine[1]), on_click=self._empty),
-                        button("Accepted: undo" if accepted else "Accept", emoji="✅", style=discord.ButtonStyle.secondary if accepted else discord.ButtonStyle.success,
+                        button("Accepted: undo" if accepted else "Accept", emoji=emojis.icon('check', '✅'), style=discord.ButtonStyle.secondary if accepted else discord.ButtonStyle.success,
                                disabled=not (mine[0] or mine[1] or theirs[0] or theirs[1]) and not accepted, on_click=self._unaccept if accepted else self._accept(window.version)),
-                        button("Cancel trade", emoji="✖️", style=discord.ButtonStyle.danger, on_click=self._cancel)))
+                        button("Cancel trade", emoji=emojis.icon('cross', '✖️'), style=discord.ButtonStyle.danger, on_click=self._cancel)))
         return body
 
     async def _add_item(self, interaction: discord.Interaction, values: list[str]) -> None:
@@ -130,7 +130,7 @@ class TradeScreen(Screen):
             trade.ask(self.user.id, member.id, is_bot=member.bot)
         except trade.TradeError as error:
             return await self.refresh(interaction, str(error))
-        await self.refresh(interaction, f"📨 Asked **{await self.nav.name_of(member.id)}**. It shows on their Trade page for a minute.")
+        await self.refresh(interaction, f"{emojis.icon('page', '📨')} Asked **{await self.nav.name_of(member.id)}**. It shows on their Trade page for a minute.")
 
     async def _withdraw(self, interaction: discord.Interaction) -> None:
         trade.withdraw_ask(self.user.id)

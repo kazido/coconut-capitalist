@@ -16,7 +16,7 @@ from cococap.user import User
 class MiningScreen(Screen):
     id = "mining"
     label = "Mining"
-    emoji = "⛏️"
+    emoji = emojis.Lazy("tool_pickaxe_rookie", "⛏️")
     description = "Dig for ores and gems"
     links = ("mine", "reactor", "mastery", "sellall")
 
@@ -33,7 +33,7 @@ class MiningScreen(Screen):
 
         ores = [f"{reg.item(i).emoji or ''} {q:,}" for i, q in (await self.user.items()).items() if i in rules.magnet.values]
         cores = " ".join(
-            (reg.item(c.gem_id).emoji or "💎") if c.gem_id else emojis.get("cell", "⬛")
+            (reg.item(c.gem_id).emoji or emojis.icon("gem", "💎")) if c.gem_id else emojis.get("cell", "⬛")
             for c in (reactor.core_1, reactor.core_2, reactor.core_3, reactor.core_4)
         )
         lines = [f"{emojis.get('autominer', '⚙️')} **Reactor Lv {reactor.level}**  ·  cores {cores}  ·  **{status['pending_lodes']:,}** lodes waiting"]

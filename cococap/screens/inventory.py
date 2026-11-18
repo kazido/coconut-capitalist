@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.services.inventory import inventory_lines
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
@@ -10,7 +11,7 @@ PER_PAGE = 12
 class InventoryScreen(Screen):
     id = "inventory"
     label = "Inventory"
-    emoji = "🎒"
+    emoji = emojis.Lazy("ui_bag", "🎒")
     description = "Your items"
     links = ("tools", "shop", "trade", "craft")
 
@@ -28,15 +29,15 @@ class InventoryScreen(Screen):
         if pages > 1:
             body.append(
                 row(
-                    button(emoji="◀️", on_click=self._turn(-1), disabled=self.page == 0),
+                    button(emoji=emojis.icon("prev", "◀️"), on_click=self._turn(-1), disabled=self.page == 0),
                     button(f"{self.page + 1}/{pages}", disabled=True),
-                    button(emoji="▶️", on_click=self._turn(1), disabled=self.page >= pages - 1),
+                    button(emoji=emojis.icon("next", "▶️"), on_click=self._turn(1), disabled=self.page >= pages - 1),
                 )
             )
-        body += [sep(), row(button("Sell", emoji="💰", style=discord.ButtonStyle.success, disabled=not lines, on_click=self._sell),
-                            button("Tools", emoji="🧰", on_click=self._tools),
-                            button("Trade", emoji="🤝", on_click=self._trade),
-                            button("Workbench", emoji="🛠️", on_click=self._craft))]
+        body += [sep(), row(button("Sell", emoji=emojis.icon("sell", "💰"), style=discord.ButtonStyle.success, disabled=not lines, on_click=self._sell),
+                            button("Tools", emoji=emojis.icon("anvil", "🧰"), on_click=self._tools),
+                            button("Trade", emoji=emojis.icon("trade", "🤝"), on_click=self._trade),
+                            button("Workbench", emoji=emojis.icon("craft", "🛠️"), on_click=self._craft))]
         return Page("Inventory", body, accent=0x99B0A2)
 
     def _turn(self, step: int):

@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.errors import CustomError
 from cococap.services import party_invites
 from cococap.services.party import Party
@@ -10,7 +11,7 @@ from cococap.ui.components import button, row, sep, text, user_select
 class PartyScreen(Screen):
     id = "party"
     label = "Party"
-    emoji = "👥"
+    emoji = emojis.Lazy("ui_people", "👥")
     description = "Team up with other players"
     refresh_every = 5  # so an invite sent while the page is open shows up (and one that expires goes away)
 
@@ -22,12 +23,12 @@ class PartyScreen(Screen):
                 *self.note_block(),
                 *invite,
                 text("You're not in a party.\nCreate one, then invite friends to play together."),
-                row(button("Create party", emoji="🎉", style=discord.ButtonStyle.success, on_click=self._create)),
+                row(button("Create party", emoji=emojis.icon("party", "🎉"), style=discord.ButtonStyle.success, on_click=self._create)),
             ], accent=0x54B2D1)
 
         lines = []
         for member_id in party.members:
-            crown = "👑 " if party.is_owner(member_id) else "• "
+            crown = f"{emojis.icon('crown', '👑')} " if party.is_owner(member_id) else "• "
             you = "  *(you)*" if member_id == self.user.id else ""
             lines.append(f"{crown}**{await self.nav.name_of(member_id)}**{you}")
         body = [
@@ -37,9 +38,9 @@ class PartyScreen(Screen):
         ]
         if party.is_owner(self.user.id):
             body += [sep(), row(user_select("Invite a player...", self._invite)),
-                     row(button("Disband party", emoji="💥", style=discord.ButtonStyle.danger, on_click=self._disband))]
+                     row(button("Disband party", emoji=emojis.icon("boom", "💥"), style=discord.ButtonStyle.danger, on_click=self._disband))]
         else:
-            body += [sep(), row(button("Leave party", emoji="🚪", on_click=self._leave))]
+            body += [sep(), row(button("Leave party", emoji=emojis.icon("door", "🚪"), on_click=self._leave))]
         body.append(text("-# Leaders can also right-click a member (Apps) to promote or kick them."))
         return Page("Party", body, accent=0x54B2D1)
 
@@ -49,9 +50,9 @@ class PartyScreen(Screen):
         if invite is None:
             return []
         who = await self.nav.name_of(invite.inviter_id)
-        return [text(f"### 📨 Party invite\n**{who}** invited you to their party. It expires <t:{int(invite.expires_at)}:R>."),
-                row(button("Join", emoji="✅", style=discord.ButtonStyle.success, on_click=self._accept),
-                    button("Decline", emoji="✖️", on_click=self._decline)),
+        return [text(f"### {emojis.icon('page', '📨')} Party invite\n**{who}** invited you to their party. It expires <t:{int(invite.expires_at)}:R>."),
+                row(button("Join", emoji=emojis.icon("check", "✅"), style=discord.ButtonStyle.success, on_click=self._accept),
+                    button("Decline", emoji=emojis.icon("cross", "✖️"), on_click=self._decline)),
                 sep()]
 
     async def _accept(self, interaction: discord.Interaction) -> None:
@@ -75,7 +76,7 @@ class PartyScreen(Screen):
             return await self.refresh(interaction, "You are not in a party any more.")
         party.check_invite(self.user.id, member.id, is_bot=member.bot)
         party_invites.offer(party, self.user.id, member.id)  # nothing is posted in the chat: they see it on their own Party page
-        await self.refresh(interaction, f"📨 Invited **{await self.nav.name_of(member.id)}**. It shows on their Party page for a minute.")
+        await self.refresh(interaction, f"{emojis.icon('page', '📨')} Invited **{await self.nav.name_of(member.id)}**. It shows on their Party page for a minute.")
 
     async def _disband(self, interaction: discord.Interaction) -> None:
         party = await Party.for_user(self.user.id)

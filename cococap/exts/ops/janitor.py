@@ -9,6 +9,7 @@ import discord
 from discord import Interaction, app_commands, ui
 from discord.ext import commands, tasks
 
+from cococap import emojis
 from cococap.constants import OWNER_ID
 from cococap.services.janitor import JanitorConfig, can_bulk, idle_minutes, load_config, should_delete
 
@@ -168,7 +169,7 @@ class Janitor(commands.Cog):
         cfg = self.cfg
         plan, lines = {}, []
         channels, problems = find_channels(self.bot, cfg)
-        lines += [f"⚠️ {p}" for p in problems]
+        lines += [f"{emojis.icon('warn', '⚠️')} {p}" for p in problems]
         if not channels:
             lines.append("I found no channels to clean, so nothing can be deleted.")
         for channel in channels:

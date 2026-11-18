@@ -3,12 +3,13 @@ import discord
 from cococap.services.stats import StatPage, stat_pages
 from cococap.ui import Page, Screen
 from cococap.ui.components import row, select, sep, text
+from cococap import emojis
 
 
 class StatsScreen(Screen):
     id = "stats"
     label = "Stats"
-    emoji = "📊"
+    emoji = emojis.Lazy("ui_milestone", "📊")
     description = "Number go up, man happy"
 
     def __init__(self, nav):

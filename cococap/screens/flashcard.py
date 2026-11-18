@@ -3,6 +3,7 @@ import time
 
 import discord
 
+from cococap import emojis
 from cococap.services import flashcard
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
@@ -15,7 +16,7 @@ INTRO = "Solve the sum before the clock runs out. Wins pay luckbucks, and a stre
 class FlashcardScreen(Screen):
     id = "flashcard"
     label = "Flashcard"
-    emoji = "🔢"
+    emoji = emojis.Lazy("ui_scroll", "🔢")
     description = "Quick sums against the clock"
     links = ("minigames",)
 
@@ -27,7 +28,7 @@ class FlashcardScreen(Screen):
     async def build(self) -> Page:
         game, body = self.game, [*self.note_block()]
         if game is None:
-            body += [text(INTRO), row(button("Start", emoji="▶️", style=discord.ButtonStyle.primary, on_click=self._start))]
+            body += [text(INTRO), row(button("Start", emoji=emojis.icon("next", "▶️"), style=discord.ButtonStyle.primary, on_click=self._start))]
             return Page("Flashcard", body, accent=0xA0A39D)
         if self.outcome is None:
             body += [
@@ -37,9 +38,9 @@ class FlashcardScreen(Screen):
             ]
             return Page("Flashcard", body, accent=0x3498DB)
         o = self.outcome
-        verdict = {"correct": "✅ Correct!", "wrong": "❌ Not quite.", "late": "⌛ Too slow!"}[o.result]
+        verdict = {"correct": f"{emojis.icon('check', '✅')} Correct!", "wrong": f"{emojis.icon('cross', '❌')} Not quite.", "late": f"{emojis.icon('timer', '⌛')} Too slow!"}[o.result]
         body += [text(f"## {verdict}\n{game.problem} = **{game.answer}**"), text("\n".join(x for x in (reward_line(o.reward), streak_line(o)) if x)),
-                 row(button("Next card", emoji="🔁", style=discord.ButtonStyle.primary, on_click=self._start))]
+                 row(button("Next card", emoji=emojis.icon("again", "🔁"), style=discord.ButtonStyle.primary, on_click=self._start))]
         return Page("Flashcard", body, accent=0x2ECC71 if o.result == "correct" else 0xE74C3C)
 
     async def _start(self, interaction: discord.Interaction) -> None:

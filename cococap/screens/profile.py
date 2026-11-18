@@ -12,7 +12,7 @@ from cococap.user import User
 class ProfileScreen(Screen):
     id = "profile"
     label = "Profile"
-    emoji = "👤"
+    emoji = emojis.Lazy("ui_people", "👤")
     description = "Your balances, rank and skill levels"
 
     async def build(self) -> Page:

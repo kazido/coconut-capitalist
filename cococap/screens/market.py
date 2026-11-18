@@ -13,7 +13,7 @@ from cococap.ui.components import bits, button, row, sep, text
 class MarketScreen(Screen):
     id = "market"
     label = "Farmer's Market"
-    emoji = "🧺"
+    emoji = emojis.icon('basket', '🧺')
     description = "Open a few hours every day: better crop prices, and blessings for land deeds"
     links = ("farm",)
 
@@ -26,24 +26,24 @@ class MarketScreen(Screen):
         if level < rules.market.min_level:
             return Page("Farmer's Market", [
                 *self.note_block(),
-                text(f"🔒 The market opens to farmers of **level {rules.market.min_level}** (you are level {level})."),
+                text(f"{emojis.icon('lock', '🔒')} The market opens to farmers of **level {rules.market.min_level}** (you are level {level})."),
             ], accent=0xE6B34A)
 
         crops = {i: q for i, q in (await self.user.items()).items() if (it := reg.find_item(i)) and it.category == "crop" and it.sellable}
         total = sum(farming.market_price(i, q, reg) for i, q in crops.items())
-        status = (f"🟢 **Open** until <t:{changes}:R>" if is_open else f"🔴 **Closed.** Opens <t:{changes}:R>")
-        lines = [f"{reg.item(i).display} x{q:,}  →  **{emojis.bits(farming.market_price(i, q, reg))}**" for i, q in crops.items()]
+        status = (f"{emojis.icon('dot_green', '🟢')} **Open** until <t:{changes}:R>" if is_open else f"{emojis.icon('dot_red', '🔴')} **Closed.** Opens <t:{changes}:R>")
+        lines = [f"{reg.item(i).display} x{q:,}  {emojis.icon('next', '→')}  **{emojis.bits(farming.market_price(i, q, reg))}**" for i, q in crops.items()]
         body = [
             *self.note_block(),
             text(f"{status}\nCrops sell for **+{rules.market.price_bonus:.0%}** while the market is open."),
             sep(),
             text("**Your crops**\n" + ("\n".join(lines) if lines else "None to sell.")),
-            text(f"💧 **{skill.rain_god_blessings}** rain god's blessing(s)  ·  each has a **{rules.market.deed_chance:.0%}** chance to become a "
+            text(f"{emojis.icon('drop', '💧')} **{skill.rain_god_blessings}** rain god's blessing(s)  ·  each has a **{rules.market.deed_chance:.0%}** chance to become a "
                  f"{reg.item(rules.deed_item).display}"),
             row(
-                button(f"Sell all ({bits(total)})" if total else "Sell all", emoji="💰", style=discord.ButtonStyle.success,
+                button(f"Sell all ({bits(total)})" if total else "Sell all", emoji=emojis.icon('sell', '💰'), style=discord.ButtonStyle.success,
                        disabled=not (is_open and crops), on_click=self._sell),
-                button("Deposit blessings", emoji="💧", disabled=not (is_open and skill.rain_god_blessings), on_click=self._deposit),
+                button("Deposit blessings", emoji=emojis.icon('drop', '💧'), disabled=not (is_open and skill.rain_god_blessings), on_click=self._deposit),
             ),
         ]
         return Page("Farmer's Market", body, accent=0xE6B34A)

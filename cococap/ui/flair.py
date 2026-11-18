@@ -10,6 +10,7 @@ Plain finds (ores you dig all day, fish -- which have their own colours -- and c
 
 from collections.abc import Mapping
 
+from cococap import emojis
 from cococap.registry import Item, get_registry
 
 RARE_ODDS, SUPER_ODDS = 100, 700  # a drop's 1-in-N
@@ -43,9 +44,9 @@ def announce(lvl: int, item: Item, quantity: int) -> str:
     """The fanfare for one find: a big banner (level 2) or a short highlighted line (level 1)."""
     what = f"{quantity:,} {item.display}"
     if lvl == 2:
-        head = f"## 🌟✨ SUPER RARE DROP! ✨🌟\n### {what}"
+        head = f"## {emojis.icon('star', '🌟')}{emojis.icon('sparkle', '✨')} SUPER RARE DROP! {emojis.icon('sparkle', '✨')}{emojis.icon('star', '🌟')}\n### {what}"
         return f"{head}\n*{item.description}*" if item.description else head
-    return f"✨ **Rare drop!** {what}"
+    return f"{emojis.icon('sparkle', '✨')} **Rare drop!** {what}"
 
 
 def banner(drops: Mapping[str, int]) -> str:

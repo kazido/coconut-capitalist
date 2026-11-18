@@ -16,7 +16,7 @@ class WikiScreen(Screen):
 
     id = "wiki"
     label = "Wiki"
-    emoji = "📖"
+    emoji = emojis.icon('book', '📖')
     description = "How everything works: skills, fish, pets, tools, items"
     links = ()
 
@@ -55,9 +55,9 @@ class WikiScreen(Screen):
                 discord.SelectOption(label=i.name, value=i.id, emoji=i.emoji or None, default=i.id == self.item,
                                      description=Rarities.from_value(i.rarity).rarity_name) for i in shown], self._pick_item)))
         if pages > 1:
-            parts.append(row(button(emoji="◀️", disabled=self.page == 0, on_click=self._turn(-1)),
+            parts.append(row(button(emoji=emojis.icon('prev', '◀️'), disabled=self.page == 0, on_click=self._turn(-1)),
                              button(f"{self.page + 1}/{pages}", disabled=True),
-                             button(emoji="▶️", disabled=self.page >= pages - 1, on_click=self._turn(1))))
+                             button(emoji=emojis.icon('next', '▶️'), disabled=self.page >= pages - 1, on_click=self._turn(1))))
         item = reg.find_item(self.item) if self.item else None
         if item:
             parts.append(section_art(f"### {item.display}\n" + item_attributes(item), emojis.image_url("item", item.id)))

@@ -30,8 +30,8 @@ def result_buttons(screen, game_id: str) -> discord.ui.ActionRow:
         await screen.go(interaction, "casino")
 
     return row(
-        button("Play again", emoji="🔁", style=discord.ButtonStyle.primary, on_click=again),
-        button("Casino", emoji="🎰", on_click=to_casino),
+        button("Play again", emoji=emojis.icon("again", "🔁"), style=discord.ButtonStyle.primary, on_click=again),
+        button("Casino", emoji=emojis.icon("money", "🎰"), on_click=to_casino),
     )
 
 
@@ -44,7 +44,7 @@ def reward_line(reward) -> str:
     if reward is None:
         return ""
     if reward.granted == 0:
-        return "🍀 You've hit today's minigame limit, so no luckbucks this time. Streaks still count!"
+        return f"{emojis.icon('luckbucks', '🍀')} You've hit today's minigame limit, so no luckbucks this time. Streaks still count!"
     line = f"**+{emojis.luckbucks(reward.granted)}**"
     if reward.streak_bonus:
         line += f" (streak bonus +{reward.streak_bonus:.0%})"
@@ -55,5 +55,5 @@ def reward_line(reward) -> str:
 
 def streak_line(outcome) -> str:
     if outcome.result == "correct":
-        return f"Streak: **{outcome.streak}**" + ("  🏅 new record!" if outcome.new_record else "")
+        return f"Streak: **{outcome.streak}**" + (f"  {emojis.icon('medal', '🏅')} new record!" if outcome.new_record else "")
     return f"You lost a streak of {outcome.lost_streak}." if outcome.lost_streak else ""

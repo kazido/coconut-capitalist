@@ -5,12 +5,13 @@ from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
 
 from .games import money, result_buttons
+from cococap import emojis
 
 
 class HighLowScreen(Screen):
     id = "highlow"
     label = "High-Low"
-    emoji = "🔼"
+    emoji = emojis.Lazy("ui_up", "🔼")
     description = "Guess high or low"
     links = ("casino",)
 
@@ -33,20 +34,21 @@ class HighLowScreen(Screen):
             return Page("High-Low", [text("No game in progress. Start one from the casino.")])
         body = [*self.note_block(), text("Will the next number be **high (6-10)** or **low (1-5)**?")]
         if game.last:
-            verdict = "✅ Correct!" if game.last.correct else "❌ Wrong!"
+            verdict = f"{emojis.icon('check', '✅')} Correct!" if game.last.correct else f"{emojis.icon('cross', '❌')} Wrong!"
             body.append(text(f"The number was **{game.last.roll}**. {verdict}"))
         body += [sep(), text(f"Bet **{money(game.bet)}**  ·  Multiplier **{game.multiplier}×**  ·  Pot **{money(game.pot)}**")]
         if not game.finished:
             body.append(
                 row(
-                    button("High", emoji="🔼", style=discord.ButtonStyle.primary, on_click=self._guess(True)),
-                    button("Low", emoji="🔽", style=discord.ButtonStyle.primary, on_click=self._guess(False)),
-                    button(f"Cash out {game.pot:,}", emoji="💰", style=discord.ButtonStyle.success, on_click=self._cash_out),
+                    button("High", emoji=emojis.icon('up', '🔼'), style=discord.ButtonStyle.primary, on_click=self._guess(True)),
+                    button("Low", emoji=emojis.icon('down', '🔽'), style=discord.ButtonStyle.primary, on_click=self._guess(False)),
+                    button(f"Cash out {game.pot:,}", emoji=emojis.icon('sell', '💰'), style=discord.ButtonStyle.success, on_click=self._cash_out),
                 )
             )
             return Page("High-Low", body, accent=0x666666)
         won = game.pot > 0
-        body += [sep(), text(f"## {'💰 Cashed out' if won else '💀 You lost'} {money(game.pot if won else game.bet)}"), result_buttons(self, "highlow")]
+        head = f"{emojis.icon('sell', '💰')} Cashed out" if won else f"{emojis.icon('skull', '💀')} You lost"
+        body += [sep(), text(f"## {head} {money(game.pot if won else game.bet)}"), result_buttons(self, "highlow")]
         return Page("High-Low", body, accent=0x2ECC71 if won else 0xE74C3C)
 
     def _guess(self, high: bool):

@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 
+from cococap import emojis
 from cococap.user import User
 
 SKILL_ICONS = {"farming": "🌽", "foraging": "🌳", "fishing": "🐟", "mining": "⛏️", "combat": "⚔️"}
@@ -27,14 +28,14 @@ async def stat_pages(user: User) -> list[StatPage]:
         ("Combat", f"Lv {User.xp_to_level(skills['combat'].xp)} · {skills['combat'].stats.monsters_slain:,} monsters slain"),
     ]
     return [
-        StatPage("general", "General", "🔢", [("Economy", [
+        StatPage("general", "General", emojis.icon('scroll', '🔢'), [("Economy", [
             ("Drops claimed", g("drops_claimed")), ("Tokens earned", g("tokens_earned")),
             ("Luckbucks earned", g("luckbucks_earned")), ("Times begged", g("times_begged")),
             ("Deposits", g("deposits")), ("Withdraws", g("withdraws")),
             ("Work claimed", g("claimed_work")), ("Daily claimed", g("claimed_daily")),
             ("Weekly claimed", g("claimed_weekly")),
         ])]),
-        StatPage("gambling", "Gambling", "🎰", [
+        StatPage("gambling", "Gambling", emojis.icon('money', '🎰'), [
             ("High-Low", [("Wins", g("hl_wins")), ("Longest win streak", g("longest_hl_streak")),
                           ("Longest loss streak", g("longest_hl_loss_streak")),
                           ("Biggest win", g("biggest_hl_win")), ("Biggest loss", g("biggest_hl_loss"))]),
@@ -42,10 +43,10 @@ async def stat_pages(user: User) -> list[StatPage]:
                            ("Hits", g("blackjack_hits")), ("Stands", g("blackjack_stands")),
                            ("Folds", g("blackjack_folds"))]),
         ]),
-        StatPage("minigames", "Minigames", "🎲", [
+        StatPage("minigames", "Minigames", emojis.icon('dice', '🎲'), [
             ("Unscramble", [("Current streak", g("unscramble_streak")), ("Longest streak", g("longest_unscramble_streak"))]),
             ("Flashcard", [("Current streak", g("flashcard_streak")), ("Longest streak", g("longest_flashcard_streak"))]),
             ("Other", [("Sequence best", g("longest_sq_streak")), ("Trivia wins", g("trivia_wins")), ("Trivia games", g("trivia_games"))]),
         ]),
-        StatPage("skills", "Skills", "📈", [("Levels", skill_lines)]),
+        StatPage("skills", "Skills", emojis.icon('milestone', '📈'), [("Levels", skill_lines)]),
     ]

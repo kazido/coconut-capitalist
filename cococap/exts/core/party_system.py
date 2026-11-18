@@ -4,6 +4,7 @@ import random
 from logging import getLogger
 from discord.ext import commands
 from discord import app_commands, Interaction
+from cococap import emojis
 from cococap.user import User
 from cococap.exts.utils.error import CustomError
 from cococap.services.party import (  # noqa: F401  (re-exported: tests and other cogs import these from here)
@@ -153,7 +154,7 @@ class PartySystemCog(commands.GroupCog, name="party"):
 
         party.check_invite(interaction.user.id, member.id, is_bot=member.bot)
         party_invites.offer(party, interaction.user.id, member.id)  # no message in the channel: it shows on their Party page for a minute
-        await interaction.response.send_message(f"📨 Invited **{member.display_name}**. It shows on their Party page for a minute.", ephemeral=True)
+        await interaction.response.send_message(f"{emojis.icon('page', '📨')} Invited **{member.display_name}**. It shows on their Party page for a minute.", ephemeral=True)
 
     @app_commands.check(in_party)
     async def kick(self, interaction: Interaction, member_to_kick: discord.Member):

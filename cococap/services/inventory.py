@@ -1,5 +1,6 @@
 """Turn a player's inventory into display lines. Pure functions of data, no Discord."""
 
+from cococap import emojis
 from cococap.models.instance import ItemInstance
 from cococap.registry import get_registry
 
@@ -21,13 +22,13 @@ def inventory_lines(items: dict[str, int], filter: str | None = None) -> list[st
         item = reg.find_item(item_id)
         if item is None:
             if needle is None or needle in item_id.lower():
-                rows.append((item_id, f"❔ {quantity:,} {item_id} *(unknown item)*"))
+                rows.append((item_id, f"{emojis.icon('unknown', '❔')} {quantity:,} {item_id} *(unknown item)*"))
             continue
         if needle and not any(
             needle in field for field in (item.name.lower(), item.id, item.skill or "", item.category)
         ):
             continue
-        line = f"{item.emoji or '▫️'} {quantity:,} {item.name}"
+        line = f"{item.emoji or emojis.icon('pip', '▫️')} {quantity:,} {item.name}"
         rows.append((item.name.lower(), line))
     return [line for _, line in sorted(rows)]
 
@@ -57,8 +58,8 @@ def instance_lines(instances: list[ItemInstance], equipped_ids: set[int], filter
             needle in field for field in (label.lower(), template.id, template.skill or "", "tool")
         ):
             continue
-        mark = " ✅" if inst.id in equipped_ids else ""
-        rows.append((label.lower(), f"{template.emoji or '🗡️'} {label}{mark}"))
+        mark = f" {emojis.icon('check', '✅')}" if inst.id in equipped_ids else ""
+        rows.append((label.lower(), f"{template.emoji or emojis.icon('sword', '🗡️')} {label}{mark}"))
     return [line for _, line in sorted(rows)]
 
 

@@ -13,7 +13,7 @@ class CraftScreen(Screen):
 
     id = "craft"
     label = "Workbench"
-    emoji = "🛠️"
+    emoji = emojis.Lazy("craft", "🛠️")
     description = "Make things from materials"
     links = ()
 
@@ -40,13 +40,13 @@ class CraftScreen(Screen):
                                                 description=(f"you can make {can:,}" if can else "missing something")[:100]))
         output = reg.item(recipe.output)
         made = f"**{recipe.quantity:,}** {output.display}" if recipe.quantity > 1 else output.display
-        lines = [f"### 🛠️ {recipe.emoji or ''} {recipe.name}", f"Makes {made}", f"-# {output.description}" if output.description else "",
+        lines = [f"### {emojis.icon('craft', '🛠️')} {recipe.emoji or ''} {recipe.name}", f"Makes {made}", f"-# {output.description}" if output.description else "",
                  "", needs_text(recipe.bits, self.user.purse, recipe.inputs, owned, reg)]
         if recipe.min_level:
-            lines.append(f"{'✅' if not locked else '❌'} {recipe.skill.title()} level **{recipe.min_level}** (you are level {level})")
+            lines.append(f"{emojis.icon('check', '✅') if not locked else emojis.icon('cross', '❌')} {recipe.skill.title()} level **{recipe.min_level}** (you are level {level})")
         lines.append(f"-# You can make **{count:,}** right now. Sell All keeps what recipes use while \"Keep upgrade materials\" is on.")
         body = [*self.note_block(), text("\n".join(lines)), row(select("Pick a recipe...", options, self._pick)),
-                row(button("Craft 1", emoji="🛠️", style=discord.ButtonStyle.success, disabled=count < 1, on_click=self._craft(1)),
+                row(button("Craft 1", emoji=emojis.icon("craft", "🛠️"), style=discord.ButtonStyle.success, disabled=count < 1, on_click=self._craft(1)),
                     button("Craft 10", disabled=count < 10, on_click=self._craft(10)),
                     button(f"Craft max ({count:,})" if count else "Craft max", disabled=count < 1, on_click=self._craft(None)))]
         return Page("Workbench", body, accent=0xB8860B)
@@ -63,8 +63,8 @@ class CraftScreen(Screen):
             made = await crafting.craft(self.user, recipe.id, max(n, 1), reg)
             self.last = made.times
             fee = f"  (for {emojis.bits(made.bits)})" if made.bits else ""
-            self.result = rewards_result("Crafted!", items=made.items, headline=[f"🛠️ You made **{made.times:,}** × {recipe.name}{fee}."],
-                                         emoji="🛠️", accent=0xB8860B, again=self._again, again_label="Craft again", back_label="Back to the Workbench")
+            self.result = rewards_result("Crafted!", items=made.items, headline=[f"{emojis.icon('craft', '🛠️')} You made **{made.times:,}** × {recipe.name}{fee}."],
+                                         emoji=emojis.icon("craft", "🛠️"), accent=0xB8860B, again=self._again, again_label="Craft again", back_label="Back to the Workbench")
             await self.refresh(interaction)
 
         return go

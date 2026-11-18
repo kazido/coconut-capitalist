@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import tool_effects, upgrades
 from cococap.services.equipment import effective_stats
@@ -37,7 +38,7 @@ class UpgradeScreen(Screen):
 
     id = "upgrade"
     label = "Upgrade Tools"
-    emoji = "🔨"
+    emoji = emojis.Lazy("craft", "🔨")
     description = "Turn a tool into the next one up"
     links = ("tools",)
 
@@ -54,7 +55,7 @@ class UpgradeScreen(Screen):
         if not offers:
             body.append(text("Nothing to upgrade. Claim your free starter tools on the Tools page first; "
                              "tools that are already maxed don't show up here."))
-            return Page("Upgrade Tools", [*body, sep(), row(button("Back to tools", emoji="🧰", on_click=self._back))], accent=0xB8860B)
+            return Page("Upgrade Tools", [*body, sep(), row(button("Back to tools", emoji=emojis.icon("anvil", "🧰"), on_click=self._back))], accent=0xB8860B)
         by_kind: dict[str, list] = {}  # kind -> the offers of the first tool you own of that kind
         for offer in sorted(offers, key=lambda o: (KIND_ORDER.index(o.current.tool.kind), o.instance.id)):
             kind_offers = by_kind.setdefault(offer.current.tool.kind, [])
@@ -65,12 +66,12 @@ class UpgradeScreen(Screen):
         mine = by_kind[self.kind]
         first = mine[0]
         owned = await self.user.items()
-        body.append(text(f"### {first.current.emoji or '🔨'} {instance_label(first.instance)}  ·  {KIND_SKILL[first.current.tool.kind]}\n"
+        body.append(text(f"### {first.current.emoji or emojis.icon('craft', '🔨')} {instance_label(first.instance)}  ·  {KIND_SKILL[first.current.tool.kind]}\n"
                          f"Power **{effective_stats(first.instance).power}**"
                          + (f"  ·  {describe_stats(first.current.tool.stats)}" if first.current.tool.stats else "")
                          + (f"  ·  {first.current.tool.path} path" if first.current.tool.path else "")
                          + f"\n-# {tool_effects.HOW[first.current.tool.kind]}"
-                         + (f"\n-# ✨ {first.current.tool.ability_name}: {first.current.tool.ability_description}" if first.current.tool.ability_name else "")))
+                         + (f"\n-# {emojis.icon('sparkle', '✨')} {first.current.tool.ability_name}: {first.current.tool.ability_description}" if first.current.tool.ability_name else "")))
         shown = mine
         if len(mine) > 1:  # a fork in the road: one page per path, swapped with a dropdown
             chosen = self.road.get(first.instance.id, mine[0].path)
@@ -83,10 +84,10 @@ class UpgradeScreen(Screen):
             road = f"  ·  **{target.path} path**" if target.path and offer.current.tool.fork else ""
             now = effective_stats(offer.instance).power
             after = target.power + (now - offer.current.tool.power)  # (enchant and rolled bonuses carry over)
-            lines = (f"**→ {offer.target.name}**{road}\n"
-                     f"Power **{now}** → **{after}**" + (f"  ·  {describe_stats(target.stats)}" if target.stats else "")
+            lines = (f"**{emojis.icon('next', '→')} {offer.target.name}**{road}\n"
+                     f"Power **{now}** {emojis.icon('next', '→')} **{after}**" + (f"  ·  {describe_stats(target.stats)}" if target.stats else "")
                      + "\n" + "\n".join(tool_effects.compare(target.kind, now, after, reg, offer.current.tool.path, target.path, offer.current.tool.stats, target.stats))
-                     + (f"\n✨ New ability: **{target.ability_name}**: {target.ability_description}" if target.ability_name and target.ability != offer.current.tool.ability else "")
+                     + (f"\n{emojis.icon('sparkle', '✨')} New ability: **{target.ability_name}**: {target.ability_description}" if target.ability_name and target.ability != offer.current.tool.ability else "")
                      + "\n" + needs_text(cost.bits, self.user.purse, cost.items, owned, reg))
             if offer.level_needed:
                 lines += f"\n-# {offer.target.name} needs level {offer.level_needed} in its skill."
@@ -95,13 +96,13 @@ class UpgradeScreen(Screen):
                 style=discord.ButtonStyle.danger if self.sure == (offer.instance.id, offer.path) else discord.ButtonStyle.success, disabled=not offer.affordable,
                 on_click=self._upgrade(offer.instance.id, offer.path))))
         if first.current.tool.fork:
-            body.append(text("-# ⚠️ A fork in the road: the path you take is the one your tool climbs from now on."))
+            body.append(text(f"-# {emojis.icon('warn', '⚠️')} A fork in the road: the path you take is the one your tool climbs from now on."))
         body.append(sep())
         if len(by_kind) > 1:  # one button per skill that has a tool to upgrade; the one showing is highlighted
             body.append(row(*[button(KIND_SKILL[kind], emoji=kind_offers[0].current.emoji or None,
                                      style=discord.ButtonStyle.primary if kind == self.kind else discord.ButtonStyle.secondary,
                                      on_click=self._show(kind)) for kind, kind_offers in by_kind.items()]))
-        body.append(row(button("Back to tools", emoji="🧰", on_click=self._back)))
+        body.append(row(button("Back to tools", emoji=emojis.icon("anvil", "🧰"), on_click=self._back)))
         return Page("Upgrade Tools", body, accent=0xB8860B)
 
     def _show(self, kind: str):
@@ -127,7 +128,7 @@ class UpgradeScreen(Screen):
                 return await self.refresh(interaction, "Press **Sure?** to upgrade, or look at something else to cancel.")
             self.sure = None
             done = await upgrades.upgrade(self.user, instance_id, path=path)
-            await self.refresh(interaction, f"🔨 Your {done.current.name} became a **{done.target.name}**!")
+            await self.refresh(interaction, f"{emojis.icon('craft', '🔨')} Your {done.current.name} became a **{done.target.name}**!")
 
         return go
 

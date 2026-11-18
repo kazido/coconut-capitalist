@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.services import blackjack
 from cococap.services.blackjack import hand_total, show
 from cococap.ui import Page, Screen
@@ -7,21 +8,23 @@ from cococap.ui.components import button, row, sep, text
 
 from .games import money, result_buttons
 
-OUTCOMES = {
-    "blackjack": ("🃏 BLACKJACK!", 0x9B59B6, "Easy money."),
-    "win": ("🎉 You win!", 0x2ECC71, "Nice win!"),
-    "push": ("🤝 Push", 0x95A5A6, "Your bet is returned."),
-    "lose": ("😞 The house wins", 0xE74C3C, "Better luck next time..."),
-    "bust": ("💥 Bust!", 0xE74C3C, "Over 21."),
-    "fold": ("🏳️ Folded", 0x95A5A6, "Half your bet is returned."),
-    "forfeit": ("⌛ Hand abandoned", 0x95A5A6, "The bet goes to the house."),
-}
+
+def _outcomes() -> dict:
+    return {
+        "blackjack": (f"{emojis.icon('cards', '🃏')} BLACKJACK!", 0x9B59B6, "Easy money."),
+        "win": (f"{emojis.icon('party', '🎉')} You win!", 0x2ECC71, "Nice win!"),
+        "push": (f"{emojis.icon('trade', '🤝')} Push", 0x95A5A6, "Your bet is returned."),
+        "lose": (f"{emojis.icon('skull', '😞')} The house wins", 0xE74C3C, "Better luck next time..."),
+        "bust": (f"{emojis.icon('boom', '💥')} Bust!", 0xE74C3C, "Over 21."),
+        "fold": (f"{emojis.icon('flag_white', '🏳️')} Folded", 0x95A5A6, "Half your bet is returned."),
+        "forfeit": (f"{emojis.icon('timer', '⌛')} Hand abandoned", 0x95A5A6, "The bet goes to the house."),
+    }
 
 
 class BlackjackScreen(Screen):
     id = "blackjack"
     label = "Blackjack"
-    emoji = "🃏"
+    emoji = emojis.Lazy("cards", "🃏")
     description = "Beat the dealer to 21"
     links = ("casino",)
 
@@ -51,14 +54,14 @@ class BlackjackScreen(Screen):
         ]
         if not game.finished:
             actions = [
-                button("Hit", emoji="🃏", style=discord.ButtonStyle.primary, on_click=self._act(blackjack.hit)),
-                button("Stand", emoji="✋", style=discord.ButtonStyle.success, on_click=self._act(blackjack.stand)),
+                button("Hit", emoji=emojis.icon("cards", "🃏"), style=discord.ButtonStyle.primary, on_click=self._act(blackjack.hit)),
+                button("Stand", emoji=emojis.icon("fist", "✋"), style=discord.ButtonStyle.success, on_click=self._act(blackjack.stand)),
             ]
             if game.can_fold:
-                actions.append(button("Fold", emoji="🏳️", style=discord.ButtonStyle.danger, on_click=self._act(blackjack.fold)))
+                actions.append(button("Fold", emoji=emojis.icon("flag_white", "🏳️"), style=discord.ButtonStyle.danger, on_click=self._act(blackjack.fold)))
             body.append(row(*actions))
             return Page("Blackjack", body, accent=0x3498DB)
-        title, accent, blurb = OUTCOMES[game.outcome]
+        title, accent, blurb = _outcomes()[game.outcome]
         net = game.payout - game.bet
         sign = "+" if net > 0 else ""
         body += [sep(), text(f"## {title}\n{blurb}  ({sign}{net:,})"), result_buttons(self, "blackjack")]

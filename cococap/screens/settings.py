@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, section, text
 
@@ -15,7 +16,7 @@ SETTINGS: dict[str, tuple[str, str]] = {
 class SettingsScreen(Screen):
     id = "settings"
     label = "Settings"
-    emoji = "⚙️"
+    emoji = emojis.icon('gear', '⚙️')
     description = "Change how the bot treats you"
 
     async def build(self) -> Page:

@@ -8,6 +8,7 @@ from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
 
 from .games import reward_line, streak_line
+from cococap import emojis
 
 INTRO = "Answer a random trivia question. Harder questions pay more, and you can play all day (to a daily limit)."
 DIFFICULTY_ACCENT = {"easy": 0x2ECC71, "medium": 0xF1C40F, "hard": 0xE74C3C}
@@ -16,7 +17,7 @@ DIFFICULTY_ACCENT = {"easy": 0x2ECC71, "medium": 0xF1C40F, "hard": 0xE74C3C}
 class TriviaScreen(Screen):
     id = "trivia"
     label = "Trivia"
-    emoji = "❓"
+    emoji = emojis.Lazy("ui_unknown", "❓")
     description = "Answer questions, earn luckbucks"
     links = ("minigames",)
 
@@ -28,14 +29,14 @@ class TriviaScreen(Screen):
     async def build(self) -> Page:
         game, body = self.game, [*self.note_block()]
         if game is None:
-            body += [text(INTRO), row(button("Start", emoji="▶️", style=discord.ButtonStyle.primary, on_click=self._start))]
+            body += [text(INTRO), row(button("Start", emoji=emojis.icon('next', '▶️'), style=discord.ButtonStyle.primary, on_click=self._start))]
             return Page("Trivia", body, accent=0xA0A39D)
         q = game.question
         lines = []
         for i, answer in enumerate(game.answers):
             mark = ""
             if self.outcome is not None:
-                mark = " ✅" if answer == q.correct else (" ❌" if i == game.picked else "")
+                mark = f" {emojis.icon('check', '✅')}" if answer == q.correct else (f" {emojis.icon('cross', '❌')}" if i == game.picked else "")
             lines.append(f"**{trivia.LETTERS[i]}**  {answer}{mark}")
         body += [text(f"*{q.text}*\n-# {q.category} · {q.difficulty.title()}"), text("\n".join(lines))]
         accent = DIFFICULTY_ACCENT.get(q.difficulty, 0x3498DB)
@@ -44,9 +45,9 @@ class TriviaScreen(Screen):
                      row(*(button(trivia.LETTERS[i], style=discord.ButtonStyle.primary, on_click=self._pick(i)) for i in range(len(game.answers))))]
             return Page("Trivia", body, accent=accent)
         o = self.outcome
-        verdict = {"correct": "✅ Correct!", "wrong": "❌ Incorrect.", "late": "⌛ Time's up!"}[o.result]
+        verdict = {"correct": f"{emojis.icon('check', '✅')} Correct!", "wrong": f"{emojis.icon('cross', '❌')} Incorrect.", "late": f"{emojis.icon('timer', '⌛')} Time's up!"}[o.result]
         body += [sep(), text(f"## {verdict}\n" + "\n".join(x for x in (reward_line(o.reward), streak_line(o)) if x)),
-                 row(button("Next question", emoji="🔁", style=discord.ButtonStyle.primary, on_click=self._start))]
+                 row(button("Next question", emoji=emojis.icon('again', '🔁'), style=discord.ButtonStyle.primary, on_click=self._start))]
         return Page("Trivia", body, accent=0x2ECC71 if o.result == "correct" else 0xE74C3C)
 
     async def _start(self, interaction: discord.Interaction) -> None:

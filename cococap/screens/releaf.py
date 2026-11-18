@@ -4,6 +4,7 @@ from cococap.registry import get_registry
 from cococap.services import releaf
 from cococap.ui import Page, Screen
 from cococap.ui.components import bar, button, row, select, sep, text
+from cococap import emojis
 
 GREEN = 0x2E7D32
 
@@ -11,7 +12,7 @@ GREEN = 0x2E7D32
 class ReleafScreen(Screen):
     id = "releaf"
     label = "Releaf Foundation"
-    emoji = "🌱"
+    emoji = emojis.Lazy("ui_sprout", "🌱")
     description = "Give rare drops together to start a server-wide Bloom"
     links = ("forage",)
     refresh_every = 20.0  # other players give too: keep the meter and the Bloom timer live
@@ -34,9 +35,9 @@ class ReleafScreen(Screen):
                 f"**+{rules.bloom_xp:.0%}** foraging xp and **+{rules.bloom_drops:.0%}** drop chances on every tree, for **{rules.bloom_hours:g}** hours.\n"
                 f"-# Giving takes the item for good and brings you nothing personal; the Bloom is for everybody, whether they gave or not.")
         body.append(text(head))
-        status_line = f"🌱  {bar(found.meter / found.goal, 12)}  **{found.meter}/{found.goal}**"
+        status_line = f"{emojis.icon('sprout', '🌱')}  {bar(found.meter / found.goal, 12)}  **{found.meter}/{found.goal}**"
         if found.bloom_active:
-            status_line += f"\n🌸 **Bloom is up!** Ends <t:{int(found.bloom_until)}:R>. Giving reopens after it."
+            status_line += f"\n{emojis.icon('flower', '🌸')} **Bloom is up!** Ends <t:{int(found.bloom_until)}:R>. Giving reopens after it."
         elif found.full:
             status_line += "\nThe Bloom has just ended: giving reopens in a moment."
         else:
@@ -93,9 +94,9 @@ class ReleafScreen(Screen):
     async def _give(self, interaction: discord.Interaction, count: int) -> None:
         reg = get_registry()
         done = await releaf.donate(self.user, self.item, count)
-        note = f"🌱 You gave **{done.given:,} {reg.item(self.item).name}** (+{done.points}). The meter is at {done.meter}/{done.goal}."
+        note = f"{emojis.icon('sprout', '🌱')} You gave **{done.given:,} {reg.item(self.item).name}** (+{done.points}). The meter is at {done.meter}/{done.goal}."
         if done.returned:
             note += f" {done.returned:,} did not fit and came back."
         if done.bloom_started:
-            note += "\n🌸 **The Bloom begins!** Everyone's foraging is boosted."
+            note += f"\n{emojis.icon('flower', '🌸')} **The Bloom begins!** Everyone's foraging is boosted."
         await self.refresh(interaction, note)

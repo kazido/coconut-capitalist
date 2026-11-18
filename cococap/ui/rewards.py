@@ -20,7 +20,7 @@ GOLD, SPECIAL = 0xF1C40F, 0x9B59B6
 
 
 def item_line(item: Item, quantity: int) -> str:
-    return f"{item.emoji or '▫️'} **+{quantity:,}** " + (f"**{item.name}**" if item.rarity >= 5 else item.name)
+    return f"{item.emoji or emojis.icon('pip', '▫️')} **+{quantity:,}** " + (f"**{item.name}**" if item.rarity >= 5 else item.name)
 
 
 def items_block(drops: Mapping[str, int]) -> str:
@@ -30,7 +30,7 @@ def items_block(drops: Mapping[str, int]) -> str:
 
 
 def totals_line(bits: int = 0, xp: int = 0) -> str:
-    parts = ([f"💰 **+{emojis.bits(bits)}**"] if bits else []) + ([f"✨ **+{xp:,}** xp"] if xp else [])
+    parts = ([f"{emojis.icon('sell', '💰')} **+{emojis.bits(bits)}**"] if bits else []) + ([f"{emojis.icon('sparkle', '✨')} **+{xp:,}** xp"] if xp else [])
     return "  ·  ".join(parts)
 
 
@@ -41,14 +41,14 @@ def rarity_name(item: Item) -> str:
 def drop_rate_line(item: Item, odds: Odds | None) -> str:
     """"Drop rate: 1 in 2,200 cells dug" when the source's table says, else just "Rarity: Legendary"."""
     rarity = f"**{rarity_name(item)}**"
-    return f"🎲 **Drop rate:** {odds.text()}  ·  {rarity}" if odds else f"🎲 **Rarity:** {rarity}"
+    return f"{emojis.icon('dice', '🎲')} **Drop rate:** {odds.text()}  ·  {rarity}" if odds else f"{emojis.icon('dice', '🎲')} **Rarity:** {rarity}"
 
 
 def rare_page(lvl: int, item: Item, quantity: int, odds: Odds | None) -> Result:
     """The special page for one rare drop."""
     super_rare = lvl == 2
     return Result("A super rare find!" if super_rare else "A rare find!", [flair.announce(lvl, item, quantity), drop_rate_line(item, odds)],
-                  emoji="🌟" if super_rare else "✨", accent=GOLD if super_rare else SPECIAL)
+                  emoji=emojis.icon('star', '🌟') if super_rare else emojis.icon('sparkle', '✨'), accent=GOLD if super_rare else SPECIAL)
 
 
 def rewards_result(
@@ -60,7 +60,7 @@ def rewards_result(
     headline: Iterable[str] = (),
     notes: Iterable[str] = (),
     odds: Lookup | Mapping[str, Odds] | None = None,
-    emoji: str = "🎉",
+    emoji: str | None = None,
     accent: int = BLURPLE,
     again: Handler | None = None,
     again_label: str = "Again",
@@ -72,6 +72,7 @@ def rewards_result(
     """The reward screen: `headline` (what happened), the item lines, the bits and xp line, then `notes`. `odds` (a function from item id to ``Odds``
     or None, or a dict) says how rare each rare drop is. The Again / back / actions choices belong to the end of the flow: with rare drops they sit on the
     last rare page, not on this one."""
+    emoji = emoji or emojis.icon("party", "🎉")
     items = {i: q for i, q in (items or {}).items() if q > 0}
     rare = flair.finds(items)
     plain = {i: q for i, q in items.items() if i not in {f[1].id for f in rare}}

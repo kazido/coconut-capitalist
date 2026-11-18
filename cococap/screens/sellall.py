@@ -35,7 +35,7 @@ async def start_sell_all(screen: Screen, interaction: discord.Interaction, skill
         return await screen.go(interaction, "sellall", skill=skill)
     keep = await upgrade_needs(screen.user) if screen.user.settings.keep_upgrade_materials else None
     earned, sold = await shop.sell_all_for_skill(screen.user, skill, keep=keep)
-    await screen.refresh(interaction, f"💰 Sold {sum(sold.values()):,} items for **{emojis.bits(earned)}**." if sold else "You have nothing from this skill to sell.")
+    await screen.refresh(interaction, f"{emojis.icon('sell', '💰')} Sold {sum(sold.values()):,} items for **{emojis.bits(earned)}**." if sold else "You have nothing from this skill to sell.")
 
 
 class SellAllScreen(Screen):
@@ -43,7 +43,7 @@ class SellAllScreen(Screen):
 
     id = "sellall"
     label = "Sell all"
-    emoji = "💰"
+    emoji = emojis.Lazy("ui_sell", "💰")
     description = "Sell everything one skill gave you"
     links = ()
 
@@ -71,15 +71,15 @@ class SellAllScreen(Screen):
         if reserved:
             parts = [f"{reg.item(i).name}: you have {everything[i]:,}, an upgrade or craft needs {needs[i]:,}" + (f" ({', '.join(dict.fromkeys(by_tool[i][1]))})" if i in by_tool else "")
                      for i in reserved]
-            warn = "\n-# 🔨 Upgrade and crafting materials in this pile (any tool you own, either road at a fork, and the Workbench):\n-# " + "\n-# ".join(parts)
+            warn = f"\n-# {emojis.icon('craft', '🔨')} Upgrade and crafting materials in this pile (any tool you own, either road at a fork, and the Workbench):\n-# " + "\n-# ".join(parts)
         keeping = self.user.settings.keep_upgrade_materials
         if keeping or not reserved:  # (with nothing to hold back there is only one way to sell)
-            first = button("Sell everything" if not reserved else f"Sell, keep upgrade materials ({bits(keep_worth)})", emoji="💰", style=discord.ButtonStyle.danger,
+            first = button("Sell everything" if not reserved else f"Sell, keep upgrade materials ({bits(keep_worth)})", emoji=emojis.icon("sell", "💰"), style=discord.ButtonStyle.danger,
                            disabled=bool(reserved) and not kept, on_click=self._sell(keeping))
-            second = button(f"Sell everything ({bits(worth)})", emoji="⚠️", on_click=self._sell(False)) if reserved else None
+            second = button(f"Sell everything ({bits(worth)})", emoji=emojis.icon("warn", "⚠️"), on_click=self._sell(False)) if reserved else None
         else:
-            first = button(f"Sell everything ({bits(worth)})", emoji="💰", style=discord.ButtonStyle.danger, on_click=self._sell(False))
-            second = button(f"Sell, keep upgrade materials ({bits(keep_worth)})", emoji="🔨", disabled=not kept, on_click=self._sell(True))
+            first = button(f"Sell everything ({bits(worth)})", emoji=emojis.icon("sell", "💰"), style=discord.ButtonStyle.danger, on_click=self._sell(False))
+            second = button(f"Sell, keep upgrade materials ({bits(keep_worth)})", emoji=emojis.icon("craft", "🔨"), disabled=not kept, on_click=self._sell(True))
         body = [*self.note_block(),
                 text(f"### {emojis.skill(self.skill, '💰')} Sell everything from {self.skill.title()}?\n{lines}" + (f"\n-# …and {more} more kinds" if more > 0 else "")
                      + f"\n**{sum(everything.values()):,}** items for **{emojis.bits(worth)}**{warn}"),
@@ -90,9 +90,9 @@ class SellAllScreen(Screen):
         async def go(interaction: discord.Interaction) -> None:
             keep = await upgrade_needs(self.user) if keep_for_upgrades else None
             earned, sold = await shop.sell_all_for_skill(self.user, self.skill, keep=keep)
-            self.result = Result("Sold!", [f"💰 You sold **{sum(sold.values()):,}** items for **{emojis.bits(earned)}**." if sold else "Nothing was left to sell."]
-                                 + (["🔨 Your upgrade materials were kept."] if keep_for_upgrades and sold else []),
-                                 emoji="💰", accent=0xD4A017, back=self._cancel, back_label="Back")
+            self.result = Result("Sold!", [f"{emojis.icon('sell', '💰')} You sold **{sum(sold.values()):,}** items for **{emojis.bits(earned)}**." if sold else "Nothing was left to sell."]
+                                 + ([f"{emojis.icon('craft', '🔨')} Your upgrade materials were kept."] if keep_for_upgrades and sold else []),
+                                 emoji=emojis.icon("sell", "💰"), accent=0xD4A017, back=self._cancel, back_label="Back")
             await self.refresh(interaction)
 
         return go

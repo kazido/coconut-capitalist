@@ -13,7 +13,7 @@ from .shop import parse_quantity
 class CasinoScreen(Screen):
     id = "casino"
     label = "Casino"
-    emoji = "🎰"
+    emoji = emojis.Lazy("ui_money", "🎰")
     description = "Gamble for glory (and the leaderboard)"
     links = ("highlow", "blackjack")
 
@@ -28,13 +28,13 @@ class CasinoScreen(Screen):
                 "Bet a number, `2k`, a percent like `25%`, or `max`."
             ),
             sep(),
-            section("### 🔼 High-Low\nGuess high or low; keep doubling or cash out.",
+            section(f"### {emojis.icon('up', '🔼')} High-Low\nGuess high or low; keep doubling or cash out.",
                     accessory=button("Play", style=discord.ButtonStyle.primary, on_click=self._ask("highlow", "High-Low"))),
-            section("### 🃏 Blackjack\nBeat the dealer to 21.",
+            section(f"### {emojis.icon('cards', '🃏')} Blackjack\nBeat the dealer to 21.",
                     accessory=button("Play", style=discord.ButtonStyle.primary, on_click=self._ask("blackjack", "Blackjack"))),
             sep(),
             section(
-                f"### 💱 Exchange\n{emojis.bits(rate.bits_per_luckbuck)} = {emojis.luckbucks(1)}  ·  up to {bits(rate.daily_limit)}/day",
+                f"### {emojis.icon('money', '💱')} Exchange\n{emojis.bits(rate.bits_per_luckbuck)} = {emojis.luckbucks(1)}  ·  up to {bits(rate.daily_limit)}/day",
                 accessory=button("Exchange", on_click=self._ask_exchange),
             ),
         ]

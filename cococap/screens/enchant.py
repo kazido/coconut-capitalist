@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import enchanting
 from cococap.services.inventory import instance_label
@@ -10,7 +11,7 @@ from cococap.ui.components import button, row, select, sep, text
 class EnchantScreen(Screen):
     id = "enchant"
     label = "Enchant"
-    emoji = "📜"
+    emoji = emojis.Lazy("scroll", "📜")
     description = "Use a scroll to enchant a tool"
     links = ("inventory",)
 
@@ -45,7 +46,7 @@ class EnchantScreen(Screen):
                 else:
                     body.append(text(f"-# None of your tools can take it right now ({enchant.name} fits a "
                                      f"{' or '.join(enchant.applies_to)})."))
-        body += [sep(), row(button("Back to inventory", emoji="🎒", on_click=self._back))]
+        body += [sep(), row(button("Back to inventory", emoji=emojis.icon("bag", "🎒"), on_click=self._back))]
         return Page("Enchant", body, accent=0x8E44AD)
 
     async def _pick_scroll(self, interaction: discord.Interaction, values: list[str]) -> None:
@@ -56,7 +57,7 @@ class EnchantScreen(Screen):
         reg = get_registry()
         scroll = reg.item(self.scroll_id)
         done = await enchanting.apply_scroll(self.user, self.scroll_id, int(values[0]))
-        await self.refresh(interaction, f"📜 **{reg.enchant(scroll.scroll.enchant).name}** is now on your {instance_label(done)}!")
+        await self.refresh(interaction, f"{emojis.icon('scroll', '📜')} **{reg.enchant(scroll.scroll.enchant).name}** is now on your {instance_label(done)}!")
 
     async def _back(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "inventory")

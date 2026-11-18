@@ -10,13 +10,13 @@ from cococap.ui.components import button, row, sep, text
 
 from cococap.ui.rewards import rewards_result
 from cococap import emojis
-from .mine import NOTCH, _cell, _cursor, item_emoji, loot_lines
+from .mine import _notch, _cell, _cursor, item_emoji, loot_lines
 
 
 class WyrmholeScreen(Screen):
     id = "wyrmhole"
     label = "Wyrmhole"
-    emoji = "🌀"
+    emoji = emojis.Lazy("ui_swirl", "🌀")
     description = "One node. Make it count."
     links = ("mining", "mine")
 
@@ -38,7 +38,7 @@ class WyrmholeScreen(Screen):
             return Page("Wyrmhole", [text("There's no wyrmhole here.")])
         if hole.small:
             return self._small_page(hole)
-        header = [NOTCH] * len(hole.nodes)
+        header = [_notch()] * len(hole.nodes)
         if not hole.finished:
             header[hole.cursor] = _cursor()
         shaft = "".join(item_emoji(i) if hole.finished else _cell() for i, _ in hole.nodes) if hole.finished else _cell() * len(hole.nodes)
@@ -57,10 +57,10 @@ class WyrmholeScreen(Screen):
         lines = []
         for r, nodes in enumerate(hole.rows):
             if r < len(hole.picks):
-                lines.append("".join(item_emoji(item) if c == hole.columns_picked[r] else _cell() for c, (item, _) in enumerate(nodes)) + f"  ✅ {hole.picks[r][1]:,} {get_registry().item(hole.picks[r][0]).name}")
+                lines.append("".join(item_emoji(item) if c == hole.columns_picked[r] else _cell() for c, (item, _) in enumerate(nodes)) + f"  {emojis.icon('check', '✅')} {hole.picks[r][1]:,} {get_registry().item(hole.picks[r][0]).name}")
             else:
                 lines.append(_cell() * len(nodes))
-        header = [NOTCH] * hole.width
+        header = [_notch()] * hole.width
         header[hole.cursor] = _cursor()
         shaft = "\n".join(lines[:hole.row]) + ("\n" if hole.row else "") + "".join(header) + "\n" + "\n".join(lines[hole.row:])
         body = [*self.note_block(),
@@ -70,9 +70,9 @@ class WyrmholeScreen(Screen):
 
     def _controls(self):
         return row(
-            button(emoji="⬅️", on_click=self._move(-1)),
+            button(emoji=emojis.icon("prev", "⬅️"), on_click=self._move(-1)),
             button("Dig", emoji=emojis.icon("pickaxe", "⛏️"), style=discord.ButtonStyle.primary, on_click=self._dig),
-            button(emoji="➡️", on_click=self._move(1)),
+            button(emoji=emojis.icon("next", "➡️"), on_click=self._move(1)),
         )
 
     def _move(self, step: int):

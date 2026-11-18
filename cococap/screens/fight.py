@@ -10,7 +10,7 @@ from cococap.user import User
 
 
 def hp_line(unit: Unit) -> str:
-    shield = f"  🔰 {unit.shield}" if unit.shield else ""
+    shield = f"  {emojis.icon('shield', '🔰')} {unit.shield}" if unit.shield else ""
     return f"{bar(unit.hp / unit.max_hp, 8)} **{unit.hp}**/{unit.max_hp}{shield}"
 
 
@@ -21,7 +21,7 @@ def effect_line(unit: Unit) -> str:
 class FightScreen(Screen):
     id = "fight"
     label = "Fight"
-    emoji = "⚔️"
+    emoji = emojis.Lazy("sword", "⚔️")
     description = "Turn-based fights: speed, cooldowns and timing"
     links = ("bestiary",)
 
@@ -44,7 +44,7 @@ class FightScreen(Screen):
         me = await combat.build_player(self.user)
         body = [
             *self.note_block(),
-            text(f"### ⚔️ Combat  ·  Lv {level}\n❤️ **{me.max_hp}**  ⚔️ **{me.attack}**  🛡️ **{me.defense}**  ⚡ **{me.speed}**"),
+            text(f"### {emojis.icon('sword', '⚔️')} Combat  ·  Lv {level}\n{emojis.icon('heart', '❤️')} **{me.max_hp}**  {emojis.icon('sword', '⚔️')} **{me.attack}**  {emojis.icon('shield', '🛡️')} **{me.defense}**  {emojis.icon('bolt', '⚡')} **{me.speed}**"),
             text("\n".join(f"**{reg.combat.skills[s].name}** — {reg.combat.skills[s].description}"
                            + (f" *(recharge {reg.combat.skills[s].cooldown})*" if reg.combat.skills[s].cooldown else "")
                            for s in me.skills)),
@@ -57,14 +57,14 @@ class FightScreen(Screen):
             open_ = level >= enc.min_level and has_key
             line = f"**{enc.name}**\n{foes}"
             if level < enc.min_level:
-                line += f"\n🔒 Combat level {enc.min_level}"
+                line += f"\n{emojis.icon('lock', '🔒')} Combat level {enc.min_level}"
             if enc.key:
                 key = reg.item(enc.key)
                 line += f"\n{key.display} ×{owned.get(enc.key, 0)}" + ("" if has_key else " · needs a key (monsters drop them)")
             body.append(section(line, accessory=button("Fight", style=discord.ButtonStyle.danger, disabled=not open_,
                                                        on_click=self._starter(enc.id))))
         body.append(sep())
-        body.append(row(button("Bestiary", emoji="📖", on_click=self._to_bestiary)))
+        body.append(row(button("Bestiary", emoji=emojis.icon("book", "📖"), on_click=self._to_bestiary)))
         return Page("Fight", body, accent=0xC0392B)
 
     async def _to_bestiary(self, interaction: discord.Interaction) -> None:
@@ -88,17 +88,17 @@ class FightScreen(Screen):
         reveal = me.has("reveal")
         body = [*self.note_block()]
         for foe in foes:
-            line = f"### {foe.emoji} {foe.name}" if foe.alive else f"### 💀 ~~{foe.name}~~"
+            line = f"### {foe.emoji} {foe.name}" if foe.alive else f"### {emojis.icon('skull', '💀')} ~~{foe.name}~~"
             if foe.alive:
                 line += f"\n{hp_line(foe)}"
                 if effect_line(foe):
                     line += f"\n{effect_line(foe)}"
                 if (reveal or foe.telegraph) and foe.next_skill:
-                    line += f"\n👁️ Next: **{battle.skill(foe.next_skill).name}**"
+                    line += f"\n{emojis.icon('eye', '👁️')} Next: **{battle.skill(foe.next_skill).name}**"
             body.append(text(line))
         body.append(sep())
         body.append(text(f"### {me.emoji} {me.name}\n{hp_line(me)}" + (f"\n{effect_line(me)}" if effect_line(me) else "")))
-        order = " → ".join(u.emoji for u in battle.turn_order(7)) if battle.outcome is None else ""
+        order = f" {emojis.icon('next', '→')} ".join(u.emoji for u in battle.turn_order(7)) if battle.outcome is None else ""
         if order:
             body.append(text(f"**Turn order:** {order}"))
         body.append(sep())
@@ -106,7 +106,7 @@ class FightScreen(Screen):
         body.append(sep())
         body.extend(self._controls(battle, me))
         if self.picking:
-            body.insert(0, text(f"🎯 **{battle.skill(self.picking).name}**: pick a target."))
+            body.insert(0, text(f"{emojis.icon('target', '🎯')} **{battle.skill(self.picking).name}**: pick a target."))
         return Page("Fight", body, accent=0xC0392B)
 
     def _controls(self, battle: Battle, me: Unit) -> list:
@@ -124,7 +124,7 @@ class FightScreen(Screen):
             label = skill.name + (f" ({cd})" if cd else "")
             style = discord.ButtonStyle.primary if i == 0 else discord.ButtonStyle.secondary
             buttons.append(button(label, style=style, disabled=cd > 0, on_click=self._skill(skill_id)))
-        return [row(*buttons), row(button("Flee", emoji="🏃", on_click=self._flee))]
+        return [row(*buttons), row(button("Flee", emoji=emojis.icon("people", "🏃"), on_click=self._flee))]
 
     def _skill(self, skill_id: str):
         async def use(interaction: discord.Interaction) -> None:
@@ -168,11 +168,11 @@ class FightScreen(Screen):
         if battle.outcome == "win":
             reg = get_registry()
             loot = [f"{reg.item(i).display} ×{q:,}" for i, q in paid.items.items()] + ([f"**{emojis.bits(paid.bits)}**"] if paid.bits else [])
-            lines = [recap, f"**+{paid.xp:,}** combat xp  ·  {paid.kills} slain", "🎁 " + (", ".join(loot) if loot else "Nothing dropped this time.")]
-            self.result = Result("Victory!", lines, emoji="🏆", accent=0x2ECC71, again=self._again, again_label="Fight again")
+            lines = [recap, f"**+{paid.xp:,}** combat xp  ·  {paid.kills} slain", f"{emojis.icon('gift', '🎁')} " + (", ".join(loot) if loot else "Nothing dropped this time.")]
+            self.result = Result("Victory!", lines, emoji=emojis.icon("record", "🏆"), accent=0x2ECC71, again=self._again, again_label="Fight again")
         else:
             lines = [recap, "You wake up back at the camp, a little bruised. Nothing was lost but the time."]
-            self.result = Result("Defeated", lines, emoji="💀", accent=0xE74C3C, again=self._again, again_label="Try again")
+            self.result = Result("Defeated", lines, emoji=emojis.icon("skull", "💀"), accent=0xE74C3C, again=self._again, again_label="Try again")
         await self.refresh(interaction)
 
     async def _again(self, interaction: discord.Interaction) -> None:
