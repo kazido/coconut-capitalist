@@ -151,9 +151,7 @@ def currency(name: str) -> str:
 
 # Icons that reuse a finished item's art (no separate ui_ emoji needed): name -> item id.
 ITEM_ICONS = {
-    "axe": "tool_axe_starter", "pickaxe": "tool_pickaxe_rookie", "rod": "tool_rod_starter", "can": "tool_can_tin",
-    "wood": "material_hardwood", "wedge": "material_iron_wedge", "wedge_gold": "material_gilded_wedge", "leaf": "material_maple_leaf",
-    "worm": "bait_worm", "battery": "material_radar_battery",
+    "worm": "bait_worm", "battery": "material_radar_battery",  # the item itself ("Loaded N bait", battery count)
 }
 
 
@@ -166,12 +164,12 @@ def icon(name: str, glyph: str = "") -> str:
     return ui(name, glyph)
 
 
-# Skill icons are the skill's starter tool (art already exists for them), with a plain glyph until it is uploaded.
+# Skill icons: the skill's own ui_skill_<name> emoji (not its tool), with a plain glyph until it is uploaded.
 SKILL_ICONS = {
-    "mining": ("tool_pickaxe_rookie", "⛏️"),
-    "fishing": ("tool_rod_starter", "🎣"),
-    "foraging": ("tool_axe_starter", "🌳"),
-    "farming": ("tool_can_tin", "🌽"),
+    "mining": ("ui_skill_mining", "⛏️"),
+    "fishing": ("ui_skill_fishing", "🎣"),
+    "foraging": ("ui_skill_foraging", "🌳"),
+    "farming": ("ui_skill_farming", "🌽"),
     "combat": ("tool_largebranch", "⚔️"),
 }
 
@@ -179,7 +177,7 @@ SKILL_ICONS = {
 def skill(name: str, fallback: str = "") -> str:
     """The icon for a skill (mining, fishing, foraging, farming, combat): its starter tool's emoji, else the glyph."""
     item_id, glyph = SKILL_ICONS.get(name, (None, fallback))
-    return for_id("item", item_id, glyph or fallback) if item_id else (glyph or fallback)
+    return ui(item_id[3:], glyph or fallback) if item_id else (glyph or fallback)
 
 
 def resolve(text: str | None) -> str | None:

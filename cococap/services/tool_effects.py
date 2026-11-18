@@ -13,7 +13,7 @@ BASE_POWER = 3  # every tool starts here; the extras count only the points above
 # one line on what power means for each kind (shown on the upgrade page)
 HOW = {
     "pickaxe": f"{emojis.icon('pickaxe', '⛏️')} Power = more ore per lode, slower pressure, more rich lodes and a spare brace now and then.",
-    "axe": f"{emojis.icon('axe', '🪓')} Power = a bigger bite out of a tree, more good chops, and spots that last longer.",
+    "axe": f"{emojis.icon('chop', '🪓')} Power = a bigger bite out of a tree, more good chops, and spots that last longer.",
     "rod": f"{emojis.icon('rod', '🎣')} Power = faster bites, more forgiven arrows, and rarer and extra fish.",
     "can": f"{emojis.icon('can', '🚿')} Power = more plots watered an hour, bigger harvests, more drops, and seeds that come back.",
     "sword": f"{emojis.icon('sword', '⚔️')} Power = a harder hit, and a tougher you: more hp and defense in a fight.",
