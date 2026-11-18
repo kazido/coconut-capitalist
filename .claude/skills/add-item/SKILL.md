@@ -15,4 +15,4 @@ description: Add a new item (material, tool, scroll, pet food, seed...) to Cocon
 5. If it is rare (rarity 4+ and 1-in-100 or rarer) the drop banner in `cococap/ui/flair.py` applies automatically.
 6. Tests: add one that checks the behaviour using numbers read from the registry; update any list that enumerates the category
    (e.g. `FOODS`/`FEASTS` in `tests/test_pets.py`). Run just the touched test files plus `tests/test_registry.py` and `tests/test_item_features.py`.
-7. Add a line to the matching `docs/DESIGN.md` section, then commit.
+7. Add a line to the matching `docs/DESIGN.md` section (Grep the header, Read only a few lines around it; never read the whole file), then commit.

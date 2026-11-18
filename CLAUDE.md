@@ -4,7 +4,7 @@ A Discord game bot (discord.py 2.7, Components V2). Skills (mining, fishing, for
 trading, parties, casino and minigames, one shared economy. Everything below is the short version; the long ones are in `docs/`.
 
 > **Usage tip:** this file is loaded every turn, so it is deliberately lean. Do NOT read `docs/` files up front. Look things up on demand:
-> `docs/STATUS.md` (current state, short; read it when resuming work), `docs/DESIGN.md` (HUGE, ~120 KB: Grep for the system's
+> `docs/STATUS.md` (current state, short; read it when resuming work), `docs/DESIGN.md` (HUGE, ~120 KB; **never read it whole, never at session start, only when unsure about how a system works**: Grep for the system's
 > heading, then read only that section), `docs/IDEAS.md` (the user's inbox). Plans for new work go in `docs/plans/` (one file each, with a `Status:` line). **Staleness rule:** when work merges, in the same commit delete its plan, remove its line from STATUS.md and fix any doc it made wrong. History lives in git, not in docs.
 
 ## Team (automatic delegation; the user pre-approved this, no need to ask)
@@ -99,7 +99,7 @@ anything else is a bug and is not leaked to the player.
 - **Selling**: one item at a time in the Shop (`screens/shop.py`, Sell mode: 1x / 10x / custom). Skill pages have no bulk sell button.
 - **Rare-drop banners**: `cococap/ui/flair.py` (level 1 = rarity 4+ and 1-in-100 or rarer; level 2 = rarity 5+ or 1-in-700+). Call
   `flair.banner(drops)` wherever a screen lists drops.
-- Fishing radar, mastery, shipments, trading all have DESIGN.md sections: read them before changing those systems.
+- Fishing radar, mastery, shipments, trading all have DESIGN.md sections: before changing them, `Grep -n "^#" docs/DESIGN.md` for headers, then Read only that section (offset/limit).
 
 ## How to add things (checklists)
 

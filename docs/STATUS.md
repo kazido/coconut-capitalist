@@ -11,12 +11,11 @@ Screens are consolidated into tab pages (33 registered). Item ids are prefixed (
 
 ## Plans still open (`docs/plans/`)
 - `area-gating.md`: features need area + level. Written, NOT approved or built.
-- `farming-activity.md`: a more active farming loop. Written, not approved.
 - `foraging-materials-needed.md`: foraging has too few materials; needs designer input.
-- `starred-materials.md`: 1/2/3-star drops; wiring drops (step 4) waits on the areas work.
+- `starred-materials.md`: drops wired in all 4 skills; open: zone->forest text rename, late upgrade costs, UI check.
 - `2026-11-19-tomorrow.md`: the owner's art/design list (rank emoji, button icons, Releaf tiers, bar colours).
 - `notes-2026-11-18.md`: bigger ideas (fuels, recipe rebalance, tutorial/lore, screen streamlining).
-- `ui_emoji_audit.md`, `ui_emoji_progress.md`: art-branch emoji routing tracker.
+- `ui_emoji_progress.md`: open emoji art items (location and ship icons).
 
 ## Known open items
 - Balance is guesses (`TODO(balance)`): mining locations, axe/can road stats, shipment sizes, radar costs, fishing/foraging/farming capstones, Forest 14 unlock,
