@@ -1,4 +1,4 @@
-"""The level-up notification: a small message with the skill icon, the new level and an XP bar, sent only to the player and
+"""The level-up notification (one per click): a small message with the skill icon, the new level and an XP bar, sent only to the player and
 removed after a few seconds. The navigator calls `check` after every click, so no skill screen has to know about it."""
 
 import logging
@@ -20,27 +20,27 @@ async def snapshot(user: User) -> dict[str, int]:
     return {name: User.xp_to_level((await user.skill(name)).xp) for name in SKILLS}
 
 
-def message(skill: str, level: int, xp: int) -> str:
-    """The text of one notification (separate from sending it so it can be tested)."""
+def message(skill: str, old: int, new: int, xp: int) -> str:
+    """The text for one skill (separate from sending it so it can be tested). A jump over several levels is ONE line: `Level up! 1 -> 5`."""
     overflow, needed = User.xp_for_next_level(xp)
     fraction = overflow / needed if needed else 0
     return (
-        f"{emojis.ui('star', '🎉')} {emojis.skill(skill)} **{skill.title()}** reached **level {level}**!\n"
-        f"{xp_bar(fraction, 10)}  {overflow:,} / {needed:,} xp to level {level + 1}"
+        f"{emojis.ui('star', '🎉')} {emojis.skill(skill)} **{skill.title()}** Level up! **{old} -> {new}**\n"
+        f"{xp_bar(fraction, 10)}  {overflow:,} / {needed:,} xp to level {new + 1}"
     )
 
 
 async def check(interaction: discord.Interaction, user: User, seen: dict[str, int] | None) -> dict[str, int]:
-    """Compare levels with the last look; notify for every skill that went up. Returns the new levels to remember.
-    A failure here must never break the click that caused it."""
+    """Compare levels with the last look and send ONE notice (one block per skill that went up, old -> new level). Returns the new levels to
+    remember. A failure here must never break the click that caused it."""
     try:
         now = await snapshot(user)
         if seen is None:
             return now
-        for name, level in now.items():
-            if level > seen.get(name, level):
-                xp = (await user.skill(name)).xp
-                await interaction.followup.send(message(name, level, xp), ephemeral=True, delete_after=LIFETIME)
+        blocks = [message(name, seen[name], level, (await user.skill(name)).xp) for name, level in now.items() if level > seen.get(name, level)]
+        if blocks:
+            sent = await interaction.followup.send("\n\n".join(blocks), ephemeral=True, wait=True)
+            await sent.delete(delay=LIFETIME)  # (Webhook.send has no delete_after)
         return now
     except Exception:  # a missing notification is better than a broken click
         log.exception("level-up check failed")

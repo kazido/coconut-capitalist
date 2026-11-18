@@ -149,7 +149,7 @@ HELP = (
 class MineScreen(Screen):
     id = "mine"
     label = "The Mines"
-    emoji = emojis.Lazy("tool_pickaxe_rookie", "⛏️")
+    emoji = emojis.Lazy("ui_skill_mining", "⛏️")
     description = "Dig deeper for rarer loot, but watch the danger meter"
     links = ("mining", "reactor")
 
@@ -196,7 +196,7 @@ class MineScreen(Screen):
             body.append(text(HELP.replace("cell_upgraded", _rich()).replace("wyrmhole:", f"{_hole()}:")))
         body.append(row(
             button(emoji=emojis.icon('prev', '⬅️'), on_click=self._move(-1)),
-            button("Dig", emoji=emojis.icon("pickaxe", "⛏️"), style=discord.ButtonStyle.primary, on_click=self._dig),
+            button("Dig", emoji=emojis.icon("dig", "⛏️"), style=discord.ButtonStyle.primary, on_click=self._dig),
             button(emoji=emojis.icon('next', '➡️'), on_click=self._move(1)),
         ))
         extra = [button(f"Brace ({run.braces})", emoji=emojis.icon("brace", "🛡️"), disabled=run.braces == 0 or run.danger == 0, on_click=self._brace)]
@@ -327,7 +327,7 @@ class MineScreen(Screen):
         self.result = rewards_result(
             titles[self.run.outcome], items=summary.haul, xp=summary.xp,
             headline=[f"Row **{summary.depth}** of {self.run.floor}  ·  **{summary.lodes}** lodes dug", *filter(None, [note])],
-            odds=odds.mining(depth=summary.depth), emoji=emojis.icon("pickaxe", "⛏️"), accent=0x2ECC71 if self.run.outcome != "collapse" else 0xE74C3C, back_label="Continue")
+            odds=odds.mining(depth=summary.depth), emoji=emojis.icon("dig", "⛏️"), accent=0x2ECC71 if self.run.outcome != "collapse" else 0xE74C3C, back_label="Continue")
         rules = get_registry().mining
         if mining.scarab_appears(rules, random.Random()):
             self.challenge = mining.make_scarab(_words(), rules, random.Random())

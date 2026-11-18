@@ -15,7 +15,7 @@ from cococap.user import User
 class MiningScreen(Screen):
     id = "mining"
     label = "Mining"
-    emoji = emojis.Lazy("tool_pickaxe_rookie", "⛏️")
+    emoji = emojis.Lazy("ui_skill_mining", "⛏️")
     description = "Dig for ores and gems"
     links = ("mine", "reactor", "mastery")
 
@@ -62,7 +62,7 @@ class MiningScreen(Screen):
             text("-# Every mine is a different kind: " + ", ".join(f"{t.emoji} {t.name}" for t in rules.mine_types[1:]) + " turn up now and then. The kind shows once you are in."),
             *where,
             row(
-                button("Enter the mines", emoji=emojis.icon("pickaxe", "⛏️"), style=discord.ButtonStyle.primary, disabled=tool is None,
+                button("Enter the mines", emoji=emojis.icon("dig", "⛏️"), style=discord.ButtonStyle.primary, disabled=tool is None,
                        on_click=self._enter),
                 button("Reactor", emoji=emojis.get("autominer", "⚙️"), on_click=self._reactor),
                 button("Mastery", emoji=emojis.icon("mastery", "🌟"), on_click=self._mastery),
