@@ -35,6 +35,13 @@ class PetScreen(Screen):
             return self.focus
         return house.active if house.active in house.pets else next(iter(sorted(house.pets)), None)
 
+    @staticmethod
+    def _option_text(pet, owned, active: bool, reg) -> str:
+        """A dropdown line: level, skill and what the pet does (plain words only: dropdown text cannot show custom emoji; Discord caps it at 100 characters)."""
+        abilities = " · ".join(line.split(" (max level")[0] for line in pets.describe(pet, owned, reg))
+        line = ("active · " if active else "") + f"Lv {pets.pet_level(owned.xp, pet.rarity, reg)} · {pet.skill.title()} · {abilities}"
+        return line if len(line) <= 100 else line[:99] + "…"
+
     async def build(self) -> Page:
         reg = get_registry()
         rules = reg.economy.pets
@@ -61,8 +68,8 @@ class PetScreen(Screen):
         found = f"-# {len(house.pets)} of {len(reg.pets)} pets found"
         body.append(text(found))
         body.append(row(select("Look at a pet...", [
-            discord.SelectOption(label=reg.pets[i].name, value=i, emoji=reg.pets[i].emoji, default=i == focus,
-                                 description=f"Lv {pets.pet_level(p.xp, reg.pets[i].rarity, reg)}  ·  {reg.pets[i].skill.title()}" + ("  ·  active" if i == house.active else ""))
+            discord.SelectOption(label=f"{reg.pets[i].name} {'⭐' * p.stars}", value=i, emoji=reg.pets[i].emoji, default=i == focus,  # (unicode stars: custom emoji do not render in dropdown text)
+                                 description=self._option_text(reg.pets[i], p, i == house.active, reg))
             for i, p in sorted(house.pets.items())][:25], self._switch)))
         body.append(sep())
         foods = [(reg.item(i), q) for i, q in owned_items.items() if q > 0 and (it := reg.find_item(i)) and pets.food_xp(it, reg) > 0]
