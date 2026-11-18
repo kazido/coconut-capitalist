@@ -4,13 +4,11 @@ key_orb_lesser = [23, 14]
 key_graveyard = [4, 9]
 key_land_deed = [6, 9]
 food_acorn_mix = [29, 4]
-food_burger = [31, 14]  # WEAK: reads as a sandwich
 food_crystal_chew = [10, 8]  # WEAK: gem stands in for rock candy
 food_dried_squid = [21, 5]
 food_fish_flakes = [26, 10]  # WEAK: generic flakes
 food_geode_feast = [29, 12]
 food_golden_sap = {cell = [7, 9], hue = 85, val = 1.1}
-food_honeycomb = [33, 7]  # WEAK: honey jar
 food_sea_feast = [32, 14]
 spirit_of_the_fields = [69, 8]
 spirit_of_the_sword = [69, 12]

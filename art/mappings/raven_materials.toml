@@ -1,5 +1,4 @@
 material_feather = [0, 6]
-material_aged_feather = [15, 3]
 material_amber = [10, 10]
 material_beeswax = [9, 5]  # WEAK: plain gold block; no wax icon
 material_compost = [26, 8]  # WEAK: dark specks stand in for compost
@@ -12,7 +11,6 @@ material_iron_wedge = [40, 6]
 material_living_vine = [15, 0]
 material_obsidian = {cell = [13, 3], sat = 0.3, val = 0.3}
 material_plant_fiber = {cell = [12, 2], hue = 60}
-material_radar_battery = {cell = [17, 0], hue = -150}  # WEAK: thin vial as battery
 material_rotation_wedge = {cell = [39, 6], hue = 12, sat = 0.6, val = 0.8}
 material_silver_ore = [13, 0]
 
