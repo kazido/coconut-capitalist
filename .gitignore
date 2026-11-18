@@ -156,3 +156,6 @@ art/*.zip
 # large downloaded art packs (not committed)
 art/downloaded/
 .full_tests_last.txt
+
+# Cut from the third-party Pixel UI pack by art/bars_from_pack.py (the pack stays local, like the other downloaded packs)
+art/sources/ui_bar_*/

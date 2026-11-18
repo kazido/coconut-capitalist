@@ -115,7 +115,7 @@ class ReactorScreen(Screen):
         drain = magnet.drain_per_row * (1 - save)
         rows = int(skill.magnet_meter // drain) if drain else 0
         meter = skill.magnet_meter
-        parts = [text(f"### Magnet\n{bar(meter / magnet.capacity)}  {meter:,}/{magnet.capacity:,}  ·  ~**{rows}** rows\n"
+        parts = [text(f"### Magnet\n{bar(meter / magnet.capacity, 10, 'meter')}  {meter:,}/{magnet.capacity:,}  ·  ~**{rows}** rows\n"
                       f"-# Marks the richest column of each row: **{drain:g}** meter a row. Feed it outside a mine.")]
         owned = self._owned
         options = [discord.SelectOption(label=reg.item(ore).name, value=ore, emoji=reg.item(ore).emoji or None, default=ore == self.ore,

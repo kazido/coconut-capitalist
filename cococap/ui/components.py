@@ -82,8 +82,31 @@ def user_select(
     return menu
 
 
-def bar(fraction: float, width: int = 10) -> str:
-    """A text progress bar, e.g. ▰▰▰▱▱▱▱▱▱▱"""
+# What each kind of bar is called and its colour (the segments are art/sources/ui_bar_<colour>_<left|mid|right>, cut from the pixel UI pack
+# by art/bars_from_pack.py; the empty part is shared: ui_bar_empty_*). XP bars are separate (xp_bar below).
+BAR_COLOURS = {"hp": "red", "wear": "yellow", "progress": "green", "meter": "blue"}
+
+
+def colored_bar(fraction: float, width: int, kind: str) -> str | None:
+    """A bar of pixel-art segments: left end, `width` middles, right end. Filled part in the kind's colour, the rest dark. None when the
+    segments are not uploaded (the caller then falls back to the plain text bar)."""
+    colour = BAR_COLOURS[kind]
+    names = {(c, p): emojis.ui(f"bar_{c}_{p}") for c in (colour, "empty") for p in ("left", "mid", "right")}
+    if not all(names.values()):
+        return None
+    filled = max(0, min(width, round(fraction * width)))
+    left = names[(colour if filled > 0 else "empty", "left")]
+    right = names[(colour if filled == width else "empty", "right")]
+    return left + names[(colour, "mid")] * filled + names[("empty", "mid")] * (width - filled) + right
+
+
+def bar(fraction: float, width: int = 10, kind: str | None = None) -> str:
+    """A progress bar. With a `kind` ("hp", "wear", "progress", "meter") it is the coloured pixel-art bar when those emojis are uploaded;
+    otherwise (or with no kind) a text bar, e.g. ▰▰▰▱▱▱▱▱▱▱ (which the glyph swap turns into the XP bar emojis)."""
+    if kind:
+        pretty = colored_bar(fraction, width, kind)
+        if pretty:
+            return pretty
     filled = max(0, min(width, round(fraction * width)))
     return "▰" * filled + "▱" * (width - filled)
 

@@ -63,7 +63,7 @@ class ShipmentsScreen(Screen):
             for item_id, need in view.need.items():
                 have = min(view.have.get(item_id, 0), need)
                 lines.append(f"{emojis.icon('check', '✅') if have >= need else emojis.icon('pip', '▫️')} {reg.item(item_id).display}  **{have:,}/{need:,}**")
-            body.append(text(f"### {emojis.icon('world', '🌍')} Community shipment\n{bar(view.fraction, 12)}  **{view.fraction:.0%}**" + (f" {emojis.icon('check', '✅')} full!" if view.done else f"  ·  new one <t:{int(view.closes_at)}:R>")
+            body.append(text(f"### {emojis.icon('world', '🌍')} Community shipment\n{bar(view.fraction, 12, 'progress')}  **{view.fraction:.0%}**" + (f" {emojis.icon('check', '✅')} full!" if view.done else f"  ·  new one <t:{int(view.closes_at)}:R>")
                              + "\n" + "\n".join(lines)
                              + f"\n-# Sized for **{view.players}** active player(s): **{emojis.bits(view.value)}**' worth in all. You have given **{emojis.bits(view.yours)}**' worth. Finishing pays everyone who gave at least {c.min_share:.0%} {c.bits_factor:.1f}x what they gave, and {c.xp:,} xp."))
             body.append(row(button("Give what it needs", emoji=emojis.icon('gift', '🎁'), style=discord.ButtonStyle.primary, disabled=view.done, on_click=self._donate)))

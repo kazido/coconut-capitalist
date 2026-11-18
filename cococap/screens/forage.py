@@ -50,7 +50,7 @@ async def spot_panel(screen, power: int) -> str:
     streak = ""
     if rules.streak_max and spot.streak:  # (one short bit on the swing line: no warnings, no sentences)
         streak = f"  {emojis.icon('flame', '🔥')} **+{rules.streak_bonus * min(spot.streak, rules.streak_max):.0%}**" + (" max" if spot.streak >= rules.streak_max else "")
-    return (f"{emojis.icon('wood', '🪵')} **{spot.title(reg.foraging)}** grain{quality}  \n{bar(left, 6)} **{left:.0%}** left (about {chops} chops)   {emojis.icon('axe', '🪓')} **{spot.preview(power, reg.foraging)}** per swing{streak}"
+    return (f"{emojis.icon('wood', '🪵')} **{spot.title(reg.foraging)}** grain{quality}  \n{bar(left, 6, 'wear')} **{left:.0%}** left (about {chops} chops)   {emojis.icon('axe', '🪓')} **{spot.preview(power, reg.foraging)}** per swing{streak}"
             + (f"   ·   {emojis.icon('wedge', '🔩')} {wedges} wedge(s)" if wedges else "")
             + (f"\n{emojis.icon('wedge_gold', '🪚')} Wedge bonus: **{spot.boost:+.0%}** for **{spot.boost_chops}** more chops" if spot.boost_chops else ""))
 
@@ -202,7 +202,7 @@ class ForageScreen(Screen):
         view = await foraging.community_tree(self.user)
         now = time.time()
         if view is not None and view.standing:
-            line = (f"### {emojis.icon('tree', '🌲')} Community tree: {species_label(view.species) or 'forest ' + str(view.zone)}  ·  forest {view.zone}\n{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp  ·  "
+            line = (f"### {emojis.icon('tree', '🌲')} Community tree: {species_label(view.species) or 'forest ' + str(view.zone)}  ·  forest {view.zone}\n{bar(view.fraction_left, 10, 'hp')}  **{view.hp:,}**/{view.max_hp:,} hp  ·  "
                     f"**{view.choppers}** chopping  ·  falls over <t:{int(view.closes_at)}:R>")
             if view.yours:
                 line += f"\nYou have chopped **{view.share:.0%}** of it."
@@ -249,7 +249,7 @@ class ForageScreen(Screen):
         pt = await party_tree.view(self.user)
         bonus = get_registry().foraging.party_tree
         if pt is not None and pt.standing:
-            line = (f"### {emojis.icon('people', '👥')} Party tree: {species_label(pt.species) or 'forest ' + str(pt.zone)}  ·  forest {pt.zone}\n{bar(pt.fraction_left)}  **{pt.hp:,}**/{pt.max_hp:,} hp  ·  "
+            line = (f"### {emojis.icon('people', '👥')} Party tree: {species_label(pt.species) or 'forest ' + str(pt.zone)}  ·  forest {pt.zone}\n{bar(pt.fraction_left, 10, 'hp')}  **{pt.hp:,}**/{pt.max_hp:,} hp  ·  "
                     f"**{len(pt.chops)}** chopping  ·  falls over <t:{int(pt.closes_at)}:R>")
             return [text(line), row(button("Join the party tree", emoji=emojis.icon("people", "👥"), style=discord.ButtonStyle.success,
                                           disabled=stats is None, on_click=self._join_party))]
@@ -329,7 +329,7 @@ class TreeScreen(Screen):
         power = foraging.swing_power(stats, tree.zone, rules)
         self.spot.on_tree(id(tree))  # (a new tree starts the right-style streak over before the panel draws it)
         body = [*self.note_block()]
-        body.append(text(f"**Forest {tree.zone}**{self._species_line(tree.species)}\n{bar(tree.hp / tree.max_hp)}  **{tree.hp:,}**/{tree.max_hp:,} hp"
+        body.append(text(f"**Forest {tree.zone}**{self._species_line(tree.species)}\n{bar(tree.hp / tree.max_hp, 10, 'hp')}  **{tree.hp:,}**/{tree.max_hp:,} hp"
                          f"\n{await spot_panel(self, power)}" + (f"\n{emojis.icon('page', '🏷️')} Marked: **+{tree.bonus:.0%}** drops when it falls" if tree.bonus else "") + (
                              f"\n-# Heavy tree: alone you swing at half your axe's {stats.power}. A Soloist axe fixes that."
                              if power < stats.power else "")))
@@ -426,7 +426,7 @@ class GroveScreen(Screen):
                for i, (uid, damage) in enumerate(view.top)]
         body += [
             text(f"**Forest {view.zone}**{TreeScreen._species_line(view.species)}  ·  falls over <t:{int(view.closes_at)}:R>\n"
-                 f"{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp\n"
+                 f"{bar(view.fraction_left, 10, 'hp')}  **{view.hp:,}**/{view.max_hp:,} hp\n"
                  f"**{view.choppers}** chopper(s)" + ("\n" + "\n".join(top) if top else "")),
             text(f"You: **{view.yours:,}** hp  ·  **{view.share:.1%}** of the tree\n"
                  f"{await spot_panel(self, power)}\n-# {status}"),
@@ -506,7 +506,7 @@ class PartyGroveScreen(Screen):
             team.append(f"{await self.nav.name_of(uid)}{' (you)' if uid == self.user.id else ''}: **{damage:,}** hp ({damage / view.max_hp:.0%})")
         body += [
             text(f"**Forest {view.zone}**{TreeScreen._species_line(view.species)}  ·  falls over <t:{int(view.closes_at)}:R>\n"
-                 f"{bar(view.fraction_left)}  **{view.hp:,}**/{view.max_hp:,} hp\n" + ("\n".join(team) if team else "Nobody has chopped yet.")),
+                 f"{bar(view.fraction_left, 10, 'hp')}  **{view.hp:,}**/{view.max_hp:,} hp\n" + ("\n".join(team) if team else "Nobody has chopped yet.")),
             text(f"{await spot_panel(self, power)}\n-# {status}"),
             row(*stance_buttons(self._chop)),
             row(button("Grain notes", emoji=emojis.icon("book", "📖"), on_click=self._notes), button("Leave", on_click=self._back)),

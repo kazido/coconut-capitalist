@@ -11,7 +11,7 @@ from cococap.user import User
 
 def hp_line(unit: Unit) -> str:
     shield = f"  {emojis.icon('shield', '🔰')} {unit.shield}" if unit.shield else ""
-    return f"{bar(unit.hp / unit.max_hp, 8)} **{unit.hp}**/{unit.max_hp}{shield}"
+    return f"{bar(unit.hp / unit.max_hp, 8, 'hp')} **{unit.hp}**/{unit.max_hp}{shield}"
 
 
 def effect_line(unit: Unit) -> str:

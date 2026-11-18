@@ -659,7 +659,7 @@ class FishCommunityScreen(Screen):
             share = g.goal.slot.count
             mark = emojis.icon('check', '✅') if g.done else emojis.icon('sq_white', '⬜')
             pay = "" if g.done else f"  ·  +{emojis.bits(g.goal.slot.bits)}"
-            lines.append(f"{mark} {g.goal.text}\n{bar(min(1.0, g.progress / share), 8)}  **{min(g.progress, share):,}/{share:,}**"
+            lines.append(f"{mark} {g.goal.text}\n{bar(min(1.0, g.progress / share), 8, 'progress')}  **{min(g.progress, share):,}/{share:,}**"
                          f"  ·  you: {g.yours:,}{pay}")
         ends = fishing_community.month_ends_at(fishing_community.month_of(now()))
         body += [sep(), text(f"### {emojis.icon('page', '🗓️')} This month's goals\n" + "\n".join(lines)

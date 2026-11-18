@@ -35,7 +35,7 @@ class ReleafScreen(Screen):
                 f"**+{rules.bloom_xp:.0%}** foraging xp and **+{rules.bloom_drops:.0%}** drop chances on every tree, for **{rules.bloom_hours:g}** hours.\n"
                 f"-# Giving takes the item for good and brings you nothing personal; the Bloom is for everybody, whether they gave or not.")
         body.append(text(head))
-        status_line = f"{emojis.icon('sprout', '🌱')}  {bar(found.meter / found.goal, 12)}  **{found.meter}/{found.goal}**"
+        status_line = f"{emojis.icon('sprout', '🌱')}  {bar(found.meter / found.goal, 12, 'progress')}  **{found.meter}/{found.goal}**"
         if found.bloom_active:
             status_line += f"\n{emojis.icon('flower', '🌸')} **Bloom is up!** Ends <t:{int(found.bloom_until)}:R>. Giving reopens after it."
         elif found.full:
