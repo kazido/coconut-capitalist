@@ -5,7 +5,7 @@ from cococap.registry import get_registry
 from cococap.services import mastery
 from cococap.services.mastery import MasteryError
 from cococap.ui import Page, Screen
-from cococap.ui.components import bits, button, row, sep, text
+from cococap.ui.components import bits, button, row, select, sep, text
 
 
 
@@ -21,6 +21,7 @@ class MasteryScreen(Screen):
     def __init__(self, nav):
         super().__init__(nav)
         self.skill = "mining"
+        self.path = 0  # which path (branch) of the tree is showing: one page per path, picked from a dropdown
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -30,8 +31,12 @@ class MasteryScreen(Screen):
                 text(f"### {emojis.skill(self.skill, '🌟')} {self.skill.title()} Mastery  ·  lv {level}\n"
                      f"**{free}** point(s) free  ·  {mastery.points_spent(owned, reg)} spent  ·  1 point per {reg.mastery.points_every_levels} levels\n"
                      "-# You cannot take every branch: choose how you play.")]
+        self.path = min(self.path, len(tree.branches) - 1)
+        options = [discord.SelectOption(label=b.name[:100], value=str(n), emoji=b.emoji or None, default=n == self.path, description=b.description[:100])
+                   for n, b in enumerate(tree.branches)]
+        body.append(row(select("Pick a path", options, self._pick_path)))
         take = []
-        for branch in tree.branches:
+        for branch in [tree.branches[self.path]]:
             lines = [f"### {branch.emoji} {branch.name}\n-# {branch.description}"]
             next_node = None
             for state in mastery.branch_state(branch, owned, level, free):
@@ -61,9 +66,13 @@ class MasteryScreen(Screen):
 
         return go
 
+    async def _pick_path(self, interaction: discord.Interaction, values: list[str]) -> None:
+        self.path = int(values[0])
+        await self.refresh(interaction)
+
     def _switch(self, skill: str):
         async def go(interaction: discord.Interaction) -> None:
-            self.skill = skill
+            self.skill, self.path = skill, 0
             await self.refresh(interaction)
 
         return go

@@ -7,7 +7,7 @@ from cococap.services import mastery
 from cococap.services.equipment import equip, equipped_stats
 from cococap.services.mastery import MasteryError
 from cococap.user import User
-from tests.test_hub import all_text, buttons, click, hub
+from tests.test_hub import all_text, buttons, choose, click, hub, select_named
 
 REG = get_registry()
 RULES = REG.mastery
@@ -176,7 +176,13 @@ async def test_the_mastery_screen_shows_branches_and_takes_a_node(db):
     await level_up(user, "mining", 5)
     nav, inter = await hub("mastery", skill="mining")
     text = all_text(nav)
-    assert "Reactor Engineer" in text and "Greedy Digger" in text and "Gem Hunter" in text and "**1** point(s)" in text
+    assert "Reactor Engineer" in text and "**1** point(s)" in text
+    assert "Greedy Digger" not in text and "Gem Hunter" not in text  # one page per path: the others are behind the dropdown
+    picker = select_named(nav, "Pick a path")
+    assert [o.label for o in picker.options] == [b.name for b in REG.mastery.trees[0].branches]
+    await choose(nav, inter, picker, "1")
+    assert "Greedy Digger" in all_text(nav) and "Reactor Engineer" not in all_text(nav)
+    await choose(nav, inter, select_named(nav, "Pick a path"), "0")
     await click(nav, inter, "Reactor Engineer: Coolant Loop")
     assert (await user.skill("mining")).mastery == ["coolant_loop"] and "You took" in all_text(nav)
     await click(nav, inter, "Fishing")
