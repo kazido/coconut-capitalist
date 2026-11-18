@@ -224,7 +224,7 @@ def _item_rarity(name: str) -> int:
 def load_raven(mapping: Path, pack: Path | None) -> list[Sprite]:
     """Third-party icons cut from the Raven sheet. Local only: skipped when the pack is not on this machine.
 
-    A mapping value is `[row, col]` or a table `{cell = [row, col], ramp = [dark, ..., light] (recolour by brightness), hue = 40, sat = 1.0, val = 1.0, nudge = [dx, dy], rarity = 3}`;
+    A mapping value is `[row, col]` or a table `{cell = [row, col], framed = false (a bare UI icon, no rarity cell), ramp = [dark, ..., light] (recolour by brightness), hue = 40, sat = 1.0, val = 1.0, nudge = [dx, dy], rarity = 3}`;
     the rarity defaults to the item's own rarity."""
     if pack is None or not (pack / RAVEN_SHEET).exists() or not mapping.exists():
         return []
@@ -252,7 +252,7 @@ def load_raven(mapping: Path, pack: Path | None) -> list[Sprite]:
             moved = Image.new("RGBA", cell.size, (0, 0, 0, 0))
             moved.alpha_composite(cell, (dx, dy)) if dx >= 0 and dy >= 0 else moved.paste(cell, (dx, dy))
             cell = moved
-        out.append(Sprite(name, "umbra", [cell], [], True, rarity))
+        out.append(Sprite(name, "umbra", [cell], [], bool(opts.get("framed", True)), rarity))
     return out
 
 
