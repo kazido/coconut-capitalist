@@ -1,5 +1,7 @@
 import discord
 
+from cococap import emojis
+
 from cococap.services.stats import SKILL_ICONS
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, section, xp_bar
@@ -19,7 +21,7 @@ class SkillsScreen(Screen):
     async def build(self) -> Page:
         body = [*self.note_block()]
         for name, screen_id in SKILL_SCREENS.items():
-            icon = SKILL_ICONS[name]
+            icon = emojis.skill(name, SKILL_ICONS[name])
             xp = (await self.user.skill(name)).xp
             overflow, needed = User.xp_for_next_level(xp)
             line = f"### {icon} {name.title()}  ·  Lv {User.xp_to_level(xp)}\n{xp_bar(overflow / needed if needed else 0, 8)}"

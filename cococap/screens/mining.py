@@ -56,18 +56,18 @@ class MiningScreen(Screen):
             *self.note_block(),
             text(f"**Level {level}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp"),
             text("Ores: " + ("  ".join(ores) if ores else "none yet") + f"\nLodes mined: **{skill.stats.lodes_mined:,}**"),
-            text(f"⛏️ Pickaxe power **{tool.power}**" if tool else
-                 "⛏️ You need a pickaxe. Buy a **Rookie Pickaxe** in the shop and it equips itself."),
+            text(f"{emojis.icon('pickaxe', '⛏️')} Pickaxe power **{tool.power}**" if tool else
+                 f"{emojis.icon('pickaxe', '⛏️')} You need a pickaxe. Buy a **Rookie Pickaxe** in the shop and it equips itself."),
             sep(),
             text("\n".join(lines)),
             text("-# Every mine is a different kind: " + ", ".join(f"{t.emoji} {t.name}" for t in rules.mine_types[1:]) + " turn up now and then. The kind shows once you are in."),
             *where,
             row(
-                button("Enter the mines", emoji="⛏️", style=discord.ButtonStyle.primary, disabled=tool is None,
+                button("Enter the mines", emoji=emojis.icon("pickaxe", "⛏️"), style=discord.ButtonStyle.primary, disabled=tool is None,
                        on_click=self._enter),
                 button("Reactor", emoji=emojis.get("autominer", "⚙️"), on_click=self._reactor),
-                button("Mastery", emoji="🌟", on_click=self._mastery),
-                button("Sell all", emoji="💰", on_click=self._sell_all),
+                button("Mastery", emoji=emojis.icon("mastery", "🌟"), on_click=self._mastery),
+                button("Sell all", emoji=emojis.icon("sell", "💰"), on_click=self._sell_all),
             ),
         ]
         return Page("Mining", body, accent=0x9E492F)

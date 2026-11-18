@@ -594,3 +594,91 @@ rows = [
   "................",
 ]
 
+[crop_rustroot]
+rarity = 3
+palette = { H = "#e8a066", h = "#c8703c", m = "#9c4628", s = "#6e2c1c", d = "#481a12", l = "#8ad050", L = "#4a9a3a", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  ".........o......",
+  "........olo.....",
+  ".......ololo....",
+  "....oooLLho.....",
+  "...oHHHHHho.....",
+  "..oHHHHHHhho....",
+  "..ohHHHsHhsmo...",
+  "..ohHdHHhhmsso..",
+  "...ohhhhhdmsdo..",
+  "....ommmdmsso...",
+  ".....ooooooo....",
+  "................",
+  "................",
+  "................",
+]
+
+[crop_marketfig]
+rarity = 3
+palette = { H = "#b58ae0", h = "#8a5cc0", m = "#65389a", s = "#46246e", d = "#2c1450", k = "#7a5a2a", K = "#5a3c1a", g = "#7ac848", p = "#f0a0c0", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "........oo......",
+  ".......okKo.....",
+  "......oHko......",
+  ".....oHgHgo.....",
+  ".....oHHHHo.....",
+  "....oHHHHHho....",
+  "...oHHHHHHhmo...",
+  "...oHHHHHhhmo...",
+  "...ohhHpmpmso...",
+  "....ohhhpmmo....",
+  ".....ommsso.....",
+  "......oooo......",
+  "................",
+  "................",
+]
+
+[crop_cloudberry]
+rarity = 4
+palette = { W = "#fcffff", h = "#d8ecfb", m = "#a8cdf0", s = "#78a4dc", d = "#5078b8", l = "#8ad060", L = "#4a9a40", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "........oo......",
+  ".....ooolLoo....",
+  "....oWWlLWhmo...",
+  "...oWWWWWWhmo...",
+  "...oWWWWWWhmo...",
+  "...oWWWWWhhmo...",
+  "..ohWWWWWWmmso..",
+  "..ohhhWhhhmsso..",
+  "..ommhhhmmssdo..",
+  "...ommmmsssdo...",
+  "....oosssdoo....",
+  "......oooo......",
+  "................",
+  "................",
+]
+
+[crop_voidbloom]
+rarity = 5
+palette = { p = "#6a48a8", q = "#4a2e80", r = "#2e1c58", t = "#1a1038", G = "#b070ff", W = "#f0d8ff", e = "#2c4a3a", E = "#4a7a52", o = "#2e1c2c" }
+rows = [
+  "................",
+  ".......oo.......",
+  "......oppo......",
+  "....oooppooo....",
+  "...oppoppoqqo...",
+  "..oppppGGpqqro..",
+  "...oppGWWGqro...",
+  "....oopGGqoo....",
+  "....oqqqqqro....",
+  "....oqqqrrro....",
+  "....orroerEo....",
+  ".....ooeeEo.....",
+  "......oeeo......",
+  "......oeo.......",
+  ".......o........",
+  "................",
+]
+

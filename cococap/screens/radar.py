@@ -1,5 +1,6 @@
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import fishing
 from cococap.services.fishing import FishingError
@@ -45,16 +46,16 @@ class RadarScreen(Screen):
                     base = fishing.water_chances(water)[fish_id]
                     lines.append(f"{water.emoji} {water.name}: {reg.item(fish_id).display}  1 in **{round(1 / chance):,}** (was 1 in {round(1 / base):,})")
             body.append(text("**Your chances**\n" + "\n".join(lines) if lines else "-# Pick fish above to see your odds."))
-            body.append(row(button("Turn off" if view.on else "Turn on", emoji="⚡", style=discord.ButtonStyle.secondary if view.on else discord.ButtonStyle.success,
+            body.append(row(button("Turn off" if view.on else "Turn on", emoji=emojis.icon("bolt", "⚡"), style=discord.ButtonStyle.secondary if view.on else discord.ButtonStyle.success,
                                    disabled=not view.targets and not view.on, on_click=self._toggle(not view.on))))
         if view.next_cost is not None:
             cost = view.next_cost
             owned = await self.user.items()
-            body += [sep(), text(f"### ⬆️ {'Build the radar' if not view.level else f'Upgrade to level {view.level + 1}'}  ·  {cost.multiplier:g}x, {cost.slots} slot(s)\n"
+            body += [sep(), text(f"### {emojis.icon('upgrade', '⬆️')} {'Build the radar' if not view.level else f'Upgrade to level {view.level + 1}'}  ·  {cost.multiplier:g}x, {cost.slots} slot(s)\n"
                                  + needs_text(cost.bits, self.user.purse, cost.items, owned, reg)),
-                     row(button("Build" if not view.level else "Upgrade", emoji="🔨", style=discord.ButtonStyle.success,
+                     row(button("Build" if not view.level else "Upgrade", emoji=emojis.icon("craft", "🔨"), style=discord.ButtonStyle.success,
                                 disabled=self.user.purse < cost.bits or any(owned.get(i, 0) < q for i, q in cost.items.items()), on_click=self._upgrade))]
-        body.append(row(button("Back to fishing", emoji="🎣", on_click=self._back)))
+        body.append(row(button("Back to fishing", emoji=emojis.skill("fishing", "🎣"), on_click=self._back)))
         return Page("Radar", body, accent=0x3A7CA5)
 
     async def _targets(self, interaction: discord.Interaction, values: list[str]) -> None:

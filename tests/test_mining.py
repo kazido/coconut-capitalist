@@ -542,11 +542,11 @@ def test_a_charged_magnet_marks_the_richest_cell_of_the_next_row():
 
 
 def test_the_magnet_mark_shows_on_the_map():
-    from cococap.screens.mine import MAGNET, render_shaft
+    from cococap.screens.mine import _magnet, render_shaft
 
     run = make_run(magnet=True)
     force_row(run, [GOLD, None, None, None, None])  # (the cursor is on column 2, so mark another)
-    assert MAGNET in render_shaft(run).splitlines()[0]
+    assert _magnet() in render_shaft(run).splitlines()[0]
 
 
 # ---- bombs ---------------------------------------------------------------------------------------------
@@ -820,29 +820,29 @@ def test_rows_you_passed_keep_their_signs_for_the_cells_you_did_not_dig():
 
 
 def test_cells_show_only_how_hard_the_rock_is_plus_rich_lodes_and_wyrmholes():
-    from cococap.screens.mine import FIRM, HARD, SOFT, _hole, _rich, cell_emoji
+    from cococap.screens.mine import _firm, _hard, _soft, _hole, _rich, cell_emoji
 
     assert len({cell_emoji(f) for f in ("soft", "firm", "hard", "rich", "hole")}) == 5  # five different looks
-    assert cell_emoji("soft") == SOFT and cell_emoji("firm") == FIRM and cell_emoji("hard") == HARD
+    assert cell_emoji("soft") == _soft() and cell_emoji("firm") == _firm() and cell_emoji("hard") == _hard()
     assert cell_emoji("rich") == _rich() and cell_emoji("hole") == _hole()
     assert {cell_emoji(kind) for kind in ("ore", "vent", "cache")} == {cell_emoji("ore")}  # (what is inside is not shown, only the rock)
 
 
 def test_a_cell_is_revealed_once_you_dig_it():
-    from cococap.screens.mine import CACHE, VENT, dug_emoji, item_emoji
+    from cococap.screens.mine import _cache, _vent, dug_emoji, item_emoji
 
-    assert dug_emoji("vent", None) == VENT and dug_emoji("cache", None) == CACHE
+    assert dug_emoji("vent", None) == _vent() and dug_emoji("cache", None) == _cache()
     assert dug_emoji("ore", COPPER) == item_emoji("material_copper_ore")
-    assert dug_emoji("ore", None) not in (VENT, CACHE, item_emoji("material_copper_ore"))
+    assert dug_emoji("ore", None) not in (_vent(), _cache(), item_emoji("material_copper_ore"))
 
 
 def test_the_map_shows_three_rows_ahead_and_a_vent_looks_like_any_other_soft_rock():
-    from cococap.screens.mine import SOFT, render_shaft
+    from cococap.screens.mine import _soft, render_shaft
 
     run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=1.0, cache_chance=0.0))
     shaft = render_shaft(run).splitlines()
     assert len(shaft) == 1 + D.lookahead
-    assert all(line.startswith(SOFT * RULES.columns) for line in shaft[1:])  # vents everywhere, all of it just soft rock: nothing gives them away
+    assert all(line.startswith(_soft() * RULES.columns) for line in shaft[1:])  # vents everywhere, all of it just soft rock: nothing gives them away
     from cococap.screens.mine import _rich
 
     rich = make_run(rules=rules_with(rich_chance=1.0, vent_chance=0.0, cache_chance=0.0))
@@ -878,13 +878,13 @@ def test_the_hint_is_a_real_clue_to_the_ore_and_to_the_pressure_it_costs():
 
 
 def test_rows_you_left_behind_still_show_the_rock_you_did_not_dig():
-    from cococap.screens.mine import SOFT, render_shaft
+    from cococap.screens.mine import _soft, render_shaft
 
     run = make_run(rules=rules_with(vent_chance=0.0, rich_chance=0.0, cache_chance=0.0))
     run.cursors, run.rng = [0], Rig(0.99)
     force_row(run, [None, None, None, None, None])
     run.dig()
-    assert render_shaft(run).splitlines()[0].count(SOFT) == RULES.columns - 1  # the four you left are soft rock; the one you dug shows what it held
+    assert render_shaft(run).splitlines()[0].count(_soft()) == RULES.columns - 1  # the four you left are soft rock; the one you dug shows what it held
 
 
 def test_the_shown_risk_is_the_real_chance_of_collapse_for_that_dig():
@@ -1026,15 +1026,15 @@ def test_the_screen_marks_the_landmarks_and_the_vault_and_says_what_you_are_digg
     run = calm_run()
     assert "checkpoint at row 10 (10 to go)" in mine.next_landmark(run)
     run.depth = 9
-    assert mine.row_mark(run, 9) == f"  {mine.MILESTONE} checkpoint" and mine.row_mark(run, 8) == ""
-    assert mine.row_mark(run, D.floor - 1) == f"  {mine.VAULT} vault"
+    assert mine.row_mark(run, 9) == f"  {mine._milestone()} checkpoint" and mine.row_mark(run, 8) == ""
+    assert mine.row_mark(run, D.floor - 1) == f"  {mine._vault()} vault"
     run.depth = 25
-    assert mine.next_landmark(run).startswith(mine.VAULT) and "5 to go" in mine.next_landmark(run)
+    assert mine.next_landmark(run).startswith(mine._vault()) and "5 to go" in mine.next_landmark(run)
     run.depth = 8  # three rows ahead are shown: rows 9, 10 and 11, and row 10 carries the flag
     shaft = mine.render_shaft(run).split("\n")
-    assert any(mine.MILESTONE in line for line in shaft) and not any(mine.VAULT in line for line in shaft)
+    assert any(mine._milestone() in line for line in shaft) and not any(mine._vault() in line for line in shaft)
     run.depth = D.floor - 2
-    assert any(mine.VAULT in line for line in mine.render_shaft(run).split("\n"))
+    assert any(mine._vault() in line for line in mine.render_shaft(run).split("\n"))
 
 
 def test_a_plain_checkpoint_gives_no_ore_and_one_with_a_vault_share_gives_that_share():

@@ -4,7 +4,7 @@ import random
 
 import discord
 
-from cococap import constants
+from cococap import constants, emojis
 from cococap.services import blackjack, highlow
 from cococap.ui import Screen
 from cococap.ui.components import bits, button, row
@@ -45,7 +45,7 @@ def reward_line(reward) -> str:
         return ""
     if reward.granted == 0:
         return "🍀 You've hit today's minigame limit, so no luckbucks this time. Streaks still count!"
-    line = f"🍀 **+{reward.granted:,}** luckbucks"
+    line = f"**+{emojis.luckbucks(reward.granted)}**"
     if reward.streak_bonus:
         line += f" (streak bonus +{reward.streak_bonus:.0%})"
     if reward.capped:

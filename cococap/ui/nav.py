@@ -152,6 +152,7 @@ class Navigator(ui.LayoutView):
         # The last result page that was built but may never have reached the player (a self-refresh whose edit failed because the message was too
         # old, say). It stays here until an edit succeeds, and the next click shows it first, so what you were paid is never paid without being seen.
         self._unsent: Result | None = None
+        self._levels: dict[str, int] | None = None  # skill levels at the last look, for the level-up notification
 
     async def name_of(self, user_id: int) -> str:
         """A player's display name, without mentioning (pinging) them."""
@@ -187,6 +188,9 @@ class Navigator(ui.LayoutView):
         try:
             await interaction.response.edit_message(view=self)
             self._unsent = None
+            from .levelup import check  # local import: levelup needs the finished ui package
+
+            self._levels = await check(interaction, self.user, self._levels)
         except (discord.NotFound, discord.InteractionResponded) as error:
             log.warning("interaction response failed (%s); editing the message directly", error)
             if self.message is None:
@@ -304,6 +308,10 @@ class Navigator(ui.LayoutView):
     async def _render(self) -> None:
         screen = self.screen
         await self.user.refresh()  # every render shows current data
+        if self._levels is None:  # the first look: levels to compare against, no notification yet
+            from .levelup import snapshot
+
+            self._levels = await snapshot(self.user)
         page = await screen.build()
         if screen.result is None and self._unsent is not None and not isinstance(screen, ResultScreen):
             screen.result = self._unsent  # a result the player never got to see (its message could not be edited): show it now
