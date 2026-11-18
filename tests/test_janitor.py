@@ -43,8 +43,8 @@ def test_channels_are_found_by_category_name_and_missing_ids_are_reported():
     play, other = NS(id=1, name="play"), NS(id=2, name="chat")
     guild = NS(categories=[NS(name="Gambling", text_channels=[play]), NS(name="General", text_channels=[other])])
     bot = NS(guilds=[guild], get_channel=lambda cid: None)
-    cfg = JanitorConfig(True, (999,), ("gambling",), 5, 5, 0.1)
+    cfg = JanitorConfig(True, (999,), ("gambling",), 5, 24, 5, 0.1)
     channels, problems = find_channels(bot, cfg)
     assert channels == [play] and len(problems) == 1 and "999" in problems[0]
-    none_found, problems = find_channels(NS(guilds=[], get_channel=lambda cid: None), JanitorConfig(True, (), ("gambling",), 5, 5, 0.1))
+    none_found, problems = find_channels(NS(guilds=[], get_channel=lambda cid: None), JanitorConfig(True, (), ("gambling",), 5, 24, 5, 0.1))
     assert none_found == [] and "no category" in problems[0]

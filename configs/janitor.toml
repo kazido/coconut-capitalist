@@ -17,5 +17,9 @@ interval_minutes = 5
 # use is edited on every click, so one being played is never swept. Drops and results count too: everything the bot posts here goes.
 idle_minutes = 5
 
+# The 5-minute sweeps only read messages posted in the last this-many hours (the startup pass and /cleanup read the WHOLE channel, once).
+# Reading everything every 5 minutes made Discord rate limit us. Anything older that somehow survived goes at the next restart.
+lookback_hours = 24
+
 # Pause between deletes (messages older than 14 days cannot be bulk deleted, so they go one by one). Keeps clear of rate limits.
 delete_delay_seconds = 0.6

@@ -14,6 +14,7 @@ class JanitorConfig:
     channel_ids: tuple[int, ...]
     category_names: tuple[str, ...]  # every text channel in a category with one of these names is swept too (case ignored)
     interval_minutes: int
+    lookback_hours: float  # the 5-minute sweeps only read this far back (reading a whole channel every time is what got us rate limited)
     idle_minutes: float  # a bot message untouched for this long is swept (the startup pass ignores it: everything goes)
     delete_delay_seconds: float
 
@@ -26,6 +27,7 @@ def load_config(path: Path = CONFIG_PATH) -> JanitorConfig:
         channel_ids=tuple(int(i) for i in raw.get("channel_ids", [])),
         category_names=tuple(str(n).lower() for n in raw.get("category_names", [])),
         interval_minutes=int(raw["interval_minutes"]),
+        lookback_hours=float(raw["lookback_hours"]),
         idle_minutes=float(raw["idle_minutes"]),
         delete_delay_seconds=float(raw["delete_delay_seconds"]),
     )
