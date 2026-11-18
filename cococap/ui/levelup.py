@@ -25,7 +25,7 @@ def message(skill: str, level: int, xp: int) -> str:
     overflow, needed = User.xp_for_next_level(xp)
     fraction = overflow / needed if needed else 0
     return (
-        f"{emojis.ui('levelup', '🎉')} {emojis.skill(skill)} **{skill.title()}** reached **level {level}**!\n"
+        f"{emojis.ui('star', '🎉')} {emojis.skill(skill)} **{skill.title()}** reached **level {level}**!\n"
         f"{xp_bar(fraction, 10)}  {overflow:,} / {needed:,} xp to level {level + 1}"
     )
 

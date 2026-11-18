@@ -144,6 +144,12 @@ def currency(name: str) -> str:
     return ui(name, CURRENCY[name])
 
 
+def icon(name: str, glyph: str = "") -> str:
+    """An action/UI icon: the application emoji ``ui_<name>`` (art/mappings/raven_magic.toml), else the plain `glyph`.
+    Use in message text and ``emoji=`` arguments, never in button labels or select text (custom emoji do not render there)."""
+    return ui(name, glyph)
+
+
 # Skill icons are the skill's starter tool (art already exists for them), with a plain glyph until it is uploaded.
 SKILL_ICONS = {
     "mining": ("tool_pickaxe_rookie", "⛏️"),
