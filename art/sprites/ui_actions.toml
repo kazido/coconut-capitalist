@@ -1,0 +1,611 @@
+# UI action icons: procedural (art/make script), light from top-left. Awaiting owner review.
+
+
+[ui_dig]
+palette = { H = "#f2f6fa", W = "#e2ad6c", d = "#78461f", h = "#bccbd8", m = "#7f93a9", o = "#2e1c2c" }
+rows = [
+  "................",
+  ".....oooooo.....",
+  "....ommmmHmo....",
+  ".....oooomhmo...",
+  ".........omhmo..",
+  "..........omhmo.",
+  ".........oWdmhmo",
+  "........oWdooHmo",
+  ".......oWdo.oHmo",
+  "......oWdo..oHmo",
+  ".....oWdo...ommo",
+  "....oWdo.....oo.",
+  "...oWdo.........",
+  "..oWdo..........",
+  ".oddo...........",
+  "..oo............",
+]
+
+[ui_grain]
+palette = { R = "#c89060", W = "#e2ad6c", o = "#2e1c2c", q = "#6e4424", r = "#a06a3a" }
+rows = [
+  ".......oo.......",
+  "....oooRqooo....",
+  "...oRqqqqqqqo...",
+  "..oRqrqqqqrqqo..",
+  ".oRqrqqrrqqrqqo.",
+  ".oqrqrqqqqrqrqo.",
+  ".oqqqqqrrqqqqqo.",
+  "oRqqrqrWWrqrqRqo",
+  "oqqqrqrWWrqrqRqo",
+  ".oqqqqqrrqqqqqo.",
+  ".oqrqrqqqqrqrqo.",
+  ".oqqrqqrrqqrRqo.",
+  "..oqqrqqqqrRqo..",
+  "...oqqqRRqqqo...",
+  "....oooqqooo....",
+  ".......oo.......",
+]
+
+[ui_wedge]
+palette = { H = "#f2f6fa", h = "#bccbd8", m = "#7f93a9", o = "#2e1c2c" }
+rows = [
+  "................",
+  "..oooooooooooo..",
+  ".oHHHHHHHHHHHmo.",
+  ".omhhhhhhhhhhmo.",
+  "..oHhhhhhhhhmo..",
+  "..omhhhhhhhhmo..",
+  "...oHhhhhhhmo...",
+  "...omhhhhhhmo...",
+  "....oHhhhhmo....",
+  "....omhhhhmo....",
+  ".....oHhhmo.....",
+  ".....omhhmo.....",
+  "......ommo......",
+  ".......oo.......",
+  "................",
+  "................",
+]
+
+[ui_wedge_gold]
+palette = { Y = "#fff0a0", g = "#c08a20", o = "#2e1c2c", y = "#f0c040" }
+rows = [
+  "................",
+  "..oooooooooooo..",
+  ".oYYYYYYYYYYYgo.",
+  ".ogyyyyyyyyyygo.",
+  "..oYyyyyyyyygo..",
+  "..ogyyyyyyyygo..",
+  "...oYyyyyyygo...",
+  "...ogyyyyyygo...",
+  "....oYyyyygo....",
+  "....ogyyyygo....",
+  ".....oYyygo.....",
+  ".....ogyygo.....",
+  "......oggo......",
+  ".......oo.......",
+  "................",
+  "................",
+]
+
+[ui_leaf]
+palette = { L = "#f0a050", k = "#a03a1e", l = "#d4602a", o = "#2e1c2c", q = "#6e4424" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "........ooooo...",
+  ".......oLLLkko..",
+  "......oLllkkko..",
+  ".....oLllkkLko..",
+  "....oLllkkLlko..",
+  "...oLllkkLllko..",
+  "...oLlkkLllko...",
+  "...oLkkLllko....",
+  "...okkLllko.....",
+  "...oqkkkko......",
+  "..oqooooo.......",
+  ".oqo............",
+  "..o.............",
+]
+
+[ui_skill_mining]
+palette = { A = "#d8f4ff", a = "#7ed0f0", b = "#3f8fc8", o = "#2e1c2c" }
+rows = [
+  ".......oo.......",
+  "......oAbo......",
+  ".....oAaabo.....",
+  "....oAaaaabo....",
+  "...obbbbbbbbo...",
+  "..obbbbbbbbbbo..",
+  ".oAAAAAAAAAAAbo.",
+  ".obaaaaaaaaaabo.",
+  "..obaaaaaaaabo..",
+  "...obaaaaaabo...",
+  "....obaaaabo....",
+  ".....obaabo.....",
+  "......obbo......",
+  ".......oo.......",
+  "................",
+  "................",
+]
+
+[ui_skill_fishing]
+palette = { F = "#b8f0ff", e = "#2e1c2c", f = "#58b8e8", j = "#3078b8", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  ".............o..",
+  "............ojo.",
+  "....ooooo...ojo.",
+  "..ooFFFFjoooFjo.",
+  ".oFjfffffFjFfjo.",
+  "oFjeFffffjFffjo.",
+  "oFfFfffffjFffjo.",
+  "ojfffffffjjffjo.",
+  ".ojjfffffjjjfjo.",
+  "..oojjjjjooojjo.",
+  "....ooooo...ojo.",
+  "............ojo.",
+  ".............o..",
+  "................",
+]
+
+[ui_skill_foraging]
+palette = { W = "#e2ad6c", Z = "#8ccc66", d = "#78461f", o = "#2e1c2c", t = "#5aa84a", u = "#3a7a3a" }
+rows = [
+  ".......oo.......",
+  "......oZuo......",
+  "......oZuo......",
+  ".....oZuuuo.....",
+  ".....ouZuuo.....",
+  "....ouZttuuo....",
+  ".....ouuuuo.....",
+  "....ouZZZuuo....",
+  "...ouZttttuuo...",
+  "...oZttttttuo...",
+  "..oZttttttttuo..",
+  ".ouuuuuuuuuuuuo.",
+  "..oooooWdooooo..",
+  "......oddo......",
+  ".......oo.......",
+  "................",
+]
+
+[ui_skill_farming]
+palette = { Y = "#fff0a0", d = "#78461f", g = "#c08a20", o = "#2e1c2c" }
+rows = [
+  "................",
+  ".......ooo......",
+  "......ogggo.....",
+  ".....oYgoggo....",
+  ".....ogooogo....",
+  "......ogggo.....",
+  ".....oYgdggo....",
+  ".....ogodogo....",
+  "......ogggo.....",
+  ".....oYgdggo....",
+  ".....ogodogo....",
+  "......oodoo.....",
+  ".......odo......",
+  ".......odo......",
+  ".......odo......",
+  "........o.......",
+]
+
+[ui_swirl]
+palette = { F = "#b8f0ff", f = "#58b8e8", j = "#3078b8", o = "#2e1c2c" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "......oooooo....",
+  ".oo..oFFjjFjo...",
+  "oFjooFfjoojfjo..",
+  "oFjooFjo..ojfjo.",
+  "oFjooFjooo.oFjo.",
+  "oFjoojfFFjooFjo.",
+  "oFjo.ojjjjooFjo.",
+  "ojfjo.oooooFfjo.",
+  ".ojfjo...ooFjo..",
+  "..ojfjoooFFjjo..",
+  "...ojjjjjjjoo...",
+  "....ooooooo.....",
+  "................",
+]
+
+[ui_sparkle]
+palette = { Y = "#fffbe6", g = "#ffd04a", o = "#2e1c2c", y = "#ffeb8a" }
+rows = [
+  "................",
+  ".............o..",
+  ".......oo...ogo.",
+  "......oYgo.ogygo",
+  "......oYgo..ogo.",
+  ".....oYyygo..o..",
+  "...ooYyyyygoo...",
+  "..oYYyyyyyyYgo..",
+  "..oggyyyyyyggo..",
+  "...oogyyyygoo...",
+  ".....ogyygo.....",
+  "......oYgo......",
+  "......oggo......",
+  ".......oo.......",
+  "................",
+  "................",
+]
+
+[ui_flame]
+palette = { Y = "#fff3b0", n = "#ff7a22", o = "#2e1c2c", p = "#d8381a", y = "#ffc83a" }
+rows = [
+  "........o.......",
+  ".......opo......",
+  ".......oppo.....",
+  "......opnpo.....",
+  "......opnno.o...",
+  ".....opnynpopo..",
+  ".....opnyYyopo..",
+  "....opnyYYynoo..",
+  "...opnyYYYYynpo.",
+  "...opnyYYYYynpo.",
+  "..opnyYYYYYynpo.",
+  "..opnyYYYYYynpo.",
+  "..opnyyyyyyynpo.",
+  "...opnnnnnnnpo..",
+  "....opppppppo...",
+  ".....ooooooo....",
+]
+
+[ui_chop]
+palette = { E = "#ffffff", H = "#f2f6fa", W = "#e2ad6c", d = "#78461f", h = "#bccbd8", m = "#7f93a9", o = "#2e1c2c", w = "#b87a40" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "..........o.....",
+  "........ooWo....",
+  ".......omWwdo...",
+  "......omhHHmoo..",
+  "......oWmhhhHEo.",
+  ".....oWwdHhhEo..",
+  "....oWwdoHhhEo..",
+  "...oWwdoomEEo...",
+  "..oWwdo..ooo....",
+  ".oWwdo..........",
+  "oWwdo...........",
+  "owdo............",
+  ".oo.............",
+]
+
+[rank_0]
+palette = { H = "#cecece", e = "#f3f3f3", h = "#888888", i = "#757575", j = "#626262", o = "#2e1c2c", s = "#393939" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhhhhiiiiiijso.",
+  "oHhhhiiiiiijjso.",
+  "oHhhheeeeejjjso.",
+  "oHhhiiiiijjjjso.",
+  "oHhhiiiijjjjjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_1]
+palette = { H = "#c7ccd4", e = "#f2f3f5", h = "#7b8490", i = "#6a727c", j = "#595f68", o = "#2e1c2c", s = "#33373c" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhhhhieiiiijso.",
+  "oHhhhiieiiijjso.",
+  "oHhhhiieiijjjso.",
+  "oHhhiiieijjjjso.",
+  "oHhhiiiejjjjjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_2]
+palette = { H = "#afd8ac", e = "#ecf6eb", h = "#52974d", i = "#468243", j = "#3b6d38", o = "#2e1c2c", s = "#223f20" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhhhheieiiijso.",
+  "oHhhhieieiijjso.",
+  "oHhhhieieijjjso.",
+  "oHhhiieiejjjjso.",
+  "oHhhiieiejjjjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_3]
+palette = { H = "#97d8d0", e = "#e6f6f4", h = "#28978a", i = "#238276", j = "#1d6d63", o = "#2e1c2c", s = "#113f3a" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhhheieieiijso.",
+  "oHhhheieieijjso.",
+  "oHhhheieiejjjso.",
+  "oHhhieieiejjjso.",
+  "oHhhieiejejjjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_4]
+palette = { H = "#a4c2f8", e = "#e9f0fd", h = "#4073ce", i = "#3763b2", j = "#2e5395", o = "#2e1c2c", s = "#1b3056" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhhheieieiijso.",
+  "oHhhheieieijjso.",
+  "oHhhheieiejjjso.",
+  "oHhhieiiejjjjso.",
+  "oHhhieiiejjjjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_5]
+palette = { H = "#a8e0fa", e = "#eaf7fe", h = "#45a5d2", i = "#3b8eb5", j = "#327797", o = "#2e1c2c", s = "#1d4558" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhhhheieiiijso.",
+  "oHhhhieieiijjso.",
+  "oHhhhieieijjjso.",
+  "oHhhiiieijjjjso.",
+  "oHhhiiiejjjjjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_6]
+palette = { H = "#b4b2f8", e = "#edecfd", h = "#5b56ce", i = "#4e4ab2", j = "#423e95", o = "#2e1c2c", s = "#262456" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhhheieieiijso.",
+  "oHhhheieieijjso.",
+  "oHhhheieiejjjso.",
+  "oHhhiieiiejjjso.",
+  "oHhhiieijejjjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_7]
+palette = { H = "#d4acf8", e = "#f5ebfd", h = "#904dce", i = "#7c43b2", j = "#683895", o = "#2e1c2c", s = "#3c2056" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhheheieieijso.",
+  "oHhheieieiejjso.",
+  "oHhheieieiejjso.",
+  "oHhhieiiejejjso.",
+  "oHhhieiiejejjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_8]
+palette = { H = "#f2ace0", e = "#fcebf7", h = "#c44ca5", i = "#a9418e", j = "#8d3777", o = "#2e1c2c", s = "#522045" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHheheieieiejso.",
+  "oHheheieieiejso.",
+  "oHheheieiejejso.",
+  "oHhheiieiejejso.",
+  "oHhheiiejejejso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_9]
+palette = { H = "#f4a4b0", e = "#fce9ec", h = "#c83e53", i = "#ac3547", j = "#902d3c", o = "#2e1c2c", s = "#541a23" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhhheieieiijso.",
+  "oHhhheieieijjso.",
+  "oHhhheiieijjjso.",
+  "oHhhieieiejjjso.",
+  "oHhhieiejejjjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_10]
+palette = { H = "#fabe9a", e = "#fef0e7", h = "#d46c2d", i = "#b65d26", j = "#994e20", o = "#2e1c2c", s = "#592d13" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhhhheieiiijso.",
+  "oHhhhieieiijjso.",
+  "oHhhhiieiijjjso.",
+  "oHhhiieiejjjjso.",
+  "oHhhiieiejjjjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_11]
+palette = { H = "#fadc9a", e = "#fef6e7", h = "#d29e2d", i = "#b58826", j = "#977220", o = "#2e1c2c", s = "#584213" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhhheieieiijso.",
+  "oHhhheieieijjso.",
+  "oHhhhieiiejjjso.",
+  "oHhhieieiejjjso.",
+  "oHhhieiejejjjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_12]
+palette = { H = "#baf8f2", e = "#eefdfc", h = "#64cec4", i = "#56b2a9", j = "#48958d", o = "#2e1c2c", s = "#2a5652" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhheheieieijso.",
+  "oHhheieieiejjso.",
+  "oHhhheiieiejjso.",
+  "oHhheieiejejjso.",
+  "oHhheieiejejjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_13]
+palette = { H = "#ffc4ec", e = "#fff1fa", h = "#db77ba", i = "#bd66a0", j = "#9e5686", o = "#2e1c2c", s = "#5c324e" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHheheieieiejso.",
+  "oHheheieieiejso.",
+  "oHhheiieiejejso.",
+  "oHheieieiejejso.",
+  "oHheieiejejejso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_14]
+palette = { H = "#eeb6ff", e = "#fbedff", h = "#bd5ddb", i = "#a350bd", j = "#88439e", o = "#2e1c2c", s = "#4f275c" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHheheieieiejso.",
+  "oHheheieieiejso.",
+  "oHhheiieiejejso.",
+  "oHheieieijejjso.",
+  "oHheieiejjejjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
+
+[rank_15]
+palette = { H = "#ffe8a0", e = "#fff9e8", h = "#dbb337", i = "#bd9a2f", j = "#9e8128", o = "#2e1c2c", s = "#5c4b17" }
+rows = [
+  ".ooooooooooooo..",
+  "oHHHHHHHHHHHHHo.",
+  "oHhhhhhhiiiiiso.",
+  "oHhhhhhiiiiiiso.",
+  "oHhheheieieijso.",
+  "oHhheieieiejjso.",
+  "oHhhheiieiejjso.",
+  "oHhheieiiejjjso.",
+  "oHhheieijejjjso.",
+  ".oHhiiijjjjjso..",
+  "..oHiijjjjjso...",
+  "...oHjjjjjso....",
+  "....oHjjjso.....",
+  ".....oHjso......",
+  "......oHo.......",
+  ".......o........",
+]
