@@ -103,6 +103,8 @@ def render_shaft(run: mining.MineRun) -> str:
         ))
     if not run.finished:
         header = [_notch()] * columns
+        for col in run.vent_columns():
+            header[col] = _vent()  # the magnet shows where the vents are (it never aims at them)
         for col in run.best_columns():
             header[col] = _magnet()
         for col in run.cursors:
@@ -140,7 +142,7 @@ HELP = (
     f"Read the rock: {_soft()} **soft** (little pressure, mostly copper)  ·  {_firm()} **firm** (iron)  ·  {_hard()} **hard** (a lot of pressure, the top ore).\n"
     "Inside it hides ore, nothing, a **vent** that cools the tunnel, or a **cache** with a brace.\n"
     "cell_upgraded: a **rich lode**, a mystery with better loot  ·  wyrmhole: a way out, if you dig it\n"
-    f"{_bomb()} **bomb**: clears a whole row  ·  {_magnet()} the magnet marks the richest column while it has fuel"
+    f"{_bomb()} **bomb**: clears a whole row  ·  {_magnet()} the magnet aims at the richest column and marks vents while it has fuel"
 )
 
 

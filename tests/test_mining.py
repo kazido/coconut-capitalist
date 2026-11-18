@@ -545,8 +545,63 @@ def test_the_magnet_mark_shows_on_the_map():
     from cococap.screens.mine import _magnet, render_shaft
 
     run = make_run(magnet=True)
+    run.cursors = [2]
     force_row(run, [GOLD, None, None, None, None])  # (the cursor is on column 2, so mark another)
     assert _magnet() in render_shaft(run).splitlines()[0]
+
+
+def test_auto_aim_puts_the_cursor_on_the_richest_column_while_the_magnet_has_fuel():
+    run = make_run(magnet=True, cursors=[0])
+    force_row(run, [COPPER, None, GOLD, None, ("material_copper_ore", 1)])
+    run.aim()
+    assert run.cursors == [2]
+    dry = make_run(magnet=True, magnet_points=1, magnet_drain=4, cursors=[0])  # not enough fuel for a row: no aim
+    force_row(dry, [COPPER, None, GOLD, None, None])
+    dry.aim()
+    assert dry.cursors == [0]
+    off = make_run(magnet=False, cursors=[0])
+    force_row(off, [COPPER, None, GOLD, None, None])
+    off.aim()
+    assert off.cursors == [0]
+
+
+def test_auto_aim_keeps_the_spacing_of_several_cursors_and_covers_the_most_ore():
+    run = make_run(magnet=True, cursors=[1, 2])
+    force_row(run, [None, None, None, GOLD, COPPER])
+    run.aim()
+    assert sorted(run.cursors) == [3, 4]
+
+
+def test_auto_aim_follows_the_magnet_down_the_shaft_and_the_player_can_still_move():
+    run = make_run(magnet=True, cursors=[2], rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0))
+    run.rng = Rig(0.99)
+    run.danger = 0
+    run.dig()
+    best = run.best_columns()
+    assert not best or run.cursors[0] in best
+    before = run.cursors[0]
+    run.move(1)
+    assert run.cursors[0] == (before + 1) % RULES.columns  # the arrows still work
+
+
+def test_the_magnet_marks_vents_but_never_aims_at_them():
+    run = make_run(magnet=True, cursors=[0])
+    force_row(run, [COPPER, None, GOLD, None, None], kinds=["ore", "vent", "ore", "vent", "ore"])
+    assert run.vent_columns() == frozenset({1, 3})
+    run.aim()
+    assert run.cursors == [2]
+    assert make_run(magnet=False).vent_columns() == frozenset()
+    from cococap.screens.mine import _vent, render_shaft
+
+    assert _vent() in render_shaft(run).splitlines()[0]
+
+
+def test_a_brace_and_the_magnet_drain_read_the_configured_numbers():
+    run = make_run(magnet=True, magnet_points=100, magnet_drain=RULES.magnet.drain_per_row)
+    run.danger = 60
+    run.braces = 1
+    run.brace()
+    assert run.danger == 60 - D.brace_amount
 
 
 # ---- bombs ---------------------------------------------------------------------------------------------

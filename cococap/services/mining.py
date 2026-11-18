@@ -200,6 +200,7 @@ class MineRun:
         self._rows: dict[int, list[Cell]] = {}
         self._holes: dict[int, set[int]] = {}
         self._kinds: dict[int, list[str]] = {}
+        self.aim()  # (a magnet with fuel puts the cursors on the richest column from the first row)
 
     @property
     def floor(self) -> int:
@@ -319,14 +320,36 @@ class MineRun:
             return None
         return int((self.magnet_points - self.magnet_used) // self.magnet_drain)
 
+    def _worth(self) -> list[int]:
+        cells, holes = self.row(self.depth), self._holes[self.depth]
+        return [0 if (col in holes or not cell) else self.registry.item(cell[0]).sell_price * cell[1] for col, cell in enumerate(cells)]
+
     def best_columns(self) -> frozenset[int]:
         """With a magnet that has fuel left: the column(s) of the next row worth the most."""
         if not self.magnet_active:
             return frozenset()
-        cells, holes = self.row(self.depth), self._holes[self.depth]
-        worth = [0 if (col in holes or not cell) else self.registry.item(cell[0]).sell_price * cell[1] for col, cell in enumerate(cells)]
+        worth = self._worth()
         top = max(worth)
         return frozenset(i for i, w in enumerate(worth) if top > 0 and w == top)
+
+    def vent_columns(self) -> frozenset[int]:
+        """With a magnet that has fuel left: the columns of the next row that hide a vent (the magnet marks them so you can steer to one yourself)."""
+        if not self.magnet_active:
+            return frozenset()
+        return frozenset(col for col, sign in enumerate(self.signs(self.depth)) if sign == "vent")
+
+    def aim(self) -> None:
+        """Auto-aim: while the magnet has fuel, slide the cursors (keeping their spacing) to cover the most ore in the next row. It is value only: it never
+        picks a vent or a brace (the player steers to those), and the arrow buttons still let the player move off it. Ties keep the cursors closest to where they are."""
+        if self.finished or not self.magnet_active:
+            return
+        worth = self._worth()
+        if max(worth) <= 0:
+            return
+        columns = self.rules.columns
+        shifts = sorted(range(columns), key=lambda s: min(s, columns - s))
+        best = max(shifts, key=lambda s: (sum(worth[(c + s) % columns] for c in self.cursors), -min(s, columns - s)))
+        self.cursors = [(c + best) % columns for c in self.cursors]
 
     # ---- pressure and risk ----------------------------------------------------------------------
     def hardness(self, cell: Cell) -> float:
@@ -408,6 +431,7 @@ class MineRun:
             self.haul.update(self.passed_haul)
             self.safe = Counter(self.haul)  # a checkpoint: everything you hold is kept from here on
         if self.depth < d.floor:
+            self.aim()
             return Counter()
         self.outcome = "floor"
         vault: Counter[str] = Counter(self._vault_ore())
