@@ -383,10 +383,6 @@ class Battle:
 
 
 # --- building a fight ----------------------------------------------------------------------------
-def available_encounters(level: int, registry: Registry | None = None):
-    return [e for e in (registry or get_registry()).combat.encounters if e.min_level <= level]
-
-
 async def build_player(user: User, registry: Registry | None = None) -> Unit:
     """Turn a player's combat level and equipped sword into a fighting unit."""
     reg = registry or get_registry()

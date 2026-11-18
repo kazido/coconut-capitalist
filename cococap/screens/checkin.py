@@ -1,6 +1,7 @@
 import discord
 import randfacts
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import economy
 from cococap.ui import Page, Screen
@@ -35,7 +36,7 @@ class CheckInScreen(Screen):
 
     async def _work(self, interaction: discord.Interaction) -> None:
         reward = await economy.claim_work(self.user)
-        await self.refresh(interaction, f"💸 Work: +{bits(reward.wage)} bits.")
+        await self.refresh(interaction, f"{emojis.currency('bits')} Work: +{bits(reward.wage)} bits.")
 
     async def _daily(self, interaction: discord.Interaction) -> None:
         reward = await economy.claim_daily(self.user)

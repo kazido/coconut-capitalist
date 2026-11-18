@@ -1,6 +1,7 @@
 import discord
 from discord import ui
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services.stats import SKILL_ICONS
 from cococap.ui import Page, Screen
@@ -32,7 +33,7 @@ class ProfileScreen(Screen):
         body = [
             *self.note_block(),
             header,
-            text(f"💸 Purse **{bits(user.purse)}**\n🪙 Tokens **{bits(user.tokens)}**\n🍀 Luckbucks **{bits(user.luckbucks)}**"),
+            text(f"{emojis.currency('bits')} Purse **{bits(user.purse)}**\n{emojis.currency('tokens')} Tokens **{bits(user.tokens)}**\n{emojis.currency('luckbucks')} Luckbucks **{bits(user.luckbucks)}**"),
             sep(),
             text("\n".join(skills)),
         ]

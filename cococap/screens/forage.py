@@ -23,11 +23,6 @@ def new_rng() -> random.Random:
     return random.Random()
 
 
-def items_text(drops: Counter | dict) -> str:
-    reg = get_registry()
-    return ", ".join(f"{q:,} {reg.item(i).display}" for i, q in drops.items()) or "no drops"
-
-
 def reward_headline(reward: foraging.Reward) -> str:
     what = "🌳 **TIMBER!**" if reward.felled else "🍂 The tree fell over before it was finished."
     where = " (party tree)" if reward.party else " (community tree)" if reward.window is not None else ""

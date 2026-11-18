@@ -1,12 +1,12 @@
 import discord
 
+from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import mastery
 from cococap.services.mastery import MasteryError
 from cococap.ui import Page, Screen
 from cococap.ui.components import bits, button, row, sep, text
 
-SKILL_EMOJI = {"mining": "⛏️", "fishing": "🎣", "farming": "🌽", "foraging": "🌳"}
 
 
 class MasteryScreen(Screen):
@@ -27,7 +27,7 @@ class MasteryScreen(Screen):
         tree = mastery.tree_for(self.skill, reg)
         owned, level, free = await mastery.status(self.user, self.skill, reg)
         body = [*self.note_block(),
-                text(f"### {SKILL_EMOJI.get(self.skill, '🌟')} {self.skill.title()} Mastery  ·  lv {level}\n"
+                text(f"### {emojis.skill(self.skill, '🌟')} {self.skill.title()} Mastery  ·  lv {level}\n"
                      f"**{free}** point(s) free  ·  {mastery.points_spent(owned, reg)} spent  ·  1 point per {reg.mastery.points_every_levels} levels\n"
                      "-# You cannot take every branch: choose how you play.")]
         take = []
@@ -46,7 +46,7 @@ class MasteryScreen(Screen):
                 take.append(button(f"{branch.name}: {next_node.node.name}"[:80], emoji=branch.emoji, style=discord.ButtonStyle.success,
                                    disabled=not next_node.available, on_click=self._take(next_node.node.id)))
         body += [sep(), *([row(*take)] if take else [])]
-        body.append(row(*(button(skill.title(), emoji=SKILL_EMOJI.get(skill), style=discord.ButtonStyle.primary if skill == self.skill else discord.ButtonStyle.secondary,
+        body.append(row(*(button(skill.title(), emoji=emojis.skill(skill) or None, style=discord.ButtonStyle.primary if skill == self.skill else discord.ButtonStyle.secondary,
                                  on_click=self._switch(skill)) for skill in [t.skill for t in reg.mastery.trees]),
                         button(f"Respec ({bits(reg.mastery.respec_bits)} bits)", emoji="♻️", disabled=not owned, on_click=self._respec)))
         return Page("Mastery", body, accent=0xD4A017)

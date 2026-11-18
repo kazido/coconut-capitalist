@@ -1,6 +1,6 @@
 import discord
 
-from cococap import constants
+from cococap import constants, emojis
 from cococap.registry import get_registry
 from cococap.services.rewards import exchange_bits
 from cococap.ui import Page, PromptModal, Screen
@@ -23,7 +23,7 @@ class CasinoScreen(Screen):
         body = [
             *self.note_block(),
             text(
-                f"🍀 **{bits(self.user.luckbucks)}** luckbucks  ·  💸 **{bits(self.user.purse)}** bits\n"
+                f"{emojis.currency('luckbucks')} **{bits(self.user.luckbucks)}** luckbucks  ·  {emojis.currency('bits')} **{bits(self.user.purse)}** bits\n"
                 f"The casino stakes **{name}**. "
                 "Bet a number, `2k`, a percent like `25%`, or `max`."
             ),
