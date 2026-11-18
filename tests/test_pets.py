@@ -587,8 +587,8 @@ async def test_the_pet_page_puts_the_description_under_the_name_and_stars_only_o
     assert lines[1] == f"-# {REG.pets['haze'].description}"  # right under the name, above the xp bar
     assert "Global 🌐" in head and "Looks after" not in head and "any food" not in head
     menu = select_named(nav, "Look at a pet")
-    assert all("⭐" not in (o.label + (o.description or "")) for o in menu.options)  # no stars in the dropdown
-    assert [o.label for o in menu.options] == ["Drizzle", "Haze"]
+    assert [o.label for o in menu.options] == ["Drizzle ⭐⭐", "Haze ⭐⭐⭐"]  # unicode stars in the dropdown label (custom emoji do not render there)
+    assert all(o.description and len(o.description) <= 100 and "<:" not in o.description for o in menu.options)  # level, skill and the ability, plain text
     assert user
 
 
