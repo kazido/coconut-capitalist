@@ -149,9 +149,20 @@ def currency(name: str) -> str:
     return ui(name, CURRENCY[name])
 
 
+# Icons that reuse a finished item's art (no separate ui_ emoji needed): name -> item id.
+ITEM_ICONS = {
+    "axe": "tool_axe_starter", "pickaxe": "tool_pickaxe_rookie", "rod": "tool_rod_starter", "can": "tool_can_tin",
+    "wood": "material_hardwood", "wedge": "material_iron_wedge", "wedge_gold": "material_gilded_wedge", "leaf": "material_maple_leaf",
+    "worm": "bait_worm", "battery": "material_radar_battery",
+}
+
+
 def icon(name: str, glyph: str = "") -> str:
-    """An action/UI icon: the application emoji ``ui_<name>`` (art/mappings/raven_magic.toml), else the plain `glyph`.
-    Use in message text and ``emoji=`` arguments, never in button labels or select text (custom emoji do not render there)."""
+    """An action/UI icon: a finished item's art for the names in ITEM_ICONS, else the application emoji ``ui_<name>``
+    (art/mappings/raven_magic.toml), else the plain `glyph`. Use in message text and ``emoji=`` arguments, never in button
+    labels or select text (custom emoji do not render there)."""
+    if name in ITEM_ICONS:
+        return for_id("item", ITEM_ICONS[name], glyph)
     return ui(name, glyph)
 
 
