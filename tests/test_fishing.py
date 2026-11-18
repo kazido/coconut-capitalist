@@ -1364,7 +1364,7 @@ def test_only_the_toughest_fish_hide_arrows_and_more_of_them_the_rarer_they_are(
         shown, actual = f.build_reel(fish_of(rarity), RULES, Random(3))
         fish = fish_of(rarity)
         most = rarity - RL.mystery_from_rarity + 1
-        assert shown.count(f.MYSTERY) == (min(most, RL.max_random_mysteries) if fish.reel.tell == "random" else most)
+        assert shown.count(f.MYSTERY) == most
         assert shown.index(f.MYSTERY) > 0 and next(a for a, t in zip(shown, actual, strict=True) if a == f.MYSTERY) is not None
         assert all(t in (f.LEFT, f.RIGHT, f.REEL) for t in actual)  # what is really wanted is never a ❓
         assert [s for s in shown if s != f.MYSTERY] == [t for s, t in zip(shown, actual, strict=True) if s != f.MYSTERY]
@@ -1380,11 +1380,11 @@ def test_reels_really_vary_from_cast_to_cast():
 def test_every_super_rare_or_better_fish_has_a_tell_and_both_kinds_exist():
     tells = {i.id: i.reel.tell for i in f.fish_pool(REG) if i.rarity >= RL.mystery_from_rarity}
     assert all(i.reel is not None for i in f.fish_pool(REG) if i.rarity >= RL.mystery_from_rarity)
-    assert {"left", "right", "same", "opposite", "random"} == set(tells.values())
+    assert {"left", "right", "last", "first", "opposite"} == set(tells.values())
     assert all(i.reel is None for i in f.fish_pool(REG) if i.rarity < RL.mystery_from_rarity)
 
 
-@pytest.mark.parametrize("tell", ["left", "right", "same", "opposite"])
+@pytest.mark.parametrize("tell", ["left", "right", "last", "first", "opposite"])
 def test_a_learnable_tell_always_does_the_same_thing(tell):
     fish = next(i for i in f.fish_pool(REG) if i.reel and i.reel.tell == tell)
     for seed in range(80):
@@ -1395,28 +1395,15 @@ def test_a_learnable_tell_always_does_the_same_thing(tell):
             if s != f.MYSTERY:
                 continue
             before = arrows[i - 1]
-            expected = {"left": f.LEFT, "right": f.RIGHT, "same": before, "opposite": f.RIGHT if before == f.LEFT else f.LEFT}[tell]
+            expected = {"left": f.LEFT, "right": f.RIGHT, "last": before, "first": arrows[0], "opposite": f.RIGHT if before == f.LEFT else f.LEFT}[tell]
             assert arrows[i] == expected
-
-
-def test_a_random_tell_really_is_a_coin_flip_you_cannot_learn():
-    fish = next(i for i in f.fish_pool(REG) if i.reel and i.reel.tell == "random")
-    results = {}
-    for seed in range(400):
-        shown, actual = f.build_reel(fish, RULES, Random(seed))
-        arrows = [a for a in actual if a != f.REEL]
-        for i, s in enumerate([a for a in shown if a != f.REEL]):
-            if s == f.MYSTERY:
-                results.setdefault(arrows[i - 1], []).append(arrows[i])
-    for before, truths in results.items():
-        assert 0.35 < truths.count(f.LEFT) / len(truths) < 0.65, before  # either arrow, whatever came before
 
 
 def test_a_player_can_work_out_every_learnable_tell_from_a_few_catches():
     """The field notes are enough: after a handful of ❓s exactly one rule fits what was seen."""
-    rules = {"left": lambda b: f.LEFT, "right": lambda b: f.RIGHT, "same": lambda b: b,
-             "opposite": lambda b: f.RIGHT if b == f.LEFT else f.LEFT}
-    for tell in ("left", "right", "same", "opposite"):
+    rules = {"left": lambda b, first: f.LEFT, "right": lambda b, first: f.RIGHT, "last": lambda b, first: b, "first": lambda b, first: first,
+             "opposite": lambda b, first: f.RIGHT if b == f.LEFT else f.LEFT}
+    for tell in ("left", "right", "last", "first", "opposite"):
         fish = next(i for i in f.fish_pool(REG) if i.reel and i.reel.tell == tell)
         notes = []
         for seed in range(6):  # six casts
@@ -1425,9 +1412,9 @@ def test_a_player_can_work_out_every_learnable_tell_from_a_few_catches():
             arrows = [a for a in actual if a != f.REEL]
             for i, s in enumerate([a for a in shown if a != f.REEL]):
                 if s == f.MYSTERY:
-                    notes.append(f"{arrows[i - 1]}>{arrows[i]}")
+                    notes.append(f"{arrows[i - 1]}>{arrows[i]}|{arrows[0]}")
             assert cast
-        fits = [name for name, rule in rules.items() if all(rule(n[0]) == n[2] for n in notes)]
+        fits = [name for name, rule in rules.items() if all(rule(n[0], n[4]) == n[2] for n in notes)]
         assert fits == [tell], (tell, notes, fits)
 
 
@@ -1460,14 +1447,14 @@ def test_a_mystery_arrow_is_secretly_an_arrow_and_pressing_it_teaches_you_what_i
     assert cast.next_arrow == f.LEFT
     cast.press(f.LEFT, T0 + 11)
     assert cast.next_arrow == f.RIGHT and cast.pattern[1] == f.MYSTERY  # shown as ❓, wanted as ►
-    assert cast.press(f.RIGHT, T0 + 12) == "ok" and cast.reveals == [(f.LEFT, f.RIGHT)]
+    assert cast.press(f.RIGHT, T0 + 12) == "ok" and cast.reveals == [(f.LEFT, f.RIGHT, f.LEFT)]
     assert cast.press(f.RIGHT, T0 + 13) == "landed"
 
 
 def test_a_wrong_guess_at_a_mystery_still_shows_you_the_answer_but_only_once():
     cast = tricky_cast([f.LEFT, f.MYSTERY, f.RIGHT], [f.LEFT, f.RIGHT, f.RIGHT], slips=2)
     cast.press(f.LEFT, T0 + 11)
-    assert cast.press(f.LEFT, T0 + 20) == "slip" and cast.reveals == [(f.LEFT, f.RIGHT)]  # wrong, but now you know
+    assert cast.press(f.LEFT, T0 + 20) == "slip" and cast.reveals == [(f.LEFT, f.RIGHT, f.LEFT)]  # wrong, but now you know
     assert cast.press(f.LEFT, T0 + 30) == "slip" and len(cast.reveals) == 1  # guessing again learns nothing new
     assert cast.press(f.RIGHT, T0 + 31) == "ok"
 
@@ -1487,8 +1474,8 @@ async def test_landing_a_fish_writes_what_its_mystery_was_in_the_field_notes(db)
     for step in cast.truth:
         cast.press(step, T0 + 11)
     got = await f.land(user, cast, REG, now=T0)
-    assert got.reveals == ((f.LEFT, f.RIGHT),)
-    assert (await user.skill("fishing")).notes == {"fish_pufferfish": [f"{f.LEFT}>{f.RIGHT}"]}
+    assert got.reveals == ((f.LEFT, f.RIGHT, f.LEFT),)
+    assert (await user.skill("fishing")).notes == {"fish_pufferfish": [f"{f.LEFT}>{f.RIGHT}|{f.LEFT}"]}
 
 
 async def test_a_fish_that_got_away_still_teaches_you_and_the_notes_stay_short(db):
@@ -1498,7 +1485,7 @@ async def test_a_fish_that_got_away_still_teaches_you_and_the_notes_stay_short(d
     cast.press(f.LEFT, T0 + 11)
     assert cast.press(f.RIGHT, T0 + 12) == "escaped"
     await f.note_tells(user, cast)
-    assert (await user.skill("fishing")).notes == {"fish_moray_eel": [f"{f.LEFT}>{f.LEFT}"]}
+    assert (await user.skill("fishing")).notes == {"fish_moray_eel": [f"{f.LEFT}>{f.LEFT}|{f.LEFT}"]}
     for i in range(30):
         again = tricky_cast([f.LEFT, f.MYSTERY], [f.LEFT, f.RIGHT])
         again.fish = REG.item("fish_moray_eel")
@@ -1541,13 +1528,6 @@ async def test_losing_at_a_mystery_still_shows_it_on_the_result_page(db, clock, 
     await click(nav, inter, wrong)
     assert nav.screen.id == "result" and "slipped off" in all_text(nav) and "The ❓ was" in all_text(nav)
     assert (await user.skill("fishing")).notes["fish_moray_eel"]
-
-
-def test_a_coin_flip_fish_never_hides_more_arrows_than_you_can_stand():
-    for fish in f.fish_pool(REG):
-        if fish.reel and fish.reel.tell == "random":
-            shown, _ = f.build_reel(fish, RULES, Random(1))
-            assert shown.count(f.MYSTERY) <= RL.max_random_mysteries
 
 
 async def test_a_chests_xp_grows_with_your_level_but_never_drops_below_the_floor(db):
@@ -1722,21 +1702,18 @@ async def test_a_shuffle_boss_moves_the_buttons_around_and_a_normal_fish_never_d
 
 
 # ---- the field notes page -----------------------------------------------------------------------------------------------------------------
-def test_a_pattern_is_only_written_down_once_it_is_confirmed_and_luck_never_shows_one():
+def test_a_pattern_is_only_written_down_once_it_is_confirmed():
     need = f.MIN_NOTES_FOR_VERDICT
-
-    def many(entry, n=need):
-        return [entry] * n
-
-    assert f.notes_verdict(many("◄>►", need - 1)) is None  # too few to say anything
-    assert "always ►" in f.notes_verdict(["◄>►", "►>►"] * (need // 2))
-    assert "always ◄" in f.notes_verdict(["◄>◄", "►>◄"] * (need // 2))
-    assert "same arrow" in f.notes_verdict(["◄>◄", "►>►"] * (need // 2))
-    assert "opposite" in f.notes_verdict(["◄>►", "►>◄"] * (need // 2))
-    assert f.notes_verdict(many("◄>►")) is None  # "always ►" and "the opposite" both still fit: not confirmed
-    luck = f.notes_verdict(["◄>►", "◄>◄", "►>►", "►>◄"])  # no rule explains it
-    assert "luck" in luck and "◄" not in luck and "►" not in luck  # (and the pattern is not shown)
-    assert "luck" in f.notes_verdict(["◄>►", "◄>◄"])  # contradictions need no minimum
+    # a note is "before>truth|first arrow of the reel"
+    assert f.notes_verdict(["◄>►|◄"] * (need - 1)) is None  # too few to say anything
+    assert "always ►" in f.notes_verdict(["◄>►|◄", "►>►|►", "◄>►|►", "►>►|◄"] * need)
+    assert "always ◄" in f.notes_verdict(["◄>◄|◄", "►>◄|►", "◄>◄|►", "►>◄|◄"] * need)
+    assert "last arrow" in f.notes_verdict(["◄>◄|►", "►>►|◄"] * need)
+    assert "opposite" in f.notes_verdict(["◄>►|◄", "►>◄|►"] * need)
+    assert "FIRST" in f.notes_verdict(["◄>◄|◄", "◄>►|►", "►>◄|◄", "►>►|►"] * need)
+    assert f.notes_verdict(["◄>►|◄"] * need) is None  # "always ►" and "opposite" both still fit: not confirmed
+    assert "no pattern fits" in f.notes_verdict(["◄>►|◄", "◄>◄|◄", "►>►|◄", "►>◄|◄"])  # contradictions need no minimum
+    assert f.notes_verdict(["◄>►", "►>◄"] * need) is None  # older notes (no first arrow) cannot rule "first" out, so it stays unconfirmed
 
 
 async def test_the_field_notes_page_is_a_button_on_the_fishing_page_even_with_nothing_in_it_yet(db):
@@ -1744,7 +1721,7 @@ async def test_the_field_notes_page_is_a_button_on_the_fishing_page_even_with_no
     await click(nav, inter, "Field notes")
     assert nav.screen.id == "fishnotes"
     page = all_text(nav)
-    assert "Field notes" in page and "not caught yet" in page and "pure luck" in page  # it explains itself and shows what is still unknown
+    assert "Field notes" in page and "not caught yet" in page and "FIRST arrow" in page  # it explains itself and shows what is still unknown
     await click(nav, inter, "Back to fishing")
     assert nav.screen.id == "fish"
     nav2, inter2 = await hub("fishrecords")
@@ -1755,15 +1732,15 @@ async def test_the_field_notes_page_is_a_button_on_the_fishing_page_even_with_no
 async def test_the_page_shows_what_a_caught_fish_has_taught_you_and_what_it_adds_up_to(db):
     user = await User.get(1)
     fish = next(i for i in f.fish_pool(REG) if i.rarity >= RL.mystery_from_rarity and i.reel and i.reel.tell == "opposite")
-    await user.update_skill("fishing", lambda s: (s.records.update({fish.id: 30.0}), s.notes.update({fish.id: ["◄>►", "►>◄"]})))
+    await user.update_skill("fishing", lambda s: (s.records.update({fish.id: 30.0}), s.notes.update({fish.id: ["◄>►|◄", "►>◄|►"]})))
     nav, _ = await hub("fishnotes")
-    assert fish.name in all_text(nav) and "**2** ❓ seen" in all_text(nav) and "opposite of the arrow before it" not in all_text(nav)
-    await user.update_skill("fishing", lambda s: s.notes[fish.id].extend(["◄>►", "►>◄"] * f.MIN_NOTES_FOR_VERDICT))
+    assert fish.name in all_text(nav) and "**2** ❓ seen" in all_text(nav) and "confirmed:" not in all_text(nav)
+    await user.update_skill("fishing", lambda s: s.notes[fish.id].extend(["◄>►|◄", "►>◄|►"] * f.MIN_NOTES_FOR_VERDICT))
     nav, _ = await hub("fishnotes")
-    assert "confirmed" in all_text(nav) and "opposite of the arrow before it" in all_text(nav)
-    await user.update_skill("fishing", lambda s: s.notes[fish.id].append("◄>◄"))  # a contradiction: it was luck all along
+    assert "confirmed: **the opposite of the last arrow" in all_text(nav)
+    await user.update_skill("fishing", lambda s: s.notes[fish.id].append("◄>◄|◄"))  # a note nothing explains
     nav, _ = await hub("fishnotes")
-    assert "pure luck" in all_text(nav) and "opposite of the arrow before it" not in all_text(nav)
+    assert "no pattern fits" in all_text(nav) and "confirmed:" not in all_text(nav)
 
 
 async def test_the_field_notes_open_while_reeling_and_the_reel_carries_on_where_it_was(db, clock, monkeypatch):

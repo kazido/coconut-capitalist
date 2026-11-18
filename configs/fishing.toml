@@ -27,7 +27,6 @@ power_per_slip = 8               # every this much rod power forgives one wrong 
 break_from_rarity = 2            # uncommon fish and up make you stop and press Reel now and then...
 arrows_per_break = 4             # ...about once per this many arrows
 mystery_from_rarity = 4          # super rare fish and up hide arrows behind a ❓ (rarity 4: one, 5: two, 6: three, 7: four)
-max_random_mysteries = 2         # ...but a fish whose ❓ is a pure coin flip (can't be learned) hides at most this many
 window = 5                       # you see the next five steps...
 fog_window = 2                   # ...or two, in a fog
 echo_window = 2                  # a second press of the arrow you JUST pressed (e.g. when the panel was slow to update) is ignored, not a slip
