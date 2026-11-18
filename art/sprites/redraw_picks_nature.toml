@@ -110,25 +110,3 @@ rows = [
   "................",
 ]
 
-[material_aged_feather]
-rarity = 5
-palette = { h = "#e4f4f8", m = "#a4cad8", s = "#6492b4", d = "#3e5878", q = "#f6e8bd", Q = "#c4a85c", o = "#2e1c2c" }
-rows = [
-  "..........ooo...",
-  "........oohhho..",
-  ".......ohhhmmdo.",
-  "......ohhhqqsdo.",
-  ".....ohhhqqsso..",
-  "....ohhhqqssdo..",
-  "....ohhqqssdo...",
-  "....ohqqssddo...",
-  "....oqqssddo....",
-  "...oqqdddoo.....",
-  "..oqqoooo.......",
-  ".oqqo...........",
-  "oqqqo...........",
-  "qqqo............",
-  "ooo.............",
-  "................",
-]
-

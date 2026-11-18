@@ -1,4 +1,4 @@
-material_feather = [0, 6]
+material_feather = {cell = [0, 6], ramp = ["#2c3040", "#6a7288", "#aab4c8", "#f2f6fc"]}
 material_amber = [10, 10]
 material_compost = [26, 8]  # WEAK: dark specks stand in for compost
 material_coral_shard = [23, 11]
@@ -31,3 +31,4 @@ key_gemstone_balance = {cell = [13, 6], ramp = ["#101c4a", "#2860c0", "#6cb4f0",
 key_gemstone_peace = {cell = [13, 6], ramp = ["#0e3a22", "#1f9a4a", "#6ee08a", "#eafff0"]}
 key_gemstone_rage = {cell = [13, 6], ramp = ["#4a0e18", "#c02030", "#f46a6a", "#fff0ec"]}
 key_gemstone_sanity = {cell = [13, 6], ramp = ["#2a1050", "#7a38c8", "#c08cf4", "#f6eaff"]}
+material_aged_feather = {cell = [0, 6], ramp = ["#5a3c10", "#b8862a", "#e8b838", "#fff0a8"]}
