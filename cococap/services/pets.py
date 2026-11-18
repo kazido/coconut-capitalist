@@ -275,6 +275,7 @@ async def open_orb(user: User, rng: random.Random, registry: Registry | None = N
     except Exception:
         await user.add_item(orb, 1)  # the pet never arrived: the orb isn't wasted
         raise
+    await user.inc_stat("orbs_opened")  # for the Pets stats page
     return OrbResult(pet, outcome["new"], outcome["stars"], outcome["maxed"], bool(outcome.get("target_hit")))
 
 
@@ -371,6 +372,7 @@ async def feed(user: User, food_id: str, quantity: int, registry: Registry | Non
     if not outcome:  # the pet vanished in the meantime
         await user.add_item(food_id, quantity)
         raise PetError("You need a pet to look after.")
+    await user.inc_stat("pet_foods_fed", quantity)  # for the Pets stats page
     return Fed(reg.pets[target], quantity, outcome["gained"], outcome["before"], outcome["after"], outcome["boost"])
 
 

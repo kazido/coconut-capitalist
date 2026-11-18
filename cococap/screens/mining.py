@@ -5,7 +5,6 @@ from cococap import emojis
 import discord
 
 from cococap.registry import get_registry
-from cococap.screens.sellall import start_sell_all
 from cococap.services import areas, mining
 from cococap.services.equipment import equipped_stats
 from cococap.ui import Page, Screen
@@ -67,7 +66,6 @@ class MiningScreen(Screen):
                        on_click=self._enter),
                 button("Reactor", emoji=emojis.get("autominer", "⚙️"), on_click=self._reactor),
                 button("Mastery", emoji=emojis.icon("mastery", "🌟"), on_click=self._mastery),
-                button("Sell all", emoji=emojis.icon("sell", "💰"), on_click=self._sell_all),
             ),
         ]
         return Page("Mining", body, accent=0x9E492F)
@@ -85,6 +83,3 @@ class MiningScreen(Screen):
 
     async def _mastery(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "mastery", skill="mining")
-
-    async def _sell_all(self, interaction: discord.Interaction) -> None:
-        await start_sell_all(self, interaction, "mining")

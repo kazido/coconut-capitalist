@@ -20,4 +20,14 @@ async def place_bet(user: User, amount: str | int, currency: str, stat: str) -> 
     bet = parse_bits(amount, user.balance(currency), unit)
     await user.spend(currency, bet)
     await user.inc_stat(stat)
+    await user.inc_stat("casino_wagered", bet)  # for the Casino stats page (counts from this update on)
+    await user.stat_best("biggest_bet", bet)
     return bet
+
+
+async def record_result(user: User, bet: int, payout: int) -> None:
+    """Count a settled game's net result: what it won, or what it lost (a push counts as neither)."""
+    if payout > bet:
+        await user.inc_stat("casino_won", payout - bet)
+    elif payout < bet:
+        await user.inc_stat("casino_lost", bet - payout)

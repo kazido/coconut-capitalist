@@ -390,6 +390,25 @@ class User:
                 )
             )
 
+    async def stat_add(self, statistic: str, amount: int = 1, seed: int = 0) -> None:
+        """Add to a counter. If it has no row yet it starts from `seed` (what the game already knew from another source, so an existing player is not reset
+        to 0 and nothing is counted twice): the first record writes seed + amount, every later one just adds."""
+        async with get_database().session() as session:
+            row = await session.get(StatRow, (self.id, statistic))
+            if row is None:
+                await session.execute(sqlite_insert(StatRow).values(user_id=self.id, name=statistic, value=seed + amount))
+            else:
+                row.value += amount
+
+    async def stat_best(self, statistic: str, value: int, seed: int = 0) -> None:
+        """Keep the best (highest) value seen for a "best of" stat; a missing row starts from `seed`."""
+        async with get_database().session() as session:
+            row = await session.get(StatRow, (self.id, statistic))
+            if row is None:
+                await session.execute(sqlite_insert(StatRow).values(user_id=self.id, name=statistic, value=max(seed, value)))
+            elif value > row.value:
+                row.value = value
+
     async def get_stat(self, statistic: str) -> int:
         async with get_database().session() as session:
             row = await session.get(StatRow, (self.id, statistic))

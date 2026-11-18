@@ -6,7 +6,6 @@ import discord
 
 from cococap import emojis
 from cococap.registry import get_registry
-from cococap.screens.sellall import start_sell_all
 from cococap.services import areas, foraging, party_tree, pets, releaf
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import Party, xp_bonus
@@ -134,6 +133,7 @@ async def swing_at(screen: Screen, power: int, stance: str, tree_key: object, sp
     pet = await pets.bonuses(screen.user)
     swing = screen.spot.swing(power, rules, screen.rng, stats.stats.get("good_chop", 0.0) + pet.get("good_chop", 0.0), stance,
                               stats.stats.get("wear_slow", 0.0), stats.stats.get("double_chop", 0.0), stats.stats.get("clean_cut", 0.0))
+    await foraging.record_chop(screen.user, screen.spot.streak)  # stats page (the chop is rules; this only counts it)
     note = swing_note(swing, stance)
     if swing.correct is not None and await foraging.note_style(screen.user, grain, stance, swing.correct):
         note += (f"  {emojis.icon('book', '📖')} Learned: the **{name}** grain likes **{foraging.STANCES[stance][0]}**!" if swing.correct
@@ -238,7 +238,6 @@ class ForageScreen(Screen):
                                on_click=self._chop),
                         button("Grain notes", emoji=emojis.icon("book", "📖"), on_click=self._notes),
                         button("Mastery", emoji=emojis.icon("star", "🌟"), on_click=self._mastery),
-                        button("Sell all", emoji=emojis.icon("sell", "💰"), on_click=self._sell_all),
                         *([button("Releaf Foundation", emoji=emojis.icon("sprout", "🌱"), on_click=self._releaf)] if level >= rules.releaf.min_level else [])))
         return Page("Foraging", body, accent=0x4C8C4A)
 
@@ -264,9 +263,6 @@ class ForageScreen(Screen):
     async def _notes(self, interaction: discord.Interaction) -> None:
         self.result = await notes_result(self.user)
         await self.refresh(interaction)
-
-    async def _sell_all(self, interaction: discord.Interaction) -> None:
-        await start_sell_all(self, interaction, "foraging")
 
     async def _mastery(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "mastery", skill="foraging")

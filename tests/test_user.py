@@ -195,8 +195,8 @@ async def test_settings_roundtrip_and_validation(db):
     assert user.settings.model_dump() == Settings().model_dump()  # the defaults: asks before Sell all, until you turn it off
     await user.set_setting("anything", True)  # unknown keys are not stored
     assert (await User.get(1)).settings.model_dump() == Settings().model_dump()
-    await user.set_setting("confirm_sell_all", False)
-    assert (await User.get(1)).settings.confirm_sell_all is False
+    await user.set_setting("confirm_upgrades", True)
+    assert (await User.get(1)).settings.confirm_upgrades is True
 
 
 async def test_deleting_a_user_cascades(db):

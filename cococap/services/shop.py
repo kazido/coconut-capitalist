@@ -133,34 +133,23 @@ async def sell(user: User, item_id: str, quantity: int = 1, registry: Registry |
     return earned
 
 
-# Everything can be sold one by one except tools, but "Sell all" leaves the things you keep to USE: seeds to plant, bait, keys and deeds, scrolls to
-# enchant with, and food and spirits for your pets.
-KEPT_BY_SELL_ALL = frozenset({"seed", "bait", "key_item", "scroll", "pet_food", "pet_item"})
-
-
-def sellable_for_skill(owned: dict[str, int], skill: str, registry: Registry | None = None, keep: dict[str, int] | None = None) -> dict[str, int]:
-    """What a skill's Sell all would sell: every sellable stack of that skill's items you hold, less what you asked to `keep` (item -> how many)."""
+async def max_affordable(user: User, item_id: str, registry: Registry | None = None) -> int:
+    """How many of an item `buy` would accept from this player right now: what their bits pay for, and what they may own (one tool per kind,
+    the per-purchase cap). Uses the same checks as `buy`, so a button sized from this never fails on money or ownership. 0 = can't buy any."""
     reg = registry or get_registry()
-    found: dict[str, int] = {}
-    for item_id, quantity in owned.items():
-        item = reg.find_item(item_id)
-        if item is None or item.skill != skill or not item.sellable or item.is_instance or item.sell_price <= 0 or item.category in KEPT_BY_SELL_ALL:
-            continue
-        spare = quantity - (keep or {}).get(item_id, 0)
-        if spare > 0:
-            found[item_id] = spare
-    return found
-
-
-async def sell_all_for_skill(user: User, skill: str, registry: Registry | None = None, keep: dict[str, int] | None = None) -> tuple[int, dict[str, int]]:
-    """Sell everything `sellable_for_skill` finds. Returns (bits earned, what was sold)."""
-    reg = registry or get_registry()
-    sold: dict[str, int] = {}
-    earned = 0
-    for item_id, quantity in sellable_for_skill(await user.items(), skill, reg, keep).items():
+    item = reg.find_item(item_id)
+    if item is None or not item.buyable:
+        return 0
+    if (await farming.locked_seeds(user, reg)).get(item.id) is not None:
+        return 0
+    if item.is_instance:
         try:
-            earned += await sell(user, item_id, quantity, reg)
-            sold[item_id] = quantity
+            await _check_can_own_another(user, item, 1, reg)
         except ShopError:
-            continue  # (used or sold somewhere else a moment ago)
-    return earned, sold
+            return 0
+        cap = 1
+    else:
+        cap = MAX_PER_PURCHASE
+    if item.price <= 0:
+        return cap
+    return min(cap, await user.get_bits() // item.price)

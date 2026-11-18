@@ -188,7 +188,9 @@ async def chop(user: User, damage: int, now: float | None = None, registry: Regi
             outcome["felled"] = True
         return PartyChop(applied, _view(state, user.id), bool(outcome.get("felled")))
 
-    return await community.update(_key(party.party_id), KEEP, swing)
+    chopped = await community.update(_key(party.party_id), KEEP, swing)
+    await user.inc_stat("party_hits")  # stats page: how often you chopped your party's tree
+    return chopped
 
 
 async def claim(user: User, now: float | None = None, registry: Registry | None = None) -> list[foraging.Reward]:

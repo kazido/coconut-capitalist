@@ -3,13 +3,13 @@ import discord
 from cococap import emojis
 from cococap.errors import CustomError
 from cococap.registry import get_registry
-from cococap.screens.sellall import SellAllPane
 from cococap.services import farming, shop
 from cococap.ui import Page, Screen, PromptModal
-from cococap.ui.components import bits, button, row, section, section_art, select, sep, text
+from cococap.ui.components import bits, button, row, section_art, select, sep, text
 from cococap.ui.tabs import TabsScreen
 
 PER_PAGE = 10
+QUICK_AMOUNT = 10  # the "10x" buttons
 
 
 def parse_quantity(raw: str) -> int:
@@ -19,12 +19,24 @@ def parse_quantity(raw: str) -> int:
         raise CustomError("Enter a whole number, like 5.") from None
 
 
+def clamp_quantity(raw: str, maximum: int) -> int:
+    """What a custom amount means: a whole number from 1 up to `maximum`. Asking for more than you can is clamped to the max, not an error,
+    so the modal's prefilled max always works. Anything that is not a whole number, or is below 1, gets a friendly message."""
+    try:
+        quantity = int(raw.replace(",", ""))
+    except ValueError:
+        quantity = 0
+    if quantity < 1:
+        raise CustomError(f"Enter a whole number from 1 to {maximum:,}.")
+    return min(quantity, maximum)
+
+
 class ShopPane(Screen):
-    """Buy seeds and supplies, sell what you've gathered. The Buy/Sell tab of the Shop page (ShopScreen)."""
+    """Buy seeds and supplies, or sell what you've gathered one item at a time. The Shop page (ShopScreen)."""
 
     label = "Shop"
     emoji = emojis.Lazy("ui_sell", "🛒")
-    description = "Buy seeds and supplies, sell what you've gathered"
+    description = "Buy seeds and supplies, or sell what you've gathered"
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -71,7 +83,7 @@ class ShopPane(Screen):
         if shown:
             if self.selected not in {i.id for i, _ in shown}:
                 self.selected = shown[0][0].id
-            body += self._listing(shown)
+            body += await self._listing(shown)
         if pages > 1:
             body.append(
                 row(
@@ -87,8 +99,8 @@ class ShopPane(Screen):
             return f"{item.display}  ·  **{emojis.bits(item.price)}**"
         return f"{item.display}  ·  ×{owned:,}  ·  {emojis.bits(item.sell_price * owned)}"
 
-    def _listing(self, shown) -> list:
-        """A markdown list of this page, one dropdown to pick from it, and one button for the picked item."""
+    async def _listing(self, shown) -> list:
+        """A markdown list of this page, one dropdown to pick from it, the picked item's details, and its amount buttons (1x, 10x, custom)."""
         buy = self.mode == "buy"
         picked, owned = next((i, q) for i, q in shown if i.id == self.selected)
         lines = [(f"{emojis.icon('next', '▶')} **" if i.id == self.selected else "") + self._line(i, q).replace("**", "") + ("**" if i.id == self.selected else "") for i, q in shown]
@@ -100,14 +112,23 @@ class ShopPane(Screen):
             for i, q in shown
         ]
         if buy:
+            # What you can afford AND may own: a tool is one per kind, so it is 0 or 1 here.
+            limit = await shop.max_affordable(self.user, picked.id)
             detail = f"### {picked.display}\n**{emojis.bits(picked.price)}**  ·  {picked.description}"[:600]
-            action = button("Buy", style=discord.ButtonStyle.success, disabled=self.user.purse < picked.price, on_click=self._ask_quantity(picked.id, "buy", 1))
         else:
+            limit = owned
             detail = f"### {picked.display}\n×{owned:,}  ·  {bits(picked.sell_price)} each  ·  **{bits(picked.sell_price * owned)}** for all"
-            action = button("Sell", style=discord.ButtonStyle.success, on_click=self._ask_quantity(picked.id, "sell", owned))
+        verb = self.mode.title()
+        style = discord.ButtonStyle.success
+        actions = row(
+            button(f"{verb} 1x", style=style, disabled=limit < 1, on_click=self._trade(picked.id, 1)),
+            button(f"{verb} {QUICK_AMOUNT}x", style=style, disabled=limit < QUICK_AMOUNT, on_click=self._trade(picked.id, QUICK_AMOUNT)),
+            # Custom is never disabled: when you can't afford any, the modal still opens and buying then gives the friendly error.
+            button(f"{verb} custom", style=discord.ButtonStyle.primary, on_click=self._ask_custom(picked.id, limit)),
+        )
         art = emojis.image_url("item", picked.id)
-        # Discord gives a dropdown a whole row, so the button sits straight under it: list, details (+picture), dropdown, button.
-        return [text("\n".join(lines)), section_art(detail, art), row(select("Pick an item...", options, self._pick)), row(action)]
+        # Discord gives a dropdown a whole row, so the buttons sit straight under it: list, details (+picture), dropdown, buttons.
+        return [text("\n".join(lines)), section_art(detail, art), row(select("Pick an item...", options, self._pick)), actions]
 
     async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.selected = values[0]
@@ -150,32 +171,50 @@ class ShopPane(Screen):
 
         return turn
 
-    def _ask_quantity(self, item_id: str, action: str, default: int):
+    async def _perform(self, interaction: discord.Interaction, item_id: str, quantity: int) -> None:
+        """Buy or sell (whichever mode the page is in) and redraw with what happened. The services raise the friendly errors."""
+        name = get_registry().item(item_id).name
+        if self.mode == "buy":
+            purchase = await shop.buy(self.user, item_id, quantity)
+            note = f"Bought {purchase.quantity:,} × {name} for {emojis.bits(purchase.total)}."
+        else:
+            earned = await shop.sell(self.user, item_id, quantity)
+            note = f"Sold {quantity:,} × {name} for {emojis.bits(earned)}."
+        await self.refresh(interaction, note)
+
+    def _trade(self, item_id: str, quantity: int):
+        async def trade(interaction: discord.Interaction) -> None:
+            await self._perform(interaction, item_id, quantity)
+
+        return trade
+
+    def _ask_custom(self, item_id: str, limit: int):
         async def ask(interaction: discord.Interaction) -> None:
             name = get_registry().item(item_id).name
+            action = self.mode
 
             async def submitted(modal_interaction: discord.Interaction, raw: str) -> None:
-                quantity = parse_quantity(raw)
-                if action == "buy":
-                    purchase = await shop.buy(self.user, item_id, quantity)
-                    note = f"Bought {purchase.quantity:,} × {name} for {emojis.bits(purchase.total)}."
-                else:
-                    earned = await shop.sell(self.user, item_id, quantity)
-                    note = f"Sold {quantity:,} × {name} for {emojis.bits(earned)}."
-                await self.refresh(modal_interaction, note)
+                # With nothing affordable the max is 0: clamp to 1 so buying gives its own "you need N bits" error.
+                await self._perform(modal_interaction, item_id, clamp_quantity(raw, max(limit, 1)))
 
             await interaction.response.send_modal(
-                PromptModal(f"{action.title()} {name}", "How many?", submitted, default=str(default), max_length=9)
+                PromptModal(
+                    f"{action.title()} {name}",
+                    f"How many? (max {limit:,})",
+                    submitted,
+                    default=str(max(limit, 1)),
+                    max_length=9,
+                )
             )
 
         return ask
 
 
 class ShopScreen(TabsScreen):
-    """The Shop page: buy and sell (ShopPane), and selling a whole skill's haul (SellAllPane). Skill pages open the second tab."""
+    """The Shop page: buy seeds and supplies, and sell what you have one item at a time (ShopPane)."""
 
     id = "shop"
     label = "Shop"
     emoji = emojis.Lazy("ui_sell", "🛒")
-    description = "Buy seeds and supplies, sell what you've gathered, or sell a whole skill's haul"
-    panes = {"buy": ShopPane, "sellall": SellAllPane}
+    description = "Buy seeds and supplies, or sell what you've gathered one item at a time"
+    panes = {"buy": ShopPane}

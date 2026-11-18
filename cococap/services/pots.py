@@ -221,6 +221,8 @@ async def collect(user: User, index: int, now: float | None = None, registry: Re
             pot.bait_left, pot.since = 0, 0.0
 
     await user.update_skill("fishing", take)
+    if caught:
+        await user.inc_stat("crab_pot_hauls")  # one pot emptied with fish in it
     found = Counter(f.id for f in caught)
     for fish_id, quantity in found.items():
         await user.add_item(fish_id, quantity)

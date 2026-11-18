@@ -10,7 +10,7 @@ from dataclasses import dataclass
 
 from cococap import constants
 from cococap.constants import BOT_ID
-from cococap.services.casino import GameOver, place_bet
+from cococap.services.casino import GameOver, place_bet, record_result
 from cococap.user import User
 
 HIGH = range(6, 11)
@@ -68,6 +68,7 @@ async def _settle(user: User, game: HighLowGame) -> int:
         return 0
     game.settled = True
     payout = game.pot
+    await record_result(user, game.bet, payout)
     if payout > 0:
         await user.credit(game.currency, payout)
     else:

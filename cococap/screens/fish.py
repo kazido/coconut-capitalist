@@ -8,7 +8,6 @@ import discord
 from cococap import emojis
 from cococap.constants import Rarities
 from cococap.registry import get_registry
-from cococap.screens.sellall import start_sell_all
 from cococap.services import areas, fishing, fishing_community, party_boss, pets, pots
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
@@ -185,13 +184,11 @@ class FishScreen(Screen):
             body.append(text(f"{emojis.icon('basket', '🧺')} **{haul.count:,}** fish  ·  worth **{emojis.bits(haul.worth)}**" if haul.count else f"{emojis.icon('haul', '🧺')} No fish yet."))
             body.append(row(
                 button("Cast", emoji=ROD, style=discord.ButtonStyle.primary, disabled=stats is None, on_click=self._cast),
-                button("Sell fish", emoji=emojis.icon("sell", "💰"), disabled=not haul.count, on_click=self._sell),
                 button("Collection", emoji=emojis.icon('book', '📖'), disabled=not (fishing.quests_unlocked(level, reg.fishing) or fishing.book_unlocked(level, reg.fishing)),
                        on_click=self._collection),
             ))
             body.append(row(button("Crab pots", emoji=emojis.icon("crab", "🦀"), disabled=level < reg.fishing.pots.min_level, on_click=self._pots),
-                            button("Mastery", emoji=emojis.icon("star", "🌟"), on_click=self._mastery),
-                            button("Sell all", emoji=emojis.icon("sell", "💰"), on_click=self._sell_all)))
+                            button("Mastery", emoji=emojis.icon("star", "🌟"), on_click=self._mastery)))
             body.append(row(button("Radar", emoji=emojis.icon('radar', '📡'), disabled=level < reg.fishing.radar.unlock_level, on_click=self._radar)))
             return Page("Fishing", body, accent=ACCENT)
 
@@ -497,14 +494,6 @@ class FishScreen(Screen):
 
     async def _mastery(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "mastery", skill="fishing")
-
-    async def _sell_all(self, interaction: discord.Interaction) -> None:
-        await start_sell_all(self, interaction, "fishing")
-
-    async def _sell(self, interaction: discord.Interaction) -> None:
-        total = await fishing.sell_all(self.user)
-        await self.refresh(interaction, f"{emojis.icon('sell', '💰')} You sold your fish for **{emojis.bits(total)}**.")
-
 
 class FishQuestsScreen(Screen):
     """A pane of the Collection (fishlog): daily and weekly quests."""

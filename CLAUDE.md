@@ -96,8 +96,7 @@ anything else is a bug and is not leaked to the player.
 - **Shipments** (`configs/shipments.toml`, `services/shipments.py`): per-skill basic (unlock lvl 10) and hard (lvl 30) crates; the community
   shipment is scrapped (`community.enabled = false`, code kept). State lives in `services/community.py` (`read`/`update`).
 - **Trading** (`services/trade.py`): in-memory invites and windows, both players Accept, version-guarded, all-or-nothing completion.
-- **Sell all** (`screens/sellall.py`): "keep upgrade materials" (default ON) holds back, per item, the MOST any single next-upgrade needs across EVERY
-  tool you own (both roads at a fork). Not a sum.
+- **Selling**: one item at a time in the Shop (`screens/shop.py`, Sell mode: 1x / 10x / custom). Skill pages have no bulk sell button.
 - **Rare-drop banners**: `cococap/ui/flair.py` (level 1 = rarity 4+ and 1-in-100 or rarer; level 2 = rarity 5+ or 1-in-700+). Call
   `flair.banner(drops)` wherever a screen lists drops.
 - Fishing radar, mastery, shipments, trading all have DESIGN.md sections: read them before changing those systems.

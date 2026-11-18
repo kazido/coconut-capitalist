@@ -25,6 +25,8 @@ class StatsPane(Screen):
             for p in pages
         ]
         body = [*self.note_block(), row(select("Pick a page...", options, self._pick)), sep()]
+        if not current.groups:
+            body.append(text("Nothing tracked here yet."))
         for group, rows in current.groups:
             body.append(text(f"**{group}**\n" + "\n".join(
                 f"{label}: `{value:,}`" if isinstance(value, int) else f"{label}: {value}"

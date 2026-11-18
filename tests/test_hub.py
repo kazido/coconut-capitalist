@@ -282,10 +282,10 @@ async def test_rank_screen_at_max_rank(db):
 
 async def test_settings_page_lists_each_setting_with_a_toggle_that_saves(db):
     nav, inter = await hub("settings")
-    assert "Confirm Sell all" in all_text(nav)
-    on = next(b for b in buttons(nav) if b.label == "ON")
-    await on.callback(inter)
-    assert (await User.get(1)).settings.confirm_sell_all is False and next(b for b in buttons(nav) if b.label == "OFF")
+    assert "Confirm tool upgrades" in all_text(nav)
+    off = next(b for b in buttons(nav) if b.label == "OFF")
+    await off.callback(inter)
+    assert (await User.get(1)).settings.confirm_upgrades is True and next(b for b in buttons(nav) if b.label == "ON")
 
 
 async def test_profile_and_home_show_balances_and_levels(db):
@@ -329,8 +329,7 @@ async def test_shop_buy_opens_a_modal_and_buying_works(db):
     await set_columns(await User.get(1), purse=10_000_000)
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")  # seeds stack, so they ask how many (tools do not: see the next test)
-    buy = [b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success][0]  # one Buy button: for the picked item
-    await buy.callback(inter)
+    await click(nav, inter, "Buy custom")
     modal = await submit(inter, "2")
     await modal.on_submit(inter)
     user = await User.get(1)
@@ -354,13 +353,13 @@ async def test_the_shop_lists_no_tools_and_the_tools_page_claims_the_free_starte
 
 
 async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
-    def item_buy_buttons(nav):  # the per-item buttons (green), not the Buy/Sell mode toggle
-        return [b for b in buttons(nav) if b.label == "Buy" and b.style == discord.ButtonStyle.success]
+    def item_buy_buttons(nav):  # the per-item buttons (green: Buy 1x, Buy 10x), not the Buy/Sell mode toggle or Buy custom
+        return [b for b in buttons(nav) if b.label in ("Buy 1x", "Buy 10x")]
 
     await set_columns(await User.get(1), purse=500)  # enough for the cheapest item (an apple seed), not the priciest
     nav, inter = await hub("shop")
-    # the page is a list + one dropdown + ONE Buy button, however many items it lists
-    assert len(item_buy_buttons(nav)) == 1 and select_named(nav, "Pick an item").options
+    # the page is a list + one dropdown + the picked item's Buy 1x / Buy 10x / Buy custom, however many items it lists
+    assert len(item_buy_buttons(nav)) == 2 and select_named(nav, "Pick an item").options
     # a brand-new player can afford the cheapest item but not the priciest: picking it disables Buy
     opts = select_named(nav, "Pick an item").options
     await choose(nav, inter, select_named(nav, "Pick an item"), opts[-1].value)
@@ -370,13 +369,12 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
     await click(nav, inter, emoji="🌽")
     menu = select_named(nav, "Pick an item")
     await choose(nav, inter, menu, next(o.value for o in menu.options if o.value.startswith("seed_")))
-    buy = [b for b in item_buy_buttons(nav) if not b.disabled][0]
-    await buy.callback(inter)
+    await click(nav, inter, "Buy custom")
     modal = await submit(inter, "lots")
-    with pytest.raises(CustomError):
+    with pytest.raises(CustomError, match="whole number"):
         await modal.on_submit(inter)
-    modal.field._value = "9999"
-    with pytest.raises(Exception, match="between 1|need"):
+    modal.field._value = "0"
+    with pytest.raises(CustomError, match="whole number"):
         await modal.on_submit(inter)
     assert (await User.get(1)).purse == 200_000
 
@@ -386,7 +384,7 @@ async def test_shop_sell_mode_sells_the_full_stack_by_default(db):
     await user.add_item("material_gold_ore", 4)
     nav, inter = await hub("shop")
     await click(nav, inter, "Sell")
-    await next(b for b in buttons(nav) if b.label == "Sell" and b.style == discord.ButtonStyle.success).callback(inter)
+    await click(nav, inter, "Sell custom")
     modal = inter.response.send_modal.await_args.args[0]
     assert modal.field.default == "4"
     modal.field._value = "4"
@@ -416,7 +414,7 @@ async def test_the_sell_button_opens_the_shop_in_sell_mode(db):
     nav, inter = await hub("inventory")
     await click(nav, inter, "Sell")
     assert nav.screen.id == "shop" and nav.screen.mode == "sell" and "Copper Ore" in all_text(nav)
-    assert any(b.label == "Sell" and b.style == discord.ButtonStyle.success for b in buttons(nav))  # (each stack has its own Sell button)
+    assert find_button(nav, "Sell 1x")  # (the picked stack has its own sell buttons)
 
 
 async def test_the_sell_button_is_off_when_you_have_nothing(db):

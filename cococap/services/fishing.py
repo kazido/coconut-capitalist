@@ -582,6 +582,7 @@ async def use_radar(user: User, water: WaterRules, registry: Registry | None = N
         await user.remove_item(reg.fishing.radar.battery, 1)
     except ValueError:
         return {}  # out of batteries: it just does not help
+    await user.inc_stat("radar_scans")  # one battery = one scan
     return chase
 
 
@@ -736,11 +737,15 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     before: list[int] = []
     hot_streak = mastery_stats.stats.get("hot_streak", 0.0) if mastery_stats else 0.0
 
+    streak: dict[str, int] = {}  # the clean-reel run before and after this catch (for the longest-run stat)
+
     def grant(skill) -> None:
         skill.xp += xp
         skill.stats.fish_caught += 1
+        streak["before"] = skill.streak
         before.append(min(HOT_STREAK_MAX, skill.streak))  # (the streak this catch rides on)
         skill.streak = skill.streak + 1 if cast.slips_left >= cast.slips_start else 0  # (a clean reel keeps the Hot Streak going; any slip ends it)
+        streak["after"] = skill.streak
         if salvage_every and skill.stats.fish_caught % salvage_every == 0:
             salvaged.append(True)
         skill.stats.caught[cast.fish.id] = skill.stats.caught.get(cast.fish.id, 0) + 1 + cast.extra_fish
@@ -775,6 +780,8 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
         skill.stats.quests_completed += len(finished)
 
     await user.update_skill("fishing", grant)
+    if streak:  # the longest clean-reel run ever; a player from before this stat starts from the run they were on
+        await user.stat_best("longest_fishing_streak", streak["after"], seed=streak["before"])
     if salvaged:  # Salvage: every Nth fish also brings up a chest's loot
         haul = salvage_loot(rng or random.Random(), reg)
         for item_id, quantity in haul.items():
@@ -843,15 +850,6 @@ async def stock(user: User, registry: Registry | None = None) -> FishStock:
     owned = await user.items()
     fish = Counter({i.id: owned[i.id] for i in fish_pool(reg) if owned.get(i.id)})
     return FishStock(fish, sum(reg.item(i).sell_price * q for i, q in fish.items()))
-
-
-async def sell_all(user: User, registry: Registry | None = None) -> int:
-    """Sell every fish in the inventory. Returns the bits received."""
-    reg = registry or get_registry()
-    total = 0
-    for item_id, quantity in (await stock(user, reg)).items.items():
-        total += await shop.sell(user, item_id, quantity, reg)
-    return total
 
 
 # ---- the personal collection book -------------------------------------------------------------------------

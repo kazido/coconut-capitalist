@@ -5,7 +5,7 @@ import random
 
 from cococap import constants, emojis
 from cococap.constants import BOT_ID
-from cococap.services.casino import GameOver, place_bet
+from cococap.services.casino import GameOver, place_bet, record_result
 from cococap.user import User
 
 SUITS = "♠♥♦♣"  # the plain suit characters stay the card identity; show() swaps them for icons
@@ -94,6 +94,7 @@ async def _settle(user: User, game: BlackjackGame) -> int:
         return 0
     game.settled = True
     payout = game.payout
+    await record_result(user, game.bet, payout)
     if payout > 0:
         await user.credit(game.currency, payout)
     if game.bet > payout:  # a lost or folded bet goes to the house account

@@ -15,6 +15,7 @@ class Plot(BaseModel):
     unlocked: bool = False
     since: int = 0  # the last rain (hour number) already counted for this plot
     watered: int = -1  # the hour you last watered this plot (once per hour)
+    tended: int = 0  # growth cycles whose byproducts you have already collected (Tend); back to 0 when the plot is planted or harvested
 
 
 def _plot() -> Plot:
