@@ -18,7 +18,7 @@ class Blackjack(commands.Cog, name="Blackjack"):
         user = await User.get(interaction.user.id)
         game = await blackjack.start(user, bet, Random(), constants.CASINO_CURRENCY)
         try:
-            await open_screen(interaction, "blackjack", game=game, bet_text=bet)
+            await open_screen(interaction, "games", tab="blackjack", game=game, bet_text=bet)
         except Exception:
             if not game.settled:  # the hand never showed: give the bet back instead of forfeiting it
                 game.settled = True

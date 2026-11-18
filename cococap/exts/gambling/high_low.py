@@ -18,7 +18,7 @@ class Highlow(commands.Cog, name="Highlow"):
         user = await User.get(interaction.user.id)
         game = await highlow.start(user, bet, Random(), constants.CASINO_CURRENCY)
         try:
-            await open_screen(interaction, "highlow", game=game, bet_text=bet)
+            await open_screen(interaction, "games", tab="highlow", game=game, bet_text=bet)
         except Exception:
             await highlow.abandon(user, game)  # the game never showed: pay the bet straight back
             raise

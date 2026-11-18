@@ -10,15 +10,13 @@ from cococap.ui.components import button, row, text
 
 from .games import reward_line, streak_line
 
-INTRO = "Unscramble the word before the clock runs out. Longer words pay more."
+INTRO = "Unscramble the word before the clock runs out. Longer words pay more. Luckbucks, up to a daily limit."
 
 
-class UnscrambleScreen(Screen):
-    id = "unscramble"
+class UnscramblePane(Screen):
     label = "Unscramble"
     emoji = emojis.Lazy("ui_page", "📄")
     description = "Unjumble the word"
-    links = ("minigames",)
 
     def __init__(self, nav):
         super().__init__(nav)

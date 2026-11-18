@@ -6,26 +6,20 @@ from cococap.ui import Navigator, Screen
 from cococap.user import User
 
 from .bestiary import BestiaryScreen
-from .blackjack import BlackjackScreen
-from .casino import CasinoScreen
+from .blackjack import BlackjackPane
 from .checkin import CheckInScreen
 from .craft import CraftScreen
-from .highlow import HighLowScreen
 from .farm import FarmScreen
 from .fight import FightScreen
-from .flashcard import FlashcardScreen
 from .fish import FishLogScreen, FishPotsScreen, FishScreen
 from .forage import ForageScreen, TreesScreen
 from .releaf import ReleafScreen
-from .sequence import SequenceScreen
-from .trivia import TriviaScreen
-from .unscramble import UnscrambleScreen
 from .home import HomeScreen, MoreScreen
 from .inventory import InventoryScreen
 from .mine import MineScreen
 from .market import MarketScreen
 from .mastery import MasteryScreen
-from .minigames import MinigamesScreen
+from .games_page import GamesScreen
 from .mining import MiningScreen
 from .party import PartyScreen
 from .pets import PetsScreen
@@ -71,14 +65,7 @@ SCREENS: dict[str, type[Screen]] = {
         ReactorScreen,
         RadarScreen,
         MineScreen,
-        MinigamesScreen,
-        CasinoScreen,
-        FlashcardScreen,
-        UnscrambleScreen,
-        SequenceScreen,
-        TriviaScreen,
-        HighLowScreen,
-        BlackjackScreen,
+        GamesScreen,
         InventoryScreen,
         CraftScreen,
         WikiScreen,

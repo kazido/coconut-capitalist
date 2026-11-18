@@ -12,7 +12,7 @@ from cococap.user import Cooldowns
 # holds Trade and the Minigames).
 FEATURED = ["skills", "shipments", "shop", "inventory", "pets", "checkin"]
 SECOND_ROW = ["ship", "player", "rank", "party"]
-MORE_LINKS = ["trade", "minigames", "wiki", "settings"]
+MORE_LINKS = ["trade", "games", "wiki", "settings"]
 PARTY_NAMES_SHOWN = 4
 
 

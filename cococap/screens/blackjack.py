@@ -6,7 +6,7 @@ from cococap.services.blackjack import hand_total, show
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
 
-from .games import money, result_buttons
+from .games import ask_bet, casino_intro, money, result_buttons
 
 
 def _outcomes() -> dict:
@@ -21,12 +21,10 @@ def _outcomes() -> dict:
     }
 
 
-class BlackjackScreen(Screen):
-    id = "blackjack"
+class BlackjackPane(Screen):
     label = "Blackjack"
     emoji = emojis.Lazy("ui_cards", "🃏")
     description = "Beat the dealer to 21"
-    links = ("casino",)
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -44,7 +42,8 @@ class BlackjackScreen(Screen):
     async def build(self) -> Page:
         game = self.game
         if game is None:
-            return Page("Blackjack", [text("No game in progress. Start one from the casino.")])
+            play = row(button("Play", style=discord.ButtonStyle.primary, on_click=ask_bet(self, "blackjack", "Blackjack")))
+            return Page("Blackjack", [*self.note_block(), casino_intro(self.user), play], accent=0x3498DB)
         body = [
             *self.note_block(),
             text(f"**Dealer** ({hand_total(game.dealer)})\n# {show(game.dealer)}"),

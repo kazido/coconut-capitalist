@@ -162,6 +162,15 @@ async def test_every_shop_tab_renders_valid_layout(db, tab):
     assert nav.content_length() <= 4000
 
 
+@pytest.mark.parametrize("tab", list(SCREENS["games"].panes))
+async def test_every_games_tab_renders_valid_layout(db, tab):
+    nav, _ = await hub("games", tab=tab)
+    assert nav.screen.tab == tab
+    nav.to_components()  # raises if the structure is invalid
+    assert nav.total_children_count <= 40, nav.total_children_count
+    assert nav.content_length() <= 4000
+
+
 @pytest.mark.parametrize("tab", list(SCREENS["reactor"].panes))
 async def test_every_reactor_tab_renders_valid_layout(db, tab):
     nav, _ = await hub("reactor", tab=tab)
@@ -503,7 +512,7 @@ async def test_mining_screen_reactor_buttons(db):
 
 
 
-# ---- navigation without a menu; skills / minigames; shop sections --------------------------------
+# ---- navigation without a menu; skills / games; shop sections --------------------------------
 async def test_no_go_anywhere_menu_remains(db):
     nav, _ = await hub("home")
     assert selects(nav) == []
@@ -524,7 +533,7 @@ def test_every_screen_is_reachable_by_following_links_from_home():
 
 
 async def test_home_links_really_open_the_declared_screens(db):
-    for parent in ("home", "more", "skills", "minigames"):
+    for parent in ("home", "more", "skills"):
         nav, inter = await hub(parent)
         openers = [c.accessory for c in nav.walk_children() if isinstance(c, ui.Section) and isinstance(c.accessory, ui.Button)
                    and not c.accessory.disabled and c.accessory.label == "Open"]
@@ -565,11 +574,10 @@ async def test_shop_has_a_section_per_skill_and_filters(db):
     assert "Tin Watering Can" not in all_text(nav)
 
 
-# ---- the in-window casino --------------------------------------------------------------------------
-async def start_from_casino(game_button_index, bet="100", user_id=1):
-    nav, inter = await hub("casino", user_id=user_id)
-    plays = [b for b in buttons(nav) if b.label == "Play"]
-    await plays[game_button_index].callback(inter)
+# ---- the in-window casino (on the Games page) ---------------------------------------------------------
+async def start_from_casino(game, bet="100", user_id=1):
+    nav, inter = await hub("games", tab=game, user_id=user_id)
+    await find_button(nav, "Play").callback(inter)
     modal = await submit(inter, bet)
     modal_inter = fake_interaction(user_id)
     await modal.on_submit(modal_inter)
@@ -577,8 +585,8 @@ async def start_from_casino(game_button_index, bet="100", user_id=1):
 
 
 async def test_highlow_plays_inside_the_hub_window(db):
-    nav, inter = await start_from_casino(0)
-    assert nav.screen.id == "highlow" and nav.screen.locked
+    nav, inter = await start_from_casino("highlow")
+    assert nav.screen.id == "games" and nav.screen.tab == "highlow" and nav.screen.locked
     assert (await User.get(1)).luckbucks == 0
     assert find_button(nav, "Home").disabled and find_button(nav, "Back").disabled  # can't walk out mid-game
     nav.screen.game.roll = 9
@@ -592,18 +600,17 @@ async def test_highlow_plays_inside_the_hub_window(db):
     assert nav.screen.game.bet == 100 and (await User.get(1)).luckbucks == 200 - 100
 
 
-async def test_highlow_loss_screen_and_return_to_casino(db):
-    nav, inter = await start_from_casino(0)
+async def test_highlow_loss_screen_leaves_the_hub_free(db):
+    nav, inter = await start_from_casino("highlow")
     nav.screen.game.roll = 2
     await find_button(nav, "High").callback(inter)
     assert "You lost" in all_text(nav)
-    await click(nav, inter, "Casino")
-    assert nav.screen.id == "casino"
+    assert not nav.screen.locked and not find_button(nav, "Home").disabled
 
 
 async def test_blackjack_plays_inside_the_hub_window(db):
     for seed_user in range(20, 60):
-        nav, inter = await start_from_casino(1, user_id=seed_user)
+        nav, inter = await start_from_casino("blackjack", user_id=seed_user)
         if not nav.screen.game.finished:
             break
     else:
@@ -616,7 +623,7 @@ async def test_blackjack_plays_inside_the_hub_window(db):
 
 
 async def test_leaving_by_timeout_mid_game_settles_the_bet(db):
-    nav, inter = await start_from_casino(0)
+    nav, inter = await start_from_casino("highlow")
     assert (await User.get(1)).luckbucks == 0  # the whole 100-luckbuck stake is on the table
     nav.message = SimpleNamespace(edit=AsyncMock())
     await nav.on_timeout()
@@ -624,13 +631,12 @@ async def test_leaving_by_timeout_mid_game_settles_the_bet(db):
 
 
 async def test_casino_rejects_a_bad_bet_without_opening_a_game(db):
-    nav, inter = await hub("casino")
-    await [b for b in buttons(nav) if b.label == "Play"][0].callback(inter)
+    nav, inter = await hub("games", tab="highlow")
+    await find_button(nav, "Play").callback(inter)
     modal = await submit(inter, "999999")
     with pytest.raises(Exception, match="Not enough"):
         await modal.on_submit(fake_interaction())
-    assert nav.screen.id == "casino" and (await User.get(1)).luckbucks == 100
-
+    assert nav.screen.id == "games" and nav.screen.tab == "highlow" and (await User.get(1)).luckbucks == 100
 
 
 # ---- the mines (in-window) ----------------------------------------------------------------------------
@@ -844,22 +850,14 @@ from cococap.registry import get_registry as _reg  # noqa: E402
 START_LUCK = _reg().economy.starting_luckbucks
 
 
-async def test_minigames_page_links_to_every_brain_game(db):
-    nav, inter = await hub("minigames")
-    for label in ("Flashcard", "Unscramble", "Sequence", "Trivia"):
-        assert label in all_text(nav)
-    plays = [b for b in buttons(nav) if b.label == "Play"]
-    assert len(plays) == 4
-    seen = set()
-    for i in range(4):
-        nav, inter = await hub("minigames")
-        await [b for b in buttons(nav) if b.label == "Play"][i].callback(inter)
-        seen.add(nav.screen.id)
-    assert seen == {"flashcard", "unscramble", "sequence", "trivia"}
+async def test_games_dropdown_lists_every_game(db):
+    nav, _ = await hub("games")
+    options = [o.label for o in select_named(nav, "Choose a game").options]
+    assert options == ["High-Low", "Blackjack", "Flashcard", "Unscramble", "Sequence", "Trivia"]
 
 
 async def test_flashcard_round_trip_pays_luckbucks(db):
-    nav, inter = await hub("flashcard")
+    nav, inter = await hub("games", tab="flashcard")
     await click(nav, inter, "Start")
     game = nav.screen.game
     assert "= ?" in all_text(nav) and len([b for b in buttons(nav) if b.label.lstrip("-").isdigit()]) == 4
@@ -874,7 +872,7 @@ async def test_flashcard_round_trip_pays_luckbucks(db):
 
 
 async def test_unscramble_uses_a_modal_answer(db):
-    nav, inter = await hub("unscramble")
+    nav, inter = await hub("games", tab="unscramble")
     await click(nav, inter, "Start")
     word = nav.screen.game.word
     await find_button(nav, "Answer").callback(inter)
@@ -884,7 +882,7 @@ async def test_unscramble_uses_a_modal_answer(db):
 
 
 async def test_sequence_full_game_in_the_window(db):
-    nav, inter = await hub("sequence")
+    nav, inter = await hub("games", tab="sequence")
     nav.screen.pause = 0
     await click(nav, inter, "Easy")
     screen = nav.screen
@@ -902,7 +900,7 @@ async def test_sequence_full_game_in_the_window(db):
 
 
 async def test_sequence_walking_away_still_pays_what_you_remembered(db):
-    nav, inter = await hub("sequence")
+    nav, inter = await hub("games", tab="sequence")
     nav.screen.pause = 0
     await click(nav, inter, "Medium")
     await find_button(nav, emoji=nav.screen.game.pattern[0]).callback(inter)
@@ -921,7 +919,7 @@ async def test_trivia_round_trip_and_outage_message(db, monkeypatch):
         return raw
 
     monkeypatch.setattr(trivia_service, "fetch_from_api", ok)
-    nav, inter = await hub("trivia")
+    nav, inter = await hub("games", tab="trivia")
     await click(nav, inter, "Start")
     assert "Red planet?" in all_text(nav)
     letter = trivia_service.LETTERS[nav.screen.game.answers.index("Mars")]
@@ -933,7 +931,7 @@ async def test_trivia_round_trip_and_outage_message(db, monkeypatch):
         raise trivia_service.TriviaUnavailable("down")
 
     monkeypatch.setattr(trivia_service, "fetch_from_api", down)
-    nav, inter = await hub("trivia")
+    nav, inter = await hub("games", tab="trivia")
     with pytest.raises(trivia_service.TriviaUnavailable):
         await find_button(nav, "Start").callback(inter)
 
@@ -1033,7 +1031,7 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
     nav, inter = await hub("home")
     text = all_text(nav)
     assert "Skills" in text
-    for moved in ("Minigames", "Stats", "Settings", "Trade"):
+    for moved in ("Games", "Stats", "Settings", "Trade"):
         assert moved not in text, moved
     assert "Party" not in text.split("Skills")[0]  # (no party line unless the player is in a party)
     assert all(name in text for name in ("Check-in", "Inventory", "Shop", "Pets"))  # the main things are sections, one Open button each
@@ -1042,13 +1040,13 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
     await click(nav, inter, "More")
     assert nav.screen.id == "more"
     text = all_text(nav)
-    assert all(name in text for name in ("Trade", "Minigames", "Settings"))
+    assert all(name in text for name in ("Trade", "Games", "Settings"))
     await click(nav, inter, "Back")
     assert nav.screen.id == "home"
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("trade", "minigames", "wiki", "settings")):
+    for index, expected in enumerate(("trade", "games", "wiki", "settings")):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)

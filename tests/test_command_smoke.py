@@ -86,4 +86,4 @@ async def test_casino_commands_take_the_bet_and_open_the_game_in_the_hub(bot):
         assert await command._check_can_run(inter) is True
         await command._callback(command.binding, inter, "100")
         view = inter.response.send_message.await_args.kwargs["view"]
-        assert view.screen.id == name and view.screen.game.bet == 100, name
+        assert view.screen.id == "games" and view.screen.tab == name and view.screen.game.bet == 100, name

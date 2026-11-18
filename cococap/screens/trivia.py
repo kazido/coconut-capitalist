@@ -14,12 +14,10 @@ INTRO = "Answer a random trivia question. Harder questions pay more, and you can
 DIFFICULTY_ACCENT = {"easy": 0x2ECC71, "medium": 0xF1C40F, "hard": 0xE74C3C}
 
 
-class TriviaScreen(Screen):
-    id = "trivia"
+class TriviaPane(Screen):
     label = "Trivia"
     emoji = emojis.Lazy("ui_unknown", "❓")
     description = "Answer questions, earn luckbucks"
-    links = ("minigames",)
 
     def __init__(self, nav):
         super().__init__(nav)

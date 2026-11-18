@@ -9,7 +9,7 @@ class SequenceCog(commands.Cog):
 
     @app_commands.command(name="sequence", description="Remember the pattern for luckbucks.")
     async def sequence(self, interaction: Interaction):
-        await open_screen(interaction, "sequence")
+        await open_screen(interaction, "games", tab="sequence")
 
 
 async def setup(bot):

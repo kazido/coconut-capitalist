@@ -1,23 +1,26 @@
 import discord
 
-from cococap.services import highlow
-from cococap.ui import Page, Screen
-from cococap.ui.components import button, row, sep, text
-
-from .games import money, result_buttons
 from cococap import emojis
+from cococap.registry import get_registry
+from cococap.services import highlow
+from cococap.services.rewards import exchange_bits
+from cococap.ui import Page, PromptModal, Screen
+from cococap.ui.components import bits, button, row, section, sep, text
+
+from .games import ask_bet, casino_intro, money, result_buttons
+from .shop import parse_quantity
 
 
-class HighLowScreen(Screen):
-    id = "highlow"
+class HighLowPane(Screen):
+    """High-Low on the Games page. Idle, it also holds the bits -> luckbucks exchange (the casino stakes luckbucks)."""
+
     label = "High-Low"
     emoji = emojis.Lazy("ui_up", "🔼")
     description = "Guess high or low"
-    links = ("casino",)
 
     def __init__(self, nav):
         super().__init__(nav)
-        self.game: highlow.HighLowGame | None = None  # set by the casino when the bet is placed
+        self.game: highlow.HighLowGame | None = None  # set when the bet is placed
         self.bet_text = "100"
 
     @property
@@ -31,7 +34,7 @@ class HighLowScreen(Screen):
     async def build(self) -> Page:
         game = self.game
         if game is None:
-            return Page("High-Low", [text("No game in progress. Start one from the casino.")])
+            return self._idle()
         body = [*self.note_block(), text("Will the next number be **high (6-10)** or **low (1-5)**?")]
         if game.last:
             verdict = f"{emojis.icon('check', '✅')} Correct!" if game.last.correct else f"{emojis.icon('cross', '❌')} Wrong!"
@@ -50,6 +53,30 @@ class HighLowScreen(Screen):
         head = f"{emojis.icon('sell', '💰')} Cashed out" if won else f"{emojis.icon('skull', '💀')} You lost"
         body += [sep(), text(f"## {head} {money(game.pot if won else game.bet)}"), result_buttons(self, "highlow")]
         return Page("High-Low", body, accent=0x2ECC71 if won else 0xE74C3C)
+
+    def _idle(self) -> Page:
+        rate = get_registry().economy.exchange
+        body = [
+            *self.note_block(),
+            casino_intro(self.user),
+            row(button("Play", style=discord.ButtonStyle.primary, on_click=ask_bet(self, "highlow", "High-Low"))),
+            sep(),
+            section(
+                f"### {emojis.icon('money', '💱')} Exchange\n{emojis.bits(rate.bits_per_luckbuck)} = {emojis.luckbucks(1)}  ·  up to {bits(rate.daily_limit)}/day",
+                accessory=button("Exchange", on_click=self._ask_exchange),
+            ),
+            text("-# Two-player: `/tictactoe @friend`"),
+        ]
+        return Page("High-Low", body, accent=0x2ECC71)
+
+    async def _ask_exchange(self, interaction: discord.Interaction) -> None:
+        async def submitted(modal_interaction: discord.Interaction, raw: str) -> None:
+            got, spent = await exchange_bits(self.user, parse_quantity(raw))
+            await self.refresh(modal_interaction, f"Exchanged {emojis.bits(spent)} for {emojis.luckbucks(got)}.")
+
+        await interaction.response.send_modal(
+            PromptModal("Exchange bits for luckbucks", "How many luckbucks?", submitted, default="10", max_length=7)
+        )
 
     def _guess(self, high: bool):
         async def guess(interaction: discord.Interaction) -> None:

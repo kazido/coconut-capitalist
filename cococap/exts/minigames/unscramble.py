@@ -9,7 +9,7 @@ class UnscrambleCog(commands.Cog):
 
     @app_commands.command(name="unscramble", description="Unscramble a word for luckbucks.")
     async def unscramble(self, interaction: Interaction):
-        await open_screen(interaction, "unscramble")
+        await open_screen(interaction, "games", tab="unscramble")
 
 
 async def setup(bot):
