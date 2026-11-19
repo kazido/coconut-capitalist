@@ -144,10 +144,11 @@ async def test_switching_pets_only_works_for_pets_you_own(db):
 # ---- feeding and spirits ------------------------------------------------------------------------------------------------------
 async def test_feeding_crops_levels_the_active_pet_up(db):
     user = await with_pet("dew", xp=0)  # a farming pet: crops are its own skill's food
-    await user.add_item("crop_hot_pepper", 3)  # 1,450 pet xp each, x3 for a farming pet
+    await user.add_item("crop_hot_pepper", 3)  # x3 for a farming pet
+    each = REG.item("crop_hot_pepper").crop.pet_xp * 3
     fed = await pets.feed(user, "crop_hot_pepper", 2, REG)
-    assert fed.xp == 2 * 1450 * 3 and fed.level_before == 1 and fed.level_after == pets.pet_level(8700, REG.pets["dew"].rarity, REG) > 1
-    assert user.pethouse.pets["dew"].xp == 8700 and await user.item_quantity("crop_hot_pepper") == 1
+    assert fed.xp == 2 * each and fed.level_before == 1 and fed.level_after == pets.pet_level(2 * each, REG.pets["dew"].rarity, REG) > 1
+    assert user.pethouse.pets["dew"].xp == 2 * each and await user.item_quantity("crop_hot_pepper") == 1
 
 
 async def test_feeding_refuses_nonsense_and_keeps_your_crops(db):
