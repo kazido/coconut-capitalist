@@ -228,11 +228,17 @@ class Navigator(ui.LayoutView):
             if old is not None and old is not self:
                 await old.close_menu()
             stored = await community.read(_menu_key(self.owner.id), {})
-            if old is None and stored and stored.get("message") != self.message.id:
-                try:  # (a menu left over from before a restart has no Navigator any more: delete its message by id)
+            old_id = old.message.id if old is not None and old.message is not None else None
+            # The stored menu goes too whenever it is not this one or the one just closed: a menu left over from before a restart,
+            # or one that fell out of _LIVE (it has no Navigator any more, so delete its message by id).
+            orphan = bool(stored) and stored.get("message") not in (self.message.id, old_id)
+            if orphan:
+                try:
                     await interaction.client.get_partial_messageable(stored["channel"]).get_partial_message(stored["message"]).delete()
-                except discord.HTTPException:
-                    pass  # already gone, or no permission
+                except discord.HTTPException as error:
+                    log.info("stored menu %s of %s not deleted: %s", stored.get("message"), self.owner.id, error)
+            log.info("menu %s opened for %s: closed live menu %s, stored menu %s%s", self.message.id, self.owner.id, old_id,
+                     stored.get("message"), " (deleted)" if orphan else "")
             _LIVE[self.owner.id] = self
             mine = {"channel": self.message.channel.id, "message": self.message.id}
             await community.update(_menu_key(self.owner.id), {}, lambda data: (data.clear(), data.update(mine)))
@@ -255,8 +261,8 @@ class Navigator(ui.LayoutView):
                 if self.client is not None:
                     try:
                         await self.client.get_partial_messageable(self.message.channel.id).get_partial_message(self.message.id).delete()
-                    except discord.HTTPException:
-                        pass  # already gone, or no permission
+                    except discord.HTTPException as error:
+                        log.info("old menu %s of %s not deleted: %s", self.message.id, self.owner.id, error)
 
     async def _respond(self, interaction: discord.Interaction) -> None:
         """Answer a click by showing the new panel. If Discord won't take the answer any more (the click was

@@ -43,6 +43,19 @@ async def test_a_shortcut_command_replaces_a_menu_whose_interaction_token_expire
     assert nav_module._LIVE[9] is not old
 
 
+async def test_a_stored_menu_that_fell_out_of_tracking_is_deleted_even_while_another_is_live(db):
+    live = menu_message(1)
+    await open_menu(12, live)
+    await community.update("menu:12", {}, lambda data: (data.clear(), data.update({"channel": 5, "message": 77})))  # an orphan
+    deleted = AsyncMock()
+    inter = fake_interaction(12)
+    inter.original_response = AsyncMock(return_value=menu_message(2))
+    inter.client.get_partial_messageable = MagicMock(return_value=SimpleNamespace(get_partial_message=lambda mid: SimpleNamespace(delete=deleted)))
+    await open_screen(inter, "forage")
+    live.delete.assert_awaited()
+    deleted.assert_awaited()
+
+
 async def test_a_menu_left_over_from_before_a_restart_is_deleted_by_its_stored_id(db):
     await community.update("menu:8", {}, lambda data: data.update({"channel": 5, "message": 99}))
     nav_module._LIVE.clear()  # (a restart forgets every Navigator)
