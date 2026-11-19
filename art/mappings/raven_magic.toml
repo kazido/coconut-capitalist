@@ -32,7 +32,6 @@ ui_hook = {cell = [24, 8], framed = false}
 ui_crab = {cell = [22, 5], framed = false}
 ui_book = {cell = [6, 0], framed = false}
 ui_record = {cell = [0, 14], framed = false}
-ui_quest = {cell = [6, 12], framed = false}
 ui_bolt = {cell = [64, 0], framed = false}
 ui_haul = {cell = [25, 10], framed = false}
 ui_sell = {cell = [9, 13], framed = false}

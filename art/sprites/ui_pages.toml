@@ -252,3 +252,26 @@ rows = [
   "................",
   "................",
 ]
+
+[ui_quest]
+kind = "free"
+outline = true
+palette = { P = "#f6e8c8", p = "#fff8e4", q = "#d8c49a", t = "#8a6a4a", R = "#e8c890", r = "#b08a58", e = "#7a5a3a", S = "#e04a40", s = "#9a2830" }
+rows = [
+  "................",
+  "................",
+  ".eRRRRRRRRRRRRe.",
+  ".errrrrrrrrrrre.",
+  "...pPPPPPPPPq...",
+  "...pPttttttPq...",
+  "...pPPPPPPPPq...",
+  "...pPtttttPPq...",
+  "...pPPPPPPPPq...",
+  "...pPttttPSSq...",
+  "...pPPPPPPSsq...",
+  "...pPPPPPPPPq...",
+  ".eRRRRRRRRRRRRe.",
+  ".errrrrrrrrrrre.",
+  "................",
+  "................",
+]
