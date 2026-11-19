@@ -26,13 +26,13 @@ def test_an_empty_reward_still_says_so():
 
 
 def test_rare_drops_are_listed_like_any_item_and_handed_to_the_popup_best_first():
-    assert flair.level(REG.item("scroll_keen")) == 2 and flair.level(REG.item("material_iron_wedge")) == 1
-    result = rewards_result("TIMBER!", items={"material_copper_ore": 2, "material_iron_wedge": 1, "scroll_keen": 1}, xp=10, odds=odds.foraging(),
+    assert flair.level(REG.item("scroll_seasoned")) == 2 and flair.level(REG.item("material_iron_wedge")) == 1
+    result = rewards_result("TIMBER!", items={"material_copper_ore": 2, "material_iron_wedge": 1, "scroll_seasoned": 1}, xp=10, odds=odds.foraging(),
                             again=noop, again_label="Another tree", back=noop, back_label="Back to foraging", actions=[("Donate", "🌱", noop)])
     text = "\n".join(result.lines)
-    assert "Copper Ore" in text and "Wedge" in text and "Keen" in text  # everything is on the one loot screen
+    assert "Copper Ore" in text and "Wedge" in text and "Seasoning" in text  # everything is on the one loot screen
     assert result.again is noop and result.actions == [("Donate", "🌱", noop)]  # with the next-action buttons on it
-    assert [f[1].id for f in result.rare] == ["scroll_keen", "material_iron_wedge"]  # the best find first
+    assert [f[1].id for f in result.rare] == ["scroll_seasoned", "material_iron_wedge"]  # the best find first
 
 
 def test_drop_rate_is_worked_out_from_the_loot_tables():
@@ -40,7 +40,7 @@ def test_drop_rate_is_worked_out_from_the_loot_tables():
     n = REG.scrolls.foraging.odds * len(pool)
     embed = rare_embed(rewards_result("x", items={pool[0]: 1}, odds=odds.foraging()).rare)
     assert f"1 in {n:,} trees felled" in embed.fields[0].value
-    mine = odds.mining(REG)("scroll_keen")
+    mine = odds.mining(REG)("scroll_iron_frame")
     assert mine.one_in == REG.scrolls.mining.odds * len(REG.scrolls.mining.pool)
     # a table item: the first that drops wins, so a later item needs the earlier ones to miss first
     table = REG.mining.depth_tables[-1]
@@ -52,15 +52,15 @@ def test_drop_rate_is_worked_out_from_the_loot_tables():
 
 
 def test_without_a_table_only_the_rarity_is_shown():
-    item = REG.item("scroll_keen")
+    item = REG.item("scroll_seasoned")
     assert "Drop rate" not in drop_rate_line(item, None) and "Rarity" in drop_rate_line(item, None)
-    embed = rare_embed(rewards_result("x", items={"scroll_keen": 1}).rare)
+    embed = rare_embed(rewards_result("x", items={"scroll_seasoned": 1}).rare)
     assert " in " not in embed.fields[0].value
 
 
 def test_a_rare_only_reward_still_lists_the_item():
-    result = rewards_result("x", items={"scroll_keen": 1})
-    assert "Keen" in "\n".join(result.lines) and result.rare
+    result = rewards_result("x", items={"scroll_seasoned": 1})
+    assert "Seasoning" in "\n".join(result.lines) and result.rare
 
 
 def test_a_species_drops_rate_reaches_the_popup():

@@ -1169,19 +1169,6 @@ kind = "axe"
 power = 3  # TODO(balance): grows with rarity
 requirement = 0
 
-[scroll_keen]
-name = "Scroll of Keenness"
-description = "A scroll that sharpens any pickaxe, axe or rod."
-wiki = "Use it from your inventory (Enchant) to put Keen on any tool. One use."
-emoji = "📜"
-rarity = 4
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_keen.scroll]
-enchant = "keen"
-
 [scroll_lure]
 name = "Scroll of the Lure"
 description = "Fish seem to find your hook sooner."
@@ -1209,20 +1196,6 @@ sell_price = 400000  # TODO(balance)
 
 [scroll_steady_line.scroll]
 enchant = "steady_line"
-
-[scroll_sharp_eye]
-name = "Scroll of the Sharp Eye"
-description = "See where the wood is weakest."
-wiki = "Use it from your inventory (Enchant) to put Sharp Eye on a fitting tool. One use."
-emoji = "📜"
-rarity = 4
-skill = "foraging"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_sharp_eye.scroll]
-enchant = "sharp_eye"
 
 [scroll_seasoned]
 name = "Scroll of Seasoning"
@@ -2136,60 +2109,6 @@ category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 400
 
-[scroll_scholar]
-name = "Scroll of the Scholar"
-description = "Whatever you do with the tool you put this on teaches you more."
-wiki = "Use it from your inventory (Enchant) to put Scholar on any tool. One use."
-emoji = "📜"
-rarity = 4
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_scholar.scroll]
-enchant = "scholar"
-
-[scroll_appraiser]
-name = "Scroll of the Appraiser"
-description = "An eye for what the harvest is worth."
-wiki = "Use it from your inventory (Enchant) to put Appraiser on any tool. One use."
-emoji = "📜"
-rarity = 4
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_appraiser.scroll]
-enchant = "appraiser"
-
-[scroll_veinfinder]
-name = "Scroll of the Veinfinder"
-description = "Rich lodes seem to find your pick."
-wiki = "Use it from your inventory (Enchant) to put Veinfinder on a pickaxe. One use."
-emoji = "📜"
-rarity = 4
-skill = "mining"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_veinfinder.scroll]
-enchant = "veinfinder"
-
-[scroll_bounty]
-name = "Scroll of Bounty"
-description = "Every cell gives a little more."
-wiki = "Use it from your inventory (Enchant) to put Bounty on a pickaxe. One use."
-emoji = "📜"
-rarity = 4
-skill = "mining"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_bounty.scroll]
-enchant = "bounty"
-
 [scroll_deepcall]
 name = "Scroll of the Deepcall"
 description = "Something old answers your line."
@@ -2217,20 +2136,6 @@ sell_price = 400000  # TODO(balance)
 
 [scroll_double_hook.scroll]
 enchant = "double_hook"
-
-[scroll_fertile]
-name = "Scroll of the Fertile Soil"
-description = "Bigger harvests from the same plots."
-wiki = "Use it from your inventory (Enchant) to put Fertile Soil on a watering can. One use."
-emoji = "📜"
-rarity = 4
-skill = "farming"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_fertile.scroll]
-enchant = "fertile"
 
 [scroll_seedkeeper]
 name = "Scroll of the Seedkeeper"

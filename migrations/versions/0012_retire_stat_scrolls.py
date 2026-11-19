@@ -1,0 +1,61 @@
+"""retire the plain stat scrolls: their bonuses are smithing part traits now
+
+Keenness, Sharp Eye, Scholar, Appraiser, Veinfinder, Bounty and Fertile are gone from the game. Anybody holding their scrolls
+(any star) gets bits equal to the scroll's sell price per scroll, and the stacks are deleted. Enchants of those kinds already
+on a tool are stripped from the tool's `enchants`. The prices are written out here (copied from `configs/items.toml` before the
+items were removed) so this migration does not depend on the config.
+
+Revision ID: 0012
+Revises: 0011
+"""
+import json
+
+from alembic import op
+import sqlalchemy as sa
+
+
+revision = '0012'
+down_revision = '0011'
+branch_labels = None
+depends_on = None
+
+# scroll item id -> sell price (bits)
+RETIRED = {
+    "scroll_keen": 400000, "scroll_sharp_eye": 400000, "scroll_scholar": 400000, "scroll_appraiser": 400000,
+    "scroll_veinfinder": 400000, "scroll_bounty": 400000, "scroll_fertile": 400000,
+}
+RETIRED_ENCHANTS = {"keen", "sharp_eye", "scholar", "appraiser", "veinfinder", "bounty", "fertile"}
+
+
+def retire_scrolls(conn) -> None:
+    """Pay out and delete every held stack of a retired scroll (star variants too), then strip retired enchants from tools."""
+    for scroll_id, price in RETIRED.items():
+        for item_id in (scroll_id, f"{scroll_id}_s2", f"{scroll_id}_s3"):
+            held = conn.execute(
+                sa.text("SELECT user_id, quantity FROM user_items WHERE item_id = :item AND quantity > 0"), {"item": item_id}
+            ).fetchall()
+            for user_id, quantity in held:
+                conn.execute(
+                    sa.text("UPDATE users SET purse = purse + :bits WHERE discord_id = :u"),
+                    {"bits": price * quantity, "u": user_id},
+                )
+            conn.execute(sa.text("DELETE FROM user_items WHERE item_id = :item"), {"item": item_id})
+
+    rows = conn.execute(sa.text("SELECT id, enchants FROM item_instances WHERE enchants IS NOT NULL")).fetchall()
+    for instance_id, enchants in rows:
+        data = json.loads(enchants) if isinstance(enchants, str) else enchants
+        if not isinstance(data, dict) or not RETIRED_ENCHANTS & data.keys():
+            continue
+        kept = {k: v for k, v in data.items() if k not in RETIRED_ENCHANTS}
+        conn.execute(
+            sa.text("UPDATE item_instances SET enchants = :e WHERE id = :id"),
+            {"e": json.dumps(kept), "id": instance_id},
+        )
+
+
+def upgrade() -> None:
+    retire_scrolls(op.get_bind())
+
+
+def downgrade() -> None:
+    pass  # the bits stay; the scrolls and their enchants no longer exist

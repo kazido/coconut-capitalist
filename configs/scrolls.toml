@@ -1,15 +1,15 @@
-# Where scrolls come from. Every skill has THREE scrolls of its own and shares THREE that fit any tool (Keenness, Scholar, Appraiser), and every skill's source
-# hands out one of its six at random. Aim: about one scroll per three hours of play in each skill, so a session or so; a scroll is an event, not routine. TODO(balance)
+# Where scrolls come from. Every skill has its own scrolls (the plain stat scrolls were retired: smithing part traits cover them),
+# and every skill's source hands out one of its pool at random. Aim: about one scroll per three hours of play in each skill, so a session or so; a scroll is an event, not routine. TODO(balance)
 # (Fishing has no entry: its scrolls come from treasure chests and boss loot, see fishing.toml.)
 
 [mining]
 odds = 2200                       # 1 in this many cells dug (about 720 cells an hour of play)
-pool = ["scroll_iron_frame", "scroll_veinfinder", "scroll_bounty", "scroll_keen", "scroll_scholar", "scroll_appraiser"]
+pool = ["scroll_iron_frame"]
 
 [foraging]
 odds = 150                        # 1 in this many private trees felled (about 45 trees an hour whatever your axe: better axes meet bigger trees)
-pool = ["scroll_sharp_eye", "scroll_seasoned", "scroll_double_strike", "scroll_keen", "scroll_scholar", "scroll_appraiser"]
+pool = ["scroll_seasoned", "scroll_double_strike"]
 
 [farming]
 odds = 2000                       # 1 in this many growth cycles of what you harvest (a long crop is 100+ cycles). Nine plots watered every hour for a WEEK is ~1,500 cycles: under one scroll a week at the very most. TODO(balance)
-pool = ["scroll_fertile", "scroll_seedkeeper", "scroll_gleaner", "scroll_keen", "scroll_scholar", "scroll_appraiser"]
+pool = ["scroll_seedkeeper", "scroll_gleaner"]

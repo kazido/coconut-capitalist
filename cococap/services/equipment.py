@@ -64,6 +64,8 @@ def effective_stats(instance: ItemInstance, registry: Registry | None = None) ->
     flags: set[str] = set()
     multipliers: list[tuple[str, float]] = []
     for enchant_id, level in instance.enchants.items():
+        if enchant_id not in reg.enchants:  # a retired enchant still stored on an old tool: ignore it, don't crash
+            continue
         enchant = reg.enchant(enchant_id)
         level = min(level, enchant.max_level)
         for effect in enchant.effects:

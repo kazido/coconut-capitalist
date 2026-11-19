@@ -49,15 +49,15 @@ async def test_a_scroll_is_used_up_and_puts_one_level_of_its_enchant_on_the_tool
 
 
 async def test_it_only_fits_the_right_kind_of_tool_and_never_past_the_maximum_and_a_refusal_keeps_the_scroll(db):
-    user, axe = await with_tool("tool_axe_starter", "foraging", scrolls={"scroll_lure": 1, "scroll_keen": 5})
+    user, axe = await with_tool("tool_axe_starter", "foraging", scrolls={"scroll_lure": 1, "scroll_seasoned": 5})
     with pytest.raises(enchanting.EnchantError, match="fits a rod"):
         await enchanting.apply_scroll(user, "scroll_lure", axe.id, REG)
     assert await user.item_quantity("scroll_lure") == 1
-    for _ in range(REG.enchant("keen").max_level):
-        await enchanting.apply_scroll(user, "scroll_keen", axe.id, REG)
+    for _ in range(REG.enchant("seasoned").max_level):
+        await enchanting.apply_scroll(user, "scroll_seasoned", axe.id, REG)
     with pytest.raises(enchanting.EnchantError, match="highest level"):
-        await enchanting.apply_scroll(user, "scroll_keen", axe.id, REG)
-    assert await user.item_quantity("scroll_keen") == 5 - REG.enchant("keen").max_level
+        await enchanting.apply_scroll(user, "scroll_seasoned", axe.id, REG)
+    assert await user.item_quantity("scroll_seasoned") == 5 - REG.enchant("seasoned").max_level
 
 
 async def test_you_cannot_enchant_someone_elses_tool_or_with_a_scroll_you_do_not_have(db):
@@ -73,12 +73,11 @@ async def test_you_cannot_enchant_someone_elses_tool_or_with_a_scroll_you_do_not
         await enchanting.apply_scroll(mine, "fish_cod", rod2.id, REG)
 
 
-async def test_keen_works_on_every_tool(db):
-    for template, skill, uid in (("tool_rod_starter", "fishing", 1), ("tool_axe_starter", "foraging", 2), ("tool_pickaxe_rookie", "mining", 3)):
-        user, tool = await with_tool(template, skill, uid, scrolls={"scroll_keen": 1})
-        before = effective_stats(tool, REG).power
-        done = await enchanting.apply_scroll(user, "scroll_keen", tool.id, REG)
-        assert effective_stats(done, REG).power == before + 1
+async def test_an_enchant_the_game_no_longer_has_is_ignored_not_fatal(db):
+    user, axe = await with_tool("tool_axe_starter", "foraging", scrolls={"scroll_seasoned": 1})
+    before = effective_stats(await user.instance(axe.id), REG).power
+    await user.set_enchant_level(axe.id, "keen", 2)  # a retired enchant still stored on an old tool
+    assert effective_stats(await user.instance(axe.id), REG).power == before
 
 
 # ---- the enchants really do something -------------------------------------------------------------------------------------
@@ -119,16 +118,13 @@ async def test_iron_frame_slows_the_mines_pressure(db):
 
 
 # ---- finding scrolls ------------------------------------------------------------------------------------------------------
-def test_every_skill_has_its_own_scrolls_and_shares_the_same_three_global_ones():  # (three each; fishing has a fourth, Double Hook)
-    own = {"mining": {"scroll_iron_frame", "scroll_veinfinder", "scroll_bounty"}, "fishing": {"scroll_lure", "scroll_steady_line", "scroll_deepcall", "scroll_double_hook"},
-           "foraging": {"scroll_sharp_eye", "scroll_seasoned", "scroll_double_strike"}, "farming": {"scroll_fertile", "scroll_seedkeeper", "scroll_gleaner"}}
-    shared = {"scroll_keen", "scroll_scholar", "scroll_appraiser"}
+def test_every_skill_has_its_own_scrolls():
+    own = {"mining": {"scroll_iron_frame"}, "fishing": {"scroll_lure", "scroll_steady_line", "scroll_deepcall", "scroll_double_hook"},
+           "foraging": {"scroll_seasoned", "scroll_double_strike"}, "farming": {"scroll_seedkeeper", "scroll_gleaner"}}
     for skill, mine in own.items():
         found = {i.id for i in REG.items.values() if i.category == "scroll" and skill in scrolls.scroll_skills(i.id, REG)}
-        assert found == mine | shared, skill  # the same number (and the same global ones) in every skill
+        assert found == mine, skill
         assert all(REG.item(i).skill == skill for i in mine)
-    for i in shared:  # a global scroll fits every kind of tool
-        assert REG.item(i).skill is None and set(REG.enchants[REG.item(i).scroll.enchant].applies_to) >= {"pickaxe", "axe", "rod", "can"}
 
 
 def test_scrolls_are_rare_about_one_every_few_hours_in_each_skill():
@@ -152,7 +148,7 @@ def test_the_scroll_roll_drops_at_its_odds_from_the_skills_own_pool():
     hits = [scrolls.roll("foraging", rng, REG) for _ in range(30_000)]
     got = [h for h in hits if h]
     assert len(got) == pytest.approx(30_000 / REG.scrolls.foraging.odds, rel=0.25)
-    assert set(got) <= set(REG.scrolls.foraging.pool) and len(set(got)) == 6
+    assert set(got) <= set(REG.scrolls.foraging.pool) and set(got) == set(REG.scrolls.foraging.pool)
 
 
 # ---- the screen -----------------------------------------------------------------------------------------------------------
@@ -208,15 +204,3 @@ async def test_if_the_enchant_fails_the_scroll_is_given_back(db, monkeypatch):
     assert await user.item_quantity("scroll_lure") == 1 and (await user.instance(rod.id)).enchants == {}
 
 
-async def test_the_scholar_scroll_adds_xp_and_the_appraiser_scroll_adds_to_what_the_skills_items_sell_for(db):
-    from cococap.services import shop
-    from cococap.services.party import xp_multiplier
-
-    user, pick = await with_tool("tool_pickaxe_rookie", "mining", scrolls={"scroll_scholar": 2, "scroll_appraiser": 2})
-    xp_before, sale_before = await xp_multiplier(user.id, REG, "mining"), await shop.haggle(user, REG.item("material_copper_ore"), REG)
-    for scroll in ("scroll_scholar", "scroll_scholar", "scroll_appraiser", "scroll_appraiser"):
-        await enchanting.apply_scroll(user, scroll, pick.id, REG)
-    assert await xp_multiplier(user.id, REG, "mining") == pytest.approx(xp_before * 1.10)  # +5% a level, two levels
-    assert await shop.haggle(user, REG.item("material_copper_ore"), REG) == pytest.approx(sale_before + 0.08)
-    assert await shop.haggle(user, REG.item("crop_apple"), REG) == 0  # (it only helps the tool's own skill)
-    assert await xp_multiplier(user.id, REG, "foraging") == pytest.approx(xp_before)  # (and its xp)

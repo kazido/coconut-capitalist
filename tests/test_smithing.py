@@ -250,21 +250,11 @@ async def test_an_old_tool_without_parts_keeps_its_template_stats():
         assert stats.stats[stat] == pytest.approx(value)
 
 
-async def test_enchanting_a_smithed_tool_twice_keeps_only_the_newer_enchant():
-    user = await player()
-    tool = await smithed_pickaxe(user, GRADE_NAMES[0])
-    await user.add_item("scroll_keen", 1)
-    await user.add_item("scroll_iron_frame", 1)
-    await enchanting.apply_scroll(user, "scroll_keen", tool.id, REG)
-    done = await enchanting.apply_scroll(user, "scroll_iron_frame", tool.id, REG)
-    assert done.enchants == {"iron_frame": 1}
-
-
 async def test_an_old_tool_still_keeps_both_enchants():
     user = await player()
-    tool = await user.give_instance("tool_pickaxe_rookie")
-    await user.add_item("scroll_keen", 1)
-    await user.add_item("scroll_iron_frame", 1)
-    await enchanting.apply_scroll(user, "scroll_keen", tool.id, REG)
-    done = await enchanting.apply_scroll(user, "scroll_iron_frame", tool.id, REG)
-    assert set(done.enchants) == {"keen", "iron_frame"}
+    tool = await user.give_instance("tool_axe_starter")
+    await user.add_item("scroll_seasoned", 1)
+    await user.add_item("scroll_double_strike", 1)
+    await enchanting.apply_scroll(user, "scroll_seasoned", tool.id, REG)
+    done = await enchanting.apply_scroll(user, "scroll_double_strike", tool.id, REG)
+    assert set(done.enchants) == {"seasoned", "double_strike"}

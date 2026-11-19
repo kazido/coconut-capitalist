@@ -13,13 +13,13 @@ REG = get_registry()
 
 
 def finds():
-    return popup.sorted_finds({"scroll_keen": 1, "material_iron_wedge": 2}, odds.foraging())
+    return popup.sorted_finds({"scroll_seasoned": 1, "material_iron_wedge": 2}, odds.foraging())
 
 
 def test_the_embed_lists_each_find_with_quantity_rarity_and_odds():
     embed = popup.rare_embed(finds())
     assert embed.title == "A super rare find!" and len(embed.fields) == 2
-    assert "Keen" in embed.fields[0].name and "trees felled" in embed.fields[0].value
+    assert "Seasoning" in embed.fields[0].name and "trees felled" in embed.fields[0].value
     assert "2 ×" in embed.fields[1].name
 
 

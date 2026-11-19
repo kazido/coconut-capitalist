@@ -12,6 +12,9 @@ from .models import LOCATIONS_PER_AREA, AreaRules, ChangelogEntry, LegacyTool, N
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
+# Stats the engines read that no enchant gives any more (their scrolls were retired; smithing part traits give them now).
+TRAIT_ONLY_STATS = frozenset({"power", "scholar", "appraise", "rich_chance", "ore_yield", "good_chop", "crop_yield"})
+
 
 class RegistryError(Exception):
     """The game data is invalid. The message names the file and entry."""
@@ -204,10 +207,11 @@ class Registry:
         return problems
 
     def _validate_smithing(self) -> list[str]:
-        """Every trait must name a stat some enchant already uses, so the engines know how to read it."""
+        """Every trait must name a stat the engines read: one some enchant uses, or one the retired stat scrolls used
+        (keen, scholar, appraiser, veinfinder, bounty, sharp_eye, fertile became part traits; the engines still read them)."""
         if self.smithing is None:
             return []
-        known = {getattr(e, "stat", None) for enchant in self.enchants.values() for e in enchant.effects}
+        known = {getattr(e, "stat", None) for enchant in self.enchants.values() for e in enchant.effects} | TRAIT_ONLY_STATS
         return [f"smithing.toml [{t.id}]: unknown stat '{t.stat}'" for t in self.smithing.trait_pool if t.stat not in known]
 
     def _validate_mining(self, rules: MiningRules) -> list[str]:

@@ -910,7 +910,7 @@ def test_flair_marks_rare_finds_and_not_the_everyday_ones():
     from cococap.ui import flair
 
     assert flair.level(REG.item("material_copper_ore")) == 0 and flair.level(REG.item("material_gold_ore")) == 0 and flair.level(REG.item("food_golden_sap")) == 0
-    assert flair.level(REG.item("scroll_keen")) == 2  # scrolls are always a big moment
+    assert flair.level(REG.item("scroll_seasoned")) == 2  # scrolls are always a big moment
     assert flair.level(REG.item("material_iron_wedge")) == 1 and flair.level(REG.item("food_burger")) == 1
     assert flair.level(REG.item("material_gilded_wedge")) == 2 and flair.level(REG.item("spirit_of_the_forest")) == 2
     assert flair.banner({"material_copper_ore": 5}) == ""
@@ -929,8 +929,8 @@ def test_every_item_and_enchant_has_an_emoji_and_scrolls_say_what_they_do():
 
     assert [i.id for i in REG.items.values() if not i.emoji_raw] == []
     assert all(e.emoji for e in REG.enchants.values())
-    text = item_attributes(REG.item("scroll_keen"))
-    assert REG.enchants["keen"].description in text and "Max level" in text
+    text = item_attributes(REG.item("scroll_seasoned"))
+    assert REG.enchants["seasoned"].description in text and "Max level" in text
 
 
 def test_wear_slowing_gear_makes_bad_grains_wear_faster_by_the_same_amount():
