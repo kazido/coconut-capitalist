@@ -149,7 +149,7 @@ def describe(pet: Pet, owned: OwnedPet, registry: Registry | None = None) -> lis
     return lines
 
 
-async def max_buffs(pet: Pet) -> str:
+def max_buffs(pet: Pet) -> str:
     """The pet's buffs at max level with one star, in words (the numbers the wiki lists)."""
     return " · ".join(bonus.text.format(v=bonus.value) for bonus in pet.bonuses)
 
