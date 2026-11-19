@@ -45,3 +45,41 @@ def test_old_pethouse_json_loads_with_empty_tank():
     assert house.fuel_seconds == 0 and house.last_collect == 0
     assert house.pets["cinder"].lent_tool is None and house.pets["cinder"].buff_until == 0
     assert house.pets["cinder"].stars == 2 and house.pets["cinder"].xp == 50
+
+
+# ---- fuel tank, haul, food buff (services/pets.py) ----------------------------------------------------------------
+import pytest  # noqa: E402
+
+from cococap.services import pets  # noqa: E402
+from tests.test_pets import with_pet  # noqa: E402
+
+
+def _crop():
+    return next(i for i in REG.items.values() if i.crop and i.sell_price > 0)
+
+
+@pytest.mark.asyncio
+async def test_crops_fill_the_tank_up_to_its_cap_and_the_haul_burns_it(db):
+    user = await with_pet("drizzle")
+    crop = _crop()
+    await user.add_item(crop.id, 100000)
+    added = await pets.fuel(user, crop.id, 100000, now=1000.0)
+    assert 0 < added <= pets.tank_cap_seconds(REG)
+    assert user.pethouse.fuel_seconds == added
+    # an hour later: the haul only counts the fuel that lasted
+    skill, xp, hours = await pets.collect(user, now=1000.0 + 10 * 3600)
+    assert hours * 3600 <= added + 1e-6 and xp > 0 and skill == "fishing"
+    assert user.pethouse.fuel_seconds == 0
+    _, xp2, _ = await pets.collect(user, now=1000.0 + 20 * 3600)
+    assert xp2 == 0  # empty tank: no haul (passive bonus is untouched elsewhere)
+
+
+@pytest.mark.asyncio
+async def test_skill_food_starts_a_timed_buff_that_expires(db):
+    user = await with_pet("drizzle", xp=0)
+    food = next(i for i in REG.items.values() if i.category == "pet_food")
+    await user.add_item(food.id, 1)
+    await pets.feed(user, food.id, 1)
+    owned = user.pethouse.pets["drizzle"]
+    assert pets.buff_multiplier(owned, REG) == 1 + REG.pet_score.food_buff_bonus
+    assert pets.buff_multiplier(owned, REG, now=owned.buff_until + 1) == 1.0

@@ -232,6 +232,8 @@ class PetScoreRules(_Data):
     haul_xp_per_score_hour: float = Field(ge=0)
     tank_cap_hours: float = Field(gt=0)
     fuel_minutes_per_value: float = Field(gt=0)
+    food_buff_bonus: float = Field(ge=0)  # skill food gives the pet this much extra xp rate...
+    food_buff_minutes: float = Field(gt=0)  # ...for this long (feeding again refreshes it, it never stacks)
 
 
 class Pet(_Data):

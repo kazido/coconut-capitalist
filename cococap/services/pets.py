@@ -9,6 +9,7 @@
 
 import math
 import random
+import time
 from dataclasses import dataclass
 
 from cococap import emojis
@@ -197,11 +198,107 @@ async def grant_play_xp(user: User, skill: str, amount: int, registry: Registry 
         owned = house.pets.get(house.active) if pet else None
         if owned is None:
             return 0
-        gained = round(amount * play_share(pet, skill, reg))
+        gained = round(amount * play_share(pet, skill, reg) * buff_multiplier(owned, reg))
         owned.xp += gained
         return gained
 
     return await user.update_pethouse(give)
+
+
+# ---- sidekicks: fuel tank, idle haul, food buff, lent tool (rules in services/pet_score.py) --------------------------------------
+def buff_multiplier(owned: OwnedPet, registry: Registry | None = None, now: float | None = None) -> float:
+    """1.5x pet xp while the skill-food buff lasts, else 1."""
+    reg = registry or get_registry()
+    return 1 + reg.pet_score.food_buff_bonus if owned.buff_until > (time.time() if now is None else now) else 1.0
+
+
+def tank_cap_seconds(registry: Registry | None = None) -> float:
+    return (registry or get_registry()).pet_score.tank_cap_hours * 3600
+
+
+def _settle(house: Pethouse, now: float, reg: Registry) -> float:
+    """Seconds of idle work since the last settle, limited by the fuel left (which it burns). Moves `last_collect` to now."""
+    elapsed = max(0.0, now - house.last_collect) if house.last_collect else 0.0
+    worked = min(elapsed, house.fuel_seconds)
+    house.fuel_seconds -= worked
+    house.last_collect = now
+    return worked
+
+
+async def fuel(user: User, crop_id: str, quantity: int, registry: Registry | None = None, now: float | None = None) -> float:
+    """Pour crops into the active pet's tank (like the magnet meter). Worth = sell price x `fuel_minutes_per_value`. Returns seconds added.
+    The tank is capped: only the crops that fit are used."""
+    reg = registry or get_registry()
+    now = time.time() if now is None else now
+    crop = reg.find_item(crop_id)
+    if crop is None or crop.crop is None or crop.sell_price <= 0:
+        raise PetError("Only crops work as fuel.")
+    await _pet_to_look_after(user, None, reg)
+    per_crop = crop.sell_price * reg.pet_score.fuel_minutes_per_value * 60
+    cap = tank_cap_seconds(reg)
+    have = await user.item_quantity(crop_id)
+    used = {}
+
+    def pour(house: Pethouse) -> None:
+        _settle(house, now, reg)
+        room = max(0.0, cap - house.fuel_seconds)
+        n = min(quantity, have, int(room // per_crop) + (1 if room % per_crop else 0))
+        used["n"] = n
+        used["added"] = min(room, n * per_crop)
+        house.fuel_seconds += used["added"]
+
+    await user.update_pethouse(pour)
+    if used["n"] < 1:
+        raise PetError("The tank is full." if have else f"You don't have any {crop.name}.")
+    await user.remove_item(crop_id, used["n"])
+    return used["added"]
+
+
+def haul_skill(house: Pethouse, pet: Pet, skill_xp: dict[str, int]) -> str | None:
+    """The skill a pet's haul goes to: its own, or for a global pet the one you have the most xp in."""
+    if pet.skill in skill_xp:
+        return pet.skill
+    return max(skill_xp, key=skill_xp.get) if pet.skill == "global" and skill_xp else None
+
+
+async def collect(user: User, registry: Registry | None = None, now: float | None = None) -> tuple[str | None, int, float]:
+    """Bank the active pet's idle haul (skill xp, burning fuel). Returns (skill, xp, hours worked). Empty tank: nothing."""
+    from cococap.services import pet_score as ps
+
+    reg = registry or get_registry()
+    now = time.time() if now is None else now
+    await user.refresh()
+    house = user.pethouse
+    pet = reg.pets.get(house.active) if house.active else None
+    owned = house.pets.get(house.active) if pet else None
+    if pet is None or owned is None:
+        raise PetError("You need a pet to look after.")
+    xps = {s: (await user.skill(s)).xp for s in ("mining", "fishing", "foraging", "farming")}
+    skill = haul_skill(house, pet, xps)
+    done: dict = {}
+
+    def settle(h: Pethouse) -> None:
+        done["worked"] = _settle(h, now, reg)
+
+    await user.update_pethouse(settle)
+    hours = done["worked"] / 3600
+    others = [(reg.pets[k], o) for k, o in user.pethouse.pets.items() if k != house.active]
+    side = ps.sidekick_bonus(others, reg)
+    xp = round(ps.haul_xp_per_hour(ps.score(pet, owned, registry=reg), side, registry=reg) * hours) if skill else 0
+    if xp > 0 and skill:
+        await user.add_xp(skill, xp)
+    return skill, xp, hours
+
+
+async def lend_tool(user: User, instance_id: str | None, pet_id: str | None = None, registry: Registry | None = None) -> None:
+    """Lend one of your tools to a pet (None takes it back). Equipment checks that the tool is not equipped are done by the caller (equipment.py)."""
+    reg = registry or get_registry()
+    target = await _pet_to_look_after(user, pet_id, reg)
+
+    def put(house: Pethouse) -> None:
+        house.pets[target].lent_tool = instance_id
+
+    await user.update_pethouse(put)
 
 
 # ---- getting pets -------------------------------------------------------------------------------------------
@@ -374,6 +471,8 @@ async def feed(user: User, food_id: str, quantity: int, registry: Registry | Non
         gained = round(worth * quantity * boost)
         outcome.update(before=pet_level(owned.xp, reg.pets[target].rarity, reg), boost=boost, gained=gained)
         owned.xp += gained
+        if food.pet_food is not None:  # skill food (not crops) also starts the timed xp buff
+            owned.buff_until = time.time() + reg.pet_score.food_buff_minutes * 60
         outcome["after"] = pet_level(owned.xp, reg.pets[target].rarity, reg)
 
     await user.update_pethouse(eat)
