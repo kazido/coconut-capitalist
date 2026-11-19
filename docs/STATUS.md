@@ -10,12 +10,11 @@ trading, parties, casino and minigames, crafting, ranks, wiki, per-skill stats p
 Screens are consolidated into tab pages (33 registered). Item ids are prefixed (`<category>_<name>`), emoji named by id. Combat is PAUSED (code kept).
 
 ## Plans still open (`docs/plans/`)
-- `tools-smithing.md`: APPROVED. Tools become 1 primary + 2 secondary dropped parts, Smithing light skill, salvage, accessories, notices/changelog first.
+- `tools-smithing.md`: APPROVED. Tools become 3 dropped parts (base + trim + accent), Smithing light skill, salvage, accessories, notices/changelog first.
 - `area-gating.md`: features need area + level. Written, NOT approved or built.
 - `foraging-materials-needed.md`: foraging has too few materials; needs designer input.
 - `starred-materials.md`: drops wired in all 4 skills; open: zone->forest text rename, late upgrade costs, UI check.
 - `notes-2026-11-18.md`: bigger ideas (fuels, recipe rebalance, tutorial/lore, screen streamlining).
-- `ui_emoji_progress.md`: open emoji art items (ship icons; all location icons are done).
 
 ## Known open items
 - Balance is guesses (`TODO(balance)`): mining locations, axe/can road stats, shipment sizes, radar costs, fishing/foraging/farming capstones, Forest 14 unlock,

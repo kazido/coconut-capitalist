@@ -9,9 +9,10 @@ owner wants a player shop later where cool tools are worth selling. Goal: every 
 built through a new light Smithing skill, and old tools are tradeable/salvageable so used tools have value. The player shop itself is a later plan.
 
 Owner's decisions (interview, 2026-11-19):
-- **Parts are generic and drop from all skills.** Two part types fit any tool: a tool = **1 Primary + 2 Secondaries**. You pick the tool kind
-  (pickaxe/rod/axe/can) when smithing. The Primary is the working end (pick head, axe blade, rod reel, can body) and gives the most power.
-- **No tool tiers. Power = sum of the parts' power.** Each part has a tier; a higher tier part grants more power (a Primary more than a Secondary).
+- **Parts are generic and drop from all skills.** Three part types, all required: a tool = **1 Base + 1 Trim + 1 Accent**
+  (changed 2026-11-19, was primary + 2 secondaries). You pick the tool kind (pickaxe/rod/axe/can) when smithing. Base = the working end
+  (pick head, axe blade, rod reel, can body), Trim = what you hold (handle, pole), Accent = a wrap, line or spout.
+- **No tool tiers. Power = sum of the parts' power.** Each part has a tier; a higher tier part grants more power (power per type per tier in config).
   Max tool = 3 high-tier parts with the traits you want; a 3+3+1 is a fine starter build.
 - **Part tier is random by rarity, weighted by area.** Higher areas make high tiers more common. Hard cap: a player in area A can roll at most
   about tier A+2 (area 1 -> tier 3 at best, rarely). No lucky jackpots far above your area.
@@ -36,13 +37,14 @@ Owner's decisions (interview, 2026-11-19):
 
 ## Art (decided first, 2026-11-19)
 Two layers, so no tool combination ever needs its own drawing:
-- **List emoji = kind + Primary tier.** One hand-drawn base sprite per kind (4, owner-approved), recoloured by script into 7 tier palettes
-  (like the ores' brightness-ramp recolours in `art/`) = **28 generated emoji** (`tool_<kind>_t<n>`). Parts in lists: one sprite each for Primary and
-  Secondary, tier-tinted the same way = **14 emoji** (`part_primary_t<n>`, `part_secondary_t<n>`).
+- **One colour per tier, shared by all parts** (`TIERS` in `art/gen/tool_layers.py`): 1 wood, 2 stone, 3 iron, 4 gold, 5 platinum,
+  6 emerald/crystal, 7 void. A base 3 / trim 3 / accent 1 tool is an iron head, iron handle, wood wrap.
+- **List emoji = kind + Base tier.** One hand-drawn sprite per kind (4, owner-approved; generator `art/gen/tool_layers.py`), all three layers
+  coloured tier n = **28 generated emoji** (`tool_<kind>_t<n>`). Parts in lists: one sprite each for Base, Trim and Accent, tier-tinted the
+  same way = **21 emoji** (`part_base_t<n>`, `part_trim_t<n>`, `part_accent_t<n>`).
 - **Tool page image = rendered by Pillow at runtime**, shown big in the tool view (attachment in a Components V2 Thumbnail/MediaGallery). It is made
-  of layers so you can see the parts: the Primary's working end (its tier palette), Secondary 1 drawn as the shaft/handle/pole (its palette),
-  Secondary 2 as a small accent (wrap, line, band, nozzle; its palette). Each kind's base sprite is drawn once in these 3 layers (art pipeline
-  `art/sprites/` TOML with a layer letter per pixel), exported as layer masks the bot recolours.
+  of the 3 layers so you can see the parts, each in its own part's tier colour. Each kind is drawn once in these layers (letters P/H/A per
+  pixel in the generator), which the bot recolours.
 - **Cosmetics exist only in the image** (rendered, no extra emoji): rare named palettes (Obsidian, Frostforged, Sunsteel...) that override the
   layer palettes, backgrounds/frames (forge glow, starfield, gilded border), and effect overlays (sparkles, embers, frost, glow aura). Each is a small
   asset or a draw function; a tool stores e.g. `{"palette": "sunsteel", "frame": "gilded", "overlay": "embers"}`; most tools have none, rare ones
@@ -52,12 +54,12 @@ Two layers, so no tool combination ever needs its own drawing:
   that it renders every kind x cosmetic without error and stays small.
 
 ## Design (data first)
-- `configs/smithing.toml` (new): part types (primary, secondary), part tier table (power per tier per type), area weights per tier + the "area + 2" cap, trait pool
+- `configs/smithing.toml` (new): part types (base, trim, accent), part tier table (power per tier per type), area weights per tier + the "area + 2" cap, trait pool
   (id, name, stat, amount per quality, which tool kinds it fits, how many traits a fresh part rolls by rarity), quality grades (odds by smithing
   level, multiplier), cosmetic chance, smithing xp, level gates (max part tier by level, part swap unlock level). Mark guesses `TODO(balance)`.
 - Parts are **instances**, not stackable items (each has its own tier + traits): reuse `item_instances` (`ItemInstanceRow`, `cococap/db/tables.py:85`)
-  with template ids `part_primary` / `part_secondary`; `rolled = {"tier": n}`, plus a new JSON `traits` list.
-- Tool instances gain columns: `smith_id` (original smith), `parts` (JSON: primary + 2 secondaries in shaft/accent order, each with tier and
+  with template ids `part_base` / `part_trim` / `part_accent`; `rolled = {"tier": n}`, plus a new JSON `traits` list.
+- Tool instances gain columns: `smith_id` (original smith), `parts` (JSON: base, trim, accent, each with tier and
   the trait picked from it), `quality`, `cosmetic` (JSON look: palette/frame/overlay or empty). Tool templates collapse to one per kind (`tool_pickaxe`, `tool_rod`, `tool_axe`, `tool_can`; sword stays paused).
   Alembic migration 0011 adds the columns (`tests/test_db_migrations.py`).
 - Stats: `services/equipment.effective_stats` (`equipment.py:37`) already merges template + rolled + enchants into stat names the engines read.
@@ -75,14 +77,14 @@ Two layers, so no tool combination ever needs its own drawing:
   Shop (fixed, no traits), rarer ones in each skill's drop table with rolled traits.
 - **Light skills page:** the Skills page (`cococap/screens/skills.py`) becomes a `TabsScreen` with tabs Skills (the 4 now) and Light skills
   (Smithing now; a list driven by the registry so later light skills just appear). Light skills have level + xp only.
-- UI (no new top-level screen): the **Tools page** (`screens/` tools tabs) gets tabs: Tools (equip, enchant), Smithing (pick kind -> pick 1 primary + 2
-  secondaries -> pick up to 3 traits -> Smith), Parts (list with tier and traits), Salvage. Tool view: the rendered image, parts, traits,
+- UI (no new top-level screen): the **Tools page** (`screens/` tools tabs) gets tabs: Tools (equip, enchant), Smithing (pick kind -> pick a base, a trim
+  and an accent -> pick up to 3 traits -> Smith), Parts (list with tier and traits), Salvage. Tool view: the rendered image, parts, traits,
   quality, smith, cosmetic.
   Remove the Upgrade tab.
 - Reset migration (0012): for every player, score their old tools by chain position (plain step 1-3, fork, fork upgrades) and grant starter
-  parts from a table in `smithing.toml` (`[[legacy_grant]]`: best old step -> e.g. 1 primary + 2 secondaries of tier N with 1-2 traits);
+  parts from a table in `smithing.toml` (`[[legacy_grant]]`: best old step -> e.g. a base, trim and accent of tier N with 1-2 traits);
   stat-enchant levels become bits; ability enchants come back as their scrolls. Delete the instances; every player gets the 4 free starters
-  (1 primary + 2 secondaries, plain tier 1, smith = the game, not salvageable). Back up `data/cococap.db` first. A notification explains it.
+  (base + trim + accent, plain tier 1, smith = the game, not salvageable). Back up `data/cococap.db` first. A notification explains it.
 
 ## Part A (build first, independent): player notifications + changelog
 - **Notifications:** `configs/notices.toml` (or `docs/`-free data file) lists notices `{id, date, title, body}`; a player sees every notice
@@ -99,7 +101,7 @@ Two layers, so no tool combination ever needs its own drawing:
 
 ## Steps (each a commit; item-id removals land on master first and alone)
 1. Plan doc in `docs/plans/tools-smithing.md` (this file, trimmed) + STATUS line.
-1b. Art first: 4 layered base sprites (owner approves), the tier palettes, the 28 tool + 14 part emoji generated, and `cococap/art_runtime.py`
+1b. Art first: 4 layered base sprites (owner approves), the tier palettes, the 28 tool + 21 part emoji generated, and `cococap/art_runtime.py`
    rendering a tool image with 2-3 sample cosmetics; Pillow made a runtime dependency. Owner reviews a sheet of rendered combos before step 2.
 2. Registry + config: `smithing.toml`, models (parts, traits, quality, accessory), loader validation, tests for the config shape.
 3. `services/smithing.py` + part instances + migration 0011 (columns); unit tests: power sum, 3-trait cap, quality roll, area tier cap,

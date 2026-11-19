@@ -1,4 +1,4 @@
-"""The Pets, Shipments and Casino stat pages: existing numbers show at once, new counters start from the update and count once per record."""
+"""The Pets, Shipments and Casino (inside Minigames) stat pages: existing numbers show at once, new counters start from the update and count once per record."""
 
 import pathlib
 import random
@@ -11,7 +11,7 @@ from cococap.registry import get_registry
 from cococap.services import blackjack as bj
 from cococap.services import highlow as hl
 from cococap.services import pets, shipments as sh
-from cococap.services.stats_casino import page as casino_page
+from cococap.services.stats import stat_pages
 from cococap.services.stats_pets import page as pets_page
 from cococap.services.stats_shipments import page as shipments_page
 from cococap.user import User
@@ -26,6 +26,11 @@ SERVICES = pathlib.Path(__file__).resolve().parents[1] / "cococap" / "services"
 def stake_bits(monkeypatch):
     """Bets are placed in purse here, so the casino tests don't depend on the luckbucks setting."""
     monkeypatch.setattr("cococap.constants.CASINO_CURRENCY", "purse")
+
+
+async def casino_page(user, _stats):
+    """The casino numbers now sit in the Minigames page."""
+    return next(p for p in await stat_pages(user) if p.key == "minigames")
 
 
 def rows(page):
@@ -129,7 +134,7 @@ async def test_a_blackjack_fold_counts_what_was_lost_once(db):
 
 
 # ---- the pages render in the Stats tab ----------------------------------------------------------------
-@pytest.mark.parametrize("key, label", [("pets", "Pets owned"), ("shipments", "Total bits paid"), ("casino", "Total wagered")])
+@pytest.mark.parametrize("key, label", [("pets", "Pets owned"), ("shipments", "Total bits paid"), ("minigames", "Total wagered")])
 async def test_each_page_renders_in_the_stats_dropdown(db, key, label):
     nav, inter = await hub("player", tab="stats")
     await choose(nav, inter, select_named(nav, "Pick a page"), key)

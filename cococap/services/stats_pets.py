@@ -14,7 +14,7 @@ async def page(user: User, stats: dict[str, int]) -> StatPage:
         pet_level(owned.xp, reg.pets[pid].rarity, reg) for pid, owned in house.pets.items() if pid in reg.pets
     ]
     active = reg.pets[house.active].name if house.active in reg.pets else "None"
-    return StatPage("pets", "Pets", emojis.icon("scroll", "📊"), [
+    return StatPage("pets", "Pets", emojis.icon("pets", "🐾"), [
         ("Collection", [
             ("Pets owned", len(house.pets)),
             ("Highest pet level", max(levels, default=0)),

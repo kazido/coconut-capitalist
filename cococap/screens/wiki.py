@@ -26,6 +26,7 @@ class WikiScreen(Screen):
         self.skill = "fishing"
         self.item: str | None = None
         self.page = 0
+        self.part = 0  # which page of a multi-page topic (wiki.GROUPS)
 
     async def build(self) -> Page:
         reg = get_registry()
@@ -40,7 +41,13 @@ class WikiScreen(Screen):
         if self.topic == "items":
             body += self._item_lookup(reg)
         else:
-            body += [text(block) for block in wiki.page(self.topic, reg)]
+            parts = wiki.parts(self.topic)
+            self.part = min(self.part, len(parts) - 1)
+            if len(parts) > 1:
+                body.append(row(button(emoji=emojis.icon('prev', '◀️'), disabled=self.part == 0, on_click=self._turn_part(-1)),
+                                button(f"{self.part + 1}/{len(parts)}", disabled=True),
+                                button(emoji=emojis.icon('next', '▶️'), disabled=self.part >= len(parts) - 1, on_click=self._turn_part(1))))
+            body += [text(block) for block in wiki.page(parts[self.part], reg)]
         return Page(f"Wiki: {name}", body, accent=0x3498DB)
 
     def _item_lookup(self, reg) -> list:
@@ -66,7 +73,7 @@ class WikiScreen(Screen):
         return parts
 
     async def _pick_topic(self, interaction: discord.Interaction, values: list[str]) -> None:
-        self.topic = values[0]
+        self.topic, self.part = values[0], 0
         await self.refresh(interaction)
 
     async def _pick_skill(self, interaction: discord.Interaction, values: list[str]) -> None:
@@ -76,6 +83,13 @@ class WikiScreen(Screen):
     async def _pick_item(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.item = values[0]
         await self.refresh(interaction)
+
+    def _turn_part(self, step: int):
+        async def turn(interaction: discord.Interaction) -> None:
+            self.part += step
+            await self.refresh(interaction)
+
+        return turn
 
     def _turn(self, step: int):
         async def turn(interaction: discord.Interaction) -> None:
