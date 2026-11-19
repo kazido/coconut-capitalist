@@ -27,6 +27,9 @@ def scroll_skills(item_id: str, registry: Registry | None = None) -> list[str]:
         found.append("fishing")  # a boss's or a water's own scroll (fishing.toml `scroll = { item, odds }`)
     if "mining" not in found and reg.mining and (reg.mining.descent.second_wind_item == item_id or any(t.scroll and t.scroll.item == item_id for t in reg.mining.mine_types)):
         found.append("mining")  # a mine's own scroll (mining.toml [[mine_types]] scroll, or [descent] second_wind_item)
+    farm = reg.farming
+    if "farming" not in found and farm and (farm.anomaly_scroll and farm.anomaly_scroll.item == item_id or any(i.crop and i.crop.scroll and i.crop.scroll.item == item_id for i in reg.items.values())):
+        found.append("farming")  # a crop's own scroll (items.toml `[crop_x.crop] scroll`) or the anomaly scroll (farming.toml)
     tree_items = {s.scroll.item for s in (*reg.foraging.species, *reg.foraging.chopping.grains) if s.scroll} if reg.foraging else set()
     if item_id in tree_items:
         found.append("foraging")  # a species' or grain's own scroll (foraging.toml `scroll = { item, odds }`)

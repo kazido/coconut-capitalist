@@ -110,7 +110,7 @@ def test_sharp_eye_makes_good_chops_more_likely():
 # ---- finding scrolls ------------------------------------------------------------------------------------------------------
 def test_every_skill_has_its_own_scrolls():
     own = {"mining": {"scroll_echo_strike", "scroll_second_wind", "scroll_prospectors_ping"}, "fishing": {"scroll_double_hook", "scroll_steady_line", "scroll_net_cast"},
-           "foraging": {"scroll_double_strike", "scroll_timber", "scroll_ember_bite"}, "farming": {"scroll_seedkeeper"}}
+           "foraging": {"scroll_double_strike", "scroll_timber", "scroll_ember_bite"}, "farming": {"scroll_seedkeeper", "scroll_golden_sprout"}}
     for skill, mine in own.items():
         found = {i.id for i in REG.items.values() if i.category == "scroll" and skill in scrolls.scroll_skills(i.id, REG)}
         assert found == mine, skill
@@ -130,11 +130,10 @@ def test_scrolls_are_rare_about_one_every_few_hours_in_each_skill():
         assert 1 / 12 <= rate <= 1 / 2, f"{skill}: a scroll every {1 / rate:.1f} hours"
 
 
-def test_farming_scrolls_are_about_one_a_week_at_most():
-    # nine plots watered every hour for a week is ~1,500 growth cycles (one chance each): the very busiest farmer should see under one scroll a week
-    weekly = 9 * 24 * 7 / REG.scrolls.farming.odds
-    assert weekly <= 1, f"farming: {weekly:.1f} scrolls a week for a nonstop farmer"
-    assert weekly >= 0.3, "farming scrolls are now almost never"
+def test_farming_has_no_general_scroll_pool_any_more():
+    # each farming scroll comes from one crop (or from anomaly harvests): the rates are in tests/test_ability_scrolls.py
+    assert REG.scrolls.farming is None
+    assert REG.item("crop_lemon").crop.scroll.item == "scroll_seedkeeper"
 
 
 def test_foraging_has_no_general_scroll_pool_any_more():

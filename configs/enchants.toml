@@ -73,6 +73,18 @@ type = "stat_add"
 stat = "seed_back"
 amount = 0.04
 
+[golden_sprout]
+name = "Golden Sprout"
+emoji = "✨"
+description = "A planting may grow golden: 3% chance per level, and its harvest is tripled (shown on the field)."
+applies_to = ["can"]
+max_level = 3  # TODO(balance): the 3% per level is a guess
+
+[[golden_sprout.effects]]
+type = "stat_add"
+stat = "golden_chance"
+amount = 0.03
+
 [echo_strike]
 name = "Echo Strike"
 emoji = "🔁"

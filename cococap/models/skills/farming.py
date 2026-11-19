@@ -17,6 +17,7 @@ class Plot(BaseModel):
     watered: int = -1  # the hour you last watered this plot (once per hour)
     zone: int = 0  # the farm zone (1-based) this crop was planted in: its byproducts and stars come from there, even if you move on. 0 = planted before zones: use the seed's own zone
     tended: int = 0  # growth cycles whose byproducts you have already collected (Tend); back to 0 when the plot is planted or harvested
+    golden: bool = False  # Golden Sprout: this planting grew golden (triple harvest); set at planting, cleared at harvest
 
 
 def _plot() -> Plot:

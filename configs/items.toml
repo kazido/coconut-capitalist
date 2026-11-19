@@ -224,6 +224,7 @@ price = 0
 sell_price = 35000
 
 [crop_lemon.crop]
+scroll = { item = "scroll_seedkeeper", odds = 40 }  # Seedkeeper comes only from lemon harvests: 1 in 40. TODO(balance)
 seed = "seed_lemon"
 min_harvest = 3
 max_harvest = 5
@@ -2098,7 +2099,7 @@ enchant = "net_cast"
 [scroll_seedkeeper]
 name = "Scroll of the Seedkeeper"
 description = "More plants go to seed."
-wiki = "Use it from your inventory (Enchant) to put Seedkeeper on a watering can. One use."
+wiki = "Use it from your inventory (Enchant) to put Seedkeeper on a watering can. One use. Only Lemon harvests drop it, now and then."
 emoji = "📜"
 rarity = 4
 skill = "farming"
@@ -2108,6 +2109,20 @@ sell_price = 400000  # TODO(balance)
 
 [scroll_seedkeeper.scroll]
 enchant = "seedkeeper"
+
+[scroll_golden_sprout]
+name = "Scroll of the Golden Sprout"
+description = "A plant may grow golden: its harvest is tripled."
+wiki = "Use it from your inventory (Enchant) to put Golden Sprout on a watering can. One use. Only anomaly harvests drop it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "farming"
+category = "scroll"
+price = 0
+sell_price = 1500000  # TODO(balance)
+
+[scroll_golden_sprout.scroll]
+enchant = "golden_sprout"
 
 [scroll_echo_strike]
 name = "Scroll of Echo Strike"

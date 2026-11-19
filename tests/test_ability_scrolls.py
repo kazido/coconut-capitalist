@@ -1,5 +1,6 @@
 """Ability scrolls: an enchant that is a visible ability (Echo Strike is the first), and a scroll that only one mine type can drop."""
 
+import copy
 from collections import Counter
 from random import Random
 
@@ -18,8 +19,10 @@ from cococap.services.equipment import equip
 from cococap.services.fishing import FishingError
 from tests.test_hub import buttons, click, hub
 from cococap.screens.forage import ember_line, timber_note
+from cococap.services import farming as fm
 from cococap.services.equipment import equip
 from cococap.user import User
+from tests.test_farm_fields import skip_zone_gate, work_zone
 
 REG = get_registry()
 RULES = REG.mining
@@ -455,3 +458,116 @@ async def test_a_water_drops_its_scroll_only_in_that_water(db):
             cast.press(arrow, cast.bite_at + 2)
         await f.land(user, cast, REG, now=cast.bite_at + 3, rng=Always(2))  # every 1-in-N roll hits
     assert await user.item_quantity(STEADY.id) == 1  # only the cadrega_canals catch dropped it
+
+
+# ---- Golden Sprout and Seedkeeper (watering can enchant; one source each: anomaly harvests, and lemon) ----------------------
+GOLDEN_SCROLL = REG.item("scroll_golden_sprout")
+SEED_SCROLL = REG.item("scroll_seedkeeper")
+FARM_T0 = 1_800_000_000 // 3600 * 3600
+FARM_SURE = copy.copy(REG)
+FARM_SURE.farming = REG.farming.model_copy(update={"grow_chance": 1.0, "blessing_chance": 0.0})
+
+
+class Always(Random):
+    """Every chance roll hits (random() is 0)."""
+
+    def random(self):
+        return 0.0
+
+
+class Never(Random):
+    """No chance roll hits (random() is just under 1)."""
+
+    def random(self):
+        return 0.999999
+
+
+class Rigged(Random):
+    """Only the 1-in-N rolls whose N is in `hits` come up 1; every other 1-in-N roll misses."""
+
+    def __init__(self, hits):
+        super().__init__(0)
+        self.hits = set(hits)
+
+    def randint(self, a, b):
+        return a if b in self.hits else b
+
+
+@pytest.fixture
+async def farm_open(db, monkeypatch):
+    skip_zone_gate(monkeypatch)
+    await work_zone(await User.get(1), len(REG.farming.field_seeds))
+
+
+async def grown_plots(user, seeds, enchant_rng):
+    """Plant one seed per plot (plot 1 with `enchant_rng`), then let them all ripen."""
+    for number, seed in enumerate(seeds, start=1):
+        await user.add_item(seed, 1)
+        await fm.plant(user, number, seed, now=FARM_T0, registry=FARM_SURE, rng=enchant_rng if number == 1 else Never())
+    await fm.sync(user, FARM_T0 + 1000 * 3600, FARM_SURE)
+
+
+async def tin_can(user, **enchants):
+    inst = await user.give_instance("tool_can_tin", enchants=enchants)
+    await equip(user, "farming", inst.id)
+
+
+def test_golden_sprout_is_a_can_enchant_with_a_scroll_from_anomalies_only():
+    enchant = REG.enchant("golden_sprout")
+    assert enchant.emoji and enchant.applies_to == ["can"] and enchant.max_level == 3
+    assert GOLDEN_SCROLL.scroll.enchant == "golden_sprout" and GOLDEN_SCROLL.category == "scroll" and GOLDEN_SCROLL.emoji
+    assert REG.farming.anomaly_scroll.item == GOLDEN_SCROLL.id
+    assert scrolls.scroll_skills(GOLDEN_SCROLL.id, REG) == ["farming"]
+
+
+def test_seedkeeper_comes_only_from_lemon_harvests():
+    assert scrolls.scroll_skills(SEED_SCROLL.id, REG) == ["farming"]
+    crops = [i.id for i in REG.items.values() if i.crop and i.crop.scroll]
+    assert crops == ["crop_lemon"] and REG.item("crop_lemon").crop.scroll.item == SEED_SCROLL.id
+
+
+async def test_golden_sprout_only_works_with_the_enchant(db, farm_open):
+    user = await User.get(1)
+    await tin_can(user, golden_sprout=3)
+    await user.add_item("seed_apple", 1)
+    await fm.plant(user, 1, "seed_apple", now=FARM_T0, registry=FARM_SURE, rng=Always())
+    assert fm.plot_of(await user.skill("farming"), 1).golden
+    bare = await User.get(2)
+    await work_zone(bare, len(REG.farming.field_seeds))
+    await equip(bare, "farming", (await bare.give_instance("tool_can_tin")).id)
+    await bare.add_item("seed_apple", 1)
+    await fm.plant(bare, 1, "seed_apple", now=FARM_T0, registry=FARM_SURE, rng=Always())
+    assert not fm.plot_of(await bare.skill("farming"), 1).golden
+
+
+async def test_a_golden_plot_shows_and_triples_its_harvest_once(db, farm_open):
+    user = await User.get(1)
+    await tin_can(user, golden_sprout=3)
+    await grown_plots(user, ["seed_apple", "seed_apple"], Always())
+    views = fm.plot_views(await user.skill("farming"), FARM_SURE)
+    assert views[0].golden and not views[1].golden
+    plain = await fm.harvest(user, 2, Random(1), now=FARM_T0 + 1000 * 3600, registry=FARM_SURE)
+    golden = await fm.harvest(user, 1, Random(1), now=FARM_T0 + 1000 * 3600, registry=FARM_SURE)
+    assert golden.golden and not plain.golden
+    assert golden.amount == 3 * plain.amount
+    assert not fm.plot_of(await user.skill("farming"), 1).golden  # the flag is spent with the harvest
+
+
+async def test_apple_and_lemon_never_drop_the_golden_scroll_outside_anomalies(db, farm_open):
+    user = await User.get(1)
+    await grown_plots(user, ["seed_apple", "seed_lemon"], Never())
+    no_anomaly = Rigged({REG.farming.anomaly_scroll.odds, REG.item("crop_lemon").crop.scroll.odds})  # Seedkeeper's 1-in-40 hits; the 1-in-25 anomaly misses, so no golden
+    lemon = await fm.harvest(user, 2, no_anomaly, now=FARM_T0 + 1000 * 3600, registry=FARM_SURE)
+    assert not lemon.anomaly and GOLDEN_SCROLL.id not in lemon.extras and SEED_SCROLL.id in lemon.extras
+    anomaly = Rigged({REG.farming.anomaly_odds, REG.farming.anomaly_scroll.odds})
+    apple = await fm.harvest(user, 1, anomaly, now=FARM_T0 + 1000 * 3600, registry=FARM_SURE)
+    assert apple.anomaly and GOLDEN_SCROLL.id in apple.extras and SEED_SCROLL.id not in apple.extras
+
+
+async def test_each_farming_source_drops_its_scroll_and_nothing_else(db, farm_open):
+    user = await User.get(1)
+    await grown_plots(user, ["seed_lemon"], Never())
+    lemon = await fm.harvest(user, 1, Rigged({REG.item("crop_lemon").crop.scroll.odds}), now=FARM_T0 + 1000 * 3600, registry=FARM_SURE)
+    assert SEED_SCROLL.id in lemon.extras and GOLDEN_SCROLL.id not in lemon.extras
+    assert (await user.item_quantity(SEED_SCROLL.id)) == 1
+

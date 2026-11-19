@@ -237,12 +237,18 @@ class Registry:
         problems += self._validate_recipes()
         problems += self._validate_smithing()
         if self.scrolls is not None:
-            for skill in ("mining", "foraging", "farming"):
+            for skill in ("mining", "foraging"):
                 source = getattr(self.scrolls, skill)
                 if source is None:
                     continue
                 problems += [f"scrolls.toml [{skill}]: '{i}' is not a scroll item" for i in source.pool
                              if i not in self.items or self.items[i].category != "scroll"]
+        if self.farming is not None:
+            crop_scrolls = [(f"crop '{i.id}'", i.crop.scroll) for i in self.items.values() if i.crop and i.crop.scroll]
+            crop_scrolls.append(("anomaly_scroll", self.farming.anomaly_scroll))
+            for where, scroll in crop_scrolls:
+                if scroll is not None and (scroll.item not in self.items or self.items[scroll.item].category != "scroll"):
+                    problems.append(f"farming {where}: '{scroll.item}' is not a scroll item")
         if self.foraging is not None:
             tree_scrolls = [(f"species '{sp.id}'", sp.scroll) for sp in self.foraging.species] + [(f"grain '{g.id}'", g.scroll) for g in self.foraging.chopping.grains]
             for where, scroll in tree_scrolls:

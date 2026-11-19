@@ -60,11 +60,19 @@ def foraging(reg: Registry | None = None) -> Lookup:
     return lookup
 
 
+def crop_scroll(item_id: str, reg: Registry) -> Odds | None:
+    """A scroll a crop gives when harvested (1 in its odds harvests), or the Golden Sprout scroll (1 in odds anomalies: 1 in anomaly_odds harvests first)."""
+    if (anomaly := reg.farming.anomaly_scroll) and anomaly.item == item_id:
+        return Odds(anomaly.odds * reg.farming.anomaly_odds, "harvests")
+    odds = [i.crop.scroll.odds for i in reg.items.values() if i.crop and i.crop.scroll and i.crop.scroll.item == item_id]
+    return Odds(min(odds), "harvests of that crop") if odds else None
+
+
 def farming(reg: Registry | None = None) -> Lookup:
     reg = reg or get_registry()
 
     def lookup(item_id: str) -> Odds | None:
-        return _scroll("farming", item_id, reg) or _own_drop(item_id, reg, "drop rolls")
+        return crop_scroll(item_id, reg) or _own_drop(item_id, reg, "drop rolls")
 
     return lookup
 

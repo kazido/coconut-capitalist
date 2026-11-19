@@ -44,6 +44,13 @@ class Drop(_Data):
         return self
 
 
+class CropScroll(_Data):
+    """A scroll one crop alone can drop: 1 in `odds` harvests of that crop (farming rolls it once per harvest)."""
+
+    item: str
+    odds: int = Field(ge=1)
+
+
 class Crop(_Data):
     """Present on a harvested crop item."""
 
@@ -51,6 +58,7 @@ class Crop(_Data):
     min_harvest: int = Field(ge=1)
     max_harvest: int = Field(ge=1)
     pet_xp: int = Field(default=0, ge=0)
+    scroll: CropScroll | None = None  # the scroll only this crop can drop when harvested (see CropScroll)
 
     @model_validator(mode="after")
     def _ordered(self):
@@ -702,6 +710,7 @@ class FarmingRules(_Data):
     max_drop_rolls: int = Field(ge=1)  # ...but never more than this many times
     starter_seeds: dict[str, int]  # a free gift of seeds the first time you farm
     anomaly_odds: int = Field(ge=1)  # 1 in N per harvest
+    anomaly_scroll: CropScroll | None = None  # the scroll an anomaly can drop: 1 in odds anomalies (Golden Sprout)
     xp_per_cycle: int = Field(ge=0)  # xp for a harvest = the seed's growth cycles x this: a long crop pays for the waiting
     deed_item: str
     field_seeds: list[str]  # the seed each field opens, in field order (14, one per farming location)
@@ -1463,7 +1472,7 @@ class ScrollSource(_Data):
 class ScrollRules(_Data):
     mining: ScrollSource | None = None  # no mining scrolls for now (their enchant was retired); the loader and roll skip a missing source
     foraging: ScrollSource | None = None  # none: foraging's scrolls come from one species or grain each (TreeScroll)
-    farming: ScrollSource
+    farming: ScrollSource | None = None  # none: farming's scrolls come from one crop or from anomalies each (CropScroll)
 
 
 class ShipmentRules(_Data):
