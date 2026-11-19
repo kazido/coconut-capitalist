@@ -17,6 +17,13 @@ The LEAD draws art itself (the owner found Sonnet/Haiku art poor). Don't delegat
   across all files). Lookups: `cococap/emojis.py` (`icon/ui/get/Lazy/for_id`); models' `.emoji` already resolve by these names with a
   Unicode fallback. Custom emoji do NOT render in button/select labels: use `emoji=`.
 
+## Source scripts for the approved sets (`art/gen/`)
+Every icon drawn in Nov 2026 comes from a script here; edit the script, re-run it, never hand-edit its TOML:
+`ui_icons.py` -> `art/sprites/ui_pages.toml` (run: `python art/gen/ui_icons.py art/sprites/ui_pages.toml`), `trees.py` -> `species.toml`,
+`zones_<skill>.py <out.toml> art/gen` -> `locations_<skill>.toml`, `batch2.py art/gen` -> `ui_actions2.toml` (dig, combat, reactor:
+the ANIMATED ones; copy its `emit(..., frames)` + `shift()`/`spark()` pattern to animate any other icon: 3-5 frames, 70-240 ms each).
+Animated sprites build to `.webp`; delete the old `art/out/<name>.png` before uploading or the uploader marks the name INVALID.
+
 ## How to draw (what produced the approved sets)
 1. Write a scratch script in the session scratchpad using `art/draw.py` (`Canvas`, `ell`, `circ`, `union`; `shade` = 4-tone ramp lit
    top-left). Shapes from math/explicit pixel lists, never freehand-typed rows. Write its `toml()` into `art/sprites/<file>.toml`.

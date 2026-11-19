@@ -59,6 +59,8 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["B011"]
+# Art generator scripts: masks are built as lambdas in loops on purpose (each one is used right away).
+"art/gen/*" = ["B023", "B905"]
 # Pre-migration modules that are skipped at startup (constants.DISABLED_EXTENSIONS) and still
 # reference removed helpers (F821). Remove each line as the module is ported.
 "cococap/exts/skills/combat.py" = ["F821"]
