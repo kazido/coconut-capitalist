@@ -62,7 +62,7 @@ class PetScreen(Screen):
         bar = xp_bar((mine.xp - low) / (high - low) if level < rules.max_level and high > low else 1.0)
         body.append(text(
             f"### {pet.emoji} {pet.name}  {stars_text(mine.stars)}  ·  Lv {level}" + (f"  ·  {emojis.icon('check', '✅')} active" if focus == house.active else "")
-            + f"\n-# {pet.description}"
+            + f"\n-# {pets.max_buffs(pet)} (max level)"
             + f"\n{bar}  " + (f"{mine.xp - low:,}/{high - low:,} xp" if level < rules.max_level else "max level")
             + "\n" + "\n".join(f"{emojis.icon('next', '▸')} {line}" for line in pets.describe(pet, mine, reg))
             + f"\n{skill_line(pet)}"))
@@ -197,7 +197,7 @@ class OrbScreen(Screen):
 
     async def _hunt(self, interaction: discord.Interaction, values: list[str]) -> None:
         pet = await pets.set_target(self.user, None if values[0] == "none" else values[0])
-        await self.refresh(interaction, f"{emojis.icon('target', '🎯')} Orbs now favour {pet.emoji} **{pet.name}**.\n-# {pet.description}" if pet else f"{emojis.icon('target', '🎯')} You are not hunting anything now.")
+        await self.refresh(interaction, f"{emojis.icon('target', '🎯')} Orbs now favour {pet.emoji} **{pet.name}**.\n-# {pets.max_buffs(pet)} (max level)" if pet else f"{emojis.icon('target', '🎯')} You are not hunting anything now.")
 
     def _open_orb(self, orb_id: str):
         async def go(interaction: discord.Interaction) -> None:
@@ -212,7 +212,7 @@ class OrbScreen(Screen):
         pet = got.pet
         mine = self.user.pethouse.pets[pet.id]  # (open_orb has refreshed the player)
         lines = [f"### {pet.emoji} {pet.name}  {stars_text(got.stars)}" + (f"  {emojis.icon('target', '🎯')} **Target hit!**" if got.target_hit else ""),
-                 f"-# {pet.description}",
+                 f"-# {pets.max_buffs(pet)} (max level)",
                  "**A new friend!**" if got.is_new else (f"Another {pet.name}! It now has **{got.stars}** stars." if not got.maxed
                                                         else f"You already have a five-star {pet.name}: it gains {reg.economy.pets.maxed_xp:,} xp instead."),
                  "\n".join(f"{emojis.icon('next', '▸')} {line}" for line in pets.describe(pet, mine, reg)), skill_line(pet)]

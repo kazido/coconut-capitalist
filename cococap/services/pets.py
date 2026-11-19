@@ -149,6 +149,11 @@ def describe(pet: Pet, owned: OwnedPet, registry: Registry | None = None) -> lis
     return lines
 
 
+async def max_buffs(pet: Pet) -> str:
+    """The pet's buffs at max level with one star, in words (the numbers the wiki lists)."""
+    return " · ".join(bonus.text.format(v=bonus.value) for bonus in pet.bonuses)
+
+
 async def bonuses(user: User, registry: Registry | None = None) -> dict[str, float]:
     """Everything your active pet is giving you right now, as {stat: amount}. Empty with no active pet."""
     reg = registry or get_registry()

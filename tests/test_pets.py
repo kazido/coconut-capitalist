@@ -585,7 +585,7 @@ async def test_the_pet_page_puts_the_description_under_the_name_and_stars_only_o
     head = next(c.content for c in nav.walk_children() if isinstance(c, ui.TextDisplay) and "Haze" in c.content and "###" in c.content)
     lines = head.splitlines()
     assert "Haze" in lines[0] and "⭐⭐⭐" in lines[0]
-    assert lines[1] == f"-# {REG.pets['haze'].description}"  # right under the name, above the xp bar
+    assert lines[1] == f"-# {pets.max_buffs(REG.pets['haze'])} (max level)"  # right under the name, above the xp bar
     assert "Global 🌐" in head and "Looks after" not in head and "any food" not in head
     menu = select_named(nav, "Look at a pet")
     assert [o.label for o in menu.options] == ["Drizzle ⭐⭐", "Haze ⭐⭐⭐"]  # unicode stars in the dropdown label (custom emoji do not render there)
