@@ -5,6 +5,7 @@ from dataclasses import dataclass, field, replace
 from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
+from cococap.services import accessories
 from cococap.user import User
 
 # Which kind of tool each skill uses.
@@ -117,7 +118,9 @@ async def equipped_stats(user: User, skill: str, registry: Registry | None = Non
     base = effective_stats(instance, registry)
     from cococap.services import mastery  # (mastery only needs the user, so there is no cycle at run time)
 
-    extra = mastery.stats((await user.skill(skill)).mastery, registry)
+    extra = dict(mastery.stats((await user.skill(skill)).mastery, registry))
+    for stat, amount in (await accessories.bonus(user, skill, registry)).items():  # worn accessories add to the tool's stats
+        extra[stat] = extra.get(stat, 0.0) + amount
     if not extra:
         return base
     return replace(base, stats={**base.stats, **{k: base.stats.get(k, 0.0) + v for k, v in extra.items()}})

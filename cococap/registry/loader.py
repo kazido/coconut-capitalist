@@ -8,12 +8,13 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import LOCATIONS_PER_AREA, AreaRules, ChangelogEntry, LegacyTool, MarketRules, Notice, Location, ScrollRules, ShipmentRules, SmithingRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
+from .models import LOCATIONS_PER_AREA, AccessoryRules, AreaRules, ChangelogEntry, LegacyTool, MarketRules, Notice, Location, ScrollRules, ShipmentRules, SmithingRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
 # Stats the engines read that no enchant gives any more (their scrolls were retired; smithing part traits give them now).
-TRAIT_ONLY_STATS = frozenset({"power", "scholar", "appraise", "rich_chance", "ore_yield", "good_chop", "crop_yield", "danger_reduction"})
+TRAIT_ONLY_STATS = frozenset({"power", "scholar", "appraise", "rich_chance", "ore_yield", "good_chop", "crop_yield", "danger_reduction",
+                              "bite_speed", "wear_slow", "rare_luck", "drop_luck"})  # the last four: accessory traits (configs/accessories.toml)
 
 
 class RegistryError(Exception):
@@ -95,6 +96,7 @@ class Registry:
         changelog: list[ChangelogEntry] | None = None,
         legacy_tools: dict[str, LegacyTool] | None = None,
         market: MarketRules | None = None,
+        accessories: AccessoryRules | None = None,
     ):
         # Player news, newest first (a stable sort keeps the file order for entries of the same day, so write new ones at the top).
         self.notices: list[Notice] = sorted(notices or [], key=lambda n: n.date, reverse=True)
@@ -118,6 +120,7 @@ class Registry:
         self.shipments = shipments
         self.smithing = smithing
         self.legacy_tools: dict[str, LegacyTool] = legacy_tools or {}  # frozen old upgrade-chain tools (configs/legacy_tools.toml)
+        self.accessories = accessories  # skill gear: 2 slots per skill (configs/accessories.toml)
         self.market = market  # the Travelling Merchant and Black Market (configs/market.toml)
         self.scrolls = scrolls
         self.recipes: dict[str, Recipe] = {r.id: r for r in recipes or []}
@@ -216,6 +219,19 @@ class Registry:
         known = {getattr(e, "stat", None) for enchant in self.enchants.values() for e in enchant.effects} | TRAIT_ONLY_STATS
         return [f"smithing.toml [{t.id}]: unknown stat '{t.stat}'" for t in self.smithing.trait_pool if t.stat not in known]
 
+    def _validate_accessories(self) -> list[str]:
+        """Accessory traits and templates must name stats the engines read, and every template needs its item entry."""
+        if self.accessories is None:
+            return []
+        known = {getattr(e, "stat", None) for enchant in self.enchants.values() for e in enchant.effects} | TRAIT_ONLY_STATS
+        problems = [f"accessories.toml [{t.id}]: unknown stat '{t.stat}'" for t in self.accessories.trait_pool if t.stat not in known]
+        for t in self.accessories.templates:
+            problems += [f"accessories.toml [{t.id}]: unknown stat '{s}'" for s in t.stats if s not in known]
+            item = self.items.get(t.id)
+            if item is None or item.category != "accessory":
+                problems.append(f"items.toml: accessory '{t.id}' needs an item entry with category 'accessory'")
+        return problems
+
     def _validate_mining(self, rules: MiningRules) -> list[str]:
         return _validate_mining_items(self, rules)
 
@@ -236,6 +252,7 @@ class Registry:
                     problems.append(f"{item.id}: seed.grows_into '{item.seed.grows_into}' is not a crop")
         problems += self._validate_recipes()
         problems += self._validate_smithing()
+        problems += self._validate_accessories()
         if self.scrolls is not None:
             for skill in ("mining", "foraging"):
                 source = getattr(self.scrolls, skill)
@@ -466,6 +483,7 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     raw_legacy = _read(config_dir, "legacy_tools")
     legacy_tools = dict(zip(raw_legacy, _build(LegacyTool, "legacy_tools", raw_legacy.items()), strict=True))
     market = _build(MarketRules, "market", [("market", _read(config_dir, "market"))])[0]
+    accessories = _build(AccessoryRules, "accessories", [("accessories", _read(config_dir, "accessories"))])[0]
     scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
     recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
     notices = _build(Notice, "notices", ((n.get("id", f"#{i}"), n) for i, n in enumerate(_read(config_dir, "notices").get("notice", []))))
@@ -475,7 +493,7 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     changelog = _build(ChangelogEntry, "changelog", ((f"entry {i + 1}", e) for i, e in enumerate(_read(config_dir, "changelog").get("entry", []))))
     return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools,
                     shipments, scrolls, recipes, areas, locations, notices=notices, changelog=changelog, smithing=smithing,
-                    legacy_tools=legacy_tools, market=market)
+                    legacy_tools=legacy_tools, market=market, accessories=accessories)
 
 
 def _name_waters(rules: FishingRules, locations: dict[str, list[Location]]) -> FishingRules:

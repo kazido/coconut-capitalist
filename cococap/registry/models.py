@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from cococap import emojis
 
 Skill = Literal["farming", "foraging", "fishing", "mining", "combat", "shepherding"]
-Category = Literal["material", "tool", "key_item", "pet_item", "pet_food", "crop", "seed", "fish", "scroll", "bait", "part"]
+Category = Literal["material", "tool", "key_item", "pet_item", "pet_food", "crop", "seed", "fish", "scroll", "bait", "part", "accessory"]
 ToolKind = Literal["pickaxe", "axe", "sword", "rod", "can"]
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -187,7 +187,7 @@ class Item(_Data):
     @property
     def is_instance(self) -> bool:
         """Tools and smithing parts are unique objects (own tier/traits/enchants); everything else is a stackable counter."""
-        return self.tool is not None or self.category == "part"
+        return self.tool is not None or self.category in ("part", "accessory")
 
     @property
     def buyable(self) -> bool:
@@ -1728,6 +1728,81 @@ class SmithingRules(_Data):
 
     def quality(self, name: str) -> Quality:
         return next(q for q in self.grades if q.name == name)
+
+
+# ---- Accessories (configs/accessories.toml) ----------------------------------------------------------------------------------
+ACCESSORY_SKILLS = ("mining", "foraging", "fishing", "farming")
+ACCESSORY_RARITIES = 7
+
+
+class AccessoryTrait(_Data):
+    id: str
+    name: str
+    stat: str  # a stat the engines read (the same names enchants and part traits use)
+    amount: float = Field(gt=0)  # value on a rarity-1 accessory; a rarer one multiplies it (AccessoryRules.value)
+    skills: list[str] = Field(min_length=1)
+
+    @field_validator("skills")
+    @classmethod
+    def _skills_known(cls, v: list[str]) -> list[str]:
+        if any(s not in ACCESSORY_SKILLS for s in v):
+            raise ValueError(f"accessory trait skills must be among {ACCESSORY_SKILLS}")
+        return v
+
+
+class AccessoryTemplate(_Data):
+    id: str  # acc_<skill>_<name>
+    name: str
+    skill: str
+    rarity: int = Field(ge=1, le=ACCESSORY_RARITIES)
+    stats: dict[str, float] = Field(default_factory=dict)  # the accessory's own base bonus
+    shop_price: int = Field(default=0, ge=0)  # bits in the Shop (0 = drop only)
+
+    @field_validator("skill")
+    @classmethod
+    def _skill_known(cls, v: str) -> str:
+        if v not in ACCESSORY_SKILLS:
+            raise ValueError(f"accessory skill must be among {ACCESSORY_SKILLS}")
+        return v
+
+
+class AccessoryRules(_Data):
+    slots_per_skill: int = Field(ge=1, le=5)
+    drop_chance: float = Field(ge=0, le=1)
+    traits_by_rarity: list[int] = Field(min_length=ACCESSORY_RARITIES, max_length=ACCESSORY_RARITIES)
+    rarity_mult: list[float] = Field(min_length=ACCESSORY_RARITIES, max_length=ACCESSORY_RARITIES)
+    trait_pool: list[AccessoryTrait] = Field(alias="trait", min_length=1)
+    templates: list[AccessoryTemplate] = Field(alias="accessory", min_length=1)
+
+    @model_validator(mode="after")
+    def _sane(self):
+        ids = [t.id for t in self.trait_pool]
+        if len(set(ids)) != len(ids):
+            raise ValueError("accessory trait ids must be unique")
+        tids = [t.id for t in self.templates]
+        if len(set(tids)) != len(tids):
+            raise ValueError("accessory ids must be unique")
+        for t in self.templates:
+            if not t.id.startswith(f"acc_{t.skill}_"):
+                raise ValueError(f"accessory '{t.id}' must be named acc_{t.skill}_<name>")
+        if any(n < 0 for n in self.traits_by_rarity) or any(m <= 0 for m in self.rarity_mult):
+            raise ValueError("traits_by_rarity must be >= 0 and rarity_mult > 0")
+        return self
+
+    def template(self, template_id: str) -> AccessoryTemplate:
+        return next(t for t in self.templates if t.id == template_id)
+
+    def trait(self, trait_id: str) -> AccessoryTrait:
+        return next(t for t in self.trait_pool if t.id == trait_id)
+
+    def traits_for(self, skill: str) -> list[AccessoryTrait]:
+        return [t for t in self.trait_pool if skill in t.skills]
+
+    def trait_count(self, rarity: int) -> int:
+        return self.traits_by_rarity[rarity - 1]
+
+    def value(self, trait: AccessoryTrait, rarity: int) -> float:
+        return trait.amount * self.rarity_mult[rarity - 1]
 
 
 # ---- Part market (configs/market.toml) ---------------------------------------------------------------------------------------------

@@ -49,8 +49,8 @@ weights = [1, 4, 12, 22, 28, 22, 11]      # TODO(balance)
 # Traits: a named bonus picked from one part. `stat` is a stat name the engines already read (the same names
 # enchants use). `amounts` = the value at each quality grade (Crude, Fine, Superb, Masterwork), scaled by quality mult.
 # `kinds` = which tool kinds the trait fits.
-# TODO(design): part traits must become GENERIC only (any part fits any tool kind); the skill traits below
-# (Vein Sense, Ore Bounty, Steady Hold, Sharp Cut, Fertile Blade) move to the skill accessories. Retune later.
+# Part traits are GENERIC only (any part fits any tool kind). The skill traits (Vein Sense, Ore Bounty, Steady Hold, Sharp Cut,
+# Seasoned, Lure, Deepcall, Fertile Blade, Gleaner) live on accessories now (configs/accessories.toml). TODO(balance) for more generic ones.
 # Traits are STAT bonuses only. Abilities (double_hook, double_strike, seedkeeper, steady_line, soloist)
 # stay enchants, one per tool. Amounts are in each stat's own unit: TODO(balance) in step 4.
 [[trait]]
@@ -71,43 +71,13 @@ name = "Appraiser's Eye"
 stat = "appraise"
 amounts = [1, 2, 3, 4]                    # TODO(balance)
 kinds = ["pickaxe", "rod", "axe", "can"]
-[[trait]]
-id = "vein_sense"
-name = "Vein Sense"
-stat = "rich_chance"
-amounts = [1, 2, 3, 4]                    # TODO(balance)
-kinds = ["pickaxe"]
-[[trait]]
-id = "ore_bounty"
-name = "Ore Bounty"
-stat = "ore_yield"
-amounts = [1, 2, 3, 4]                    # TODO(balance)
-kinds = ["pickaxe"]
-[[trait]]
-id = "steady_hold"
-name = "Steady Hold"
-stat = "danger_reduction"
-amounts = [1, 2, 3, 4]                    # TODO(balance)
-kinds = ["pickaxe", "axe"]
-[[trait]]
-id = "sharp_cut"
-name = "Sharp Cut"
-stat = "good_chop"
-amounts = [1, 2, 3, 4]                    # TODO(balance)
-kinds = ["axe"]
-[[trait]]
-id = "fertile_blade"
-name = "Fertile Blade"
-stat = "crop_yield"
-amounts = [1, 2, 3, 4]                    # TODO(balance)
-kinds = ["can"]
 
 # How many traits a freshly dropped part rolls, by part rarity.
 [fresh_traits]
 common = 1                                # TODO(balance)
 uncommon = 2
 rare = 3
-epic = 4
+epic = 3                                # TODO(balance): capped at the 3 generic part traits (only 3 exist now)
 
 # Quality grades a smithed tool can get. `mult` scales the tool's power and every trait amount.
 # `base_odds` are percent weights; `levels.quality_shift_per_level` moves percent points off Crude per smithing level.

@@ -1,0 +1,129 @@
+# Accessories: small gear worn beside a skill's tool, 2 slots per skill (services/accessories.py). Their stats are added to the
+# tool's stats in services/equipment.py, so every engine reads them unchanged. Plan: docs/plans/accessories.md.
+# Everything here is balance data. TODO(balance) marks first guesses.
+
+slots_per_skill = 2
+# Chance that ONE skill action also drops a rolled accessory (a rarer one with traits). Most actions give nothing.
+drop_chance = 0.005                       # TODO(balance)
+# Traits a rolled accessory gets, by its rarity (index 0 = rarity 1).
+traits_by_rarity = [0, 1, 1, 2, 2, 3, 3]  # TODO(balance)
+# Trait value rule: a trait's `amount` is its value on a rarity-1 accessory. A rarer accessory multiplies it by
+# rarity_mult[rarity - 1]. (Amounts are the level-1 values of the old stat enchants, in each stat's own unit.)
+rarity_mult = [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2]   # TODO(balance)
+
+# Traits: a named bonus rolled onto a drop. `skills` = where it can roll (ids are unique; a trait may sit in several pools).
+[[trait]]
+id = "vein_sense"
+name = "Vein Sense"
+stat = "rich_chance"
+amount = 0.03                             # TODO(balance)
+skills = ["mining"]
+[[trait]]
+id = "ore_bounty"
+name = "Ore Bounty"
+stat = "ore_yield"
+amount = 0.06                             # TODO(balance)
+skills = ["mining"]
+[[trait]]
+id = "steady_hold"
+name = "Steady Hold"
+stat = "danger_reduction"
+amount = 0.03                             # TODO(balance)
+skills = ["mining", "foraging"]
+[[trait]]
+id = "sharp_cut"
+name = "Sharp Cut"
+stat = "good_chop"
+amount = 0.05                             # TODO(balance)
+skills = ["foraging"]
+[[trait]]
+id = "seasoned"
+name = "Seasoned"
+stat = "wear_slow"
+amount = 0.15                             # TODO(balance)
+skills = ["foraging"]
+[[trait]]
+id = "lure"
+name = "Lure"
+stat = "bite_speed"
+amount = 0.10                             # TODO(balance)
+skills = ["fishing"]
+[[trait]]
+id = "deepcall"
+name = "Deepcall"
+stat = "rare_luck"
+amount = 0.10                             # TODO(balance)
+skills = ["fishing"]
+[[trait]]
+id = "fertile_blade"
+name = "Fertile Blade"
+stat = "crop_yield"
+amount = 0.06                             # TODO(balance)
+skills = ["farming"]
+[[trait]]
+id = "gleaner"
+name = "Gleaner"
+stat = "drop_luck"
+amount = 0.12                             # TODO(balance)
+skills = ["farming"]
+[[trait]]
+id = "scholar"
+name = "Scholar"
+stat = "scholar"
+amount = 0.05                             # TODO(balance)
+skills = ["mining", "foraging", "fishing", "farming"]
+
+# Templates: 2 per skill. The basic one (rarity 1, no traits) is sold in the Shop for `shop_price` bits;
+# the rare one (rarity 5, two traits) only drops. `stats` = the accessory's own small base bonus.
+[[accessory]]
+id = "acc_mining_gloves"
+name = "Work Gloves"
+skill = "mining"
+rarity = 1
+stats = { ore_yield = 0.02 }              # TODO(balance)
+shop_price = 300                          # TODO(balance)
+[[accessory]]
+id = "acc_mining_headlamp"
+name = "Headlamp"
+skill = "mining"
+rarity = 5
+stats = { rich_chance = 0.02 }            # TODO(balance)
+[[accessory]]
+id = "acc_foraging_satchel"
+name = "Forager's Satchel"
+skill = "foraging"
+rarity = 1
+stats = { wear_slow = 0.05 }              # TODO(balance)
+shop_price = 300                          # TODO(balance)
+[[accessory]]
+id = "acc_foraging_pruners"
+name = "Pruning Shears"
+skill = "foraging"
+rarity = 5
+stats = { good_chop = 0.02 }              # TODO(balance)
+[[accessory]]
+id = "acc_fishing_bobber"
+name = "Bobber Charm"
+skill = "fishing"
+rarity = 1
+stats = { bite_speed = 0.03 }             # TODO(balance)
+shop_price = 300                          # TODO(balance)
+[[accessory]]
+id = "acc_fishing_reel"
+name = "Brass Reel"
+skill = "fishing"
+rarity = 5
+stats = { rare_luck = 0.02 }              # TODO(balance)
+[[accessory]]
+id = "acc_farming_apron"
+name = "Gardening Apron"
+skill = "farming"
+rarity = 1
+stats = { crop_yield = 0.02 }             # TODO(balance)
+shop_price = 300                          # TODO(balance)
+[[accessory]]
+id = "acc_farming_trowel"
+name = "Golden Trowel"
+skill = "farming"
+rarity = 5
+stats = { drop_luck = 0.02 }              # TODO(balance)

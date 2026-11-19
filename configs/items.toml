@@ -2287,3 +2287,92 @@ skill = "mining"
 category = "part"
 price = 0
 sell_price = 0
+
+# Accessories (configs/accessories.toml): unique instances like parts. Shop price lives in accessories.toml (shop_price).
+[acc_mining_gloves]
+name = "Work Gloves"
+description = "A worn pair of gloves. Worn beside your pickaxe for a small mining bonus."
+wiki = "Worn in one of the two accessory slots of a skill (Tools > Accessories). Sold in the Shop."
+emoji = "acc_mining_gloves"
+rarity = 1
+skill = "mining"
+category = "accessory"
+price = 0
+sell_price = 0
+
+[acc_mining_headlamp]
+name = "Headlamp"
+description = "Lights the dark seams. Rare accessory: its traits are rolled when it drops."
+wiki = "Dropped by mining now and then. Worn in one of the two accessory slots of a skill."
+emoji = "acc_mining_headlamp"
+rarity = 5
+skill = "mining"
+category = "accessory"
+price = 0
+sell_price = 0
+
+[acc_foraging_satchel]
+name = "Forager's Satchel"
+description = "Keeps your finds tidy. Worn beside your axe for a small foraging bonus."
+wiki = "Worn in one of the two accessory slots of a skill (Tools > Accessories). Sold in the Shop."
+emoji = "acc_foraging_satchel"
+rarity = 1
+skill = "foraging"
+category = "accessory"
+price = 0
+sell_price = 0
+
+[acc_foraging_pruners]
+name = "Pruning Shears"
+description = "Sharp enough to cut clean. Rare accessory: its traits are rolled when it drops."
+wiki = "Dropped by foraging now and then. Worn in one of the two accessory slots of a skill."
+emoji = "acc_foraging_pruners"
+rarity = 5
+skill = "foraging"
+category = "accessory"
+price = 0
+sell_price = 0
+
+[acc_fishing_bobber]
+name = "Bobber Charm"
+description = "A lucky float. Worn beside your rod for a small fishing bonus."
+wiki = "Worn in one of the two accessory slots of a skill (Tools > Accessories). Sold in the Shop."
+emoji = "acc_fishing_bobber"
+rarity = 1
+skill = "fishing"
+category = "accessory"
+price = 0
+sell_price = 0
+
+[acc_fishing_reel]
+name = "Brass Reel"
+description = "Heavy and well oiled. Rare accessory: its traits are rolled when it drops."
+wiki = "Dropped by fishing now and then. Worn in one of the two accessory slots of a skill."
+emoji = "acc_fishing_reel"
+rarity = 5
+skill = "fishing"
+category = "accessory"
+price = 0
+sell_price = 0
+
+[acc_farming_apron]
+name = "Gardening Apron"
+description = "Full of pockets for seeds. Worn beside your can for a small farming bonus."
+wiki = "Worn in one of the two accessory slots of a skill (Tools > Accessories). Sold in the Shop."
+emoji = "acc_farming_apron"
+rarity = 1
+skill = "farming"
+category = "accessory"
+price = 0
+sell_price = 0
+
+[acc_farming_trowel]
+name = "Golden Trowel"
+description = "Turns up extra finds. Rare accessory: its traits are rolled when it drops."
+wiki = "Dropped by farming now and then. Worn in one of the two accessory slots of a skill."
+emoji = "acc_farming_trowel"
+rarity = 5
+skill = "farming"
+category = "accessory"
+price = 0
+sell_price = 0

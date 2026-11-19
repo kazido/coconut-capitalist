@@ -36,10 +36,6 @@ def traits_fitting(kind: str) -> list[str]:
     return [t.id for t in RULES.traits_for(kind)]
 
 
-def traits_not_fitting(kind: str) -> list[str]:
-    return [t.id for t in RULES.trait_pool if kind not in t.kinds]
-
-
 async def three_parts(user: User, tiers=(1, 1, 1), traits=(None, None, None)) -> dict[str, int]:
     ids = {}
     for slot, tier, trait in zip(PARTS, tiers, traits, strict=True):
@@ -72,12 +68,13 @@ async def test_smith_refuses_two_picks_from_one_part():
         await smith_with(user, ids, picks={ids["base"]: [a, b]})
 
 
-async def test_smith_refuses_a_trait_that_does_not_fit_the_kind():
+async def test_smith_refuses_a_trait_the_part_does_not_carry():
+    # every part trait fits every kind now, so the rule that still matters is: pick only what the part holds
     user = await player(level=10)
-    bad = traits_not_fitting("can")[0]
-    ids = await three_parts(user, traits=(bad, None, None))
+    a, b = traits_fitting("pickaxe")[:2]
+    ids = await three_parts(user, traits=(a, None, None))
     with pytest.raises(GameRuleError):
-        await smith_with(user, ids, picks={ids["base"]: bad}, kind="can")
+        await smith_with(user, ids, picks={ids["base"]: b}, kind="pickaxe")
 
 
 async def test_smith_refuses_a_part_of_the_wrong_type():
