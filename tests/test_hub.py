@@ -494,13 +494,17 @@ async def test_mining_screen_reactor_buttons(db):
     await click(nav, inter, "Insert gems")
     assert (await user.skill("mining")).reactor.core_1.gem_id == "key_gemstone_sanity"
     assert "Inserted: Sanity" in all_text(nav)
-    await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")  # picking an ore says exactly what feeding it does
-    assert "full needs" in all_text(nav) and find_button(nav, "Feed 1").disabled  # (no copper to feed)
+    assert "no mining materials to feed" in all_text(nav)  # nothing owned: no dropdown to pick from
     await user.add_item("material_copper_ore", 30)
     nav, inter = await hub("reactor")
+    await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")  # picking an ore says exactly what feeding it does
+    assert "full needs" in all_text(nav)
     await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")
     await click(nav, inter, "Feed 10")
-    assert "Fed the magnet **10 Copper Ore**" in all_text(nav) and (await user.skill("mining")).magnet_meter == 10 and await user.item_quantity("material_copper_ore") == 20
+    from cococap.services.mining import magnet_value
+
+    cu = magnet_value("material_copper_ore", get_registry())
+    assert "Fed the magnet **10 Copper Ore**" in all_text(nav) and (await user.skill("mining")).magnet_meter == 10 * cu and await user.item_quantity("material_copper_ore") == 20
     await click(nav, inter, "Magnet on")
     assert (await user.skill("mining")).magnet_on is False and find_button(nav, "Magnet off")
     assert find_button(nav, "Claim lodes").disabled

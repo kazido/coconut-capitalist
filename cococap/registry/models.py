@@ -496,7 +496,7 @@ class MagnetRules(_Data):
     level: int = Field(ge=1)
     capacity: int = Field(ge=1)
     drain_per_row: float = Field(default=0.0, ge=0)  # meter points one dug row uses while the magnet marks it
-    values: dict[str, int]
+    bits_per_point: int = Field(ge=1)  # a material gives sell_price // bits_per_point meter points (at least 1)
 
 
 class ScarabPrize(_Data):

@@ -91,7 +91,7 @@ class ReactorScreen(Screen):
         lodes, loot = await mining.claim_lodes(self.user, random.Random(), fed_out=fed)
         reg = get_registry()
         found = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in loot.items()) or "nothing"
-        into = f" {sum(reg.mining.magnet.values[i] * q for i, q in fed.items()):,} meter went into the magnet ({', '.join(f'{q:,} {reg.item(i).name}' for i, q in fed.items())})." if fed else ""
+        into = f" {sum(mining.magnet_value(i, reg) * q for i, q in fed.items()):,} meter went into the magnet ({', '.join(f'{q:,} {reg.item(i).name}' for i, q in fed.items())})." if fed else ""
         await self.refresh(interaction, f"Claimed {lodes:,} lodes: {found}.{into}")
 
     async def _insert(self, interaction: discord.Interaction) -> None:
@@ -120,12 +120,17 @@ class ReactorScreen(Screen):
         parts = [text(f"### Magnet\n{bar(meter / magnet.capacity, 10, 'meter')}  {meter:,}/{magnet.capacity:,}  ·  ~**{rows}** rows\n"
                       f"-# Marks the richest column of each row: **{drain:g}** meter a row. Feed it outside a mine.")]
         owned = self._owned
-        options = [discord.SelectOption(label=reg.item(ore).name, value=ore, emoji=reg.item(ore).emoji or None, default=ore == self.ore,
-                                        description=f"you have {owned.get(ore, 0):,}  ·  +{value} meter each")
-                   for ore, value in magnet.values.items()]
-        parts.append(row(select("Feed the magnet with...", options, self._pick_ore)))
-        if self.ore:
-            value, have = magnet.values[self.ore], owned.get(self.ore, 0)
+        # Any mining material you own that has a meter value, most owned first (a select holds 25 at most)
+        fuel = sorted(((ore, n) for ore, n in owned.items() if mining.magnet_value(ore, reg) is not None), key=lambda kv: -kv[1])[:25]
+        if fuel:
+            options = [discord.SelectOption(label=reg.item(ore).name, value=ore, emoji=reg.item(ore).emoji or None, default=ore == self.ore,
+                                            description=f"you have {n:,}  ·  +{mining.magnet_value(ore, reg)} meter each")
+                       for ore, n in fuel]
+            parts.append(row(select("Feed the magnet with...", options, self._pick_ore)))
+        else:
+            parts.append(text("-# You have no mining materials to feed it."))
+        if self.ore and mining.magnet_value(self.ore, reg) is not None:
+            value, have = mining.magnet_value(self.ore, reg), owned.get(self.ore, 0)
             room = magnet.capacity - meter
             fits = -(-room // value) if room > 0 else 0  # (ore it takes to fill it, rounded up)
             name = reg.item(self.ore).name
@@ -160,7 +165,7 @@ class ReactorScreen(Screen):
     async def _feed(self, interaction: discord.Interaction, count: int) -> None:
         reg = get_registry()
         meter, used = await mining.deposit_ore(self.user, self.ore, count)
-        value = reg.mining.magnet.values[self.ore]
+        value = mining.magnet_value(self.ore, reg)
         await self.refresh(interaction, f"Fed the magnet **{used:,} {reg.item(self.ore).name}** (+{used * value:,} meter, now {meter:,}/{reg.mining.magnet.capacity:,}).")
 
     def _toggle(self, option: str, current: bool):

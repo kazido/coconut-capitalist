@@ -72,8 +72,8 @@ def _mining(reg: Registry) -> list[str]:
         "more (pressure), and the deeper you are the likelier a collapse. A collapse halves what you are carrying, so leave in time.",
         "**Reading the mine.** Signs tell you what lies below: ore, a rich lode, a cooling vent, a cache or a hole. Braces calm the pressure "
         f"(you start with {m.descent.braces_base}), Scarab Bombs blow a whole row, and the vault at the bottom pays big.",
-        f"**Ores** (copper, iron, gold) sell or feed the **magnet** (level {m.magnet.level}): its meter holds {_n(m.magnet.capacity)} points (an ore is worth "
-        f"{', '.join(f'{v} for a {reg.item(k).name}' for k, v in m.magnet.values.items())}) and every row you dig with it on marks the richest column and burns {m.magnet.drain_per_row:g}. "
+        f"**Ores** and other mining materials sell or feed the **magnet** (level {m.magnet.level}): its meter holds {_n(m.magnet.capacity)} points (any mining material is worth "
+        f"its sell price / {m.magnet.bits_per_point}, at least 1) and every row you dig with it on marks the richest column and burns {m.magnet.drain_per_row:g}. "
         "What is left stays for the next mine, and you can only feed it outside a mine. **Gems** are rare; with mining level {m.reactor.gem_slot_level} you can set them in the **reactor**, which also "
         "mines lodes for you while you are away.",
         "**Kinds of mine.** Every mine you enter is rolled: most are **Standard**, but now and then you get one with a twist, shown at the top of the mine before you dig. "

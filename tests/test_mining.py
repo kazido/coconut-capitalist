@@ -123,12 +123,16 @@ async def player(level=1, **items):
 
 
 async def test_magnet_deposits(db):
-    gold, iron = RULES.magnet.values["material_gold_ore"], RULES.magnet.values["material_iron_ore"]
+    gold, iron = m.magnet_value("material_gold_ore", REG), m.magnet_value("material_iron_ore", REG)
     user = await player(level=5, material_gold_ore=3, material_iron_ore=2, crop_apple=1)
     assert await m.deposit_ore(user, "material_gold_ore", 3) == (3 * gold, 3)
     assert await m.deposit_ore(user, "material_iron_ore", 2) == (3 * gold + 2 * iron, 2)
     with pytest.raises(m.MiningError, match="only takes"):
         await m.deposit_ore(user, "crop_apple", 1)
+    fish = next(i for i, it in REG.items.items() if it.category == "fish")
+    await user.add_item(fish, 1)
+    with pytest.raises(m.MiningError, match="only takes"):
+        await m.deposit_ore(user, fish, 1)
     with pytest.raises(m.MiningError, match="don't have"):
         await m.deposit_ore(user, "material_gold_ore", 1)
     await user.add_item("material_gold_ore", 100)
@@ -138,6 +142,15 @@ async def test_magnet_deposits(db):
     assert await user.item_quantity("material_gold_ore") == 100 - used
     with pytest.raises(m.MiningError, match="full"):
         await m.deposit_ore(user, "material_gold_ore", 1)
+
+
+async def test_any_mining_material_fills_the_magnet_by_its_sell_price(db):
+    # The richest mining material (a gem-like one) is worth its sell price / bits_per_point, read from the registry
+    gem = max((i for i, it in REG.items.items() if it.skill == "mining" and it.category == "material"), key=lambda i: REG.items[i].sell_price)
+    points = REG.items[gem].sell_price // RULES.magnet.bits_per_point
+    user = await player(level=5, **{gem: 2})
+    assert m.magnet_value(gem, REG) == max(1, points)
+    assert await m.deposit_ore(user, gem, 1) == (min(RULES.magnet.capacity, max(1, points)), 1)
 
 
 async def test_the_magnet_cannot_be_fed_while_you_are_in_a_mine(db):
@@ -161,12 +174,19 @@ async def test_the_auto_miner_feeds_the_magnet_first_when_you_ask_it_to_and_neve
     assert await m._feed_from_loot(user, loot, REG) == Counter()  # (off by default)
     await m.set_magnet_option(user, "magnet_auto_feed", True)
     fed = await m._feed_from_loot(user, loot, REG)
-    v = RULES.magnet.values
-    assert fed == Counter({"material_gold_ore": 10, "material_iron_ore": 5, "material_copper_ore": 7}) and "material_coal" not in fed
-    assert (await user.skill("mining")).magnet_meter == 10 * v["material_gold_ore"] + 5 * v["material_iron_ore"] + 7 * v["material_copper_ore"]
+    v = {i: m.magnet_value(i, REG) for i in loot}
+    assert fed == loot  # every mining material has a value, and the meter has room for all of it
+    assert (await user.skill("mining")).magnet_meter == sum(v[i] * q for i, q in loot.items())
     await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", RULES.magnet.capacity - 50))
     fed = await m._feed_from_loot(user, Counter({"material_gold_ore": 100}), REG)
     assert fed["material_gold_ore"] == 50 // v["material_gold_ore"] and (await user.skill("mining")).magnet_meter <= RULES.magnet.capacity  # only what fits
+    # cheapest first: with room for two of the cheap ore only, the dear gem gets nothing
+    cheap = "material_coal"
+    gem = max((i for i, it in REG.items.items() if it.skill == "mining" and it.category == "material"), key=lambda i: REG.items[i].sell_price)
+    assert m.magnet_value(cheap, REG) < m.magnet_value(gem, REG)
+    await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", RULES.magnet.capacity - 2 * m.magnet_value(cheap, REG)))
+    fed = await m._feed_from_loot(user, Counter({gem: 3, cheap: 5}), REG)
+    assert fed == Counter({cheap: 2})
     await m.set_magnet_option(user, "magnet_auto_feed", True)
     await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", 0))
     run = await m.start_run(user, Random(1))  # in a mine: no feeding

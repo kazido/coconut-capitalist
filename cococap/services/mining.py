@@ -987,7 +987,7 @@ async def claim_lodes(
         result = roll_table(table, reg, rng)
         if result:
             loot[result[0]] += result[1]
-    fed = await _feed_from_loot(user, loot, reg)  # (with the setting on, copper, iron and gold top the magnet up first)
+    fed = await _feed_from_loot(user, loot, reg)  # (with the setting on, mining materials top the magnet up first, cheapest first)
     if fed_out is not None:
         fed_out.update(fed)
     for item_id, quantity in (loot - fed).items():
@@ -995,20 +995,31 @@ async def claim_lodes(
     return claimed["lodes"], loot
 
 
+def magnet_value(item_id: str, reg: Registry) -> int | None:
+    """Meter points one item gives the magnet: its sell price / bits_per_point (at least 1). None if it is not a mining material with a price.
+    Starred variants (`_s2`, `_s3`) count the same way."""
+    item = reg.items.get(item_id)
+    if item is None or item.skill != "mining" or item.category != "material" or item.sell_price <= 0:
+        return None
+    return max(1, item.sell_price // reg.mining.magnet.bits_per_point)
+
+
 async def _feed_from_loot(user: User, loot: Counter[str], reg: Registry) -> Counter[str]:
-    """Put as much of `loot`'s copper, iron and gold into the magnet as fits, if the player has Auto-feed on and is not in a mine. Returns the ore used."""
+    """Put as much of `loot`'s mining materials into the magnet as fits, if the player has Auto-feed on and is not in a mine. Cheapest first,
+    so common ore goes in before gems and the meter fills with the most material. Returns the material used."""
     magnet = reg.mining.magnet
     mining, level = await _mining_state(user)
     if not mining.magnet_auto_feed or level < magnet.level or in_a_mine(user.id):
         return Counter()
     fed: Counter[str] = Counter()
     room = magnet.capacity - mining.magnet_meter
-    for ore, value in sorted(magnet.values.items(), key=lambda kv: -kv[1]):  # (the dearest ore first, so the meter fills with the least ore)
-        take = min(loot.get(ore, 0), room // value)
+    values = {i: v for i in loot if (v := magnet_value(i, reg)) is not None}
+    for item_id, value in sorted(values.items(), key=lambda kv: kv[1]):  # (the cheapest first)
+        take = min(loot.get(item_id, 0), room // value)
         if take > 0:
-            fed[ore] = take
+            fed[item_id] = take
             room -= take * value
-    points = sum(magnet.values[ore] * q for ore, q in fed.items())
+    points = sum(values[i] * q for i, q in fed.items())
     if points:
         await user.update_skill("mining", lambda m: setattr(m, "magnet_meter", min(magnet.capacity, m.magnet_meter + points)))
     return fed
@@ -1027,9 +1038,9 @@ async def deposit_ore(
 ) -> tuple[int, int]:
     """Feed ore to the magnet. Only as much as fits is taken. Returns (meter, ore_used)."""
     rules = (registry or get_registry()).mining
-    value = rules.magnet.values.get(item_id)
+    value = magnet_value(item_id, registry or get_registry())
     if value is None:
-        raise MiningError("The magnet only takes copper, iron and gold ore.")
+        raise MiningError("The magnet only takes mining materials.")
     if quantity < 1:
         raise MiningError("Deposit at least one.")
     mining, level = await _mining_state(user)
