@@ -1667,7 +1667,7 @@ async def test_a_click_acknowledged_too_late_still_updates_the_panel(db):
     nav.message.edit.reset_mock()
     await nav.show(inter, "shop")  # Discord refuses our answer ("this interaction failed")...
     assert nav.screen.id == "shop"
-    nav.message.edit.assert_awaited_once_with(view=nav)  # ...so the message is edited directly instead
+    nav.message.edit.assert_awaited_once_with(view=nav, attachments=[])  # ...so the message is edited directly instead
 
 
 async def test_an_already_answered_click_also_falls_back(db):
@@ -1675,7 +1675,7 @@ async def test_an_already_answered_click_also_falls_back(db):
     inter.response.edit_message = AsyncMock(side_effect=discord.InteractionResponded(inter))
     nav.message.edit.reset_mock()
     await nav.refresh(inter)
-    nav.message.edit.assert_awaited_once_with(view=nav)
+    nav.message.edit.assert_awaited_once_with(view=nav, attachments=[])
 
 
 async def test_a_real_error_is_not_swallowed_by_the_fallback(db):

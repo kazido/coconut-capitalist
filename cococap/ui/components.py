@@ -46,6 +46,11 @@ def thumb(url: str) -> ui.Thumbnail:
     return ui.Thumbnail(url)
 
 
+def gallery(url: str) -> ui.MediaGallery:
+    """A picture across the page; `url` is usually attachment://<filename> of a Page's files."""
+    return ui.MediaGallery(discord.MediaGalleryItem(url))
+
+
 def section_art(markdown: str, url: str | None, fallback: ui.Item | None = None):
     """Text with a big picture on the right; plain text (or `fallback` accessory) when there is no picture."""
     accessory = thumb(url) if url else fallback

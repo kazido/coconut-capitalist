@@ -4,7 +4,8 @@ from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import areas, crafting
 from cococap.ui import Page, Screen
-from cococap.ui.components import button, needs_text, row, select, text
+from cococap import map_runtime
+from cococap.ui.components import button, gallery, needs_text, row, select, text
 
 
 class ShipScreen(Screen):
@@ -28,7 +29,9 @@ class ShipScreen(Screen):
 
         lines = [f"### {here.emoji} {here.name}", f"-# {here.description}",
                  f"Ship: {built.emoji + ' ' + built.name if built else 'none yet'}"]
-        body = [*self.note_block(), text("\n".join(lines))]
+        # The world map: reached areas, the one ahead, and a red X where you are now.
+        map_png = map_runtime.render_map(st.current, st.highest)
+        body = [*self.note_block(), gallery("attachment://map.png"), text("\n".join(lines))]
 
         if tier is not None:
             levels = await areas._levels(self.user)
@@ -63,7 +66,7 @@ class ShipScreen(Screen):
             if recipe is not None:
                 can = await crafting.craftable_count(self.user, recipe)
                 body.append(row(button("Craft fuel", emoji=emojis.icon('flame', '⛽'), disabled=can < 1, on_click=self._fuel(recipe.id))))
-        return Page("Ship", body, accent=0x2E86C1)
+        return Page("Ship", body, accent=0x2E86C1, files=[("map.png", map_png)])
 
     async def _upgrade(self, interaction: discord.Interaction) -> None:
         tier = await areas.upgrade_ship(self.user)
