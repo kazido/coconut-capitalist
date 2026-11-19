@@ -28,38 +28,46 @@ _X = [
 _BASE: Image.Image | None = None
 _SITES: list[tuple[int, int]] | None = None
 _FOG: tuple[float, float] = (0.0, 0.0)  # fog ellipse radii (rx, ry), from world_map.json
+_UNIT = 1  # map pixels per drawing pixel: the base map is drawn at a finer grid; marks are stamped in unit-sized blocks
 
 
 def _load() -> None:
-    global _BASE, _SITES, _FOG
+    global _BASE, _SITES, _FOG, _UNIT
     if _BASE is None:
         _BASE = Image.open(_ASSETS / "world_map.png").convert("RGBA")
         data = json.loads((_ASSETS / "world_map.json").read_text(encoding="utf-8"))
         _SITES = [(int(x), int(y)) for x, y in data["sites"]]
         _FOG = (float(data["fog"][0]), float(data["fog"][1]))
+        _UNIT = int(data.get("unit", 1))
 
 
 def _stamp(img: Image.Image, left: int, top: int, rows: list[str], pal: dict[str, tuple]) -> None:
+    u = _UNIT
     for j, row in enumerate(rows):
         for i, ch in enumerate(row):
-            x, y = left + i, top + j
-            if ch in pal and 0 <= x < img.width and 0 <= y < img.height:
-                img.putpixel((x, y), pal[ch])
+            if ch not in pal:
+                continue
+            for dy in range(u):
+                for dx in range(u):
+                    x, y = left + i * u + dx, top + j * u + dy
+                    if 0 <= x < img.width and 0 <= y < img.height:
+                        img.putpixel((x, y), pal[ch])
 
 
 def _fog(img: Image.Image, sx: int, sy: int) -> None:
     """A soft parchment ellipse covering the landmark and its name label (6 px below the site): solid inside,
     checkerboard dither at the edge. The ink "?" sits at the centre."""
     rx, ry = _FOG
-    cx, cy = sx, sy + 6
+    u = _UNIT
+    cx, cy = sx, sy + 6 * u
     for y in range(max(0, cy - int(ry) - 1), min(img.height, cy + int(ry) + 2)):
         for x in range(max(0, cx - int(rx) - 1), min(img.width, cx + int(rx) + 2)):
             d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
             if d <= 0.6:
                 img.putpixel((x, y), _FOG_IN)
-            elif d <= 1.0 and (x + y) % 2 == 0:
+            elif d <= 1.0 and (x // u + y // u) % 2 == 0:
                 img.putpixel((x, y), _FOG_EDGE)
-    _stamp(img, cx - 1, cy - 2, _QUESTION, {"o": _INK})
+    _stamp(img, cx - 1 * u, cy - 2 * u, _QUESTION, {"o": _INK})
 
 
 def _art_version() -> str:
@@ -96,7 +104,7 @@ def render_map(
     for i in range(revealed, count):
         _fog(img, *_SITES[i])
     cx, cy = _SITES[current]
-    _stamp(img, cx + 4, cy - 14, _X, {"o": _INK, "R": _RED})
+    _stamp(img, cx + 4 * _UNIT, cy - 14 * _UNIT, _X, {"o": _INK, "R": _RED})
     img = img.resize((img.width * scale, img.height * scale), Image.NEAREST)
     buf = io.BytesIO()
     img.save(buf, "PNG")

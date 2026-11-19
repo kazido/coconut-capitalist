@@ -12,6 +12,7 @@ from tests.test_hub import hub
 DATA = json.loads((map_runtime._ASSETS / "world_map.json").read_text(encoding="utf-8"))
 W, H = DATA["size"]
 SITES = [tuple(s) for s in DATA["sites"]]
+UNIT = DATA.get("unit", 1)  # map pixels per drawing pixel
 RX, RY = DATA["fog"]
 FOG = {(0xE6, 0xCF, 0x98, 255), (0xD6, 0xB9, 0x7C, 255)}
 RED = (0xE8, 0x28, 0x1C, 255)
@@ -41,8 +42,8 @@ def test_default_scale_is_the_display_scale():
 def test_x_marks_the_current_area():
     im = _image(render_map(3, 3, scale=SCALE, cache_dir=None))
     sx, sy = SITES[3]
-    near = [im.getpixel((x, y)) for x in range((sx - 12) * SCALE, (sx + 12) * SCALE)
-            for y in range((sy - 16) * SCALE, (sy + 4) * SCALE)
+    near = [im.getpixel((x, y)) for x in range((sx - 12 * UNIT) * SCALE, (sx + 12 * UNIT) * SCALE)
+            for y in range((sy - 16 * UNIT) * SCALE, (sy + 4 * UNIT) * SCALE)
             if 0 <= x < im.width and 0 <= y < im.height]
     assert RED in near
 
