@@ -2297,7 +2297,7 @@ emoji = "acc_mining_gloves"
 rarity = 1
 skill = "mining"
 category = "accessory"
-price = 300
+price = 10000
 sell_price = 0
 
 [acc_mining_headlamp]
@@ -2319,7 +2319,7 @@ emoji = "acc_foraging_satchel"
 rarity = 1
 skill = "foraging"
 category = "accessory"
-price = 300
+price = 10000
 sell_price = 0
 
 [acc_foraging_pruners]
@@ -2341,7 +2341,7 @@ emoji = "acc_fishing_bobber"
 rarity = 1
 skill = "fishing"
 category = "accessory"
-price = 300
+price = 10000
 sell_price = 0
 
 [acc_fishing_reel]
@@ -2363,7 +2363,7 @@ emoji = "acc_farming_apron"
 rarity = 1
 skill = "farming"
 category = "accessory"
-price = 300
+price = 10000
 sell_price = 0
 
 [acc_farming_trowel]

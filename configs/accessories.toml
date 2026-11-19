@@ -81,7 +81,7 @@ name = "Work Gloves"
 skill = "mining"
 rarity = 1
 stats = { ore_yield = 0.02 }              # TODO(balance)
-shop_price = 300                          # TODO(balance)
+shop_price = 10000                        # TODO(balance)
 [[accessory]]
 id = "acc_mining_headlamp"
 name = "Headlamp"
@@ -94,7 +94,7 @@ name = "Forager's Satchel"
 skill = "foraging"
 rarity = 1
 stats = { wear_slow = 0.05 }              # TODO(balance)
-shop_price = 300                          # TODO(balance)
+shop_price = 10000                        # TODO(balance)
 [[accessory]]
 id = "acc_foraging_pruners"
 name = "Pruning Shears"
@@ -107,7 +107,7 @@ name = "Bobber Charm"
 skill = "fishing"
 rarity = 1
 stats = { bite_speed = 0.03 }             # TODO(balance)
-shop_price = 300                          # TODO(balance)
+shop_price = 10000                        # TODO(balance)
 [[accessory]]
 id = "acc_fishing_reel"
 name = "Brass Reel"
@@ -120,7 +120,7 @@ name = "Gardening Apron"
 skill = "farming"
 rarity = 1
 stats = { crop_yield = 0.02 }             # TODO(balance)
-shop_price = 300                          # TODO(balance)
+shop_price = 10000                        # TODO(balance)
 [[accessory]]
 id = "acc_farming_trowel"
 name = "Golden Trowel"
