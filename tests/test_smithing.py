@@ -284,3 +284,19 @@ def test_tier_pace():
     t7 = w[6] / sum(w)
     # one of each part type from random tier-7 drops: 3 * (1 + 1/2 + 1/3) = 5.5 tier-7 drops on average
     assert 5.5 / t7 >= 60, "a full tier-7 tool should take at least ~60 parts in the last area"
+
+
+async def test_tool_detail_page_lists_parts_tiers_traits_and_smith():
+    """Tools tab: pick a tool from the dropdown to see its parts (tier + rarity), the picked traits and who smithed it."""
+    from tests.test_hub import all_text, choose, click, hub, select_named
+
+    user = await player()
+    trait = RULES.trait_pool[0]
+    tool = await smithed_pickaxe(user, RULES.grades[0].name, traits=(trait.id, None, None), tiers=(8, 3, 1))
+    nav, inter = await hub("tools")
+    await choose(nav, inter, select_named(nav, "See a tool's details"), str(tool.id))
+    page = all_text(nav)
+    assert "Celestial" in page and "Rare" in page and "Common" in page
+    assert trait.name in page and f"<@{user.id}>" in page and "<t:" in page
+    await click(nav, inter, "Back to tools")
+    assert select_named(nav, "See a tool's details")

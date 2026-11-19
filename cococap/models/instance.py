@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import datetime
 
 
 @dataclass(frozen=True)
@@ -15,3 +16,4 @@ class ItemInstance:
     parts: dict | None = None  # smithed tools: {"base": {"tier", "trait"}, "trim": ..., "accent": ...}
     quality: str | None = None
     cosmetic: dict = field(default_factory=dict)
+    created_at: datetime | None = None  # when it was made (a smithed tool: its craft date)

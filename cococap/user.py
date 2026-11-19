@@ -505,6 +505,7 @@ class User:
             parts=dict(row.parts) if row.parts is not None else None,
             quality=row.quality,
             cosmetic=dict(row.cosmetic or {}),
+            created_at=row.created_at,
         )
 
     async def instances(self, include_unknown: bool = False) -> list[ItemInstance]:
