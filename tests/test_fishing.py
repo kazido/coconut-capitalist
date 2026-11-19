@@ -1345,12 +1345,26 @@ def fish_of(rarity, tell=None):
 def test_easy_fish_are_plain_arrows_and_tougher_ones_make_you_stop_and_reel():
     shown, actual = f.build_reel(fish_of(1), RULES, Random(1))
     assert f.REEL not in shown and f.MYSTERY not in shown and len(shown) == RL.base_length + 1
-    for rarity in range(RL.break_from_rarity, 8):
-        shown, actual = f.build_reel(fish_of(rarity), RULES, Random(2))
-        arrows = RL.base_length + rarity
-        assert shown.count(f.REEL) == arrows // RL.arrows_per_break >= 1 and len(shown) == arrows + shown.count(f.REEL)
-        assert shown[0] != f.REEL and shown[-1] != f.REEL  # you start and finish on an arrow
-        assert not any(a == b == f.REEL for a, b in zip(shown, shown[1:], strict=False))  # never two Reels in a row
+    seen, ends, many = set(), False, False
+    for seed in range(300):
+        for rarity in range(RL.break_from_rarity, 8):
+            fish = fish_of(rarity)
+            shown, actual = f.build_reel(fish, RULES, Random(seed))
+            assert len(shown) == RL.base_length + rarity  # a Reel replaces an arrow, it never adds a step
+            assert shown == actual or all(s == a or s == f.MYSTERY for s, a in zip(shown, actual, strict=True))
+            if fish.reel is None:
+                continue
+            seen.add(shown.count(f.REEL))
+            ends |= shown[0] == f.REEL or shown[-1] == f.REEL
+            many |= shown.count(f.REEL) > 1
+            for i, step in enumerate(shown):  # a Reel never takes a ❓ or an arrow a ❓ is worked out from
+                if step == f.MYSTERY:
+                    assert actual[i] != f.REEL
+                    if fish.reel.tell in ("last", "opposite"):
+                        assert actual[i - 1] != f.REEL
+                    if fish.reel.tell == "first":
+                        assert actual[0] != f.REEL
+    assert ends and many  # first/last arrows can be Reels, and there is no cap of one
 
 
 def test_only_the_toughest_fish_hide_arrows_and_more_of_them_the_rarer_they_are():
@@ -1417,7 +1431,7 @@ def test_a_player_can_work_out_every_learnable_tell_from_a_few_catches():
 
 def test_a_boss_has_breaks_but_no_hidden_arrows():
     boss = f.cast_line(rod(), Lucky(1), T0, REG)
-    assert boss.boss and f.MYSTERY not in boss.pattern and boss.pattern.count(f.REEL) == BOSS.length // RL.arrows_per_break
+    assert boss.boss and f.MYSTERY not in boss.pattern and len(boss.pattern) == BOSS.length
 
 
 # ---- pressing the new steps -------------------------------------------------------------------------------------------------
@@ -1620,7 +1634,7 @@ async def test_the_page_names_the_fish_on_the_line_so_you_can_use_what_you_have_
 def boss_with(modifier):
     entry = next(b for b in BOSS.bosses if modifier in b.modifiers)
     fixed = Lucky(1)
-    fixed.choice = lambda seq: entry if seq is BOSS.bosses or (list(seq) == list(BOSS.bosses)) else seq[0]
+    fixed.choice = lambda seq: entry if seq is BOSS.bosses or (list(seq) == list(BOSS.bosses)) else (seq[-1] if isinstance(seq, range) else seq[0])  # (a range is the Reel-or-arrow roll: keep arrows)
     return f.cast_line(rod(), fixed, T0, REG), entry
 
 

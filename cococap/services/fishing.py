@@ -185,10 +185,19 @@ def build_reel(fish: Item, rules: FishingRules, rng: random.Random, *, arrows: i
             actual[pos] = _mystery_arrow(fish.reel.tell, actual[pos - 1], actual[0])
             hidden.add(pos)
     shown = [MYSTERY if i in hidden else a for i, a in enumerate(actual)]
-    breaks = n // r.arrows_per_break if fish.rarity >= r.break_from_rarity else 0
-    for gap in sorted(rng.sample(range(1, n), min(breaks, n - 1)), reverse=True):
-        shown.insert(gap, REEL)
-        actual.insert(gap, REEL)
+    if fish.rarity >= r.break_from_rarity:
+        # A Reel REPLACES an arrow (any of them, first and last included) and there is no cap: each arrow has a
+        # 1-in-`arrows_per_break` chance. Never a ❓ (it stays hidden) and never an arrow a ❓ is worked out from.
+        protected = set(hidden)
+        tell = fish.reel.tell if fish.reel is not None and not wild else None  # a wild ❓ is a coin flip: depends on nothing
+        for pos in hidden:
+            if tell in ("last", "opposite"):
+                protected.add(pos - 1)  # the arrow just before it
+            if tell == "first":
+                protected.add(0)  # the first arrow of the reel
+        for pos in range(n):
+            if pos not in protected and rng.choice(range(r.arrows_per_break)) == 0:  # (1 in N; choice, not random(), so the tests' rigged dice stay out of it)
+                shown[pos] = actual[pos] = REEL
     return shown, actual
 
 

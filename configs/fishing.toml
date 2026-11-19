@@ -24,8 +24,8 @@ base_length = 2                  # arrows to press = this + the fish's rarity (a
 slack_bonus = 0.08               # land a fish with slack to spare and it pays this much more (of its worth) for EVERY unused slack: a clean reel earns
 max_slips = 4                    # (a power-120 rod would otherwise forgive 15, and never fail a reel)
 power_per_slip = 8               # every this much rod power forgives one wrong arrow (a power-8 rod forgives one)
-break_from_rarity = 2            # uncommon fish and up make you stop and press Reel now and then...
-arrows_per_break = 4             # ...about once per this many arrows
+break_from_rarity = 2            # uncommon fish and up swap some arrows for a Reel press...
+arrows_per_break = 4             # ...each arrow has a 1-in-this chance (any arrow, no cap; never a ❓ or one a ❓ depends on)
 mystery_from_rarity = 4          # super rare fish and up hide arrows behind a ❓ (rarity 4: one, 5: two, 6: three, 7: four)
 window = 5                       # you see the next five steps...
 fog_window = 2                   # ...or two, in a fog

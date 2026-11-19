@@ -453,8 +453,8 @@ average catch at ~4-6.5k bits and a catch at ~15-20 s, which is about what forag
 
 ### A reel with more to it: breaks and mystery arrows
 
-A reel is no longer just ◄ ► repeated. Uncommon fish and up make you **stop and press Reel** (🌀, a third button) between
-runs of arrows, about once per four arrows, in a different place every time. **Super rare fish and up hide some arrows
+A reel is no longer just ◄ ► repeated. Uncommon fish and up make you **stop and press Reel** (🌀, a third button) in place of
+some arrows: each arrow (first and last too) has a 1-in-4 chance, no cap, never a ❓ or the arrow a ❓'s tell reads. **Super rare fish and up hide some arrows
 behind a ❓** (one at rarity 4, up to four at 7). The ❓ is secretly an arrow that follows *that fish's own tell*, set in
 the data: always ◄, always ►, the opposite of the last arrow, the same as the last arrow, or the same as the FIRST arrow of the reel. No fish is pure luck (wild bosses still are). Press the ❓ and you find out what it was
 even if you guess wrong, and it is counted in your **field notes** (on the Records page). The notes only state a pattern once it is CONFIRMED
