@@ -158,7 +158,7 @@ async def collect_community_rewards(screen: Screen) -> None:
 class ForageScreen(Screen):
     id = "forage"
     label = "Foraging"
-    emoji = emojis.Lazy("ui_tree", "🌳")
+    emoji = emojis.Lazy("ui_skill_foraging", "🌳")
     description = "Chop trees alone or join the community tree"
     links = ("trees", "mastery", "releaf")
 
@@ -235,7 +235,7 @@ class ForageScreen(Screen):
                  for loc in forests],
                 self._pick_zone,
             )))
-        body.append(row(button("Chop a tree", emoji=emojis.icon("chop", "🪓"), style=discord.ButtonStyle.primary, disabled=stats is None,
+        body.append(row(button("Chop a tree", emoji=emojis.icon("chop_tree", "🪓"), style=discord.ButtonStyle.primary, disabled=stats is None,
                                on_click=self._chop),
                         button("Grain notes", emoji=emojis.icon("book", "📖"), on_click=self._notes),
                         button("Mastery", emoji=emojis.icon("star", "🌟"), on_click=self._mastery),

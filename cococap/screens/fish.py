@@ -183,7 +183,7 @@ class FishScreen(Screen):
                 body.append(text(f"-# {emojis.icon('quest', '📜')} Quests unlock at fishing level {reg.fishing.quests.min_level}."))
             body.append(text(f"{emojis.icon('basket', '🧺')} **{haul.count:,}** fish  ·  worth **{emojis.bits(haul.worth)}**" if haul.count else f"{emojis.icon('haul', '🧺')} No fish yet."))
             body.append(row(
-                button("Cast", emoji=ROD, style=discord.ButtonStyle.primary, disabled=stats is None, on_click=self._cast),
+                button("Cast", emoji=emojis.icon("cast", "🎣"), style=discord.ButtonStyle.primary, disabled=stats is None, on_click=self._cast),
                 button("Collection", emoji=emojis.icon('book', '📖'), disabled=not (fishing.quests_unlocked(level, reg.fishing) or fishing.book_unlocked(level, reg.fishing)),
                        on_click=self._collection),
             ))
@@ -194,7 +194,7 @@ class FishScreen(Screen):
 
         status = cast.status(now())
         if status == "waiting":
-            body += [text(f"### {emojis.icon('wave', '🌊')} The line is in the water…\n" + await self._wait_estimate()),
+            body += [text(f"### {emojis.icon('bobber', '🎣')} The line is in the water…\n" + await self._wait_estimate()),
                      row(button("Cancel cast", on_click=self._cancel))]
             return Page("Fishing", body, accent=ACCENT)
 

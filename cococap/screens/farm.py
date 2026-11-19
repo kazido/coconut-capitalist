@@ -20,7 +20,7 @@ PER_ROW = 3
 class FarmScreen(Screen):
     id = "farm"
     label = "Farm"
-    emoji = emojis.Lazy("ui_wheat", "🌾")
+    emoji = emojis.Lazy("ui_skill_farming", "🌾")
     description = "Plant seeds, wait for the rain, harvest"
     links = ("market", "mastery")
 
@@ -86,7 +86,7 @@ class FarmScreen(Screen):
             )))
         empty = sum(1 for v in shown if v.empty)
         body.append(row(
-            button("Harvest all", emoji=emojis.icon('basket', '🧺'), style=discord.ButtonStyle.success, disabled=not any(v.ready for v in views), on_click=self._harvest_all),
+            button("Harvest all", emoji=emojis.icon('harvest', '🧺'), style=discord.ButtonStyle.success, disabled=not any(v.ready for v in views), on_click=self._harvest_all),
             button("Water", emoji=emojis.icon('drop', '💧'), style=discord.ButtonStyle.primary,
                    disabled=can is None or not any(v.growing and not v.watered for v in views), on_click=self._water),
             button("Tend", emoji=emojis.icon('sprout', '🌿'), disabled=not farming.tend_waiting(skill, reg.farming), on_click=self._tend),
