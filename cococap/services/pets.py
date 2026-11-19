@@ -68,11 +68,11 @@ def skill_emoji(pet: Pet) -> str:
 
 
 def food_xp(item: Item, registry: Registry | None = None) -> int:
-    """What one of this food is worth before any bonus (crops: their own pet xp)."""
+    """What one of this food is worth before any bonus. Crops are 0: they are fuel for the idle tank now (`fuel`), not xp."""
     reg = registry or get_registry()
     if item.pet_food:
         return round(reg.economy.pets.food_xp[item.pet_food.tier - 1] * item.pet_food.xp_mult)
-    return crop_pet_xp(item)
+    return 0
 
 
 def food_skill(item: Item) -> str | None:
@@ -447,8 +447,10 @@ async def feed(user: User, food_id: str, quantity: int, registry: Registry | Non
     """Feed a pet (your active one unless you name another) crops or skill food. Food of the pet's skill is worth more."""
     reg = registry or get_registry()
     food = reg.find_item(food_id)
-    if food is None or (food.crop is None and food.pet_food is None):
-        raise PetError("Pets eat crops and the food your skills drop.")
+    if food is not None and food.crop is not None:
+        raise PetError("Crops are fuel now: pour them into the tank. Pets level on the food your skills drop.")
+    if food is None or food.pet_food is None:
+        raise PetError("Pets eat the food your skills drop.")
     target = await _pet_to_look_after(user, pet_id, reg)
     if quantity < 1:
         raise PetError("Feed at least one.")
