@@ -27,30 +27,6 @@ class LegacyReset:
     scrolls_given: int
 
 
-def _chain(reg: Registry, starter: str) -> dict[str, str]:
-    """Every tool on this starter's upgrade chain -> its step. A plain upgrade is 'plain', the first fork tool is 'fork',
-    and any upgrade after a fork is 'fork_up'. Walks the `upgrade` and `fork` links from the data, never by id."""
-    steps: dict[str, str] = {starter: "starter"}
-    todo = [(starter, False)]  # (template, is it on a fork branch)
-    while todo:
-        tid, forked = todo.pop()
-        tool = reg.item(tid).tool
-        if tool is None:
-            continue
-        edges = []
-        if tool.upgrade:
-            edges.append((tool.upgrade.to, False))
-        if tool.fork:
-            edges.append((tool.fork.to, True))
-        for target, is_fork in edges:
-            if target in steps:
-                continue
-            step = "fork" if is_fork else ("fork_up" if forked else "plain")
-            steps[target] = step
-            todo.append((target, is_fork or forked))
-    return steps
-
-
 def _scroll_for(reg: Registry, enchant: str) -> str | None:
     return next((i.id for i in reg.items.values() if i.scroll and i.scroll.enchant == enchant), None)
 
@@ -69,19 +45,27 @@ async def reset_player(user: User, rng: random.Random, registry: Registry | None
         return None
     reg = registry or get_registry()
     rules = _rules(reg)
-    chains = {reg.item(s).tool.kind: _chain(reg, s) for s in STARTER_TOOLS}
     rows = {g.step: g for g in rules.legacy_grants}
 
-    old: list[ItemInstance] = []
+    # An old tool has no parts, or is a frozen legacy template (configs/legacy_tools.toml). The frozen record is read,
+    # never the live item, because the old templates may be gone from items.toml by now. Smithed starters are not old.
+    old: list[tuple[ItemInstance, str]] = []  # (instance, its tool kind)
     best: dict[str, str | None] = {}  # kind -> the best step reached on that kind's chain
     enchants: list[tuple[int, str]] = []  # (level, scroll id) of every enchant on an old tool
     for inst in await user.instances():
-        item = reg.find_item(inst.template_id)
-        if item is None or item.tool is None or inst.parts:
+        frozen = reg.legacy_tools.get(inst.template_id)  # frozen record of an old template, if it was one
+        if frozen is not None and frozen.step == "starter":
+            frozen = None if inst.parts else frozen
+        if inst.parts and frozen is None:
             continue
-        kind = item.tool.kind
-        old.append(inst)
-        step = chains.get(kind, {}).get(inst.template_id)
+        if frozen is not None:
+            kind, step = frozen.kind, frozen.step
+        else:
+            item = reg.find_item(inst.template_id)
+            if item is None or item.tool is None:
+                continue
+            kind, step = item.tool.kind, None
+        old.append((inst, kind))
         if kind not in best or _STEP_RANK[step] > _STEP_RANK[best[kind]]:
             best[kind] = step
         for enchant, level in inst.enchants.items():
@@ -97,8 +81,7 @@ async def reset_player(user: User, rng: random.Random, registry: Registry | None
         scrolls_given += 1
 
     # Old tools go first: deleting one also clears any skill that had it equipped.
-    for inst in old:
-        kind = reg.item(inst.template_id).tool.kind
+    for inst, kind in old:
         skill = skill_for_tool(kind)
         if skill and (await user.skill(skill)).equipped_instance_id == inst.id:
             await user.equip(skill, None)
@@ -116,7 +99,7 @@ async def reset_player(user: User, rng: random.Random, registry: Registry | None
             parts_given += 1
 
     # Starters: one for each kind the player has no tool of now (smithed ones count as a tool).
-    have = {reg.item(i.template_id).tool.kind for i in await user.instances() if reg.find_item(i.template_id) and reg.item(i.template_id).tool}
+    have = {item.tool.kind for i in await user.instances() if (item := reg.find_item(i.template_id)) and item.tool}
     for starter in STARTER_TOOLS:
         kind = reg.item(starter).tool.kind
         if kind in have:
@@ -132,7 +115,7 @@ async def reset_player(user: User, rng: random.Random, registry: Registry | None
 
     await user.set_stat(RESET_STAT, 1)
     return LegacyReset(
-        kinds=tuple(sorted({reg.item(i.template_id).tool.kind for i in old})),
+        kinds=tuple(sorted({kind for _inst, kind in old})),
         parts_given=parts_given,
         scrolls_given=scrolls_given,
     )

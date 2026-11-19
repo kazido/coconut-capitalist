@@ -1611,6 +1611,14 @@ class LegacyGrant(_Data):
     traits: int = Field(ge=0, le=3)
 
 
+class LegacyTool(_Data):
+    """A frozen record of one OLD upgrade-chain tool (configs/legacy_tools.toml), kept after its template leaves items.toml,
+    so the one-time reset can still tell its kind and how far it got."""
+
+    kind: ToolKind
+    step: Literal["starter", "plain", "fork", "fork_up"]
+
+
 class SmithingRules(_Data):
     part_types: list[str] = Field(min_length=3, max_length=3)
     area_cap: int = Field(ge=0)

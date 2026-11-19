@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import LOCATIONS_PER_AREA, AreaRules, ChangelogEntry, Notice, Location, ScrollRules, ShipmentRules, SmithingRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
+from .models import LOCATIONS_PER_AREA, AreaRules, ChangelogEntry, LegacyTool, Notice, Location, ScrollRules, ShipmentRules, SmithingRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -90,6 +90,7 @@ class Registry:
         notices: list[Notice] | None = None,
         smithing: SmithingRules | None = None,
         changelog: list[ChangelogEntry] | None = None,
+        legacy_tools: dict[str, LegacyTool] | None = None,
     ):
         # Player news, newest first (a stable sort keeps the file order for entries of the same day, so write new ones at the top).
         self.notices: list[Notice] = sorted(notices or [], key=lambda n: n.date, reverse=True)
@@ -112,6 +113,7 @@ class Registry:
         self.tools = tools
         self.shipments = shipments
         self.smithing = smithing
+        self.legacy_tools: dict[str, LegacyTool] = legacy_tools or {}  # frozen old upgrade-chain tools (configs/legacy_tools.toml)
         self.scrolls = scrolls
         self.recipes: dict[str, Recipe] = {r.id: r for r in recipes or []}
         self.drop_tables: dict[str, DropTable] = {t.id: t for t in drop_tables or []}
@@ -446,6 +448,8 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     tools = _build(ToolRules, "tools", [("tools", _read(config_dir, "tools"))])[0]
     shipments = _build(ShipmentRules, "shipments", [("shipments", _read(config_dir, "shipments"))])[0]
     smithing = _build(SmithingRules, "smithing", [("smithing", _read(config_dir, "smithing"))])[0]
+    raw_legacy = _read(config_dir, "legacy_tools")
+    legacy_tools = dict(zip(raw_legacy, _build(LegacyTool, "legacy_tools", raw_legacy.items()), strict=True))
     scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
     recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
     notices = _build(Notice, "notices", ((n.get("id", f"#{i}"), n) for i, n in enumerate(_read(config_dir, "notices").get("notice", []))))
@@ -454,7 +458,8 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
         raise RegistryError(f"notices.toml: duplicate id(s) {dupes} (seen ids are stored per player, so every notice needs its own)")
     changelog = _build(ChangelogEntry, "changelog", ((f"entry {i + 1}", e) for i, e in enumerate(_read(config_dir, "changelog").get("entry", []))))
     return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools,
-                    shipments, scrolls, recipes, areas, locations, notices=notices, changelog=changelog, smithing=smithing)
+                    shipments, scrolls, recipes, areas, locations, notices=notices, changelog=changelog, smithing=smithing,
+                    legacy_tools=legacy_tools)
 
 
 def _name_waters(rules: FishingRules, locations: dict[str, list[Location]]) -> FishingRules:

@@ -1,0 +1,203 @@
+# Frozen snapshot of the OLD upgrade chains (plain upgrades, forks, starters) and what step each tool was on.
+# Used only by the one-time legacy tools reset (cococap/services/legacy_tools.py), so players' old tools can still
+# be graded after their templates are removed from items.toml. Do not edit.
+
+[tool_pickaxe_rookie]
+kind = "pickaxe"
+step = "starter"
+
+[tool_pickaxe_reinforced]
+kind = "pickaxe"
+step = "plain"
+
+[tool_pickaxe_steel]
+kind = "pickaxe"
+step = "plain"
+
+[tool_pickaxe_masterwork]
+kind = "pickaxe"
+step = "plain"
+
+[tool_pickaxe_ironbound]
+kind = "pickaxe"
+step = "plain"
+
+[tool_pickaxe_prospector]
+kind = "pickaxe"
+step = "fork"
+
+[tool_pickaxe_geode]
+kind = "pickaxe"
+step = "fork_up"
+
+[tool_pickaxe_seekers]
+kind = "pickaxe"
+step = "fork_up"
+
+[tool_pickaxe_veinhunter]
+kind = "pickaxe"
+step = "fork_up"
+
+[tool_pickaxe_motherlode]
+kind = "pickaxe"
+step = "fork_up"
+
+[tool_pickaxe_crystal]
+kind = "pickaxe"
+step = "plain"
+
+[tool_pickaxe_deepdelver]
+kind = "pickaxe"
+step = "plain"
+
+[tool_pickaxe_mythril]
+kind = "pickaxe"
+step = "plain"
+
+[tool_pickaxe_worldsplitter]
+kind = "pickaxe"
+step = "plain"
+
+[tool_axe_starter]
+kind = "axe"
+step = "starter"
+
+[tool_axe_thornwhip]
+kind = "axe"
+step = "plain"
+
+[tool_axe_reinforced]
+kind = "axe"
+step = "plain"
+
+[tool_broadaxe_bastards]
+kind = "axe"
+step = "plain"
+
+[tool_axe_masterwork]
+kind = "axe"
+step = "plain"
+
+[tool_axe_gatherers]
+kind = "axe"
+step = "fork"
+
+[tool_hatchet_foragers]
+kind = "axe"
+step = "fork_up"
+
+[tool_axe_mosswood]
+kind = "axe"
+step = "fork_up"
+
+[tool_axe_canopy]
+kind = "axe"
+step = "fork_up"
+
+[tool_hatchet_sovereign]
+kind = "axe"
+step = "plain"
+
+[tool_axe_wilted]
+kind = "axe"
+step = "plain"
+
+[tool_axe_elderwood]
+kind = "axe"
+step = "plain"
+
+[tool_rod_starter]
+kind = "rod"
+step = "starter"
+
+[tool_rod_reinforced]
+kind = "rod"
+step = "plain"
+
+[tool_rod_sturdy]
+kind = "rod"
+step = "plain"
+
+[tool_rod_masterwork]
+kind = "rod"
+step = "plain"
+
+[tool_rod_tidecaller]
+kind = "rod"
+step = "plain"
+
+[tool_rod_lantern]
+kind = "rod"
+step = "fork"
+
+[tool_rod_siren]
+kind = "rod"
+step = "fork_up"
+
+[tool_rod_trident]
+kind = "rod"
+step = "fork_up"
+
+[tool_rod_kraken]
+kind = "rod"
+step = "fork_up"
+
+[tool_rod_trophy]
+kind = "rod"
+step = "fork_up"
+
+[tool_rod_moonlit]
+kind = "rod"
+step = "plain"
+
+[tool_rod_leviathan]
+kind = "rod"
+step = "plain"
+
+[tool_rod_abyssal]
+kind = "rod"
+step = "plain"
+
+[tool_rod_poseidon]
+kind = "rod"
+step = "plain"
+
+[tool_can_tin]
+kind = "can"
+step = "starter"
+
+[tool_can_copper]
+kind = "can"
+step = "plain"
+
+[tool_can_iron]
+kind = "can"
+step = "plain"
+
+[tool_can_silver]
+kind = "can"
+step = "plain"
+
+[tool_can_gold]
+kind = "can"
+step = "plain"
+
+[tool_can_cauldron]
+kind = "can"
+step = "fork"
+
+[tool_can_retort]
+kind = "can"
+step = "fork_up"
+
+[tool_can_athanor]
+kind = "can"
+step = "fork_up"
+
+[tool_can_crystal]
+kind = "can"
+step = "plain"
+
+[tool_can_moonwell]
+kind = "can"
+step = "plain"

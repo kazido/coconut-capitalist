@@ -6,6 +6,7 @@ import pytest
 
 from cococap.constants import STARTER_TOOLS
 from cococap.registry import get_registry
+from cococap.registry.models import LegacyTool
 from cococap.services import legacy_tools, shop
 from cococap.services.equipment import TOOL_FOR_SKILL
 from cococap.services.smithing import PART_TYPES
@@ -110,3 +111,28 @@ async def test_claimed_starters_are_smithed_tier_one_tools():
         tool = next(i for i in await user.instances() if i.template_id == item_id)
         assert tool.parts and all(tool.parts[slot]["tier"] == 1 for slot in PART_TYPES)
         assert tool.quality == RULES.grades[0].name
+
+
+def test_frozen_legacy_table_covers_every_starter_chain():
+    # configs/legacy_tools.toml is a frozen copy of the old chains, so the reset still works after the templates are gone.
+    for starter in STARTER_TOOLS:
+        entry = REG.legacy_tools[starter]
+        assert entry.step == "starter" and entry.kind == REG.item(starter).tool.kind
+    assert {e.step for e in REG.legacy_tools.values()} == {"starter", "plain", "fork", "fork_up"}
+
+
+async def test_old_tool_missing_from_items_is_deleted_and_graded_by_its_frozen_step(monkeypatch):
+    # The template is gone from items.toml (find_item says None), but the frozen record still says it was a fork_up pickaxe.
+    gone = REG.item(STARTER["axe"]).tool.upgrade.to
+    user = await User.get(4)
+    await user.give_instance(gone)
+    monkeypatch.setattr(REG, "legacy_tools", {**REG.legacy_tools, gone: LegacyTool(kind="pickaxe", step="fork_up")})
+    monkeypatch.setattr(REG, "find_item", lambda item_id: None if item_id == gone else dict.get(REG.items, item_id))
+
+    result = await legacy_tools.reset_player(user, random.Random(5), REG)
+
+    assert result is not None
+    assert result.kinds == ("pickaxe",)
+    assert gone not in {i.template_id for i in await user.instances()}  # ids can be reused, so check by template
+    parts = [i for i in await user.instances() if i.template_id.startswith("part_")]
+    assert sorted(p.rolled["tier"] for p in parts) == [ROWS["fork_up"].tier] * 3
