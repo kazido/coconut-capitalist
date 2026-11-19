@@ -34,7 +34,7 @@ decision) before building on. Do NOT do bounded work yourself: delegate it, then
 - **Never push unless the user says so.** Push only `master`: `git push origin master`.
 - **Design before big features** (use plan mode: explore, write the plan, get approval, then build). Small fixes: just do them.
 - **Tests, cheaply (the user is on a usage limit):** after a change run `python -m scripts.quick_tests` (picks only the test files related to what
-  changed and prints a few lines). Run the FULL suite only when landing a branch, after a large refactor, or when asked: `python -m scripts.full_tests`
+  changed and prints a few lines). Run the FULL suite only when the user asks (never after ordinary changes, and never put it in a brief for another session or agent; say "targeted tests + ruff only"): `python -m scripts.full_tests`
   with `run_in_background: true`, then read its few-line summary (`.full_tests_last.txt`) ONCE when it finishes. Never poll with sleep loops and
   never paste long test output. If something fails on `master` too, say so and do not chase it.
 - Never write secrets (tokens, DB logins) into files, docs or commits.
@@ -126,7 +126,7 @@ Home/More/another screen. `tests/test_hub.py::test_every_screen_renders_valid_la
 - Plain, readable code and comments that say WHY. Config comments explain what a number does; mark guesses `TODO(balance)`.
 - Keep screens uncluttered (the user dislikes clutter): fewer buttons, dropdowns for variants, one concept per page.
 - Pronouns: use they/them for the user unless told otherwise. Don't put personal details in external requests.
-- Final replies: short, plain language, say what changed and what is not verified.
+- Final replies: short, plain language, say what changed and what is not verified in the code. Never say you cannot test in Discord or that the bot needs a restart: the user knows.
 
 ## Things that are deliberately still here (not dead code)
 
