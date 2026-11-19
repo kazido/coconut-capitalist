@@ -45,13 +45,11 @@ async def spot_panel(screen, power: int) -> str:
     left = max(0.0, 1 - spot.wear)
     stats = await equipped_stats(screen.user, "foraging")  # (no axe yet: the page still draws)
     chops = spot.chops_left(reg.foraging, stats.stats.get("wear_slow", 0.0) if stats else 0.0)
-    wedges = sum(q for _, q in await foraging.wedges(screen.user))
     rules = reg.foraging.chopping
     streak = ""
     if rules.streak_max and spot.streak:  # (one short bit on the swing line: no warnings, no sentences)
         streak = f"  {emojis.icon('flame', '🔥')} **+{rules.streak_bonus * min(spot.streak, rules.streak_max):.0%}**" + (" max" if spot.streak >= rules.streak_max else "")
     return (f"{emojis.icon('grain', '🪵')} **{spot.title(reg.foraging)}** grain{quality}  \n{bar(left, 6, 'wear')} **{left:.0%}** left (about {chops} chops)   {emojis.icon('chop', '🪓')} **{spot.preview(power, reg.foraging)}** per swing{streak}"
-            + (f"   ·   {emojis.icon('wedge', '🔩')} {wedges} wedge(s)" if wedges else "")
             + (f"\n{emojis.icon('wedge_gold', '🪚')} Wedge bonus: **{spot.boost:+.0%}** for **{spot.boost_chops}** more chops" if spot.boost_chops else ""))
 
 
@@ -151,7 +149,10 @@ async def collect_community_rewards(screen: Screen) -> None:
     rewards = await foraging.claim_rewards(screen.user) + await party_tree.claim(screen.user)
     if rewards:
         title = "The tree is down!" if any(r.party for r in rewards) and not any(not r.party for r in rewards) else "The community tree is down!"
-        screen.result = rewards_page(rewards, title, back_label="Continue")
+        async def to_forage(interaction: discord.Interaction) -> None:
+            await screen.go(interaction, "forage")  # straight back to foraging, like a single tree's reward page
+
+        screen.result = rewards_page(rewards, title, back=to_forage, back_label="Back to foraging")
 
 
 class ForageScreen(Screen):
@@ -423,8 +424,8 @@ class GroveScreen(Screen):
             text(f"**Forest {view.zone}**{TreeScreen._species_line(view.species)}  ·  falls over <t:{int(view.closes_at)}:R>\n"
                  f"{bar(view.fraction_left, 10, 'hp')}  **{view.hp:,}**/{view.max_hp:,} hp\n"
                  f"**{view.choppers}** chopper(s)" + ("\n" + "\n".join(top) if top else "")),
-            text(f"You: **{view.yours:,}** hp  ·  **{view.share:.1%}** of the tree\n"
-                 f"{await spot_panel(self, power)}\n-# {status}"),
+            text((f"You: **{view.yours:,}** hp  ·  **{view.share:.1%}** of the tree\n" if not any(uid == self.user.id for uid, _ in view.top) else "")  # (already on the list above)
+                 + f"{await spot_panel(self, power)}\n-# {status}"),
             row(*stance_buttons(self._chop)),
             row(button("Grain notes", emoji=emojis.icon("book", "📖"), on_click=self._notes), button("Leave", on_click=self._back)),
         ]

@@ -1499,8 +1499,8 @@ async def test_felling_the_community_tree_pays_everyone_from_their_own_panel(db,
     await foraging_service.chop_community(bob, tree.max_hp - tree.max_hp // 2, OPEN_HOUR)  # bob's chop fells it
     await nav.screen.refresh(inter)
     assert nav.screen.id == "result" and "TIMBER" in all_text(nav) and (await bob.skill("foraging")).xp > 0  # bob's share arrived (xp and drops: chopping pays no bits)
-    await continue_through(nav, inter)
-    assert "felled" in all_text(nav)
+    await continue_through(nav, inter, "Back to foraging")
+    assert nav.screen.id == "forage" and "felled" in all_text(nav)
     nav_a, _ = await hub("forage", user_id=1)  # alice returns later and finds hers too
     assert nav_a.screen.id == "result" and "TIMBER" in all_text(nav_a) and (await (await User.get(1)).skill("foraging")).xp > 0
 
@@ -1513,11 +1513,9 @@ async def test_the_tree_falling_over_unfinished_ends_the_panel_gracefully(db, mo
     freeze_time(monkeypatch, OPEN_HOUR + 40 * 60)  # 40 minutes in: it fell over
     await nav.screen.refresh(inter)
     assert nav.screen.id == "result" and "fell over" in all_text(nav)  # the consolation arrives on its own page
-    await click(nav, inter, "Continue")
+    await click(nav, inter, "Back to foraging")
     text = all_text(nav)
-    assert "fell over" in text and "next one grows" in text
-    assert [b for b in buttons(nav) if b.label == "Back to foraging"]
-    assert "consolation" in text.lower() or "TIMBER" not in text
+    assert nav.screen.id == "forage" and "next one grows" in text
 
 
 async def test_home_only_says_whether_check_in_is_ready_and_the_timers_live_on_the_check_in_page(db):
