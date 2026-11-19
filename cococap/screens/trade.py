@@ -81,11 +81,14 @@ class TradeScreen(Screen):
         name = await self.nav.name_of(them)
         mine, theirs = window.offer(me), window.offer(them)
         left = trade.countdown_left(window)
-        countdown = f"\n\n### {emojis.icon('timer', '⏳')} Trading in {max(1, math.ceil(left))}... (change anything or undo to stop)" if left is not None else ""
+        countdown = f"\n\n### {emojis.icon('timer', '⏳')} Trading in {max(1, math.ceil(left))}... (press Cancel to stop)" if left is not None else ""
         tick = lambda uid: f" {emojis.icon('check', '✅')} accepted" if uid in window.accepted else ""  # noqa: E731
         body = [text(f"### {emojis.icon('trade', '🤝')} Trading with {name}\n"
                      f"**You**{tick(me)}\n{describe(*mine)}\n\n**{name}**{tick(them)}\n{describe(*theirs)}{countdown}"
                      f"\n-# Any change takes both Accepts back. Tools and gear can't be traded. Closes <t:{int(window.expires_at)}:R> if nothing changes.")]
+        if left is not None:  # going through: only Cancel, which returns both of you to the editable window
+            body.append(row(button("Cancel", emoji=emojis.icon('cross', '✖️'), style=discord.ButtonStyle.danger, on_click=self._stop)))
+            return body
         stacks = sorted((await trade.tradable(self.user)).items(), key=lambda kv: -get_registry().item(kv[0]).sell_price * kv[1])[:SHOWN_ITEMS]
         if stacks:
             body.append(row(select("Add an item...", [
@@ -162,6 +165,9 @@ class TradeScreen(Screen):
 
     async def _unaccept(self, interaction: discord.Interaction) -> None:
         await self._run(interaction, lambda: trade.unaccept(self.user.id))
+
+    async def _stop(self, interaction: discord.Interaction) -> None:
+        await self._run(interaction, lambda: trade.stop_countdown(self.user.id))
 
     async def _cancel(self, interaction: discord.Interaction) -> None:
         trade.cancel(self.user.id)

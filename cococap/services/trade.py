@@ -23,7 +23,8 @@ from cococap.user import InsufficientFunds, User
 
 INVITE_SECONDS = 60
 IDLE_SECONDS = 600
-COUNTDOWN_SECONDS = 3  # after both Accept, so a last-second change can still be seen
+COUNTDOWN_SECONDS = 5  # after both Accept, so a last-second change can still be seen
+GRACE_SECONDS = 1  # extra time after the countdown reaches 0 in which Cancel still works
 MIN_BITS = 100  # (like /pay: no pocket-change spam)
 
 
@@ -274,6 +275,14 @@ def unaccept(user_id: int, now: float | None = None) -> None:
     window.countdown_ends = None
 
 
+def stop_countdown(user_id: int, now: float | None = None) -> None:
+    """Call off the countdown only: both Accepts are taken back but every offer stays, so the trade can be edited and accepted again."""
+    window = _open(user_id, now)
+    window.accepted.clear()
+    window.countdown_ends = None
+    window.version += 1
+
+
 def countdown_left(window: Window, now: float | None = None) -> float | None:
     """Seconds until the trade goes through, or None when no countdown is running."""
     if window.countdown_ends is None or window.closed:
@@ -286,7 +295,7 @@ async def settle(user_id: int, now: float | None = None) -> bool:
     window = window_of(user_id, now)
     if window is None or window.closed or window.countdown_ends is None or window.accepted != {window.a, window.b}:
         return False
-    if _now(now) < window.countdown_ends:
+    if _now(now) < window.countdown_ends + GRACE_SECONDS:
         return False
     await _complete(window)  # (it marks the window closed before anything moves, so two players settling at once trade once)
     return True
