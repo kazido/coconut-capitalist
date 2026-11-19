@@ -72,6 +72,19 @@ SCREEN_SKILL = {"mining": "mining", "mine": "mining", "reactor": "mining", "fish
                 "forage": "foraging", "trees": "foraging", "farm": "farming"}
 
 
+async def tag_pet_xp(user: User, screen_id: str, lines: list[str]) -> list[str]:
+    """Put the pet's xp bonus next to the xp in the totals line: `**+120** xp (🐕 +5%)`. Nothing changes without a bonus."""
+    skill = SCREEN_SKILL.get(screen_id)
+    house = user.pethouse
+    if skill is None or house.active not in house.pets:
+        return lines
+    bonus = await pets.xp_bonus(user, skill)
+    if bonus <= 0:
+        return lines
+    tag = f" xp ({get_registry().pets[house.active].emoji} +{bonus:.0%})"
+    return [line.replace("** xp", "**" + tag, 1) if "** xp" in line else line for line in lines]
+
+
 async def progress_line(user: User, screen_id: str) -> str | None:
     """One compact line on a result screen: your level and bar in the skill you were playing, and your active pet's level and bar."""
     skill = SCREEN_SKILL.get(screen_id)

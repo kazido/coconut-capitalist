@@ -69,3 +69,22 @@ async def test_the_active_pet_levelling_up_rides_in_the_same_notice(db):
     await levelup.check(inter, user, seen)
     assert inter.followup.send.await_count == 1
     assert "Drizzle" in inter.followup.send.await_args.kwargs["embed"].description and "1 -> 3" in inter.followup.send.await_args.kwargs["embed"].description
+
+
+async def test_the_pets_xp_bonus_sits_next_to_the_xp_in_the_totals_line(db):
+    from cococap.models.pethouse import OwnedPet
+    from cococap.registry import get_registry
+    from cococap.services import pets
+
+    reg = get_registry()
+    pet = next(p for p in reg.pets.values() if any(b.stat == "xp_all" for b in p.bonuses))
+    user = await User.get(1)
+
+    def adopt(house):
+        house.pets[pet.id] = OwnedPet(stars=1, xp=pets.level_xp(reg.economy.pets.max_level, pet.rarity, reg))
+        house.active = pet.id
+
+    await user.update_pethouse(adopt)
+    lines = await levelup.tag_pet_xp(user, "forage", ["✨ **+40** xp", "other"])
+    assert pet.emoji in lines[0] and "(" in lines[0] and lines[1] == "other"
+    assert await levelup.tag_pet_xp(user, "casino", ["✨ **+40** xp"]) == ["✨ **+40** xp"]

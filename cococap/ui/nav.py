@@ -419,9 +419,10 @@ class Navigator(ui.LayoutView):
         if screen.result is not None:  # a win or a loss: show what happened on a page of its own first
             result, screen.result = screen.result, None
             self._unsent = result
-            from .levelup import collect, progress_line  # local import: levelup needs the finished ui package
+            from .levelup import collect, progress_line, tag_pet_xp  # local import: levelup needs the finished ui package
 
             result.levelups, self._levels = await collect(self.user, self._levels)  # shown on the result itself, not as a popup
+            result.lines = await tag_pet_xp(self.user, screen.id, result.lines)
             result.progress = await progress_line(self.user, screen.id)
             screen = self.screen = ResultScreen(self, result, screen)
             page = await screen.build()
