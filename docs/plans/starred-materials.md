@@ -6,7 +6,7 @@ Upgrades should eventually need higher-quality materials. The user's decisions:
 - Stars can NOT be crafted up. They only drop.
 - Higher stars depend on the LOCATION, never on depth: each skill moves between locations (forests, waters, ...; see `configs/areas.toml`) and only the later locations drop higher stars. 2★ can drop early but rarely; by mid-progression (e.g. foraging forest 10 of 14) 2★ is the main drop. 3★ is never the majority drop anywhere.
 - Only LATER upgrades (the fork and top tiers) ask for 2★/3★ materials. Early upgrades stay plain.
-- Rename foraging "zones" to "forests" (player-facing text only; keep code identifiers).
+- DONE (step 1): foraging says "forests" to players (player-facing text only; code identifiers kept).
 
 ## Design
 **Storage (no migration).** `ItemRow.item_id` is a plain string; ids must be alnum + `_`. The existing id is the 1★ item (every current inventory stays valid). The registry generates derived items `<id>_s2` and `<id>_s3` for each material listed as `starrable` (name "Copper Ore ★★", same emoji/price base, sell price multiplied). Files: `cococap/registry/models.py` (a `stars` field/`star_of` link on Item), `cococap/registry/loader.py` (generate variants, validate), `configs/items.toml` (`starrable = true` on chosen materials, plus a `[stars]` table of sell_price multipliers in `configs/economy.toml`).
@@ -23,7 +23,7 @@ Table = per progress step, weights for 1★/2★/3★, e.g. step 1: 97/3/0; mid:
 **UI.** Names show stars (★ text now; art stars stay paused). Sell-all keeps working per id; the "keep upgrade materials" rule already holds back per item id, so lower stars not needed by any owned tool's next upgrade can be sold in bulk. Wiki/shop list the variants under the base item.
 
 ## Steps (each bounded, delegable)
-1. TODO Rename zone -> forest in player-facing text (screens/forage.py still has 33 "zone" mentions). Small, separate commit.
+1. DONE Rename zone -> forest in player-facing text (forage.py, wiki.py already said forest; no strings left to change).
 2. DONE Registry: starrable flag + generated variants + validation + tests (`tests/test_registry*.py`).
 3. DONE `services/stars.py` + `configs/stars.toml` + guard tests (3★ never majority; monotone with progress).
 4. DONE: wired into all four skills (foraging, fishing, mining, farming), tests included.

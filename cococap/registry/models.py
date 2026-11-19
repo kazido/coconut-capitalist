@@ -1118,6 +1118,8 @@ class PotRules(_Data):
 class RodRules(_Data):
     luck_per_power: float = Field(ge=0)  # every point of rod power above 3 makes the rare fish (rarity 4+) this much likelier
     extra_fish_per_power: float = Field(ge=0)  # ...and adds this to the number of EXTRA fish a catch brings (1.2 = one, and a 20% chance of two)
+    low_rarity_boost: float = Field(ge=1)  # a rarity-1 fish multiplies that extra-fish number by this...
+    low_rarity_cutoff: int = Field(ge=2)  # ...fading linearly to 1x at this rarity and above
 
 
 class RadarLevel(_Data):
