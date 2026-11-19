@@ -19,27 +19,30 @@ weekly_luckbucks = 25
 # Starred materials (see docs/plans/starred-materials.md): each id below also exists as <id>_s2 and <id>_s3 (own inventory stacks, never crafted up).
 # The plain id is the 1-star one. Start small: add a material here only when an upgrade needs its stars.
 [stars]
-sell_multipliers = [1.0, 2.5, 6.0]  # sell price of 1, 2 and 3 stars x the base price  TODO(balance)
+sell_multipliers = [1.0, 1.5, 2.5, 6.0]  # sell price of plain, 1, 2 and 3 stars x the base price  TODO(balance)
 starrable = ["material_iron_ore", "material_gold_ore", "material_silver_ore", "material_platinum_ore", "material_hardwood", "material_fine_bark", "material_maple_leaf", "material_coral_shard", "material_beeswax", "material_living_vine"]
 
 # Which star a starrable drop is, by how deep you are (progress 0 = first forest / top of the mine / shallowest water, 1 = the deepest).
-# Weights are 1-star / 2-star / 3-star, blended in a straight line between points. 2-star can turn up early but rarely and is the main drop from
-# the middle on; 3-star is never the majority anywhere (the registry refuses it). TODO(balance): all numbers
+# Weights are plain / 1-star / 2-star / 3-star (plain is the default drop; stars are the special ones), blended in a straight line between points. Mines (of 14): 1-5 plain with lucky 1-star and rare 2-star, 6-10 stars
+# common (mostly 1-2) with rare 3-star, 11-14 2- and 3-star common. 3-star is never the majority anywhere (the registry refuses it). TODO(balance): all numbers
 [[stars.curve]]
-progress = 0.0
-weights = [97, 3, 0]
+progress = 0
+weights = [92, 8, 0, 0]
 [[stars.curve]]
-progress = 0.25
-weights = [75, 24, 1]
+progress = 0.31
+weights = [60, 33, 7, 0]
 [[stars.curve]]
-progress = 0.5
-weights = [40, 55, 5]
+progress = 0.38
+weights = [45, 40, 14, 1]
 [[stars.curve]]
-progress = 0.75
-weights = [25, 60, 15]
+progress = 0.69
+weights = [30, 35, 28, 7]
 [[stars.curve]]
-progress = 1.0
-weights = [15, 65, 20]
+progress = 0.77
+weights = [25, 30, 30, 15]
+[[stars.curve]]
+progress = 1
+weights = [15, 25, 35, 25]
 
 [minigames]
 daily_cap = 300                    # max luckbucks per player per day from ALL minigames combined

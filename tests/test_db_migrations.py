@@ -133,3 +133,25 @@ def test_cutting_the_zone_materials_swaps_them_for_a_few_original_ones(tmp_path)
     con = sqlite3.connect(tmp_path / "old.db")
     items = {(u, i): q for u, i, q in con.execute("SELECT user_id, item_id, quantity FROM user_items")}
     assert items == {(1, "material_plant_fiber"): 4, (1, "material_compost"): 14, (2, "material_copper_ore"): 4}
+
+
+def test_star_tiers_migration_moves_each_starred_stack_down_one_tier(tmp_path):
+    """Migration 0011: plain stays plain; _s2 becomes _s1 and _s3 becomes _s2 (the old 2-/3-star stacks lose one star)."""
+    import sqlite3
+
+    url = f"sqlite:///{tmp_path / 'old.db'}"
+    upgrade_sync(url, "0010")
+    con = sqlite3.connect(tmp_path / "old.db")
+    cols = [(r[1], r[2]) for r in con.execute("PRAGMA table_info(users)") if r[3] and r[4] is None]
+    values = {name: (1 if name == "discord_id" else "x" if "CHAR" in kind.upper() or kind.upper() == "TEXT" else 0) for name, kind in cols}
+    con.execute(f"INSERT INTO users ({', '.join(values)}) VALUES ({', '.join('?' * len(values))})", list(values.values()))
+    con.executemany(
+        "INSERT INTO user_items (user_id, item_id, quantity) VALUES (?, ?, ?)",
+        [(1, "material_iron_ore", 5), (1, "material_iron_ore_s2", 3), (1, "material_iron_ore_s3", 2)],
+    )
+    con.commit()
+    con.close()
+    upgrade_sync(url)
+    con = sqlite3.connect(tmp_path / "old.db")
+    items = dict(con.execute("SELECT item_id, quantity FROM user_items"))
+    assert items == {"material_iron_ore": 5, "material_iron_ore_s1": 3, "material_iron_ore_s2": 2}

@@ -150,7 +150,7 @@ class Item(_Data):
     crop: Crop | None = None
     seed: Seed | None = None
     tool: Tool | None = None
-    stars: int = Field(default=1, ge=1, le=3)  # quality tier. Tier 2 and 3 items are GENERATED from a base item (`star_of`), see StarRules
+    stars: int = Field(default=0, ge=0, le=3)  # quality tier (0 = no star, the default). Tier 1-3 items are GENERATED from a base item (`star_of`), see StarRules
     star_of: str | None = None  # the base (1-star) item id, for a generated star variant
 
     _id = field_validator("id")(check_id)
@@ -192,7 +192,7 @@ class Item(_Data):
     @property
     def display(self) -> str:
         """Emoji (if any) followed by the name; a starred material shows star icons instead of the ★ marks in its name."""
-        name = self.name.rsplit(" ", 1)[0] + " " + emojis.stars(self.stars) if self.star_of and self.stars > 1 else self.name
+        name = self.name.rsplit(" ", 1)[0] + " " + emojis.stars(self.stars) if self.star_of and self.stars > 0 else self.name
         return f"{self.emoji} {name}" if self.emoji else name
 
 
@@ -1223,27 +1223,27 @@ class PetRules(_Data):
 
 class StarAnchor(_Data):
     """One point of the star curve: at `progress` (0 = the first forest / the top of the mine / the shallowest water, 1 = the deepest) a starrable
-    drop is 1, 2 or 3 stars with these relative weights. Between anchors the weights are blended in a straight line."""
+    drop is plain, 1, 2 or 3 stars with these relative weights. Between anchors the weights are blended in a straight line."""
 
     progress: float = Field(ge=0, le=1)
-    weights: list[float] = Field(min_length=3, max_length=3)  # 1-star, 2-star, 3-star
+    weights: list[float] = Field(min_length=4, max_length=4)  # no star, 1-star, 2-star, 3-star
 
     @model_validator(mode="after")
     def _sane(self):
         if any(w < 0 for w in self.weights) or sum(self.weights) <= 0:
             raise ValueError("star weights must be non-negative and not all zero")
-        if self.weights[2] >= sum(self.weights) / 2:
+        if self.weights[3] >= sum(self.weights) / 2:
             raise ValueError("3-star must never be the majority drop")
         return self
 
 
 class StarRules(_Data):
-    """Starred materials: a material in `starrable` also exists as `<id>_s2` and `<id>_s3` (2- and 3-star), each its own inventory stack.
-    The plain id is the 1-star one. Stars only drop, they are never crafted up. Which star drops where is `configs/stars.toml` (later)."""
+    """Starred materials: a material in `starrable` also exists as `<id>_s1`, `<id>_s2` and `<id>_s3` (1-, 2- and 3-star), each its own inventory stack.
+    The plain id is the no-star one (the default drop; stars are the special, better ones). Stars only drop, they are never crafted up. Which star drops where is `configs/stars.toml` (later)."""
 
-    sell_multipliers: list[float] = Field(default_factory=lambda: [1.0, 2.5, 6.0], min_length=3, max_length=3)  # sell price of 1, 2, 3 stars x the base
+    sell_multipliers: list[float] = Field(default_factory=lambda: [1.0, 1.5, 2.5, 6.0], min_length=4, max_length=4)  # sell price of plain, 1, 2, 3 stars x the base
     starrable: list[str] = Field(default_factory=list)
-    curve: list[StarAnchor] = Field(default_factory=lambda: [StarAnchor(progress=0, weights=[1, 0, 0]), StarAnchor(progress=1, weights=[1, 0, 0])])
+    curve: list[StarAnchor] = Field(default_factory=lambda: [StarAnchor(progress=0, weights=[1, 0, 0, 0]), StarAnchor(progress=1, weights=[1, 0, 0, 0])])
 
     @model_validator(mode="after")
     def _climbing(self):

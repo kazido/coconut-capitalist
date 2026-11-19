@@ -1060,7 +1060,7 @@ async def test_reaching_the_floor_shows_the_vault_and_banks_it(db):
     assert run.outcome == "floor" and "reached the vault" in all_text(nav)
     user = await User.get(1)
     for ore, quantity in get_registry().mining.descent.vault_ore.items():
-        assert sum([await user.item_quantity(i) for i in (ore, f"{ore}_s2", f"{ore}_s3")]) >= quantity  # (a starrable ore may be starred)
+        assert sum([await user.item_quantity(i) for i in (ore, f"{ore}_s1", f"{ore}_s2", f"{ore}_s3")]) >= quantity  # (a starrable ore may be starred)
 
 
 # ---- the two-page home and the party ------------------------------------------------------------------------

@@ -13,35 +13,42 @@ CURVE = REG.economy.stars.curve
 DEPTHS = [i / 20 for i in range(21)]
 
 
-def test_weights_add_up_and_the_start_has_no_three_star():
+def _ids_with_weight(base: str, at: float) -> set[str]:
+    """The inventory ids a starrable drop can take at this depth: only the tiers the curve gives weight to."""
+    return {stars.star_id(base, n) for n, w in enumerate(stars.weights(at)) if w > 0}
+
+
+def test_weights_add_up_and_the_start_has_no_two_or_three_star():
     assert all(abs(sum(stars.weights(d)) - 1) < 1e-9 for d in DEPTHS)
-    assert stars.weights(0.0)[2] == 0 and stars.weights(0.0)[0] > 0.9  # the first forest is nearly all plain
+    start = stars.weights(0.0)
+    assert len(start) == 4 and start[2] == 0 and start[3] == 0  # the first forest gives no 2- or 3-star
+    assert start[0] > 0.9  # and is nearly all plain
 
 
-def test_three_star_is_never_the_majority_and_two_star_leads_from_the_middle():
+def test_three_star_is_never_the_majority_and_plain_leads_at_the_start():
     for d in DEPTHS:
-        one, two, three = stars.weights(d)
-        assert three < 0.5 and three < two + one  # never the main drop
-        if d >= 0.5:
-            assert two > 0.5 or two > one and two > three, d  # 2-star is the main drop from the middle on
-    assert stars.weights(0.5)[1] > stars.weights(0.5)[0]
+        assert stars.weights(d)[3] < 0.5  # 3-star is never the main drop
+    start = stars.weights(0.0)
+    assert start.index(max(start)) == 0  # plain is the most common at the top of the list
+    mid = stars.weights(0.5)
+    assert mid[1] > mid[2] > mid[3]  # among the stars, 1-star is the usual one in the middle (plain can still lead)
 
 
 def test_deeper_never_makes_stars_rarer():
-    prev = (1.0, 0.0, 0.0)
+    prev = stars.weights(0.0)
     for d in DEPTHS:
-        one, two, three = stars.weights(d)
-        assert one <= prev[0] + 1e-9 and three >= prev[2] - 1e-9
-        prev = (one, two, three)
+        w = stars.weights(d)
+        assert w[0] <= prev[0] + 1e-9 and w[3] >= prev[3] - 1e-9
+        prev = w
 
 
 def test_the_roll_follows_the_weights():
     rng = random.Random(1)
     for d in (0.0, 0.5, 1.0):
         n = 20_000
-        got = [0, 0, 0]
+        got = [0, 0, 0, 0]
         for _ in range(n):
-            got[stars.roll_stars(d, rng) - 1] += 1
+            got[stars.roll_stars(d, rng)] += 1
         for share, want in zip((g / n for g in got), stars.weights(d), strict=True):
             assert abs(share - want) < 0.02, (d, share, want)
 
@@ -49,9 +56,10 @@ def test_the_roll_follows_the_weights():
 def test_only_starrable_items_change_id():
     rng = random.Random(2)
     assert all(stars.roll_item("material_copper_ore", 1.0, rng) == "material_copper_ore" for _ in range(200))  # not starrable
-    seen = {stars.roll_item("material_gold_ore", 1.0, rng) for _ in range(500)}
-    assert seen == {"material_gold_ore", "material_gold_ore_s2", "material_gold_ore_s3"}
-    assert {stars.roll_item("material_gold_ore", 0.0, rng) for _ in range(500)} == {"material_gold_ore", "material_gold_ore_s2"}  # no 3-star at the start
+    gold = "material_gold_ore"
+    seen = {stars.roll_item(gold, 1.0, rng) for _ in range(500)}
+    assert seen == _ids_with_weight(gold, 1.0) == {stars.star_id(gold, n) for n in range(4)}
+    assert {stars.roll_item(gold, 0.0, rng) for _ in range(500)} == _ids_with_weight(gold, 0.0)  # no 2- or 3-star at the start
     assert all(REG.find_item(i) for i in seen)  # every id it can return is a real item
 
 
@@ -67,7 +75,11 @@ def test_a_curve_with_a_majority_three_star_is_refused(tmp_path):
 
     shutil.copytree(CONFIG_DIR, tmp_path / "c")
     path = tmp_path / "c" / "economy.toml"
-    path.write_text(path.read_text().replace("weights = [15, 65, 20]", "weights = [10, 30, 60]"))
+    # swap the deepest anchor for one where 3-star is the majority (the last "weights = [...]" line in the curve)
+    text = path.read_text()
+    head, _, _ = text.rpartition("weights = [")
+    tail = text[len(head) :].split("]", 1)[1]
+    path.write_text(head + "weights = [10, 20, 20, 50]" + tail)
     with pytest.raises(RegistryError, match="majority"):
         load_registry(tmp_path / "c")
 
@@ -84,9 +96,8 @@ class _Fixed:
 
 
 def _top_band_x(at: float) -> float:
-    """A roll that lands in the 2-star band or above, the top one that exists at this depth (3-star only when it has weight)."""
-    w = stars.weights(at)
-    return (1.0 + w[0] + w[1]) / 2 if w[2] > 0 else 1.0 - w[1] / 2
+    """A roll just under 1: the highest tier that has any weight at this depth (the cumulative pick ends at the top)."""
+    return 0.999999
 
 
 def test_apply_leaves_non_starrable_drops_alone():
@@ -112,7 +123,7 @@ def test_apply_at_the_deepest_depth_can_give_a_higher_star():
 
 def test_apply_at_the_start_never_gives_three_star():
     gold = REG.economy.stars.starrable[0]
-    assert stars.weights(0.0)[2] == 0  # the curve has no 3-star at the start
+    assert stars.weights(0.0)[3] == 0  # the curve has no 3-star at the start
     for seed in range(500):
         out = stars.apply(Counter({gold: 1}), 0.0, random.Random(seed), REG)
         assert stars.star_id(gold, 3) not in out
@@ -130,3 +141,11 @@ def test_apply_is_deterministic_for_a_seed():
     drops = Counter({starrable[0]: 4, starrable[1]: 2, "material_copper_ore": 1})
     first = stars.apply(drops, 0.6, random.Random(9), REG)
     assert all(stars.apply(drops, 0.6, random.Random(9), REG) == first for _ in range(3))
+
+
+def test_the_first_mine_gives_no_two_or_three_star_and_mine_five_is_all_but_no_three_star():
+    mines = len(REG.mining.mines)
+    first = stars.weights(stars.progress(1, mines))
+    assert first[2] == 0 and first[3] == 0  # mine 1: plain and 1-star only
+    # mine 5 is still almost 3-star-free (the curve's 3-star ramp starts just before it): under 1%, not exactly zero
+    assert stars.weights(stars.progress(5, mines))[3] < 0.01

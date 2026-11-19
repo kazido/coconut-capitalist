@@ -1,3 +1,4 @@
+import re
 import shutil
 from pathlib import Path
 
@@ -150,18 +151,18 @@ def test_a_species_drop_rate_must_be_a_chance(data):
 
 
 # ---- starred materials ---------------------------------------------------------------------------------------------------------------------
-def test_every_starrable_material_has_a_two_and_three_star_variant():
+def test_every_starrable_material_has_a_one_two_and_three_star_variant():
     reg = get_registry()
     rules = reg.economy.stars
     assert rules.starrable
     for base_id in rules.starrable:
         base = reg.item(base_id)
-        assert base.stars == 1 and base.star_of is None
-        for stars in (2, 3):
+        assert base.stars == 0 and base.star_of is None  # the plain id is the no-star default
+        for stars in (1, 2, 3):
             v = reg.item(f"{base_id}_s{stars}")
             assert v.star_of == base_id and v.stars == stars and v.category == "material" and v.skill == base.skill
             assert v.drop is None and not v.buyable  # stars are rolled by the star service, never part of a drop pool or sold in a shop
-            assert v.sell_price == round(base.sell_price * rules.sell_multipliers[stars - 1])
+            assert v.sell_price == round(base.sell_price * rules.sell_multipliers[stars])  # index 0 is plain
             assert "★" * stars in v.name
 
 
@@ -190,6 +191,10 @@ def test_bad_starrable_lists_are_rejected(data, ids, problem):
 
 
 def test_star_sell_multipliers_must_climb(data):
-    edit(data / "economy.toml", "sell_multipliers = [1.0, 2.5, 6.0]", "sell_multipliers = [1.0, 6.0, 2.5]")
+    mults = list(get_registry().economy.stars.sell_multipliers)
+    mults[-2], mults[-1] = mults[-1], mults[-2]  # the 2- and 3-star prices swapped: no longer climbing
+    text = (data / "economy.toml").read_text()
+    line = re.search(r"sell_multipliers = \[[^\]]*\]", text).group(0)
+    (data / "economy.toml").write_text(text.replace(line, f"sell_multipliers = {mults}", 1))
     with pytest.raises(RegistryError, match="climb"):
         load_registry(data)

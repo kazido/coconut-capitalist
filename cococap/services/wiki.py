@@ -19,6 +19,7 @@ TOPICS: list[tuple[str, str, str]] = [  # (id, title, emoji)
     ("crafting", "Crafting: the Workbench", "🛠️"),
     ("tools", "Tools and upgrades", "🔨"),
     ("enchants", "Enchants and scrolls", "📜"),
+    ("stars", "Starred materials", "⭐"),
     ("pets", "Pets", "🐾"),
     ("party", "Parties", "👥"),
     ("items", "Item lookup", "🎒"),
@@ -283,6 +284,26 @@ def _pets(reg: Registry) -> list[str]:
     ]
 
 
+def _stars(reg: Registry) -> list[str]:
+    from cococap import emojis
+    from cococap.services import stars
+
+    r = reg.economy.stars
+    rows = []
+    for label, at in (("first area", 0.0), ("a quarter down", 0.25), ("halfway", 0.5), ("three quarters down", 0.75), ("the deepest area", 1.0)):
+        w = stars.weights(at, reg)
+        rows.append(f"{label}: " + ", ".join(f"{emojis.stars(n) if n else 'plain'} {p:.0%}" for n, p in enumerate(w) if p >= 0.005))
+    mult = ", ".join(f"{emojis.stars(n) if n else 'plain'} x{m:g}" for n, m in enumerate(r.sell_multipliers))
+    names = ", ".join(reg.item(i).name for i in r.starrable)
+    return [
+        "**Starred materials** are special, higher quality versions of some materials. A normal drop has **no star**; stars (1 to 3) are the lucky ones. "
+        f"A starred material works exactly like the plain one but is its own stack and sells for more ({mult} the plain price). Stars only drop: they cannot be crafted up.",
+        f"**Which materials.** {names}.",
+        "**Where they drop.** Mining, foraging, farming and fishing all roll a star for each material stack you get. The deeper the area you work in "
+        "(the further down the list of mines, forests, waters and fields), the better the stars. Chances by depth:\n" + "\n".join(rows),
+    ]
+
+
 def _party(reg: Registry) -> list[str]:
     steps = reg.economy.party_xp_bonus_by_size
     sizes = ", ".join(f"{n} members **+{b:.0%}**" for n, b in enumerate(steps, start=2)) + "+"
@@ -311,7 +332,7 @@ def _crafting(reg: Registry) -> list[str]:
 
 
 _PAGES = {"start": _start, "mining": _mining, "farming": _farming, "foraging": _foraging, "fishing": _fishing, "fish": lambda reg: _fish(reg, 7, 4), "fish2": lambda reg: _fish(reg, 3, 1),
-          "waters": lambda reg: _waters(reg, 0, 7), "waters2": lambda reg: _waters(reg, 7), "pots": _pots, "crafting": _crafting, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "party": _party, "items": _items}
+          "waters": lambda reg: _waters(reg, 0, 7), "waters2": lambda reg: _waters(reg, 7), "pots": _pots, "crafting": _crafting, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "stars": _stars, "party": _party, "items": _items}
 
 SKILL_FILTERS = ["mining", "farming", "foraging", "fishing", "combat", "general"]
 
