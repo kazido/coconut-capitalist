@@ -559,6 +559,8 @@ class WyrmholeSession:
     small: bool = False
     bonus: Counter[str] = field(default_factory=Counter)  # added to the loot when the last row is dug
     banked: bool = False
+    xp_per_row: int = 0  # mining xp for each row dug (paid when the hole is banked)
+    xp_awarded: int = 0
 
     @property
     def row(self) -> int:
@@ -604,23 +606,28 @@ class WyrmholeSession:
         return total
 
 
-def generate_wyrmhole(rules: MiningRules, rng: random.Random) -> WyrmholeSession:
-    pool = rules.wyrmhole.pool
-    nodes = [(item, pool[item]) for item in (rng.choice(list(pool)) for _ in range(rules.columns))]
-    nodes[rng.randrange(rules.columns)] = (rules.wyrmhole.implosion_item, 1)
-    return WyrmholeSession(rows=[nodes], cursor=rules.columns // 2)
+def wyrmhole_gem(rules: MiningRules, owned_core_gems: set[str], rng: random.Random) -> str:
+    """The gem hidden in a big wyrmhole's last row: the implosion gem (likelier the more core gems you own), else a core gem you do not own."""
+    w = rules.wyrmhole
+    missing = [g for g in rules.reactor.core_gems if g not in owned_core_gems]
+    if not missing or rng.random() < min(1.0, w.implosion_base + w.implosion_per_gem * len(owned_core_gems)):
+        return w.implosion_item
+    return rng.choice(missing)
+
+
+def generate_wyrmhole(rules: MiningRules, rng: random.Random, owned_core_gems: set[str] | frozenset[str] = frozenset()) -> WyrmholeSession:
+    """A big wyrmhole: every node pays (no empty ones); only the LAST row hides a gem, in one node."""
+    w = rules.wyrmhole
+    rows = [[(item, row.pool[item]) for item in (rng.choice(list(row.pool)) for _ in range(w.columns))] for row in w.rows]
+    rows[-1][rng.randrange(w.columns)] = (wyrmhole_gem(rules, set(owned_core_gems), rng), 1)
+    return WyrmholeSession(rows=rows, cursor=w.columns // 2, xp_per_row=w.xp_per_row)
 
 
 def generate_mini_wyrmhole(rules: MiningRules, rng: random.Random) -> WyrmholeSession:
-    """A small wyrmhole: each row's nodes are drawn from that row's pool, and now and then a row hides a reactor core gem in one node."""
+    """A small wyrmhole: each row's nodes are drawn from that row's pool. No gems, no empty nodes."""
     mini = rules.mini_wyrmhole
-    rows: list[list[tuple[str, int]]] = []
-    for row, gem_chance in zip(mini.rows, mini.gem_chance, strict=True):
-        nodes = [(item, row.pool[item]) for item in (rng.choice(list(row.pool)) for _ in range(mini.columns))]
-        if rng.random() < gem_chance:
-            nodes[rng.randrange(mini.columns)] = (rng.choice(rules.reactor.core_gems), 1)
-        rows.append(nodes)
-    return WyrmholeSession(rows=rows, cursor=mini.columns // 2, small=True, bonus=Counter(mini.last_row_bonus))
+    rows = [[(item, row.pool[item]) for item in (rng.choice(list(row.pool)) for _ in range(mini.columns))] for row in mini.rows]
+    return WyrmholeSession(rows=rows, cursor=mini.columns // 2, small=True, bonus=Counter(mini.last_row_bonus), xp_per_row=mini.xp_per_row)
 
 
 # ---- the scarab -------------------------------------------------------------------------------
@@ -847,10 +854,15 @@ async def abandon_run(user: User, run: MineRun, registry: Registry | None = None
 
 async def enter_wyrmhole(user: User, rng: random.Random, registry: Registry | None = None, *, small: bool = False) -> WyrmholeSession:
     rules = (registry or get_registry()).mining
-    return generate_mini_wyrmhole(rules, rng) if small else generate_wyrmhole(rules, rng)
+    if small:
+        return generate_mini_wyrmhole(rules, rng)
+    mining, _ = await _mining_state(user)
+    placed = {c.gem_id for c in (mining.reactor.core_1, mining.reactor.core_2, mining.reactor.core_3, mining.reactor.core_4) if c.gem_id}
+    items = await user.items()
+    return generate_wyrmhole(rules, rng, placed | {g for g in rules.reactor.core_gems if items.get(g)})
 
 
-async def finish_wyrmhole(user: User, session: WyrmholeSession) -> tuple[str, int]:
+async def finish_wyrmhole(user: User, session: WyrmholeSession, registry: Registry | None = None) -> tuple[str, int]:
     """Bank a wyrmhole (once): rows you have not dug yet are dug where the cursor is, then every pick (and the last-row bonus) goes in the pack.
     Returns the last pick."""
     while not session.finished:  # walking away still takes your pick(s)
@@ -860,7 +872,14 @@ async def finish_wyrmhole(user: User, session: WyrmholeSession) -> tuple[str, in
         for item_id, quantity in session.loot().items():
             await user.add_item(item_id, quantity)
         picks = len(session.picks)
-        await user.update_skill("mining", lambda m: setattr(m.stats, "lodes_mined", m.stats.lodes_mined + picks))
+        xp = round(session.xp_per_row * picks * await xp_multiplier(user.id, registry, "mining"))
+        session.xp_awarded = xp
+
+        def record(m: Mining) -> None:
+            m.stats.lodes_mined += picks
+            m.xp += xp
+
+        await user.update_skill("mining", record)
     return session.revealed
 
 

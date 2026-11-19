@@ -20,6 +20,7 @@ def _cell() -> str: return emojis.get("cell", "⬛")
 def _cell_empty() -> str: return emojis.get("cell_empty", "▫️")
 def _rich() -> str: return emojis.icon("rock_rich", "🟦")
 def _hole() -> str: return emojis.get("wyrmhole", "🌀")
+def _wyrm_rock() -> str: return emojis.icon("rock_wyrm", "🟪")  # a hidden cell inside a wyrmhole
 def _vent() -> str: return emojis.icon("vent", "💨")
 def _cache() -> str: return emojis.icon("cache", "📦")
 def _bomb() -> str: return emojis.icon("bomb", "💣")
@@ -161,22 +162,27 @@ class MineScreen(Screen):
         self.challenge_deadline = 0.0
         self.scarab_result: str | None = None
         self.show_help = False
+        self.hole: mining.WyrmholeSession | None = None  # the wyrmhole mini mine you are digging, if any
 
     @property
     def locked(self) -> bool:
-        return self.run is not None and not self.run.finished
+        return (self.run is not None and not self.run.finished) or (self.hole is not None and not self.hole.finished)
 
     @property
     def hides_nav(self) -> bool:
         return self.locked  # "Leave & bank" is the way out while a run is live
 
     async def on_abandon(self) -> None:
+        if self.hole is not None and not self.hole.finished:
+            await mining.finish_wyrmhole(self.user, self.hole)  # walking away still takes your pick
         if self.run is not None and not self.run.finished:
             await mining.abandon_run(self.user, self.run)
 
     # ---- rendering ----------------------------------------------------------------------------
     async def build(self) -> Page:
         run = self.run
+        if self.hole is not None:
+            return self._hole_page(self.hole)
         if run is None:
             return Page("The Mines", [text("Head into the mines from the Mining page.")])
         if run.finished:
@@ -379,17 +385,72 @@ class MineScreen(Screen):
 
     async def _again(self, interaction: discord.Interaction) -> None:
         self.run = await mining.start_run(self.user, random.Random(), location=self.run.site.id)  # (the same mine again)
-        self.summary = self.challenge = self.scarab_result = None
+        self.summary = self.challenge = self.scarab_result = self.hole = None
         await self.refresh(interaction)
 
     async def _to_menu(self, interaction: discord.Interaction) -> None:
         """Leave the finished mine for the Mining page (the reward screen was the end of the run)."""
         await self.go(interaction, "mining")
 
+    # ---- the wyrmhole: a small mine of its own (no hazards, nothing empty), drawn on this same screen ----------------
     async def _wyrmhole(self, interaction: discord.Interaction) -> None:
-        hole = await mining.enter_wyrmhole(self.user, random.Random())
-        await self.go(interaction, "reactor", tab="wyrmholes", hole=hole)
+        self.hole = await mining.enter_wyrmhole(self.user, random.Random())
+        await self.refresh(interaction)
 
     async def _wyrmhole_small(self, interaction: discord.Interaction) -> None:
-        hole = await mining.enter_wyrmhole(self.user, random.Random(), small=True)
-        await self.go(interaction, "reactor", tab="wyrmholes", hole=hole)
+        self.hole = await mining.enter_wyrmhole(self.user, random.Random(), small=True)
+        await self.refresh(interaction)
+
+    def _hole_page(self, hole: mining.WyrmholeSession) -> Page:
+        """Rows you dug show your pick, the row you are on shows the cursor, the rest are still rock. The last row of a big wyrmhole is the one with gems."""
+        reg = get_registry()
+        lines = []
+        for r, nodes in enumerate(hole.rows):
+            if r < len(hole.picks):
+                item, quantity = hole.picks[r]
+                lines.append("".join(item_emoji(i) if c == hole.columns_picked[r] else _wyrm_rock() for c, (i, _) in enumerate(nodes)) + f"  {emojis.icon('check', '✅')} {quantity:,} {reg.item(item).name}")
+            else:
+                lines.append(_wyrm_rock() * len(nodes))
+        header = [_notch()] * hole.width
+        header[hole.cursor] = _cursor()
+        shaft = "\n".join(lines[:hole.row]) + ("\n" if hole.row else "") + "".join(header) + "\n" + "\n".join(lines[hole.row:])
+        name = "small wyrmhole" if hole.small else "wyrmhole"
+        last = "" if hole.small else (" **The last row hides a gem!**" if hole.row == len(hole.rows) - 1 else " The last row hides a gem.")
+        body = [*self.note_block(),
+                text(f"## {emojis.icon('small_wyrmhole' if hole.small else 'wyrmhole', '🕳️')} A {name}\nNo danger in here and nothing is empty: dig **one** node on each of the **{len(hole.rows)}** rows."
+                     f" Row **{hole.row + 1}** of {len(hole.rows)}: the deeper, the better.{last}"),
+                sep(), text(shaft)]
+        if hole.finished:
+            body += [sep(), text("## Your picks\n" + loot_lines(hole.loot())),
+                     row(button("Back to the mines", emoji=emojis.icon("dig", "⛏️"), on_click=self._hole_back))]
+        else:
+            body.append(row(
+                button(emoji=emojis.icon("prev", "⬅️"), on_click=self._hole_move(-1)),
+                button("Dig", emoji=emojis.icon("dig", "⛏️"), style=discord.ButtonStyle.primary, on_click=self._hole_dig),
+                button(emoji=emojis.icon("next", "➡️"), on_click=self._hole_move(1)),
+            ))
+        return Page("The Mines", body, accent=0x9B59B6)
+
+    def _hole_move(self, step: int):
+        async def move(interaction: discord.Interaction) -> None:
+            self.hole.move(step)
+            await self.refresh(interaction)
+
+        return move
+
+    async def _hole_dig(self, interaction: discord.Interaction) -> None:
+        hole = self.hole
+        if hole.finished:  # a second click that was already on its way
+            return await self.refresh(interaction)
+        hole.dig()
+        if not hole.finished:  # on to the next row
+            return await self.refresh(interaction)
+        await mining.finish_wyrmhole(self.user, hole)
+        headline = [f"{emojis.icon('small_wyrmhole' if hole.small else 'wyrmhole', '🕳️')} You dug the whole " + ("small " if hole.small else "") + "wyrmhole."]
+        self.result = rewards_result("Your picks", items=hole.loot(), xp=hole.xp_awarded, headline=headline, emoji=emojis.icon("wyrmhole", "🌀"), accent=0x9B59B6,
+                                     back=self._hole_back, back_label="Back to the mines", odds=odds.mini_wyrmhole() if hole.small else None)
+        await self.refresh(interaction)
+
+    async def _hole_back(self, interaction: discord.Interaction) -> None:
+        self.hole = None
+        await self.go(interaction, "mining")

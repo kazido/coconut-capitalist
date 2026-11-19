@@ -286,21 +286,31 @@ gem_bonus = 5000                   # N shrinks by this for every gem placed in t
 min_odds = 1000                    # ...but never below this
 min_depth = 2                      # first row (0-based) wyrmholes can hide in
 implosion_item = "key_gemstone_implosion"
-[wyrmhole.pool]                    # item = quantity found in a wyrmhole cell
-tool_scarab_bomb = 20
-material_copper_ore = 1000
-material_iron_ore = 300
-material_gold_ore = 100
+# A big wyrmhole is a small mine of its own: no hazard and no empty cells, you dig ONE of `columns` hidden nodes on each row and keep every pick. Each row pays from
+# its own pool (item = quantity). ONLY the LAST row holds a gem: one of its nodes is the implosion gem, or a reactor core gem you do not own yet. The chance it is the
+# implosion gem is `implosion_base` + `implosion_per_gem` for every core gem you own (placed or in your pack); with all four it is always the implosion gem.
+# `xp_per_row` is mining xp for each row dug (the multipliers apply).  TODO(balance)
+columns = 3
+xp_per_row = 150
+implosion_base = 0.25
+implosion_per_gem = 0.25
+[[wyrmhole.rows]]
+pool = { material_iron_ore = 60, material_tin_ore = 40, material_silver_ore = 10 }
+[[wyrmhole.rows]]
+pool = { material_silver_ore = 15, material_amber = 8, material_gold_ore = 5 }
+[[wyrmhole.rows]]
+pool = { material_gold_ore = 10, material_obsidian = 6, material_amber = 10, tool_scarab_bomb = 5 }
+[[wyrmhole.rows]]
+pool = { material_gold_ore = 20, material_obsidian = 10, tool_scarab_bomb = 10 }
 
-# ---- Small wyrmholes: now and then a mine has one (decided when the mine starts, shown on the mine page). It is a 3-wide hole `rows` deep: on each row you
+# ---- Small wyrmholes: now and then a mine has one (decided when the mine starts, shown on the mine page). It is a 3-wide hole `rows` deep, no hazard and no empty cell: on each row you
 # pick ONE of 3 hidden nodes, and everything you pick is banked. Each row pays from its own pool (item = quantity; the 3 hidden nodes are drawn from it), better
-# than a normal row, and a little better each row. `gem_chance` = the chance THAT row hides a reactor core gem in one of its 3 nodes (you find it only if you
-# pick that node, so a third of these): about 1 in 200 holes gives one (a gem sells for 400,000; a normal cell finds one 1 in 12,000). `last_row_bonus` is added when
-# you finish the last row. Simulated in DESIGN.md "Small wyrmholes": about +15-30% of a normal mine's value, in 1 mine in 100, so a treat and not an income.  TODO(balance)
+# than a normal row, and a little better each row. No gems in here (those are the big wyrmhole's last row). `last_row_bonus` is added when you finish the last row.
+# `xp_per_row` is mining xp for each row dug. About +15-30% of a normal mine's value, in 1 mine in 100, so a treat and not an income.  TODO(balance)
 [mini_wyrmhole]
+xp_per_row = 40
 odds = 100                         # 1 in N mines
 columns = 3
-gem_chance = [0.001, 0.002, 0.003, 0.004, 0.0045]
 last_row_bonus = { material_gold_ore = 1 }
 [[mini_wyrmhole.rows]]
 pool = { material_copper_ore = 24, material_iron_ore = 4, material_tin_ore = 6 }

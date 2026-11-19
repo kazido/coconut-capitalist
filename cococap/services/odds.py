@@ -93,16 +93,11 @@ def mining(reg: Registry | None = None, depth: int | None = None) -> Lookup:
 
 
 def mini_wyrmhole(reg: Registry | None = None) -> Lookup:
-    """A small wyrmhole: a core gem is 1 in (the chance any row hides it in the node you pick) per hole; an ore is 1 in the size of the best row pool that holds it, per pick."""
+    """A small wyrmhole (no gems in it): an item is 1 in the size of the best row pool that holds it, per pick."""
     reg = reg or get_registry()
     mini = reg.mining.mini_wyrmhole
 
     def lookup(item_id: str) -> Odds | None:
-        if item_id in reg.mining.reactor.core_gems:
-            miss = 1.0
-            for g in mini.gem_chance:
-                miss *= 1 - g / mini.columns / len(reg.mining.reactor.core_gems)  # (the gem is one of the cores, picked by chance)
-            return Odds(1 / (1 - miss), "small wyrmholes") if miss < 1 else None
         best = max((1 / len(r.pool) for r in mini.rows if item_id in r.pool), default=0.0)  # the node you pick is a draw from the row's pool
         return Odds(1 / best, "picks") if best > 0 else None
 

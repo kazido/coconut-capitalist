@@ -436,15 +436,6 @@ class Enchant(_Data):
         return emojis.for_id("enchant", self.id, self.emoji_raw)
 
 
-class WyrmholeRules(_Data):
-    odds: int = Field(ge=2)
-    gem_bonus: int = Field(ge=0)
-    min_odds: int = Field(ge=2)
-    min_depth: int = Field(ge=0)
-    implosion_item: str
-    pool: dict[str, int]
-
-
 class MiniWyrmholeRow(_Data):
     pool: dict[str, int] = Field(min_length=1)  # item = quantity; the row's 3 nodes are drawn from it
 
@@ -455,21 +446,30 @@ class MiniWyrmholeRow(_Data):
         return self
 
 
+class WyrmholeRules(_Data):
+    """The big wyrmhole: a hazard-free mini mine; its LAST row holds the implosion gem or a core gem you do not own."""
+
+    odds: int = Field(ge=2)
+    gem_bonus: int = Field(ge=0)
+    min_odds: int = Field(ge=2)
+    min_depth: int = Field(ge=0)
+    implosion_item: str
+    columns: int = Field(ge=2)  # nodes per row
+    rows: list[MiniWyrmholeRow] = Field(min_length=1)
+    xp_per_row: int = Field(ge=0)
+    implosion_base: float = Field(ge=0, le=1)  # chance the gem is the implosion gem with no core gem owned...
+    implosion_per_gem: float = Field(ge=0, le=1)  # ...plus this for every core gem owned
+
+
 class MiniWyrmholeRules(_Data):
     odds: int = Field(ge=2)  # 1 in N mines has one
     columns: int = Field(ge=2)  # nodes per row
     rows: list[MiniWyrmholeRow] = Field(min_length=1)
-    gem_chance: list[float]  # per row: the chance the row hides a core gem in one node
+    xp_per_row: int = Field(ge=0)
     last_row_bonus: dict[str, int] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _sane(self):
-        if len(self.gem_chance) != len(self.rows):
-            raise ValueError("mini_wyrmhole: gem_chance needs one number per row")
-        if any(not 0 <= g <= 0.05 for g in self.gem_chance):
-            raise ValueError("mini_wyrmhole: each gem_chance must be between 0 and 0.05")
-        if sum(self.gem_chance) / self.columns > 0.02:
-            raise ValueError("mini_wyrmhole: a core gem would turn up in more than 1 hole in 50 (core gems are rare)")
         if any(q < 1 for q in self.last_row_bonus.values()):
             raise ValueError("mini_wyrmhole: last_row_bonus quantities must be at least 1")
         return self

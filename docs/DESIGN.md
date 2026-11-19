@@ -1048,18 +1048,17 @@ The wyrmhole code is untouched: a later "small wyrmhole" mine should decide its 
 The owner asked for a smaller kind of wyrmhole: a 3-wide mine with higher-tier rewards across 5 rows, special and not common. `[mini_wyrmhole]` in `configs/mining.toml`.
 
 - **When:** 1 in 100 mines (`odds`), rolled in `start_run` with the injected rng (`roll_mini_wyrmhole`; `start_run(mini_wyrmhole=True/False)` forces it) and kept on
-  `MineRun.mini_wyrmhole`. It is a property of the run, announced on the mine page ("🕳️ A small wyrmhole has opened in this mine!"). The big wyrmhole (1 in 25,000 per cell,
-  implosion gem, one pick) is untouched.
+  `MineRun.mini_wyrmhole`. It is a property of the run, announced on the mine page ("🕳️ A small wyrmhole has opened in this mine!"). The big wyrmhole (1 in 25,000 per cell) is a bigger version of the same mini mine, see "Wyrmholes are mini mines" below.
 - **Entering:** a button "Enter the small wyrmhole" is on the mine page from the first row. It calls `MineRun.enter_mini_wyrmhole()` (outcome `mini_wyrmhole`), which
   ends the dig phase exactly like breaking into the big wyrmhole: `settle_run` banks what you carry (no collapse can touch it), the reward screen shows it, and then the
   finished page offers "Enter the small wyrmhole". (Same as the big hole: if you leave that page without entering, the hole is gone.)
 - **The hole:** `generate_mini_wyrmhole` builds a `WyrmholeSession` (now rows of nodes; the big one is one row): 5 rows x 3 hidden nodes, each node drawn from that row's
   `pool` (item = quantity, fixed like the big hole's), one pick per row with the same cursor/Dig screen (`screens/wyrmhole.py` is parameterised, `session.small`). Rows get
-  better down the hole. Each row has a `gem_chance` that one of its 3 nodes is a reactor core gem (random of the four); you find it only if you pick that node. Finishing
+  better down the hole. No gems in a small hole. Finishing
   the last row adds `last_row_bonus` (1 gold ore). Everything is banked once at the end (`finish_wyrmhole`, idempotent): walking away or a timeout digs the remaining rows
   at the cursor and banks them (the same rule as the big hole's single pick).
 - **Rare-drop screen:** `odds.mini_wyrmhole` (a gem is "1 in N small wyrmholes", an ore is 1 in the row pool size per pick).
-- **Validation:** gem_chance has one number per row, each at most 0.05, and the sum over columns at most 0.02 (a gem in at most 1 hole in 50); rows non-empty; items exist.
+- **Validation:** rows non-empty; items exist.
 
 Value check (`scratchpad/mini_base.py`, `mini_sim.py`; the baseline is a player who stops at 7% collapse risk and braces above 10 pressure, 4,000 mines per power; the hole is
 200,000 holes, a random node per row, ore and gem at sell price):
@@ -1217,3 +1216,12 @@ just two dark eyes); `art/wisps.toml` lists them with `kind = "flame"`. The flam
 (warm colours keep warm shadows: the shared ramp used to turn yellow shadows olive). The older round wisp silhouettes in `art/wisp.py` remain for
 other uses but read too fat for pets. Stars on the art are paused. Next: decide a wisp per pet (25), name them `pet_<id>`, upload.
 
+
+## Wyrmholes are mini mines (on the mine screen)
+
+Both wyrmholes are small bonus mines drawn on the MINE screen (`MineScreen.hole`, `_hole_page`; cells use the animated `ui_rock_wyrm` emoji), not a Reactor tab (that tab is gone).
+You still break into / slip into one, the mine banks and shows its reward screen, then "Enter the wyrmhole" opens the hole on the same screen.
+- **No hazard, no empty node:** every node pays from its row's pool; you dig ONE node per row (cursor + Dig) and keep every pick. Leaving early digs the rest at the cursor.
+- **XP:** `xp_per_row` per row dug (small 40, big 150; xp multipliers apply), paid by `finish_wyrmhole` (idempotent). TODO(balance)
+- **Gems only in the big hole's last row:** `[wyrmhole] rows` (4 rows, 3 wide). Exactly one node of the last row is a gem: the implosion gem, else a core gem you do not
+  own (placed in the reactor or in your pack). `P(implosion) = implosion_base + implosion_per_gem x core gems owned` (0.25 + 0.25 each; own all four = always implosion).

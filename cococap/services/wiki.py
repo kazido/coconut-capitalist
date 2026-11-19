@@ -75,7 +75,7 @@ def _mining(reg: Registry) -> list[str]:
         + "; ".join(f"{t.emoji} **{t.name}** ({t.description.rstrip('.').lower()})" for t in m.mine_types[1:]) + ".",
         f"**Small wyrmholes.** Rarely (1 mine in {m.mini_wyrmhole.odds}) a mine has a **small wyrmhole**: the mine page says so, and you can slip in at any time (what you carry is banked first). "
         f"It is {m.mini_wyrmhole.columns} nodes wide and {len(m.mini_wyrmhole.rows)} rows deep: pick **one** node on each row, deeper rows pay better ore, and everything you pick is yours. "
-        "Very rarely one node hides a reactor core gem. The big wyrmholes (hidden in the rock, with the implosion gem) are as before.",
+        "No hazards and no empty nodes, and you earn mining xp for every row. Gems are only in the LAST row of a big wyrmhole (hidden in the rock): the implosion gem, or a reactor core gem you do not own yet.",
     ]
 
 

@@ -172,10 +172,8 @@ async def test_every_games_tab_renders_valid_layout(db, tab):
     assert nav.content_length() <= 4000
 
 
-@pytest.mark.parametrize("tab", list(SCREENS["reactor"].panes))
-async def test_every_reactor_tab_renders_valid_layout(db, tab):
-    nav, _ = await hub("reactor", tab=tab)
-    assert nav.screen.tab == tab
+async def test_the_reactor_page_renders_valid_layout(db):
+    nav, _ = await hub("reactor")
     nav.to_components()  # raises if the structure is invalid
     assert nav.total_children_count <= 40, nav.total_children_count
     assert nav.content_length() <= 4000
@@ -738,9 +736,12 @@ async def test_a_wyrmhole_leads_to_a_one_pick_screen_and_banks_it(db):
     assert run.outcome == "wyrmhole" and "wyrmhole" in all_text(nav)
     await continue_through(nav, inter)
     await find_button(nav, "Enter the wyrmhole").callback(inter)
-    assert nav.screen.id == "reactor" and nav.screen.tab == "wyrmholes" and nav.screen.locked
-    await find_button(nav, "Dig").callback(inter)
-    assert nav.screen.id == "result" and sum((await user.items()).values()) > 0  # the pick is a reward screen like any other
+    assert nav.screen.id == "mine" and nav.screen.hole is not None and nav.screen.locked  # a small mine on the mine screen, not a Reactor tab
+    rows = len(nav.screen.hole.rows)
+    for _ in range(rows):
+        await find_button(nav, "Dig").callback(inter)
+    assert nav.screen.id == "result" and sum((await user.items()).values()) > 0  # the picks are a reward screen like any other
+    assert (await user.skill("mining")).xp > 10  # (the wyrmhole pays xp per row)
     await continue_through(nav, inter, "Back to the mines")
     assert nav.screen.id == "mining"
 
@@ -772,11 +773,11 @@ async def test_entering_the_small_wyrmhole_banks_the_pack_then_one_pick_per_row_
     assert run.outcome == "mini_wyrmhole" and await user.item_quantity("material_copper_ore") == 7  # banked first, like the big wyrmhole
     await continue_through(nav, inter)
     await find_button(nav, "Enter the small wyrmhole").callback(inter)
-    assert nav.screen.id == "reactor" and nav.screen.tab == "wyrmholes" and nav.screen.locked
+    assert nav.screen.id == "mine" and nav.screen.locked
     hole = nav.screen.hole
     assert hole.small and "Row **1** of 5" in all_text(nav)
     for r in range(5):
-        assert nav.screen.id == "reactor" and hole.row == r and nav.screen.locked
+        assert nav.screen.id == "mine" and hole.row == r and nav.screen.locked
         await find_button(nav, "Dig").callback(inter)
     assert nav.screen.id == "result" and hole.finished and hole.banked
     for item_id, qty in hole.loot().items():
@@ -798,21 +799,6 @@ async def test_walking_away_mid_small_wyrmhole_banks_the_rest(db):
     assert hole.banked and len(hole.picks) == 5
     for item_id, qty in hole.loot().items():
         assert await user.item_quantity(item_id) >= qty
-
-
-async def test_a_core_gem_from_a_small_wyrmhole_gets_a_rare_drop_popup(db):
-    user = await User.get(1)
-    nav, inter, run = await _mine_with_a_small_wyrmhole()
-    await click(nav, inter, "Enter the small wyrmhole")
-    await continue_through(nav, inter)
-    await find_button(nav, "Enter the small wyrmhole").callback(inter)
-    nav.screen.hole.rows[4][1] = ("key_gemstone_sanity", 1)  # the middle node of the last row, where the cursor starts
-    for _ in range(5):
-        await find_button(nav, "Dig").callback(inter)
-    assert nav.screen.id == "result" and "Gold Ore" in all_text(nav) and "Sanity" in all_text(nav)  # one loot screen with everything on it
-    popup = inter.followup.send.await_args.kwargs["embed"]  # and the gem's odds in the popup
-    assert "small wyrmholes" in popup.fields[0].value
-    assert await user.item_quantity("key_gemstone_sanity") == 1
 
 
 async def test_scarab_answered_in_time_pays_out_and_late_or_wrong_does_not(db):
@@ -988,7 +974,7 @@ async def test_the_reactor_has_its_own_page_reachable_from_mining(db):
     await click(nav, inter, "Reactor")
     assert nav.screen.id == "reactor"
     text = all_text(nav)
-    assert "Reactor Level 1" in text and "Auto-miner" in text and "empty: Sanity" in text
+    assert "Reactor Level 1" in text and "Auto-miner" in text and "Sanity" in text and "empty" not in text
     assert "**1** column" in text and "wyrmhole **1 in" in text
     assert {b.label for b in buttons(nav)} >= {"Claim lodes", "Insert gems", "Prestige"}
     assert find_button(nav, "Back")  # Back returns to Mining

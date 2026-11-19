@@ -44,19 +44,39 @@ def test_prestige_needs_all_four_distinct_gems():
     assert not m.prestige_unlocked(Mining(), RULES)
 
 
-def test_wyrmhole_mine_has_exactly_one_implosion_gem():
-    for seed in range(50):
+GEMS = {RULES.wyrmhole.implosion_item, *RULES.reactor.core_gems}
+
+
+def test_a_big_wyrmhole_hides_exactly_one_gem_and_only_in_its_last_row():
+    for seed in range(100):
         hole = m.generate_wyrmhole(RULES, Random(seed))
-        assert len(hole.nodes) == 5
-        assert [n[0] for n in hole.nodes].count("key_gemstone_implosion") == 1
-        assert all(n[0] in RULES.wyrmhole.pool or n[0] == "key_gemstone_implosion" for n in hole.nodes)
+        assert len(hole.rows) == len(RULES.wyrmhole.rows) and all(len(r) == RULES.wyrmhole.columns for r in hole.rows)
+        assert all(n[0] not in GEMS for r in hole.rows[:-1] for n in r)  # no gems above the last row
+        assert sum(n[0] in GEMS for n in hole.rows[-1]) == 1
+        pools = [set(r.pool) for r in RULES.wyrmhole.rows]
+        assert all(n[0] in pools[i] for i, r in enumerate(hole.rows) for n in r if n[0] not in GEMS)  # (and no node is empty: every one pays)
+        assert all(n[1] >= 1 for r in hole.rows for n in r)
 
 
-def test_wyrmhole_allows_a_single_dig():
+def test_the_gem_is_never_a_core_gem_you_own_and_the_implosion_gem_gets_likelier_with_every_one():
+    core = RULES.reactor.core_gems
+
+    def implosion_share(owned):
+        gems = [next(n[0] for n in m.generate_wyrmhole(RULES, Random(s), owned).rows[-1] if n[0] in GEMS) for s in range(3000)]
+        assert all(g == RULES.wyrmhole.implosion_item or g not in owned for g in gems)  # never a core gem you already own
+        return gems.count(RULES.wyrmhole.implosion_item) / len(gems)
+
+    shares = [implosion_share(set(core[:k])) for k in range(5)]
+    assert shares == sorted(shares) and shares[0] < shares[3] and shares[4] == 1.0  # (own all four: always the implosion gem)
+
+
+def test_wyrmhole_digs_one_node_per_row_and_a_finished_hole_refuses_more():
     hole = m.generate_wyrmhole(RULES, Random(1))
     hole.move(1)
     item = hole.dig()
-    assert hole.finished and item == hole.nodes[3]
+    assert not hole.finished and item == hole.rows[0][hole.columns_picked[0]] and hole.cursor == hole.width // 2
+    while not hole.finished:
+        hole.dig()
     with pytest.raises(m.MiningError):
         hole.dig()
 
@@ -226,9 +246,11 @@ async def test_concurrent_lode_claims_pay_once(db):
 async def test_wyrmhole_reward_is_banked(db):
     user = await player()
     hole = m.generate_wyrmhole(RULES, Random(5))
-    item_id, qty = await m.finish_wyrmhole(user, hole)
-    assert await user.item_quantity(item_id) == qty
-    assert (await user.skill("mining")).stats.lodes_mined == 1
+    await m.finish_wyrmhole(user, hole)
+    for item_id, qty in hole.loot().items():
+        assert await user.item_quantity(item_id) >= qty
+    skill = await user.skill("mining")
+    assert skill.stats.lodes_mined == len(hole.rows) and skill.xp == hole.xp_awarded > 0 and hole.xp_awarded >= RULES.wyrmhole.xp_per_row * len(hole.rows)
 
 
 async def test_scarab_reward_is_banked(db):
@@ -1507,15 +1529,11 @@ def test_small_wyrmhole_rows_pay_more_than_normal_rows_and_better_each_row():
     assert min(paid) > normal  # even the top row of the hole beats a normal cell
 
 
-def test_a_core_gem_in_a_small_wyrmhole_is_rare_and_only_core_gems_from_the_reactor():
-    n = 20000
-    gems = Counter()
-    for seed in range(n):
-        for item, _ in m.generate_mini_wyrmhole(RULES, Random(seed)).rows[4]:
-            if item in RULES.reactor.core_gems:
-                gems[item] += 1
-    assert 0 < sum(gems.values()) < n * 0.01 and set(gems) <= set(RULES.reactor.core_gems)
-    assert sum(MINI.gem_chance) / MINI.columns <= 0.02  # at most about 1 hole in 50 hides one in a node you can pick
+def test_a_small_wyrmhole_never_holds_a_gem_and_has_no_empty_node():
+    for seed in range(300):
+        hole = m.generate_mini_wyrmhole(RULES, Random(seed))
+        assert all(n[0] not in GEMS and n[1] >= 1 for r in hole.rows for n in r)
+        assert hole.xp_per_row == MINI.xp_per_row > 0
 
 
 def test_entering_a_small_wyrmhole_ends_the_mine_and_only_if_it_has_one():
@@ -1553,28 +1571,23 @@ async def test_walking_away_from_a_small_wyrmhole_still_banks_what_is_left(db):
         assert await user.item_quantity(item_id) == qty
 
 
-async def test_the_big_wyrmhole_is_still_one_row_with_one_pick(db):
+async def test_the_big_wyrmhole_is_a_small_mine_of_several_rows(db):
     hole = await m.enter_wyrmhole(await player(), Random(2))
-    assert not hole.small and len(hole.rows) == 1 and len(hole.nodes) == RULES.columns
+    assert not hole.small and len(hole.rows) == len(RULES.wyrmhole.rows) > 1 and len(hole.nodes) == RULES.wyrmhole.columns
 
 
 def test_small_wyrmhole_odds_for_the_rare_drop_screen():
     from cococap.services import odds
 
     lookup = odds.for_source("mini_wyrmhole")
-    gem = lookup(RULES.reactor.core_gems[0])
-    assert gem and gem.one_in > 200 and "small wyrmholes" in gem.text()
-    assert lookup("material_gold_ore").one_in == 4 and lookup("key_gemstone_sanity") and lookup("material_clay") is None
+    assert lookup(RULES.reactor.core_gems[0]) is None  # (no gems in a small wyrmhole)
+    assert lookup("material_gold_ore").one_in == 4 and lookup("material_clay") is None
 
 
 def test_small_wyrmhole_config_is_validated():
     from cococap.registry.models import MiniWyrmholeRules
 
     good = MINI.model_dump()
-    with pytest.raises(ValidationError):
-        MiniWyrmholeRules(**{**good, "gem_chance": [0.001]})  # one number per row
-    with pytest.raises(ValidationError):
-        MiniWyrmholeRules(**{**good, "gem_chance": [0.05] * 5})  # far too many gems
     with pytest.raises(ValidationError):
         MiniWyrmholeRules(**{**good, "odds": 1})
 
