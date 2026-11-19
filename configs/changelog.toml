@@ -1,0 +1,73 @@
+# The changelog players read on More -> News -> Changelog (newest first, paged).
+#
+# Add an entry for every change players will notice. Big ones (a new system, a rework) get `major = true` and a full write-up; small
+# buffs, fixes and tweaks from one update go in ONE entry with `major = false` and a short line each. If players may have questions
+# about it, also add a notice (notices.toml).
+#
+#   date  = the day it ships (YYYY-MM-DD)
+#   title = one line
+#   body  = Discord markdown, at most 1500 characters
+#   major = true for a big change (shown with a star), false for a grouped list of small ones
+
+[[entry]]
+date = 2026-11-19
+title = "News and Changelog"
+major = true
+body = """
+Important changes now pop up as a message the first time you open the menu after they ship. Every message stays on **More → News**, and this changelog lists what has changed lately.
+"""
+
+[[entry]]
+date = 2026-11-19
+title = "Small changes"
+major = false
+body = """
+- Mining, fishing and foraging remember the location you last picked.
+- A bot restart no longer uses up a fishing hallucination early.
+- Common fish school up: a good rod lands an extra 2 or 3 of them more often.
+"""
+
+[[entry]]
+date = 2026-11-18
+title = "Wyrm Tunnels"
+major = true
+body = """
+A rare new mine type (about 1 in 100 mines). In Wyrm Tunnels big and small wyrmholes are **10x likelier**.
+
+Wyrmholes are now little mines right on the mine screen: no hazards, no empty nodes, xp for every row, and gems in the last row of a big hole.
+"""
+
+[[entry]]
+date = 2026-11-18
+title = "Trading countdown"
+major = true
+body = """
+When both players press Accept, a **5 second countdown** starts before the trade goes through. Press Cancel during it to back out: both offers stay as they were. A receipt shows what changed hands.
+
+You can also find an item by name when adding it to a trade.
+"""
+
+[[entry]]
+date = 2026-11-18
+title = "One menu per player"
+major = true
+body = """
+Opening /play or a shortcut like /fish now closes the menu you had open before, even one from before a bot restart. No more stale menus to click by mistake.
+
+The loot screen is the last screen of every action, and rare finds and level-ups show up as a small popup you can **Share** to a channel or **Close**.
+"""
+
+[[entry]]
+date = 2026-11-18
+title = "Small changes"
+major = false
+body = """
+- Mining: the scarab leaves by itself when its timer runs out.
+- Mining: a live mine shows only the rows ahead of you.
+- Fishing: bosses can be opened to everyone.
+- Fishing: Reels can replace any arrow, with no cap.
+- Releaf: the goal scales with how many people are foraging, and every rarity counts.
+- Scrolls drop about once a week in mining and foraging; farming scrolls are much rarer.
+- Farming: zones! Pick a zone for your plots; each zone has its own byproducts.
+- New icons all over the menus.
+"""

@@ -5,6 +5,7 @@ file/entry named, instead of surfacing as an AttributeError in the middle of a c
 """
 
 import re
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -1533,3 +1534,23 @@ class Recipe(_Data):
         if self.min_level and not self.skill:
             raise ValueError("min_level needs a skill")
         return self
+
+
+class Notice(_Data):
+    """A message for players (configs/notices.toml): pops up once per player, then stays on More -> News -> Messages."""
+
+    id: str
+    date: date
+    title: str = Field(min_length=1, max_length=200)
+    body: str = Field(min_length=1, max_length=1500)  # one per popup page and per Messages page, well under Discord's limits
+
+    _id = field_validator("id")(check_id)
+
+
+class ChangelogEntry(_Data):
+    """One changelog entry (configs/changelog.toml): a full write-up when `major`, else one grouped list of small changes."""
+
+    date: date
+    title: str = Field(min_length=1, max_length=200)
+    body: str = Field(min_length=1, max_length=1500)
+    major: bool = False

@@ -41,6 +41,7 @@ def fake_interaction(user_id=1, name="tester"):
 async def hub(screen="home", user_id=1, **state):
     inter = fake_interaction(user_id)
     nav = await open_screen(inter, screen, **state)
+    inter.followup.send.reset_mock()  # forget the notice popup (tests/test_news.py) so popup counts start at 0
     return nav, inter
 
 
@@ -1077,7 +1078,9 @@ async def test_the_first_page_is_short_and_the_rest_waits_on_more(db):
 
 
 async def test_each_more_page_entry_opens_its_screen(db):
-    for index, expected in enumerate(("trade", "games", "bestiary", "wiki", "settings")):
+    from cococap.screens.home import MORE_LINKS
+
+    for index, expected in enumerate(MORE_LINKS):
         nav, inter = await hub("more")
         sections = [c for c in nav.walk_children() if isinstance(c, ui.Section)]
         await sections[index].accessory.callback(inter)

@@ -1,0 +1,21 @@
+# Notices: important messages for players. Each one pops up ONCE for every player, the first time they open the hub (/play or any
+# shortcut) after it ships; all of them stay readable on More -> News -> Messages (newest first).
+#
+# When to add one: a change players may have questions about (a rework, a removed item, a new rule). Smaller changes only get a line
+# in changelog.toml. Write it for players, in plain words. Never reuse or rename an `id`: seen ids are stored per player, so a new id is
+# shown again to everyone and a renamed one is shown twice.
+#
+#   id    = short and unique (letters, digits, _)
+#   date  = the day it ships (YYYY-MM-DD); the newest comes first in Messages
+#   title = one line
+#   body  = the message (Discord markdown, at most 1500 characters)
+
+[[notice]]
+id = "news_page"
+date = 2026-11-19
+title = "News is here"
+body = """
+The bot can now tell you when something big changes. Messages like this one pop up once, the first time you open the menu after a change ships.
+
+Missed one? Every message stays on **More → News**, next to a **Changelog** of everything that has changed lately.
+"""

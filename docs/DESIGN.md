@@ -1225,3 +1225,12 @@ You still break into / slip into one, the mine banks and shows its reward screen
 - **XP:** `xp_per_row` per row dug (small 40, big 150; xp multipliers apply), paid by `finish_wyrmhole` (idempotent). TODO(balance)
 - **Gems only in the big hole's last row:** `[wyrmhole] rows` (4 rows, 3 wide). Exactly one node of the last row is a gem: the implosion gem, else a core gem you do not
   own (placed in the reactor or in your pack). `P(implosion) = implosion_base + implosion_per_gem x core gems owned` (0.25 + 0.25 each; own all four = always implosion).
+
+## Player news (notices + changelog)
+
+- **Data:** `configs/notices.toml` (`[[notice]] {id, date, title, body}`) and `configs/changelog.toml` (`[[entry]] {date, title, body, major}`);
+  models `Notice`/`ChangelogEntry`, loaded onto `Registry.notices`/`.changelog`, newest first (same-day entries keep file order). Notice ids must be unique.
+- **Popup:** `open_screen` (every /play and shortcut) calls `ui/notices.check` after the menu is sent: unseen notices go out as ONE ephemeral embed,
+  one notice per page (◀ ▶ Close). Ids are stored in `Settings.seen_notices` only once the send worked, so a failed popup retries next time.
+- **News page:** More -> News (`screens/news.py`, tabs Messages and Changelog): `services/news.pages` packs entries onto ~1800-char pages.
+- **Upkeep rule:** player-visible change = changelog entry; one players may ask about = also a notice (CLAUDE.md, finish-feature skill).

@@ -110,6 +110,9 @@ add the id to any test list that enumerates a category (e.g. `FOODS` in `tests/t
 Home/More/another screen. `tests/test_hub.py::test_every_screen_renders_valid_layout_within_discord_limits` covers layout limits automatically.
 **A new rule/system**: service module (no discord) + registry model + config TOML + screen + tests + DESIGN.md section + STATUS.md line.
 **A DB change**: new Alembic migration in `migrations/versions/` (and update `cococap/db/tables.py`); `tests/test_db_migrations.py` checks the schema matches.
+**A change players will notice**: add it to `configs/changelog.toml` (newest at the top; a big change gets its own `major = true`
+entry, small ones share one grouped entry). If players may have questions about it, also add a notice to `configs/notices.toml` (a new
+unique `id`; it pops up once for every player, then stays on More -> News -> Messages).
 **A balance change**: edit the TOML, run `scripts.balance` or the relevant guard test, never hard-code the number in a test.
 
 ## Testing

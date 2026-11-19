@@ -12,7 +12,7 @@ from cococap.user import Cooldowns
 # holds Trade and the Minigames).
 FEATURED = ["skills", "shipments", "shop", "inventory", "pets", "checkin"]
 SECOND_ROW = ["ship", "player", "rank", "party"]
-MORE_LINKS = ["trade", "games", "bestiary", "wiki", "settings"]
+MORE_LINKS = ["news", "trade", "games", "bestiary", "wiki", "settings"]
 PARTY_NAMES_SHOWN = 4
 
 
@@ -100,7 +100,7 @@ class MoreScreen(Screen):
     id = "more"
     label = "More"
     emoji = emojis.icon('next', '➡️')
-    description = "Trade, games, bestiary, wiki and settings"
+    description = "News, trade, games, bestiary, wiki and settings"
     links = tuple(MORE_LINKS)
 
     async def build(self) -> Page:

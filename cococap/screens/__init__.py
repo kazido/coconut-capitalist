@@ -21,6 +21,7 @@ from .market import MarketScreen
 from .mastery import MasteryScreen
 from .games_page import GamesScreen
 from .mining import MiningScreen
+from .news import NewsScreen
 from .party import PartyScreen
 from .pets import PetsScreen
 from .player import PlayerScreen
@@ -72,6 +73,7 @@ SCREENS: dict[str, type[Screen]] = {
         ShopScreen,
         RankScreen,
         SettingsScreen,
+        NewsScreen,
     )
 }
 
@@ -82,4 +84,7 @@ async def open_screen(interaction: Interaction, screen_id: str = "home", **state
     await user.set_name(interaction.user.display_name)
     nav = Navigator(interaction.user, user, SCREENS)
     await nav.open(interaction, screen_id, **state)
+    from cococap.ui import notices  # local import: like levelup, it needs the finished ui package
+
+    await notices.check(interaction, user)  # unseen notices pop up once, after the menu is sent
     return nav
