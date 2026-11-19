@@ -625,7 +625,7 @@ def test_the_farming_materials_are_used_by_upgrades_across_the_game():
     outside = {t.tool.kind for t in REG.items.values() if t.tool and t.tool.kind != "can" and t.tool.upgrade and made & set(t.tool.upgrade.items)}
     assert {"axe", "pickaxe", "rod", "sword"} <= outside  # ...in other skills' tools too, not only the can
     rates = [REG.item(m).drop.rate for m in ("material_compost", "material_dewdrop", "material_beeswax", "material_living_vine")]
-    assert rates == sorted(rates) and len(set(rates[1:])) == 3  # each rarer than the last (compost and dewdrop are both bulk: 1 in 3 with a quantity range)
+    assert rates == sorted(rates) and len(set(rates)) == 4  # each rarer than the last
 
 
 async def test_a_plot_you_watered_and_then_harvested_does_not_use_up_the_can(db):
@@ -828,7 +828,7 @@ async def test_tending_collects_the_byproducts_of_the_cycles_since_last_time_onc
     await growing(user, cycle=2)
     report = await f.tend(user, Random(1), T0, REG)
     assert (report.plots, report.cycles) == (1, 2) and (await user.skill("farming")).farm.plot_1.tended == 2
-    assert all(REG.item(i).skill == "farming" for i in report.found)  # (a late zone's table is rare finds: a Tend there can come up empty)
+    assert all(REG.item(i).skill == "farming" for i in report.found) and sum(report.found.values()) > 0
     for item, quantity in report.found.items():
         assert await user.item_quantity(item) == quantity
     with pytest.raises(f.FarmingError):  # nothing new has grown

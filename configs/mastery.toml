@@ -142,10 +142,10 @@ effects = [{ stat = "rich_chance", amount = 0.03 }, { stat = "vault_gem", amount
 [[trees.branches.nodes]]
 id = "geode_cracker"
 name = "Geode Cracker"
-description = "CAPSTONE: about 1 cell in 650 is a geode with a reactor gem inside (one you have not placed yet)."
+description = "CAPSTONE: about 1 cell in 400 is a geode with a reactor gem inside (one you have not placed yet)."
 level = 50
 cost = 4
-effects = [{ stat = "geode", amount = 0.0015 }]
+effects = [{ stat = "geode", amount = 0.0025 }]
 
 [[trees]]
 skill = "fishing"

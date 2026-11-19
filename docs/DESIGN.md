@@ -178,18 +178,6 @@ crop. Byproducts (Tend and a harvest's extras) roll only that zone's table, `far
 zone has its own table value, so `byproduct_rolls` is sized per zone to keep a Tend near what it was (guard test). Star depth = the planted zone. A plot keeps at most
 `byproduct_max_cycles` (3) cycles waiting, so a Tend stays small.
 
-## Rarity (drop rates by active time)
-
-A drop's rarity is how long an ACTIVE player waits between finds of that one item, so the per-roll rate differs per skill (rolls per active hour: mining
-720 cells, foraging 45 trees, farming ~400 byproduct rolls). `rate = rolls/hour x minutes / 60`. Minutes between finds: R2 10, R3 60, R4 300, R5 1,500 (25 h), R6 6,000
-(100 h), R7 24,000 (400 h); an item may sit within x2 of that. R1 and bulk materials (a material of rarity 1-2) are found nearly every action: rate 1-3 with a quantity
-range. The two tables live in `tests/test_rarity_bands.py` (`ROLLS_PER_HOUR`, `MINUTES_BETWEEN_FINDS`): tune them there (and `ROLLS_PER_HOUR` in `services/shipments.py`),
-and the guard test checks every drop (fish excepted: what bites is set by the per-water odds in `fishing.toml [waters.fish]`, untouched).
-Pay was kept level per item: price x expected count per hour is unchanged, so rarer items sell for more (R3 gold ore 1,900 -> 50,000), and the item counts in upgrades,
-recipes, ship parts, vault ore, wyrmholes, crab pots and radar were scaled by the same factor, so the time to collect them is the same. Mining tables are re-sorted rarest-first
-(a startup check). Scrolls: mining 1 in 10,800 cells and foraging 1 in 675 private trees, about one a week of play (~15 h). Re-rated: Honeycomb R4->R2, Golden Sap R5->R3,
-Acorn Mix R2->R1 (so each pet food skill still has three tiers). Late-zone Tend byproducts are now lumpy (beeswax/living vine are R3/R4 finds), with the same value on average.
-
 ## Areas and locations (v3)
 
 Every skill has an ordered list of **named locations**, 14 per skill (`configs/locations.toml`, keyed `[skill.id]`: forests, mines, waters,

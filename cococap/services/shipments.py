@@ -30,24 +30,17 @@ class ShipmentError(GameRuleError):
     """A rule was broken; the message is safe to show the player."""
 
 
-# Rolls of a drop table in an hour of active play, by skill (the same numbers tests/test_rarity_bands.py sorts rarity by)
-ROLLS_PER_HOUR = {"mining": 720, "foraging": 45, "fishing": 156, "farming": 400}
-
-
-BUDGET_PER_KIND = 4  # one piece of a find may be worth up to this many times a kind's share of the crate (rarer finds are dear now: a couple of pieces fill a kind)
-
-
 # ---- what can be asked for ---------------------------------------------------------------------------------------------
 def pool(skill: str, level: int, registry: Registry, budget: int, cheapest: int = 0) -> list[Item]:
     """The materials of `skill` a shipment may ask for at this level: sellable finds and crops, nothing rarer than the level allows, nothing so dear that
     one is more than `budget` bits, and nothing so cheap that you would be asked for a thousand (`cheapest`)."""
-    cap = 5 + registry.shipments.personal.rate_per_level * level  # minutes of active play between finds of one item that a shipment may ask for
+    cap = 5 + registry.shipments.personal.rate_per_level * level
     consumables = {w.item for w in registry.foraging.rotate.wedges}  # (wedges are for using, not for shipping)
     items = []
     for item in registry.items.values():
         if item.skill != skill or item.sell_price <= 0 or item.is_instance or item.id in consumables or not cheapest <= item.sell_price <= budget:
             continue
-        if item.category == "crop" or (item.drop is not None and item.category in ("material", "fish") and item.drop.rate * 60 / ROLLS_PER_HOUR.get(item.skill, 100) <= cap):  # (a rate is per roll: judge by how long a find takes)
+        if item.category == "crop" or (item.drop is not None and item.category in ("material", "fish") and item.drop.rate <= cap):
             items.append(item)
     return sorted(items, key=lambda i: i.id)
 
@@ -96,13 +89,11 @@ def make_shipment(rng: random.Random, theme: str, levels: dict[str, int], regist
 
     def add(skill: str, per_kind: float, cheapest: int, most: int = 10**9) -> None:
         level = levels.get(skill, 1)
-        options = [i for i in pool(skill, level, reg, round(per_kind * BUDGET_PER_KIND), cheapest) if i.id not in need]
+        options = [i for i in pool(skill, level, reg, round(per_kind * 3), cheapest) if i.id not in need]
         if not options:  # (a low level with little to choose from: allow cheaper things first, and only then rarer ones, rather than ask for nothing)
-            options = [i for i in pool(skill, level, reg, round(per_kind * BUDGET_PER_KIND)) if i.id not in need]
+            options = [i for i in pool(skill, level, reg, round(per_kind * 3)) if i.id not in need]
         if not options:
-            options = [i for i in pool(skill, 100, reg, round(per_kind * BUDGET_PER_KIND)) if i.id not in need]
-        if not options:  # (a skill with only a few cheap finds: take one that costs more than the budget rather than none)
-            options = sorted((i for i in pool(skill, 100, reg, 10**12) if i.id not in need), key=lambda i: i.sell_price)[:1]  # the cheapest of what is left
+            options = [i for i in pool(skill, 100, reg, round(per_kind * 3)) if i.id not in need]
         item = rng.choice(options)
         need[item.id] = min(most, max(1, round(per_kind / item.sell_price)))  # (a cap, so even the cheapest fallback is never a pile)
 

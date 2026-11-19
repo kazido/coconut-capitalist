@@ -1,13 +1,13 @@
 # Where scrolls come from. Every skill has THREE scrolls of its own and shares THREE that fit any tool (Keenness, Scholar, Appraiser), and every skill's source
-# hands out one of its six at random. Aim: about one scroll per WEEK of play (~15 active hours) in mining and foraging; a scroll is an event, not routine. TODO(balance)
+# hands out one of its six at random. Aim: about one scroll per three hours of play in each skill, so a session or so; a scroll is an event, not routine. TODO(balance)
 # (Fishing has no entry: its scrolls come from treasure chests and boss loot, see fishing.toml.)
 
 [mining]
-odds = 10800                      # 1 in this many cells dug: about 720 cells an hour x ~15 active hours a week = about one scroll a week
+odds = 2200                       # 1 in this many cells dug (about 720 cells an hour of play)
 pool = ["scroll_iron_frame", "scroll_veinfinder", "scroll_bounty", "scroll_keen", "scroll_scholar", "scroll_appraiser"]
 
 [foraging]
-odds = 675                        # 1 in this many private trees felled (about 45 trees an hour whatever your axe) x ~15 active hours a week = about one scroll a week
+odds = 150                        # 1 in this many private trees felled (about 45 trees an hour whatever your axe: better axes meet bigger trees)
 pool = ["scroll_sharp_eye", "scroll_seasoned", "scroll_double_strike", "scroll_keen", "scroll_scholar", "scroll_appraiser"]
 
 [farming]

@@ -54,5 +54,5 @@ async def test_early_fields_pay_one_star_and_late_fields_pay_more(db, monkeypatc
     # seed_ambrosia (field 14, 777 cycles) rolls the drop table 60 times a harvest; seed_coconut (field 12) is nearly as deep
     skip_zone_gate(monkeypatch)
     await work_zone(await User.get(1), len(get_registry().farming.field_seeds))  # the planted zone sets the star depth
-    late = await harvest_extras_stars("seed_ambrosia", 250)  # (zone 14's table is rare finds: it takes a good few harvests to see beeswax)
+    late = await harvest_extras_stars("seed_ambrosia", 3)
     assert late["material_beeswax_s2"] + late["material_beeswax_s3"] > 0

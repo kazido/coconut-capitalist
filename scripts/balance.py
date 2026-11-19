@@ -38,7 +38,7 @@ def mining_per_click() -> float:
             clicks += 1
         return sum(price(i) * q for i, q in run.haul.items()), clicks
 
-    runs = [mine(s) for s in range(4000)]  # many runs: the rare drops (spirits, gems) pay a lot, so a short sample is noisy
+    runs = [mine(s) for s in range(800)]
     return sum(v for v, _ in runs) / sum(c for _, c in runs)
 
 

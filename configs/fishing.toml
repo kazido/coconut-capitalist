@@ -573,7 +573,7 @@ craft_bits = 25000
 [pots.craft_items]
 material_hardwood = 10
 material_plant_fiber = 15
-material_coral_shard = 10
+material_coral_shard = 5
 
 [[pots.levels]]                   # level 1
 interval_minutes = 75
@@ -586,7 +586,7 @@ upgrade_bits = 60000
 [pots.levels.upgrade_items]
 material_hardwood = 20
 material_plant_fiber = 20
-material_coral_shard = 20
+material_coral_shard = 10
 [[pots.levels]]
 interval_minutes = 52
 capacity = 12
@@ -594,7 +594,7 @@ upgrade_bits = 250000
 [pots.levels.upgrade_items]
 material_hardwood = 50
 material_plant_fiber = 50
-material_coral_shard = 50
+material_coral_shard = 25
 fish_salmon = 5
 [[pots.levels]]
 interval_minutes = 40
@@ -603,7 +603,7 @@ upgrade_bits = 1000000
 [pots.levels.upgrade_items]
 material_hardwood = 120
 material_plant_fiber = 100
-material_coral_shard = 120
+material_coral_shard = 60
 fish_tuna = 5
 fish_swordfish = 1
 [[pots.levels]]
@@ -613,7 +613,7 @@ upgrade_bits = 5000000
 [pots.levels.upgrade_items]
 material_hardwood = 300
 material_plant_fiber = 250
-material_coral_shard = 300
+material_coral_shard = 150
 fish_swordfish = 5
 fish_marlin = 1
 
@@ -638,24 +638,24 @@ battery = "material_radar_battery"
 multiplier = 1.4
 slots = 1
 bits = 2000000
-items = { fish_tuna = 150, fish_swordfish = 20, material_coral_shard = 200 }
+items = { fish_tuna = 150, fish_swordfish = 20, material_coral_shard = 100 }
 [[radar.levels]]
 multiplier = 1.8
 slots = 1
 bits = 10000000
-items = { fish_swordfish = 80, fish_moray_eel = 40, material_coral_shard = 400 }
+items = { fish_swordfish = 80, fish_moray_eel = 40, material_coral_shard = 200 }
 [[radar.levels]]
 multiplier = 2.3
 slots = 2
 bits = 40000000
-items = { fish_giant_squid = 6, fish_marlin = 6, fish_pike = 60, material_coral_shard = 800 }
+items = { fish_giant_squid = 6, fish_marlin = 6, fish_pike = 60, material_coral_shard = 400 }
 [[radar.levels]]
 multiplier = 2.8
 slots = 2
 bits = 150000000
-items = { fish_abyssal_angler = 4, fish_giant_squid = 15, fish_marlin = 15, material_coral_shard = 1200 }
+items = { fish_abyssal_angler = 4, fish_giant_squid = 15, fish_marlin = 15, material_coral_shard = 600 }
 [[radar.levels]]
 multiplier = 3.3
 slots = 3
 bits = 600000000
-items = { fish_leviathan_pup = 1, fish_abyssal_angler = 10, fish_oarfish = 6, material_coral_shard = 1800 }
+items = { fish_leviathan_pup = 1, fish_abyssal_angler = 10, fish_oarfish = 6, material_coral_shard = 900 }

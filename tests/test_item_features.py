@@ -33,11 +33,11 @@ def test_shop_embed_hides_non_shop_fields():
 def test_roll_item_respects_drop_table():
     reg = get_registry()
     assert roll_item(reg.item("crop_apple")) is None  # no drop table
-    gem = reg.item("material_clay")  # 1-in-3, exactly 1
+    gem = reg.item("key_gemstone_implosion")  # 1-in-5, exactly 1
     random.seed(1)
     rolls = [roll_item(gem) for _ in range(2000)]
     assert set(rolls) == {None, 1}
-    assert 550 < rolls.count(1) < 780  # ~33%
+    assert 300 < rolls.count(1) < 500  # ~20%
     ore = reg.item("material_copper_ore")
     assert {r for r in (roll_item(ore) for _ in range(500)) if r} <= {1, 2, 3}
 

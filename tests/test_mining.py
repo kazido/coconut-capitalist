@@ -675,9 +675,8 @@ def test_the_vault_holds_all_three_ores_in_proportion_to_how_often_they_drop():
         item = REG.item(ore)
         return sum(loot.skewed_roll(rng, item.drop.min, item.drop.max) for _ in range(20000)) / 20000 / item.drop.rate
 
-    ratios = {ore: D.vault_ore[ore] / per_roll(ore) for ore in ("material_copper_ore", "material_iron_ore")}
-    assert max(ratios.values()) / min(ratios.values()) < 1.3  # the rarer the ore, the fewer of it: as many "rolls" of each
-    assert 1 <= D.vault_ore["material_gold_ore"] <= 2  # (gold is a rare find now: a vault holds a nugget or two, never a pile)
+    ratios = {ore: D.vault_ore[ore] / per_roll(ore) for ore in D.vault_ore}
+    assert max(ratios.values()) / min(ratios.values()) < 1.15  # the rarer the ore, the fewer of it: as many "rolls" of each
     worth = sum(REG.item(ore).sell_price * q for ore, q in D.vault_ore.items())
     assert 70_000 <= worth <= 120_000  # (the ore COUNT is what was cut, to a third; the price is the flattened one)
 
@@ -1288,7 +1287,7 @@ def test_the_three_mining_capstones_are_about_equally_strong_at_low_and_high_pow
     price = lambda i: REG.item(i).sell_price  # noqa: E731
     d = RULES.descent
 
-    def average(power, runs=5000, lifeline_runs=None, **kw):  # (many runs: rare drops pay a lot, so a short sample is noisy)
+    def average(power, runs=1200, lifeline_runs=None, **kw):
         total, wait = 0, 0
         for seed in range(runs):
             run = m.MineRun(RULES, REG, R(seed), cursors=[2], braces=d.braces_base + 1, yield_factor=1 + d.power_yield_bonus * (power - 3),
@@ -1381,7 +1380,7 @@ def test_a_plain_run_is_a_standard_mine_and_unchanged():
 def test_an_ore_focused_mine_pays_more_of_its_ore():
     def income(type_id, ore, depth=6):
         total = 0
-        for seed in range(3000):  # (gold is a rare find now: many seeds)
+        for seed in range(150):
             run = _run(type_id, seed)
             total += sum(q for i in range(depth) for cell in run.row(i) if cell and cell[0] == ore for q in [cell[1]])
         return total
@@ -1392,7 +1391,7 @@ def test_an_ore_focused_mine_pays_more_of_its_ore():
 
 
 def test_ore_boost_raises_the_drop_chance_and_other_ores_stay_possible():
-    boosted = TYPES["standard"].model_copy(update={"id": "x", "ore_boost": {"material_iron_ore": 2.0}})
+    boosted = TYPES["standard"].model_copy(update={"id": "x", "ore_boost": {"material_iron_ore": 3.0}})
     def count(kind, ore):
         n = 0
         for seed in range(60):
@@ -1400,7 +1399,7 @@ def test_ore_boost_raises_the_drop_chance_and_other_ores_stay_possible():
             n += sum(1 for i in range(4, 8) for cell in run.row(i) if cell and cell[0] == ore)
         return n
     assert count(boosted, "material_iron_ore") > count(TYPES["standard"], "material_iron_ore") * 1.5
-    assert count(boosted, "material_copper_ore") > 0 and count(boosted, "material_tin_ore") > 0
+    assert count(boosted, "material_copper_ore") > 0 and count(boosted, "material_gold_ore") > 0
 
 
 def test_ore_yield_also_fattens_the_vault_ore():

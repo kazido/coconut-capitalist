@@ -247,7 +247,7 @@ def test_early_upgrades_use_only_the_tools_own_skill_and_later_ones_mostly_do():
                 assert not foreign, (tool.id, [i.id for i in foreign])
             else:  # later: a majority from its own skill, a smaller share from others
                 assert foreign, (tool.id, "later steps should call on other skills too")
-                assert len(own) > len(foreign), tool.id  # (more KINDS from its own skill: how many of each depends on how rare each is now)
+                assert len(own) > len(foreign) and sum(own.values()) > sum(foreign.values()), tool.id
 
 
 def test_every_upgrade_step_takes_bits_and_several_materials():
