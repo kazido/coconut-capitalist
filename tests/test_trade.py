@@ -233,3 +233,24 @@ async def test_the_item_dropdown_lists_ordinary_stacks_but_never_tools_and_cance
     assert "material_copper_ore" in values and "tool_pickaxe_rookie" not in values
     await find_button(nav, "Cancel trade").callback(inter)
     assert trade.window_of(1) is None and "off" in all_text(nav)
+
+
+async def test_find_item_adds_any_tradable_item_by_name_and_amount(db):
+    from tests.test_hub import click, submit
+
+    a, b = await pair(db, ore=10)
+    await a.add_item("material_tin_ore", 4)
+    window = open_window(time.time())
+    nav, inter = await hub("trade", user_id=1)
+    await click(nav, inter, "Find item")
+    modal = await submit(inter, "copper 3")  # part of the name, then an amount
+    await modal.on_submit(inter)
+    assert window.offer(1)[0] == {"material_copper_ore": 3}
+    await click(nav, inter, "Find item")
+    modal = await submit(inter, "tin ore")  # no amount: all of it
+    await modal.on_submit(inter)
+    assert window.offer(1)[0]["material_tin_ore"] == 4
+    await click(nav, inter, "Find item")
+    modal = await submit(inter, "unobtainium")
+    await modal.on_submit(inter)
+    assert "no tradable item" in all_text(nav)

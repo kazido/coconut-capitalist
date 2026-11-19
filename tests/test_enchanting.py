@@ -131,12 +131,15 @@ def test_every_skill_has_its_own_scrolls_and_shares_the_same_three_global_ones()
         assert REG.item(i).skill is None and set(REG.enchants[REG.item(i).scroll.enchant].applies_to) >= {"pickaxe", "axe", "rod", "can"}
 
 
-def test_scrolls_are_rare_about_one_every_few_hours_in_each_skill():
-    # per hour of play: mining ~720 cells, foraging ~45 private trees, fishing ~2 bosses and a chest now and then
-    per_hour = {"mining": 720 / REG.scrolls.mining.odds, "foraging": 45 / REG.scrolls.foraging.odds}
+def test_scrolls_are_rare_about_one_a_week_in_mining_and_foraging():
+    # per hour of play: mining ~720 cells, foraging ~45 private trees; a week of play is ~15 active hours
+    week = 15
+    for skill, per_hour in {"mining": 720 / REG.scrolls.mining.odds, "foraging": 45 / REG.scrolls.foraging.odds}.items():
+        assert 0.5 <= week * per_hour <= 2, f"{skill}: {week * per_hour:.1f} scrolls a week"
+    per_hour = {}
     boss = sum(r.chance for r in REG.fishing.boss.loot if r.item.startswith("scroll_"))
     per_hour["fishing"] = 1.5 * boss  # (bosses are hooked about 1 in 80 casts and not every one is landed)
-    for skill, rate in per_hour.items():
+    for skill, rate in per_hour.items():  # fishing: from chests and bosses, a few hours between scrolls
         assert 1 / 6 <= rate <= 1 / 2, f"{skill}: a scroll every {1 / rate:.1f} hours"
 
 

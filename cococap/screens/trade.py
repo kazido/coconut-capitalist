@@ -68,7 +68,8 @@ class TradeScreen(Screen):
             body.append(row(select("Add an item...", [
                 discord.SelectOption(label=get_registry().item(i).name[:90], description=f"you have {q:,}", value=i, emoji=get_registry().item(i).emoji or None) for i, q in stacks], self._add_item)))
         accepted = me in window.accepted
-        body.append(row(button("Add bits", emoji=emojis.currency("bits"), on_click=self._add_bits),
+        body.append(row(button("Find item", emoji=emojis.icon('search', '🔎'), on_click=self._find_item),
+                        button("Add bits", emoji=emojis.currency("bits"), on_click=self._add_bits),
                         button("Empty my side", disabled=not (mine[0] or mine[1]), on_click=self._empty),
                         button("Accepted: undo" if accepted else "Accept", emoji=emojis.icon('check', '✅'), style=discord.ButtonStyle.secondary if accepted else discord.ButtonStyle.success,
                                disabled=not (mine[0] or mine[1] or theirs[0] or theirs[1]) and not accepted, on_click=self._unaccept if accepted else self._accept(window.version)),
@@ -88,6 +89,34 @@ class TradeScreen(Screen):
             await self.refresh(modal_interaction, f"Offering {name}." if parse_number(raw) else f"Took {name} back out.")
 
         await interaction.response.send_modal(PromptModal(f"Offer {name}", f"How many? (you have {have:,}; 0 to take it out)", submitted, default=str(have), max_length=9))
+
+    async def _find_item(self, interaction: discord.Interaction) -> None:
+        """The dropdown only holds 25 stacks: this finds ANY tradable item by (part of) its name, with an optional amount ("iron ore 20")."""
+        async def submitted(modal_interaction: discord.Interaction, raw: str) -> None:
+            words = raw.strip().split()
+            amount = None
+            if len(words) > 1 and words[-1].replace(",", "").isdigit():
+                amount = int(words.pop().replace(",", ""))
+            query = " ".join(words).lower()
+            reg = get_registry()
+            stacks = await trade.tradable(self.user)
+            exact = [i for i in stacks if reg.item(i).name.lower() == query]
+            matches = exact or [i for i in stacks if query and query in reg.item(i).name.lower()]
+            if not matches:
+                return await self.refresh(modal_interaction, f"You have no tradable item called \"{' '.join(words)}\".")
+            if len(matches) > 1:
+                names = ", ".join(reg.item(i).name for i in matches[:6])
+                return await self.refresh(modal_interaction, f"Which one? {names}" + ("..." if len(matches) > 6 else ""))
+            item_id = matches[0]
+            have = stacks[item_id]
+            count = have if amount is None else min(amount, have)
+            try:
+                await trade.put_items(self.user, item_id, count)
+            except trade.TradeError as error:
+                return await self.refresh(modal_interaction, str(error))
+            await self.refresh(modal_interaction, f"Offering {count:,} {reg.item(item_id).name}." if count else f"Took {reg.item(item_id).name} back out.")
+
+        await interaction.response.send_modal(PromptModal("Find an item", "Item name, then an amount (default: all)", submitted, placeholder="iron ore 20", max_length=60))
 
     async def _add_bits(self, interaction: discord.Interaction) -> None:
         async def submitted(modal_interaction: discord.Interaction, raw: str) -> None:
