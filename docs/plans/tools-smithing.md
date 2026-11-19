@@ -12,7 +12,8 @@ Owner's decisions (interview, 2026-11-19):
 - **Parts are generic and drop from all skills.** Three part types, all required: a tool = **1 Base + 1 Trim + 1 Accent**
   (changed 2026-11-19, was primary + 2 secondaries). You pick the tool kind (pickaxe/rod/axe/can) when smithing. Base = the working end
   (pick head, axe blade, rod reel, can body), Trim = what you hold (handle, pole), Accent = a wrap, line or spout.
-- **No tool tiers. Power = sum of the parts' power.** Each part has a tier; a higher tier part grants more power (power per type per tier in config).
+- **No tool tiers. Power = sum of the parts' power.** Each part has a tier; a higher tier part grants more power. **All three part
+  types are equal** (same power per tier; decided 2026-11-19), so any part is as valuable as another.
   Max tool = 3 high-tier parts with the traits you want; a 3+3+1 is a fine starter build.
 - **Part tier is random by rarity, weighted by area.** Higher areas make high tiers more common. Hard cap: a player in area A can roll at most
   about tier A+2 (area 1 -> tier 3 at best, rarely). No lucky jackpots far above your area.
@@ -54,7 +55,7 @@ Two layers, so no tool combination ever needs its own drawing:
   that it renders every kind x cosmetic without error and stays small.
 
 ## Design (data first)
-- `configs/smithing.toml` (new): part types (base, trim, accent), part tier table (power per tier per type), area weights per tier + the "area + 2" cap, trait pool
+- `configs/smithing.toml` (new): part types (base, trim, accent), part tier table (power per tier, the same for every type), area weights per tier + the "area + 2" cap, trait pool
   (id, name, stat, amount per quality, which tool kinds it fits, how many traits a fresh part rolls by rarity), quality grades (odds by smithing
   level, multiplier), cosmetic chance, smithing xp, level gates (max part tier by level, part swap unlock level). Mark guesses `TODO(balance)`.
 - Parts are **instances**, not stackable items (each has its own tier + traits): reuse `item_instances` (`ItemInstanceRow`, `cococap/db/tables.py:85`)
