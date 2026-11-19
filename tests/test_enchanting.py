@@ -109,7 +109,7 @@ def test_sharp_eye_makes_good_chops_more_likely():
 
 # ---- finding scrolls ------------------------------------------------------------------------------------------------------
 def test_every_skill_has_its_own_scrolls():
-    own = {"mining": {"scroll_echo_strike"}, "fishing": {"scroll_double_hook", "scroll_steady_line"},
+    own = {"mining": {"scroll_echo_strike", "scroll_second_wind", "scroll_prospectors_ping"}, "fishing": {"scroll_double_hook", "scroll_steady_line"},
            "foraging": {"scroll_double_strike"}, "farming": {"scroll_seedkeeper"}}
     for skill, mine in own.items():
         found = {i.id for i in REG.items.values() if i.category == "scroll" and skill in scrolls.scroll_skills(i.id, REG)}

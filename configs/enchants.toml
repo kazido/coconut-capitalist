@@ -72,3 +72,27 @@ max_level = 3  # TODO(balance): the 6% per level is a guess
 type = "stat_add"
 stat = "echo_strike"
 amount = 0.06
+
+[second_wind]
+name = "Second Wind"
+emoji = "🌬️"
+description = "Once per mine, a collapse is held off for a moment: press Brace! to save the tunnel (no brace used)."
+applies_to = ["pickaxe"]
+max_level = 1
+
+[[second_wind.effects]]
+type = "stat_add"
+stat = "second_wind"
+amount = 1.0
+
+[prospectors_ping]
+name = "Prospector's Ping"
+emoji = "📡"
+description = "Once per mine, Ping reveals the three tiles straight below your cursor."
+applies_to = ["pickaxe"]
+max_level = 1
+
+[[prospectors_ping.effects]]
+type = "stat_add"
+stat = "prospectors_ping"
+amount = 1.0

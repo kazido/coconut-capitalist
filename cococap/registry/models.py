@@ -552,6 +552,8 @@ class DescentRules(_Data):
     lifeline_runs: int = Field(default=4, ge=1)  # ...and how many mines the reactor needs to recharge afterwards (the one that saved you counts as the first)
     max_reduction: float = Field(ge=0, le=0.95)
     brace_amount: float = Field(ge=0)
+    second_wind_item: str  # the Second Wind scroll: 1 in second_wind_odds banked runs that reached the top pressure label drop it
+    second_wind_odds: int = Field(ge=1)
     braces_base: int = Field(ge=0)
     braces_per_reactor_levels: int = Field(ge=1)
     # Collapse risk is a smooth curve of pressure: 0 below `safe_pressure`, `max_risk` at 100.

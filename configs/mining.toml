@@ -270,6 +270,7 @@ emoji = "📚"
 weight = 2.5
 description = "Old carvings on every wall: double mining xp."
 xp_mult = 2.0
+scroll = { item = "scroll_prospectors_ping", odds = 40 }  # TODO(balance): 1 in 40 banked Scholar's Cavern runs
 
 [[mine_types]]
 id = "deep_pocket"
@@ -390,6 +391,8 @@ lifeline_runs = 8                  # ...and it needs this many mines to recharge
 reactor_reduction = 0.02           # each reactor level above 1 slows pressure gains by 2%...
 max_reduction = 0.5                # ...up to 50%
 brace_amount = 25                  # pressure removed by one brace (a brace skips the dig)
+second_wind_item = "scroll_second_wind"  # the scroll only a run that reached the top pressure label can drop (see Second Wind)
+second_wind_odds = 40             # TODO(balance): 1 in 40 banked runs that reached the top label
 braces_base = 1
 braces_per_reactor_levels = 5      # +1 brace for every 5 reactor levels
 

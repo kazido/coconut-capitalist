@@ -2109,6 +2109,34 @@ sell_price = 1200000  # TODO(balance)
 [scroll_echo_strike.scroll]
 enchant = "echo_strike"
 
+[scroll_second_wind]
+name = "Scroll of Second Wind"
+description = "Once per mine, a collapse is held off long enough to press Brace!."
+wiki = "Use it from your inventory (Enchant) to put Second Wind on a pickaxe. One use. Only a run that climbs to the top pressure label can drop it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "mining"
+category = "scroll"
+price = 0
+sell_price = 1500000  # TODO(balance)
+
+[scroll_second_wind.scroll]
+enchant = "second_wind"
+
+[scroll_prospectors_ping]
+name = "Scroll of Prospector's Ping"
+description = "Once per mine, a Ping shows the three tiles under your cursor."
+wiki = "Use it from your inventory (Enchant) to put Prospector's Ping on a pickaxe. One use. Only Scholar's Cavern drops it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "mining"
+category = "scroll"
+price = 0
+sell_price = 1200000  # TODO(balance)
+
+[scroll_prospectors_ping.scroll]
+enchant = "prospectors_ping"
+
 # ---- Tree species signature drops (see [[species]] in foraging.toml). No [drop] block: they only drop from their species. ----
 [material_twilight_fuel]
 name = "Twilight Fuel"

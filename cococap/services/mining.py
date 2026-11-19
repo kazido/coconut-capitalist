@@ -101,6 +101,7 @@ class DigResult:
     vault: Counter[str] = field(default_factory=Counter)  # what the vault gave, if this dig reached the floor
     auto_bombed: bool = False  # the Warden's Auto-Bomb went off on this row
     multi: tuple[int, ...] = ()  # extra columns the Prospector's Multi-Mine dug beside yours
+    second_wind: bool = False  # Second Wind held a collapse: the run waits for Brace! (or the next dig lets it happen)
     echo: tuple[int, ...] = ()  # the column Echo Strike cracked beside a dug one (its loot is in `found`, its pressure is not charged)
     milestone: Milestone | None = None  # the landmark row this dig finished, if any (already applied)
     milestone_haul: Counter[str] = field(default_factory=Counter)  # the ore it gave
@@ -167,6 +168,8 @@ class MineRun:
         wyrmhole_bonus: float = 0.0,
         site: MineSite | None = None,
         echo_strike: float = 0.0,
+        second_wind: bool = False,
+        prospectors_ping: bool = False,
     ):
         self.rules, self.registry, self.rng = rules, registry, rng
         self.site = site or rules.mines[0]  # which named mine this is (its ore tables, yield and hardness)
@@ -182,6 +185,11 @@ class MineRun:
         self.rich_bonus, self.vault_gem_bonus = rich_bonus + self.mine_type.rich_chance_add, vault_gem_bonus  # Mastery: more rich lodes, more vault gems
         self.auto_bomb_every, self.multi_mine = auto_bomb_every, multi_mine  # pickaxe abilities (0: none)
         self.echo_strike = echo_strike  # pickaxe enchant: the chance a dig also cracks the tile beside it (0: none)
+        # Second Wind (once per mine): a collapse is held until Brace! (saves it, no brace charge) or the next dig, which lets it happen.
+        self.second_wind_armed, self.second_wind_held, self.second_wind_used = second_wind, False, False
+        self.ping_armed, self.ping_used = prospectors_ping, False  # Prospector's Ping (once per mine): reveals tiles ahead
+        self.pinged: set[tuple[int, int]] = set()  # (row, column) tiles a ping revealed
+        self.reached_top = False  # got to the top pressure label at some point (Second Wind's source needs it)
         self.lifeline, self.gold_rush, self.geode = lifeline, gold_rush, geode  # Mastery capstones (0: none): a second chance from a collapse, every Nth cell pays triple, geodes with gems
         self.rare_reroll = rare_reroll  # a Fox: a cell that rolled nothing rare has this chance of one free second roll
         self.cells_mined = 0
@@ -435,6 +443,8 @@ class MineRun:
                 self.passed_haul = Counter({ore: max(1, round(q * self.passed.vault_share)) for ore, q in self._vault_ore().items()})
             self.haul.update(self.passed_haul)
             self.safe = Counter(self.haul)  # a checkpoint: everything you hold is kept from here on
+        if self.warning.name == d.warnings[-1].name:
+            self.reached_top = True  # Second Wind's scroll only drops from runs that got this high
         if self.depth < d.floor:
             self.aim()
             return Counter()
@@ -477,12 +487,16 @@ class MineRun:
             self.magnet_rows += 1
         self.last_risk, self.last_pressure = self.risk, self.danger  # kept for the log when something goes wrong
         saved: Counter[str] | None = None
-        if self.rng.random() < self.risk:
+        held, self.second_wind_held = self.second_wind_held, False  # a dig while Second Wind waits for Brace! lets the collapse happen
+        if held or self.rng.random() < self.risk:
             if self.lifeline and self.lifeline_ready and not self.lifeline_fired:
                 # Lifeline (Mastery capstone): the reactor holds the tunnel. You lose a little of what you carry, the pressure drops, and the dig goes on.
                 self.lifeline_fired = True
                 saved = self._lose(d.lifeline_loss)
                 self.danger = min(self.danger, d.lifeline_pressure)
+            elif self.second_wind_armed and not self.second_wind_used and not held:
+                self.second_wind_held = True  # the rock holds for a moment: nothing is dug until the player answers
+                return DigResult(Counter(), second_wind=True)
             else:
                 self.outcome = "collapse"
                 return DigResult(Counter(), collapsed=True, lost=self._lose(d.collapse_loss))
@@ -529,11 +543,26 @@ class MineRun:
     def brace(self) -> None:
         """Shore up the tunnel: lower the pressure (uses a brace, skips a dig)."""
         self._require_live()
+        if self.second_wind_held:  # Second Wind: Brace! saves the held collapse, and it costs no brace
+            self.second_wind_held, self.second_wind_used = False, True
+            self.danger = max(0.0, self.danger - self.rules.descent.brace_amount)
+            return
         if self.braces <= 0:
             raise MiningError("You're out of braces.")
         self.braces -= 1
         self.braces_used += 1
         self.danger = max(0.0, self.danger - self.rules.descent.brace_amount)
+
+    def ping(self) -> list[tuple[int, int]]:
+        """Prospector's Ping (once per mine): reveal the three tiles straight below the first cursor. Returns the tiles it revealed."""
+        self._require_live()
+        if not self.ping_armed or self.ping_used:
+            raise MiningError("You have no ping left.")
+        self.ping_used = True
+        col = self.cursors[0]
+        tiles = [(depth, col) for depth in range(self.depth, min(self.depth + 3, self.rules.descent.floor))]
+        self.pinged.update(tiles)
+        return tiles
 
     def leave(self) -> None:
         """Climb out with everything you're carrying."""
@@ -737,6 +766,8 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         auto_bomb_every=int(tool.stats.get("auto_bomb", 0)),
         multi_mine=tool.stats.get("multi_mine", 0.0),
         echo_strike=tool.stats.get("echo_strike", 0.0),
+        second_wind=bool(tool.stats.get("second_wind", 0)),
+        prospectors_ping=bool(tool.stats.get("prospectors_ping", 0)),
         lifeline=int(tool.stats.get("lifeline", 0)),
         gold_rush=int(tool.stats.get("gold_rush", 0)),
         geode=tool.stats.get("geode", 0.0),
@@ -793,6 +824,8 @@ async def settle_run(user: User, run: MineRun, registry: Registry | None = None)
     part = await smithing.maybe_drop_part(user, mine_no, run.rng, registry)  # one roll per run banked
     if run.mine_type.scroll and run.rng.random() < 1 / run.mine_type.scroll.odds:  # a mine type's own scroll: 1 in `odds` banked runs of it
         run.haul[run.mine_type.scroll.item] += 1
+    if run.reached_top and run.outcome != "collapse" and run.rng.random() < 1 / rules.descent.second_wind_odds:  # Second Wind's scroll: runs that got to the top label
+        run.haul[rules.descent.second_wind_item] += 1
     summary = replace(summary, haul=Counter(run.haul), part=part)
     for item_id, quantity in run.haul.items():
         await user.add_item(item_id, quantity)

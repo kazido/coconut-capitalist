@@ -3,9 +3,13 @@
 from collections import Counter
 from random import Random
 
+import pytest
+
 from cococap.registry import get_registry
+from cococap.screens import mine as mine_screen
 from cococap.screens.mine import echo_note
 from cococap.services import mining as m
+from cococap.services.mining import MiningError
 from cococap.services import scrolls
 from cococap.services.equipment import equip
 from cococap.user import User
@@ -52,7 +56,7 @@ def test_echo_strike_is_a_pickaxe_enchant_with_a_scroll_from_wyrm_tunnels_only()
     assert scrolls.scroll_skills(ECHO.id, REG) == ["mining"]
     sources = [t.id for t in RULES.mine_types if t.scroll and t.scroll.item == ECHO.id]
     assert sources == ["wyrm_tunnels"]
-    assert all(t.scroll is None for t in RULES.mine_types if t.id != "wyrm_tunnels")
+    assert all(t.scroll is None for t in RULES.mine_types if t.id not in ("wyrm_tunnels", "scholars_cavern"))
 
 
 # ---- Echo Strike on a dig -------------------------------------------------------------------------------------------------
@@ -135,3 +139,111 @@ async def test_other_mine_types_never_drop_the_echo_scroll(db):
         if t.id != "wyrm_tunnels":
             summary = await banked(db, t.id, 0.0)
             assert ECHO.id not in summary.haul, t.id
+
+
+# ---- Second Wind and Prospector's Ping (pickaxe abilities, one scroll source each) -----------------------------------------
+SECOND = REG.item("scroll_second_wind")
+PING = REG.item("scroll_prospectors_ping")
+TOP = RULES.descent.warnings[-1].name
+
+
+def rig_collapse(run):
+    """Make the next collapse roll always hit: high pressure (a real max risk) and a roll of 0."""
+    run.danger = 100
+    run.rng = Rig(0.0)
+
+
+def test_second_wind_and_ping_enchants_and_scrolls_exist():
+    for enchant, item in (("second_wind", SECOND), ("prospectors_ping", PING)):
+        assert REG.enchant(enchant).applies_to == ["pickaxe"] and REG.enchant(enchant).max_level == 1
+        assert item.scroll.enchant == enchant and item.category == "scroll" and item.emoji
+        assert scrolls.scroll_skills(item.id, REG) == ["mining"]
+
+
+def test_second_wind_holds_the_collapse_once_and_brace_saves_it_for_free():
+    run = calm_run(second_wind=True)
+    force_row(run, [COPPER, GOLD, GOLD, GOLD, COPPER])
+    rig_collapse(run)
+    result = run.dig()
+    assert result.second_wind and not result.collapsed and run.outcome is None
+    braces = run.braces
+    danger = run.danger
+    run.brace()
+    assert run.braces == braces and run.danger == max(0.0, danger - RULES.descent.brace_amount)
+    assert not run.second_wind_held and run.second_wind_used
+    run.rng = Rig(0.0)  # collapse rolls again, but the mine is already used up: it collapses
+    result = run.dig()
+    assert result.collapsed
+
+
+def test_second_wind_only_lets_the_collapse_happen_if_the_player_digs_instead():
+    run = calm_run(second_wind=True)
+    force_row(run, [COPPER, GOLD, GOLD, GOLD, COPPER])
+    rig_collapse(run)
+    assert run.dig().second_wind
+    result = run.dig()  # any other action (here a dig) lets the rock give way
+    assert result.collapsed and run.outcome == "collapse"
+
+
+def test_without_the_enchant_a_collapse_is_a_plain_collapse():
+    run = calm_run()
+    force_row(run, [COPPER, GOLD, GOLD, GOLD, COPPER])
+    rig_collapse(run)
+    result = run.dig()
+    assert result.collapsed and not result.second_wind
+
+
+def test_ping_reveals_the_three_tiles_under_the_cursor_once_per_mine():
+    run = calm_run(prospectors_ping=True)
+    tiles = run.ping()
+    col = run.cursors[0]
+    assert tiles == [(run.depth + i, col) for i in range(3)]
+    assert run.pinged == set(tiles)
+    with pytest.raises(MiningError):
+        run.ping()
+
+
+def test_ping_needs_the_enchant():
+    run = calm_run()
+    with pytest.raises(MiningError):
+        run.ping()
+
+
+def test_pinged_tiles_show_their_contents_on_the_shaft():
+    run = calm_run(prospectors_ping=True)
+    run.ping()
+    shown = mine_screen.ahead_row(run, run.depth)
+    assert shown  # the row renders with the revealed tile in it
+    assert (run.depth, run.cursors[0]) in run.pinged
+
+
+async def test_second_wind_and_ping_enchants_arm_the_run(db):
+    user = await User.get(1)
+    pick = await user.give_instance("tool_pickaxe_rookie", enchants={"second_wind": 1, "prospectors_ping": 1})
+    await equip(user, "mining", pick.id)
+    run = await m.start_run(user, Random(1), mine_type="standard")
+    assert run.second_wind_armed and run.ping_armed
+
+
+async def test_second_wind_scroll_drops_only_from_runs_that_reached_the_top_label(db):
+    user = await User.get(1)
+    run = m.MineRun(RULES, REG, Random(1), cursors=[2])
+    run.rng = Rig(0.0)
+    run.reached_top = True
+    run.leave()
+    summary = await m.settle_run(user, run)
+    assert summary.haul[SECOND.id] == 1
+    low = m.MineRun(RULES, REG, Random(1), cursors=[2])
+    low.rng = Rig(0.0)
+    low.leave()
+    summary = await m.settle_run(await User.get(1), low)
+    assert SECOND.id not in summary.haul
+
+
+async def test_ping_scroll_drops_only_from_scholars_cavern(db):
+    summary = await banked(db, "scholars_cavern", 0.0)
+    assert summary.haul[PING.id] == 1
+    for t in RULES.mine_types:
+        if t.id != "scholars_cavern":
+            summary = await banked(db, t.id, 0.0)
+            assert PING.id not in summary.haul, t.id
