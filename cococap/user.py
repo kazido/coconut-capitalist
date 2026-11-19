@@ -284,6 +284,11 @@ class User:
         Settings.model_validate(settings.model_dump())  # reject unknown keys / wrong types
         await self._update(settings=settings.model_dump())
 
+    async def set_zone(self, skill: str, place: str) -> None:
+        """Remember where the player last set a skill's location."""
+        if self.settings.zones.get(skill) != place:
+            await self.set_setting("zones", {**self.settings.zones, skill: place})
+
     # --- skills --------------------------------------------------------------------------
     async def skill(self, name: str) -> Skill:
         """The user's progress in a skill, as the skill's Pydantic model (defaults if untouched)."""

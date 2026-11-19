@@ -160,6 +160,8 @@ class FishScreen(Screen):
                                  + (f"  ·  forgives **{slips}** slip(s)" if slips else "")))
             level = User.xp_to_level(skill.xp)
             open_waters = await fishing.open_waters(self.user, reg)
+            if self.water is None:
+                self.water = self.user.settings.zones.get("fishing")  # where you last set it
             if self.water not in {w.id for w in open_waters}:
                 self.water = open_waters[-1].id  # a closed or unknown water falls back to the newest one you can fish
             here = fishing.water_by_id(reg, self.water)
@@ -335,6 +337,7 @@ class FishScreen(Screen):
 
     async def _pick_water(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.water = values[0]
+        await self.user.set_zone("fishing", self.water)
         await self.refresh(interaction)
 
     async def _collect_party_boss(self) -> bool:

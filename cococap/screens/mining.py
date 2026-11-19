@@ -40,6 +40,8 @@ class MiningScreen(Screen):
             lines.append(f"-# Gem slots unlock at mining level {rules.reactor.gem_slot_level}.")
         tool = await equipped_stats(self.user, "mining")
         open_sites = await mining.open_mines(self.user, reg)
+        if self.mine is None:
+            self.mine = self.user.settings.zones.get("mining")  # where you last set it
         if self.mine not in {s.id for s in open_sites}:
             self.mine = open_sites[-1].id  # a closed or unknown mine falls back to the newest one you can dig
         names = {loc.id: loc for loc in reg.locations["mining"]}
@@ -76,6 +78,7 @@ class MiningScreen(Screen):
 
     async def _pick_mine(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.mine = values[0]
+        await self.user.set_zone("mining", self.mine)
         await self.refresh(interaction)
 
     async def _reactor(self, interaction: discord.Interaction) -> None:

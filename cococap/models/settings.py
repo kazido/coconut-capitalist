@@ -6,3 +6,4 @@ class Settings(BaseModel):
 
     confirm_upgrades: bool = False  # tool upgrades take a second press ("Sure?") so a costly or one-way upgrade is never an accident
     fishing_estimate: bool = True  # show the rod's usual wait for a bite on the Fishing page
+    zones: dict[str, str] = {}  # where you last set each skill's location (mining/fishing/foraging); sticks until you change it

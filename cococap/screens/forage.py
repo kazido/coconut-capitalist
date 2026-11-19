@@ -180,6 +180,8 @@ class ForageScreen(Screen):
         # the forests you can chop: unlocked by level AND by area (a forest's number is its zone)
         forests = await areas.open_location_list(self.user, "foraging", reg)
         zones = [loc.n for loc in forests]
+        if self.zone is None and (saved := self.user.settings.zones.get("foraging")):
+            self.zone = int(saved)  # where you last set it
         if self.zone not in zones:
             self.zone = zones[-1]  # an unknown or closed forest falls back to the highest open one
         here_forest = forests[zones.index(self.zone)]
@@ -283,6 +285,7 @@ class ForageScreen(Screen):
 
     async def _pick_zone(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.zone = int(values[0])
+        await self.user.set_zone("foraging", values[0])
         await self.refresh(interaction)
 
     async def _chop(self, interaction: discord.Interaction) -> None:
