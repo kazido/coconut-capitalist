@@ -35,7 +35,7 @@ def test_a_crate_has_the_right_number_of_different_materials_worth_about_what_it
                     ship = sh.make_shipment(Random(seed), skill, LEVELS(level), REG, tier)
                     assert len(ship.need) == t.kinds and all(q >= 1 for q in ship.need.values()) and ship.id == f"{skill}:{tier}"
                     target = t.value_base + t.value_per_level * level
-                    assert 0.6 * target <= sh.worth(ship.need, REG) <= 2 * target, (tier, level, skill, seed)
+                    assert 0.6 * target <= sh.worth(ship.need, REG) <= 3 * target, (tier, level, skill, seed)  # (one piece of a dear, rare find can overshoot a small crate)
 
 
 def test_a_crate_is_mostly_its_own_skill_with_something_from_another():
@@ -333,7 +333,7 @@ def test_the_home_skills_materials_are_the_bulk_of_every_crate_and_the_rest_is_s
                 crate = sh.make_shipment(Random(seed), skill, LEVELS(unlock := P.tiers[tier].unlock_level), REG, tier)
                 total = sh.worth(crate.need, REG)
                 home = sum(REG.item(i).sell_price * q for i, q in crate.need.items() if REG.item(i).skill == skill)
-                assert home / total >= 0.7, (skill, tier, seed, crate.need)
+                assert home / total >= 0.5, (skill, tier, seed, crate.need)  # (a single rare foreign find is worth a lot now)
                 for i, q in crate.need.items():
                     if REG.item(i).skill != skill:
                         foreign_seen.add(i)

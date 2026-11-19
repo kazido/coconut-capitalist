@@ -42,9 +42,9 @@ to = "tool_shiningsilver"
 bits = 200000000  # TODO(balance)
 
 [tool_dreamnail.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_living_vine = 10
-material_gold_ore = 1000
-material_maple_leaf = 100
+material_living_vine = 1
+material_gold_ore = 24
+material_maple_leaf = 44
 material_aged_feather = 3
 fish_pufferfish = 20
 crop_hot_pepper = 20
@@ -71,7 +71,7 @@ to = "tool_rustedbroadsword"
 bits = 50000  # TODO(balance)
 
 [tool_largebranch.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_iron_ore = 40
+material_iron_ore = 57
 material_hardwood = 10
 material_plant_fiber = 10
 fish_bass = 5
@@ -100,12 +100,12 @@ to = "tool_dreamnail"
 bits = 5000000  # TODO(balance)
 
 [tool_rustedbroadsword.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_beeswax = 10
-material_gold_ore = 200
-material_fine_bark = 25
-material_maple_leaf = 10
+material_beeswax = 1
+material_gold_ore = 5
+material_fine_bark = 7
+material_maple_leaf = 4
 fish_salmon = 10
-material_coral_shard = 30
+material_coral_shard = 60
 crop_lemon = 20
 
 [tool_shiningsilver]
@@ -310,7 +310,7 @@ price = 0
 sell_price = 500000
 
 [spirit_of_the_fields.drop]
-rate = 1100
+rate = 10000  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -326,7 +326,7 @@ price = 0
 sell_price = 12500000  # TODO(balance)
 
 [seed_ambrosia.drop]
-rate = 5000
+rate = 40000  # 1 in N per drop roll; tier R6, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -373,10 +373,10 @@ rarity = 3
 skill = "farming"
 category = "seed"
 price = 0
-sell_price = 12500  # TODO(balance)
+sell_price = 60000
 
 [seed_dusty_dandelion.drop]
-rate = 150
+rate = 720  # 1 in N per drop roll; tier R3, see docs/plans/rarity-review.md
 min = 1
 max = 3
 
@@ -982,10 +982,10 @@ rarity = 2
 skill = "fishing"
 category = "material"
 price = 0
-sell_price = 500
+sell_price = 250
 
 [material_coral_shard.drop]
-rate = 6  # 1 in 6 casts brings one up
+rate = 3  # 1 in N per drop roll; tier R2, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1070,7 +1070,7 @@ bits = 600000
 fish_salmon = 8
 fish_trout = 10
 fish_pufferfish = 1
-material_coral_shard = 8
+material_coral_shard = 16
 
 [tool_rod_masterwork]
 name = "Masterwork Rod"
@@ -1096,8 +1096,8 @@ bits = 10000000
 fish_salmon = 40
 fish_trout = 171
 fish_catfish = 37
-material_dewdrop = 20
-material_coral_shard = 60
+material_dewdrop = 66
+material_coral_shard = 120
 material_hardwood = 30
 
 [spirit_of_the_sea]
@@ -1112,7 +1112,7 @@ price = 0
 sell_price = 500000
 
 [spirit_of_the_sea.drop]
-rate = 1100
+rate = 3900  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1125,10 +1125,10 @@ rarity = 5
 skill = "foraging"
 category = "material"
 price = 0
-sell_price = 3600000  # TODO(balance): flattened (was 7,000,000); see DESIGN.md 'Sell prices'
+sell_price = 4000000
 
 [material_aged_feather.drop]
-rate = 1000
+rate = 1125  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1141,14 +1141,14 @@ rarity = 4
 skill = "foraging"
 category = "pet_food"
 price = 0
-sell_price = 100000  # TODO(balance)
+sell_price = 110000
 
 [food_burger.pet_food]
 tier = 3
 xp_mult = 5
 
 [food_burger.drop]
-rate = 200
+rate = 225  # 1 in N per drop roll; tier R4, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1177,10 +1177,10 @@ rarity = 3
 skill = "foraging"
 category = "material"
 price = 0
-sell_price = 36000  # TODO(balance): flattened (was 30,000); see DESIGN.md 'Sell prices'
+sell_price = 140000
 
 [material_fine_bark.drop]
-rate = 12
+rate = 45  # 1 in N per drop roll; tier R3, see docs/plans/rarity-review.md
 min = 1
 max = 4
 
@@ -1193,10 +1193,10 @@ rarity = 4
 skill = "foraging"
 category = "material"
 price = 0
-sell_price = 330000  # TODO(balance): flattened (was 500,000); see DESIGN.md 'Sell prices'
+sell_price = 740000
 
 [material_maple_leaf.drop]
-rate = 100
+rate = 225  # 1 in N per drop roll; tier R4, see docs/plans/rarity-review.md
 min = 1
 max = 2
 
@@ -1209,10 +1209,10 @@ rarity = 5
 skill = "foraging"
 category = "pet_item"
 price = 0
-sell_price = 400000  # TODO(balance): flattened (was 500,000); see DESIGN.md 'Sell prices'
+sell_price = 410000
 
 [spirit_of_the_forest.drop]
-rate = 1100
+rate = 1125  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1237,21 +1237,21 @@ to = "tool_axe_masterwork"
 bits = 4000000  # TODO(balance)
 
 [tool_broadaxe_bastards.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_dewdrop = 30
-material_maple_leaf = 12
-material_fine_bark = 40
+material_dewdrop = 99
+material_maple_leaf = 5
+material_fine_bark = 11
 material_hardwood = 100
-material_gold_ore = 30
+material_gold_ore = 1
 
 [tool_broadaxe_bastards.tool.fork]
 to = "tool_axe_gatherers"
 bits = 4000000
 
 [tool_broadaxe_bastards.tool.fork.items]
-material_dewdrop = 30
-material_maple_leaf = 18
+material_dewdrop = 99
+material_maple_leaf = 8
 material_feather = 120
-material_gold_ore = 30
+material_gold_ore = 1
 
 
 [tool_axe_masterwork]
@@ -1280,13 +1280,13 @@ to = "tool_hatchet_sovereign"
 bits = 20000000  # TODO(balance)
 
 [tool_axe_masterwork.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_beeswax = 15
-material_maple_leaf = 40
+material_beeswax = 2
+material_maple_leaf = 18
 material_aged_feather = 1
-material_fine_bark = 80
+material_fine_bark = 21
 material_hardwood = 200
-material_gold_ore = 80
-material_coral_shard = 15
+material_gold_ore = 2
+material_coral_shard = 30
 
 
 [tool_axe_reinforced]
@@ -1310,11 +1310,11 @@ to = "tool_broadaxe_bastards"
 bits = 800000  # TODO(balance)
 
 [tool_axe_reinforced.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_compost = 60
-material_fine_bark = 25
+material_compost = 69
+material_fine_bark = 7
 material_hardwood = 60
 material_feather = 150
-material_iron_ore = 40
+material_iron_ore = 57
 
 [tool_hatchet_sovereign]
 name = "Sovereign Hatchet"
@@ -1342,12 +1342,12 @@ to = "tool_axe_wilted"
 bits = 100000000  # TODO(balance)
 
 [tool_hatchet_sovereign.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_living_vine = 5
-material_maple_leaf = 100
+material_living_vine = 1
+material_maple_leaf = 44
 material_aged_feather = 4
-material_fine_bark = 150
+material_fine_bark = 40
 material_hardwood = 400
-material_gold_ore = 200
+material_gold_ore = 5
 fish_tuna = 10
 
 [tool_axe_starter]
@@ -1397,7 +1397,7 @@ bits = 150000  # TODO(balance)
 [tool_axe_thornwhip.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
 material_feather = 100
 material_hardwood = 25
-material_fine_bark = 5
+material_fine_bark = 1
 
 [tool_axe_wilted]
 name = "Wilted Axe"
@@ -1425,12 +1425,12 @@ to = "tool_axe_elderwood"
 bits = 500000000
 
 [tool_axe_wilted.tool.upgrade.items]
-material_maple_leaf = 250
-material_aged_feather = 8
-material_fine_bark = 350
+material_maple_leaf = 111
+material_aged_feather = 7
+material_fine_bark = 93
 material_hardwood = 900
 material_feather = 800
-material_gold_ore = 450
+material_gold_ore = 11
 material_plant_fiber = 250
 fish_tuna = 25
 
@@ -1540,10 +1540,10 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
+sell_price = 410000
 
 [key_gemstone_balance.drop]
-rate = 12000
+rate = 18000  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1559,7 +1559,7 @@ price = 0
 sell_price = 5000000
 
 [key_gemstone_implosion.drop]
-rate = 5
+rate = 72000  # 1 in N per drop roll; tier R6, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1572,10 +1572,10 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
+sell_price = 410000
 
 [key_gemstone_peace.drop]
-rate = 12000
+rate = 18000  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1588,10 +1588,10 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
+sell_price = 410000
 
 [key_gemstone_rage.drop]
-rate = 12000
+rate = 18000  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1604,10 +1604,10 @@ rarity = 5
 skill = "mining"
 category = "key_item"
 price = 0
-sell_price = 400000  # TODO(balance): a rare, valuable find (was 45,000 at 1 in 1,500)
+sell_price = 410000
 
 [key_gemstone_sanity.drop]
-rate = 12000
+rate = 18000  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1620,7 +1620,7 @@ rarity = 1
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 50  # TODO(balance): flattened (was 20); see DESIGN.md 'Sell prices'
+sell_price = 66
 
 [material_copper_ore.drop]
 rate = 2
@@ -1636,10 +1636,10 @@ rarity = 3
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 1900  # TODO(balance): flattened (was 2,000); see DESIGN.md 'Sell prices'
+sell_price = 50000
 
 [material_gold_ore.drop]
-rate = 15
+rate = 720  # 1 in N per drop roll; tier R3, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1652,12 +1652,12 @@ rarity = 2
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 300  # TODO(balance): flattened (was 200); see DESIGN.md 'Sell prices'
+sell_price = 180
 
 [material_iron_ore.drop]
-rate = 6
+rate = 3  # 1 in N per drop roll; tier R2, see docs/plans/rarity-review.md
 min = 1
-max = 2
+max = 1
 
 [material_oreo_gemstone]
 name = "Oreore"
@@ -1671,7 +1671,7 @@ price = 0
 sell_price = 20000000
 
 [material_oreo_gemstone.drop]
-rate = 25000
+rate = 288000  # 1 in N per drop roll; tier R7, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1684,10 +1684,10 @@ rarity = 5
 skill = "mining"
 category = "pet_item"
 price = 0
-sell_price = 160000  # TODO(balance): flattened (was 500,000); see DESIGN.md 'Sell prices'
+sell_price = 720000
 
 [spirit_of_the_mines.drop]
-rate = 1100
+rate = 18000  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -1712,8 +1712,8 @@ to = "tool_pickaxe_reinforced"
 bits = 30000  # TODO(balance)
 
 [tool_pickaxe_rookie.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_copper_ore = 200
-material_iron_ore = 40
+material_copper_ore = 130
+material_iron_ore = 57
 
 [tool_pickaxe_reinforced]
 name = "Reinforced Pickaxe"
@@ -1736,9 +1736,9 @@ to = "tool_pickaxe_steel"
 bits = 200000
 
 [tool_pickaxe_reinforced.tool.upgrade.items]
-material_copper_ore = 160
-material_iron_ore = 120
-material_gold_ore = 25
+material_copper_ore = 104
+material_iron_ore = 171
+material_gold_ore = 1
 
 [tool_pickaxe_masterwork]
 name = "Masterwork Pickaxe"
@@ -1761,27 +1761,27 @@ to = "tool_pickaxe_ironbound"
 bits = 3000000
 
 [tool_pickaxe_masterwork.tool.upgrade.items]
-material_coal = 1003
-material_clay = 483
-material_tin_ore = 450
-material_iron_ore = 800
-material_copper_ore = 1346
+material_coal = 654
+material_clay = 1168
+material_tin_ore = 427
+material_iron_ore = 1139
+material_copper_ore = 878
 material_hardwood = 40
-material_coral_shard = 20
+material_coral_shard = 40
 
 [tool_scarab_bomb]
 name = "Scarab Bomb"
 description = "Careful handling these, they can be quite dangerous."
 wiki = "Take it down the mines (up to 3 per run). Blows an entire row at once: you collect every cell in it, vents and lodes included, for a flat bit of pressure and no collapse check."
 emoji = "💣"
-rarity = 4
+rarity = 2
 skill = "mining"
 category = "tool"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 90000
 
 [tool_scarab_bomb.drop]
-rate = 5
+rate = 5  # crafted/scarab prize, not a real roll: kept as it was
 min = 3
 max = 7
 
@@ -2020,14 +2020,14 @@ name = "Acorn Mix"
 emoji = "🌰"
 description = "A crunchy bag of forest snacks. Pets go nuts for it."
 wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the foraging skill gets extra xp from it."
-rarity = 2
+rarity = 1
 skill = "foraging"
 category = "pet_food"
-sell_price = 500  # TODO(balance)
+sell_price = 500
 [food_acorn_mix.pet_food]
 tier = 1
 [food_acorn_mix.drop]
-rate = 2
+rate = 2  # 1 in N per drop roll; tier R1, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2036,14 +2036,14 @@ name = "Honeycomb"
 emoji = "🍯"
 description = "Sticky, golden and a little bit magic."
 wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the foraging skill gets extra xp from it."
-rarity = 4
+rarity = 2
 skill = "foraging"
 category = "pet_food"
-sell_price = 6000  # TODO(balance)
+sell_price = 4800
 [food_honeycomb.pet_food]
 tier = 2
 [food_honeycomb.drop]
-rate = 10
+rate = 8  # 1 in N per drop roll; tier R2, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2052,14 +2052,14 @@ name = "Golden Sap"
 emoji = "🟡"
 description = "From the oldest tree in the forest. Pets would do anything for it."
 wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the foraging skill gets extra xp from it."
-rarity = 5
+rarity = 3
 skill = "foraging"
 category = "pet_food"
-sell_price = 60000  # TODO(balance)
+sell_price = 54000
 [food_golden_sap.pet_food]
 tier = 3
 [food_golden_sap.drop]
-rate = 50
+rate = 45  # 1 in N per drop roll; tier R3, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2075,7 +2075,7 @@ sell_price = 500  # TODO(balance)
 [food_stone_biscuit.pet_food]
 tier = 1
 [food_stone_biscuit.drop]
-rate = 100
+rate = 120  # 1 in N per drop roll; tier R2, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2091,7 +2091,7 @@ sell_price = 6000  # TODO(balance)
 [food_crystal_chew.pet_food]
 tier = 2
 [food_crystal_chew.drop]
-rate = 500
+rate = 3600  # 1 in N per drop roll; tier R4, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2107,7 +2107,7 @@ sell_price = 60000  # TODO(balance)
 [food_geode_feast.pet_food]
 tier = 3
 [food_geode_feast.drop]
-rate = 2500
+rate = 18000  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2119,11 +2119,11 @@ wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the fishing skil
 rarity = 2
 skill = "fishing"
 category = "pet_food"
-sell_price = 500  # TODO(balance)
+sell_price = 1000
 [food_fish_flakes.pet_food]
 tier = 1
 [food_fish_flakes.drop]
-rate = 13
+rate = 26  # 1 in N per drop roll; tier R2, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2135,11 +2135,11 @@ wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the fishing skil
 rarity = 4
 skill = "fishing"
 category = "pet_food"
-sell_price = 6000  # TODO(balance)
+sell_price = 36000
 [food_dried_squid.pet_food]
 tier = 2
 [food_dried_squid.drop]
-rate = 130
+rate = 780  # 1 in N per drop roll; tier R4, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2151,11 +2151,11 @@ wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the fishing skil
 rarity = 5
 skill = "fishing"
 category = "pet_food"
-sell_price = 60000  # TODO(balance)
+sell_price = 180000
 [food_sea_feast.pet_food]
 tier = 3
 [food_sea_feast.drop]
-rate = 1300
+rate = 3900  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2190,12 +2190,12 @@ to = "tool_pickaxe_crystal"
 bits = 15000000
 
 [tool_pickaxe_ironbound.tool.upgrade.items]
-material_coal = 3001
-material_tin_ore = 1346
-material_iron_ore = 2000
-material_silver_ore = 264
+material_coal = 1957
+material_tin_ore = 1278
+material_iron_ore = 2849
+material_silver_ore = 9
 material_hardwood = 100
-material_coral_shard = 50
+material_coral_shard = 100
 
 
 [tool_pickaxe_crystal]
@@ -2224,11 +2224,11 @@ to = "tool_pickaxe_deepdelver"
 bits = 70000000
 
 [tool_pickaxe_crystal.tool.upgrade.items]
-material_iron_ore = 4523
-material_silver_ore = 672
-material_amber = 428
-material_clay = 2947
-material_beeswax = 8
+material_iron_ore = 6442
+material_silver_ore = 24
+material_amber = 36
+material_clay = 7124
+material_beeswax = 1
 fish_tuna = 8
 
 
@@ -2258,11 +2258,11 @@ to = "tool_pickaxe_mythril"
 bits = 300000000
 
 [tool_pickaxe_deepdelver.tool.upgrade.items]
-material_silver_ore = 1868
-material_amber = 1193
-material_garnet = 108
-material_tin_ore = 7655
-material_maple_leaf = 40
+material_silver_ore = 67
+material_amber = 100
+material_garnet = 4
+material_tin_ore = 7269
+material_maple_leaf = 18
 fish_sturgeon = 2
 
 
@@ -2292,9 +2292,9 @@ to = "tool_pickaxe_worldsplitter"
 bits = 1200000000
 
 [tool_pickaxe_mythril.tool.upgrade.items]
-material_garnet = 443
-material_amber = 3432
-material_silver_ore = 5363
+material_garnet = 15
+material_amber = 287
+material_silver_ore = 193
 material_aged_feather = 4
 fish_marlin = 5
 
@@ -2350,9 +2350,9 @@ bits = 40000000
 fish_pike = 9
 fish_muskie = 8
 fish_salmon = 29
-material_coral_shard = 120
+material_coral_shard = 240
 material_hardwood = 40
-material_iron_ore = 60
+material_iron_ore = 85
 
 
 [tool_rod_moonlit]
@@ -2384,9 +2384,9 @@ bits = 150000000
 fish_sturgeon = 3
 fish_muskie = 24
 fish_pike = 28
-material_coral_shard = 250
+material_coral_shard = 500
 material_hardwood = 100
-material_gold_ore = 100
+material_gold_ore = 2
 
 
 [tool_rod_leviathan]
@@ -2418,9 +2418,9 @@ bits = 500000000
 fish_oarfish = 9
 fish_sturgeon = 6
 fish_moray_eel = 208
-material_coral_shard = 500
-material_maple_leaf = 30
-material_gold_ore = 200
+material_coral_shard = 1000
+material_maple_leaf = 13
+material_gold_ore = 5
 
 
 [tool_rod_abyssal]
@@ -2452,9 +2452,9 @@ bits = 1500000000
 fish_golden_koi = 1
 fish_oarfish = 7
 fish_sturgeon = 5
-material_coral_shard = 800
+material_coral_shard = 1600
 material_aged_feather = 3
-material_gold_ore = 400
+material_gold_ore = 9
 
 
 [tool_rod_poseidon]
@@ -2510,10 +2510,10 @@ rarity = 2
 skill = "foraging"
 category = "material"
 price = 1000  # TODO(balance)
-sell_price = 500  # TODO(balance)
+sell_price = 67
 
 [material_rotation_wedge.drop]
-rate = 60  # TODO(balance): 1 in 60 per drop roll
+rate = 8  # 1 in N per drop roll; tier R2, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2526,10 +2526,10 @@ rarity = 4
 skill = "foraging"
 category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
-sell_price = 4000  # TODO(balance)
+sell_price = 2200
 
 [material_iron_wedge.drop]
-rate = 400  # TODO(balance): 1 in 400 per drop roll
+rate = 225  # 1 in N per drop roll; tier R4, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2542,10 +2542,10 @@ rarity = 6
 skill = "foraging"
 category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
-sell_price = 25000  # TODO(balance)
+sell_price = 45000
 
 [material_gilded_wedge.drop]
-rate = 2500  # TODO(balance): 1 in 2500 per drop roll
+rate = 4500  # 1 in N per drop roll; tier R6, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2554,10 +2554,10 @@ to = "tool_pickaxe_prospector"
 bits = 3000000
 
 [tool_pickaxe_masterwork.tool.fork.items]
-material_gold_ore = 225
-material_obsidian = 107
+material_gold_ore = 5
+material_obsidian = 3
 material_hardwood = 40
-material_coral_shard = 20
+material_coral_shard = 40
 
 [tool_pickaxe_prospector]
 name = "Prospector's Pickaxe"
@@ -2585,11 +2585,11 @@ to = "tool_pickaxe_geode"
 bits = 15000000
 
 [tool_pickaxe_prospector.tool.upgrade.items]
-material_gold_ore = 547
-material_obsidian = 324
-material_platinum_ore = 37
+material_gold_ore = 13
+material_obsidian = 10
+material_platinum_ore = 1
 material_hardwood = 100
-material_coral_shard = 50
+material_coral_shard = 100
 
 [tool_pickaxe_geode]
 name = "Geode Pickaxe"
@@ -2617,10 +2617,10 @@ to = "tool_pickaxe_seekers"
 bits = 70000000
 
 [tool_pickaxe_geode.tool.upgrade.items]
-material_gold_ore = 1200
-material_obsidian = 822
-material_platinum_ore = 135
-material_beeswax = 8
+material_gold_ore = 28
+material_obsidian = 25
+material_platinum_ore = 2
+material_beeswax = 1
 fish_tuna = 8
 
 [tool_pickaxe_seekers]
@@ -2649,10 +2649,10 @@ to = "tool_pickaxe_veinhunter"
 bits = 300000000
 
 [tool_pickaxe_seekers.tool.upgrade.items]
-material_platinum_ore = 377
-material_obsidian = 1833
-material_sapphire = 9
-material_maple_leaf = 40
+material_platinum_ore = 6
+material_obsidian = 55
+material_sapphire = 1
+material_maple_leaf = 18
 fish_sturgeon = 2
 
 [tool_pickaxe_veinhunter]
@@ -2681,9 +2681,9 @@ to = "tool_pickaxe_motherlode"
 bits = 1200000000
 
 [tool_pickaxe_veinhunter.tool.upgrade.items]
-material_platinum_ore = 1086
-material_sapphire = 40
-material_emerald = 40
+material_platinum_ore = 17
+material_sapphire = 2
+material_emerald = 2
 material_aged_feather = 4
 fish_marlin = 5
 
@@ -2717,8 +2717,8 @@ fish_swordfish = 92
 fish_tuna = 367
 fish_pufferfish = 19
 fish_moray_eel = 17
-material_dewdrop = 20
-material_coral_shard = 60
+material_dewdrop = 66
+material_coral_shard = 120
 material_hardwood = 30
 
 [tool_rod_lantern]
@@ -2750,9 +2750,9 @@ bits = 40000000
 fish_swordfish = 85
 fish_sturgeon = 1
 fish_giant_squid = 2
-material_coral_shard = 120
+material_coral_shard = 240
 material_hardwood = 40
-material_iron_ore = 60
+material_iron_ore = 85
 
 [tool_rod_siren]
 name = "Siren Rod"
@@ -2783,9 +2783,9 @@ bits = 150000000
 fish_marlin = 14
 fish_giant_squid = 13
 fish_swordfish = 255
-material_coral_shard = 250
+material_coral_shard = 500
 material_hardwood = 100
-material_gold_ore = 100
+material_gold_ore = 2
 
 [tool_rod_trident]
 name = "Trident Rod"
@@ -2816,9 +2816,9 @@ bits = 500000000
 fish_abyssal_angler = 12
 fish_giant_squid = 36
 fish_marlin = 29
-material_coral_shard = 500
-material_maple_leaf = 30
-material_gold_ore = 200
+material_coral_shard = 1000
+material_maple_leaf = 13
+material_gold_ore = 5
 
 [tool_rod_kraken]
 name = "Kraken Rod"
@@ -2849,9 +2849,9 @@ bits = 1500000000
 fish_leviathan_pup = 1
 fish_abyssal_angler = 9
 fish_giant_squid = 20
-material_coral_shard = 800
+material_coral_shard = 1600
 material_aged_feather = 3
-material_gold_ore = 400
+material_gold_ore = 9
 
 [tool_rod_trophy]
 name = "Trophy Rod"
@@ -2883,12 +2883,12 @@ rarity = 1
 skill = "farming"
 category = "material"
 price = 0
-sell_price = 150
+sell_price = 130
 
 [material_compost.drop]
-rate = 3  # TODO(balance): 1 in 3 per drop roll
+rate = 3  # 1 in N per drop roll; tier R1, see docs/plans/rarity-review.md
 min = 1
-max = 4
+max = 5
 
 [material_dewdrop]
 name = "Morning Dewdrop"
@@ -2899,12 +2899,12 @@ rarity = 2
 skill = "farming"
 category = "material"
 price = 0
-sell_price = 800
+sell_price = 240
 
 [material_dewdrop.drop]
-rate = 12  # TODO(balance): 1 in 12 per drop roll
+rate = 3  # 1 in N per drop roll; tier R2, see docs/plans/rarity-review.md
 min = 1
-max = 2
+max = 1
 
 [material_beeswax]
 name = "Beeswax"
@@ -2915,10 +2915,10 @@ rarity = 3
 skill = "farming"
 category = "material"
 price = 0
-sell_price = 3000
+sell_price = 30000
 
 [material_beeswax.drop]
-rate = 40  # TODO(balance): 1 in 40 per drop roll
+rate = 400  # 1 in N per drop roll; tier R3, see docs/plans/rarity-review.md
 min = 1
 max = 2
 
@@ -2931,10 +2931,10 @@ rarity = 4
 skill = "farming"
 category = "material"
 price = 0
-sell_price = 12000
+sell_price = 160000
 
 [material_living_vine.drop]
-rate = 150  # TODO(balance): 1 in 150 per drop roll
+rate = 2000  # 1 in N per drop roll; tier R4, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -2959,7 +2959,7 @@ to = "tool_can_copper"
 bits = 20000
 
 [tool_can_tin.tool.upgrade.items]
-material_compost = 30
+material_compost = 34
 material_plant_fiber = 20
 
 [tool_can_copper]
@@ -2983,8 +2983,8 @@ to = "tool_can_iron"
 bits = 150000
 
 [tool_can_copper.tool.upgrade.items]
-material_compost = 80
-material_dewdrop = 10
+material_compost = 92
+material_dewdrop = 33
 material_plant_fiber = 40
 
 [tool_can_iron]
@@ -3008,9 +3008,9 @@ to = "tool_can_silver"
 bits = 800000
 
 [tool_can_iron.tool.upgrade.items]
-material_compost = 150
-material_dewdrop = 40
-material_beeswax = 5
+material_compost = 172
+material_dewdrop = 133
+material_beeswax = 1
 material_plant_fiber = 100
 material_hardwood = 20
 
@@ -3035,8 +3035,8 @@ to = "tool_can_gold"
 bits = 4000000
 
 [tool_can_silver.tool.upgrade.items]
-material_dewdrop = 100
-material_beeswax = 20
+material_dewdrop = 332
+material_beeswax = 2
 material_hardwood = 50
 
 [tool_can_silver.tool.fork]
@@ -3044,7 +3044,7 @@ to = "tool_can_cauldron"
 bits = 4000000
 
 [tool_can_silver.tool.fork.items]
-material_compost = 400
+material_compost = 459
 material_plant_fiber = 260
 material_hardwood = 50
 
@@ -3074,9 +3074,9 @@ to = "tool_can_crystal"
 bits = 20000000
 
 [tool_can_gold.tool.upgrade.items]
-material_beeswax = 60
-material_living_vine = 6
-material_coral_shard = 40
+material_beeswax = 6
+material_living_vine = 1
+material_coral_shard = 80
 
 [tool_can_crystal]
 name = "Crystal Watering Can"
@@ -3104,9 +3104,9 @@ to = "tool_can_moonwell"
 bits = 100000000
 
 [tool_can_crystal.tool.upgrade.items]
-material_living_vine = 25
-material_beeswax = 120
-material_gold_ore = 30
+material_living_vine = 2
+material_beeswax = 12
+material_gold_ore = 1
 
 [tool_can_moonwell]
 name = "Moonwell Watering Can"
@@ -3138,7 +3138,7 @@ rarity = 1
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 40  # TODO(balance): tuned so mining pays what it did
+sell_price = 65
 
 [material_coal.drop]
 rate = 3
@@ -3154,12 +3154,12 @@ rarity = 1
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 90  # TODO(balance): tuned so mining pays what it did
+sell_price = 36
 
 [material_clay.drop]
-rate = 8
+rate = 3  # 1 in N per drop roll; tier R1, see docs/plans/rarity-review.md
 min = 1
-max = 2
+max = 1
 
 [material_amber]
 name = "Amber"
@@ -3170,10 +3170,10 @@ rarity = 3
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 1200  # TODO(balance): tuned so mining pays what it did
+sell_price = 15000
 
 [material_amber.drop]
-rate = 60
+rate = 720  # 1 in N per drop roll; tier R3, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -3186,12 +3186,12 @@ rarity = 2
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 200  # TODO(balance): tuned so mining pays what it did
+sell_price = 210
 
 [material_tin_ore.drop]
-rate = 5
+rate = 3  # 1 in N per drop roll; tier R2, see docs/plans/rarity-review.md
 min = 1
-max = 2
+max = 1
 
 [material_silver_ore]
 name = "Silver Ore"
@@ -3202,10 +3202,10 @@ rarity = 3
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 1000  # TODO(balance): tuned so mining pays what it did
+sell_price = 30000
 
 [material_silver_ore.drop]
-rate = 25
+rate = 720  # 1 in N per drop roll; tier R3, see docs/plans/rarity-review.md
 min = 1
 max = 2
 
@@ -3218,10 +3218,10 @@ rarity = 4
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 6000  # TODO(balance): tuned so mining pays what it did
+sell_price = 180000
 
 [material_garnet.drop]
-rate = 120
+rate = 3600  # 1 in N per drop roll; tier R4, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -3234,10 +3234,10 @@ rarity = 3
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 1700  # TODO(balance): tuned so mining pays what it did
+sell_price = 57000
 
 [material_obsidian.drop]
-rate = 20
+rate = 720  # 1 in N per drop roll; tier R3, see docs/plans/rarity-review.md
 min = 1
 max = 2
 
@@ -3250,10 +3250,10 @@ rarity = 4
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 9000  # TODO(balance): tuned so mining pays what it did
+sell_price = 390000
 
 [material_platinum_ore.drop]
-rate = 55
+rate = 3600  # 1 in N per drop roll; tier R4, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -3266,10 +3266,10 @@ rarity = 5
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 45000  # TODO(balance): tuned so mining pays what it did
+sell_price = 1200000
 
 [material_sapphire.drop]
-rate = 700
+rate = 18000  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -3282,10 +3282,10 @@ rarity = 5
 skill = "mining"
 category = "material"
 price = 0
-sell_price = 65000  # TODO(balance): tuned so mining pays what it did
+sell_price = 1300000
 
 [material_emerald.drop]
-rate = 900
+rate = 18000  # 1 in N per drop roll; tier R5, see docs/plans/rarity-review.md
 min = 1
 max = 1
 
@@ -3310,9 +3310,9 @@ to = "tool_pickaxe_masterwork"
 bits = 500000
 
 [tool_pickaxe_steel.tool.upgrade.items]
-material_iron_ore = 300
-material_gold_ore = 60
-material_copper_ore = 400
+material_iron_ore = 427
+material_gold_ore = 2
+material_copper_ore = 261
 material_hardwood = 12
 
 [tool_rod_sturdy]
@@ -3339,8 +3339,8 @@ bits = 2000000
 fish_salmon = 15
 fish_trout = 20
 fish_pufferfish = 3
-material_coral_shard = 20
-material_gold_ore = 10
+material_coral_shard = 40
+material_gold_ore = 1
 
 [tool_axe_gatherers]
 name = "Gatherer's Axe"
@@ -3368,11 +3368,11 @@ to = "tool_hatchet_foragers"
 bits = 20000000
 
 [tool_axe_gatherers.tool.upgrade.items]
-material_beeswax = 15
-material_maple_leaf = 55
+material_beeswax = 2
+material_maple_leaf = 24
 material_feather = 240
-material_gold_ore = 80
-material_coral_shard = 15
+material_gold_ore = 2
+material_coral_shard = 30
 
 [tool_hatchet_foragers]
 name = "Forager's Hatchet"
@@ -3400,10 +3400,10 @@ to = "tool_axe_mosswood"
 bits = 100000000
 
 [tool_hatchet_foragers.tool.upgrade.items]
-material_living_vine = 5
-material_maple_leaf = 134
+material_living_vine = 1
+material_maple_leaf = 60
 material_feather = 480
-material_gold_ore = 200
+material_gold_ore = 5
 fish_tuna = 10
 
 [tool_axe_mosswood]
@@ -3432,9 +3432,9 @@ to = "tool_axe_canopy"
 bits = 500000000
 
 [tool_axe_mosswood.tool.upgrade.items]
-material_maple_leaf = 326
+material_maple_leaf = 145
 material_feather = 1880
-material_gold_ore = 450
+material_gold_ore = 11
 material_plant_fiber = 250
 fish_tuna = 25
 
@@ -3486,8 +3486,8 @@ bits = 20000000
 
 [tool_can_cauldron.tool.upgrade.items]
 material_plant_fiber = 600
-material_compost = 800
-material_coral_shard = 40
+material_compost = 918
+material_coral_shard = 80
 
 [tool_can_retort]
 name = "Retort Can"
@@ -3516,7 +3516,7 @@ bits = 100000000
 
 [tool_can_retort.tool.upgrade.items]
 material_plant_fiber = 3260
-material_gold_ore = 30
+material_gold_ore = 1
 
 [tool_can_athanor]
 name = "Athanor Can"

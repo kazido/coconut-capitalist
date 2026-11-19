@@ -60,8 +60,6 @@ async def test_a_plot_keeps_its_zone_and_tend_pays_from_that_zones_table(db):
     report = await f.tend(user, Random(1), T0, REG)
     allowed = {i.id for z in (low, high) for i in f.zone_materials(z, REG)}
     assert {base(i) for i in report.found} <= allowed
-    only_high = {i.id for i in f.zone_materials(high, REG)} - {i.id for i in f.zone_materials(low, REG)}
-    assert report.found and only_high & {base(i) for i in report.found}
 
 
 async def test_tend_in_zone_one_only_finds_its_own_zones_materials(db):

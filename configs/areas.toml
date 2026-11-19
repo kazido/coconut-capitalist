@@ -58,40 +58,40 @@ fuel = { material_void_fuel = 1 }
 name = "Patchwork Raft"
 emoji = "🛶"
 bits = 10000
-parts = { material_hardwood = 5, material_iron_ore = 100, material_plant_fiber = 50, material_coral_shard = 20 }
+parts = { material_hardwood = 5, material_iron_ore = 142, material_plant_fiber = 50, material_coral_shard = 40 }
 skill_floors = { mining = 8, fishing = 8, foraging = 8, farming = 8 }
 
 [[ship_tier]]
 name = "Dune Skiff"
 emoji = "⛵"
 bits = 50000
-parts = { material_hardwood = 15, material_silver_ore = 60, material_beeswax = 10, material_coral_shard = 60 }
+parts = { material_hardwood = 15, material_silver_ore = 2, material_beeswax = 1, material_coral_shard = 120 }
 skill_floors = { mining = 19, fishing = 19, foraging = 19, farming = 19 }
 
 [[ship_tier]]
 name = "Scrap Cruiser"
 emoji = "🚢"
 bits = 250000
-parts = { material_fine_bark = 20, material_platinum_ore = 40, material_living_vine = 10, fish_sardine = 50 }
+parts = { material_fine_bark = 5, material_platinum_ore = 1, material_living_vine = 1, fish_sardine = 50 }
 skill_floors = { mining = 27, fishing = 27, foraging = 27, farming = 27 }
 
 [[ship_tier]]
 name = "Sky Frigate"
 emoji = "🛳️"
 bits = 1000000
-parts = { material_maple_leaf = 20, material_sapphire = 20, material_living_vine = 25, fish_swordfish = 20 }
+parts = { material_maple_leaf = 9, material_sapphire = 1, material_living_vine = 2, fish_swordfish = 20 }
 skill_floors = { mining = 35, fishing = 35, foraging = 35, farming = 35 }
 
 [[ship_tier]]
 name = "Star Clipper"
 emoji = "🚀"
 bits = 5000000
-parts = { material_aged_feather = 5, material_emerald = 25, crop_starfruit = 10, fish_marlin = 15 }
+parts = { material_aged_feather = 4, material_emerald = 1, crop_starfruit = 10, fish_marlin = 15 }
 skill_floors = { mining = 42, fishing = 42, foraging = 42, farming = 42 }
 
 [[ship_tier]]
 name = "Void Runner"
 emoji = "🛸"
 bits = 25000000
-parts = { material_gilded_wedge = 5, material_emerald = 60, crop_ambrosia = 2, fish_abyssal_angler = 5 }
+parts = { material_gilded_wedge = 3, material_emerald = 3, crop_ambrosia = 2, fish_abyssal_angler = 5 }
 skill_floors = { mining = 48, fishing = 48, foraging = 48, farming = 48 }

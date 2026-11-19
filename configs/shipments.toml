@@ -5,7 +5,7 @@
 [personal]
 foreign_share = 0.10             # the materials from OTHER skills are only this share of a crate's value in total (the home skill is the bulk)
 foreign_max_quantity = 12         # ...and never more than this many of one of them, so it cannot be a pile of the cheapest ore
-rate_per_level = 8                # a skill's finds this common (1 in N, N up to 5 + this x your level) can be asked for: nothing rare at low levels
+rate_per_level = 8                # a skill's finds this common (one every N minutes of active play, N up to 5 + this x your level) can be asked for: nothing rare at low levels
 
 # Every skill has one crate of each tier once its OWN level reaches `unlock_level`. A crate asks for `kinds` materials, `theme_kinds` of them from its own skill (the rest
 # from other skills), and is sized by that skill's level, so a player at the unlock level can finish it. Shipping pays `bits_factor` x what the materials would sell for.
