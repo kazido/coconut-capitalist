@@ -329,6 +329,7 @@ async def test_shop_buy_opens_a_modal_and_buying_works(db):
     await set_columns(await User.get(1), purse=10_000_000)
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")  # seeds stack, so they ask how many (tools do not: see the next test)
+    await choose(nav, inter, select_named(nav, "Pick an item"), "seed_apple")  # (Farming now lists a basic accessory first)
     await click(nav, inter, "Buy custom")
     modal = await submit(inter, "2")
     await modal.on_submit(inter)
@@ -362,8 +363,9 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
     assert len(item_buy_buttons(nav)) == 2 and select_named(nav, "Pick an item").options
     # a brand-new player can afford the cheapest item but not the priciest: picking it disables Buy
     opts = select_named(nav, "Pick an item").options
-    await choose(nav, inter, select_named(nav, "Pick an item"), opts[-1].value)
-    assert opts[-1].value and item_buy_buttons(nav)[0].disabled
+    priciest = max((o.value for o in opts), key=lambda v: get_registry().item(v).price)
+    await choose(nav, inter, select_named(nav, "Pick an item"), priciest)
+    assert item_buy_buttons(nav)[0].disabled
     await set_columns(await User.get(1), purse=200_000)
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")
@@ -444,9 +446,8 @@ async def test_the_tools_page_is_a_compact_list_without_equip_buttons_and_leads_
     text = all_text(nav)
     assert "Starter Axe" in text and "Tin Watering Can" in text and "Farming" in text and "Foraging" in text and "power" in text
     assert "✅" not in text and not [b for b in buttons(nav) if b.label in ("Equip", "Equipped")]
-    await choose(nav, inter, select_named(nav, "Choose a tab"), "upgrade")
-    assert nav.screen.tab == "upgrade"
-    await click(nav, inter, "Back to tools")
+    await choose(nav, inter, select_named(nav, "Choose a tab"), "enchant")
+    assert nav.screen.tab == "enchant"
     assert nav.screen.id == "tools"
 
 
@@ -495,13 +496,17 @@ async def test_mining_screen_reactor_buttons(db):
     await click(nav, inter, "Insert gems")
     assert (await user.skill("mining")).reactor.core_1.gem_id == "key_gemstone_sanity"
     assert "Inserted: Sanity" in all_text(nav)
-    await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")  # picking an ore says exactly what feeding it does
-    assert "full needs" in all_text(nav) and find_button(nav, "Feed 1").disabled  # (no copper to feed)
+    assert "no mining materials to feed" in all_text(nav)  # nothing owned: no dropdown to pick from
     await user.add_item("material_copper_ore", 30)
     nav, inter = await hub("reactor")
+    await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")  # picking an ore says exactly what feeding it does
+    assert "full needs" in all_text(nav)
     await choose(nav, inter, select_named(nav, "Feed the magnet"), "material_copper_ore")
     await click(nav, inter, "Feed 10")
-    assert "Fed the magnet **10 Copper Ore**" in all_text(nav) and (await user.skill("mining")).magnet_meter == 10 and await user.item_quantity("material_copper_ore") == 20
+    from cococap.services.mining import magnet_value
+
+    cu = magnet_value("material_copper_ore", get_registry())
+    assert "Fed the magnet **10 Copper Ore**" in all_text(nav) and (await user.skill("mining")).magnet_meter == 10 * cu and await user.item_quantity("material_copper_ore") == 20
     await click(nav, inter, "Magnet on")
     assert (await user.skill("mining")).magnet_on is False and find_button(nav, "Magnet off")
     assert find_button(nav, "Claim lodes").disabled
@@ -878,7 +883,10 @@ async def test_leaving_the_hub_idle_mid_run_banks_the_haul(db):
     carried = dict(nav.screen.run.haul)
     nav.message = SimpleNamespace(edit=AsyncMock())
     await nav.on_timeout()
-    assert nav.screen.run.finished and await user.items() == carried
+    # banking may star some ore (the run's haul is rewritten with the starred ids) but never adds or loses any
+    items = await user.items()
+    assert nav.screen.run.finished and items == dict(nav.screen.run.haul)
+    assert sum(items.values()) == sum(carried.values())
 
 
 # ---- the brain games (in-window) -------------------------------------------------------------------------
@@ -1369,11 +1377,25 @@ from cococap.services import foraging as foraging_service  # noqa: E402
 OPEN_HOUR = 490_000 * 3600 + 60  # a minute into an hour: the community tree is standing
 
 
+# a smithed axe: the starter template with three high-tier parts (the old upgrade chain is gone)
+SMITHED_PARTS = {"base": {"tier": 4, "trait": None}, "trim": {"tier": 4, "trait": None}, "accent": {"tier": 4, "trait": None}}
+
+
+async def axe_power(user):
+    """The power the player's equipped foraging axe really swings with (a smithed one is not the bare template)."""
+    from cococap.services.equipment import effective_stats
+
+    return effective_stats(await user.equipped_instance("foraging"), get_registry()).power
+
+
 async def with_axe(user_id=1, flags=(), template="tool_axe_starter"):
     from cococap.services.equipment import add_enchant, equip
 
     user = await User.get(user_id)
-    axe = await user.give_instance(template)
+    if template == "smithed":
+        axe = await user.give_instance("tool_axe_starter", parts=SMITHED_PARTS, quality="Crude")
+    else:
+        axe = await user.give_instance(template)
     await equip(user, "foraging", axe.id)
     if "soloist" in flags:
         await add_enchant(user, axe.id, "soloist")
@@ -1433,10 +1455,10 @@ async def test_a_second_chop_click_on_a_fallen_tree_does_not_pay_twice(db, monke
 async def test_heavy_trees_are_slower_for_a_lone_chopper_and_soloist_fixes_it(db, monkeypatch):
     freeze_time(monkeypatch)
     heavy = get_registry().foraging.heavy_zone
-    await with_axe(1, template="tool_axe_reinforced")
+    await with_axe(1, template="smithed")
     nav, _ = await hub("trees", tab="own", tree=foraging_service.Tree(heavy, 100, 100))
     assert "Heavy tree" in all_text(nav)
-    await with_axe(2, flags=("soloist",), template="tool_axe_reinforced")
+    await with_axe(2, flags=("soloist",), template="smithed")
     nav, _ = await hub("trees", tab="own", tree=foraging_service.Tree(heavy, 100, 100), user_id=2)
     assert "Heavy tree" not in all_text(nav)
 
@@ -1553,8 +1575,8 @@ async def test_home_only_says_whether_check_in_is_ready_and_the_timers_live_on_t
 
 async def test_a_spot_wears_out_and_moves_on_by_itself_and_a_wrong_style_only_glances_off(db, monkeypatch):
     freeze_time(monkeypatch)
-    user = await with_axe(template="tool_axe_reinforced")
-    power = get_registry().item("tool_axe_reinforced").tool.power
+    user = await with_axe(template="smithed")
+    power = await axe_power(user)
     nav, inter = await hub("trees", tab="own", tree=foraging_service.Tree(1, 1_000_000, 1_000_000))
     rules = get_registry().foraging
     right = nav.screen.spot.stance(rules)
@@ -1572,8 +1594,8 @@ async def test_a_spot_wears_out_and_moves_on_by_itself_and_a_wrong_style_only_gl
 
 async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
     freeze_time(monkeypatch, good_chops=True)
-    await with_axe(template="tool_axe_reinforced")
-    power = get_registry().item("tool_axe_reinforced").tool.power
+    user = await with_axe(template="smithed")
+    power = await axe_power(user)
     nav, inter = await hub("trees", tab="own", tree=foraging_service.Tree(1, 10_000, 10_000))
     await chop(nav, inter)
     bonus = round(power * (1 + RULES_CHOP.good_chop_bonus))
@@ -1586,8 +1608,8 @@ async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
 
 async def test_the_community_tree_has_the_same_spot_and_wear(db, monkeypatch):
     freeze_time(monkeypatch)
-    user = await with_axe(template="tool_axe_reinforced")
-    power = get_registry().item("tool_axe_reinforced").tool.power
+    user = await with_axe(template="smithed")
+    power = await axe_power(user)
     nav, inter = await hub("trees", tab="grove")
     assert "left (about" in all_text(nav) and "per swing" in all_text(nav)
     await chop(nav, inter, zone=3)
@@ -1645,7 +1667,7 @@ async def test_a_click_acknowledged_too_late_still_updates_the_panel(db):
     nav.message.edit.reset_mock()
     await nav.show(inter, "shop")  # Discord refuses our answer ("this interaction failed")...
     assert nav.screen.id == "shop"
-    nav.message.edit.assert_awaited_once_with(view=nav)  # ...so the message is edited directly instead
+    nav.message.edit.assert_awaited_once_with(view=nav, attachments=[])  # ...so the message is edited directly instead
 
 
 async def test_an_already_answered_click_also_falls_back(db):
@@ -1653,7 +1675,7 @@ async def test_an_already_answered_click_also_falls_back(db):
     inter.response.edit_message = AsyncMock(side_effect=discord.InteractionResponded(inter))
     nav.message.edit.reset_mock()
     await nav.refresh(inter)
-    nav.message.edit.assert_awaited_once_with(view=nav)
+    nav.message.edit.assert_awaited_once_with(view=nav, attachments=[])
 
 
 async def test_a_real_error_is_not_swallowed_by_the_fallback(db):
@@ -1936,15 +1958,15 @@ async def test_rare_drops_are_on_the_one_loot_screen_with_again_and_the_odds(db)
     nav, inter = await hub("forage")
     again = AsyncMock()
     screen = nav.screen
-    screen.result = rewards_result("TIMBER!", items={"material_copper_ore": 2, "material_iron_wedge": 1, "scroll_keen": 1}, xp=40, odds=odds.foraging(),
+    screen.result = rewards_result("TIMBER!", items={"material_copper_ore": 2, "material_iron_wedge": 1, "scroll_double_strike": 1}, xp=40, odds=odds.foraging(),
                                    again=again, again_label="Another tree", back_label="Back to foraging")
     inter.followup.send.reset_mock()
     await screen.refresh(inter)
-    assert nav.screen.id == "result" and "Copper Ore" in all_text(nav) and "Keen" in all_text(nav) and "Wedge" in all_text(nav)
+    assert nav.screen.id == "result" and "Copper Ore" in all_text(nav) and "Double Strike" in all_text(nav) and "Wedge" in all_text(nav)
     assert {b.label for b in buttons(nav)} >= {"Another tree", "Back to foraging"} and not find_button(nav, "Another tree").disabled
-    spec = get_registry().scrolls.foraging  # no popup any more: the rare find, its odds and a Share button are on the loot screen
-    assert inter.followup.send.await_count == 0 and "Super rare find" in all_text(nav) and f"1 in {spec.odds * len(spec.pool):,} trees felled" in all_text(nav)
-    assert find_button(nav, "Share") is not None
+    burl_odds = next(g.scroll.odds for g in get_registry().foraging.chopping.grains if g.id == "burl")  # Double Strike: Burl grain only
+    assert inter.followup.send.await_count == 0 and "Super rare find" in all_text(nav) and f"1 in {burl_odds:,} trees felled" in all_text(nav)
+    assert find_button(nav, "Share") is not None  # no popup any more: the rare find, its odds and a Share button are on the loot screen
     await click(nav, inter, "Back to foraging")
     assert nav.screen.id == "forage"
 

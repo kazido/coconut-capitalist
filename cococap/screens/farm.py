@@ -7,7 +7,7 @@ import discord
 from cococap.registry import get_registry
 from cococap.services import farming
 from cococap.services.equipment import equipped_stats
-from cococap.services import odds
+from cococap.services import accessories, odds, smithing
 from cococap.ui.rewards import rewards_result
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import button, row, sep, select, text, xp_bar
@@ -105,11 +105,11 @@ class FarmScreen(Screen):
         lines = [f"**{heading}**"] if heading else []
         for v in views:
             if v.ready:
-                lines.append(f"**{v.number}** {reg.item(v.crop_id).display}  {emojis.icon('check', '✅')} **ready**")
+                lines.append(f"**{v.number}** {reg.item(v.crop_id).display}  {emojis.icon('check', '✅')} **ready**" + (f" {emojis.icon('sparkle', '✨')} golden" if v.golden else ""))
             elif v.growing:
                 seed = reg.item(v.seed_id)
                 lines.append(f"**{v.number}** {seed.emoji or emojis.icon('sprout', '🌱')} {seed.name.removesuffix(' Seed')}  {v.cycle}/{v.needed}" + (f" {emojis.icon('drop', '💧')}" if v.watered else "")
-                             + f"  ·  {farming.estimate(v.needed - v.cycle, reg.farming).short()}")
+                             + (f" {emojis.icon('sparkle', '✨')} golden" if v.golden else "") + f"  ·  {farming.estimate(v.needed - v.cycle, reg.farming).short()}")
         if len(lines) == (1 if heading else 0):
             lines.append("Nothing is growing here yet. Pick a seed, then plant it.")
         return "\n".join(lines)
@@ -150,8 +150,12 @@ class FarmScreen(Screen):
         notes = []
         if again := [h.plot for h in harvests if h.replanted]:
             notes.append(f"{emojis.icon('tree', '🌲')} **Evergreen!** Plot " + ", ".join(str(n) for n in again) + " replanted itself.")
+        if any(h.golden for h in harvests):
+            notes.append(f"{emojis.icon('sparkle', '✨')} **Golden Sprout!** Triple harvest.")
         if any(h.anomaly for h in harvests):
             notes.append(f"{emojis.icon('sparkle', '✨')} **An agricultural anomaly!** Marvelous! Your work and daily are ready again.")
+        notes += [smithing.part_line(h.part) for h in harvests if h.part is not None]
+        notes += [accessories.accessory_line(h.accessory) for h in harvests if h.accessory is not None]
         self.result = rewards_result("Harvest!", items=crops + extras, xp=sum(h.xp for h in harvests), notes=notes, odds=odds.farming(),
                                      emoji=emojis.icon('basket', '🧺'), accent=0x2F919E, back_label="Back to the farm")
         await self.refresh(interaction)

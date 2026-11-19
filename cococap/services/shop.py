@@ -8,6 +8,7 @@ from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
 from cococap.services import farming, pets
 from cococap.services.equipment import EquipmentError, equip, equipped_stats, skill_for_tool
+from cococap.services.legacy_tools import give_starter_tool
 from cococap.user import InsufficientFunds, User
 
 MAX_PER_PURCHASE = 1000
@@ -34,6 +35,8 @@ async def buy(user: User, item_id: str, quantity: int = 1, registry: Registry | 
         raise ShopError(f"Reach {field} to buy that seed.")
     if not 1 <= quantity <= MAX_PER_PURCHASE:
         raise ShopError(f"You can buy between 1 and {MAX_PER_PURCHASE:,} at a time.")
+    if item.category == "accessory" and quantity != 1:
+        raise ShopError("Accessories are bought one at a time.")
     if item.is_instance:
         await _check_can_own_another(user, item, quantity, reg)
     total = item.price * quantity
@@ -67,7 +70,7 @@ async def claim_starter_tools(user: User, registry: Registry | None = None) -> l
         stat = f"starter_claimed_{item_id}"
         if item.tool.kind in have or await user.get_stat(stat):
             continue
-        made = await user.give_instance(item_id)
+        made = await give_starter_tool(user, item_id, reg)
         await user.set_stat(stat, 1)
         await _equip_first_tool(user, item, [made], reg)
         given.append(item_id)

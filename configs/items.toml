@@ -224,6 +224,7 @@ price = 0
 sell_price = 35000
 
 [crop_lemon.crop]
+scroll = { item = "scroll_seedkeeper", odds = 40 }  # Seedkeeper comes only from lemon harvests: 1 in 40. TODO(balance)
 seed = "seed_lemon"
 min_harvest = 3
 max_harvest = 5
@@ -1025,7 +1026,7 @@ max = 2
 name = "Starter Rod"
 emoji = "🎣"
 description = "A bent stick and some string. Everybody starts somewhere."
-wiki = "The rod every new player starts with. Upgrade it into the Reinforced Rod."
+wiki = "The rod every new player starts with. Smith it into new tools from parts."
 rarity = 1
 skill = "fishing"
 category = "tool"
@@ -1036,69 +1037,6 @@ sell_price = 0
 kind = "rod"
 power = 3  # TODO(balance): grows with rarity
 requirement = 0
-
-[tool_rod_starter.tool.upgrade]
-to = "tool_rod_reinforced"
-bits = 100000  # TODO(balance)
-
-[tool_rod_starter.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-fish_herring = 20
-fish_sardine = 20
-fish_bass = 8
-
-[tool_rod_reinforced]
-name = "Reinforced Rod"
-emoji = "🎣"
-description = "Fibreglass and a proper reel. Fish bite sooner and slip away less."
-wiki = "A rod on the shared road, before the fork. Upgrade it into the Sturdy Rod."
-rarity = 3
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_reinforced.tool]
-kind = "rod"
-power = 8  # TODO(balance): grows with rarity
-requirement = 0
-
-[tool_rod_reinforced.tool.upgrade]
-to = "tool_rod_sturdy"
-bits = 600000
-
-[tool_rod_reinforced.tool.upgrade.items]
-fish_salmon = 8
-fish_trout = 10
-fish_pufferfish = 1
-material_coral_shard = 8
-
-[tool_rod_masterwork]
-name = "Masterwork Rod"
-emoji = "🎣"
-description = "Hand-balanced by someone who really loved fishing."
-wiki = "A rod on the shared road, before the fork. Upgrade it into the Tidecaller Rod or the Lantern Rod: pick one road, you cannot go back."
-rarity = 5
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_masterwork.tool]
-kind = "rod"
-power = 18
-requirement = 0
-
-[tool_rod_masterwork.tool.upgrade]
-to = "tool_rod_tidecaller"
-bits = 10000000
-
-[tool_rod_masterwork.tool.upgrade.items]
-fish_salmon = 40
-fish_trout = 171
-fish_catfish = 37
-material_dewdrop = 20
-material_coral_shard = 60
-material_hardwood = 30
 
 [spirit_of_the_sea]
 name = "Spirit of the Sea"
@@ -1215,145 +1153,11 @@ rate = 1100
 min = 1
 max = 1
 
-[tool_broadaxe_bastards]
-name = "Bastards Broadaxe"
-emoji = "🪓"
-description = "Fabled heirloom of the Burger Bastard."
-wiki = "A axe on the shared road, before the fork. Upgrade it into the Masterwork Axe or the Gatherer's Axe: pick one road, you cannot go back."
-rarity = 5
-skill = "foraging"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_broadaxe_bastards.tool]
-kind = "axe"
-power = 12  # TODO(balance): grows with rarity
-requirement = 0
-
-[tool_broadaxe_bastards.tool.upgrade]
-to = "tool_axe_masterwork"
-bits = 4000000  # TODO(balance)
-
-[tool_broadaxe_bastards.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_dewdrop = 30
-material_maple_leaf = 12
-material_fine_bark = 40
-material_hardwood = 100
-material_gold_ore = 30
-
-[tool_broadaxe_bastards.tool.fork]
-to = "tool_axe_gatherers"
-bits = 4000000
-
-[tool_broadaxe_bastards.tool.fork.items]
-material_dewdrop = 30
-material_maple_leaf = 18
-material_feather = 120
-material_gold_ore = 30
-
-
-[tool_axe_masterwork]
-name = "Masterwork Axe"
-emoji = "🪓"
-description = "Unleash your woodcutting potential with the Masterwork Axe, the pinnacle of craftsmanship."
-wiki = "A axe on the Lumberjack road, which fells whole trees. Upgrade it into the Sovereign Hatchet."
-rarity = 5
-skill = "foraging"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_axe_masterwork.tool]
-kind = "axe"
-power = 18  # TODO(balance): grows with rarity
-requirement = 0
-path = "Lumberjack"
-ability = "timber"
-ability_name = "Timber"
-ability_description = "6% of your chops land twice."
-stats = { double_chop = 0.06 }
-
-[tool_axe_masterwork.tool.upgrade]
-to = "tool_hatchet_sovereign"
-bits = 20000000  # TODO(balance)
-
-[tool_axe_masterwork.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_beeswax = 15
-material_maple_leaf = 40
-material_aged_feather = 1
-material_fine_bark = 80
-material_hardwood = 200
-material_gold_ore = 80
-material_coral_shard = 15
-
-
-[tool_axe_reinforced]
-name = "Reinforced Axe"
-emoji = "🪓"
-description = "Slightly higher chopping power than your average axe."
-wiki = "A axe on the shared road, before the fork. Upgrade it into the Bastards Broadaxe."
-rarity = 4
-skill = "foraging"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_axe_reinforced.tool]
-kind = "axe"
-power = 8  # TODO(balance): grows with rarity
-requirement = 0
-
-[tool_axe_reinforced.tool.upgrade]
-to = "tool_broadaxe_bastards"
-bits = 800000  # TODO(balance)
-
-[tool_axe_reinforced.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_compost = 60
-material_fine_bark = 25
-material_hardwood = 60
-material_feather = 150
-material_iron_ore = 40
-
-[tool_hatchet_sovereign]
-name = "Sovereign Hatchet"
-emoji = "🪓"
-description = "Imbued with the spirit of a true woodsman."
-wiki = "A axe on the Lumberjack road, which fells whole trees. Upgrade it into the Wilted Axe."
-rarity = 6
-skill = "foraging"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_hatchet_sovereign.tool]
-kind = "axe"
-power = 28  # TODO(balance): grows with rarity
-requirement = 0
-path = "Lumberjack"
-ability = "timber"
-ability_name = "Timber"
-ability_description = "10% of your chops land twice."
-stats = { double_chop = 0.1 }
-
-[tool_hatchet_sovereign.tool.upgrade]
-to = "tool_axe_wilted"
-bits = 100000000  # TODO(balance)
-
-[tool_hatchet_sovereign.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_living_vine = 5
-material_maple_leaf = 100
-material_aged_feather = 4
-material_fine_bark = 150
-material_hardwood = 400
-material_gold_ore = 200
-fish_tuna = 10
-
 [tool_axe_starter]
 name = "Starter Axe"
 emoji = "🪓"
 description = "A basic axe, meant for novice lumberjacks."
-wiki = "The axe every new player starts with. Upgrade it into the Thornwhip Axe."
+wiki = "The axe every new player starts with. Smith it into new tools from parts."
 rarity = 1
 skill = "foraging"
 category = "tool"
@@ -1364,101 +1168,6 @@ sell_price = 0
 kind = "axe"
 power = 3  # TODO(balance): grows with rarity
 requirement = 0
-
-[tool_axe_starter.tool.upgrade]
-to = "tool_axe_thornwhip"
-bits = 20000  # TODO(balance)
-
-[tool_axe_starter.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_feather = 40
-material_hardwood = 6
-
-[tool_axe_thornwhip]
-name = "Thornwhip Axe"
-emoji = "🪓"
-description = "An enhanced version of the starter axe."
-wiki = "A axe on the shared road, before the fork. Upgrade it into the Reinforced Axe."
-rarity = 3
-skill = "foraging"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_axe_thornwhip.tool]
-kind = "axe"
-power = 5  # TODO(balance): grows with rarity
-requirement = 0
-
-[tool_axe_thornwhip.tool.upgrade]
-to = "tool_axe_reinforced"
-bits = 150000  # TODO(balance)
-
-[tool_axe_thornwhip.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_feather = 100
-material_hardwood = 25
-material_fine_bark = 5
-
-[tool_axe_wilted]
-name = "Wilted Axe"
-emoji = "🪓"
-description = "Amidst ancient groves, the wilted axe struggles to bloom. A lumberjack's companion, whispering dreams. Hewn from history, it reigns amidst forests and streams."
-wiki = "A axe on the Lumberjack road, which fells whole trees. Upgrade it into the Elderwood Greataxe."
-rarity = 7
-skill = "foraging"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_axe_wilted.tool]
-kind = "axe"
-power = 40
-requirement = 0
-path = "Lumberjack"
-ability = "timber"
-ability_name = "Timber"
-ability_description = "14% of your chops land twice."
-stats = { double_chop = 0.14 }
-
-[tool_axe_wilted.tool.upgrade]
-to = "tool_axe_elderwood"
-bits = 500000000
-
-[tool_axe_wilted.tool.upgrade.items]
-material_maple_leaf = 250
-material_aged_feather = 8
-material_fine_bark = 350
-material_hardwood = 900
-material_feather = 800
-material_gold_ore = 450
-material_plant_fiber = 250
-fish_tuna = 25
-
-[scroll_keen]
-name = "Scroll of Keenness"
-description = "A scroll that sharpens any pickaxe, axe or rod."
-wiki = "Use it from your inventory (Enchant) to put Keen on any tool. One use."
-emoji = "📜"
-rarity = 4
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_keen.scroll]
-enchant = "keen"
-
-[scroll_lure]
-name = "Scroll of the Lure"
-description = "Fish seem to find your hook sooner."
-wiki = "Use it from your inventory (Enchant) to put Lure on a fitting tool. One use."
-emoji = "📜"
-rarity = 4
-skill = "fishing"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_lure.scroll]
-enchant = "lure"
 
 [scroll_steady_line]
 name = "Scroll of the Steady Line"
@@ -1474,34 +1183,6 @@ sell_price = 400000  # TODO(balance)
 [scroll_steady_line.scroll]
 enchant = "steady_line"
 
-[scroll_sharp_eye]
-name = "Scroll of the Sharp Eye"
-description = "See where the wood is weakest."
-wiki = "Use it from your inventory (Enchant) to put Sharp Eye on a fitting tool. One use."
-emoji = "📜"
-rarity = 4
-skill = "foraging"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_sharp_eye.scroll]
-enchant = "sharp_eye"
-
-[scroll_seasoned]
-name = "Scroll of Seasoning"
-description = "Spots wear out more slowly under your axe."
-wiki = "Use it from your inventory (Enchant) to put Seasoned on an axe. One use."
-emoji = "📜"
-rarity = 4
-skill = "foraging"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_seasoned.scroll]
-enchant = "seasoned"
-
 [scroll_double_strike]
 name = "Scroll of the Double Strike"
 description = "Your axe bites twice."
@@ -1515,20 +1196,6 @@ sell_price = 1200000  # TODO(balance)
 
 [scroll_double_strike.scroll]
 enchant = "double_strike"
-
-[scroll_iron_frame]
-name = "Scroll of the Iron Frame"
-description = "Braces a pickaxe against the creaking mine."
-wiki = "Use it from your inventory (Enchant) to put Iron Frame on a fitting tool. One use."
-emoji = "📜"
-rarity = 4
-skill = "mining"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_iron_frame.scroll]
-enchant = "iron_frame"
 
 [key_gemstone_balance]
 name = "Balance"
@@ -1694,7 +1361,7 @@ max = 1
 name = "Rookie Pickaxe"
 emoji = "⛏️"
 description = "They hand this one out to the new recruits. Guess that's you."
-wiki = "The pickaxe every new player starts with. Upgrade it into the Reinforced Pickaxe."
+wiki = "The pickaxe every new player starts with. Smith it into new tools from parts."
 rarity = 1
 skill = "mining"
 category = "tool"
@@ -1705,68 +1372,6 @@ sell_price = 0
 kind = "pickaxe"
 power = 3
 requirement = 0
-
-[tool_pickaxe_rookie.tool.upgrade]
-to = "tool_pickaxe_reinforced"
-bits = 30000  # TODO(balance)
-
-[tool_pickaxe_rookie.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_copper_ore = 200
-material_iron_ore = 40
-
-[tool_pickaxe_reinforced]
-name = "Reinforced Pickaxe"
-emoji = "⛏️"
-description = "A sturdier head and a better grip. Piles come out bigger."
-wiki = "A pickaxe on the shared road, before the fork. Upgrade it into the Steel Pickaxe."
-rarity = 3
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_reinforced.tool]
-kind = "pickaxe"
-power = 5  # +25% ore per point above 3 (mining.toml): x1.5
-requirement = 0
-
-[tool_pickaxe_reinforced.tool.upgrade]
-to = "tool_pickaxe_steel"
-bits = 200000
-
-[tool_pickaxe_reinforced.tool.upgrade.items]
-material_copper_ore = 160
-material_iron_ore = 120
-material_gold_ore = 25
-
-[tool_pickaxe_masterwork]
-name = "Masterwork Pickaxe"
-emoji = "⛏️"
-description = "Forged by someone who has seen the bottom of the mines."
-wiki = "A pickaxe on the shared road, before the fork. Upgrade it into the Ironbound Pickaxe or the Prospector's Pickaxe: pick one road, you cannot go back."
-rarity = 5
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_masterwork.tool]
-kind = "pickaxe"
-power = 9  # x2.5 ore (the same jump for every tool at this step: about x2.6 income)
-requirement = 0
-
-[tool_pickaxe_masterwork.tool.upgrade]
-to = "tool_pickaxe_ironbound"
-bits = 3000000
-
-[tool_pickaxe_masterwork.tool.upgrade.items]
-material_coal = 1003
-material_clay = 483
-material_tin_ore = 450
-material_iron_ore = 800
-material_copper_ore = 1346
-material_hardwood = 40
-material_coral_shard = 20
 
 [tool_scarab_bomb]
 name = "Scarab Bomb"
@@ -2163,343 +1768,6 @@ max = 1
 # same in every skill: x1, x1.5, x2.6, x4, x6, x9, x13, x18 of a starter tool (python -m scripts.balance prints it). Each step costs about 5x the last.
 
 
-[tool_pickaxe_ironbound]
-name = "Ironbound Pickaxe"
-emoji = "⛏️"
-description = "Banded in black iron. It does not so much dig as insist."
-wiki = "A pickaxe on the Warden road, which leans on its automatic bombs. Upgrade it into the Crystal Pickaxe."
-rarity = 5
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_ironbound.tool]
-kind = "pickaxe"
-power = 15
-requirement = 0
-path = "Warden"
-ability = "auto_bomb"
-ability_name = "Auto-Bomb"
-ability_description = "Every 32 rows a charge blows the whole row for free: flat pressure, no collapse check."
-stats = { auto_bomb = 32 }
-
-[tool_pickaxe_ironbound.tool.upgrade]
-to = "tool_pickaxe_crystal"
-bits = 15000000
-
-[tool_pickaxe_ironbound.tool.upgrade.items]
-material_coal = 3001
-material_tin_ore = 1346
-material_iron_ore = 2000
-material_silver_ore = 264
-material_hardwood = 100
-material_coral_shard = 50
-
-
-[tool_pickaxe_crystal]
-name = "Crystal Pickaxe"
-emoji = "⛏️"
-description = "The head is a single cut gem. It hums when ore is near."
-wiki = "A pickaxe on the Warden road, which leans on its automatic bombs. Upgrade it into the Deepdelver's Pick."
-rarity = 6
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_crystal.tool]
-kind = "pickaxe"
-power = 23
-requirement = 0
-path = "Warden"
-ability = "auto_bomb"
-ability_name = "Auto-Bomb"
-ability_description = "Every 28 rows a charge blows the whole row for free: flat pressure, no collapse check."
-stats = { auto_bomb = 28 }
-
-[tool_pickaxe_crystal.tool.upgrade]
-to = "tool_pickaxe_deepdelver"
-bits = 70000000
-
-[tool_pickaxe_crystal.tool.upgrade.items]
-material_iron_ore = 4523
-material_silver_ore = 672
-material_amber = 428
-material_clay = 2947
-material_beeswax = 8
-fish_tuna = 8
-
-
-[tool_pickaxe_deepdelver]
-name = "Deepdelver's Pick"
-emoji = "⛏️"
-description = "Carried down further than any map goes."
-wiki = "A pickaxe on the Warden road, which leans on its automatic bombs. Upgrade it into the Mythril Pickaxe."
-rarity = 6
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_deepdelver.tool]
-kind = "pickaxe"
-power = 35
-requirement = 0
-path = "Warden"
-ability = "auto_bomb"
-ability_name = "Auto-Bomb"
-ability_description = "Every 24 rows a charge blows the whole row for free: flat pressure, no collapse check."
-stats = { auto_bomb = 24 }
-
-[tool_pickaxe_deepdelver.tool.upgrade]
-to = "tool_pickaxe_mythril"
-bits = 300000000
-
-[tool_pickaxe_deepdelver.tool.upgrade.items]
-material_silver_ore = 1868
-material_amber = 1193
-material_garnet = 108
-material_tin_ore = 7655
-material_maple_leaf = 40
-fish_sturgeon = 2
-
-
-[tool_pickaxe_mythril]
-name = "Mythril Pickaxe"
-emoji = "⛏️"
-description = "Light as a feather, hard as a promise."
-wiki = "A pickaxe on the Warden road, which leans on its automatic bombs. Upgrade it into the Worldsplitter."
-rarity = 7
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_mythril.tool]
-kind = "pickaxe"
-power = 51
-requirement = 0
-path = "Warden"
-ability = "auto_bomb"
-ability_name = "Auto-Bomb"
-ability_description = "Every 17 rows a charge blows the whole row for free: flat pressure, no collapse check."
-stats = { auto_bomb = 17 }
-
-[tool_pickaxe_mythril.tool.upgrade]
-to = "tool_pickaxe_worldsplitter"
-bits = 1200000000
-
-[tool_pickaxe_mythril.tool.upgrade.items]
-material_garnet = 443
-material_amber = 3432
-material_silver_ore = 5363
-material_aged_feather = 4
-fish_marlin = 5
-
-
-[tool_pickaxe_worldsplitter]
-name = "Worldsplitter"
-emoji = "⛏️"
-description = "They say the mine groans when it is carried in."
-wiki = "A pickaxe on the Warden road, which leans on its automatic bombs. There is nothing above it."
-rarity = 7
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_worldsplitter.tool]
-kind = "pickaxe"
-power = 71
-requirement = 0
-path = "Warden"
-ability = "auto_bomb"
-ability_name = "Auto-Bomb"
-ability_description = "Every 14 rows a charge blows the whole row for free: flat pressure, no collapse check."
-stats = { auto_bomb = 14 }
-
-
-[tool_rod_tidecaller]
-name = "Tidecaller Rod"
-emoji = "🎣"
-description = "Fish come when it calls. Some even bring friends."
-wiki = "A rod on the Angler road, which reels fish in for you. Upgrade it into the Moonlit Rod."
-rarity = 5
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_tidecaller.tool]
-kind = "rod"
-power = 30
-requirement = 0
-path = "Angler"
-ability = "auto_reel"
-ability_name = "Auto-Reel"
-ability_description = "The first 1 arrow of every reel is pressed for you."
-stats = { auto_reel = 1, bite_speed = 0.03 }
-
-[tool_rod_tidecaller.tool.upgrade]
-to = "tool_rod_moonlit"
-bits = 40000000
-
-[tool_rod_tidecaller.tool.upgrade.items]
-fish_pike = 9
-fish_muskie = 8
-fish_salmon = 29
-material_coral_shard = 120
-material_hardwood = 40
-material_iron_ore = 60
-
-
-[tool_rod_moonlit]
-name = "Moonlit Rod"
-emoji = "🎣"
-description = "Strung with silver line that glows after dark."
-wiki = "A rod on the Angler road, which reels fish in for you. Upgrade it into the Leviathan Rod."
-rarity = 6
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_moonlit.tool]
-kind = "rod"
-power = 45
-requirement = 0
-path = "Angler"
-ability = "auto_reel"
-ability_name = "Auto-Reel"
-ability_description = "The first 1 arrow of every reel is pressed for you."
-stats = { auto_reel = 1, bite_speed = 0.06 }
-
-[tool_rod_moonlit.tool.upgrade]
-to = "tool_rod_leviathan"
-bits = 150000000
-
-[tool_rod_moonlit.tool.upgrade.items]
-fish_sturgeon = 3
-fish_muskie = 24
-fish_pike = 28
-material_coral_shard = 250
-material_hardwood = 100
-material_gold_ore = 100
-
-
-[tool_rod_leviathan]
-name = "Leviathan Rod"
-emoji = "🎣"
-description = "Built to hold something far too big for a pond."
-wiki = "A rod on the Angler road, which reels fish in for you. Upgrade it into the Abyssal Rod."
-rarity = 6
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_leviathan.tool]
-kind = "rod"
-power = 65
-requirement = 0
-path = "Angler"
-ability = "auto_reel"
-ability_name = "Auto-Reel"
-ability_description = "The first 2 arrows of every reel are pressed for you."
-stats = { auto_reel = 2, bite_speed = 0.09, slips = 1 }
-
-[tool_rod_leviathan.tool.upgrade]
-to = "tool_rod_abyssal"
-bits = 500000000
-
-[tool_rod_leviathan.tool.upgrade.items]
-fish_oarfish = 9
-fish_sturgeon = 6
-fish_moray_eel = 208
-material_coral_shard = 500
-material_maple_leaf = 30
-material_gold_ore = 200
-
-
-[tool_rod_abyssal]
-name = "Abyssal Rod"
-emoji = "🎣"
-description = "Cold to the touch. The line never seems to reach the bottom."
-wiki = "A rod on the Angler road, which reels fish in for you. Upgrade it into the Poseidon's Rod."
-rarity = 7
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_abyssal.tool]
-kind = "rod"
-power = 90
-requirement = 0
-path = "Angler"
-ability = "auto_reel"
-ability_name = "Auto-Reel"
-ability_description = "The first 2 arrows of every reel are pressed for you."
-stats = { auto_reel = 2, bite_speed = 0.12 }
-
-[tool_rod_abyssal.tool.upgrade]
-to = "tool_rod_poseidon"
-bits = 1500000000
-
-[tool_rod_abyssal.tool.upgrade.items]
-fish_golden_koi = 1
-fish_oarfish = 7
-fish_sturgeon = 5
-material_coral_shard = 800
-material_aged_feather = 3
-material_gold_ore = 400
-
-
-[tool_rod_poseidon]
-name = "Poseidon's Rod"
-emoji = "🔱"
-description = "The sea gives up its best without being asked twice."
-wiki = "A rod on the Angler road, which reels fish in for you. There is nothing above it."
-rarity = 7
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_poseidon.tool]
-kind = "rod"
-power = 120
-requirement = 0
-path = "Angler"
-ability = "auto_reel"
-ability_name = "Auto-Reel"
-ability_description = "The first 3 arrows of every reel are pressed for you."
-stats = { auto_reel = 3, bite_speed = 0.15, slips = 1 }
-
-
-[tool_axe_elderwood]
-name = "Elderwood Greataxe"
-emoji = "🪓"
-description = "Cut from the oldest tree in the forest, which did not mind."
-wiki = "A axe on the Lumberjack road, which fells whole trees. There is nothing above it."
-rarity = 7
-skill = "foraging"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_axe_elderwood.tool]
-kind = "axe"
-power = 54
-requirement = 0
-path = "Lumberjack"
-ability = "timber"
-ability_name = "Timber"
-ability_description = "18% of your chops land twice."
-stats = { double_chop = 0.18 }
-
-
 [material_rotation_wedge]
 name = "Rotation Wedge"
 description = "Drive it into a bad spot and the grain gives way to another."
@@ -2547,331 +1815,6 @@ sell_price = 25000  # TODO(balance)
 rate = 2500  # TODO(balance): 1 in 2500 per drop roll
 min = 1
 max = 1
-
-[tool_pickaxe_masterwork.tool.fork]
-to = "tool_pickaxe_prospector"
-bits = 3000000
-
-[tool_pickaxe_masterwork.tool.fork.items]
-material_gold_ore = 225
-material_obsidian = 107
-material_hardwood = 40
-material_coral_shard = 20
-
-[tool_pickaxe_prospector]
-name = "Prospector's Pickaxe"
-emoji = "⛏️"
-description = "Light, quick and greedy: it finds more ore, and brings the roof down sooner."
-wiki = "A pickaxe on the Prospector road, which trades a sturdier tunnel for richer ore. Upgrade it into the Geode Pickaxe."
-rarity = 5
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_prospector.tool]
-kind = "pickaxe"
-power = 15
-requirement = 0
-path = "Prospector"
-ability = "multi_mine"
-ability_name = "Multi-Mine"
-ability_description = "Each dig has a 25% chance to bite the rock beside you too, for the pressure of its hardness only."
-stats = { ore_yield = 0.11, multi_mine = 0.25 }
-
-[tool_pickaxe_prospector.tool.upgrade]
-to = "tool_pickaxe_geode"
-bits = 15000000
-
-[tool_pickaxe_prospector.tool.upgrade.items]
-material_gold_ore = 547
-material_obsidian = 324
-material_platinum_ore = 37
-material_hardwood = 100
-material_coral_shard = 50
-
-[tool_pickaxe_geode]
-name = "Geode Pickaxe"
-emoji = "⛏️"
-description = "Cracks rock to find the sparkle inside. Richer ore, a creakier tunnel."
-wiki = "A pickaxe on the Prospector road, which trades a sturdier tunnel for richer ore. Upgrade it into the Seeker's Pickaxe."
-rarity = 6
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_geode.tool]
-kind = "pickaxe"
-power = 23
-requirement = 0
-path = "Prospector"
-ability = "multi_mine"
-ability_name = "Multi-Mine"
-ability_description = "Each dig has a 35% chance to bite the rock beside you too, for the pressure of its hardness only."
-stats = { ore_yield = 0.22, multi_mine = 0.35 }
-
-[tool_pickaxe_geode.tool.upgrade]
-to = "tool_pickaxe_seekers"
-bits = 70000000
-
-[tool_pickaxe_geode.tool.upgrade.items]
-material_gold_ore = 1200
-material_obsidian = 822
-material_platinum_ore = 135
-material_beeswax = 8
-fish_tuna = 8
-
-[tool_pickaxe_seekers]
-name = "Seeker's Pickaxe"
-emoji = "⛏️"
-description = "It seems to know where the good stuff is hiding."
-wiki = "A pickaxe on the Prospector road, which trades a sturdier tunnel for richer ore. Upgrade it into the Vein-Hunter's Pickaxe."
-rarity = 6
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_seekers.tool]
-kind = "pickaxe"
-power = 35
-requirement = 0
-path = "Prospector"
-ability = "multi_mine"
-ability_name = "Multi-Mine"
-ability_description = "Each dig has a 45% chance to bite the rock beside you too, for the pressure of its hardness only."
-stats = { ore_yield = 0.33, multi_mine = 0.45 }
-
-[tool_pickaxe_seekers.tool.upgrade]
-to = "tool_pickaxe_veinhunter"
-bits = 300000000
-
-[tool_pickaxe_seekers.tool.upgrade.items]
-material_platinum_ore = 377
-material_obsidian = 1833
-material_sapphire = 9
-material_maple_leaf = 40
-fish_sturgeon = 2
-
-[tool_pickaxe_veinhunter]
-name = "Vein-Hunter's Pickaxe"
-emoji = "⛏️"
-description = "A hunter's tool. It takes more from every lode, and the mine knows it."
-wiki = "A pickaxe on the Prospector road, which trades a sturdier tunnel for richer ore. Upgrade it into the Motherlode Pickaxe."
-rarity = 7
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_veinhunter.tool]
-kind = "pickaxe"
-power = 51
-requirement = 0
-path = "Prospector"
-ability = "multi_mine"
-ability_name = "Multi-Mine"
-ability_description = "Each dig has a 55% chance to bite the rock beside you too, for the pressure of its hardness only."
-stats = { ore_yield = 0.44, multi_mine = 0.55 }
-
-[tool_pickaxe_veinhunter.tool.upgrade]
-to = "tool_pickaxe_motherlode"
-bits = 1200000000
-
-[tool_pickaxe_veinhunter.tool.upgrade.items]
-material_platinum_ore = 1086
-material_sapphire = 40
-material_emerald = 40
-material_aged_feather = 4
-fish_marlin = 5
-
-[tool_pickaxe_motherlode]
-name = "Motherlode Pickaxe"
-emoji = "⛏️"
-description = "Everything in the mountain wants to be found by this pick."
-wiki = "A pickaxe on the Prospector road, which trades a sturdier tunnel for richer ore. There is nothing above it."
-rarity = 7
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_motherlode.tool]
-kind = "pickaxe"
-power = 71
-requirement = 0
-path = "Prospector"
-ability = "multi_mine"
-ability_name = "Multi-Mine"
-ability_description = "Each dig has a 60% chance to bite the rock beside you too, for the pressure of its hardness only."
-stats = { ore_yield = 0.55, multi_mine = 0.6 }
-
-[tool_rod_masterwork.tool.fork]
-to = "tool_rod_lantern"
-bits = 10000000
-
-[tool_rod_masterwork.tool.fork.items]
-fish_swordfish = 92
-fish_tuna = 367
-fish_pufferfish = 19
-fish_moray_eel = 17
-material_dewdrop = 20
-material_coral_shard = 60
-material_hardwood = 30
-
-[tool_rod_lantern]
-name = "Lantern Rod"
-emoji = "🏮"
-description = "A glowing lure draws strange things up from the deep. Slower bites, better finds."
-wiki = "A rod on the Treasure Hunter road, which pulls up rare bycatch. Upgrade it into the Siren Rod."
-rarity = 5
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_lantern.tool]
-kind = "rod"
-power = 30
-requirement = 0
-path = "Treasure Hunter"
-ability = "bycatch"
-ability_name = "Bycatch"
-ability_description = "10% of catches also bring up a second, different fish."
-stats = { bycatch = 0.1, rare_luck = 0.06, treasure_luck = 0.1, bite_speed = -0.02 }
-
-[tool_rod_lantern.tool.upgrade]
-to = "tool_rod_siren"
-bits = 40000000
-
-[tool_rod_lantern.tool.upgrade.items]
-fish_swordfish = 85
-fish_sturgeon = 1
-fish_giant_squid = 2
-material_coral_shard = 120
-material_hardwood = 40
-material_iron_ore = 60
-
-[tool_rod_siren]
-name = "Siren Rod"
-emoji = "🧜"
-description = "It hums a tune only the rare fish answer to."
-wiki = "A rod on the Treasure Hunter road, which pulls up rare bycatch. Upgrade it into the Trident Rod."
-rarity = 6
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_siren.tool]
-kind = "rod"
-power = 45
-requirement = 0
-path = "Treasure Hunter"
-ability = "bycatch"
-ability_name = "Bycatch"
-ability_description = "15% of catches also bring up a second, different fish."
-stats = { bycatch = 0.15, rare_luck = 0.12, treasure_luck = 0.2, bite_speed = -0.04 }
-
-[tool_rod_siren.tool.upgrade]
-to = "tool_rod_trident"
-bits = 150000000
-
-[tool_rod_siren.tool.upgrade.items]
-fish_marlin = 14
-fish_giant_squid = 13
-fish_swordfish = 255
-material_coral_shard = 250
-material_hardwood = 100
-material_gold_ore = 100
-
-[tool_rod_trident]
-name = "Trident Rod"
-emoji = "🔱"
-description = "Three prongs, three chances at something unusual."
-wiki = "A rod on the Treasure Hunter road, which pulls up rare bycatch. Upgrade it into the Kraken Rod."
-rarity = 6
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_trident.tool]
-kind = "rod"
-power = 65
-requirement = 0
-path = "Treasure Hunter"
-ability = "bycatch"
-ability_name = "Bycatch"
-ability_description = "20% of catches also bring up a second, different fish."
-stats = { bycatch = 0.2, rare_luck = 0.18, treasure_luck = 0.3, bite_speed = -0.06 }
-
-[tool_rod_trident.tool.upgrade]
-to = "tool_rod_kraken"
-bits = 500000000
-
-[tool_rod_trident.tool.upgrade.items]
-fish_abyssal_angler = 12
-fish_giant_squid = 36
-fish_marlin = 29
-material_coral_shard = 500
-material_maple_leaf = 30
-material_gold_ore = 200
-
-[tool_rod_kraken]
-name = "Kraken Rod"
-emoji = "🐙"
-description = "Whatever lives down there, this rod calls it."
-wiki = "A rod on the Treasure Hunter road, which pulls up rare bycatch. Upgrade it into the Trophy Rod."
-rarity = 7
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_kraken.tool]
-kind = "rod"
-power = 90
-requirement = 0
-path = "Treasure Hunter"
-ability = "bycatch"
-ability_name = "Bycatch"
-ability_description = "25% of catches also bring up a second, different fish."
-stats = { bycatch = 0.25, rare_luck = 0.24, treasure_luck = 0.4, bite_speed = -0.08 }
-
-[tool_rod_kraken.tool.upgrade]
-to = "tool_rod_trophy"
-bits = 1500000000
-
-[tool_rod_kraken.tool.upgrade.items]
-fish_leviathan_pup = 1
-fish_abyssal_angler = 9
-fish_giant_squid = 20
-material_coral_shard = 800
-material_aged_feather = 3
-material_gold_ore = 400
-
-[tool_rod_trophy]
-name = "Trophy Rod"
-emoji = "🏆"
-description = "Hung with trophies, and it earns every one."
-wiki = "A rod on the Treasure Hunter road, which pulls up rare bycatch. There is nothing above it."
-rarity = 7
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_trophy.tool]
-kind = "rod"
-power = 120
-requirement = 0
-path = "Treasure Hunter"
-ability = "bycatch"
-ability_name = "Bycatch"
-ability_description = "30% of catches also bring up a second, different fish."
-stats = { bycatch = 0.3, rare_luck = 0.3, treasure_luck = 0.5, bite_speed = -0.1 }
 
 [material_compost]
 name = "Rich Compost"
@@ -2952,181 +1895,6 @@ sell_price = 0
 kind = "can"
 power = 3  # plots it waters an hour
 requirement = 0
-
-[tool_can_tin.tool.upgrade]
-to = "tool_can_copper"
-bits = 20000
-
-[tool_can_tin.tool.upgrade.items]
-material_compost = 30
-material_plant_fiber = 20
-
-[tool_can_copper]
-name = "Copper Watering Can"
-description = "A proper spout and a handle that fits."
-wiki = "Waters 4 plots an hour: each always grows a cycle."
-emoji = "🚿"
-rarity = 3
-skill = "farming"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_can_copper.tool]
-kind = "can"
-power = 4  # plots it waters an hour
-requirement = 0
-
-[tool_can_copper.tool.upgrade]
-to = "tool_can_iron"
-bits = 150000
-
-[tool_can_copper.tool.upgrade.items]
-material_compost = 80
-material_dewdrop = 10
-material_plant_fiber = 40
-
-[tool_can_iron]
-name = "Iron Watering Can"
-description = "Heavy when full, and it never seems to run dry."
-wiki = "Waters 5 plots an hour: each always grows a cycle."
-emoji = "🚿"
-rarity = 4
-skill = "farming"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_can_iron.tool]
-kind = "can"
-power = 5  # plots it waters an hour
-requirement = 0
-
-[tool_can_iron.tool.upgrade]
-to = "tool_can_silver"
-bits = 800000
-
-[tool_can_iron.tool.upgrade.items]
-material_compost = 150
-material_dewdrop = 40
-material_beeswax = 5
-material_plant_fiber = 100
-material_hardwood = 20
-
-[tool_can_silver]
-name = "Silver Watering Can"
-description = "Rain looks nicer coming out of silver. Crops thrive on it."
-wiki = "Waters 6 plots an hour: each always grows a cycle."
-emoji = "🚿"
-rarity = 5
-skill = "farming"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_can_silver.tool]
-kind = "can"
-power = 6  # plots it waters an hour
-requirement = 0
-
-[tool_can_silver.tool.upgrade]
-to = "tool_can_gold"
-bits = 4000000
-
-[tool_can_silver.tool.upgrade.items]
-material_dewdrop = 100
-material_beeswax = 20
-material_hardwood = 50
-
-[tool_can_silver.tool.fork]
-to = "tool_can_cauldron"
-bits = 4000000
-
-[tool_can_silver.tool.fork.items]
-material_compost = 400
-material_plant_fiber = 260
-material_hardwood = 50
-
-[tool_can_gold]
-name = "Gold Watering Can"
-description = "Whatever it waters comes up richer."
-wiki = "Waters 7 plots an hour: each always grows a cycle."
-emoji = "🚿"
-rarity = 5
-skill = "farming"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_can_gold.tool]
-kind = "can"
-power = 7  # plots it waters an hour
-requirement = 0
-path = "Sprinkler"
-ability = "sprinkle"
-ability_name = "Sprinkler"
-ability_description = "Watered plots are 8% likelier to grow each hour."
-stats = { sprinkle = 0.08 }
-
-[tool_can_gold.tool.upgrade]
-to = "tool_can_crystal"
-bits = 20000000
-
-[tool_can_gold.tool.upgrade.items]
-material_beeswax = 60
-material_living_vine = 6
-material_coral_shard = 40
-
-[tool_can_crystal]
-name = "Crystal Watering Can"
-description = "The water inside is older than the farm."
-wiki = "Waters 8 plots an hour: each always grows a cycle."
-emoji = "🚿"
-rarity = 6
-skill = "farming"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_can_crystal.tool]
-kind = "can"
-power = 8  # plots it waters an hour
-requirement = 0
-path = "Sprinkler"
-ability = "sprinkle"
-ability_name = "Sprinkler"
-ability_description = "Watered plots are 12% likelier to grow each hour."
-stats = { sprinkle = 0.12 }
-
-[tool_can_crystal.tool.upgrade]
-to = "tool_can_moonwell"
-bits = 100000000
-
-[tool_can_crystal.tool.upgrade.items]
-material_living_vine = 25
-material_beeswax = 120
-material_gold_ore = 30
-
-[tool_can_moonwell]
-name = "Moonwell Watering Can"
-description = "Filled at a well that is only there at night. It waters the whole farm."
-wiki = "Waters 9 plots an hour: each always grows a cycle."
-emoji = "🚿"
-rarity = 7
-skill = "farming"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_can_moonwell.tool]
-kind = "can"
-power = 9  # plots it waters an hour
-requirement = 0
-path = "Sprinkler"
-ability = "sprinkle"
-ability_name = "Sprinkler"
-ability_description = "Watered plots are 16% likelier to grow each hour."
-stats = { sprinkle = 0.16 }
 
 [material_coal]
 name = "Coal"
@@ -3288,256 +2056,6 @@ rate = 900
 min = 1
 max = 1
 
-[tool_pickaxe_steel]
-name = "Steel Pickaxe"
-emoji = "⛏️"
-description = "Quenched steel: it bites deeper and shrugs off the dust."
-wiki = "A pickaxe on the shared road, before the fork. Upgrade it into the Masterwork Pickaxe."
-rarity = 4
-skill = "mining"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_pickaxe_steel.tool]
-kind = "pickaxe"
-power = 7
-requirement = 0
-
-[tool_pickaxe_steel.tool.upgrade]
-to = "tool_pickaxe_masterwork"
-bits = 500000
-
-[tool_pickaxe_steel.tool.upgrade.items]
-material_iron_ore = 300
-material_gold_ore = 60
-material_copper_ore = 400
-material_hardwood = 12
-
-[tool_rod_sturdy]
-name = "Sturdy Rod"
-emoji = "🎣"
-description = "A longer, stiffer rod with a smooth drag. Bites come sooner and fewer fish get away."
-wiki = "A rod on the shared road, before the fork. Upgrade it into the Masterwork Rod."
-rarity = 4
-skill = "fishing"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rod_sturdy.tool]
-kind = "rod"
-power = 12
-requirement = 0
-
-[tool_rod_sturdy.tool.upgrade]
-to = "tool_rod_masterwork"
-bits = 2000000
-
-[tool_rod_sturdy.tool.upgrade.items]
-fish_salmon = 15
-fish_trout = 20
-fish_pufferfish = 3
-material_coral_shard = 20
-material_gold_ore = 10
-
-[tool_axe_gatherers]
-name = "Gatherer's Axe"
-emoji = "🪓"
-description = "Light and quick: it shakes loose what the branches hold."
-wiki = "A axe on the Forager road, which shakes loose what the branches hold. Upgrade it into the Forager's Hatchet."
-rarity = 5
-skill = "foraging"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_axe_gatherers.tool]
-kind = "axe"
-power = 18
-requirement = 0
-path = "Forager"
-ability = "shake"
-ability_name = "Shake the Branches"
-ability_description = "Each chop has a 10% chance to shake loose a drop."
-stats = { shake = 0.1 }
-
-[tool_axe_gatherers.tool.upgrade]
-to = "tool_hatchet_foragers"
-bits = 20000000
-
-[tool_axe_gatherers.tool.upgrade.items]
-material_beeswax = 15
-material_maple_leaf = 55
-material_feather = 240
-material_gold_ore = 80
-material_coral_shard = 15
-
-[tool_hatchet_foragers]
-name = "Forager's Hatchet"
-emoji = "🪓"
-description = "A hatchet for those who walk the trees, not fell them."
-wiki = "A axe on the Forager road, which shakes loose what the branches hold. Upgrade it into the Mosswood Axe."
-rarity = 6
-skill = "foraging"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_hatchet_foragers.tool]
-kind = "axe"
-power = 28
-requirement = 0
-path = "Forager"
-ability = "shake"
-ability_name = "Shake the Branches"
-ability_description = "Each chop has a 16% chance to shake loose a drop."
-stats = { shake = 0.16 }
-
-[tool_hatchet_foragers.tool.upgrade]
-to = "tool_axe_mosswood"
-bits = 100000000
-
-[tool_hatchet_foragers.tool.upgrade.items]
-material_living_vine = 5
-material_maple_leaf = 134
-material_feather = 480
-material_gold_ore = 200
-fish_tuna = 10
-
-[tool_axe_mosswood]
-name = "Mosswood Axe"
-emoji = "🪓"
-description = "Moss-wrapped and sure: the branches give up their fruit."
-wiki = "A axe on the Forager road, which shakes loose what the branches hold. Upgrade it into the Canopy Axe."
-rarity = 7
-skill = "foraging"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_axe_mosswood.tool]
-kind = "axe"
-power = 40
-requirement = 0
-path = "Forager"
-ability = "shake"
-ability_name = "Shake the Branches"
-ability_description = "Each chop has a 22% chance to shake loose a drop."
-stats = { shake = 0.22 }
-
-[tool_axe_mosswood.tool.upgrade]
-to = "tool_axe_canopy"
-bits = 500000000
-
-[tool_axe_mosswood.tool.upgrade.items]
-material_maple_leaf = 326
-material_feather = 1880
-material_gold_ore = 450
-material_plant_fiber = 250
-fish_tuna = 25
-
-[tool_axe_canopy]
-name = "Canopy Axe"
-emoji = "🪓"
-description = "Cut from the canopy itself. Everything up there falls to you."
-wiki = "A axe on the Forager road, which shakes loose what the branches hold. There is nothing above it."
-rarity = 7
-skill = "foraging"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_axe_canopy.tool]
-kind = "axe"
-power = 54
-requirement = 0
-path = "Forager"
-ability = "shake"
-ability_name = "Shake the Branches"
-ability_description = "Each chop has a 28% chance to shake loose a drop."
-stats = { shake = 0.28 }
-
-[tool_can_cauldron]
-name = "Alembic Can"
-description = "Whatever it waters might turn out to be worth more."
-wiki = "Waters 7 plots an hour: each always grows a cycle."
-emoji = "🧪"
-rarity = 5
-skill = "farming"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_can_cauldron.tool]
-kind = "can"
-power = 7
-requirement = 0
-path = "Alchemist"
-ability = "transmute"
-ability_name = "Transmute"
-ability_description = "10% of harvests come up double."
-stats = { transmute = 0.1 }
-
-[tool_can_cauldron.tool.upgrade]
-to = "tool_can_retort"
-bits = 20000000
-
-[tool_can_cauldron.tool.upgrade.items]
-material_plant_fiber = 600
-material_compost = 800
-material_coral_shard = 40
-
-[tool_can_retort]
-name = "Retort Can"
-description = "A copper still on a spout. Harvests sometimes come up double."
-wiki = "Waters 8 plots an hour: each always grows a cycle."
-emoji = "🧪"
-rarity = 6
-skill = "farming"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_can_retort.tool]
-kind = "can"
-power = 8
-requirement = 0
-path = "Alchemist"
-ability = "transmute"
-ability_name = "Transmute"
-ability_description = "15% of harvests come up double."
-stats = { transmute = 0.15 }
-
-[tool_can_retort.tool.upgrade]
-to = "tool_can_athanor"
-bits = 100000000
-
-[tool_can_retort.tool.upgrade.items]
-material_plant_fiber = 3260
-material_gold_ore = 30
-
-[tool_can_athanor]
-name = "Athanor Can"
-description = "The alchemist's furnace, tipped over your field."
-wiki = "Waters 9 plots an hour: each always grows a cycle."
-emoji = "🧪"
-rarity = 7
-skill = "farming"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_can_athanor.tool]
-kind = "can"
-power = 9
-requirement = 0
-path = "Alchemist"
-ability = "transmute"
-ability_name = "Transmute"
-ability_description = "20% of harvests come up double."
-stats = { transmute = 0.2 }
-
 [material_radar_battery]
 name = "Radar Battery"
 description = "One cast's worth of power for your radar."
@@ -3548,74 +2066,6 @@ skill = "fishing"
 category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 400
-
-[scroll_scholar]
-name = "Scroll of the Scholar"
-description = "Whatever you do with the tool you put this on teaches you more."
-wiki = "Use it from your inventory (Enchant) to put Scholar on any tool. One use."
-emoji = "📜"
-rarity = 4
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_scholar.scroll]
-enchant = "scholar"
-
-[scroll_appraiser]
-name = "Scroll of the Appraiser"
-description = "An eye for what the harvest is worth."
-wiki = "Use it from your inventory (Enchant) to put Appraiser on any tool. One use."
-emoji = "📜"
-rarity = 4
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_appraiser.scroll]
-enchant = "appraiser"
-
-[scroll_veinfinder]
-name = "Scroll of the Veinfinder"
-description = "Rich lodes seem to find your pick."
-wiki = "Use it from your inventory (Enchant) to put Veinfinder on a pickaxe. One use."
-emoji = "📜"
-rarity = 4
-skill = "mining"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_veinfinder.scroll]
-enchant = "veinfinder"
-
-[scroll_bounty]
-name = "Scroll of Bounty"
-description = "Every cell gives a little more."
-wiki = "Use it from your inventory (Enchant) to put Bounty on a pickaxe. One use."
-emoji = "📜"
-rarity = 4
-skill = "mining"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_bounty.scroll]
-enchant = "bounty"
-
-[scroll_deepcall]
-name = "Scroll of the Deepcall"
-description = "Something old answers your line."
-wiki = "Use it from your inventory (Enchant) to put Deepcall on a rod. One use."
-emoji = "📜"
-rarity = 4
-skill = "fishing"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_deepcall.scroll]
-enchant = "deepcall"
 
 [scroll_double_hook]
 name = "Scroll of the Double Hook"
@@ -3631,24 +2081,24 @@ sell_price = 400000  # TODO(balance)
 [scroll_double_hook.scroll]
 enchant = "double_hook"
 
-[scroll_fertile]
-name = "Scroll of the Fertile Soil"
-description = "Bigger harvests from the same plots."
-wiki = "Use it from your inventory (Enchant) to put Fertile Soil on a watering can. One use."
+[scroll_net_cast]
+name = "Scroll of Net Cast"
+description = "A net that hauls in a few fish at once."
+wiki = "Use it from your inventory (Enchant) to put Net Cast on a rod. One use. Only Old Whiskers drops it, now and then."
 emoji = "📜"
-rarity = 4
-skill = "farming"
+rarity = 5
+skill = "fishing"
 category = "scroll"
 price = 0
-sell_price = 400000  # TODO(balance)
+sell_price = 1200000  # TODO(balance)
 
-[scroll_fertile.scroll]
-enchant = "fertile"
+[scroll_net_cast.scroll]
+enchant = "net_cast"
 
 [scroll_seedkeeper]
 name = "Scroll of the Seedkeeper"
 description = "More plants go to seed."
-wiki = "Use it from your inventory (Enchant) to put Seedkeeper on a watering can. One use."
+wiki = "Use it from your inventory (Enchant) to put Seedkeeper on a watering can. One use. Only Lemon harvests drop it, now and then."
 emoji = "📜"
 rarity = 4
 skill = "farming"
@@ -3659,22 +2109,91 @@ sell_price = 400000  # TODO(balance)
 [scroll_seedkeeper.scroll]
 enchant = "seedkeeper"
 
-[scroll_gleaner]
-name = "Scroll of the Gleaner"
-description = "Nothing in the field goes to waste."
-wiki = "Use it from your inventory (Enchant) to put Gleaner on a watering can. One use."
+[scroll_golden_sprout]
+name = "Scroll of the Golden Sprout"
+description = "A plant may grow golden: its harvest is tripled."
+wiki = "Use it from your inventory (Enchant) to put Golden Sprout on a watering can. One use. Only anomaly harvests drop it, now and then."
 emoji = "📜"
-rarity = 4
+rarity = 5
 skill = "farming"
 category = "scroll"
 price = 0
-sell_price = 400000  # TODO(balance)
+sell_price = 1500000  # TODO(balance)
 
-[scroll_gleaner.scroll]
-enchant = "gleaner"
+[scroll_golden_sprout.scroll]
+enchant = "golden_sprout"
+
+[scroll_echo_strike]
+name = "Scroll of Echo Strike"
+description = "Your pick sometimes cracks the tile beside the one you dig."
+wiki = "Use it from your inventory (Enchant) to put Echo Strike on a pickaxe. One use. Only Wyrm Tunnels drop it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "mining"
+category = "scroll"
+price = 0
+sell_price = 1200000  # TODO(balance)
+
+[scroll_echo_strike.scroll]
+enchant = "echo_strike"
+
+[scroll_timber]
+name = "Scroll of Timber!"
+description = "Your axe sometimes topples a felled tree into the next one."
+wiki = "Use it from your inventory (Enchant) to put Timber! on an axe. One use. Only Redwood trees and their rare grain drop it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "foraging"
+category = "scroll"
+price = 0
+sell_price = 1200000  # TODO(balance)
+
+[scroll_timber.scroll]
+enchant = "timber"
+
+[scroll_ember_bite]
+name = "Scroll of Ember Bite"
+description = "Your chops sometimes set the trunk smouldering, so the next ones hit harder."
+wiki = "Use it from your inventory (Enchant) to put Ember Bite on an axe. One use. Only Emberwood trees drop it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "foraging"
+category = "scroll"
+price = 0
+sell_price = 1200000  # TODO(balance)
+
+[scroll_ember_bite.scroll]
+enchant = "ember_bite"
+
+[scroll_second_wind]
+name = "Scroll of Second Wind"
+description = "Once per mine, a collapse is held off long enough to press Brace!."
+wiki = "Use it from your inventory (Enchant) to put Second Wind on a pickaxe. One use. Only a run that climbs to the top pressure label can drop it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "mining"
+category = "scroll"
+price = 0
+sell_price = 1500000  # TODO(balance)
+
+[scroll_second_wind.scroll]
+enchant = "second_wind"
+
+[scroll_prospectors_ping]
+name = "Scroll of Prospector's Ping"
+description = "Once per mine, a Ping shows the three tiles under your cursor."
+wiki = "Use it from your inventory (Enchant) to put Prospector's Ping on a pickaxe. One use. Only Scholar's Cavern drops it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "mining"
+category = "scroll"
+price = 0
+sell_price = 1200000  # TODO(balance)
+
+[scroll_prospectors_ping.scroll]
+enchant = "prospectors_ping"
 
 # ---- Tree species signature drops (see [[species]] in foraging.toml). No [drop] block: they only drop from their species. ----
-
 [material_twilight_fuel]
 name = "Twilight Fuel"
 description = "Burned by your ship to make the first trip to Twilight Desert."
@@ -3734,6 +2253,128 @@ rarity = 7
 category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 1000
+
+[part_base]
+name = "Base Part"
+description = "One third of a smithed tool. Its tier sets its power; picked traits go on the finished tool."
+wiki = "Dropped by skill work. Smith three parts into a tool at the Smithy."
+emoji = "part_base"
+rarity = 2
+skill = "mining"
+category = "part"
+price = 0
+sell_price = 0
+
+[part_trim]
+name = "Trim Part"
+description = "One third of a smithed tool. Its tier sets its power; picked traits go on the finished tool."
+wiki = "Dropped by skill work. Smith three parts into a tool at the Smithy."
+emoji = "part_trim"
+rarity = 2
+skill = "mining"
+category = "part"
+price = 0
+sell_price = 0
+
+[part_accent]
+name = "Accent Part"
+description = "One third of a smithed tool. Its tier sets its power; picked traits go on the finished tool."
+wiki = "Dropped by skill work. Smith three parts into a tool at the Smithy."
+emoji = "part_accent"
+rarity = 2
+skill = "mining"
+category = "part"
+price = 0
+sell_price = 0
+
+# Accessories (configs/accessories.toml): unique instances like parts. Shop price: the basic ones mirror shop_price in accessories.toml (a test keeps them equal).
+[acc_mining_gloves]
+name = "Work Gloves"
+description = "A worn pair of gloves. Worn beside your pickaxe for a small mining bonus."
+wiki = "Worn in one of the two accessory slots of a skill (Tools > Accessories). Sold in the Shop."
+emoji = "acc_mining_gloves"
+rarity = 1
+skill = "mining"
+category = "accessory"
+price = 10000
+sell_price = 0
+
+[acc_mining_headlamp]
+name = "Headlamp"
+description = "Lights the dark seams. Rare accessory: its traits are rolled when it drops."
+wiki = "Dropped by mining now and then. Worn in one of the two accessory slots of a skill."
+emoji = "acc_mining_headlamp"
+rarity = 5
+skill = "mining"
+category = "accessory"
+price = 0
+sell_price = 0
+
+[acc_foraging_satchel]
+name = "Forager's Satchel"
+description = "Keeps your finds tidy. Worn beside your axe for a small foraging bonus."
+wiki = "Worn in one of the two accessory slots of a skill (Tools > Accessories). Sold in the Shop."
+emoji = "acc_foraging_satchel"
+rarity = 1
+skill = "foraging"
+category = "accessory"
+price = 10000
+sell_price = 0
+
+[acc_foraging_pruners]
+name = "Pruning Shears"
+description = "Sharp enough to cut clean. Rare accessory: its traits are rolled when it drops."
+wiki = "Dropped by foraging now and then. Worn in one of the two accessory slots of a skill."
+emoji = "acc_foraging_pruners"
+rarity = 5
+skill = "foraging"
+category = "accessory"
+price = 0
+sell_price = 0
+
+[acc_fishing_bobber]
+name = "Bobber Charm"
+description = "A lucky float. Worn beside your rod for a small fishing bonus."
+wiki = "Worn in one of the two accessory slots of a skill (Tools > Accessories). Sold in the Shop."
+emoji = "acc_fishing_bobber"
+rarity = 1
+skill = "fishing"
+category = "accessory"
+price = 10000
+sell_price = 0
+
+[acc_fishing_reel]
+name = "Brass Reel"
+description = "Heavy and well oiled. Rare accessory: its traits are rolled when it drops."
+wiki = "Dropped by fishing now and then. Worn in one of the two accessory slots of a skill."
+emoji = "acc_fishing_reel"
+rarity = 5
+skill = "fishing"
+category = "accessory"
+price = 0
+sell_price = 0
+
+[acc_farming_apron]
+name = "Gardening Apron"
+description = "Full of pockets for seeds. Worn beside your can for a small farming bonus."
+wiki = "Worn in one of the two accessory slots of a skill (Tools > Accessories). Sold in the Shop."
+emoji = "acc_farming_apron"
+rarity = 1
+skill = "farming"
+category = "accessory"
+price = 10000
+sell_price = 0
+
+[acc_farming_trowel]
+name = "Golden Trowel"
+description = "Turns up extra finds. Rare accessory: its traits are rolled when it drops."
+wiki = "Dropped by farming now and then. Worn in one of the two accessory slots of a skill."
+emoji = "acc_farming_trowel"
+rarity = 5
+skill = "farming"
+category = "accessory"
+price = 0
+sell_price = 0
 
 [food_harvest_mash]
 name = "Harvest Mash"

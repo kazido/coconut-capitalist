@@ -5,6 +5,7 @@ from dataclasses import dataclass, field, replace
 from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
+from cococap.services import accessories
 from cococap.user import User
 
 # Which kind of tool each skill uses.
@@ -45,13 +46,27 @@ def effective_stats(instance: ItemInstance, registry: Registry | None = None) ->
     if template.tool is None:
         raise EquipmentError(f"{template.name} is not a tool")
 
+    from cococap.services import smithing  # (imported here: smithing imports this module)
+
     stats: dict[str, float] = {"power": float(template.tool.power), **template.tool.stats}
+    if instance.parts:  # a smithed tool's power comes from its three parts and its quality grade
+        rules = smithing._rules(reg)
+        stats["power"] = float(smithing.tool_power(instance.parts, instance.quality, rules))
+        grade = [q.name for q in rules.grades].index(instance.quality)
+        mult = rules.quality(instance.quality).mult
+        for slot in smithing.PART_TYPES:  # each picked trait adds its amount for this grade, times the grade's mult
+            trait_id = (instance.parts.get(slot) or {}).get("trait")
+            if trait_id:
+                trait = rules.trait(trait_id)
+                stats[trait.stat] = stats.get(trait.stat, 0.0) + trait.amounts[grade] * mult
     for stat, bonus in instance.rolled.items():
         stats[stat] = stats.get(stat, 0.0) + bonus
 
     flags: set[str] = set()
     multipliers: list[tuple[str, float]] = []
     for enchant_id, level in instance.enchants.items():
+        if enchant_id not in reg.enchants:  # a retired enchant still stored on an old tool: ignore it, don't crash
+            continue
         enchant = reg.enchant(enchant_id)
         level = min(level, enchant.max_level)
         for effect in enchant.effects:
@@ -103,7 +118,9 @@ async def equipped_stats(user: User, skill: str, registry: Registry | None = Non
     base = effective_stats(instance, registry)
     from cococap.services import mastery  # (mastery only needs the user, so there is no cycle at run time)
 
-    extra = mastery.stats((await user.skill(skill)).mastery, registry)
+    extra = dict(mastery.stats((await user.skill(skill)).mastery, registry))
+    for stat, amount in (await accessories.bonus(user, skill, registry)).items():  # worn accessories add to the tool's stats
+        extra[stat] = extra.get(stat, 0.0) + amount
     if not extra:
         return base
     return replace(base, stats={**base.stats, **{k: base.stats.get(k, 0.0) + v for k, v in extra.items()}})

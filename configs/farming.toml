@@ -11,6 +11,7 @@ water_chance = 1.0                # WATER your plots (a button, once an hour per
 drop_cycles_per_roll = 2          # a harvest rolls the farming drop table once per 2 growth cycles of the crop (apple 0.5, lemon 2, coconut 50)...
 max_drop_rolls = 60               # ...up to this many
 anomaly_odds = 25                 # 1 in N per harvest: refreshes your work and daily cooldowns (wiki: 1/25)
+anomaly_scroll = { item = "scroll_golden_sprout", odds = 8 }  # an anomaly harvest drops it 1 in 8 times (Golden Sprout). TODO(balance)
 xp_per_cycle = 300               # farming xp for a harvest = the crop's growth cycles x this (apple 300, coconut 30,000). Tools never change xp
 deed_item = "key_land_deed"
 # Tend: every growth cycle a growing plot makes byproducts (the zone's drop table: plant fiber, compost, dewdrops, beeswax, living vines), collected with the Tend

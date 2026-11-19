@@ -41,6 +41,20 @@ major = false
 
 [[entry]]
 date = 2026-11-19
+title = "Tools are smithed now"
+major = true
+body = """
+Tools are built from a **base**, a **trim** and an **accent** part, and parts drop from every skill. Smith them on **Tools → Smithing**.
+
+Old tools were reset once: your starters are free smithed tools, every tool you had upgraded came back as parts (more the further it got), and your two strongest enchants came back as scrolls.
+
+Some scrolls were retired, since smithing part traits now cover their bonuses (Keenness, Sharp Eye, Scholar, Appraiser, Veinfinder, Bounty, Fertile). Any you held were sold for bits.
+
+More scrolls were retired (Lure, Seasoning, Iron Frame, Deepcall, Gleaner). Their bonuses will come from mastery, pets and accessories instead. Any you held were sold for bits, and the enchants came off your tools.
+"""
+
+[[entry]]
+date = 2026-11-19
 title = "News and Changelog"
 major = true
 body = """

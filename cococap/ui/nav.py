@@ -7,6 +7,7 @@ think about navigation, so no screen can be a dead end.
 """
 
 import asyncio
+import io
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -74,6 +75,7 @@ class Page:
     title: str
     body: list[ui.Item]
     accent: int = BLURPLE
+    files: list[tuple[str, bytes]] = field(default_factory=list)  # (filename, bytes) pictures the body points at: attachment://<filename>
 
 
 Handler = Callable[[discord.Interaction], Awaitable[None]]
@@ -188,6 +190,7 @@ class Navigator(ui.LayoutView):
         # The last result page that was built but may never have reached the player (a self-refresh whose edit failed because the message was too
         # old, say). It stays here until an edit succeeds, and the next click shows it first, so what you were paid is never paid without being seen.
         self._unsent: Result | None = None
+        self._files: list[tuple[str, bytes]] = []  # the current page's pictures (Page.files), re-sent on every edit
         self._levels: dict[str, int] | None = None  # skill levels at the last look, for the level-up notification
 
     async def name_of(self, user_id: int) -> str:
@@ -212,7 +215,8 @@ class Navigator(ui.LayoutView):
             self.stack = ["home"]  # so Back from a shortcut lands on the home page
         self.client = interaction.client
         await self._enter(screen_id, push=True, **state)
-        await interaction.response.send_message(view=self)
+        files = self._attachments()
+        await interaction.response.send_message(view=self, **({"files": files} if files else {}))
         self._unsent = None
         self.message = await interaction.original_response()
         await self._replace_old_menu(interaction)
@@ -265,12 +269,16 @@ class Navigator(ui.LayoutView):
                     except discord.HTTPException as error:
                         log.info("old menu %s of %s not deleted: %s", self.message.id, self.owner.id, error)
 
+    def _attachments(self) -> list[discord.File]:
+        """Fresh discord.File objects for the current page (a File is used up once it is sent)."""
+        return [discord.File(io.BytesIO(data), filename=name) for name, data in self._files]
+
     async def _respond(self, interaction: discord.Interaction) -> None:
         """Answer a click by showing the new panel. If Discord won't take the answer any more (the click was
         acknowledged too late, so "this interaction failed"), the game state has already changed, so show the new panel
         by editing the message directly instead of leaving the player staring at a stale one."""
         try:
-            await interaction.response.edit_message(view=self)
+            await interaction.response.edit_message(view=self, attachments=self._attachments())
             self._unsent = None
             from .levelup import check  # local import: levelup needs the finished ui package
 
@@ -280,7 +288,7 @@ class Navigator(ui.LayoutView):
             if self.message is None:
                 raise
             try:
-                await self.message.edit(view=self)
+                await self.message.edit(view=self, attachments=self._attachments())
                 self._unsent = None
             except discord.HTTPException:
                 raise error from None
@@ -301,7 +309,7 @@ class Navigator(ui.LayoutView):
         """Redraw again after the first response was used (for animations: keep it to ~1 per second)."""
         async with self._lock:
             await self._render()
-            await interaction.edit_original_response(view=self)
+            await interaction.edit_original_response(view=self, attachments=self._attachments())
             self._unsent = None
 
     # ---- self-refresh -------------------------------------------------------------------------------
@@ -320,7 +328,7 @@ class Navigator(ui.LayoutView):
         So a slow edit keeps running in the background (the next refresh waits for it) and we only stop waiting for it."""
         if self._pending_edit is not None and not self._pending_edit.done():
             return False
-        task = self._pending_edit = asyncio.ensure_future(self.message.edit(view=self))
+        task = self._pending_edit = asyncio.ensure_future(self.message.edit(view=self, attachments=self._attachments()))
 
         def settled(done: asyncio.Future) -> None:
             if not done.cancelled() and done.exception() is None:
@@ -426,6 +434,7 @@ class Navigator(ui.LayoutView):
             result.progress = await progress_line(self.user, screen.id)
             screen = self.screen = ResultScreen(self, result, screen)
             page = await screen.build()
+        self._files = list(page.files)  # a page without pictures clears the last one on the next edit
         self._swap_items()
         controls = [] if getattr(screen, "hides_nav", False) else [self._controls()]
         header = f"## {screen.emoji} {page.title}".strip()
@@ -494,7 +503,7 @@ class Navigator(ui.LayoutView):
                 child.disabled = True
         if self.message is not None:
             try:
-                await self.message.edit(view=self)
+                await self.message.edit(view=self, attachments=self._attachments())
             except discord.HTTPException:
                 pass
 

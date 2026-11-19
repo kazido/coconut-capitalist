@@ -26,9 +26,10 @@ from cococap.db import get_database
 from cococap.db.tables import CommunityTreeRow, SkillRow, TreeChopRow, TreeRewardRow
 from cococap.errors import GameRuleError
 from cococap.models.skills.foraging import Foraging
+from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
 from cococap.registry.models import ForagingRules, Grain, Species, Wedge
-from cococap.services import releaf, scrolls, stars
+from cococap.services import accessories, releaf, smithing, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services import pets
 from cococap.services.loot import roll_drop, skewed_roll
@@ -288,6 +289,8 @@ class Tree:
     effort: float = 0.0  # the quality of every chop made on it so far: its xp
     bonus: float = 0.0  # marked by Rich Seams: +this to its bits and drops when it falls (0.25 = +25%)
     species: str = ""  # the species id (set by the zone when it is rolled; "" = none, no signature drops)
+    grain: str = ""  # the grain of the spot it was last chopped on (its grain's scroll source; "" = none)
+    smouldering: int = 0  # Ember Bite: the chops left that hit harder
 
     @property
     def felled(self) -> bool:
@@ -324,6 +327,38 @@ def roll_tree(zone: int, rng: random.Random, rules: ForagingRules, species: str 
         sp = roll_species(zone, rng, rules)
         species = sp.id if sp else ""
     return Tree(zone, hp, hp, species=species)
+
+
+def topple(tree: Tree, rules: ForagingRules) -> None:
+    """Timber!: a tree that crashed into this one starts with a share of its hp already gone (never already felled)."""
+    tree.hp = max(1, tree.max_hp - round(tree.max_hp * rules.chopping.timber_share))
+
+
+def ember_power(tree: Tree, power: int, rules: ForagingRules) -> int:
+    """Ember Bite: a smouldering trunk's next chops hit harder."""
+    return round(power * rules.chopping.ember_mult) if tree.smouldering else power
+
+
+def ember_tick(tree: Tree, chance: float, rng: random.Random, rules: ForagingRules) -> bool:
+    """After a chop: count down a smouldering trunk, then this chop may set it smouldering (Ember Bite's chance). True if it caught."""
+    if tree.smouldering:
+        tree.smouldering -= 1
+    if chance and rng.random() < chance:
+        tree.smouldering = rules.chopping.ember_chops
+        return True
+    return False
+
+
+def tree_scroll_sources(tree: Tree, rules: ForagingRules) -> list:
+    """The scroll sources of a private tree: its species and the grain it was chopped on (each may drop its own scroll)."""
+    species = next((sp for sp in rules.species if sp.id == tree.species), None)
+    grain = next((g for g in rules.chopping.grains if g.id == tree.grain), None)
+    return [src.scroll for src in (species, grain) if src is not None and src.scroll is not None]
+
+
+def roll_tree_scrolls(tree: Tree, rng: random.Random, registry: Registry) -> list[str]:
+    """One roll per scroll source of the tree (1 in its odds): the ids of the scrolls that dropped."""
+    return [src.item for src in tree_scroll_sources(tree, registry.foraging) if rng.randint(1, src.odds) == 1]
 
 
 # ---- what trees pay ---------------------------------------------------------------------------------------
@@ -387,6 +422,9 @@ class Reward:
     felled: bool = True  # False: the tree fell over unfinished (a consolation prize)
     window: int | None = None  # the community tree it came from
     party: bool = False  # ...or it came from a party tree
+    part: ItemInstance | None = None  # a smithing part from a tree you felled yourself
+    accessory: ItemInstance | None = None  # a rare accessory from a tree you felled yourself
+    timber: bool = False  # Timber!: this tree toppled into the next one
 
 
 async def _pay(user: User, drops: Counter, bits: int, xp: int, trees: int) -> None:
@@ -457,18 +495,22 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     tree.collected = True
     axe = await equipped_stats(user, "foraging", reg)
     final_cut = axe.stats.get("final_cut", 0.0) if axe else 0.0  # Final Cut (Mastery): a tree you fell yourself pays more
+    timber_chance = axe.stats.get("timber", 0.0) if axe else 0.0  # Timber! (an axe enchant): it may topple into the next tree
+    timber = bool(timber_chance) and rng.random() < timber_chance
     fox = (await pets.bonuses(user, reg)).get("rare_reroll", 0.0)
     drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus + final_cut), rng), rng, reg, fox, tree.species,
                        await releaf.drop_boost(reg))
     drops = stars.apply(drops, stars.progress(tree.zone, rules.zones), rng, reg)  # starred materials: how deep the forest is
-    if scroll := scrolls.roll("foraging", rng, reg):  # (a rare scroll, one chance per tree whatever its size)
+    part = await smithing.maybe_drop_part(user, tree.zone, rng, reg)  # one part roll per tree felled
+    accessory = await accessories.maybe_drop_accessory(user, "foraging", rng, reg)  # one accessory roll per tree felled
+    for scroll in roll_tree_scrolls(tree, rng, reg):  # a rare scroll per source (its species, its grain), one roll each whatever the size
         drops[scroll] += 1
     bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules) * (1 + tree.bonus + final_cut))
     xp = round(tree.effort * rules.xp_per_swing * await xp_multiplier(user.id, reg, "foraging"))
     await _pay(user, drops, bits, xp, trees=1)
     if tree.species:  # stats page: species felled
         await user.inc_stat(f"felled:{tree.species}")
-    return Reward(drops, bits, xp)
+    return Reward(drops, bits, xp, part=part, accessory=accessory, timber=timber)
 
 
 # ---- the community tree: the clock ---------------------------------------------------------------------------

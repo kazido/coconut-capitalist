@@ -45,7 +45,7 @@ def total(pet: Pet, registry: Registry | None = None) -> Score:
         skills = dict.fromkeys(SKILLS, 0)
         skills[pet.skill] = min(MAX_SKILL, rules.skill_points["specialist"][pet.rarity])
     lo = pet.loadout
-    gear = lo.tool_tier * rules.gear_per_tier + sum(lo.enchants.values()) * rules.gear_per_enchant_level
+    gear = lo.tool_tier * rules.gear_per_tier + lo.enchant_levels * rules.gear_per_enchant_level
     return Score(skills, min(MAX_MASTERY, round(lo.mastery_score * rules.mastery_per_point)), min(MAX_GEAR, round(gear)), rules.ability_points[pet.ability])
 
 

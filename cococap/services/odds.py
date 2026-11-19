@@ -43,22 +43,36 @@ def species_odds(item_id: str, reg: Registry) -> Odds | None:
     return Odds(1 / rate, "drop rolls") if rate > 0 else None
 
 
+def tree_scroll(item_id: str, reg: Registry) -> Odds | None:
+    """A scroll a tree species or a grain gives when a private tree is felled: 1 in its odds trees (the best odds if several)."""
+    odds = [s.scroll.odds for s in (*reg.foraging.species, *reg.foraging.chopping.grains) if s.scroll and s.scroll.item == item_id]
+    return Odds(min(odds), "trees felled") if odds else None
+
+
 def foraging(reg: Registry | None = None) -> Lookup:
     reg = reg or get_registry()
 
     def lookup(item_id: str) -> Odds | None:
-        if found := _scroll("foraging", item_id, reg) or species_odds(item_id, reg):
+        if found := _scroll("foraging", item_id, reg) or tree_scroll(item_id, reg) or species_odds(item_id, reg):
             return found
         return _own_drop(item_id, reg, "drop rolls")
 
     return lookup
 
 
+def crop_scroll(item_id: str, reg: Registry) -> Odds | None:
+    """A scroll a crop gives when harvested (1 in its odds harvests), or the Golden Sprout scroll (1 in odds anomalies: 1 in anomaly_odds harvests first)."""
+    if (anomaly := reg.farming.anomaly_scroll) and anomaly.item == item_id:
+        return Odds(anomaly.odds * reg.farming.anomaly_odds, "harvests")
+    odds = [i.crop.scroll.odds for i in reg.items.values() if i.crop and i.crop.scroll and i.crop.scroll.item == item_id]
+    return Odds(min(odds), "harvests of that crop") if odds else None
+
+
 def farming(reg: Registry | None = None) -> Lookup:
     reg = reg or get_registry()
 
     def lookup(item_id: str) -> Odds | None:
-        return _scroll("farming", item_id, reg) or _own_drop(item_id, reg, "drop rolls")
+        return crop_scroll(item_id, reg) or _own_drop(item_id, reg, "drop rolls")
 
     return lookup
 
@@ -119,14 +133,27 @@ def fishing_boss(reg: Registry | None = None) -> Lookup:
     return lambda item_id: _treasure(item_id, reg.fishing.boss.loot, "boss fights")
 
 
-def fishing_catch(reg: Registry | None = None) -> Lookup:
-    """What washes up with a catch: an item's own drop odds, or (Salvage) a chest's loot."""
+def fishing_scroll(reg: Registry | None = None) -> Lookup:
+    """A scroll one boss gives (1 in odds x the number of bosses, as a boss is drawn at random) or one water gives (1 in odds catches there)."""
     reg = reg or get_registry()
-    chest = fishing_chest(reg)
-    return lambda item_id: _own_drop(item_id, reg, "catches") or chest(item_id)
+    bosses = reg.fishing.boss.bosses
+
+    def lookup(item_id: str) -> Odds | None:
+        options = [Odds(b.scroll.odds * len(bosses), "boss fights") for b in bosses if b.scroll and b.scroll.item == item_id]
+        options += [Odds(w.scroll.odds, "catches here") for w in reg.fishing.waters if w.scroll and w.scroll.item == item_id]
+        return min(options, key=lambda o: o.one_in) if options else None
+
+    return lookup
+
+
+def fishing_catch(reg: Registry | None = None) -> Lookup:
+    """What washes up with a catch: an item's own drop odds, or (Salvage) a chest's loot, or a water's scroll."""
+    reg = reg or get_registry()
+    chest, scroll = fishing_chest(reg), fishing_scroll(reg)
+    return lambda item_id: _own_drop(item_id, reg, "catches") or chest(item_id) or scroll(item_id)
 
 
 def for_source(name: str, reg: Registry | None = None, **kw) -> Lookup:
     """`name` is one of foraging, farming, mining, fishing_chest, fishing_boss, fishing_catch, mini_wyrmhole."""
     return {"foraging": foraging, "farming": farming, "mining": mining, "fishing_chest": fishing_chest,
-            "fishing_boss": fishing_boss, "fishing_catch": fishing_catch, "mini_wyrmhole": mini_wyrmhole}[name](reg, **kw)
+            "fishing_boss": fishing_boss, "fishing_catch": fishing_catch, "fishing_scroll": fishing_scroll, "mini_wyrmhole": mini_wyrmhole}[name](reg, **kw)

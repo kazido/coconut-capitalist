@@ -13,30 +13,6 @@ max_level = 1
 type = "flag"
 flag = "soloist"
 
-[keen]
-name = "Keen"
-emoji = "🗡️"
-description = "A sharper, stronger tool: +1 power per level. Fits every tool."
-applies_to = ["pickaxe", "axe", "rod", "can", "sword"]
-max_level = 3
-
-[[keen.effects]]
-type = "stat_add"
-stat = "power"
-amount = 1
-
-[lure]
-name = "Lure"
-emoji = "🪝"
-description = "Fish find your hook sooner: 10% shorter waits per level."
-applies_to = ["rod"]
-max_level = 3
-
-[[lure.effects]]
-type = "stat_add"
-stat = "bite_speed"
-amount = 0.10
-
 [steady_line]
 name = "Steady Line"
 emoji = "🧵"
@@ -48,6 +24,18 @@ max_level = 2
 type = "stat_add"
 stat = "slips"
 amount = 1
+
+[net_cast]
+name = "Net Cast"
+emoji = "🥅"
+description = "Once per fishing trip (each visit to the Fishing page, or each new water), a Net button hauls in 3 of the water's commonest fish at once."
+applies_to = ["rod"]
+max_level = 1
+
+[[net_cast.effects]]
+type = "stat_add"
+stat = "net_cast"
+amount = 1.0
 
 [double_hook]
 name = "Double Hook"
@@ -61,42 +49,6 @@ type = "stat_add"
 stat = "double_hook"
 amount = 0.04
 
-[sharp_eye]
-name = "Sharp Eye"
-emoji = "👁️"
-description = "You see where the wood is weakest: +5% good chop chance per level."
-applies_to = ["axe"]
-max_level = 3
-
-[[sharp_eye.effects]]
-type = "stat_add"
-stat = "good_chop"
-amount = 0.05
-
-[iron_frame]
-name = "Iron Frame"
-emoji = "🛡️"
-description = "A braced pickaxe slows the mine's creaking: 3% less pressure per level."
-applies_to = ["pickaxe"]
-max_level = 3
-
-[[iron_frame.effects]]
-type = "stat_add"
-stat = "danger_reduction"
-amount = 0.03
-
-[seasoned]
-name = "Seasoned"
-emoji = "🌰"
-description = "A well-seasoned handle: plain and good grains wear out 15% slower per level, but bad grains (knotty, twisted) wear out 15% faster, so you leave them sooner."
-applies_to = ["axe"]
-max_level = 3
-
-[[seasoned.effects]]
-type = "stat_add"
-stat = "wear_slow"
-amount = 0.15
-
 [double_strike]
 name = "Double Strike"
 emoji = "⚡"
@@ -108,78 +60,6 @@ max_level = 3
 type = "stat_add"
 stat = "double_chop"
 amount = 0.08
-
-[scholar]
-name = "Scholar"
-emoji = "🎓"
-description = "Whatever you do with this tool teaches you more: +5% xp per level in its skill. Fits every tool."
-applies_to = ["pickaxe", "axe", "rod", "can", "sword"]
-max_level = 3
-
-[[scholar.effects]]
-type = "stat_add"
-stat = "scholar"
-amount = 0.05
-
-[appraiser]
-name = "Appraiser"
-emoji = "⚖️"
-description = "An eye for what things are worth: +4% bits when you sell items of this tool's skill, per level. Fits every tool."
-applies_to = ["pickaxe", "axe", "rod", "can", "sword"]
-max_level = 3
-
-[[appraiser.effects]]
-type = "stat_add"
-stat = "appraise"
-amount = 0.04
-
-[veinfinder]
-name = "Veinfinder"
-emoji = "🔦"
-description = "You read the rock better: +3% chance per level that a cell is a rich lode."
-applies_to = ["pickaxe"]
-max_level = 3
-
-[[veinfinder.effects]]
-type = "stat_add"
-stat = "rich_chance"
-amount = 0.03
-
-[bounty]
-name = "Bounty"
-emoji = "🧺"
-description = "Every cell gives a little more: +6% ore per level."
-applies_to = ["pickaxe"]
-max_level = 3
-
-[[bounty.effects]]
-type = "stat_add"
-stat = "ore_yield"
-amount = 0.06
-
-[deepcall]
-name = "Deepcall"
-emoji = "🌊"
-description = "Something old answers the line: +10% odds of the rare fish per level."
-applies_to = ["rod"]
-max_level = 3
-
-[[deepcall.effects]]
-type = "stat_add"
-stat = "rare_luck"
-amount = 0.10
-
-[fertile]
-name = "Fertile"
-emoji = "🌻"
-description = "Rich water, rich soil: +6% bigger harvests per level."
-applies_to = ["can"]
-max_level = 3
-
-[[fertile.effects]]
-type = "stat_add"
-stat = "crop_yield"
-amount = 0.06
 
 [seedkeeper]
 name = "Seedkeeper"
@@ -193,14 +73,74 @@ type = "stat_add"
 stat = "seed_back"
 amount = 0.04
 
-[gleaner]
-name = "Gleaner"
-emoji = "🧵"
-description = "Nothing in the field goes to waste: +12% more farming drops per level."
+[golden_sprout]
+name = "Golden Sprout"
+emoji = "✨"
+description = "A planting may grow golden: 3% chance per level, and its harvest is tripled (shown on the field)."
 applies_to = ["can"]
-max_level = 3
+max_level = 3  # TODO(balance): the 3% per level is a guess
 
-[[gleaner.effects]]
+[[golden_sprout.effects]]
 type = "stat_add"
-stat = "drop_luck"
-amount = 0.12
+stat = "golden_chance"
+amount = 0.03
+
+[echo_strike]
+name = "Echo Strike"
+emoji = "🔁"
+description = "Your pick echoes: 6% chance per level that a dug tile also breaks the tile beside it (you get its loot, it adds no pressure)."
+applies_to = ["pickaxe"]
+max_level = 3  # TODO(balance): the 6% per level is a guess
+
+[[echo_strike.effects]]
+type = "stat_add"
+stat = "echo_strike"
+amount = 0.06
+
+[second_wind]
+name = "Second Wind"
+emoji = "🌬️"
+description = "Once per mine, a collapse is held off for a moment: press Brace! to save the tunnel (no brace used)."
+applies_to = ["pickaxe"]
+max_level = 1
+
+[[second_wind.effects]]
+type = "stat_add"
+stat = "second_wind"
+amount = 1.0
+
+[prospectors_ping]
+name = "Prospector's Ping"
+emoji = "📡"
+description = "Once per mine, Ping reveals the three tiles straight below your cursor."
+applies_to = ["pickaxe"]
+max_level = 1
+
+[[prospectors_ping.effects]]
+type = "stat_add"
+stat = "prospectors_ping"
+amount = 1.0
+
+[timber]
+name = "Timber!"
+emoji = "🪵"
+description = "Your axe can topple a tree: a percent chance per level that a tree you fell crashes into the next one, which starts half chopped."
+applies_to = ["axe"]
+max_level = 3  # TODO(balance): the chance per level is a guess
+
+[[timber.effects]]
+type = "stat_add"
+stat = "timber"
+amount = 0.05
+
+[ember_bite]
+name = "Ember Bite"
+emoji = "🔥"
+description = "A chop can set the trunk smouldering: a percent chance per level, then the next chops on that tree hit harder."
+applies_to = ["axe"]
+max_level = 3  # TODO(balance): the chance per level is a guess
+
+[[ember_bite.effects]]
+type = "stat_add"
+stat = "ember_bite"
+amount = 0.04

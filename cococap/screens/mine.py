@@ -8,7 +8,7 @@ import discord
 from cococap.constants import PROJECT_ROOT
 from cococap.registry import get_registry
 from cococap.services import mining
-from cococap.services import odds
+from cococap.services import accessories, odds, smithing
 from cococap.ui import flair
 from cococap.ui.rewards import rewards_result
 from cococap.ui import Page, PromptModal, ResultScreen, Screen
@@ -116,7 +116,7 @@ def render_shaft(run: mining.MineRun) -> str:
             depth = run.depth + ahead
             if depth >= run.floor:
                 break
-            lines.append("".join(cell_emoji(feel) for feel in run.feel(depth)) + row_mark(run, depth))
+            lines.append(ahead_row(run, depth) + row_mark(run, depth))
     return "\n".join(lines)
 
 
@@ -132,6 +132,20 @@ def risk_text(risk: float) -> str:
     if risk <= 0:
         return "0%"
     return "<1%" if risk < 0.005 else f"{risk:.0%}"
+
+
+def echo_note(result: mining.DigResult) -> str:
+    """The dig note line for Echo Strike (a pickaxe enchant): shown only when the echo actually cracked a tile."""
+    return "🔁 **Echo Strike!** The tile beside it cracked too. " if result.echo else ""
+
+
+def ahead_row(run: mining.MineRun, depth: int) -> str:
+    """A row you can see ahead: rock as it feels from above, except the tiles a Prospector's Ping revealed (their contents show)."""
+    signs, cells = run.signs(depth), run.row(depth)
+    return "".join(
+        dug_emoji(signs[col], cells[col]) if (depth, col) in run.pinged and signs[col] != "hole" else cell_emoji(feel)
+        for col, feel in enumerate(run.feel(depth))
+    )
 
 
 def carrying(haul: Counter) -> str:
@@ -189,6 +203,7 @@ class MineScreen(Screen):
         if run.finished:
             return await self._finished_page()
         warning = run.warning
+        held = run.second_wind_held
         body = [
             *self.note_block(),
             text(type_line(run)),
@@ -206,7 +221,12 @@ class MineScreen(Screen):
             button("Dig", emoji=emojis.icon("dig", "⛏️"), style=discord.ButtonStyle.primary, on_click=self._dig),
             button(emoji=emojis.icon('next', '➡️'), on_click=self._move(1)),
         ))
-        extra = [button(f"Brace ({run.braces})", emoji=emojis.icon("brace", "🛡️"), disabled=run.braces == 0 or run.danger == 0, on_click=self._brace)]
+        if held:  # Second Wind: the collapse waits on this one button (any dig lets it happen)
+            extra = [button("Brace!", emoji=emojis.icon("brace", "🛡️"), style=discord.ButtonStyle.danger, on_click=self._brace)]
+        else:
+            extra = [button(f"Brace ({run.braces})", emoji=emojis.icon("brace", "🛡️"), disabled=run.braces == 0 or run.danger == 0, on_click=self._brace)]
+        if run.ping_armed:
+            extra.append(button("Ping", emoji=emojis.icon("ping", "📡"), disabled=run.ping_used or held, on_click=self._ping))
         if run.bombs or run.bombs_used:
             extra.append(button(f"Bomb ({run.bombs})", emoji=_bomb(), disabled=run.bombs == 0, on_click=self._bomb))
         extra.append(button("Leave & bank", emoji=emojis.icon("haul", "🎒"), style=discord.ButtonStyle.success, on_click=self._leave))
@@ -257,6 +277,12 @@ class MineScreen(Screen):
             return await self.refresh(interaction)
         await self._after(interaction, self.run.dig())
 
+    async def _ping(self, interaction: discord.Interaction) -> None:
+        if self.run.finished:
+            return await self.refresh(interaction)
+        self.run.ping()
+        await self.refresh(interaction, "📡 **Prospector's Ping!** The three tiles under your cursor are revealed.")
+
     async def _bomb(self, interaction: discord.Interaction) -> None:
         if self.run.finished:
             return await self.refresh(interaction)
@@ -268,11 +294,13 @@ class MineScreen(Screen):
         found = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.found.items())
         auto = f"{emojis.icon('bomb', '💣')} **Auto-Bomb!** " if result.auto_bombed else ""
         multi = f"{emojis.icon('pickaxe', '⛏️')}{emojis.icon('pickaxe', '⛏️')} **Multi-Mine!** (+{len(result.multi)} column) " if result.multi else ""
-        if result.collapsed:
+        if result.second_wind:
+            note = f"{emojis.icon('brace', '🛡️')} **Second Wind!** The rock holds for a moment. Press **Brace!** to save the tunnel."
+        elif result.collapsed:
             lost = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.lost.items())
             note = "The tunnel gave way!" + (f" You lost {lost}." if lost else "")
         else:
-            note = auto + multi + (f"{emojis.icon('boom', '💥')} BOOM! " if result.bombed and not result.auto_bombed else "") + (f"Found {found}." if found else ("" if result.wyrmhole else "Nothing here."))
+            note = auto + multi + echo_note(result) + (f"{emojis.icon('boom', '💥')} BOOM! " if result.bombed and not result.auto_bombed else "") + (f"Found {found}." if found else ("" if result.wyrmhole else "Nothing here."))
             if result.lifeline:
                 lost_text = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.lifeline_lost.items())
                 note = f"{emojis.icon('lifeline', '🛟')} **Lifeline!** The reactor held the tunnel when it would have collapsed" + (f" (it cost you {lost_text})" if lost_text else "") + ". " + note
@@ -307,8 +335,9 @@ class MineScreen(Screen):
     async def _brace(self, interaction: discord.Interaction) -> None:
         if self.run.finished:
             return await self.refresh(interaction)
+        saved = self.run.second_wind_held
         self.run.brace()
-        await self.refresh(interaction, "You brace the tunnel. The risk falls.")
+        await self.refresh(interaction, "Second Wind! You brace the tunnel and it holds." if saved else "You brace the tunnel. The risk falls.")
 
     async def _leave(self, interaction: discord.Interaction) -> None:
         if self.run.finished:
@@ -367,6 +396,10 @@ class MineScreen(Screen):
             choices += [("Answer", emojis.icon("scroll", "📜"), self._ask_scarab), ("Ignore", emojis.icon("cross", "✖️"), self._skip_scarab)]
         elif self.scarab_result:
             notes.append(self.scarab_result)  # (the scarab left: time ran out)
+        if summary.part is not None:
+            notes.append(smithing.part_line(summary.part))
+        if summary.accessory is not None:
+            notes.append(accessories.accessory_line(summary.accessory))
         self.result = rewards_result(
             titles[self.run.outcome], items=summary.haul, xp=summary.xp, notes=notes,
             headline=[f"Row **{summary.depth}** of {self.run.floor}  ·  **{summary.lodes}** lodes dug", *filter(None, [note])],

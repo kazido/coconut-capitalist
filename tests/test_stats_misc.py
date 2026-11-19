@@ -74,7 +74,7 @@ async def test_one_orb_opened_adds_exactly_one(db):
 async def test_feeding_a_pet_adds_the_amount_fed_once(db):
     user = await User.get(1)
     await with_pet(user)
-    crop = next(i for i, item in get_registry().items.items() if item.crop)
+    crop = next(i for i, item in get_registry().items.items() if item.category == "pet_food")
     await user.add_item(crop, 3)
     await pets.feed(user, crop, 3)
     assert rows(await pets_page(user, await user.stats()))["Pet foods fed"] == 3

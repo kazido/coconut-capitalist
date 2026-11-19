@@ -1,4 +1,5 @@
 import datetime
+import math
 import random
 import time
 from collections import Counter
@@ -8,7 +9,7 @@ import discord
 from cococap import emojis
 from cococap.constants import Rarities
 from cococap.registry import get_registry
-from cococap.services import areas, fishing, fishing_community, party_boss, pets, pots
+from cococap.services import accessories, areas, fishing, fishing_community, party_boss, pets, pots, smithing
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
 from cococap.services import odds
@@ -193,6 +194,10 @@ class FishScreen(Screen):
             body.append(row(button("Crab pots", emoji=emojis.icon("crab", "🦀"), disabled=level < reg.fishing.pots.min_level, on_click=self._pots),
                             button("Mastery", emoji=emojis.icon("star", "🌟"), on_click=self._mastery)))
             body.append(row(button("Radar", emoji=emojis.icon('radar', '📡'), disabled=level < reg.fishing.radar.unlock_level, on_click=self._radar)))
+            if stats is not None and stats.stats.get("net_cast", 0.0) > 0:  # the Net Cast enchant shows its button
+                left = await fishing.net_ready_in(self.user)
+                label = "Net" if left <= 0 else f"Net ready in {math.ceil(left / 60)}m"
+                body.append(row(button(label, emoji=emojis.icon("net", "🥅"), disabled=left > 0, on_click=self._net)))
             return Page("Fishing", body, accent=ACCENT)
 
         status = cast.status(now())
@@ -310,8 +315,10 @@ class FishScreen(Screen):
             live = flash_live
         else:
             live = offer_live if self.offer is not None else None
+        part_notes = [smithing.part_line(catch.part)] if catch.part is not None else []
+        part_notes += [accessories.accessory_line(catch.accessory)] if catch.accessory is not None else []
         return rewards_result(f"You caught a {catch.fish.display}!", items=Counter({catch.fish.id: 1 + catch.extra_fish}) + Counter(catch.extras), xp=catch.xp,
-                              notes=lines[1:], headline=lines[:1], odds=odds.fishing_catch(), emoji=emojis.skill("fishing", "🎣"), accent=int(rarity.color, 16),
+                              notes=lines[1:] + part_notes, headline=lines[:1], odds=odds.fishing_catch(), emoji=emojis.skill("fishing", "🎣"), accent=int(rarity.color, 16),
                               again=self._cast, again_label="Cast again", live=live, actions=actions)
 
     # ---- handlers --------------------------------------------------------------------------------
@@ -334,6 +341,13 @@ class FishScreen(Screen):
         self.missed = None
         self.cast = fishing.quick_cast(stats, self.rng, now(), offer[1], get_registry(), await pets.bonuses(self.user))
         await self.refresh(interaction, f"{emojis.icon('bolt', '⚡')} A second line is biting! Pull it up.")
+
+    async def _net(self, interaction: discord.Interaction) -> None:
+        """Net Cast: a net hauls a few of the water's commonest fish at once, then it cools down."""
+        open_waters = await fishing.open_waters(self.user)
+        water = next((w for w in open_waters if w.id == self.water), open_waters[-1])  # closed or unknown: the newest open one
+        _, count, _ = await fishing.net_cast(self.user, water)
+        await self.refresh(interaction, f"{emojis.icon('net', '🥅')} **Net Cast!** You hauled in {count} fish.")
 
     async def _pick_water(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.water = values[0]

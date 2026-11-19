@@ -30,7 +30,6 @@ class MiningScreen(Screen):
         overflow, needed = User.xp_for_next_level(skill.xp)
         reactor = skill.reactor
 
-        ores = [f"{reg.item(i).emoji or ''} {q:,}" for i, q in (await self.user.items()).items() if i in rules.magnet.values]
         cores = " ".join(
             (reg.item(c.gem_id).emoji or emojis.icon("gem", "💎")) if c.gem_id else emojis.get("cell", "⬛")
             for c in (reactor.core_1, reactor.core_2, reactor.core_3, reactor.core_4)
@@ -56,7 +55,7 @@ class MiningScreen(Screen):
         body = [
             *self.note_block(),
             text(f"**Level {level}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp"),
-            text("Ores: " + ("  ".join(ores) if ores else "none yet") + f"\nLodes mined: **{skill.stats.lodes_mined:,}**"),
+            text(f"Lodes mined: **{skill.stats.lodes_mined:,}**"),
             text(f"{emojis.icon('pickaxe', '⛏️')} Pickaxe power **{tool.power}**" if tool else
                  f"{emojis.icon('pickaxe', '⛏️')} You need a pickaxe. Buy a **Rookie Pickaxe** in the shop and it equips itself."),
             sep(),

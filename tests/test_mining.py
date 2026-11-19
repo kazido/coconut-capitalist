@@ -123,12 +123,16 @@ async def player(level=1, **items):
 
 
 async def test_magnet_deposits(db):
-    gold, iron = RULES.magnet.values["material_gold_ore"], RULES.magnet.values["material_iron_ore"]
+    gold, iron = m.magnet_value("material_gold_ore", REG), m.magnet_value("material_iron_ore", REG)
     user = await player(level=5, material_gold_ore=3, material_iron_ore=2, crop_apple=1)
     assert await m.deposit_ore(user, "material_gold_ore", 3) == (3 * gold, 3)
     assert await m.deposit_ore(user, "material_iron_ore", 2) == (3 * gold + 2 * iron, 2)
     with pytest.raises(m.MiningError, match="only takes"):
         await m.deposit_ore(user, "crop_apple", 1)
+    fish = next(i for i, it in REG.items.items() if it.category == "fish")
+    await user.add_item(fish, 1)
+    with pytest.raises(m.MiningError, match="only takes"):
+        await m.deposit_ore(user, fish, 1)
     with pytest.raises(m.MiningError, match="don't have"):
         await m.deposit_ore(user, "material_gold_ore", 1)
     await user.add_item("material_gold_ore", 100)
@@ -138,6 +142,15 @@ async def test_magnet_deposits(db):
     assert await user.item_quantity("material_gold_ore") == 100 - used
     with pytest.raises(m.MiningError, match="full"):
         await m.deposit_ore(user, "material_gold_ore", 1)
+
+
+async def test_any_mining_material_fills_the_magnet_by_its_sell_price(db):
+    # The richest mining material (a gem-like one) is worth its sell price / bits_per_point, read from the registry
+    gem = max((i for i, it in REG.items.items() if it.skill == "mining" and it.category == "material"), key=lambda i: REG.items[i].sell_price)
+    points = REG.items[gem].sell_price // RULES.magnet.bits_per_point
+    user = await player(level=5, **{gem: 2})
+    assert m.magnet_value(gem, REG) == max(1, points)
+    assert await m.deposit_ore(user, gem, 1) == (min(RULES.magnet.capacity, max(1, points)), 1)
 
 
 async def test_the_magnet_cannot_be_fed_while_you_are_in_a_mine(db):
@@ -161,12 +174,19 @@ async def test_the_auto_miner_feeds_the_magnet_first_when_you_ask_it_to_and_neve
     assert await m._feed_from_loot(user, loot, REG) == Counter()  # (off by default)
     await m.set_magnet_option(user, "magnet_auto_feed", True)
     fed = await m._feed_from_loot(user, loot, REG)
-    v = RULES.magnet.values
-    assert fed == Counter({"material_gold_ore": 10, "material_iron_ore": 5, "material_copper_ore": 7}) and "material_coal" not in fed
-    assert (await user.skill("mining")).magnet_meter == 10 * v["material_gold_ore"] + 5 * v["material_iron_ore"] + 7 * v["material_copper_ore"]
+    v = {i: m.magnet_value(i, REG) for i in loot}
+    assert fed == loot  # every mining material has a value, and the meter has room for all of it
+    assert (await user.skill("mining")).magnet_meter == sum(v[i] * q for i, q in loot.items())
     await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", RULES.magnet.capacity - 50))
     fed = await m._feed_from_loot(user, Counter({"material_gold_ore": 100}), REG)
     assert fed["material_gold_ore"] == 50 // v["material_gold_ore"] and (await user.skill("mining")).magnet_meter <= RULES.magnet.capacity  # only what fits
+    # cheapest first: with room for two of the cheap ore only, the dear gem gets nothing
+    cheap = "material_coal"
+    gem = max((i for i, it in REG.items.items() if it.skill == "mining" and it.category == "material"), key=lambda i: REG.items[i].sell_price)
+    assert m.magnet_value(cheap, REG) < m.magnet_value(gem, REG)
+    await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", RULES.magnet.capacity - 2 * m.magnet_value(cheap, REG)))
+    fed = await m._feed_from_loot(user, Counter({gem: 3, cheap: 5}), REG)
+    assert fed == Counter({cheap: 2})
     await m.set_magnet_option(user, "magnet_auto_feed", True)
     await user.update_skill("mining", lambda s: setattr(s, "magnet_meter", 0))
     run = await m.start_run(user, Random(1))  # in a mine: no feeding
@@ -1033,15 +1053,6 @@ def test_going_deeper_is_a_real_choice_not_always_the_right_one():
     assert balanced > cautious and balanced > reckless * 1.2
 
 
-def test_one_vault_is_a_part_of_the_next_pickaxe_not_the_whole_of_it():
-    """The reward for reaching the bottom should not pay for a pickaxe upgrade on its own: the ores it holds are a fraction of what Masterwork asks."""
-    ask = REG.item("tool_pickaxe_steel").tool.upgrade.items  # (the step into Masterwork)
-    for ore, quantity in D.vault_ore.items():
-        assert quantity <= ask[ore], ore  # never more than the whole ask of any ore...
-    shares = [D.vault_ore[ore] / ask[ore] for ore in ask if ore in D.vault_ore]
-    assert min(shares) <= 0.35 and max(shares) < 1  # ...and well under half of at least one of them: it takes several trips
-
-
 # ---- checkpoints: landmark rows ---------------------------------------------------------------------------------------------------
 def calm_run(**kw):
     run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0, **kw))
@@ -1156,27 +1167,6 @@ def test_the_pools_open_up_as_you_go_deeper():
         seen |= set(table)
 
 
-def test_the_new_finds_all_sell_and_each_road_of_the_pickaxe_upgrades_with_its_own_rock():
-    new = ("material_coal", "material_clay", "material_amber", "material_tin_ore", "material_silver_ore", "material_garnet", "material_obsidian", "material_platinum_ore", "material_sapphire", "material_emerald")
-    for item_id in new:
-        item = REG.item(item_id)
-        assert item.skill == "mining" and item.sell_price > 0 and item.drop and item_id in D.hardness
-    def spent_on(road):
-        found, tool = set(), REG.item("tool_pickaxe_masterwork")
-        costs = [tool.tool.upgrade if road == "Warden" else tool.tool.fork]
-        item = REG.item(costs[0].to)
-        while item.tool.upgrade:
-            costs.append(item.tool.upgrade)
-            item = REG.item(item.tool.upgrade.to)
-        for cost in costs:
-            found |= set(cost.items)
-        return found
-    warden, prospector = spent_on("Warden"), spent_on("Prospector")
-    assert {"material_coal", "material_clay", "material_tin_ore", "material_silver_ore", "material_amber", "material_garnet"} <= warden  # soft and firm rock
-    assert {"material_obsidian", "material_platinum_ore", "material_sapphire", "material_emerald", "material_gold_ore"} <= prospector  # hard rock
-    assert not {i for i in new if rock_of(i) == "hard"} & warden and not {i for i in new if rock_of(i) != "hard"} & prospector
-
-
 def test_in_each_pool_the_harder_rock_holds_the_better_stuff():
     worth = {"soft": set(), "firm": set(), "hard": set()}
     for table in RULES.depth_tables[:3]:  # (above the gems and the spirit, which would swamp the comparison)
@@ -1244,20 +1234,6 @@ def test_multi_mine_never_digs_a_wyrmhole_or_the_column_you_already_dug():
         run.rng = Random(seed)
         result = run.dig()
         assert result.multi in ((1,), ()) and 2 not in result.multi and 3 not in result.multi
-
-
-def test_the_roads_chain_climbs_the_abilities_and_the_numbers_in_the_text_match_the_stats():
-    wardens = ["tool_pickaxe_ironbound", "tool_pickaxe_crystal", "tool_pickaxe_deepdelver", "tool_pickaxe_mythril", "tool_pickaxe_worldsplitter"]
-    prospectors = ["tool_pickaxe_prospector", "tool_pickaxe_geode", "tool_pickaxe_seekers", "tool_pickaxe_veinhunter", "tool_pickaxe_motherlode"]
-    bombs = [REG.item(w).tool.stats["auto_bomb"] for w in wardens]
-    multis = [REG.item(p).tool.stats["multi_mine"] for p in prospectors]
-    assert bombs == sorted(bombs, reverse=True) and multis == sorted(multis)  # better tools: sooner bombs, more multi-mining
-    for w, b in zip(wardens, bombs, strict=True):
-        tool = REG.item(w).tool
-        assert tool.ability == "auto_bomb" and tool.ability_name == "Auto-Bomb" and f"Every {int(b)} rows" in tool.ability_description
-    for p, mm in zip(prospectors, multis, strict=True):
-        tool = REG.item(p).tool
-        assert tool.ability == "multi_mine" and tool.ability_name == "Multi-Mine" and f"{mm:.0%}" in tool.ability_description
 
 
 # ---- Mastery capstones -----------------------------------------------------------------------------------------------------------------------------

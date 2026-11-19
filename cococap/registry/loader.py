@@ -8,9 +8,13 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import LOCATIONS_PER_AREA, AreaRules, ChangelogEntry, Notice, Location, ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, PetScoreRules, Rank, Recipe, Skill
+from .models import LOCATIONS_PER_AREA, AccessoryRules, AreaRules, ChangelogEntry, LegacyTool, MarketRules, Notice, Location, ScrollRules, ShipmentRules, SmithingRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, PetScoreRules, Rank, Recipe, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
+
+# Stats the engines read that no enchant gives any more (their scrolls were retired; smithing part traits give them now).
+TRAIT_ONLY_STATS = frozenset({"power", "scholar", "appraise", "rich_chance", "ore_yield", "good_chop", "crop_yield", "danger_reduction",
+                              "bite_speed", "wear_slow", "rare_luck", "drop_luck"})  # the last four: accessory traits (configs/accessories.toml)
 
 
 class RegistryError(Exception):
@@ -89,7 +93,11 @@ class Registry:
         areas: AreaRules | None = None,
         locations: dict[str, list[Location]] | None = None,
         notices: list[Notice] | None = None,
+        smithing: SmithingRules | None = None,
         changelog: list[ChangelogEntry] | None = None,
+        legacy_tools: dict[str, LegacyTool] | None = None,
+        market: MarketRules | None = None,
+        accessories: AccessoryRules | None = None,
     ):
         # Player news, newest first (a stable sort keeps the file order for entries of the same day, so write new ones at the top).
         self.notices: list[Notice] = sorted(notices or [], key=lambda n: n.date, reverse=True)
@@ -112,6 +120,10 @@ class Registry:
         self.mastery = mastery
         self.tools = tools
         self.shipments = shipments
+        self.smithing = smithing
+        self.legacy_tools: dict[str, LegacyTool] = legacy_tools or {}  # frozen old upgrade-chain tools (configs/legacy_tools.toml)
+        self.accessories = accessories  # skill gear: 2 slots per skill (configs/accessories.toml)
+        self.market = market  # the Travelling Merchant and Black Market (configs/market.toml)
         self.scrolls = scrolls
         self.recipes: dict[str, Recipe] = {r.id: r for r in recipes or []}
         self.drop_tables: dict[str, DropTable] = {t.id: t for t in drop_tables or []}
@@ -201,6 +213,27 @@ class Registry:
         problems += [f"farming.toml field_seeds: duplicate '{s}'" for s in sorted({s for s in seeds if seeds.count(s) > 1})]
         return problems
 
+    def _validate_smithing(self) -> list[str]:
+        """Every trait must name a stat the engines read: one some enchant uses, or one the retired stat scrolls used
+        (keen, scholar, appraiser, veinfinder, bounty, sharp_eye, fertile became part traits; the engines still read them)."""
+        if self.smithing is None:
+            return []
+        known = {getattr(e, "stat", None) for enchant in self.enchants.values() for e in enchant.effects} | TRAIT_ONLY_STATS
+        return [f"smithing.toml [{t.id}]: unknown stat '{t.stat}'" for t in self.smithing.trait_pool if t.stat not in known]
+
+    def _validate_accessories(self) -> list[str]:
+        """Accessory traits and templates must name stats the engines read, and every template needs its item entry."""
+        if self.accessories is None:
+            return []
+        known = {getattr(e, "stat", None) for enchant in self.enchants.values() for e in enchant.effects} | TRAIT_ONLY_STATS
+        problems = [f"accessories.toml [{t.id}]: unknown stat '{t.stat}'" for t in self.accessories.trait_pool if t.stat not in known]
+        for t in self.accessories.templates:
+            problems += [f"accessories.toml [{t.id}]: unknown stat '{s}'" for s in t.stats if s not in known]
+            item = self.items.get(t.id)
+            if item is None or item.category != "accessory":
+                problems.append(f"items.toml: accessory '{t.id}' needs an item entry with category 'accessory'")
+        return problems
+
     def _validate_mining(self, rules: MiningRules) -> list[str]:
         return _validate_mining_items(self, rules)
 
@@ -213,22 +246,6 @@ class Registry:
                     problems.append(f"{item.id}: crop.seed '{item.crop.seed}' is not a seed item")
                 elif seed.seed.grows_into != item.id:
                     problems.append(f"{item.id}: seed '{seed.id}' grows into '{seed.seed.grows_into}'")
-            if item.tool and item.tool.upgrade:
-                up = item.tool.upgrade
-                target = self.items.get(up.to)
-                if target is None or target.tool is None or target.tool.kind != item.tool.kind:
-                    problems.append(f"{item.id}: upgrade target '{up.to}' is not a {item.tool.kind}")
-                elif target.tool.power <= item.tool.power:
-                    problems.append(f"{item.id}: upgrade target '{up.to}' must be stronger")
-                problems += [f"{item.id}: upgrade needs unknown item '{m}'" for m in up.items if m not in self.items]
-            if item.tool and item.tool.fork:
-                fork = item.tool.fork
-                target = self.items.get(fork.to)
-                if target is None or target.tool is None or target.tool.kind != item.tool.kind or target.tool.power <= item.tool.power:
-                    problems.append(f"{item.id}: fork target '{fork.to}' must be a stronger {item.tool.kind}")
-                if item.tool.upgrade is None:
-                    problems.append(f"{item.id}: a fork needs a normal upgrade as the other path")
-                problems += [f"{item.id}: fork needs unknown item '{m}'" for m in fork.items if m not in self.items]
             if item.scroll and item.scroll.enchant not in self.enchants:
                 problems.append(f"{item.id}: scroll of unknown enchant '{item.scroll.enchant}'")
             if item.seed:
@@ -236,10 +253,26 @@ class Registry:
                 if crop is None or crop.crop is None:
                     problems.append(f"{item.id}: seed.grows_into '{item.seed.grows_into}' is not a crop")
         problems += self._validate_recipes()
+        problems += self._validate_smithing()
+        problems += self._validate_accessories()
         if self.scrolls is not None:
-            for skill in ("mining", "foraging", "farming"):
-                problems += [f"scrolls.toml [{skill}]: '{i}' is not a scroll item" for i in getattr(self.scrolls, skill).pool
+            for skill in ("mining", "foraging"):
+                source = getattr(self.scrolls, skill)
+                if source is None:
+                    continue
+                problems += [f"scrolls.toml [{skill}]: '{i}' is not a scroll item" for i in source.pool
                              if i not in self.items or self.items[i].category != "scroll"]
+        if self.farming is not None:
+            crop_scrolls = [(f"crop '{i.id}'", i.crop.scroll) for i in self.items.values() if i.crop and i.crop.scroll]
+            crop_scrolls.append(("anomaly_scroll", self.farming.anomaly_scroll))
+            for where, scroll in crop_scrolls:
+                if scroll is not None and (scroll.item not in self.items or self.items[scroll.item].category != "scroll"):
+                    problems.append(f"farming {where}: '{scroll.item}' is not a scroll item")
+        if self.foraging is not None:
+            tree_scrolls = [(f"species '{sp.id}'", sp.scroll) for sp in self.foraging.species] + [(f"grain '{g.id}'", g.scroll) for g in self.foraging.chopping.grains]
+            for where, scroll in tree_scrolls:
+                if scroll is not None and (scroll.item not in self.items or self.items[scroll.item].category != "scroll"):
+                    problems.append(f"foraging.toml {where}: '{scroll.item}' is not a scroll item")
         if self.mining is not None:
             problems += self._validate_mining(self.mining)
         if self.fishing is not None:
@@ -275,6 +308,10 @@ class Registry:
                          if row.item not in self.items]
             problems += [f"fishing.toml treasure: unknown loot item '{row.item}'" for row in self.fishing.treasure.loot
                          if row.item not in self.items]
+            fishing_scrolls = [(f"boss '{b.name}'", b.scroll) for b in self.fishing.boss.bosses] + [(f"water '{w.id}'", w.scroll) for w in self.fishing.waters]
+            for where, scroll in fishing_scrolls:
+                if scroll is not None and (scroll.item not in self.items or self.items[scroll.item].category != "scroll"):
+                    problems.append(f"fishing.toml {where}: '{scroll.item}' is not a scroll item")
         if self.foraging is not None:
             problems += [f"foraging.toml rotate: unknown wedge item '{w.item}'" for w in self.foraging.rotate.wedges if w.item not in self.items]
         if self.foraging is not None:
@@ -305,11 +342,6 @@ class Registry:
             if sum(weights.values()) <= 0 or any(w < 0 for w in weights.values()) or any(not 1 <= r <= 8 for r in weights):
                 problems.append(f"economy.toml [pets.orbs.{orb_id}]: weights must be >= 0, add up to something, and be for rarities 1-8")
         for pet in self.pets.values():
-            for eid, lvl in pet.loadout.enchants.items():
-                if eid not in self.enchants:
-                    problems.append(f"pets.toml [{pet.id}.loadout]: unknown enchant '{eid}'")
-                elif not 1 <= lvl <= self.enchants[eid].max_level:
-                    problems.append(f"pets.toml [{pet.id}.loadout]: enchant '{eid}' level {lvl} is outside 1-{self.enchants[eid].max_level}")
             if pet.rarity not in self.economy.pets.xp_scale:
                 problems.append(f"economy.toml [pets.xp_scale] has no scale for rarity {pet.rarity} ({pet.id})")
         expected = list(range(len(self.ranks)))
@@ -384,9 +416,16 @@ def _validate_mining_items(reg: "Registry", rules: MiningRules) -> list[str]:
             need(item_id, f"mine type '{t.id}' ore_boost/ore_yield")
             if item_id in reg.items and item_id not in in_tables:
                 problems.append(f"mining.toml mine type '{t.id}': '{item_id}' is in no depth table, so boosting it would do nothing")
+        if t.scroll:
+            need(t.scroll.item, f"mine type '{t.id}' scroll")
+            if t.scroll.item in reg.items and reg.items[t.scroll.item].scroll is None:
+                problems.append(f"mining.toml mine type '{t.id}': '{t.scroll.item}' is not a scroll")
+    sw = rules.descent.second_wind_item
+    if sw in reg.items and reg.items[sw].scroll is None:
+        problems.append(f"mining.toml [descent] second_wind_item: '{sw}' is not a scroll")
     mini = rules.mini_wyrmhole
     for item_id in (*(i for r in mini.rows for i in r.pool), *mini.last_row_bonus, *(i for r in rules.wyrmhole.rows for i in r.pool), rules.wyrmhole.implosion_item, *rules.reactor.core_gems,
-                    *rules.magnet.values, *(i for prize in rules.scarab.prizes for i in prize.items), BOMB_ITEM,
+                    *(i for prize in rules.scarab.prizes for i in prize.items), BOMB_ITEM,
                     *rules.descent.hardness, *rules.descent.vault_ore):
         need(item_id, "item reference")
     return problems
@@ -442,6 +481,11 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     mastery = _build(MasteryRules, "mastery", [("mastery", _read(config_dir, "mastery"))])[0]
     tools = _build(ToolRules, "tools", [("tools", _read(config_dir, "tools"))])[0]
     shipments = _build(ShipmentRules, "shipments", [("shipments", _read(config_dir, "shipments"))])[0]
+    smithing = _build(SmithingRules, "smithing", [("smithing", _read(config_dir, "smithing"))])[0]
+    raw_legacy = _read(config_dir, "legacy_tools")
+    legacy_tools = dict(zip(raw_legacy, _build(LegacyTool, "legacy_tools", raw_legacy.items()), strict=True))
+    market = _build(MarketRules, "market", [("market", _read(config_dir, "market"))])[0]
+    accessories = _build(AccessoryRules, "accessories", [("accessories", _read(config_dir, "accessories"))])[0]
     scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
     recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
     pet_score = _build(PetScoreRules, "pet_score", [("pet_score", _read(config_dir, "pet_score"))])[0]
@@ -451,7 +495,8 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
         raise RegistryError(f"notices.toml: duplicate id(s) {dupes} (seen ids are stored per player, so every notice needs its own)")
     changelog = _build(ChangelogEntry, "changelog", ((f"entry {i + 1}", e) for i, e in enumerate(_read(config_dir, "changelog").get("entry", []))))
     return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools,
-                    shipments, scrolls, recipes, pet_score, areas, locations, notices=notices, changelog=changelog)
+                    shipments, scrolls, recipes, pet_score, areas, locations, notices=notices, changelog=changelog, smithing=smithing,
+                    legacy_tools=legacy_tools, market=market, accessories=accessories)
 
 
 def _name_waters(rules: FishingRules, locations: dict[str, list[Location]]) -> FishingRules:

@@ -361,14 +361,3 @@ async def test_upgrading_shows_bits_and_materials_too(db):
     assert "Upgrade pot 1 to level 2" in page and f"**0/{P.levels[1].upgrade_items['material_hardwood']}**" in page
     assert "(you have" in page
 
-
-async def test_the_tool_upgrade_page_shows_what_you_have_against_what_you_need(db):
-    from cococap.services.equipment import equip
-
-    user = await User.get(1)
-    inst = await user.give_instance("tool_axe_starter")
-    await equip(user, "foraging", inst.id)
-    await user.add_item("material_feather", 10)
-    nav, _ = await hub("tools", tab="upgrade")
-    page = all_text(nav)
-    assert "**10/40**" in page and "❌" in page and "(you have" in page

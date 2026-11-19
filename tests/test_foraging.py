@@ -657,15 +657,6 @@ def test_the_wedges_get_better_and_cost_more():
     assert sells == sorted(sells)
 
 
-async def test_the_seasoned_enchant_slows_wear_on_the_axe(db):
-    user = await player(1)
-    inst = await user.give_instance("tool_axe_starter")
-    await equip(user, "foraging", inst.id)
-    await add_enchant(user, inst.id, "seasoned")
-    stats = effective_stats(await user.instance(inst.id), REG)
-    assert stats.stats["wear_slow"] == pytest.approx(0.15)
-
-
 # ---- the notes -------------------------------------------------------------------------------------------------------------------------
 async def test_a_right_style_is_remembered_and_a_wrong_one_is_crossed_off(db):
     user = await player(1)
@@ -803,50 +794,7 @@ async def test_the_better_wedges_really_find_special_spots_more_often(db):
 
 
 # ---- upgrade materials come at a pace the other skills match ----------------------------------------------------------------------------
-def test_the_axe_materials_come_in_a_couple_of_hours_not_a_working_week():
-    """An hour of chopping should bring a decent share of the next axe's materials (this is what hp_per_roll and the item drop rates are for)."""
-    from cococap.services import loot
-
-    rng = Random(2)
-    spot = f.Spot.pick(RULES, rng)
-    power = REG.item("tool_axe_thornwhip").tool.power
-    dealt = sum(spot.swing(power, RULES, rng, 0.0, spot.stance(RULES)).damage for _ in range(4000)) / 4000
-    rolls_per_hour = dealt / RULES.hp_per_roll * 12 * 60
-    need = {i: q for i, q in REG.item("tool_axe_thornwhip").tool.upgrade.items.items() if REG.item(i).skill == "foraging"}
-
-    def per_roll(item):
-        r = Random(1)
-        return sum(loot.skewed_roll(r, item.drop.min, item.drop.max) for _ in range(5000)) / 5000 / item.drop.rate
-
-    hours = max(q / (per_roll(REG.item(i)) * rolls_per_hour) for i, q in need.items())
-    assert hours < 3.5, hours  # (it was over six)
-
-
 # ---- the axe roads: Timber (double chops) and Shake the Branches ---------------------------------------------------------------------------------
-async def test_a_foragers_axe_shakes_loose_drops_and_a_plain_axe_never_does(db):
-    user = await player(1, "tool_axe_canopy")
-    shake = (await f.axe_stats(user)).stats["shake"]
-    assert shake > 0
-    always = type("Always", (Random,), {"random": lambda self: 0.0})()
-    got = await f.shake(user, shake, always, REG)
-    assert sum(got.values()) == 1 and len(got) == 1  # exactly one item, never a bunch
-    for item_id, quantity in got.items():
-        assert await user.item_quantity(item_id) == quantity
-    for n in range(40):
-        assert sum((await f.shake(user, 1.0, Random(n), REG)).values()) == 1
-    never = type("Never", (Random,), {"random": lambda self: 0.99})()
-    assert not await f.shake(user, shake, never, REG) and not await f.shake(user, 0.0, always, REG)
-
-
-async def test_a_lumberjacks_axe_carries_double_chop_that_the_swing_already_uses(db):
-    user = await player(1, "tool_axe_elderwood")
-    stats = (await f.axe_stats(user)).stats
-    assert stats["double_chop"] > 0 and "shake" not in stats
-    spot = f.Spot.pick(RULES, Random(1))
-    swing = spot.swing(40, RULES, type("Always", (Random,), {"random": lambda self: 0.0})(), 0.0, None, 0.0, stats["double_chop"])
-    assert swing.doubled
-
-
 # ---- Mastery capstones: Final Cut, Windfall, Clean Cut ----------------------------------------------------------------------------------------------
 async def felled(user, hp=400, seed=1):
     tree = f.Tree(3, hp, hp)
@@ -953,7 +901,7 @@ def test_flair_marks_rare_finds_and_not_the_everyday_ones():
     from cococap.ui import flair
 
     assert flair.level(REG.item("material_copper_ore")) == 0 and flair.level(REG.item("material_gold_ore")) == 0 and flair.level(REG.item("food_golden_sap")) == 0
-    assert flair.level(REG.item("scroll_keen")) == 2  # scrolls are always a big moment
+    assert flair.level(REG.item("scroll_double_strike")) == 2  # scrolls are always a big moment
     assert flair.level(REG.item("material_iron_wedge")) == 1 and flair.level(REG.item("food_burger")) == 1
     assert flair.level(REG.item("material_gilded_wedge")) == 2 and flair.level(REG.item("spirit_of_the_forest")) == 2
     assert flair.banner({"material_copper_ore": 5}) == ""
@@ -972,8 +920,8 @@ def test_every_item_and_enchant_has_an_emoji_and_scrolls_say_what_they_do():
 
     assert [i.id for i in REG.items.values() if not i.emoji_raw] == []
     assert all(e.emoji for e in REG.enchants.values())
-    text = item_attributes(REG.item("scroll_keen"))
-    assert REG.enchants["keen"].description in text and "Max level" in text
+    text = item_attributes(REG.item("scroll_double_strike"))
+    assert REG.enchants["double_strike"].description in text and "Max level" in text
 
 
 def test_wear_slowing_gear_makes_bad_grains_wear_faster_by_the_same_amount():

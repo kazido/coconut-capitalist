@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from cococap import emojis
 
 Skill = Literal["farming", "foraging", "fishing", "mining", "combat", "shepherding"]
-Category = Literal["material", "tool", "key_item", "pet_item", "pet_food", "crop", "seed", "fish", "scroll", "bait"]
+Category = Literal["material", "tool", "key_item", "pet_item", "pet_food", "crop", "seed", "fish", "scroll", "bait", "part", "accessory"]
 ToolKind = Literal["pickaxe", "axe", "sword", "rod", "can"]
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -44,6 +44,13 @@ class Drop(_Data):
         return self
 
 
+class CropScroll(_Data):
+    """A scroll one crop alone can drop: 1 in `odds` harvests of that crop (farming rolls it once per harvest)."""
+
+    item: str
+    odds: int = Field(ge=1)
+
+
 class Crop(_Data):
     """Present on a harvested crop item."""
 
@@ -51,6 +58,7 @@ class Crop(_Data):
     min_harvest: int = Field(ge=1)
     max_harvest: int = Field(ge=1)
     pet_xp: int = Field(default=0, ge=0)
+    scroll: CropScroll | None = None  # the scroll only this crop can drop when harvested (see CropScroll)
 
     @model_validator(mode="after")
     def _ordered(self):
@@ -178,8 +186,8 @@ class Item(_Data):
 
     @property
     def is_instance(self) -> bool:
-        """Tools are unique objects (can carry enchants); everything else is a stackable counter."""
-        return self.tool is not None
+        """Tools and smithing parts are unique objects (own tier/traits/enchants); everything else is a stackable counter."""
+        return self.tool is not None or self.category in ("part", "accessory")
 
     @property
     def buyable(self) -> bool:
@@ -215,7 +223,7 @@ class PetLoadout(_Data):
 
     tool_tier: int = Field(ge=0, le=4)  # 0 = a fresh tool ... 4 = a forked one
     mastery_score: int = Field(ge=0, le=100)  # mastery points the pet "has spent"
-    enchants: dict[str, int] = Field(default_factory=dict)  # enchant id -> level (checked against enchants.toml by the registry)
+    enchant_levels: int = Field(default=0, ge=0)  # total enchant levels the pet "has" (simulated: no real enchants, which change; counts toward gear)
 
 
 class PetScoreRules(_Data):
@@ -538,7 +546,7 @@ class MagnetRules(_Data):
     level: int = Field(ge=1)
     capacity: int = Field(ge=1)
     drain_per_row: float = Field(default=0.0, ge=0)  # meter points one dug row uses while the magnet marks it
-    values: dict[str, int]
+    bits_per_point: int = Field(ge=1)  # a material gives sell_price // bits_per_point meter points (at least 1)
 
 
 class ScarabPrize(_Data):
@@ -594,6 +602,8 @@ class DescentRules(_Data):
     lifeline_runs: int = Field(default=4, ge=1)  # ...and how many mines the reactor needs to recharge afterwards (the one that saved you counts as the first)
     max_reduction: float = Field(ge=0, le=0.95)
     brace_amount: float = Field(ge=0)
+    second_wind_item: str  # the Second Wind scroll: 1 in second_wind_odds banked runs that reached the top pressure label drop it
+    second_wind_odds: int = Field(ge=1)
     braces_base: int = Field(ge=0)
     braces_per_reactor_levels: int = Field(ge=1)
     # Collapse risk is a smooth curve of pressure: 0 below `safe_pressure`, `max_risk` at 100.
@@ -640,6 +650,13 @@ class DescentRules(_Data):
         return self
 
 
+class MineScroll(_Data):
+    """A scroll only one mine type can drop: 1 in `odds` banked runs of that type (settle_run rolls it)."""
+
+    item: str
+    odds: int = Field(ge=1)
+
+
 class MineType(_Data):
     """One kind of mine you can roll when you head down (shown before you dig). Every effect is a plain number; 1.0 / 0 / {} changes nothing."""
 
@@ -655,6 +672,7 @@ class MineType(_Data):
     wyrmhole_mult: float = Field(default=1.0, ge=1, le=20)  # x the chance of a big wyrmhole (per cell) and of a small one (per mine)
     ore_boost: dict[str, float] = Field(default_factory=dict)  # item -> x its drop chance (other ores stay possible; more of a hard ore also means more pressure)
     ore_yield: dict[str, float] = Field(default_factory=dict)  # item -> x the quantity of that item (no extra pressure)
+    scroll: MineScroll | None = None  # the scroll this mine type alone can drop (see MineScroll)
 
     @model_validator(mode="after")
     def _boosts_are_sane(self):
@@ -735,6 +753,7 @@ class FarmingRules(_Data):
     max_drop_rolls: int = Field(ge=1)  # ...but never more than this many times
     starter_seeds: dict[str, int]  # a free gift of seeds the first time you farm
     anomaly_odds: int = Field(ge=1)  # 1 in N per harvest
+    anomaly_scroll: CropScroll | None = None  # the scroll an anomaly can drop: 1 in odds anomalies (Golden Sprout)
     xp_per_cycle: int = Field(ge=0)  # xp for a harvest = the seed's growth cycles x this: a long crop pays for the waiting
     deed_item: str
     field_seeds: list[str]  # the seed each field opens, in field order (14, one per farming location)
@@ -776,6 +795,13 @@ class CommunityRules(_Data):
     refresh_seconds: float = Field(gt=0)
 
 
+class TreeScroll(_Data):
+    """A scroll one tree species or one wood grain can drop: 1 in `odds` private trees felled with it (foraging rolls it once per source)."""
+
+    item: str
+    odds: int = Field(ge=1)
+
+
 class Grain(_Data):
     """A kind of wood at the place you chop. It sets how hard the spot is to cut and how fast it wears out, and it wants one chop style."""
 
@@ -785,6 +811,7 @@ class Grain(_Data):
     weight: float = Field(gt=0)  # how often a new spot has this grain
     stance: Literal["o", "s", "u"]  # the one style it likes: o = overhead, s = sidecut, u = undercut
     wear: float = Field(gt=0)  # how fast a chop wears the spot out, relative to 1 (good grains last, bad ones go quickly)
+    scroll: TreeScroll | None = None  # the scroll this grain alone can drop (see TreeScroll)
 
 
 class Special(_Data):
@@ -827,6 +854,9 @@ class ChoppingRules(_Data):
     streak_bonus: float = Field(ge=0, default=0.0)  # damage added per right-style chop in a row on the same tree...
     streak_max: int = Field(ge=0, default=0)  # ...up to this many (so the most it can add is streak_bonus x streak_max)
     mark_cap: float = Field(ge=0)  # the most extra reward (+0.5 = +50%) marks can put on one tree
+    ember_mult: float = Field(ge=1)  # Ember Bite: a smouldering trunk's next chops hit this much harder
+    ember_chops: int = Field(ge=1)  # ...for this many chops
+    timber_share: float = Field(ge=0, lt=1)  # Timber!: a tree it toppled into starts with this share of its hp gone
     grains: list[Grain] = Field(min_length=2)
     specials: list[Special] = Field(min_length=1)
 
@@ -910,6 +940,7 @@ class Species(_Data):
     zone_max: int = Field(ge=1)
     weight: float = Field(gt=0)  # how common it is among the species of a zone
     drops: list[SpeciesDrop] = Field(default_factory=list)  # optional signature drops (none for now: the materials were cut)
+    scroll: TreeScroll | None = None  # the scroll only this species can drop (see TreeScroll)
 
     _id = field_validator("id")(check_id)
 
@@ -1091,11 +1122,19 @@ class CommunityRules(_Data):
     min_share: float = Field(ge=0, le=1)  # you must have done this share of a goal to be paid for it
 
 
+class FishingScroll(_Data):
+    """A scroll one boss or one water alone can drop: 1 in `odds` boss fights landed (or catches in that water)."""
+
+    item: str
+    odds: int = Field(ge=1)
+
+
 class BossEntry(_Data):
     """One boss and the twist that makes its reel different."""
 
     name: str
     modifiers: list[Literal["mirror", "reverse", "shuffle", "fog", "wild"]] = Field(min_length=1)
+    scroll: FishingScroll | None = None  # the scroll only this boss can drop (defeat_boss rolls it)
 
 
 class PartyBossRules(_Data):
@@ -1138,6 +1177,7 @@ class WaterRules(_Data):
     wait_multiplier: float = Field(gt=0)  # deeper water takes longer to bite
     xp: int = Field(ge=0)  # xp for every fish landed here: deeper waters pay more, a better rod never does
     fish: dict[str, int] = Field(min_length=1)
+    scroll: FishingScroll | None = None  # the scroll only this water can drop (land rolls it per catch here)
 
     @property
     def emoji(self) -> str:
@@ -1196,6 +1236,13 @@ class DoubleHookRules(_Data):
     cap: float = Field(gt=0, le=1)  # the chance never goes above this
 
 
+class NetRules(_Data):
+    """Net Cast: one net hauls this many of the water's commonest fish at once, then it cools down."""
+
+    fish: int = Field(ge=1)
+    cooldown_seconds: int = Field(ge=0)  # between two nets
+
+
 class FishingRules(_Data):
     xp_per_catch: int = Field(ge=0)  # xp for landing a fish when the water does not set its own: one catch pays the same whatever the fish or the rod
     xp_per_rarity: int = Field(ge=0)
@@ -1212,6 +1259,7 @@ class FishingRules(_Data):
     pots: PotRules
     radar: RadarRules
     double_hook: DoubleHookRules
+    net: NetRules
 
 
 class MinigamePayout(_Data):
@@ -1465,9 +1513,9 @@ class ScrollSource(_Data):
 
 
 class ScrollRules(_Data):
-    mining: ScrollSource
-    foraging: ScrollSource
-    farming: ScrollSource
+    mining: ScrollSource | None = None  # no mining scrolls for now (their enchant was retired); the loader and roll skip a missing source
+    foraging: ScrollSource | None = None  # none: foraging's scrolls come from one species or grain each (TreeScroll)
+    farming: ScrollSource | None = None  # none: farming's scrolls come from one crop or from anomalies each (CropScroll)
 
 
 class ShipmentRules(_Data):
@@ -1597,3 +1645,230 @@ class ChangelogEntry(_Data):
     title: str = Field(min_length=1, max_length=200)
     body: str = Field(min_length=1, max_length=1500)
     major: bool = False
+
+
+# ---- Smithing (configs/smithing.toml) ----------------------------------------------------------------------------------------------
+PART_TIERS = 7
+
+
+class AreaWeights(_Data):
+    area: int = Field(ge=1)
+    weights: list[int] = Field(min_length=PART_TIERS, max_length=PART_TIERS)
+
+    @field_validator("weights")
+    @classmethod
+    def _weights_sane(cls, v: list[int]) -> list[int]:
+        if any(w < 0 for w in v) or sum(v) <= 0:
+            raise ValueError("weights must be >= 0 and not all zero")
+        return v
+
+
+class SmithTrait(_Data):
+    id: str
+    name: str
+    stat: str
+    amounts: list[float] = Field(min_length=4, max_length=4)  # one per quality grade
+    kinds: list[ToolKind] = Field(min_length=1)
+
+    _id = field_validator("id")(check_id)
+
+
+class FreshTraits(_Data):
+    common: int = Field(ge=0)
+    uncommon: int = Field(ge=0)
+    rare: int = Field(ge=0)
+    epic: int = Field(ge=0)
+
+
+class Quality(_Data):
+    name: str
+    mult: float = Field(gt=0)
+    base_odds: int = Field(ge=0)
+
+
+class SmithLevels(_Data):
+    xp_per_smith: int = Field(ge=0)
+    xp_per_salvage: int = Field(ge=0)
+    quality_shift_per_level: float = Field(ge=0)
+    swap_unlock_level: int = Field(ge=1)
+    max_tier_by_level: list[tuple[int, int]] = Field(min_length=1)
+
+
+class LegacyGrant(_Data):
+    """What an old upgrade-chain tool of this step turns into at the one-time reset: 3 parts of `tier`, each with `traits` traits."""
+
+    step: Literal["plain", "fork", "fork_up"]
+    tier: int = Field(ge=1, le=PART_TIERS)
+    traits: int = Field(ge=0, le=3)
+
+
+class LegacyTool(_Data):
+    """A frozen record of one OLD upgrade-chain tool (configs/legacy_tools.toml), kept after its template leaves items.toml,
+    so the one-time reset can still tell its kind and how far it got."""
+
+    kind: ToolKind
+    step: Literal["starter", "plain", "fork", "fork_up"]
+
+
+class SmithingRules(_Data):
+    part_types: list[str] = Field(min_length=3, max_length=3)
+    area_cap: int = Field(ge=0)
+    max_traits: int = Field(ge=1)
+    bonus_trait_chance: float = Field(ge=0, le=1)
+    cosmetic_chance: float = Field(ge=0, le=1)
+    part_drop_chance: float = Field(ge=0, le=1)
+    rarity_by_tier: list[str] = Field(min_length=PART_TIERS, max_length=PART_TIERS)
+    tiers: dict[str, list[int]]  # {"power": [...]}: power per part tier, index 0 = tier 1
+    area_weights: list[AreaWeights] = Field(min_length=1)
+    trait_pool: list[SmithTrait] = Field(alias="trait", min_length=1)
+    fresh_traits: FreshTraits
+    grades: list[Quality] = Field(alias="quality", min_length=1)
+    levels: SmithLevels
+    legacy_grants: list[LegacyGrant] = Field(alias="legacy_grant", min_length=3, max_length=3)
+    legacy_scroll_cap: int = Field(2, ge=0)  # most scrolls the one-time reset gives back per player
+
+    @model_validator(mode="after")
+    def _sane(self):
+        if sorted(g.step for g in self.legacy_grants) != ["fork", "fork_up", "plain"]:
+            raise ValueError("legacy_grant needs one row each for plain, fork and fork_up")
+        if self.part_types != ["base", "trim", "accent"]:
+            raise ValueError("part_types must be exactly base, trim, accent")
+        power = self.tiers.get("power", [])
+        if len(power) != PART_TIERS or any(b <= a for a, b in zip(power, power[1:], strict=False)):
+            raise ValueError("tiers.power must be 7 strictly increasing ints")
+        ids = [t.id for t in self.trait_pool]
+        if len(set(ids)) != len(ids):
+            raise ValueError("trait ids must be unique")
+        if any(r not in ("common", "uncommon", "rare", "epic") for r in self.rarity_by_tier):
+            raise ValueError("rarity_by_tier must name common, uncommon, rare or epic")
+        if self.max_traits != 3:
+            raise ValueError("max_traits must be 3")
+        mults = [q.mult for q in self.grades]
+        if any(b <= a for a, b in zip(mults, mults[1:], strict=False)):
+            raise ValueError("quality mults must increase in order")
+        return self
+
+    def fresh_trait_count(self, tier: int) -> int:
+        return getattr(self.fresh_traits, self.rarity_by_tier[tier - 1])
+
+    def tier_power(self, tier: int) -> int:
+        return self.tiers["power"][tier - 1]
+
+    def max_tier_for_area(self, area: int) -> int:
+        return min(PART_TIERS, area + self.area_cap)
+
+    def weights_for_area(self, area: int) -> list[int]:
+        """Drop weights for tiers 1..7 in this area, with anything above the area cap zeroed (ignored)."""
+        row = next(w for w in self.area_weights if w.area == area)
+        cap = self.max_tier_for_area(area)
+        return [w if i + 1 <= cap else 0 for i, w in enumerate(row.weights)]
+
+    def trait(self, trait_id: str) -> SmithTrait:
+        return next(t for t in self.trait_pool if t.id == trait_id)
+
+    def traits_for(self, kind: str) -> list[SmithTrait]:
+        return [t for t in self.trait_pool if kind in t.kinds]
+
+    def quality(self, name: str) -> Quality:
+        return next(q for q in self.grades if q.name == name)
+
+
+# ---- Accessories (configs/accessories.toml) ----------------------------------------------------------------------------------
+ACCESSORY_SKILLS = ("mining", "foraging", "fishing", "farming")
+ACCESSORY_RARITIES = 7
+
+
+class AccessoryTrait(_Data):
+    id: str
+    name: str
+    stat: str  # a stat the engines read (the same names enchants and part traits use)
+    amount: float = Field(gt=0)  # value on a rarity-1 accessory; a rarer one multiplies it (AccessoryRules.value)
+    skills: list[str] = Field(min_length=1)
+
+    @field_validator("skills")
+    @classmethod
+    def _skills_known(cls, v: list[str]) -> list[str]:
+        if any(s not in ACCESSORY_SKILLS for s in v):
+            raise ValueError(f"accessory trait skills must be among {ACCESSORY_SKILLS}")
+        return v
+
+
+class AccessoryTemplate(_Data):
+    id: str  # acc_<skill>_<name>
+    name: str
+    skill: str
+    rarity: int = Field(ge=1, le=ACCESSORY_RARITIES)
+    stats: dict[str, float] = Field(default_factory=dict)  # the accessory's own base bonus
+    shop_price: int = Field(default=0, ge=0)  # bits in the Shop (0 = drop only)
+
+    @field_validator("skill")
+    @classmethod
+    def _skill_known(cls, v: str) -> str:
+        if v not in ACCESSORY_SKILLS:
+            raise ValueError(f"accessory skill must be among {ACCESSORY_SKILLS}")
+        return v
+
+
+class AccessoryRules(_Data):
+    slots_per_skill: int = Field(ge=1, le=5)
+    drop_chance: float = Field(ge=0, le=1)
+    traits_by_rarity: list[int] = Field(min_length=ACCESSORY_RARITIES, max_length=ACCESSORY_RARITIES)
+    rarity_mult: list[float] = Field(min_length=ACCESSORY_RARITIES, max_length=ACCESSORY_RARITIES)
+    trait_pool: list[AccessoryTrait] = Field(alias="trait", min_length=1)
+    templates: list[AccessoryTemplate] = Field(alias="accessory", min_length=1)
+
+    @model_validator(mode="after")
+    def _sane(self):
+        ids = [t.id for t in self.trait_pool]
+        if len(set(ids)) != len(ids):
+            raise ValueError("accessory trait ids must be unique")
+        tids = [t.id for t in self.templates]
+        if len(set(tids)) != len(tids):
+            raise ValueError("accessory ids must be unique")
+        for t in self.templates:
+            if not t.id.startswith(f"acc_{t.skill}_"):
+                raise ValueError(f"accessory '{t.id}' must be named acc_{t.skill}_<name>")
+        if any(n < 0 for n in self.traits_by_rarity) or any(m <= 0 for m in self.rarity_mult):
+            raise ValueError("traits_by_rarity must be >= 0 and rarity_mult > 0")
+        return self
+
+    def template(self, template_id: str) -> AccessoryTemplate:
+        return next(t for t in self.templates if t.id == template_id)
+
+    def trait(self, trait_id: str) -> AccessoryTrait:
+        return next(t for t in self.trait_pool if t.id == trait_id)
+
+    def traits_for(self, skill: str) -> list[AccessoryTrait]:
+        return [t for t in self.trait_pool if skill in t.skills]
+
+    def trait_count(self, rarity: int) -> int:
+        return self.traits_by_rarity[rarity - 1]
+
+    def value(self, trait: AccessoryTrait, rarity: int) -> float:
+        return trait.amount * self.rarity_mult[rarity - 1]
+
+
+# ---- Part market (configs/market.toml) ---------------------------------------------------------------------------------------------
+class MarketShop(_Data):
+    """One shop that sells smithing parts for bits. Its stock is rerolled every `refresh_seconds` (services/market.py)."""
+
+    name: str
+    unlock_area: str  # area id; the shop stays closed until you have reached it
+    refresh_seconds: int = Field(ge=60)
+    slots: int = Field(ge=1, le=10)
+    tier_weights: list[int] = Field(min_length=PART_TIERS, max_length=PART_TIERS)  # tiers 1..7
+    extra_traits: int = Field(ge=0, le=3)  # added to the tier's fresh trait count (capped at the pool)
+    tier_price: list[int] = Field(min_length=PART_TIERS, max_length=PART_TIERS)  # bits per part, by tier
+    trait_premium: float = Field(ge=0)  # price x (1 + this x traits)
+
+    @field_validator("tier_weights")
+    @classmethod
+    def _weights_sane(cls, v: list[int]) -> list[int]:
+        if any(w < 0 for w in v) or sum(v) <= 0:
+            raise ValueError("tier_weights must be >= 0 and not all zero")
+        return v
+
+
+class MarketRules(_Data):
+    merchant: MarketShop
+    black_market: MarketShop

@@ -20,8 +20,9 @@ from dataclasses import dataclass, field
 
 from cococap.errors import GameRuleError
 from cococap.models.skills.farming import Farming, Plot
+from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
-from cococap.services import areas, pets, scrolls, stars
+from cococap.services import accessories, areas, pets, scrolls, smithing, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
@@ -165,6 +166,7 @@ class PlotView:
     needed: int
     ready: bool
     watered: bool = False  # you have watered it this hour
+    golden: bool = False  # Golden Sprout: this planting will harvest tripled
 
     def left(self, rules, watered: bool = False) -> Estimate:
         """How long until it is ready, from now (the rain after this one, then the next...)."""
@@ -192,7 +194,7 @@ def plot_views(farming: Farming, registry: Registry, now: float | None = None) -
         views.append(PlotView(
             number, is_unlocked(farming, number, registry.farming), plot.crop_id,
             seed.grows_into if seed else None, plot.cycle, seed.cycles if seed else 0, plot.can_harvest,
-            hour is not None and plot.watered == hour,
+            hour is not None and plot.watered == hour, plot.golden,
         ))
     return views
 
@@ -370,7 +372,7 @@ async def buy_plot(user: User, number: int, registry: Registry | None = None) ->
 
 
 async def plant(
-    user: User, number: int, seed_id: str, now: float | None = None, registry: Registry | None = None
+    user: User, number: int, seed_id: str, now: float | None = None, registry: Registry | None = None, rng: random.Random | None = None
 ) -> None:
     reg, now = registry or get_registry(), now if now is not None else time.time()
     seed = reg.find_item(seed_id)
@@ -387,6 +389,9 @@ async def plant(
         raise FarmingError(f"You don't have any {seed.name}.") from None
 
     grow = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
+    can = await equipped_stats(user, "farming", reg)
+    golden_chance = can.stats.get("golden_chance", 0.0) if can else 0.0  # (Golden Sprout: this planting may grow golden, a triple harvest)
+    golden = bool(golden_chance) and (rng or random.Random()).random() < golden_chance
 
     def sow(m: Farming) -> None:
         apply_rain(m, user.id, now, reg, grow)
@@ -396,6 +401,7 @@ async def plant(
         if plot.crop_id:
             raise FarmingError("Something is already growing there.")
         plot.crop_id, plot.cycle, plot.can_harvest, plot.since, plot.tended, plot.zone = seed_id, 0, False, hour_of(now), 0, zone
+        plot.golden = golden
 
     try:
         await user.update_skill("farming", sow)
@@ -413,6 +419,9 @@ class Harvest:
     anomaly: bool
     extras: Counter = field(default_factory=Counter)  # leftovers from the harvest (plant fiber...)
     replanted: bool = False  # Evergreen: the plot is growing the same crop again
+    part: ItemInstance | None = None  # a smithing part from this harvest, if any
+    accessory: ItemInstance | None = None  # a rare accessory from this harvest, if any
+    golden: bool = False  # Golden Sprout: this plot grew golden, so the harvest is tripled
 
 
 # ---- Tend: byproducts of every growth cycle ---------------------------------------------------------------------------------------
@@ -514,16 +523,19 @@ async def harvest(
             raise FarmingError("Nothing is ready to harvest on that plot.")
         crop = reg.item(reg.item(plot.crop_id).seed.grows_into)
         amount = max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield) * (2 if rng.random() < transmute else 1) * (1.6 if heirloom and rng.random() < heirloom else 1)))
+        if plot.golden:  # Golden Sprout: triple harvest
+            amount *= 3
         if extra_harvest and rng.random() < extra_harvest:
             amount += max(1, round(rng.randint(crop.crop.min_harvest, crop.crop.max_harvest) * (1 + crop_yield)))
         taken.update(seed=plot.crop_id, zone=plot_zone(plot, rules), crop=crop.id, amount=amount,
-                     xp=round(reg.item(plot.crop_id).seed.cycles * rules.xp_per_cycle * party_bonus))
+                     xp=round(reg.item(plot.crop_id).seed.cycles * rules.xp_per_cycle * party_bonus), golden=plot.golden)
         replant = bool(evergreen) and rng.random() < evergreen
         taken["replanted"] = replant
         if replant:  # Evergreen: the same crop is growing again, no seed spent
             plot.cycle, plot.can_harvest, plot.since, plot.tended = 0, False, hour_of(now), 0
         else:
             plot.crop_id, plot.cycle, plot.can_harvest, plot.tended, plot.zone = None, 0, False, 0, 0  # the plot is empty from this moment: once only
+        plot.golden = False  # (a golden planting pays once; the next one is rolled fresh)
         m.xp += taken["xp"]
         m.stats.crops_grown += taken["amount"]
 
@@ -533,24 +545,29 @@ async def harvest(
     except Exception:
         def restore(m: Farming) -> None:
             plot = plot_of(m, number)
-            plot.crop_id, plot.can_harvest, plot.zone = taken["seed"], True, taken["zone"]
+            plot.crop_id, plot.can_harvest, plot.zone, plot.golden = taken["seed"], True, taken["zone"], taken["golden"]
 
         await user.update_skill("farming", restore)  # the crop never arrived: the plot is still ripe
         raise
     await user.inc_stat(f"harvested:{taken['crop']}", taken["amount"])  # stats page: harvests by crop
     extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0, taken["zone"])
     extras = stars.apply(extras, stars.progress(taken["zone"], len(reg.farming.field_seeds)), rng, reg)  # starred materials: the further the field, the better the star
-    if scroll := scrolls.roll("farming", rng, reg, reg.item(taken["seed"]).seed.cycles):  # a rare scroll: one chance per growth cycle of what you harvest
-        extras[scroll] += 1
+    part = await smithing.maybe_drop_part(user, taken["zone"], rng, reg)  # one part roll per harvest
+    accessory = await accessories.maybe_drop_accessory(user, "farming", rng, reg)  # one accessory roll per harvest
+    anomaly = rng.randint(1, rules.anomaly_odds) == 1
+    if crop_scroll := reg.item(taken["crop"]).crop.scroll:  # a rare scroll only this crop drops: 1 in its odds harvests
+        if rng.randint(1, crop_scroll.odds) == 1:
+            extras[crop_scroll.item] += 1
+    if anomaly and rules.anomaly_scroll and rng.randint(1, rules.anomaly_scroll.odds) == 1:  # Golden Sprout: only anomaly harvests
+        extras[rules.anomaly_scroll.item] += 1
     if can and rng.random() < can.stats.get("seed_back", 0.0):  # a good can lets a plant go to seed: the seed comes back
         extras[taken["seed"]] += 1
     for item_id, quantity in extras.items():
         await user.add_item(item_id, quantity)
-    anomaly = rng.randint(1, rules.anomaly_odds) == 1
     if anomaly:
         await user.refresh_cooldowns(Cooldowns.WORK, Cooldowns.DAILY)
         await user.inc_stat("anomalies")  # stats page
-    return Harvest(number, taken["crop"], taken["amount"], taken["xp"], anomaly, extras, taken.get("replanted", False))
+    return Harvest(number, taken["crop"], taken["amount"], taken["xp"], anomaly, extras, taken.get("replanted", False), part=part, accessory=accessory, golden=taken["golden"])
 
 
 async def harvest_all(

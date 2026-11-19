@@ -35,6 +35,20 @@ async def set_columns(user, **columns):
 
 
 @pytest.fixture(autouse=True)
+def _no_legacy_reset_in_ui_tests(request, monkeypatch):
+    """Opening a screen runs the one-time tools reset, which would swap the tools a UI test sets up. Only
+    test_legacy_tools.py runs the reset (it calls it directly)."""
+    if request.module.__name__ == "test_legacy_tools":
+        return
+    from cococap.services import legacy_tools
+
+    async def skip(user, rng, registry=None):
+        return None
+
+    monkeypatch.setattr(legacy_tools, "reset_player", skip)
+
+
+@pytest.fixture(autouse=True)
 def _no_leftover_invites():
     """Pending party invites live in memory: never let one test's invite show up in the next."""
     from cococap.services import party_invites

@@ -34,7 +34,7 @@ def test_shipped_tables_only_use_real_items_and_mix_bits_with_items():
     for table in REG.drop_tables.values():
         assert any(e.item is None for e in table.entries) and any(e.item for e in table.entries), table.id
         assert all(e.item in REG.items for e in table.entries if e.item)
-    rare = [e for e in REG.drop_tables["graveyard"].entries if e.item in {"key_orb_familiar", "key_land_deed", "scroll_keen"}]
+    rare = [e for e in REG.drop_tables["graveyard"].entries if e.item in {"key_orb_familiar", "key_land_deed"}]
     total = sum(e.weight for e in REG.drop_tables["graveyard"].entries)
     assert rare and all(e.weight / total < 0.01 + 0.01 for e in rare)  # rare things are rare
 

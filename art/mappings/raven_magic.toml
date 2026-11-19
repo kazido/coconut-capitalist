@@ -106,19 +106,14 @@ ui_apple = {cell = [27, 2], framed = false}
 # Enchant icons (one each; they had only a plain glyph before)
 enchant_soloist = {cell = [67, 0], framed = false}
 enchant_keen = {cell = [90, 7], framed = false}
-enchant_lure = {cell = [24, 8], framed = false}
 enchant_steady_line = {cell = [24, 2], framed = false}
 enchant_double_hook = {cell = [24, 9], framed = false}
 enchant_sharp_eye = {cell = [44, 14], framed = false}
-enchant_iron_frame = {cell = [41, 7], framed = false}
-enchant_seasoned = {cell = [29, 3], framed = false}
 enchant_double_strike = {cell = [64, 0], framed = false}
 enchant_scholar = {cell = [18, 0], framed = false}
 enchant_appraiser = {cell = [7, 11], framed = false}
 enchant_veinfinder = {cell = [7, 6], framed = false}
 enchant_bounty = {cell = [3, 5], framed = false}
-enchant_deepcall = {cell = [49, 1], framed = false}
 enchant_fertile = {cell = [58, 10], framed = false}
 enchant_seedkeeper = {cell = [28, 1], framed = false}
-enchant_gleaner = {cell = [58, 13], framed = false}
 ui_rock_rich = {cell = [12, 3], ramp = ["#1a1a44", "#2c44a0", "#4e86e8", "#bce0ff"], framed = false}

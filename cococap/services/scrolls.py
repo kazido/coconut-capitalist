@@ -19,9 +19,18 @@ def roll(skill: str, rng: random.Random, registry: Registry | None = None, rolls
 
 
 def scroll_skills(item_id: str, registry: Registry | None = None) -> list[str]:
-    """The skills whose scroll source (or, for fishing, chest and boss loot) can give this scroll."""
+    """The skills whose scroll source (or, for fishing, a boss or a water) can give this scroll."""
     reg = registry or get_registry()
-    found = [s for s in ("mining", "foraging", "farming") if reg.scrolls and item_id in getattr(reg.scrolls, s).pool]
-    if reg.fishing and any(entry.item == item_id for entry in (*reg.fishing.treasure.loot, *reg.fishing.boss.loot)):
-        found.append("fishing")
+    found = [s for s in ("mining", "foraging", "farming") if reg.scrolls and getattr(reg.scrolls, s) is not None and item_id in getattr(reg.scrolls, s).pool]
+    if reg.fishing and (any(b.scroll and b.scroll.item == item_id for b in reg.fishing.boss.bosses)
+                        or any(w.scroll and w.scroll.item == item_id for w in reg.fishing.waters)):
+        found.append("fishing")  # a boss's or a water's own scroll (fishing.toml `scroll = { item, odds }`)
+    if "mining" not in found and reg.mining and (reg.mining.descent.second_wind_item == item_id or any(t.scroll and t.scroll.item == item_id for t in reg.mining.mine_types)):
+        found.append("mining")  # a mine's own scroll (mining.toml [[mine_types]] scroll, or [descent] second_wind_item)
+    farm = reg.farming
+    if "farming" not in found and farm and (farm.anomaly_scroll and farm.anomaly_scroll.item == item_id or any(i.crop and i.crop.scroll and i.crop.scroll.item == item_id for i in reg.items.values())):
+        found.append("farming")  # a crop's own scroll (items.toml `[crop_x.crop] scroll`) or the anomaly scroll (farming.toml)
+    tree_items = {s.scroll.item for s in (*reg.foraging.species, *reg.foraging.chopping.grains) if s.scroll} if reg.foraging else set()
+    if item_id in tree_items:
+        found.append("foraging")  # a species' or grain's own scroll (foraging.toml `scroll = { item, odds }`)
     return found

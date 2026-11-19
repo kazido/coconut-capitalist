@@ -85,7 +85,7 @@ def test_prefixed_ids_migration_renames_every_stored_id_and_back(tmp_path):
     values = {name: (1 if name == "discord_id" else "x" if "CHAR" in kind.upper() or kind.upper() == "TEXT" else 0) for name, kind in cols}
     values["pethouse"] = json.dumps({"active": "dog", "pets": {"dog": {"stars": 1}, "cat": {"stars": 2}}})
     con.execute(f"INSERT INTO users ({', '.join(values)}) VALUES ({', '.join('?' * len(values))})", list(values.values()))
-    con.executemany("INSERT INTO user_items (user_id, item_id, quantity) VALUES (1, ?, ?)", [("cod", 2), ("copper_ore", 3), ("scroll_keen", 1)])
+    con.executemany("INSERT INTO user_items (user_id, item_id, quantity) VALUES (1, ?, ?)", [("cod", 2), ("copper_ore", 3), ("scroll_double_strike", 1)])
     con.execute("INSERT INTO item_instances (owner_id, template_id, rolled, enchants) VALUES (1, 'rookiepickaxe', '{}', '{}')")
     con.execute("INSERT INTO user_skills (user_id, skill, xp, data) VALUES (1, 'farming', 0, ?)", [json.dumps({"seeds": {"apple_seed": 4}, "plots": [{"crop": "apple"}]})])
     con.execute("INSERT INTO user_stats (user_id, name, value) VALUES (1, 'starter_claimed_starter_rod', 1), (1, 'hl_wins', 5)")
@@ -94,7 +94,7 @@ def test_prefixed_ids_migration_renames_every_stored_id_and_back(tmp_path):
 
     upgrade_sync(url)
     con = sqlite3.connect(tmp_path / "old.db")
-    assert dict(con.execute("SELECT item_id, quantity FROM user_items")) == {"fish_cod": 2, "material_copper_ore": 3, "scroll_keen": 1}
+    assert dict(con.execute("SELECT item_id, quantity FROM user_items")) == {"fish_cod": 2, "material_copper_ore": 3, "scroll_double_strike": 1}
     assert con.execute("SELECT template_id FROM item_instances").fetchone() == ("tool_pickaxe_rookie",)
     assert json.loads(con.execute("SELECT data FROM user_skills").fetchone()[0]) == {"seeds": {"seed_apple": 4}, "plots": [{"crop": "crop_apple"}]}
     house = json.loads(con.execute("SELECT pethouse FROM users").fetchone()[0])
@@ -108,7 +108,7 @@ def test_prefixed_ids_migration_renames_every_stored_id_and_back(tmp_path):
 
     command.downgrade(_config(url), "0008")
     con = sqlite3.connect(tmp_path / "old.db")
-    assert dict(con.execute("SELECT item_id, quantity FROM user_items")) == {"cod": 2, "copper_ore": 3, "scroll_keen": 1}
+    assert dict(con.execute("SELECT item_id, quantity FROM user_items")) == {"cod": 2, "copper_ore": 3, "scroll_double_strike": 1}
     assert json.loads(con.execute("SELECT pethouse FROM users").fetchone()[0])["active"] == "dog"
 
 
@@ -133,6 +133,72 @@ def test_cutting_the_zone_materials_swaps_them_for_a_few_original_ones(tmp_path)
     con = sqlite3.connect(tmp_path / "old.db")
     items = {(u, i): q for u, i, q in con.execute("SELECT user_id, item_id, quantity FROM user_items")}
     assert items == {(1, "material_plant_fiber"): 4, (1, "material_compost"): 14, (2, "material_copper_ore"): 4}
+
+
+def test_retiring_the_stat_scrolls_pays_them_out_and_strips_their_enchants(tmp_path):
+    """Migration 0013: held scrolls (any star) pay their sell price in bits and the stacks go; retired enchants leave tools."""
+    import json
+    import sqlite3
+
+    url = f"sqlite:///{tmp_path / 'old.db'}"
+    upgrade_sync(url, "0012")
+    con = sqlite3.connect(tmp_path / "old.db")
+    cols = [(r[1], r[2]) for r in con.execute("PRAGMA table_info(users)") if r[3] and r[4] is None]
+    for uid in (1, 2):
+        values = {name: (uid if name == "discord_id" else 1000 if name == "purse" else "x" if "CHAR" in kind.upper() or kind.upper() == "TEXT" else 0) for name, kind in cols}
+        con.execute(f"INSERT INTO users ({', '.join(values)}) VALUES ({', '.join('?' * len(values))})", list(values.values()))
+    icols = [(r[1], r[2]) for r in con.execute("PRAGMA table_info(item_instances)") if r[3] and r[4] is None and not r[5]]
+    for enchants in ('{"keen": 2, "soloist": 1}', '{"lure": 1}'):
+        values = {name: ("x" if "CHAR" in kind.upper() or kind.upper() == "TEXT" else 0) for name, kind in icols}
+        values["enchants"] = enchants
+        con.execute(f"INSERT INTO item_instances ({', '.join(values)}) VALUES ({', '.join('?' * len(values))})", list(values.values()))
+    con.executemany(
+        "INSERT INTO user_items (user_id, item_id, quantity) VALUES (?, ?, ?)",
+        [(1, "scroll_keen", 3), (1, "scroll_bounty_s2", 2), (1, "scroll_lure", 1), (2, "material_copper_ore", 4)],
+    )
+    con.commit()
+    con.close()
+    upgrade_sync(url, "0013")
+    con = sqlite3.connect(tmp_path / "old.db")
+    purses = dict(con.execute("SELECT discord_id, purse FROM users"))
+    items = {(u, i): q for u, i, q in con.execute("SELECT user_id, item_id, quantity FROM user_items")}
+    enchants = [json.loads(e) for (e,) in con.execute("SELECT enchants FROM item_instances ORDER BY id")]
+    assert purses == {1: 1000 + 5 * 400000, 2: 1000}
+    assert items == {(1, "scroll_lure"): 1, (2, "material_copper_ore"): 4}
+    assert enchants == [{"soloist": 1}, {"lure": 1}]
+
+
+def test_retiring_five_more_scrolls_pays_them_out_and_strips_their_enchants(tmp_path):
+    """Migration 0014: held Lure, Seasoning, Iron Frame, Deepcall and Gleaner scrolls (any star) pay bits; their enchants leave tools."""
+    import json
+    import sqlite3
+
+    url = f"sqlite:///{tmp_path / 'old.db'}"
+    upgrade_sync(url, "0013")
+    con = sqlite3.connect(tmp_path / "old.db")
+    cols = [(r[1], r[2]) for r in con.execute("PRAGMA table_info(users)") if r[3] and r[4] is None]
+    for uid in (1, 2):
+        values = {name: (uid if name == "discord_id" else 1000 if name == "purse" else "x" if "CHAR" in kind.upper() or kind.upper() == "TEXT" else 0) for name, kind in cols}
+        con.execute(f"INSERT INTO users ({', '.join(values)}) VALUES ({', '.join('?' * len(values))})", list(values.values()))
+    icols = [(r[1], r[2]) for r in con.execute("PRAGMA table_info(item_instances)") if r[3] and r[4] is None and not r[5]]
+    for enchants in ('{"lure": 1, "soloist": 1}', '{"double_hook": 2}'):
+        values = {name: ("x" if "CHAR" in kind.upper() or kind.upper() == "TEXT" else 0) for name, kind in icols}
+        values["enchants"] = enchants
+        con.execute(f"INSERT INTO item_instances ({', '.join(values)}) VALUES ({', '.join('?' * len(values))})", list(values.values()))
+    con.executemany(
+        "INSERT INTO user_items (user_id, item_id, quantity) VALUES (?, ?, ?)",
+        [(1, "scroll_lure", 1), (1, "scroll_seasoned_s2", 2), (1, "scroll_double_hook", 1), (2, "material_copper_ore", 4)],
+    )
+    con.commit()
+    con.close()
+    upgrade_sync(url)
+    con = sqlite3.connect(tmp_path / "old.db")
+    purses = dict(con.execute("SELECT discord_id, purse FROM users"))
+    items = {(u, i): q for u, i, q in con.execute("SELECT user_id, item_id, quantity FROM user_items")}
+    enchants = [json.loads(e) for (e,) in con.execute("SELECT enchants FROM item_instances ORDER BY id")]
+    assert purses == {1: 1000 + 3 * 400000, 2: 1000}
+    assert items == {(1, "scroll_double_hook"): 1, (2, "material_copper_ore"): 4}
+    assert enchants == [{"soloist": 1}, {"double_hook": 2}]
 
 
 def test_star_tiers_migration_moves_each_starred_stack_down_one_tier(tmp_path):

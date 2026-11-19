@@ -1,7 +1,10 @@
 """The hub's screens, in menu order, and the one function every command uses to open them."""
 
+import random
+
 from discord import Interaction
 
+from cococap.services import legacy_tools
 from cococap.ui import Navigator, Screen
 from cococap.user import User
 
@@ -82,6 +85,7 @@ async def open_screen(interaction: Interaction, screen_id: str = "home", **state
     """Open the hub as a new message on `screen_id`. Every slash-command shortcut calls this."""
     user = await User.get(interaction.user.id)
     await user.set_name(interaction.user.display_name)
+    await legacy_tools.reset_player(user, random.Random())  # one-time tools reset (runs once per player)
     nav = Navigator(interaction.user, user, SCREENS)
     await nav.open(interaction, screen_id, **state)
     from cococap.ui import notices  # local import: like levelup, it needs the finished ui package

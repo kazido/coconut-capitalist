@@ -1,0 +1,124 @@
+# Smithing: a tool is built from three PARTS (base, trim, accent) plus up to 3 TRAITS picked from the parts.
+# Parts drop from skill actions. Every part type gives the SAME power for the same tier (owner decision).
+# Everything here is balance data. TODO(balance) marks first guesses. Plan: docs/plans/tools-smithing.md.
+
+part_types = ["base", "trim", "accent"]   # a tool needs exactly one part of each type
+
+# A player in area A can roll parts of tier up to A + area_cap. Weights above that cap are ignored.
+area_cap = 2
+# A tool never holds more than max_traits. bonus_trait_chance adds one more trait when fewer than 3 are picked.
+max_traits = 3
+bonus_trait_chance = 0.25                 # TODO(balance)
+cosmetic_chance = 0.10                    # chance a smithed tool gets a cosmetic look (palette/frame/overlay)
+# Chance that ONE skill action (a mine banked, a fish landed, a tree felled, a crop harvested) also drops a part.
+part_drop_chance = 0.01                  # TODO(balance)
+# One-time reset of old tools: enchants come back as scrolls, but only this many in total per player (the strongest
+# enchants first, one scroll each). Scrolls already dropped too often, so the reset must not flood players (owner decision).
+legacy_scroll_cap = 2
+
+# Rarity of a part by its tier (tier 1..7). A fresh part rolls fresh_traits[its rarity] traits.
+rarity_by_tier = ["common", "common", "uncommon", "uncommon", "rare", "rare", "epic"]  # TODO(balance)
+
+[tiers]
+# Power a part gives at tier 1..7 (index 0 = tier 1). Three tier-1 parts ~ today's starter tool power (3).
+power = [1, 2, 3, 5, 7, 10, 14]           # TODO(balance)
+
+# Tier drop weights per area (7 numbers, tier 1..7).
+[[area_weights]]
+area = 1
+weights = [70, 25, 5, 0, 0, 0, 0]         # TODO(balance)
+[[area_weights]]
+area = 2
+weights = [40, 40, 15, 5, 0, 0, 0]        # TODO(balance)
+[[area_weights]]
+area = 3
+weights = [20, 35, 25, 15, 5, 0, 0]       # TODO(balance)
+[[area_weights]]
+area = 4
+weights = [10, 25, 30, 22, 10, 3, 0]      # TODO(balance)
+[[area_weights]]
+area = 5
+weights = [5, 15, 25, 28, 17, 8, 2]       # TODO(balance)
+[[area_weights]]
+area = 6
+weights = [2, 8, 18, 27, 25, 15, 5]       # TODO(balance)
+[[area_weights]]
+area = 7
+weights = [1, 4, 12, 22, 28, 22, 11]      # TODO(balance)
+
+# Traits: a named bonus picked from one part. `stat` is a stat name the engines already read (the same names
+# enchants use). `amounts` = the value at each quality grade (Crude, Fine, Superb, Masterwork), scaled by quality mult.
+# `kinds` = which tool kinds the trait fits.
+# Part traits are GENERIC only (any part fits any tool kind). The skill traits (Vein Sense, Ore Bounty, Steady Hold, Sharp Cut,
+# Seasoned, Lure, Deepcall, Fertile Blade, Gleaner) live on accessories now (configs/accessories.toml). TODO(balance) for more generic ones.
+# Traits are STAT bonuses only. Abilities (double_hook, double_strike, seedkeeper, steady_line, soloist)
+# stay enchants, one per tool. Amounts are in each stat's own unit: TODO(balance) in step 4.
+[[trait]]
+id = "power_core"
+name = "Power Core"
+stat = "power"
+amounts = [1, 2, 3, 4]                    # TODO(balance)
+kinds = ["pickaxe", "rod", "axe", "can"]
+[[trait]]
+id = "scholar_edge"
+name = "Scholar's Edge"
+stat = "scholar"
+amounts = [1, 2, 3, 4]                    # TODO(balance)
+kinds = ["pickaxe", "rod", "axe", "can"]
+[[trait]]
+id = "appraiser_eye"
+name = "Appraiser's Eye"
+stat = "appraise"
+amounts = [1, 2, 3, 4]                    # TODO(balance)
+kinds = ["pickaxe", "rod", "axe", "can"]
+
+# How many traits a freshly dropped part rolls, by part rarity.
+[fresh_traits]
+common = 1                                # TODO(balance)
+uncommon = 2
+rare = 3
+epic = 3                                # TODO(balance): capped at the 3 generic part traits (only 3 exist now)
+
+# Quality grades a smithed tool can get. `mult` scales the tool's power and every trait amount.
+# `base_odds` are percent weights; `levels.quality_shift_per_level` moves percent points off Crude per smithing level.
+[[quality]]
+name = "Crude"
+mult = 1.0
+base_odds = 60                            # TODO(balance)
+[[quality]]
+name = "Fine"
+mult = 1.15
+base_odds = 28
+[[quality]]
+name = "Superb"
+mult = 1.35
+base_odds = 10
+[[quality]]
+name = "Masterwork"
+mult = 1.6
+base_odds = 2
+
+[levels]
+xp_per_smith = 40                         # smithing xp per tool smithed    TODO(balance)
+xp_per_salvage = 15                       # smithing xp per tool salvaged
+quality_shift_per_level = 0.5             # percent points moved off Crude per smithing level (TODO(balance))
+swap_unlock_level = 10                    # smithing level that unlocks swapping one part of an existing tool
+# Max part tier you can smith with, by smithing level: [level, tier] steps (the highest step reached counts).
+max_tier_by_level = [[1, 1], [5, 2], [10, 3], [15, 4], [20, 5], [30, 6], [40, 7]]   # TODO(balance)
+
+# One-time reset of OLD upgrade-chain tools (services/legacy_tools.py). Each tool kind gets ONE grant: the best step the
+# player reached on that kind's chain. Each grant is one base, one trim and one accent part of `tier`, each rolling `traits`
+# traits to choose from. A starter (no upgrade) grants nothing. Steps: plain = 1-3 upgrades, fork = the first fork tool,
+# fork_up = any upgrade after the fork.
+[[legacy_grant]]
+step = "plain"
+tier = 2                                  # TODO(balance)
+traits = 3
+[[legacy_grant]]
+step = "fork"
+tier = 3                                  # TODO(balance)
+traits = 3
+[[legacy_grant]]
+step = "fork_up"
+tier = 4                                  # TODO(balance)
+traits = 3

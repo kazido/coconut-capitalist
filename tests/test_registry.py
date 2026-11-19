@@ -180,7 +180,7 @@ async def test_stars_are_their_own_stacks(db):
     assert await user.items() == {"material_gold_ore": 5, "material_gold_ore_s2": 2}
 
 
-@pytest.mark.parametrize("ids,problem", [('"no_such_item"', "does not exist"), ('"material_hardwood", "tool_pickaxe_steel"', "plain material"), ('"material_hardwood", "material_hardwood_s2"', "does not exist")])
+@pytest.mark.parametrize("ids,problem", [('"no_such_item"', "does not exist"), ('"material_hardwood", "tool_pickaxe_rookie"', "plain material"), ('"material_hardwood", "material_hardwood_s2"', "does not exist")])
 def test_bad_starrable_lists_are_rejected(data, ids, problem):
     text = (data / "economy.toml").read_text()
     start = text.index("starrable = [")
@@ -206,5 +206,4 @@ def test_every_pet_has_a_valid_loadout_and_score_rules():
     reg = get_registry()
     assert reg.pet_score is not None and reg.pet_score.sidekick_cap > 0
     for pet in reg.pets.values():
-        for eid, lvl in pet.loadout.enchants.items():
-            assert 1 <= lvl <= reg.enchants[eid].max_level
+        assert pet.loadout.enchant_levels >= 0

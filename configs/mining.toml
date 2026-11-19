@@ -270,6 +270,7 @@ emoji = "📚"
 weight = 2.5
 description = "Old carvings on every wall: double mining xp."
 xp_mult = 2.0
+scroll = { item = "scroll_prospectors_ping", odds = 40 }  # TODO(balance): 1 in 40 banked Scholar's Cavern runs
 
 [[mine_types]]
 id = "deep_pocket"
@@ -287,6 +288,7 @@ emoji = "🌀"
 weight = 1
 description = "The walls are riddled with burrows: wyrmholes are 10x as likely."
 wyrmhole_mult = 10
+scroll = { item = "scroll_echo_strike", odds = 40 }  # TODO(balance): 1 in 40 banked Wyrm Tunnels runs
 
 [wyrmhole]
 # A wyrmhole is a cell in the shaft that shows up (3 rows ahead) in place of a lode: dig it and the mine ends (the haul is yours) and you drop into the hole. What is in
@@ -346,12 +348,9 @@ automine_cap_hours = 24            # lodes stop piling up after this long
 level = 5                          # mining level needed
 capacity = 1000                    # the meter holds this many points
 drain_per_row = 6                  # while it is on, every row you dig uses this many (a mine is 30 rows, so a full meter is about 5 mines)
-# Meter points per ore, set so a point costs about the same in bits whatever you feed (50 bits a point at today's prices): a full meter is about 50,000 bits of ore
-# (1,000 copper, 167 iron or 26 gold), and following the marker is worth several times what its rows cost.  TODO(balance)
-[magnet.values]
-material_copper_ore = 1
-material_iron_ore = 6
-material_gold_ore = 38
+# Any mining material fills the meter, worth its sell price / bits_per_point points (at least 1), so every material costs about the same bits per point.
+# A full meter is about 50,000 bits of ore, and following the marker is worth several times what its rows cost.  TODO(balance)
+bits_per_point = 50
 
 [scarab]                           # a subterranean scarab can turn up after ANY mine (a safe exit, the vault, a collapse or a wyrmhole), holding a scrambled scroll
 chance = 12                        # 1 in 12 mines (it was 1 in 51, and only after a safe exit)
@@ -392,6 +391,8 @@ lifeline_runs = 8                  # ...and it needs this many mines to recharge
 reactor_reduction = 0.02           # each reactor level above 1 slows pressure gains by 2%...
 max_reduction = 0.5                # ...up to 50%
 brace_amount = 25                  # pressure removed by one brace (a brace skips the dig)
+second_wind_item = "scroll_second_wind"  # the scroll only a run that reached the top pressure label can drop (see Second Wind)
+second_wind_odds = 40             # TODO(balance): 1 in 40 banked runs that reached the top label
 braces_base = 1
 braces_per_reactor_levels = 5      # +1 brace for every 5 reactor levels
 

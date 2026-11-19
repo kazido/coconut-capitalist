@@ -8,6 +8,7 @@ All randomness comes from an injected ``random.Random``.
 """
 
 import logging
+import math
 import random
 import time
 from collections import Counter
@@ -16,9 +17,10 @@ from dataclasses import dataclass, field, replace
 from cococap.constants import Rarities
 from cococap.errors import GameRuleError
 from cococap.models.skills.fishing import TreasureState
+from cococap.models.instance import ItemInstance
 from cococap.registry import Item, Registry, get_registry
 from cococap.registry.models import FishingRules, WaterRules
-from cococap.services import areas, shop, stars
+from cococap.services import accessories, areas, shop, smithing, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop, roll_table
 from cococap.services import pets
@@ -454,6 +456,46 @@ def quick_cast(stats: EffectiveStats, rng: random.Random, now: float, water: Wat
     return cast
 
 
+def net_seconds_left(net_cast_at: float, now: float, registry: Registry | None = None) -> float:
+    """Seconds until the next Net Cast is ready (0 when it is ready now)."""
+    reg = registry or get_registry()
+    if net_cast_at <= 0:  # never cast: ready
+        return 0.0
+    return max(0.0, net_cast_at + reg.fishing.net.cooldown_seconds - now)
+
+
+async def net_ready_in(user: User, now: float | None = None, registry: Registry | None = None) -> float:
+    """Seconds until your Net Cast is ready again (for the Fishing page)."""
+    skill = await user.skill("fishing")
+    return net_seconds_left(skill.net_cast_at, time.time() if now is None else now, registry)
+
+
+async def net_cast(user: User, water: WaterRules, registry: Registry | None = None, now: float | None = None) -> tuple[str, int, int]:
+    """Net Cast (rod enchant): a net hauls `fishing.toml [net] fish` of the water's commonest fish at once, no reel. Returns (fish id, how many, xp).
+    A cooldown (`[net] cooldown_seconds`, kept on your fishing skill) separates two nets."""
+    reg = registry or get_registry()
+    now = time.time() if now is None else now
+    stats = await equipped_stats(user, "fishing", reg)
+    if stats is None or stats.stats.get("net_cast", 0.0) <= 0:
+        raise FishingError("Your rod has no Net Cast.")
+    left = await net_ready_in(user, now, reg)
+    if left > 0:
+        raise FishingError(f"Your net is still drying. Ready in {math.ceil(left / 60)}m.")
+    cast_at = now
+    fish_id = min(water.fish, key=water.fish.get)  # the smallest 1-in-N is the commonest fish here
+    count = reg.fishing.net.fish
+    xp = round(water.xp * count * await xp_multiplier(user.id, reg, "fishing"))
+
+    def grant(skill) -> None:
+        skill.xp += xp
+        skill.stats.fish_caught += count
+        skill.net_cast_at = cast_at
+
+    await user.update_skill("fishing", grant)
+    await user.add_item(fish_id, count)
+    return fish_id, count, xp
+
+
 def make_boss(cast: "Cast", boss_name: str, rules: FishingRules, rng: random.Random) -> None:
     """Turn a cast into a fight with the named boss: its own long reel (a different one for everyone who fights it) and its twists."""
     entry = next(b for b in rules.boss.bosses if b.name == boss_name)
@@ -703,6 +745,8 @@ class Catch:
     slack_bits: int = 0  # ...and what they paid
     bycatch: Item | None = None  # a second, different fish the Treasure Hunter's rod brought up
     streak_bits: int = 0  # what the Angler's Hot Streak added (clean reels in a row)
+    part: ItemInstance | None = None  # a smithing part that came up with the fish, if any
+    accessory: ItemInstance | None = None  # a rare accessory that came up with the fish, if any
 
 
 def catch_extras(rng: random.Random, registry: Registry) -> Counter:
@@ -740,11 +784,17 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     if bycatch is not None:
         await user.add_item(bycatch.id, 1)
     extras = catch_extras(rng or random.Random(), reg)
+    part_area = 1
     if cast.water is not None:  # starred materials: the deeper the water (its place in the list), the likelier a better star
         location = next(i for i, w in enumerate(rules.waters) if w.id == cast.water.id) + 1
+        part_area = location
         extras = stars.apply(extras, stars.progress(location, len(rules.waters)), rng or random.Random(), reg)
+    part = await smithing.maybe_drop_part(user, part_area, rng or random.Random(), reg)  # one part roll per catch
+    accessory = await accessories.maybe_drop_accessory(user, "fishing", rng or random.Random(), reg)  # one accessory roll per catch
     for item_id, quantity in extras.items():
         await user.add_item(item_id, quantity)
+    if cast.water is not None and cast.water.scroll and (rng or random.Random()).random() < 1 / cast.water.scroll.odds:
+        await user.add_item(cast.water.scroll.item, 1)  # a water's own scroll: 1 in odds catches here (fishing.toml [[waters]] scroll)
     finished: list[Quest] = []
     pet = await pets.bonuses(user, reg)
     seen: list[str] = []
@@ -827,7 +877,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     if slack_bits + streak_bits:
         await user.add_bits(slack_bits + streak_bits)
     return Catch(cast.fish, xp, tuple(finished), quest_bits, extras, seen[0] if seen else None,
-                 tuple(cast.reveals), cast.extra_fish, cast.size, bool(best), server_record, record_bits, holder, cast.slips_left, slack_bits, bycatch, streak_bits)
+                 tuple(cast.reveals), cast.extra_fish, cast.size, bool(best), server_record, record_bits, holder, cast.slips_left, slack_bits, bycatch, streak_bits, part=part, accessory=accessory)
 
 
 RECORDS_KEY = "fishing_records"
@@ -1129,6 +1179,9 @@ async def defeat_boss(user: User, cast: Cast, rng: random.Random | None = None, 
         raise FishingError("You already collected that.")
     cast.settled = True
     bits, items = roll_boss_reward(reg, rng)
+    entry = next(e for e in b.bosses if e.name == cast.boss)
+    if entry.scroll and rng.random() < 1 / entry.scroll.odds:  # a boss's own scroll: 1 in odds fights landed (fishing.toml [[boss.bosses]] scroll)
+        items[entry.scroll.item] += 1
     rod = await equipped_stats(user, "fishing", reg)
     if rod and rod.stats.get("chum", 0.0) > 0:  # Chum Slick: the boss pays again
         more_bits, more_items = roll_boss_reward(reg, rng)
