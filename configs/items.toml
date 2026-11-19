@@ -1,6 +1,6 @@
 # Item registry (typed; validated by cococap/registry on startup).
 # Ids are lowercase snake_case and are what players' inventories store -- never rename one without a data migration.
-# Seeds are `<crop>_seed`. rarity: 1 Common .. 7 Mythical. price 0 = not sold in the shop; drop.rate = 1-in-N.
+# Seeds are `<crop>_seed`. rarity: 1 Common .. 6 Mythical, 7 Premium, 8 Celestial. price 0 = not sold in the shop; drop.rate = 1-in-N.
 
 [spirit_of_the_sword]
 name = "Spirit of the Sword"

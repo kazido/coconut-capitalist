@@ -38,7 +38,7 @@ color = "#3D8BFF"
 [[rarity]]
 value = 4
 name = "Super Rare"
-color = "#A855F7"
+color = "#C56CF0"
 
 [[rarity]]
 value = 5
@@ -47,10 +47,16 @@ color = "#FFB020"
 
 [[rarity]]
 value = 6
+name = "Mythical"
+color = "#FF4FD8"
+
+[[rarity]]
+value = 7
 name = "Premium"
 color = "#FF4D4D"
 
 [[rarity]]
-value = 7
-name = "Mythical"
-color = "#FF4FD8"
+value = 8
+name = "Celestial"
+color = "#FFF3A0"
+color2 = "#5EF0FF"   # a two-tone rarity: borders run from color (top-left) to color2 (bottom-right)
