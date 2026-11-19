@@ -105,23 +105,6 @@ def _shift(px, dh: float = 0.0, dv: float = 0.0, toward_white: float = 0.0):
     return (round(r * 255), round(g * 255), round(b * 255), a)
 
 
-def _sparkle_spots(outer: Image.Image, n: int = 3) -> list[tuple[int, int]]:
-    """Empty pixels well clear of the item (no opaque pixel in their 8-neighbourhood, not on the canvas edge), spread apart."""
-    def clear(x: int, y: int) -> bool:
-        return all(not _opaque(outer, x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1))
-
-    cands = [(x, y) for y in range(1, CANVAS - 1) for x in range(1, CANVAS - 1) if not outer.getpixel((x, y))[3] and clear(x, y)]
-    centre = (CANVAS - 1) / 2
-    cands.sort(key=lambda p: -((p[0] - centre) ** 2 + (p[1] - centre) ** 2))  # the corners first: the most empty room
-    spots: list[tuple[int, int]] = []
-    for p in cands:
-        if all(max(abs(p[0] - q[0]), abs(p[1] - q[1])) >= 4 for q in spots):
-            spots.append(p)
-        if len(spots) == n:
-            break
-    return spots
-
-
 def _frame(outer: Image.Image, ring: set, rarity: int, t: float, sparkles: list) -> Image.Image:
     """One 20x20 frame at loop position t (0..FRAMES, may be fractional). Effects follow `effects(rarity)`."""
     breathe, wave, gleam, sparkle = effects(rarity)
@@ -146,10 +129,10 @@ def _frame(outer: Image.Image, ring: set, rarity: int, t: float, sparkles: list)
                     w = (0.85 if on_ring else 0.45) * (1 - dist / 1.6)
             out.putpixel((x, y), _shift(px, dh, dv, w))
     if sparkle:
-        # Each sparkle twinkles once per loop, staggered: a dot in the ring colour that grows into a plus with a white
+        # Each sparkle twinkles once per loop at its own random moment (so some twinkle together): a dot in the ring colour that grows into a plus with a white
         # heart for a couple of frames, then shrinks back (the look the owner picked in the first preview).
-        for i, (sx, sy, colour) in enumerate(sparkles):
-            ph = (int(t) - i * (FRAMES // len(sparkles))) % FRAMES
+        for sx, sy, colour, start in sparkles:
+            ph = (int(t) - start) % FRAMES
             if ph >= SPARKLE_ON:
                 continue
             out.putpixel((sx, sy), (255, 255, 255, 255) if ph in (3, 4) else colour)
@@ -163,8 +146,18 @@ def _frame(outer: Image.Image, ring: set, rarity: int, t: float, sparkles: list)
 def _sparkles(outer: Image.Image, rarity: int) -> list:
     if not effects(rarity)[3]:
         return []
+    # The owner's pick (first preview): 4 random clear spots, each starting its twinkle at a random frame, so sometimes two
+    # or three twinkle at once. Seeded from the image, so a sprite always builds the same.
+    import random
+    import zlib
+
+    rng = random.Random(zlib.crc32(outer.tobytes()))
+    def clear(x: int, y: int) -> bool:
+        return all(not _opaque(outer, x + dx, y + dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1))
+
+    free = [(x, y) for y in range(1, CANVAS - 1) for x in range(1, CANVAS - 1) if clear(x, y)]
     fill = _rarity_fill(rarity)
-    return [(x, y, fill(x, y)) for x, y in _sparkle_spots(outer, n=4)]  # each in the ring colour at its spot (gradient-aware)
+    return [(x, y, fill(x, y), rng.randrange(FRAMES)) for x, y in rng.sample(free, min(4, len(free)))]
 
 
 def framed(sprite) -> tuple[list[Image.Image], list[int]]:
