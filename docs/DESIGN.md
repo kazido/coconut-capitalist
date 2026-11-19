@@ -101,7 +101,7 @@ A run is a shaft of `floor` rows (30). Digging the last row opens the **vault** 
   player sees. Collapse loses half the haul; xp is kept.
 - **Special cells:** rich lode (`cell_upgraded`: a mystery that rolls the next tier's table, more of it), vent
   (💨 no loot, cools), cache (📦 +1 brace), wyrmhole (as before).
-- **Bomb** (`tool_scarab_bomb`, up to 3 carried per run): clears a whole row (not wyrmholes) for a flat pressure and no
+- **Bomb** (`tool_scarab_bomb`, up to 3 carried per run): blows 10 rows down from the cursor's row (`descent.bomb_layers`): every cell except wyrmholes, no pressure and no
   collapse check. Worth saving for a row with several rich lodes.
 - **Brace:** skips a dig to lower pressure.
 - The screen is deliberately small: risk line, map, pack, buttons. A `?` button toggles the legend.

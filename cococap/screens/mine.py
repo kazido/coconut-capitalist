@@ -144,7 +144,7 @@ HELP = (
     f"Read the rock: {_soft()} **soft** (little pressure, mostly copper)  ·  {_firm()} **firm** (iron)  ·  {_hard()} **hard** (a lot of pressure, the top ore).\n"
     "Inside it hides ore, nothing, a **vent** that cools the tunnel, or a **cache** with a brace.\n"
     "cell_upgraded: a **rich lode**, a mystery with better loot  ·  wyrmhole: dig it to drop into a hole of treasure (what you carry is banked)\n"
-    f"{_bomb()} **bomb**: clears a whole row  ·  {_magnet()} the magnet aims at the richest column and marks vents while it has fuel"
+    f"{_bomb()} **bomb**: blasts 10 rows (no collapse risk)  ·  {_magnet()} the magnet aims at the richest column and marks vents while it has fuel"
 )
 
 
@@ -294,6 +294,8 @@ class MineScreen(Screen):
                 note += f" {_milestone()} **Row {m.row}: checkpoint!** What is in your pack is safe from a collapse now.{extra}"
             if result.vault:
                 note += " The vault opens: " + ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.vault.items()) + "."
+            if result.bombed and result.wyrmhole:  # the blast hid the wyrmhole below the screen: say so loudly
+                note += f"\n{emojis.icon('wyrmhole', '🌀')} **A WYRMHOLE! Your bomb opened one in the rows it blew.** Take your rewards, then enter it."
         if self.run.finished:
             await self._end(note)
         await self.refresh(interaction, note)
@@ -352,6 +354,8 @@ class MineScreen(Screen):
         """Build the reward screen of the finished mine (separate from `_end` so a scarab turning up later can be added to it)."""
         summary = self.summary
         titles = {"left": "You climbed out safely", "collapse": "The mine collapsed!", "wyrmhole": "You broke into a wyrmhole!", "floor": "You reached the vault!"}
+        if self.run.outcome == "wyrmhole" and self.run.depth >= self.run.floor:
+            titles["wyrmhole"] = "You reached the vault and broke into a wyrmhole!"
         # The reward screen is the LAST screen of a mine: the next action starts from it (on the last rare-drop page when there are rare drops).
         choices: list[tuple[str, str, object]] = []
         if self.run.outcome == "wyrmhole":

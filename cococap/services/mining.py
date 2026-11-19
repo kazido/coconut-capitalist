@@ -496,13 +496,39 @@ class MineRun:
                          lifeline=saved is not None, lifeline_lost=saved or Counter())
 
     def bomb(self) -> DigResult:
-        """Blow the whole row (except wyrmholes): every cell, one flat pressure hit, no collapse check."""
+        """A scarab bomb: blow `bomb_layers` rows down from this one. Every cell is mined except wyrmholes. The blast adds no pressure and has
+        no collapse check, so it never adds collapse risk. A wyrmhole in those rows is not blown: the mine ends with the wyrmhole as its outcome,
+        even if the blast reached the vault (the rewards are banked and you are offered the wyrmhole)."""
         self._require_live()
         if self.bombs <= 0:
             raise MiningError("You have no bombs left.")
         self.bombs -= 1
         self.bombs_used += 1
-        return self._blow()
+        start = self.depth
+        found: Counter[str] = Counter()
+        vault: Counter[str] = Counter()
+        vents = caches = 0
+        milestone, milestone_haul = None, Counter()
+        hole_seen = False
+        for _ in range(self.rules.descent.bomb_layers):
+            self.row(self.depth)  # (rolls the row and its wyrmholes first)
+            holes = self._holes[self.depth]
+            hole_seen = hole_seen or bool(holes)
+            columns = [c for c in range(self.rules.columns) if c not in holes]
+            row_found, row_vents, row_caches, _ = self._mine(columns)
+            found.update(row_found)
+            vents += row_vents
+            caches += row_caches
+            vault.update(self._descend(0.0, 0))  # no pressure: the blast cannot make the next dig riskier
+            if self.passed is not None:  # (a landmark passed inside the blast still pays out)
+                milestone, milestone_haul = self.passed, self.passed_haul
+            if self.finished:  # the floor: the vault opened, so the blast stops there
+                break
+        self.auto_counter += self.depth - start
+        if hole_seen:  # the wyrmhole you blasted past is always taken, even when the blast reached the vault (the vault's ore is already in the haul)
+            self.outcome = "wyrmhole"
+        return DigResult(found, bombed=True, wyrmhole=self.outcome == "wyrmhole", vented=vents, caches=caches, vault=vault,
+                         milestone=milestone, milestone_haul=milestone_haul)
 
     def _blow(self, auto: bool = False) -> DigResult:
         """The blast itself, for a bomb from your pack or an Auto-Bomb: every cell of the row, one flat pressure hit, no collapse check."""
@@ -804,7 +830,7 @@ async def _record_run_stats(user: User, run: MineRun, registry: Registry) -> Non
         counts["mining_safe_exits"] += 1
     if run.outcome == "collapse":
         counts["mining_collapses"] += 1
-    if run.outcome == "floor":
+    if run.depth >= run.floor:  # (a bomb can reach the vault and still end in a wyrmhole)
         counts["mining_vault_floors"] += 1
     if run.outcome == "wyrmhole":
         counts["mining_wyrmholes_found"] += 1

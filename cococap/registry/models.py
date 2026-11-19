@@ -570,7 +570,8 @@ class DescentRules(_Data):
     cache_chance: float = Field(ge=0, le=1)  # supplies: +braces
     cache_min_depth: int = Field(ge=0)
     cache_braces: int = Field(ge=1)
-    bomb_pressure: float = Field(ge=0)  # a bomb clears a whole row for this flat pressure
+    bomb_pressure: float = Field(ge=0)  # the Auto-Bomb charge clears a whole row for this flat pressure
+    bomb_layers: int = Field(ge=1)  # rows a scarab bomb blows down, with no pressure added
     bombs_per_run: int = Field(ge=0)  # most bombs you can carry into one run
     lookahead: int = Field(ge=1, le=3)  # how many rows ahead you can see
     vault_gem_chance: float = Field(ge=0, le=1)  # chance the vault also holds one random reactor gem (gems are rare!)

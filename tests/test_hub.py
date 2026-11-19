@@ -1035,7 +1035,7 @@ async def test_the_mine_screen_is_short_and_the_legend_only_shows_on_request(db)
     assert "vent" in all_text(nav)  # still showing after other actions, until you hide it
 
 
-async def test_the_bomb_button_only_appears_with_bombs_and_clears_a_row(db):
+async def test_the_bomb_button_only_appears_with_bombs_and_blasts_ten_rows(db):
     nav, inter = await enter_mines()
     assert not [b for b in buttons(nav) if b.label and b.label.startswith("Bomb")]
     user = await User.get(1)
@@ -1046,7 +1046,7 @@ async def test_the_bomb_button_only_appears_with_bombs_and_clears_a_row(db):
     nav.screen.run.rng = Rig(0.99)
     await click(nav, inter, "Bomb (2)")
     run = nav.screen.run
-    assert run.depth == 1 and run.bombs == 1 and run.lodes == 5 and "BOOM" in all_text(nav)
+    assert run.depth == get_registry().mining.descent.bomb_layers and run.bombs == 1 and run.lodes >= 5 and "BOOM" in all_text(nav)
     assert await user.item_quantity("tool_scarab_bomb") == 1
     assert find_button(nav, "Bomb (1)") and not find_button(nav, "Bomb (1)").disabled
 

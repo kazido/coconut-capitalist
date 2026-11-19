@@ -71,7 +71,7 @@ def _mining(reg: Registry) -> list[str]:
         f"**Mining** needs a pickaxe. You dig down a **{m.columns}-column mine, {m.descent.floor} rows deep**. Each row you dig makes the mine creak "
         "more (pressure), and the deeper you are the likelier a collapse. A collapse halves what you are carrying, so leave in time.",
         "**Reading the mine.** Signs tell you what lies below: ore, a rich lode, a cooling vent, a cache or a hole. Braces calm the pressure "
-        f"(you start with {m.descent.braces_base}), Scarab Bombs blow a whole row, and the vault at the bottom pays big.",
+        f"(you start with {m.descent.braces_base}), Scarab Bombs blow 10 rows, and the vault at the bottom pays big.",
         f"**Ores** (copper, iron, gold) sell or feed the **magnet** (level {m.magnet.level}): its meter holds {_n(m.magnet.capacity)} points (an ore is worth "
         f"{', '.join(f'{v} for a {reg.item(k).name}' for k, v in m.magnet.values.items())}) and every row you dig with it on marks the richest column and burns {m.magnet.drain_per_row:g}. "
         "What is left stays for the next mine, and you can only feed it outside a mine. **Gems** are rare; with mining level {m.reactor.gem_slot_level} you can set them in the **reactor**, which also "
