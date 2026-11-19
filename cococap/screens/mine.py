@@ -92,10 +92,10 @@ def next_landmark(run: mining.MineRun) -> str:
 
 
 def render_shaft(run: mining.MineRun) -> str:
-    """The last row you dug, a cursor line, then the rows ahead with everything visible."""
+    """A cursor line, then the rows ahead with everything visible (the row you just dug is not shown)."""
     columns = run.rules.columns
     lines = []
-    for dug in run.history[-SHOWN_ROWS:]:
+    for dug in (run.history[-SHOWN_ROWS:] if run.finished else []):  # (a live mine shows only the rows AHEAD, so the view does not jump after every dig)
         # What you dug shows what it gave; what you left behind stays as it looked.
         lines.append("".join(
             dug_emoji(dug.kinds[c], dug.cells[c]) if c in dug.dug else cell_emoji(run.feel(dug.depth)[c])
