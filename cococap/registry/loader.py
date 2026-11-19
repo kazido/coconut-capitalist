@@ -342,11 +342,6 @@ class Registry:
             if sum(weights.values()) <= 0 or any(w < 0 for w in weights.values()) or any(not 1 <= r <= 8 for r in weights):
                 problems.append(f"economy.toml [pets.orbs.{orb_id}]: weights must be >= 0, add up to something, and be for rarities 1-8")
         for pet in self.pets.values():
-            for eid, lvl in pet.loadout.enchants.items():
-                if eid not in self.enchants:
-                    problems.append(f"pets.toml [{pet.id}.loadout]: unknown enchant '{eid}'")
-                elif not 1 <= lvl <= self.enchants[eid].max_level:
-                    problems.append(f"pets.toml [{pet.id}.loadout]: enchant '{eid}' level {lvl} is outside 1-{self.enchants[eid].max_level}")
             if pet.rarity not in self.economy.pets.xp_scale:
                 problems.append(f"economy.toml [pets.xp_scale] has no scale for rarity {pet.rarity} ({pet.id})")
         expected = list(range(len(self.ranks)))

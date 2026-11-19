@@ -223,7 +223,7 @@ class PetLoadout(_Data):
 
     tool_tier: int = Field(ge=0, le=4)  # 0 = a fresh tool ... 4 = a forked one
     mastery_score: int = Field(ge=0, le=100)  # mastery points the pet "has spent"
-    enchants: dict[str, int] = Field(default_factory=dict)  # enchant id -> level (checked against enchants.toml by the registry)
+    enchant_levels: int = Field(default=0, ge=0)  # total enchant levels the pet "has" (simulated: no real enchants, which change; counts toward gear)
 
 
 class PetScoreRules(_Data):
