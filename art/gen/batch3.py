@@ -1,7 +1,7 @@
 """Batch 3: animated home/skill/UI icons plus a few redraws. Writes art/sprites/ui_actions3.toml.
 
 Run from the repo root: python art/gen/batch3.py
-Owns: ui_timer, ui_coconut, autominer, ui_magnet, ui_search, ui_ruler, ui_group, ui_star, ui_box, ui_send,
+Owns: ui_timer, ui_coconut, autominer, ui_magnet, ui_prev, ui_next, ui_search, ui_ruler, ui_group, ui_star, ui_box, ui_send,
 ui_skill_mining, ui_skill_fishing, ui_skill_foraging, ui_skill_farming (ui_icons.py skips the ones it used to write).
 """
 import math
@@ -257,6 +257,29 @@ mg = [(magnet(12, False), 300), (magnet(12, False, -1), 60), (magnet(12, False, 
       (magnet(11, True), 80), (magnet(10, False), 520)]
 emit("ui_magnet", {"H": "#ff9a80", "R": "#e8403c", "r": "#9c2434", "T": "#f4f8ff", "M": "#b8c2d4", "t": "#6c7890",
                    "B": "#8ad8ff", "N": "#8a92a4", "n": "#2a2e3a", "W": "#e4ecf4"}, mg)
+
+# ---------------------------------------------------------------- Prev / next: a small hop with a touch of squash and stretch.
+def arrow(w, h, bottom):
+    """An arrow pointing right, w x h pixels, centred left-right and standing on row `bottom`."""
+    g = blank()
+    x0 = round(7.5 - w / 2 + 0.5); x1 = x0 + w - 1
+    y0 = bottom - h + 1; cy = (y0 + bottom) / 2
+    hx = x0 + round(w * 0.28)  # where the head starts
+    shaft = max(1.0, h * 0.16)  # half the shaft's thickness
+    for y in range(y0, bottom + 1):
+        for x in range(x0, x1 + 1):
+            half = (h / 2) * (x1 - x + 0.6) / (x1 - hx + 0.6) if x >= hx else shaft
+            if abs(y - cy) <= half:
+                rel = (y - cy) / (h / 2)
+                g[y][x] = "h" if rel < -0.25 else "m" if rel < 0.3 else "s"
+    return g
+
+
+hop = [(arrow(12, 10, 13), 700), (arrow(13, 9, 13), 110), (arrow(11, 11, 13), 100), (arrow(12, 10, 12), 180),
+       (arrow(13, 9, 13), 110)]  # subtle: a 1px squash, a 1px stretch, a 1px hop
+for name, mirror in (("ui_next", False), ("ui_prev", True)):
+    emit(name, {"h": "#d3dae3", "m": "#a9b4c2", "s": "#7d8999"}, [([r[::-1] for r in g] if mirror else g, ms) for g, ms in hop])
+
 
 # ---------------------------------------------------------------- Search: a round steel-rimmed lens and a wooden handle.
 c = Canvas()
