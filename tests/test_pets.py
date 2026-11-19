@@ -441,7 +441,7 @@ async def test_choosing_a_new_target_starts_the_count_again_and_nonsense_is_refu
     await pets.set_target(user, "tempest", REG)  # same one: keep the misses
     assert user.pethouse.misses == 7
     await pets.set_target(user, "drizzle", REG)
-    assert user.pethouse.target == "drizzle" and user.pethouse.misses == 0
+    assert user.pethouse.target == "drizzle" and user.pethouse.misses == 7  # switching keeps the pity
     assert await pets.set_target(user, None, REG) is None and user.pethouse.target is None
     with pytest.raises(pets.PetError, match="no such pet"):
         await pets.set_target(user, "unicorn", REG)
@@ -458,7 +458,7 @@ async def test_the_pet_house_lets_you_aim_and_shows_your_chances(db):
     await user.refresh()
     assert user.pethouse.target == "tempest"
     page = all_text(nav)
-    assert "Tempest" in page and "Hunting" in page and "%" in page
+    assert "Tempest" in page and "Hunting" in page and "boost" in page
     await choose(nav, inter, select_named(nav, "Hunt a pet"), "none")
     await user.refresh()
     assert user.pethouse.target is None and "Hunting" not in all_text(nav)

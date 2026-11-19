@@ -292,8 +292,8 @@ async def set_target(user: User, pet_id: str | None, registry: Registry | None =
             raise PetError(f"Your {reg.pets[pet_id].name} already has every star.")
 
     def aim(house: Pethouse) -> None:
-        if house.target != pet_id:
-            house.misses = 0  # a new hunt starts from nothing
+        # Misses are kept when you switch: the pity you built up still counts toward whatever you hunt next
+        # (a hit on any pet resets it, in open_orb).
         house.target = pet_id
 
     await user.update_pethouse(aim)

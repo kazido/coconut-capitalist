@@ -39,12 +39,12 @@ def test_the_fish_pages_list_every_fish_with_its_value_and_where_to_find_it():
 
 
 def test_the_pet_page_lists_every_pet_its_bonus_and_its_chance():
-    page = all_blocks("pets")
+    page = all_blocks("pets") + all_blocks("pets2")  # two pages, so each stays under Discord's text limit
     for pet in REG.pets.values():
         assert pet.name in page
         for bonus in pet.bonuses:
             assert bonus.text.format(v=bonus.value) in page
-    assert "per orb" in page and "Hunt" in page
+    assert "per orb" in page and "Hunt" in all_blocks("pets")
 
 
 def test_the_tools_page_has_every_upgrade_step_with_what_it_costs():
@@ -79,7 +79,7 @@ def test_the_wiki_follows_the_data(monkeypatch):
     cat = REG.pets["drizzle"]
     stronger = cat.model_copy(update={"bonuses": [cat.bonuses[0].model_copy(update={"value": 0.77})]})
     monkeypatch.setitem(REG.pets, "drizzle", stronger)
-    assert "77%" in all_blocks("pets")  # change the data and the wiki changes with it
+    assert "77%" in all_blocks("pets2")  # change the data and the wiki changes with it
 
 
 def test_every_item_can_be_found_by_browsing_its_skill():

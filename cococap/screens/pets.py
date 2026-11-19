@@ -3,6 +3,7 @@ import random
 import discord
 
 from cococap import emojis
+from cococap.constants import Rarities
 from cococap.registry import get_registry
 from cococap.services import pets, shop
 from cococap.ui import Page, PromptModal, Result, Screen
@@ -157,18 +158,16 @@ class OrbScreen(Screen):
                 text(f"### {emojis.icon('orb', '🔮')} Familiar Orbs\n{have}\nAn orb hatches a random pet (a pet you own gains a star). The Lesser orb is cheap and mostly "
                      "gives common pets, the Greater one mostly rare ones. Find orbs fishing, or buy them here.")]
         if house.target in reg.pets:
-            target = reg.pets[house.target]
-            chance = pets.orb_odds(reg, house.target, house.misses)[house.target]
-            body.append(text(f"{emojis.icon('target', '🎯')} **Hunting {target.emoji} {target.name}**  ·  **{chance:.1%}** per orb (×{pets.target_boost(house.misses, reg):g})"
+            target = reg.pets[house.target]  # (no odds here: they differ per orb kind, see the wiki)
+            body.append(text(f"{emojis.icon('target', '🎯')} **Hunting {target.emoji} {target.name}**  ·  ×{pets.target_boost(house.misses, reg):g} boost"
                              + (f"  ·  {house.misses} misses so far make it likelier" if house.misses else "")))
         hunt = [discord.SelectOption(label="No target", value="none", emoji=emojis.icon("cross", "🚫"), default=house.target is None)]
         for pet in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)):
             mine = house.pets.get(pet.id)
             if mine is not None and mine.stars >= rules.max_stars:
                 continue  # nothing left to hunt
-            chance = pets.orb_odds(reg, pet.id, 0)[pet.id]
             hunt.append(discord.SelectOption(label=pet.name + (f" ({mine.stars}/{rules.max_stars})" if mine else ""), value=pet.id, emoji=pet.emoji,
-                                             description=f"rarity {pet.rarity}  ·  {chance:.1%} per orb when hunted", default=pet.id == house.target))
+                                             description=Rarities.from_value(pet.rarity).rarity_name, default=pet.id == house.target))
         body.append(row(select("Hunt a pet (orbs favour it)...", hunt[:25], self._hunt)))
         for orb_id in kinds:  # one button per orb: Open it if you own some, otherwise Buy it (asks how many)
             orb = reg.item(orb_id)

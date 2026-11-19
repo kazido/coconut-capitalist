@@ -20,7 +20,7 @@ TOPICS: list[tuple[str, str, str]] = [  # (id, title, emoji)
     ("tools", "Tools and upgrades", "🔨"),
     ("enchants", "Enchants and scrolls", "📜"),
     ("stars", "Starred materials", "⭐"),
-    ("pets", "Pets", "🐾"),
+    ("pets", "Pets", "🔮"),
     ("party", "Parties", "👥"),
     ("items", "Item lookup", "🎒"),
 ]
@@ -35,7 +35,7 @@ def _materials(items: dict[str, int], reg: Registry) -> str:
 
 
 # A topic shown as several pages (the wiki screen pages through them with arrows). Each part is a `_PAGES` id.
-GROUPS: dict[str, list[str]] = {"fish": ["fish", "fish2"], "waters": ["waters", "waters2"], "tools": ["tools", "tools2", "tools3"]}
+GROUPS: dict[str, list[str]] = {"fish": ["fish", "fish2"], "waters": ["waters", "waters2"], "tools": ["tools", "tools2", "tools3"], "pets": ["pets", "pets2"]}
 
 
 def parts(topic: str) -> list[str]:
@@ -252,7 +252,6 @@ def _pets(reg: Registry) -> list[str]:
     rules = reg.economy.pets
     from cococap.services import pets as pet_service
 
-    odds = pet_service.orb_odds(reg)
     kinds = pet_service.orb_ids(reg)
     orb_lines = []
     for orb_id in kinds:
@@ -261,10 +260,6 @@ def _pets(reg: Registry) -> list[str]:
         by_rarity = {r: sum(c for pid, c in chances.items() if reg.pets[pid].rarity == r) for r in sorted(rules.xp_scale)}
         orb_lines.append(f"{orb.emoji} **{orb.name}** ({orb.price:,} bits): " + ", ".join(
             f"{Rarities.from_value(r).rarity_name} {c:.0%}" for r, c in by_rarity.items() if c > 0))
-    lines = []
-    for pet in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)):
-        bonus = ", ".join(b.text.format(v=b.value) for b in pet.bonuses)
-        lines.append(f"{pet.emoji} **{pet.name}** {pet_service.skill_emoji(pet)} ({Rarities.from_value(pet.rarity).rarity_name}, {odds[pet.id]:.1%} per orb): {bonus}")
     return [
         f"**Pets** hatch from **Familiar Orbs** (shop, treasure chests, boss loot). Your active pet's bonuses work everywhere. A duplicate adds a star "
         f"(up to {rules.max_stars}, +{rules.star_bonus:.0%} each), your active pet also levels as you play (it gains {rules.play_xp_share:.0%} of the xp you earn in its own skill; a global pet {rules.play_xp_global:.0%} of any), food and crops level it faster (to {rules.max_level}), and a Spirit adds skill xp. **Hunt** a pet in the "
@@ -277,10 +272,24 @@ def _pets(reg: Registry) -> list[str]:
         "and food of another skill is worth the plain amount. "
         "A pet's numbers are shown at its current level (a fresh pet gives a tenth) with the max level in brackets.",
         "**Orbs** come in three kinds, bought on the Familiar Orbs page. A cheaper orb mostly gives common pets, a pricier one mostly rare ones "
-        "(chance of each rarity; the percentages beside each pet below are for the standard orb):\n" + "\n".join(orb_lines),
+        "(chance of each rarity):\n" + "\n".join(orb_lines),
+    ]
+
+
+def _pets2(reg: Registry) -> list[str]:
+    """The second pets page: levels and the full list (split so each page stays under Discord's text limit)."""
+    rules = reg.economy.pets
+    from cococap.services import pets as pet_service
+
+    odds = pet_service.orb_odds(reg)
+    lines = []
+    for pet in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)):
+        bonus = ", ".join(b.text.format(v=b.value) for b in pet.bonuses)
+        lines.append(f"{pet.emoji} **{pet.name}** {pet_service.skill_emoji(pet)} ({Rarities.from_value(pet.rarity).rarity_name}, {odds[pet.id]:.1%} per orb): {bonus}")
+    return [
         "**Levels.** Common pets level up quickest and rare pets slowest: a level costs xp of "
         + ", ".join(f"{Rarities.from_value(r).rarity_name} x{s / rules.xp_scale[3]:.2g}" for r, s in sorted(rules.xp_scale.items())) + " (relative to a rarity-3 pet).",
-        "**All pets** (bonuses at max level, one star)\n" + "\n".join(lines),
+        "**All pets** (bonuses at max level, one star; the odds are for the standard orb)\n" + "\n".join(lines),
     ]
 
 
@@ -332,7 +341,7 @@ def _crafting(reg: Registry) -> list[str]:
 
 
 _PAGES = {"start": _start, "mining": _mining, "farming": _farming, "foraging": _foraging, "fishing": _fishing, "fish": lambda reg: _fish(reg, 7, 4), "fish2": lambda reg: _fish(reg, 3, 1),
-          "waters": lambda reg: _waters(reg, 0, 7), "waters2": lambda reg: _waters(reg, 7), "pots": _pots, "crafting": _crafting, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "stars": _stars, "party": _party, "items": _items}
+          "waters": lambda reg: _waters(reg, 0, 7), "waters2": lambda reg: _waters(reg, 7), "pots": _pots, "crafting": _crafting, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "pets2": _pets2, "stars": _stars, "party": _party, "items": _items}
 
 SKILL_FILTERS = ["mining", "farming", "foraging", "fishing", "combat", "general"]
 
