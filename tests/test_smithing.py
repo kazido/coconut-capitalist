@@ -185,3 +185,86 @@ async def test_swap_part_is_blocked_below_the_unlock_level():
     new = await give_part(user, "base", 1)
     with pytest.raises(GameRuleError):
         await smithing.swap_part(user, tool.id, "base", new.id, registry=REG)
+
+
+# ---- a smithed tool's stats come from its parts (equipment.effective_stats) -------------------------------------------
+
+from cococap.services import enchanting  # noqa: E402
+from cococap.services.equipment import effective_stats  # noqa: E402
+
+GRADE_NAMES = [q.name for q in RULES.grades]
+
+
+async def smithed_pickaxe(user: User, grade: str, traits=(None, None, None), tiers=(1, 1, 1)):
+    parts = {
+        slot: {"tier": tier, "trait": trait}
+        for slot, tier, trait in zip(PARTS, tiers, traits, strict=True)
+    }
+    return await user.give_instance(
+        "tool_pickaxe_rookie", parts=parts, quality=grade, smith_id=user.id
+    )
+
+
+async def test_smithed_tool_power_is_tool_power_and_scales_with_quality():
+    user = await player()
+    powers = []
+    for grade in GRADE_NAMES:
+        tool = await smithed_pickaxe(user, grade, tiers=(2, 4, 6))
+        expected = smithing.tool_power(tool.parts, grade, RULES)
+        assert effective_stats(tool, REG).power == round(expected)
+        powers.append(expected)
+    assert powers == sorted(powers) and len(set(powers)) == len(powers)
+
+
+async def test_a_picked_trait_adds_its_amount_times_the_grade_mult_to_its_stat():
+    user = await player()
+    trait = RULES.traits_for("pickaxe")[0]
+    for grade in GRADE_NAMES:
+        idx = GRADE_NAMES.index(grade)
+        tool = await smithed_pickaxe(user, grade, traits=(trait.id, None, None))
+        base = await smithed_pickaxe(user, grade)
+        mult = RULES.quality(grade).mult
+        gained = effective_stats(tool, REG).stats.get(trait.stat, 0.0) - effective_stats(base, REG).stats.get(trait.stat, 0.0)
+        assert gained == pytest.approx(trait.amounts[idx] * mult)
+
+
+async def test_the_same_trait_picked_from_two_parts_stacks():
+    # two parts can carry the same trait; picking it from both doubles the bonus
+    trait = next(t for t in RULES.traits_for("pickaxe") if t.stat != "power")
+    user = await player()
+    grade = GRADE_NAMES[-1]
+    both = await smithed_pickaxe(user, grade, traits=(trait.id, trait.id, None))
+    one = await smithed_pickaxe(user, grade, traits=(trait.id, None, None))
+    mult = RULES.quality(grade).mult
+    gained = effective_stats(both, REG).stats[trait.stat] - effective_stats(one, REG).stats[trait.stat]
+    assert gained == pytest.approx(trait.amounts[GRADE_NAMES.index(grade)] * mult)
+
+
+async def test_an_old_tool_without_parts_keeps_its_template_stats():
+    user = await player()
+    tool = await user.give_instance("tool_pickaxe_rookie")
+    template = REG.item("tool_pickaxe_rookie").tool
+    stats = effective_stats(tool, REG)
+    assert stats.power == template.power
+    for stat, value in template.stats.items():
+        assert stats.stats[stat] == pytest.approx(value)
+
+
+async def test_enchanting_a_smithed_tool_twice_keeps_only_the_newer_enchant():
+    user = await player()
+    tool = await smithed_pickaxe(user, GRADE_NAMES[0])
+    await user.add_item("scroll_keen", 1)
+    await user.add_item("scroll_iron_frame", 1)
+    await enchanting.apply_scroll(user, "scroll_keen", tool.id, REG)
+    done = await enchanting.apply_scroll(user, "scroll_iron_frame", tool.id, REG)
+    assert done.enchants == {"iron_frame": 1}
+
+
+async def test_an_old_tool_still_keeps_both_enchants():
+    user = await player()
+    tool = await user.give_instance("tool_pickaxe_rookie")
+    await user.add_item("scroll_keen", 1)
+    await user.add_item("scroll_iron_frame", 1)
+    await enchanting.apply_scroll(user, "scroll_keen", tool.id, REG)
+    done = await enchanting.apply_scroll(user, "scroll_iron_frame", tool.id, REG)
+    assert set(done.enchants) == {"keen", "iron_frame"}

@@ -45,7 +45,19 @@ def effective_stats(instance: ItemInstance, registry: Registry | None = None) ->
     if template.tool is None:
         raise EquipmentError(f"{template.name} is not a tool")
 
+    from cococap.services import smithing  # (imported here: smithing imports this module)
+
     stats: dict[str, float] = {"power": float(template.tool.power), **template.tool.stats}
+    if instance.parts:  # a smithed tool's power comes from its three parts and its quality grade
+        rules = smithing._rules(reg)
+        stats["power"] = float(smithing.tool_power(instance.parts, instance.quality, rules))
+        grade = [q.name for q in rules.grades].index(instance.quality)
+        mult = rules.quality(instance.quality).mult
+        for slot in smithing.PART_TYPES:  # each picked trait adds its amount for this grade, times the grade's mult
+            trait_id = (instance.parts.get(slot) or {}).get("trait")
+            if trait_id:
+                trait = rules.trait(trait_id)
+                stats[trait.stat] = stats.get(trait.stat, 0.0) + trait.amounts[grade] * mult
     for stat, bonus in instance.rolled.items():
         stats[stat] = stats.get(stat, 0.0) + bonus
 

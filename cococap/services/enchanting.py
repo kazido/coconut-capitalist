@@ -48,7 +48,11 @@ async def apply_scroll(user: User, scroll_id: str, instance_id: int, registry: R
     except ValueError:
         raise EnchantError(f"You don't have a {scroll.name}.") from None
     try:
-        return await add_enchant(user, instance_id, scroll.scroll.enchant, registry=reg)
+        result = await add_enchant(user, instance_id, scroll.scroll.enchant, registry=reg)
+        if instance.parts:  # a smithed tool holds at most one enchant: the newer one replaces the old
+            for other in [e for e in result.enchants if e != scroll.scroll.enchant]:
+                result = await user.set_enchant_level(instance_id, other, 0)
+        return result
     except Exception:
         await user.add_item(scroll_id, 1)  # the enchant didn't take: the scroll is not wasted
         raise
