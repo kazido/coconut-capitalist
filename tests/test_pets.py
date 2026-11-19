@@ -465,7 +465,7 @@ async def test_the_pet_house_lets_you_aim_and_shows_your_chances(db):
 
 
 # ---- skill food and pet skills --------------------------------------------------------------------------------------------------------
-FEASTS = {"food_burger"}  # rare finds worth a multiple of a tier's pet xp (not one of a skill's three everyday foods)
+FEASTS = {"food_burger", "food_pet_biscuit"}  # rare finds worth a multiple of a tier's pet xp (not one of a skill's three everyday foods)
 FOODS = {"foraging": ("food_acorn_mix", "food_honeycomb", "food_golden_sap"), "mining": ("food_stone_biscuit", "food_crystal_chew", "food_geode_feast"),
          "fishing": ("food_fish_flakes", "food_dried_squid", "food_sea_feast"), "farming": ("food_harvest_mash", "food_garden_stew", "food_golden_ear")}
 

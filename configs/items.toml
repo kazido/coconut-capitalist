@@ -3783,3 +3783,16 @@ tier = 3
 rate = 150
 min = 1
 max = 1
+
+# Basic pet food for ANY pet (no skill): bought in the shop with bits, so it is a bit sink. A pet with no skill of its own gets x2 from it, others x1.
+[food_pet_biscuit]
+name = "Pet Biscuit"
+emoji = "🍪"
+description = "Plain, filling and good for any pet."
+wiki = "Basic pet food from the shop. Feed it to any pet from the Pet House. Worth the same pet xp as a first-tier skill food, with no skill bonus (pets with no skill of their own get double)."
+rarity = 1
+category = "pet_food"
+price = 1000  # TODO(balance)
+sell_price = 100  # TODO(balance)
+[food_pet_biscuit.pet_food]
+tier = 1
