@@ -142,34 +142,33 @@ async def test_switching_pets_only_works_for_pets_you_own(db):
 
 
 # ---- feeding and spirits ------------------------------------------------------------------------------------------------------
-async def test_feeding_crops_levels_the_active_pet_up(db):
-    user = await with_pet("dew", xp=0)  # a farming pet: crops are its own skill's food
-    await user.add_item("crop_hot_pepper", 3)  # x3 for a farming pet
-    each = REG.item("crop_hot_pepper").crop.pet_xp * 3
-    fed = await pets.feed(user, "crop_hot_pepper", 2, REG)
-    assert fed.xp == 2 * each and fed.level_before == 1 and fed.level_after == pets.pet_level(2 * each, REG.pets["dew"].rarity, REG) > 1
-    assert user.pethouse.pets["dew"].xp == 2 * each and await user.item_quantity("crop_hot_pepper") == 1
+async def test_feeding_skill_food_levels_the_active_pet_up(db):
+    user = await with_pet("dew", xp=0)
+    food = next(i for i in REG.items.values() if i.category == "pet_food")
+    await user.add_item(food.id, 3)
+    each = round(pets.food_xp(food, REG) * pets.food_multiplier(REG.pets["dew"], food, REG))
+    fed = await pets.feed(user, food.id, 2, REG)
+    assert fed.xp == 2 * each and fed.level_before == 1
+    assert user.pethouse.pets["dew"].xp == 2 * each and await user.item_quantity(food.id) == 1
 
 
-async def test_feeding_refuses_nonsense_and_keeps_your_crops(db):
+async def test_feeding_refuses_nonsense_and_crops_and_keeps_your_food(db):
     user = await User.get(1)
+    food = next(i for i in REG.items.values() if i.category == "pet_food")
+    await user.add_item(food.id, 5)
     await user.add_item("crop_lemon", 5)
     with pytest.raises(pets.PetError, match="need a pet"):
-        await pets.feed(user, "crop_lemon", 1, REG)
+        await pets.feed(user, food.id, 1, REG)
     user = await with_pet("cinder", xp=0)
-    with pytest.raises(pets.PetError, match="eat crops and"):
+    with pytest.raises(pets.PetError, match="eat the food"):
         await pets.feed(user, "fish_cod", 1, REG)
+    with pytest.raises(pets.PetError, match="fuel"):
+        await pets.feed(user, "crop_lemon", 1, REG)
     with pytest.raises(pets.PetError, match="don't have 9"):
-        await pets.feed(user, "crop_lemon", 9, REG)
+        await pets.feed(user, food.id, 9, REG)
     with pytest.raises(pets.PetError, match="at least one"):
-        await pets.feed(user, "crop_lemon", 0, REG)
-    assert await user.item_quantity("crop_lemon") == 5 and user.pethouse.pets["cinder"].xp == 0
-
-
-async def test_every_crop_is_worth_something_to_a_pet():
-    crops = [i for i in REG.items.values() if i.crop]
-    assert crops and all(i.crop.pet_xp > 0 for i in crops)
-    assert sorted(i.crop.pet_xp for i in crops) == [i.crop.pet_xp for i in sorted(crops, key=lambda c: c.sell_price)]  # dearer crops feed more
+        await pets.feed(user, food.id, 0, REG)
+    assert await user.item_quantity(food.id) == 5 and await user.item_quantity("crop_lemon") == 5 and user.pethouse.pets["cinder"].xp == 0
 
 
 async def test_a_spirit_adds_xp_for_its_skill_only_while_that_pet_is_active_and_only_once(db):
@@ -337,10 +336,11 @@ async def test_opening_an_orb_from_the_orbs_page_shows_a_result_page(db, monkeyp
     assert nav.screen.id == "pets" and "Drizzle" in all_text(nav) and "⭐⭐" in all_text(nav)
 
 
-async def test_the_pet_house_switches_pets_feeds_crops_and_hands_over_spirits(db):
+async def test_the_pet_house_switches_pets_feeds_skill_food_and_hands_over_spirits(db):
     user = await with_pet("cinder", xp=0)
     await with_pet("drizzle", active=False)
-    await user.add_item("crop_lemon", 4)
+    food = next(i for i in REG.items.values() if i.category == "pet_food")
+    await user.add_item(food.id, 4)
     await user.add_item("spirit_of_the_forest", 1)
     nav, inter = await hub("pets")
     assert "Cinder" in all_text(nav) and "work" in all_text(nav).lower()
@@ -350,14 +350,14 @@ async def test_the_pet_house_switches_pets_feeds_crops_and_hands_over_spirits(db
     assert not [b for b in buttons(nav) if b.label == "Make active"]
     before = user.pethouse.pets["drizzle"].xp
     feed = select_named(nav, "Feed Drizzle")  # the menu names the pet it is for
-    hint = next(o.description for o in feed.options if o.value == "crop_lemon")
-    assert f"{REG.item('crop_lemon').crop.pet_xp:,} xp each" in hint
-    await choose(nav, inter, feed, "crop_lemon")
+    hint = next(o.description for o in feed.options if o.value == food.id)
+    assert f"{pets.food_xp(food, REG):,} xp each" in hint
+    await choose(nav, inter, feed, food.id)
     modal = inter.response.send_modal.await_args.args[0]
     assert "xp each" in modal.children[0].description
     await modal._handler(inter, "3")
     await user.refresh()
-    assert user.pethouse.pets["drizzle"].xp == before + 3 * REG.item("crop_lemon").crop.pet_xp * REG.economy.pets.matched_food_multiplier and await user.item_quantity("crop_lemon") == 1  # (a fishing cat still gets the crop bonus)
+    assert user.pethouse.pets["drizzle"].xp == before + 3 * round(pets.food_xp(food, REG) * pets.food_multiplier(REG.pets["drizzle"], food, REG)) and await user.item_quantity(food.id) == 1
     await choose(nav, inter, select_named(nav, "Give a Spirit"), "spirit_of_the_forest")
     await user.refresh()
     assert user.pethouse.pets["drizzle"].spirits == ["foraging"] and "Spirit" in all_text(nav)
@@ -506,15 +506,6 @@ async def test_food_of_a_pets_own_skill_is_worth_triple_a_global_pet_gets_double
     assert again.xp == base * rules.global_food_multiplier
     assert rules.matched_food_multiplier > rules.global_food_multiplier > 1  # a specialist does best, a generalist still gains
     assert await user.item_quantity("food_fish_flakes") == 10 - 2 - 1 and user.pethouse.active == "drizzle"  # (feeding a pet does not make it active)
-
-
-async def test_crops_give_every_pet_the_matched_bonus(db):
-    user = await with_pet("dew", xp=0)
-    await user.add_item("crop_lemon", 2)
-    assert (await pets.feed(user, "crop_lemon", 2, REG)).xp == 2 * REG.item("crop_lemon").crop.pet_xp * REG.economy.pets.matched_food_multiplier
-    cat = await with_pet("cinder", xp=0)  # a non-farming pet gets the same
-    await cat.add_item("crop_lemon", 1)
-    assert (await pets.feed(cat, "crop_lemon", 1, REG)).xp == REG.item("crop_lemon").crop.pet_xp * REG.economy.pets.matched_food_multiplier
 
 
 async def test_feeding_can_name_a_pet_you_do_not_have_and_gives_the_food_back_when_it_fails(db):

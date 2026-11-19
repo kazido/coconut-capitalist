@@ -26,3 +26,7 @@ haul_xp_per_score_hour = 20   # skill xp per hour for each point of score (befor
 # ---- Fuel tank (crops fuel the ACTIVE pet; online play never needs fuel) -----------------------------------------------------------------
 tank_cap_hours = 8            # the tank holds this many hours of work
 fuel_minutes_per_value = 0.02 # minutes of fuel per bit of crop sell price
+
+# ---- Skill food buff ---------------------------------------------------------------------------------------------------------------------
+food_buff_bonus = 0.5         # skill food also gives +50% pet xp ...
+food_buff_minutes = 30        # ... for this long; feeding again refreshes it (never stacks)
