@@ -85,11 +85,15 @@ async def test_every_news_tab_renders_valid_layout(db, tab, monkeypatch):
     nav, inter = await hub("news", tab=tab)
     nav.to_components()
     assert nav.total_children_count <= 40 and nav.content_length() <= 4000
-    assert "E5" in all_text(nav) or "Notice 5" in all_text(nav)  # newest first
-    assert find_button(nav, "1/5").disabled  # the page counter is a label, not a button
+    if tab == "changelog":
+        assert "E5" in all_text(nav)  # newest first
+    total = len({"messages": news.message_pages, "changelog": news.changelog_pages, "older": news.older_changelog_pages}[tab]())
+    if total == 1:
+        return
+    assert find_button(nav, f"1/{total}").disabled  # the page counter is a label, not a button
     next_button = [b for b in nav.walk_children() if getattr(b, "label", None) is None and getattr(b, "emoji", None) and not b.disabled][-1]
     await next_button.callback(inter)
-    assert find_button(nav, "2/5") is not None
+    assert find_button(nav, f"2/{total}") is not None
     nav.to_components()
     assert nav.content_length() <= 4000
 

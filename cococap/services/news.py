@@ -55,5 +55,14 @@ def message_pages() -> list[list[str]]:
     return pages([notice_text(n) for n in get_registry().notices])
 
 
+RECENT_CHANGES = 3  # the Changelog tab shows this many newest entries on one page; older ones go to the Older changes tab
+
+
 def changelog_pages() -> list[list[str]]:
-    return pages([entry_text(e) for e in get_registry().changelog])
+    """The newest few changes. Packed like any other tab, so three long entries still fit Discord's limits (paged if needed)."""
+    return pages([entry_text(e) for e in get_registry().changelog[:RECENT_CHANGES]])
+
+
+def older_changelog_pages() -> list[list[str]]:
+    """Every change after the newest RECENT_CHANGES, newest first, packed onto pages."""
+    return pages([entry_text(e) for e in get_registry().changelog[RECENT_CHANGES:]])
