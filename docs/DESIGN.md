@@ -174,9 +174,8 @@ cycle, so a new farmer can plant, water and harvest straight away; the long crop
 One set of plots, a **zone** dropdown on the Farm page (zone N = farm field N, opened by farming level and area, like the mining picker;
 `Farming.zone` is the one you are working). Zone N plants its own seed and cheaper ones (`farming.seed_zone`; a seed that opens no field plants
 anywhere). Each plot remembers the zone it was planted in (`Plot.zone`, 0 = planted before zones: derived from its seed), so switching never wastes a
-crop. Byproducts (Tend and a harvest's extras) roll only that zone's table, `farming.toml zone_materials[N-1]`: one signature material per zone
-(`material_slime_goo` ... `material_ambrosia_nectar`, placeholders, TODO(balance)) plus two of the five old farming materials by tier. One roll of any
-zone's table is worth about 618 bits, so `byproduct_rolls` still sizes a Tend (guard test). Star depth = the planted zone. A plot keeps at most
+crop. Byproducts (Tend and a harvest's extras) roll only that zone's table, `farming.toml zone_materials[N-1]`: two of the five farming materials by tier (fiber+compost, compost+dewdrop, dewdrop+beeswax, beeswax+living vine; no new materials: the owner kept only the old ones). Each
+zone has its own table value, so `byproduct_rolls` is sized per zone to keep a Tend near what it was (guard test). Star depth = the planted zone. A plot keeps at most
 `byproduct_max_cycles` (3) cycles waiting, so a Tend stays small.
 
 ## Areas and locations (v3)

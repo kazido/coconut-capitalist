@@ -110,3 +110,26 @@ def test_prefixed_ids_migration_renames_every_stored_id_and_back(tmp_path):
     con = sqlite3.connect(tmp_path / "old.db")
     assert dict(con.execute("SELECT item_id, quantity FROM user_items")) == {"cod": 2, "copper_ore": 3, "scroll_keen": 1}
     assert json.loads(con.execute("SELECT pethouse FROM users").fetchone()[0])["active"] == "dog"
+
+
+def test_cutting_the_zone_materials_swaps_them_for_a_few_original_ones(tmp_path):
+    """Migration 0010: each distinct zone material held (any star) becomes 2 plant fiber + 2 compost; the stacks are deleted."""
+    import sqlite3
+
+    url = f"sqlite:///{tmp_path / 'old.db'}"
+    upgrade_sync(url, "0009")
+    con = sqlite3.connect(tmp_path / "old.db")
+    cols = [(r[1], r[2]) for r in con.execute("PRAGMA table_info(users)") if r[3] and r[4] is None]
+    for uid in (1, 2):
+        values = {name: (uid if name == "discord_id" else "x" if "CHAR" in kind.upper() or kind.upper() == "TEXT" else 0) for name, kind in cols}
+        con.execute(f"INSERT INTO users ({', '.join(values)}) VALUES ({', '.join('?' * len(values))})", list(values.values()))
+    con.executemany(
+        "INSERT INTO user_items (user_id, item_id, quantity) VALUES (?, ?, ?)",
+        [(1, "material_slime_goo", 50), (1, "material_slime_goo_s2", 3), (1, "material_pale_bloom", 9), (1, "material_compost", 10), (2, "material_copper_ore", 4)],
+    )
+    con.commit()
+    con.close()
+    upgrade_sync(url)
+    con = sqlite3.connect(tmp_path / "old.db")
+    items = {(u, i): q for u, i, q in con.execute("SELECT user_id, item_id, quantity FROM user_items")}
+    assert items == {(1, "material_plant_fiber"): 4, (1, "material_compost"): 14, (2, "material_copper_ore"): 4}
