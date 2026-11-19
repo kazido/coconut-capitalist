@@ -9,7 +9,7 @@ think about navigation, so no screen can be a dead end.
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from typing import ClassVar
 
 import discord
@@ -62,7 +62,8 @@ class Result:
     back_label: str = "Continue"
     live: Callable[[], tuple[list[str], bool]] | None = None  # (extra lines for now, keep redrawing?): fading numbers...
     actions: list[tuple[str, str, Handler]] = field(default_factory=list)  # extra buttons: (label, emoji, handler of the origin screen)
-    then: list["Result"] = field(default_factory=list)  # screens that follow this one (a rare drop's own page): "Continue" shows the first; it carries the rest
+    again_locked: bool = False  # Again greyed out until a timed event on this screen (the scarab) is dealt with
+    rare: list = field(default_factory=list)  # rare finds (popup.sorted_finds): shown as an ephemeral popup after this screen
 
 
 async def report_error(interaction: discord.Interaction, error: Exception, where: str) -> None:
@@ -153,6 +154,7 @@ class Navigator(ui.LayoutView):
         # The last result page that was built but may never have reached the player (a self-refresh whose edit failed because the message was too
         # old, say). It stays here until an edit succeeds, and the next click shows it first, so what you were paid is never paid without being seen.
         self._unsent: Result | None = None
+        self._popup_rare: list = []  # rare finds of the result just drawn, popped up once its edit has gone out
         self._levels: dict[str, int] | None = None  # skill levels at the last look, for the level-up notification
 
     async def name_of(self, user_id: int) -> str:
@@ -192,6 +194,11 @@ class Navigator(ui.LayoutView):
             from .levelup import check  # local import: levelup needs the finished ui package
 
             self._levels = await check(interaction, self.user, self._levels)
+            if self._popup_rare:
+                from .popup import rare_embed, send
+
+                finds, self._popup_rare = self._popup_rare, []
+                await send(interaction, rare_embed(finds), self.owner)
         except (discord.NotFound, discord.InteractionResponded) as error:
             log.warning("interaction response failed (%s); editing the message directly", error)
             if self.message is None:
@@ -319,6 +326,7 @@ class Navigator(ui.LayoutView):
         if screen.result is not None:  # a win or a loss: show what happened on a page of its own first
             result, screen.result = screen.result, None
             self._unsent = result
+            self._popup_rare = result.rare
             screen = self.screen = ResultScreen(self, result, screen)
             page = await screen.build()
         self._swap_items()
@@ -424,9 +432,9 @@ class ResultScreen(Screen):
             extra, self._ticking = r.live()
             lines += extra
         body = [text(line) for line in lines]  # (the panel header already shows the title)
-        buttons = [] if r.then else [button(label, emoji=emoji, on_click=self._act(handler)) for label, emoji, handler in r.actions]
-        if r.again is not None and not r.then:  # (with more pages to come, the choices wait for the last one)
-            buttons.append(button(r.again_label, emoji=emojis.icon('again', '🔁'), style=discord.ButtonStyle.primary, on_click=self._again))
+        buttons = [button(label, emoji=emoji, on_click=self._act(handler)) for label, emoji, handler in r.actions]
+        if r.again is not None:
+            buttons.append(button(r.again_label, emoji=emojis.icon('again', '🔁'), style=discord.ButtonStyle.primary, on_click=self._again, disabled=r.again_locked))
         buttons.append(button(r.back_label, emoji=emojis.icon('next', '➡️'), on_click=self._back))
         body.append(row(*buttons))
         return Page(r.title, body, accent=r.accent)
@@ -444,11 +452,7 @@ class ResultScreen(Screen):
 
     async def _back(self, interaction: discord.Interaction) -> None:
         self.nav.screen = self.origin
-        if self.shown.then:
-            following, *rest = self.shown.then
-            self.origin.result = replace(following, then=rest)  # the next page carries the ones after it
-            await self.origin.refresh(interaction)
-        elif self.shown.back is not None:
+        if self.shown.back is not None:
             await self.shown.back(interaction)
         else:
             await self.origin.refresh(interaction)

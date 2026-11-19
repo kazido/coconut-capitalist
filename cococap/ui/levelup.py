@@ -1,17 +1,17 @@
-"""The level-up notification (one per click): a small message with the skill icon, the new level and an XP bar, sent only to the player and
-removed after a few seconds. The navigator calls `check` after every click, so no skill screen has to know about it."""
+"""The level-up popup (one per click): an embed with the skill icon, the new level and an XP bar, sent only to the player with Share and Close
+buttons (`ui/popup.py`). The navigator calls `check` after every click, so no skill screen has to know about it."""
 
 import logging
 
 import discord
 
 from cococap import emojis
+from cococap.ui import popup
 from cococap.ui.components import xp_bar
 from cococap.user import User
 
 log = logging.getLogger(__name__)
 
-LIFETIME = 8  # seconds the notification stays before it deletes itself
 SKILLS = tuple(emojis.SKILL_ICONS)
 
 
@@ -39,8 +39,7 @@ async def check(interaction: discord.Interaction, user: User, seen: dict[str, in
             return now
         blocks = [message(name, seen[name], level, (await user.skill(name)).xp) for name, level in now.items() if level > seen.get(name, level)]
         if blocks:
-            sent = await interaction.followup.send("\n\n".join(blocks), ephemeral=True, wait=True)
-            await sent.delete(delay=LIFETIME)  # (Webhook.send has no delete_after)
+            await popup.send(interaction, discord.Embed(title="Level up!", description="\n\n".join(blocks), colour=discord.Colour.gold()))
         return now
     except Exception:  # a missing notification is better than a broken click
         log.exception("level-up check failed")

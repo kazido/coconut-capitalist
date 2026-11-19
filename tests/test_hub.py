@@ -62,7 +62,7 @@ def find_button(nav, label=None, emoji=None):
 
 
 async def continue_through(nav, inter, label="Continue"):
-    """Click Continue on the reward screen and on every rare-drop page after it, until the screen it came from is back."""
+    """Click Continue on the reward screen (the one and only page of an action) until the screen it came from is back."""
     while nav.screen.id == "result" and any(b.label == label for b in buttons(nav)):  # (a mine's last page ends with its own choices: Mine again, wyrmhole, ...)
         await click(nav, inter, label)
 
@@ -800,7 +800,7 @@ async def test_walking_away_mid_small_wyrmhole_banks_the_rest(db):
         assert await user.item_quantity(item_id) >= qty
 
 
-async def test_a_core_gem_from_a_small_wyrmhole_gets_the_rare_drop_screen(db):
+async def test_a_core_gem_from_a_small_wyrmhole_gets_a_rare_drop_popup(db):
     user = await User.get(1)
     nav, inter, run = await _mine_with_a_small_wyrmhole()
     await click(nav, inter, "Enter the small wyrmhole")
@@ -809,9 +809,9 @@ async def test_a_core_gem_from_a_small_wyrmhole_gets_the_rare_drop_screen(db):
     nav.screen.hole.rows[4][1] = ("key_gemstone_sanity", 1)  # the middle node of the last row, where the cursor starts
     for _ in range(5):
         await find_button(nav, "Dig").callback(inter)
-    assert nav.screen.id == "result" and "Gold Ore" in all_text(nav)  # the plain finds first
-    await click(nav, inter, "Continue")
-    assert nav.screen.id == "result" and "Drop rate" in all_text(nav) and "small wyrmholes" in all_text(nav)  # then the gem's own page, with its odds
+    assert nav.screen.id == "result" and "Gold Ore" in all_text(nav) and "Sanity" in all_text(nav)  # one loot screen with everything on it
+    popup = inter.followup.send.await_args.kwargs["embed"]  # and the gem's odds in the popup
+    assert "small wyrmholes" in popup.fields[0].value
     assert await user.item_quantity("key_gemstone_sanity") == 1
 
 
@@ -836,6 +836,23 @@ async def test_scarab_answered_in_time_pays_out_and_late_or_wrong_does_not(db):
         await modal.on_submit(fake_interaction())
         after = (sum((await user.items()).values()), (await user.skill("mining")).xp)
         assert (after != before) is rewarded, (answer, delay)  # (a prize is items, xp, or both)
+
+
+async def test_the_scarab_greys_out_mine_again_until_answered_or_ignored_and_there_is_no_second_page(db):
+    import time
+
+    from cococap.services.mining import ScarabChallenge
+
+    nav, inter = await enter_mines()
+    nav.screen.run.leave()
+    await nav.screen._end(None)
+    nav.screen.challenge = ScarabChallenge("lantern", "ternlan", 30)
+    nav.screen.challenge_deadline = time.time() + 30
+    nav.screen._show_loot()
+    await nav.screen.refresh(inter)
+    assert find_button(nav, "Mine again").disabled
+    await find_button(nav, "Ignore").callback(inter)
+    assert nav.screen.id == "result" and not find_button(nav, "Mine again").disabled  # the loot screen again, now free to go on
 
 
 async def test_leaving_the_hub_idle_mid_run_banks_the_haul(db):
@@ -1897,7 +1914,7 @@ async def test_home_shows_pending_party_and_trade_invites(db):
         trade._invites.clear()
 
 
-async def test_rare_drops_get_their_own_pages_after_the_reward_screen_with_the_drop_rate(db):
+async def test_rare_drops_are_on_the_one_loot_screen_with_again_and_the_odds_in_a_popup(db):
     from cococap.services import odds
     from cococap.ui.rewards import rewards_result
 
@@ -1906,16 +1923,14 @@ async def test_rare_drops_get_their_own_pages_after_the_reward_screen_with_the_d
     screen = nav.screen
     screen.result = rewards_result("TIMBER!", items={"material_copper_ore": 2, "material_iron_wedge": 1, "scroll_keen": 1}, xp=40, odds=odds.foraging(),
                                    again=again, again_label="Another tree", back_label="Back to foraging")
+    inter.followup.send.reset_mock()
     await screen.refresh(inter)
-    assert nav.screen.id == "result" and "Copper Ore" in all_text(nav) and "Scroll" not in all_text(nav) and "Wedge" not in all_text(nav)
-    assert [b.label for b in buttons(nav) if b.label not in ("Home", "Back")] == ["Continue"]  # no Again until the last page
-    await click(nav, inter, "Continue")
+    assert nav.screen.id == "result" and "Copper Ore" in all_text(nav) and "Keen" in all_text(nav) and "Wedge" in all_text(nav)
+    assert {b.label for b in buttons(nav)} >= {"Another tree", "Back to foraging"} and not find_button(nav, "Another tree").disabled
+    kw = inter.followup.send.await_args.kwargs  # ONE popup, only for the player, with Share and Close
     spec = get_registry().scrolls.foraging
-    assert "SUPER RARE" in all_text(nav) and f"1 in {spec.odds * len(spec.pool):,} trees felled" in all_text(nav)
-    assert nav.screen.locked and [b.label for b in buttons(nav) if b.label not in ("Home", "Back")] == ["Continue"]
-    await click(nav, inter, "Continue")
-    assert "Rare drop" in all_text(nav) and "1 in" in all_text(nav)  # (the wedge's own drop rate)
-    assert {b.label for b in buttons(nav)} >= {"Another tree", "Back to foraging"}
+    assert inter.followup.send.await_count == 1 and kw["ephemeral"] is True and [c.label for c in kw["view"].children] == ["Share", "Close"]
+    assert "SUPER" in kw["embed"].title.upper() and f"1 in {spec.odds * len(spec.pool):,} trees felled" in kw["embed"].fields[0].value
     await click(nav, inter, "Back to foraging")
     assert nav.screen.id == "forage"
 

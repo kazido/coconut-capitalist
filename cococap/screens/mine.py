@@ -348,7 +348,8 @@ class MineScreen(Screen):
             titles[self.run.outcome], items=summary.haul, xp=summary.xp, notes=notes,
             headline=[f"Row **{summary.depth}** of {self.run.floor}  ·  **{summary.lodes}** lodes dug", *filter(None, [note])],
             odds=odds.mining(depth=summary.depth), emoji=emojis.icon("dig", "⛏️"), accent=0x2ECC71 if self.run.outcome != "collapse" else 0xE74C3C,
-            again=self._again, again_label="Mine again", back=self._to_menu, back_label="Mining page", actions=choices)
+            again=self._again, again_label="Mine again", back=self._to_menu, back_label="Mining page", actions=choices,
+            again_locked=self.challenge is not None)  # (a scarab waits: answer or ignore it first)
 
     async def _ask_scarab(self, interaction: discord.Interaction) -> None:
         async def submitted(modal_interaction: discord.Interaction, answer: str) -> None:
@@ -373,6 +374,7 @@ class MineScreen(Screen):
 
     async def _skip_scarab(self, interaction: discord.Interaction) -> None:
         self.challenge = None
+        self._show_loot()  # the same loot screen, now without the scarab (Mine again is free again)
         await self.refresh(interaction)
 
     async def _again(self, interaction: discord.Interaction) -> None:
