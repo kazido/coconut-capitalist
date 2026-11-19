@@ -31,4 +31,4 @@ async def page(user: User, stats: dict[str, int]) -> StatPage:
         ("Market", [("Bits from crops sold", seen(stats, "crop_bits_sold"))]),
         ("Level", [("Level", User.xp_to_level(skill.xp)), ("XP", f"{skill.xp:,}")]),
     ]
-    return StatPage("farming", "Farming", emojis.icon("scroll", "📊"), groups)
+    return StatPage("farming", "Farming", emojis.skill("farming", "🌽"), groups)
