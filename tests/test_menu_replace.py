@@ -28,6 +28,21 @@ async def test_opening_a_new_menu_deletes_the_players_old_one(db):
     assert (await community.read("menu:7", {}))["message"] == 2  # the id is stored
 
 
+async def test_a_shortcut_command_replaces_a_menu_whose_interaction_token_expired(db):
+    # /fish after a /play menu has been in use for over 15 minutes: its webhook delete fails, the bot token must delete it.
+    first = menu_message(1)
+    first.delete = AsyncMock(side_effect=nav_module.discord.NotFound(MagicMock(status=404), "Unknown Webhook"))
+    old, inter = await open_menu(9, first)
+    deleted = AsyncMock()
+    old.client = MagicMock()
+    old.client.get_partial_messageable = MagicMock(return_value=SimpleNamespace(get_partial_message=lambda mid: SimpleNamespace(delete=deleted)))
+    shortcut = fake_interaction(9)
+    shortcut.original_response = AsyncMock(return_value=menu_message(2))
+    await open_screen(shortcut, "fish")
+    deleted.assert_awaited()
+    assert nav_module._LIVE[9] is not old
+
+
 async def test_a_menu_left_over_from_before_a_restart_is_deleted_by_its_stored_id(db):
     await community.update("menu:8", {}, lambda data: data.update({"channel": 5, "message": 99}))
     nav_module._LIVE.clear()  # (a restart forgets every Navigator)

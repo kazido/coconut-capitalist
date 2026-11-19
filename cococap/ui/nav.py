@@ -30,6 +30,7 @@ TICK_EDIT_TIMEOUT = 2.0  # seconds a self-refresh may take to reach Discord befo
 
 
 _LIVE: dict[int, "Navigator"] = {}  # player id -> their open /play menu (one at a time)
+_REPLACE_LOCK = asyncio.Lock()  # serialises the "delete the old menu, remember the new one" step
 
 
 def _menu_key(user_id: int) -> str:
@@ -218,6 +219,10 @@ class Navigator(ui.LayoutView):
 
     async def _replace_old_menu(self, interaction: discord.Interaction) -> None:
         """One menu per player: delete the one they had open before (also across a bot restart: its message id is stored), and remember this one."""
+        async with _REPLACE_LOCK:  # two commands typed fast must not both see the same "old" menu and leave each other open
+            await self._replace_old_menu_locked(interaction)
+
+    async def _replace_old_menu_locked(self, interaction: discord.Interaction) -> None:
         try:
             old = _LIVE.get(self.owner.id)
             if old is not None and old is not self:
@@ -245,7 +250,13 @@ class Navigator(ui.LayoutView):
             try:
                 await self.message.delete()
             except discord.HTTPException:
-                pass
+                # The message came from an interaction, so .delete() goes through that interaction's webhook token, which Discord
+                # expires after 15 minutes: a menu in use longer than that would survive. Delete it with the bot's own token instead.
+                if self.client is not None:
+                    try:
+                        await self.client.get_partial_messageable(self.message.channel.id).get_partial_message(self.message.id).delete()
+                    except discord.HTTPException:
+                        pass  # already gone, or no permission
 
     async def _respond(self, interaction: discord.Interaction) -> None:
         """Answer a click by showing the new panel. If Discord won't take the answer any more (the click was
