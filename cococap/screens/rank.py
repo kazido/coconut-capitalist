@@ -10,7 +10,7 @@ from cococap.ui.components import bits, button, section, sep, text
 class RankScreen(Screen):
     id = "rank"
     label = "Ranks"
-    emoji = emojis.Lazy("ui_medal", "🏅")
+    emoji = emojis.Lazy("ui_ranks", "🏅")
     description = "Spend tokens on a higher wage"
 
     async def build(self) -> Page:
