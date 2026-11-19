@@ -55,20 +55,16 @@ ui_tips = {cell = [0, 12], framed = false}
 ui_scroll = {cell = [18, 8], framed = false}
 ui_rock_soft = {cell = [12, 3], framed = false}
 ui_rock_firm = {cell = [13, 3], framed = false}
-ui_rock_hard = {cell = [12, 3], hue = -25, sat = 1.3, framed = false}
+ui_rock_hard = {cell = [13, 3], ramp = ["#4a2a10", "#a86a18", "#f0b830", "#fff2a8"], framed = false}
 ui_vent = {cell = [45, 4], framed = false}
 ui_wyrmhole = {cell = [48, 4], framed = false}
 ui_small_wyrmhole = {cell = [43, 11], framed = false}
-ui_magnet = {cell = [7, 4], framed = false}
 ui_lifeline = {cell = [41, 2], framed = false}
 ui_cache = {cell = [9, 13], framed = false}
 
 # Glyph replacements (cococap/glyphs.py): every plain unicode emoji the bot writes maps to one of these.
-ui_home = {cell = [2, 0], framed = false}
 ui_gear = {cell = [0, 1], framed = false}
-ui_crate = {cell = [0, 8], framed = false}
 ui_gift = {cell = [0, 8], hue = 300, framed = false}
-ui_bag = {cell = [0, 13], framed = false}
 ui_skull = {cell = [14, 0], framed = false}
 ui_party = {cell = [65, 6], framed = false}
 ui_money = {cell = [9, 15], framed = false}
@@ -133,3 +129,4 @@ enchant_deepcall = {cell = [49, 1], framed = false}
 enchant_fertile = {cell = [58, 10], framed = false}
 enchant_seedkeeper = {cell = [28, 1], framed = false}
 enchant_gleaner = {cell = [58, 13], framed = false}
+ui_rock_rich = {cell = [12, 3], ramp = ["#1a1a44", "#2c44a0", "#4e86e8", "#bce0ff"], framed = false}
