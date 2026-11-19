@@ -23,7 +23,11 @@ def seen(stats: dict[str, int], name: str, seed: int = 0) -> int:
 
 # One page per skill, built by services/stats_<name>.py (`async def page(user, stats) -> StatPage`). A page reads numbers the game already stores
 # directly (so existing players keep theirs) and counters that only exist from the update on (they start at 0, silently).
-PAGE_MODULES = ("mining", "fishing", "foraging", "farming", "pets", "shipments", "casino")
+PAGE_MODULES = ("mining", "fishing", "foraging", "farming", "pets", "shipments")
+
+
+class Money(int):
+    """A luckbucks amount: a plain int to the code, shown with the luckbucks icon on the page."""
 
 
 async def skill_pages(user: User, stats: dict[str, int]) -> list[StatPage]:
@@ -55,19 +59,23 @@ async def stat_pages(user: User) -> list[StatPage]:
             ("Work claimed", g("claimed_work")), ("Daily claimed", g("claimed_daily")),
             ("Weekly claimed", g("claimed_weekly")),
         ])]),
-        StatPage("gambling", "Gambling", emojis.icon('money', '🎰'), [
+        StatPage("minigames", "Minigames", emojis.icon('dice', '🎲'), [
             ("High-Low", [("Wins", g("hl_wins")), ("Longest win streak", g("longest_hl_streak")),
                           ("Longest loss streak", g("longest_hl_loss_streak")),
-                          ("Biggest win", g("biggest_hl_win")), ("Biggest loss", g("biggest_hl_loss"))]),
+                          ("Biggest win", Money(g("biggest_hl_win"))), ("Biggest loss", Money(g("biggest_hl_loss")))]),
             ("Blackjack", [("Games", g("blackjack_games")), ("Blackjacks", g("blackjacks")),
                            ("Hits", g("blackjack_hits")), ("Stands", g("blackjack_stands")),
                            ("Folds", g("blackjack_folds"))]),
-        ]),
-        StatPage("minigames", "Minigames", emojis.icon('dice', '🎲'), [
+            ("Casino betting", [
+                ("Games played", g("highlow_games") + g("blackjack_games")),
+                ("Biggest bet", Money(g("biggest_bet"))), ("Total wagered", Money(g("casino_wagered")))]),
+            ("Casino results", [
+                ("Total won", Money(g("casino_won"))), ("Total lost", Money(g("casino_lost"))),
+                ("Net", Money(g("casino_won") - g("casino_lost")))]),
             ("Unscramble", [("Current streak", g("unscramble_streak")), ("Longest streak", g("longest_unscramble_streak"))]),
             ("Flashcard", [("Current streak", g("flashcard_streak")), ("Longest streak", g("longest_flashcard_streak"))]),
             ("Other", [("Sequence best", g("longest_sq_streak")), ("Trivia wins", g("trivia_wins")), ("Trivia games", g("trivia_games"))]),
         ]),
-        StatPage("skills", "Levels", emojis.icon('milestone', '📈'), [("Levels", skill_lines)]),
+        StatPage("skills", "Levels", emojis.icon('skills', '📈'), [("Levels", skill_lines)]),
         *await skill_pages(user, s),
     ]

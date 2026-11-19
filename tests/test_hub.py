@@ -299,7 +299,7 @@ async def test_stats_pages_switch_with_the_select(db):
     user = await User.get(1)
     await user.inc_stat("hl_wins", 3)
     nav, inter = await hub("player", tab="stats")
-    await choose(nav, inter, select_named(nav, "Pick a page"), "gambling")
+    await choose(nav, inter, select_named(nav, "Pick a page"), "minigames")
     assert "Wins: `3`" in all_text(nav)
 
 

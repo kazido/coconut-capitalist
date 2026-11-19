@@ -1,6 +1,6 @@
 import discord
 
-from cococap.services.stats import StatPage, stat_pages
+from cococap.services.stats import Money, StatPage, stat_pages
 from cococap.ui import Page, Screen
 from cococap.ui.components import row, select, sep, text
 from cococap import emojis
@@ -29,7 +29,8 @@ class StatsPane(Screen):
             body.append(text("Nothing tracked here yet."))
         for group, rows in current.groups:
             body.append(text(f"**{group}**\n" + "\n".join(
-                f"{label}: `{value:,}`" if isinstance(value, int) else f"{label}: {value}"
+                f"{label}: {emojis.currency('luckbucks')} `{value:,}`" if isinstance(value, Money)
+                else f"{label}: `{value:,}`" if isinstance(value, int) else f"{label}: {value}"
                 for label, value in rows
             )))
         return Page(f"{current.title} Stats", body, accent=discord.Colour.dark_purple().value)

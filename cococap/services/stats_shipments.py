@@ -12,7 +12,7 @@ async def page(user: User, stats: dict[str, int]) -> StatPage:
     skills = list(dict.fromkeys(skill for skill, _tier in shipments.slot_ids(reg)))
     crates = await shipments.mine(user, reg)  # derived: the crates on your list right now
     ready = sum(1 for crate in crates if crate.done())
-    return StatPage("shipments", "Shipments", emojis.icon("scroll", "📊"), [
+    return StatPage("shipments", "Shipments", emojis.icon("crate", "📦"), [
         ("Shipped", [("Total crates", seen(stats, "shipments_shipped"))] + [
             (skill.capitalize(), seen(stats, f"shipped_{skill}")) for skill in skills
         ]),

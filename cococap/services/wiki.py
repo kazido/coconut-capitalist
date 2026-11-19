@@ -14,14 +14,10 @@ TOPICS: list[tuple[str, str, str]] = [  # (id, title, emoji)
     ("foraging", "Foraging", "🌳"),
     ("fishing", "Fishing", "🎣"),
     ("fish", "Fish", "🐟"),
-    ("fish2", "Fish: the common ones", "🐟"),
     ("waters", "Waters", "🌊"),
-    ("waters2", "Waters: the deep ones", "🌊"),
     ("pots", "Crab pots and bait", "🦀"),
     ("crafting", "Crafting: the Workbench", "🛠️"),
-    ("tools", "Tools and upgrades: axes and cans", "🔨"),
-    ("tools2", "Tools: rods", "🎣"),
-    ("tools3", "Tools: pickaxes and swords", "⛏️"),
+    ("tools", "Tools and upgrades", "🔨"),
     ("enchants", "Enchants and scrolls", "📜"),
     ("pets", "Pets", "🐾"),
     ("party", "Parties", "👥"),
@@ -35,6 +31,15 @@ def _n(value: int) -> str:
 
 def _materials(items: dict[str, int], reg: Registry) -> str:
     return ", ".join(f"{q:,} {reg.item(i).name}" for i, q in items.items())
+
+
+# A topic shown as several pages (the wiki screen pages through them with arrows). Each part is a `_PAGES` id.
+GROUPS: dict[str, list[str]] = {"fish": ["fish", "fish2"], "waters": ["waters", "waters2"], "tools": ["tools", "tools2", "tools3"]}
+
+
+def parts(topic: str) -> list[str]:
+    """The `_PAGES` ids that make up a topic, in reading order."""
+    return GROUPS.get(topic, [topic])
 
 
 def page(topic: str, registry: Registry | None = None) -> list[str]:
