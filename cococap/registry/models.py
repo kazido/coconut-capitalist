@@ -452,7 +452,9 @@ class WyrmholeRules(_Data):
     odds: int = Field(ge=2)
     gem_bonus: int = Field(ge=0)
     min_odds: int = Field(ge=2)
-    min_depth: int = Field(ge=0)
+    min_depth: int = Field(ge=0)  # first row (0-based) a wyrmhole can show in...
+    max_depth: int = Field(ge=0)  # ...and the last: deeper ones would only tease a player whose mine collapses before they reach it
+    big_chance: float = Field(gt=0, le=1)  # digging into a wyrmhole opens a BIG one with this chance, else a small one
     implosion_item: str
     columns: int = Field(ge=2)  # nodes per row
     rows: list[MiniWyrmholeRow] = Field(min_length=1)
@@ -460,9 +462,14 @@ class WyrmholeRules(_Data):
     implosion_base: float = Field(ge=0, le=1)  # chance the gem is the implosion gem with no core gem owned...
     implosion_per_gem: float = Field(ge=0, le=1)  # ...plus this for every core gem owned
 
+    @model_validator(mode="after")
+    def _depths(self):
+        if self.max_depth < self.min_depth:
+            raise ValueError("wyrmhole: max_depth must be at least min_depth")
+        return self
+
 
 class MiniWyrmholeRules(_Data):
-    odds: int = Field(ge=2)  # 1 in N mines has one
     columns: int = Field(ge=2)  # nodes per row
     rows: list[MiniWyrmholeRow] = Field(min_length=1)
     xp_per_row: int = Field(ge=0)

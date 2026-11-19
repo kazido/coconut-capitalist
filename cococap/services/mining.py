@@ -162,14 +162,13 @@ class MineRun:
         geode: float = 0.0,
         rare_reroll: float = 0.0,
         mine_type: MineType | None = None,
-        mini_wyrmhole: bool = False,
+        wyrmhole_bonus: float = 0.0,
         site: MineSite | None = None,
     ):
         self.rules, self.registry, self.rng = rules, registry, rng
         self.site = site or rules.mines[0]  # which named mine this is (its ore tables, yield and hardness)
         self.tables = rules.tables_of(self.site)
         self.mine_type = mine_type or rules.mine_type("standard")  # the kind of mine (effects: ore boost, yield, rich lodes; pressure and xp are applied by start/settle)
-        self.mini_wyrmhole = mini_wyrmhole  # this mine has a small wyrmhole (decided when it starts): you can enter it any time before the run ends
         self.cursors = list(cursors)
         self.growth_factor, self.yield_factor = growth_factor, yield_factor
         self.braces, self.bombs, self.magnet = braces, bombs, magnet
@@ -187,7 +186,7 @@ class MineRun:
         self.vents_dug = self.braces_used = self.magnet_rows = 0  # for the Mining stats page (settle_run banks them)
         self.xp_awarded = 0
         self.last_risk = self.last_pressure = 0.0
-        self.wyrmhole_odds = max(1, round((wyrmhole_odds_value or rules.wyrmhole.odds) / self.mine_type.wyrmhole_mult))  # Wyrm Tunnels: wyrmholes are likelier
+        self.wyrmhole_odds = max(1, round((wyrmhole_odds_value or rules.wyrmhole.odds) / self.mine_type.wyrmhole_mult / (1 + wyrmhole_bonus)))  # Wyrm Tunnels and Mastery: wyrmholes are likelier
         self.depth = 0  # rows dug so far == the index of the row you're about to dig
         self.danger = 0.0  # pressure, 0-100
         self.haul: Counter[str] = Counter()
@@ -252,7 +251,7 @@ class MineRun:
             self._holes[depth] = {
                 col
                 for col in range(self.rules.columns)
-                if depth >= self.rules.wyrmhole.min_depth and self.rng.randint(1, self.wyrmhole_odds) == 1
+                if depth >= self.rules.wyrmhole.min_depth and self.rng.randint(1, self.wyrmhole_odds) == 1 and depth <= self.rules.wyrmhole.max_depth  # (always rolled, so the dice do not shift)
             }
             self._kinds[depth] = self._roll_kinds(depth)
         return self._rows[depth]
@@ -529,13 +528,6 @@ class MineRun:
         self._require_live()
         self.outcome = "left"
 
-    def enter_mini_wyrmhole(self) -> None:
-        """Slip into this mine's small wyrmhole: the dig phase ends and the haul is yours (like the big wyrmhole; `settle_run` banks it)."""
-        self._require_live()
-        if not self.mini_wyrmhole:
-            raise MiningError("There is no small wyrmhole in this mine.")
-        self.outcome = "mini_wyrmhole"
-
 
 @dataclass(frozen=True)
 class RunSummary:
@@ -678,11 +670,6 @@ async def _mining_state(user: User) -> tuple[Mining, int]:
     return mining, User.xp_to_level(mining.xp)
 
 
-def roll_mini_wyrmhole(rules: MiningRules, rng: random.Random, mult: float = 1.0) -> bool:
-    """Does this mine have a small wyrmhole? 1 in `mini_wyrmhole.odds`, divided by the mine type's `wyrmhole_mult`."""
-    return rng.randint(1, max(1, round(rules.mini_wyrmhole.odds / mult))) == 1
-
-
 async def open_mines(user: User, registry: Registry | None = None) -> list[MineSite]:
     """The named mines you can dig in right now: open by mining level AND by area (areas.open_location_list), first mine first."""
     reg = registry or get_registry()
@@ -691,10 +678,9 @@ async def open_mines(user: User, registry: Registry | None = None) -> list[MineS
 
 
 async def start_run(user: User, rng: random.Random, registry: Registry | None = None, *, mine_type: MineType | str | None = None,
-                    mini_wyrmhole: bool | None = None, location: str | None = None) -> MineRun:
+                    location: str | None = None) -> MineRun:
     """Begin a mine. A full magnet is spent here; the pickaxe, reactor and gems shape the run. The kind of mine is rolled by weight
-    (`mine_type` forces one, for tests) and shown on the mine page before you dig. One mine in `mini_wyrmhole.odds` has a small wyrmhole
-    (`mini_wyrmhole=` forces it either way, for tests). `location` is the named mine (a mining location id) you dig in; it must be open
+    (`mine_type` forces one, for tests) and shown on the mine page before you dig. `location` is the named mine (a mining location id) you dig in; it must be open
     to you, and None means the newest one you have opened."""
     reg = registry or get_registry()
     rules = reg.mining
@@ -706,7 +692,6 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         if site is None:
             raise MiningError("You haven't opened that mine yet.")
     kind = rules.mine_type(mine_type) if isinstance(mine_type, str) else mine_type or roll_mine_type(rules, rng)
-    has_mini = roll_mini_wyrmhole(rules, rng, kind.wyrmhole_mult) if mini_wyrmhole is None else mini_wyrmhole
     d = rules.descent
     tool = await equipped_stats(user, "mining", reg)
     if tool is None:
@@ -743,7 +728,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         geode=tool.stats.get("geode", 0.0),
         rare_reroll=pet.get("rare_reroll", 0.0),
         mine_type=kind,
-        mini_wyrmhole=has_mini,
+        wyrmhole_bonus=tool.stats.get("wyrmhole_chance", 0.0),
         site=site,
     )
     _LIVE_RUNS[user.id] = (run, time.time())
@@ -821,7 +806,7 @@ async def _record_run_stats(user: User, run: MineRun, registry: Registry) -> Non
         counts["mining_collapses"] += 1
     if run.outcome == "floor":
         counts["mining_vault_floors"] += 1
-    if run.outcome in ("wyrmhole", "mini_wyrmhole"):
+    if run.outcome == "wyrmhole":
         counts["mining_wyrmholes_found"] += 1
     if run.lifeline_fired:
         counts["mining_lifeline_saves"] += 1
@@ -852,8 +837,11 @@ async def abandon_run(user: User, run: MineRun, registry: Registry | None = None
     await settle_run(user, run, registry)
 
 
-async def enter_wyrmhole(user: User, rng: random.Random, registry: Registry | None = None, *, small: bool = False) -> WyrmholeSession:
+async def enter_wyrmhole(user: User, rng: random.Random, registry: Registry | None = None, *, small: bool | None = None) -> WyrmholeSession:
+    """Go into the wyrmhole you dug: a big one with `wyrmhole.big_chance`, else a small one (`small=` forces it, for tests)."""
     rules = (registry or get_registry()).mining
+    if small is None:
+        small = rng.random() >= rules.wyrmhole.big_chance
     if small:
         return generate_mini_wyrmhole(rules, rng)
     mining, _ = await _mining_state(user)

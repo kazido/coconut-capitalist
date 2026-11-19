@@ -20,7 +20,7 @@ def test_columns_dug_grows_every_five_reactor_levels(level, expected):
     assert m.columns_dug(level, RULES) == expected
 
 
-@pytest.mark.parametrize("gems, odds", [(0, 25000), (1, 20000), (4, 5000), (10, 1000)])
+@pytest.mark.parametrize("gems, odds", [(0, 450), (1, 390), (4, 210), (10, 200)])
 def test_wyrmhole_odds_improve_with_gems_but_have_a_floor(gems, odds):
     assert m.wyrmhole_odds(gems, RULES) == odds
 
@@ -487,13 +487,13 @@ def test_breaking_into_a_wyrmhole_ends_the_run_and_keeps_the_haul():
     assert result.wyrmhole and run.outcome == "wyrmhole" and run.haul == Counter(material_copper_ore=4) and run.depth == 0
 
 
-def test_wyrmholes_can_only_hide_below_the_minimum_depth():
+def test_wyrmholes_only_show_between_the_minimum_and_maximum_depth():
     deep_holes = 0
     for seed in range(60):
         run = make_run(seed, wyrmhole_odds_value=2)  # 50% per cell, to make them common
-        for depth in range(10):
+        for depth in range(RULES.wyrmhole.max_depth + 4):
             run.row(depth)
-            if depth < RULES.wyrmhole.min_depth:
+            if not RULES.wyrmhole.min_depth <= depth <= RULES.wyrmhole.max_depth:  # (too deep and the mine would collapse before you reach it)
                 assert run._holes[depth] == set(), (seed, depth)
             else:
                 deep_holes += len(run._holes[depth])
@@ -1313,7 +1313,7 @@ def test_the_three_mining_capstones_are_about_equally_strong_at_low_and_high_pow
         total, wait = 0, 0
         for seed in range(runs):
             run = m.MineRun(RULES, REG, R(seed), cursors=[2], braces=d.braces_base + 1, yield_factor=1 + d.power_yield_bonus * (power - 3),
-                            lifeline_ready=wait <= 0, **kw)
+                            lifeline_ready=wait <= 0, wyrmhole_odds_value=25000, **kw)  # (no wyrmholes: this is about the capstones)
             while not run.finished:
                 limit = 0.12 if (run.lifeline and run.lifeline_ready and not run.lifeline_fired) else 0.07  # (with a second chance in hand you push a little further)
                 if run.risk >= limit:
@@ -1351,14 +1351,12 @@ def _run(type_id=None, seed=1, **kw):
     return m.MineRun(RULES, REG, Random(seed), cursors=[2], mine_type=TYPES[type_id] if type_id else None, **kw)
 
 
-def test_wyrm_tunnels_make_wyrmholes_likelier_in_proportion_to_its_multiplier():
+def test_wyrm_tunnels_and_mastery_make_wyrmholes_likelier():
     mult = TYPES["wyrm_tunnels"].wyrmhole_mult
     assert mult > 1 and TYPES["standard"].wyrmhole_mult == 1
-    n = 20000
-    plain = sum(m.roll_mini_wyrmhole(RULES, Random(i)) for i in range(n))
-    boosted = sum(m.roll_mini_wyrmhole(RULES, Random(i), mult) for i in range(n))
-    assert boosted > plain * mult / 2  # ~mult x as many small wyrmholes (noisy: plain is ~n/odds)
-    assert round(RULES.wyrmhole.odds / mult) < RULES.wyrmhole.odds
+    plain = _run("standard").wyrmhole_odds
+    assert _run("wyrm_tunnels").wyrmhole_odds < plain / mult * 1.1
+    assert _run("standard", wyrmhole_bonus=1.0).wyrmhole_odds == round(plain / 2)  # +100% wyrmhole chance halves the odds
 
 
 def test_the_mine_type_weights_validate_and_standard_dominates():
@@ -1489,19 +1487,17 @@ async def test_mine_types_keep_the_live_run_guard_and_settle_working(db):
 MINI = RULES.mini_wyrmhole
 
 
-def test_a_small_wyrmhole_opens_in_about_one_mine_in_odds():
-    n = 40000
-    hits = sum(m.roll_mini_wyrmhole(RULES, Random(seed)) for seed in range(n))
-    expected = n / MINI.odds
-    assert 0.7 * expected < hits < 1.3 * expected  # (about 400 +- 90)
-
-
-async def test_start_run_rolls_it_with_the_rng_and_can_be_forced(db):
+async def test_entering_a_wyrmhole_rolls_big_or_small_and_can_be_forced(db):
     user = await player()
-    assert (await m.start_run(user, Random(1), mini_wyrmhole=True)).mini_wyrmhole
-    assert not (await m.start_run(user, Random(1), mini_wyrmhole=False)).mini_wyrmhole
-    seen = [(await m.start_run(user, Random(seed))).mini_wyrmhole for seed in range(1000)]
-    assert 0 < sum(seen) < 30 and not make_run().mini_wyrmhole  # (a mine without one by default)
+    assert (await m.enter_wyrmhole(user, Random(1), small=True)).small and not (await m.enter_wyrmhole(user, Random(1), small=False)).small
+    sizes = [(await m.enter_wyrmhole(user, Random(seed))).small for seed in range(400)]
+    big = sizes.count(False) / len(sizes)
+    assert 0 < big < 0.5 and abs(big - RULES.wyrmhole.big_chance) < 0.08  # big ones are the rarer
+
+
+async def test_start_run_passes_the_mastery_wyrmhole_chance_on(db):
+    user = await player()
+    assert (await m.start_run(user, Random(1))).wyrmhole_odds == m.wyrmhole_odds(0, RULES)
 
 
 def test_a_small_wyrmhole_is_three_wide_and_five_rows_with_one_pick_per_row():
@@ -1546,17 +1542,6 @@ def test_a_small_wyrmhole_never_holds_a_gem_and_has_no_empty_node():
         assert hole.xp_per_row == MINI.xp_per_row > 0
 
 
-def test_entering_a_small_wyrmhole_ends_the_mine_and_only_if_it_has_one():
-    run = make_run(mini_wyrmhole=True)
-    run.haul = Counter(material_copper_ore=4)
-    run.enter_mini_wyrmhole()
-    assert run.finished and run.outcome == "mini_wyrmhole" and run.haul == Counter(material_copper_ore=4)
-    with pytest.raises(m.MiningError):
-        run.dig()
-    with pytest.raises(m.MiningError):
-        make_run().enter_mini_wyrmhole()
-
-
 async def test_a_small_wyrmhole_banks_every_pick_and_the_last_row_bonus_once(db):
     user = await player()
     hole = m.generate_mini_wyrmhole(RULES, Random(5))
@@ -1582,7 +1567,7 @@ async def test_walking_away_from_a_small_wyrmhole_still_banks_what_is_left(db):
 
 
 async def test_the_big_wyrmhole_is_a_small_mine_of_several_rows(db):
-    hole = await m.enter_wyrmhole(await player(), Random(2))
+    hole = await m.enter_wyrmhole(await player(), Random(2), small=False)
     assert not hole.small and len(hole.rows) == len(RULES.wyrmhole.rows) > 1 and len(hole.nodes) == RULES.wyrmhole.columns
 
 
@@ -1599,7 +1584,7 @@ def test_small_wyrmhole_config_is_validated():
 
     good = MINI.model_dump()
     with pytest.raises(ValidationError):
-        MiniWyrmholeRules(**{**good, "odds": 1})
+        MiniWyrmholeRules(**{**good, "columns": 1})
 
 
 # ---- the 14 named mines -----------------------------------------------------------------------------
