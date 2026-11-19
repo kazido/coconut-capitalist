@@ -36,6 +36,22 @@ async def test_send_is_ephemeral_with_share_and_close():
     assert kw["ephemeral"] is True and [c.label for c in kw["view"].children] == ["Share", "Close"]
 
 
+async def test_only_the_player_can_press_share_or_close_on_a_public_popup():
+    i = inter()
+    await popup.send(i, popup.rare_embed(finds()), ephemeral=False)
+    view = i.followup.send.await_args.kwargs["view"]
+    stranger = inter()
+    stranger.user = SimpleNamespace(display_name="Sam", display_avatar=None, id=2)
+    stranger.response.send_message = AsyncMock()
+    await view.close.callback(stranger)
+    await view.share.callback(stranger)
+    stranger.delete_original_response.assert_not_awaited()
+    assert stranger.response.send_message.await_count == 2
+    assert stranger.response.edit_message.await_count == 0
+    await view.close.callback(i)  # the player can still close it
+    i.delete_original_response.assert_awaited_once()
+
+
 async def test_a_failing_send_never_raises():
     i = inter()
     i.followup.send.side_effect = RuntimeError("boom")
