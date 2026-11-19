@@ -198,3 +198,13 @@ def test_star_sell_multipliers_must_climb(data):
     (data / "economy.toml").write_text(text.replace(line, f"sell_multipliers = {mults}", 1))
     with pytest.raises(RegistryError, match="climb"):
         load_registry(data)
+
+
+def test_every_pet_has_a_valid_loadout_and_score_rules():
+    from cococap.registry import get_registry
+
+    reg = get_registry()
+    assert reg.pet_score is not None and reg.pet_score.sidekick_cap > 0
+    for pet in reg.pets.values():
+        for eid, lvl in pet.loadout.enchants.items():
+            assert 1 <= lvl <= reg.enchants[eid].max_level

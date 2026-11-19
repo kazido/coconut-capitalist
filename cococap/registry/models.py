@@ -204,6 +204,36 @@ class PetBonus(_Data):
     text: str  # how it reads, with {v} for the number
 
 
+class PetLoadout(_Data):
+    """The simulated "mini you" a pet is scored from (see PetScoreRules and services/pet_score.py). Nothing here is a real item."""
+
+    tool_tier: int = Field(ge=0, le=4)  # 0 = a fresh tool ... 4 = a forked one
+    mastery_score: int = Field(ge=0, le=100)  # mastery points the pet "has spent"
+    enchants: dict[str, int] = Field(default_factory=dict)  # enchant id -> level (checked against enchants.toml by the registry)
+
+
+class PetScoreRules(_Data):
+    """configs/pet_score.toml: formula constants, sidekick bonus, passive and haul caps, fuel tank. All TODO(balance)."""
+
+    tool_tier_weight: float = Field(ge=0)
+    enchant_level_weight: float = Field(ge=0)
+    mastery_weight: float = Field(ge=0)
+    rarity_weight: float = Field(ge=0)
+    level_floor: float = Field(gt=0, le=1)
+    star_bonus: float = Field(ge=0)
+    global_proficiency: float = Field(gt=0, le=1)
+    lent_tool_weight: float = Field(ge=0)
+    sidekick_per_points: float = Field(gt=0)
+    sidekick_star_weight: float = Field(ge=0)
+    sidekick_cap: float = Field(ge=0)
+    passive_per_score: float = Field(ge=0)
+    passive_cap: float = Field(ge=0)
+    haul_active_share: float = Field(gt=0, le=1)
+    haul_xp_per_score_hour: float = Field(ge=0)
+    tank_cap_hours: float = Field(gt=0)
+    fuel_minutes_per_value: float = Field(gt=0)
+
+
 class Pet(_Data):
     id: str
     name: str
@@ -212,6 +242,7 @@ class Pet(_Data):
     rarity: int = Field(default=1, ge=1, le=5)
     description: str = ""
     bonuses: list[PetBonus] = Field(default_factory=list)
+    loadout: PetLoadout
 
     _id = field_validator("id")(check_id)
 

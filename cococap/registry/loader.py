@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import LOCATIONS_PER_AREA, AreaRules, ChangelogEntry, Notice, Location, ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
+from .models import LOCATIONS_PER_AREA, AreaRules, ChangelogEntry, Notice, Location, ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, PetScoreRules, Rank, Recipe, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -85,6 +85,7 @@ class Registry:
         shipments: ShipmentRules | None = None,
         scrolls: ScrollRules | None = None,
         recipes: list[Recipe] | None = None,
+        pet_score: PetScoreRules | None = None,
         areas: AreaRules | None = None,
         locations: dict[str, list[Location]] | None = None,
         notices: list[Notice] | None = None,
@@ -102,6 +103,7 @@ class Registry:
         self.enchants: dict[str, Enchant] = {e.id: e for e in enchants or []}
         self.mining = mining
         self.economy = economy
+        self.pet_score = pet_score
         self.farming = farming
         self.foraging = foraging
         self.fishing = fishing
@@ -303,6 +305,11 @@ class Registry:
             if sum(weights.values()) <= 0 or any(w < 0 for w in weights.values()) or any(not 1 <= r <= 5 for r in weights):
                 problems.append(f"economy.toml [pets.orbs.{orb_id}]: weights must be >= 0, add up to something, and be for rarities 1-5")
         for pet in self.pets.values():
+            for eid, lvl in pet.loadout.enchants.items():
+                if eid not in self.enchants:
+                    problems.append(f"pets.toml [{pet.id}.loadout]: unknown enchant '{eid}'")
+                elif not 1 <= lvl <= self.enchants[eid].max_level:
+                    problems.append(f"pets.toml [{pet.id}.loadout]: enchant '{eid}' level {lvl} is outside 1-{self.enchants[eid].max_level}")
             if pet.rarity not in self.economy.pets.xp_scale:
                 problems.append(f"economy.toml [pets.xp_scale] has no scale for rarity {pet.rarity} ({pet.id})")
         expected = list(range(len(self.ranks)))
@@ -437,13 +444,14 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     shipments = _build(ShipmentRules, "shipments", [("shipments", _read(config_dir, "shipments"))])[0]
     scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
     recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
+    pet_score = _build(PetScoreRules, "pet_score", [("pet_score", _read(config_dir, "pet_score"))])[0]
     notices = _build(Notice, "notices", ((n.get("id", f"#{i}"), n) for i, n in enumerate(_read(config_dir, "notices").get("notice", []))))
     seen = [n.id for n in notices]
     if dupes := sorted({i for i in seen if seen.count(i) > 1}):
         raise RegistryError(f"notices.toml: duplicate id(s) {dupes} (seen ids are stored per player, so every notice needs its own)")
     changelog = _build(ChangelogEntry, "changelog", ((f"entry {i + 1}", e) for i, e in enumerate(_read(config_dir, "changelog").get("entry", []))))
     return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools,
-                    shipments, scrolls, recipes, areas, locations, notices=notices, changelog=changelog)
+                    shipments, scrolls, recipes, pet_score, areas, locations, notices=notices, changelog=changelog)
 
 
 def _name_waters(rules: FishingRules, locations: dict[str, list[Location]]) -> FishingRules:
