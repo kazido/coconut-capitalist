@@ -44,6 +44,8 @@ weights = [1, 4, 12, 22, 28, 22, 11]      # TODO(balance)
 # Traits: a named bonus picked from one part. `stat` is a stat name the engines already read (the same names
 # enchants use). `amounts` = the value at each quality grade (Crude, Fine, Superb, Masterwork), scaled by quality mult.
 # `kinds` = which tool kinds the trait fits.
+# TODO(design): part traits must become GENERIC only (any part fits any tool kind); the skill traits below
+# (Vein Sense, Ore Bounty, Steady Hold, Sharp Cut, Fertile Blade) move to the skill accessories. Retune later.
 # Traits are STAT bonuses only. Abilities (double_hook, double_strike, iron_frame, seedkeeper, gleaner,
 # deepcall, seasoned...) stay enchants, one per tool. Amounts are in each stat's own unit: TODO(balance) in step 4.
 [[trait]]

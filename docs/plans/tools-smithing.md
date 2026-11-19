@@ -18,7 +18,9 @@ Owner's decisions (interview, 2026-11-19):
 - **Part tier is random by rarity, weighted by area.** Higher areas make high tiers more common. Hard cap: a player in area A can roll at most
   about tier A+2 (area 1 -> tier 3 at best, rarely). No lucky jackpots far above your area.
 - **Traits.** Freshly dropped parts carry several traits; at smithing you **pick 3** for the tool (max 3 per tool), the rest are lost.
-  Traits = today's stat enchants and path leanings (+power, +xp, +sell value, +ore yield, rich lodes, less pressure, good chops...).
+  **Part traits are GENERIC only** (any part can go into any tool kind): +power, +xp, +sell value and more generic ideas (TODO).
+  Skill-specific bonuses (ore yield, rich lodes, less pressure, good chops, crop yield, fishing...) live on the skill accessories
+  instead (decided 2026-11-19). The current trait list in `configs/smithing.toml` still has skill traits: retune it later.
 - **Smithing roll** adds: a **quality grade** (Crude / Fine / Superb / Masterwork, scales power and trait numbers), a chance of a **bonus trait**
   only if fewer than 3 were picked, and a rare **cosmetic** (see Art).
 - **Salvage.** You can break down a tool you did NOT smith (bought or traded). You get all 3 parts back, each with only the 1 trait the smith picked
