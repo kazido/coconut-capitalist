@@ -144,9 +144,10 @@ class FishScreen(Screen):
             body.append(text(header))
             if fight is not None and fight.is_open:
                 if fight.you is None:
-                    body += [text(f"### {emojis.icon('boss', '💀')} **{fight.boss}** is on your party's line!\n**{fight.reeling}** reeling · closes <t:{int(fight.closes_at)}:R>\n"
+                    whose = "your party's" if fight.own else "a player's"
+                    body += [text(f"### {emojis.icon('boss', '💀')} **{fight.boss}** is on {whose} line!\n**{fight.reeling}** reeling · closes <t:{int(fight.closes_at)}:R>\n"
                                   "-# Join with your own set of arrows. Everyone who lands theirs is paid, and more for every teammate who does too."),
-                             row(button("Join the fight", emoji=emojis.icon("boss", "💀"), style=discord.ButtonStyle.danger, disabled=stats is None, on_click=self._join_boss))]
+                             row(button("Join the fight", emoji=emojis.icon("boss", "💀"), style=discord.ButtonStyle.danger, disabled=stats is None, on_click=self._join_boss(fight.host if not fight.own else None)))]
                 elif fight.you == "done":
                     body.append(text(f"### {emojis.icon('check', '✅')} You landed your part of the fight with **{fight.boss}**\n**{fight.reeling}** still reeling · closes <t:{int(fight.closes_at)}:R>"))
             if stats is None:
@@ -222,6 +223,8 @@ class FishScreen(Screen):
                      f"{pattern_line(cast, rules)}{slack}\n-# {arrows} arrows, and some of them turn into **Reel** when you get there. Don't slip!"),
                 row(*reel_buttons(cast, self.rng, self._press, discord.ButtonStyle.danger), button("Let it go", on_click=self._cancel)),
             ]
+            if cast.hooked and not cast.public:
+                body.append(row(button("Open to others", emoji=emojis.icon("group", "👥"), on_click=self._open_boss)))
             return Page("Fishing", body, accent=0x7B241C)
 
         # reeling it in: you can see what kind of fish it is now, so you can use what you have learned about it
@@ -352,16 +355,31 @@ class FishScreen(Screen):
                                      headline=headline, notes=notes, odds=odds.fishing_boss(), emoji=emojis.icon("boss", "💀"), accent=0x7B241C, again=self._cast, again_label="Cast again")
         return True
 
-    async def _join_boss(self, interaction: discord.Interaction) -> None:
-        stats = await fishing.rod_stats(self.user)
+    def _join_boss(self, host: str | None = None):
+        """The Join button's handler: your party's fight, or (with `host`) one that was opened to everyone."""
+        async def join(interaction: discord.Interaction) -> None:
+            stats = await fishing.rod_stats(self.user)
+            try:
+                fight = await party_boss.join(self.user, now(), host=host)
+            except party_boss.PartyBossError as error:
+                return await self.refresh(interaction, str(error))
+            cast = fishing.join_boss_cast(stats, self.rng, now(), fight.boss, get_registry(), await pets.bonuses(self.user))
+            cast.party_fight, cast.public = fight.number, True  # (only the one who hooked it can open it up)
+            self.cast, self.missed = cast, None
+            await self.refresh(interaction, f"{emojis.icon('boss', '💀')} You join the fight with **{fight.boss}**! Reel your own set of arrows.")
+
+        return join
+
+    async def _open_boss(self, interaction: discord.Interaction) -> None:
+        cast = self.cast
+        if cast is None or not cast.boss or cast.public:
+            return await self.refresh(interaction)
         try:
-            fight = await party_boss.join(self.user, now())
+            fight = await party_boss.open_to_all(self.user, cast.boss, cast.modifiers, now())
         except party_boss.PartyBossError as error:
             return await self.refresh(interaction, str(error))
-        cast = fishing.join_boss_cast(stats, self.rng, now(), fight.boss, get_registry(), await pets.bonuses(self.user))
-        cast.party_fight = fight.number
-        self.cast, self.missed = cast, None
-        await self.refresh(interaction, f"{emojis.icon('boss', '💀')} You join the fight with **{fight.boss}**! Reel your own set of arrows.")
+        cast.party_fight, cast.public = fight.number, True
+        await self.refresh(interaction, f"{emojis.icon('group', '👥')} **Open to everyone!** Any player will see this fight on their Fishing page.")
 
     async def _cancel(self, interaction: discord.Interaction) -> None:
         if self.cast is not None and self.cast.party_fight is not None:

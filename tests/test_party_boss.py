@@ -196,3 +196,19 @@ async def test_letting_the_boss_go_or_slipping_ends_only_your_part(db, clock):
     assert view.is_open and view.failed == 1 and view.reeling == 1  # the teammate's fight carries on
     await reel_in(mate, mate_inter, mate.screen.cast)
     assert (await pb.view(users[1], clock[0] + 1, REG)).status == "won"  # and is won by the one who landed theirs
+
+
+async def test_a_boss_opened_to_everyone_can_be_joined_by_a_player_with_no_party(db, clock):
+    await player(1)
+    await player(2)
+    nav, inter = await hub("fish")
+    cast = await hook_a_boss(nav, inter, clock)
+    assert cast.party_fight is None and find_button(nav, "Open to others")
+    other, other_inter = await hub("fish", user_id=2)
+    assert "Join the fight" not in all_text(other)  # nobody can see it yet
+    await click(nav, inter, "Open to others")
+    assert cast.public and cast.party_fight == 1
+    other, other_inter = await hub("fish", user_id=2)
+    assert "Old Whiskers" in all_text(other) and find_button(other, "Join the fight")
+    await click(other, other_inter, "Join the fight")
+    assert other.screen.cast.boss == "Old Whiskers" and other.screen.cast.party_fight == 1

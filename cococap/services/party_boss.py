@@ -5,6 +5,10 @@ Fishing page. Everyone reels **their own set of arrows** (the same boss and the 
 a team effort and not one person's clicks. Everyone who lands their reel is paid: the boss's rewards, and **more for every extra member who landed theirs** (+25% each,
 up to doubling). Someone who slips off the hook only loses their own share. The fight is settled once, in one transaction, and each member collects their payout from
 their own Fishing page, like a party tree.
+
+The hooker can also **open the fight to everyone** (with or without a party): it is then listed on every player's Fishing page until it closes, and anyone can
+join it. A fight lives under its host's key (their party, or their own id when they have none); people who join a foreign fight keep a pointer to it so their
+reel reports and their payout find it.
 """
 
 import random
@@ -19,6 +23,9 @@ from cococap.services.party import Party, xp_multiplier
 from cococap.user import User
 
 KEEP = {"current": None, "pending": {}, "count": 0}
+PUBLIC = "party_boss_public"  # the keys of fights opened to everyone
+PUBLIC_KEEP = {"keys": []}
+MAX_LISTED = 20  # how many public fights one page looks at
 
 
 class PartyBossError(GameRuleError):
@@ -27,6 +34,31 @@ class PartyBossError(GameRuleError):
 
 def _key(party_id: int) -> str:
     return f"party_boss:{party_id}"
+
+
+def _solo_key(user_id: int) -> str:
+    return f"party_boss:u{user_id}"
+
+
+def _joined_key(user_id: int) -> str:
+    return f"party_boss_joined:{user_id}"
+
+
+def _seed_id(key: str) -> int:
+    """The number after the colon (a party id, or a solo host's user id): only used to seed the payout dice."""
+    return int(key.rpartition(":")[2].lstrip("u") or 0)
+
+
+async def _home(user: User) -> str:
+    """Where YOUR fights live: your party's key, or your own when you have no party."""
+    party = await Party.for_user(user.id)
+    return _key(party.party_id) if party is not None else _solo_key(user.id)
+
+
+async def _keys(user: User) -> list[str]:
+    """Every fight key you can be in: your own, then any foreign fights you joined."""
+    joined = await community.read(_joined_key(user.id), {"keys": []})
+    return list(dict.fromkeys([await _home(user), *joined["keys"]]))
 
 
 @dataclass(frozen=True)
@@ -40,6 +72,9 @@ class FightView:
     done: int
     failed: int
     you: str | None  # "reeling" | "done" | "failed" | None (not in it)
+    public: bool = False  # opened to everyone
+    host: str = ""  # the key the fight lives under (needed to join a foreign one)
+    own: bool = True  # your own fight (your party's, or yours alone), not one found on the public list
 
     @property
     def is_open(self) -> bool:
@@ -62,7 +97,7 @@ def team_bonus(finishers: int, rules) -> float:
     return min(rules.fishing.boss.party.max_bonus, rules.fishing.boss.party.bonus_per_extra * max(0, finishers - 1))
 
 
-def _settle(state: dict, party_id: int, reg: Registry) -> None:
+def _settle(state: dict, seed_id: int, reg: Registry) -> None:
     """Work out everyone's payout for the fight that just ended, exactly once. Anyone still reeling when it ends has run out of time."""
     fight = state["current"]
     if fight is None or fight["settled"]:
@@ -78,7 +113,7 @@ def _settle(state: dict, party_id: int, reg: Registry) -> None:
     bonus = 1 + team_bonus(len(done), reg)
     boss = reg.fishing.boss
     for uid, entry in done.items():
-        rng = random.Random(f"party-boss:{party_id}:{fight['number']}:{uid}")
+        rng = random.Random(f"party-boss:{seed_id}:{fight['number']}:{uid}")
         bits, items = fishing.roll_boss_reward(reg, rng)
         bits = round(bits * bonus)
         slack_bits = fishing.slack_bonus(bits, entry.get("slack", 0), reg.fishing)
@@ -87,25 +122,41 @@ def _settle(state: dict, party_id: int, reg: Registry) -> None:
             "items": {i: round(q * bonus) for i, q in items.items()}, "teammates": len(done) - 1, "bonus": bonus - 1})
 
 
-def _expire(state: dict, party_id: int, now: float, reg: Registry) -> None:
+def _expire(state: dict, seed_id: int, now: float, reg: Registry) -> None:
     fight = state["current"]
     if fight is not None and not fight["settled"] and now >= fight["closes"]:
-        _settle(state, party_id, reg)
+        _settle(state, seed_id, reg)
 
 
-def _view(state: dict, user_id: int) -> FightView | None:
+def _view(state: dict, user_id: int, host: str = "", own: bool = True) -> FightView | None:
     fight = state["current"]
     if fight is None:
         return None
     states = [e["state"] for e in fight["players"].values()]
     mine = fight["players"].get(str(user_id))
     return FightView(fight["number"], fight["boss"], tuple(fight["modifiers"]), fight["status"], fight["closes"], states.count("reeling"),
-                     states.count("done"), states.count("failed"), mine["state"] if mine else None)
+                     states.count("done"), states.count("failed"), mine["state"] if mine else None, bool(fight.get("public")), host, own)
 
 
 async def _party(user: User) -> Party | None:
     party = await Party.for_user(user.id)
     return party if party is not None and party.member_count() >= 2 else None
+
+
+def _starter(user: User, boss: str, modifiers: list[str], now: float, reg: Registry, host: str, public: bool):
+    """The change that opens a new fight under `host` (None if one is already open there)."""
+    def start(state: dict) -> FightView | None:
+        _expire(state, _seed_id(host), now, reg)
+        current = state["current"]
+        if current is not None and not current["settled"]:
+            return None  # one fight at a time: this boss is yours alone
+        state["count"] += 1
+        state["current"] = {"number": state["count"], "boss": boss, "modifiers": list(modifiers), "opened": now, "host": str(user.id), "public": public,
+                            "closes": now + reg.fishing.boss.party.fight_seconds, "status": "open", "settled": False,
+                            "players": {str(user.id): {"state": "reeling", "slack": 0}}}
+        return _view(state, user.id, host)
+
+    return start
 
 
 async def open_fight(user: User, boss: str, modifiers: list[str], now: float | None = None, registry: Registry | None = None) -> FightView | None:
@@ -115,92 +166,144 @@ async def open_fight(user: User, boss: str, modifiers: list[str], now: float | N
     party = await _party(user)
     if party is None:
         return None
+    host = _key(party.party_id)
+    return await community.update(host, KEEP, _starter(user, boss, modifiers, now, reg, host, False))
 
-    def start(state: dict) -> FightView | None:
-        _expire(state, party.party_id, now, reg)
+
+async def open_to_all(user: User, boss: str, modifiers: list[str], now: float | None = None, registry: Registry | None = None) -> FightView:
+    """Open the boss you hooked to everyone: it shows on every player's Fishing page until it closes. Works with or without a party."""
+    reg = registry or get_registry()
+    now = time.time() if now is None else now
+    host = await _home(user)
+    uid = str(user.id)
+
+    def publish(state: dict) -> FightView | None:
+        _expire(state, _seed_id(host), now, reg)
         current = state["current"]
         if current is not None and not current["settled"]:
-            return None  # one fight at a time: this boss is yours alone
-        state["count"] += 1
-        state["current"] = {"number": state["count"], "boss": boss, "modifiers": list(modifiers), "opened": now,
-                            "closes": now + reg.fishing.boss.party.fight_seconds, "status": "open", "settled": False,
-                            "players": {str(user.id): {"state": "reeling", "slack": 0}}}
-        return _view(state, user.id)
+            if uid not in current["players"]:
+                return None  # a teammate's fight is open, not yours
+            current["public"] = True  # your party fight (or an earlier open one): now everyone can see it
+            return _view(state, user.id, host)
+        return _starter(user, boss, modifiers, now, reg, host, True)(state)
 
-    return await community.update(_key(party.party_id), KEEP, start)
+    fight = await community.update(host, KEEP, publish)
+    if fight is None:
+        raise PartyBossError("Your party already has a boss fight open.")
+
+    def add(state: dict) -> None:
+        if host not in state["keys"]:
+            state["keys"].append(host)
+
+    await community.update(PUBLIC, PUBLIC_KEEP, add)
+    return fight
+
+
+async def _look(key: str, user: User, now: float, reg: Registry, own: bool) -> FightView | None:
+    def look(state: dict) -> FightView | None:
+        _expire(state, _seed_id(key), now, reg)
+        return _view(state, user.id, key, own)
+
+    return await community.update(key, KEEP, look)
 
 
 async def view(user: User, now: float | None = None, registry: Registry | None = None) -> FightView | None:
-    """Your party's current fight (a finished one stays visible until the next opens). None without a party or a fight."""
+    """The fight to show you: one you are in, else your party's open one, else one opened to everyone, else your last finished one."""
     reg = registry or get_registry()
     now = time.time() if now is None else now
-    party = await Party.for_user(user.id)
-    if party is None:
-        return None
+    home = await _home(user)
+    views = [v for k in await _keys(user) if (v := await _look(k, user, now, reg, k == home)) is not None]
+    mine = next((v for v in views if v.is_open and v.you is not None), None) or next((v for v in views if v.is_open), None)
+    if mine is not None:
+        return mine
+    stale = []
+    for key in (await community.read(PUBLIC, PUBLIC_KEEP))["keys"][-MAX_LISTED:]:
+        if key == home:
+            continue
+        found = await _look(key, user, now, reg, False)
+        if found is None or not found.is_open or not found.public:
+            stale.append(key)
+        elif found.you is None:
+            return found
+    if stale:  # forget the ones that have closed
+        await community.update(PUBLIC, PUBLIC_KEEP, lambda st: st.update(keys=[k for k in st["keys"] if k not in stale]))
+    return views[0] if views else None
 
-    def look(state: dict) -> FightView | None:
-        _expire(state, party.party_id, now, reg)
-        return _view(state, user.id)
 
-    return await community.update(_key(party.party_id), KEEP, look)
-
-
-async def join(user: User, now: float | None = None, registry: Registry | None = None) -> FightView:
-    """Join your party's open fight: you get your own reel."""
+async def join(user: User, now: float | None = None, registry: Registry | None = None, host: str | None = None) -> FightView:
+    """Join your party's open fight, or (with `host`) one opened to everyone: you get your own reel."""
     reg = registry or get_registry()
     now = time.time() if now is None else now
-    party = await _party(user)
-    if party is None:
-        raise PartyBossError("You need a party to join a boss fight.")
+    home = await _home(user)
+    foreign = host is not None and host != home
+    if not foreign:
+        if await _party(user) is None:
+            raise PartyBossError("You need a party to join a boss fight.")
+        host = home
 
     def enter(state: dict) -> FightView:
-        _expire(state, party.party_id, now, reg)
+        _expire(state, _seed_id(host), now, reg)
         fight = state["current"]
-        if fight is None or fight["settled"]:
-            raise PartyBossError("Your party has no boss fight open.")
+        if fight is None or fight["settled"] or (foreign and not fight.get("public")):
+            raise PartyBossError("That boss fight is closed." if foreign else "Your party has no boss fight open.")
         if str(user.id) in fight["players"]:
             raise PartyBossError("You are already in this fight.")
         fight["players"][str(user.id)] = {"state": "reeling", "slack": 0}
-        return _view(state, user.id)
+        return _view(state, user.id, host, not foreign)
 
-    return await community.update(_key(party.party_id), KEEP, enter)
+    fight = await community.update(host, KEEP, enter)
+    if foreign:
+        def remember(state: dict) -> None:
+            if host not in state["keys"]:
+                state["keys"].append(host)
+
+        await community.update(_joined_key(user.id), {"keys": []}, remember)
+    return fight
 
 
 async def report(user: User, outcome: str, slack: int = 0, now: float | None = None, registry: Registry | None = None) -> FightView | None:
     """Your reel is over: "done" (you landed it, with `slack` to spare) or "failed" (it slipped off). Settles the fight once everyone is finished."""
     reg = registry or get_registry()
     now = time.time() if now is None else now
-    party = await Party.for_user(user.id)
-    if party is None:
-        return None
+    result = None
+    for key in await _keys(user):
+        def finish(state: dict, key=key) -> FightView | None:
+            _expire(state, _seed_id(key), now, reg)
+            fight = state["current"]
+            mine = fight["players"].get(str(user.id)) if fight else None
+            if fight is None or mine is None:
+                return None
+            if fight["settled"] or mine["state"] != "reeling":
+                return _view(state, user.id, key)  # (the fight ended while you were reeling: you ran out of time)
+            mine["state"], mine["slack"] = outcome, slack
+            if all(e["state"] != "reeling" for e in fight["players"].values()):
+                _settle(state, _seed_id(key), reg)
+            return _view(state, user.id, key)
 
-    def finish(state: dict) -> FightView | None:
-        _expire(state, party.party_id, now, reg)
-        fight = state["current"]
-        mine = fight["players"].get(str(user.id)) if fight else None
-        if fight is None or mine is None or fight["settled"] or mine["state"] != "reeling":
-            return _view(state, user.id)  # (the fight ended while you were reeling: you ran out of time)
-        mine["state"], mine["slack"] = outcome, slack
-        if all(e["state"] != "reeling" for e in fight["players"].values()):
-            _settle(state, party.party_id, reg)
-        return _view(state, user.id)
-
-    return await community.update(_key(party.party_id), KEEP, finish)
+        found = await community.update(key, KEEP, finish)
+        if result is None:
+            result = found
+    return result
 
 
 async def claim(user: User, now: float | None = None, registry: Registry | None = None) -> list[Payout]:
     """Collect what you are owed from finished fights (once each)."""
     reg = registry or get_registry()
     now = time.time() if now is None else now
-    party = await Party.for_user(user.id)
-    if party is None:
-        return []
+    home = await _home(user)
+    owed, finished = [], []
+    for key in await _keys(user):
+        def take(state: dict, key=key) -> tuple[list[dict], bool]:
+            _expire(state, _seed_id(key), now, reg)
+            fight = state["current"]
+            return state["pending"].pop(str(user.id), []), fight is None or fight["settled"]
 
-    def take(state: dict) -> list[dict]:
-        _expire(state, party.party_id, now, reg)
-        return state["pending"].pop(str(user.id), [])
-
-    owed = await community.update(_key(party.party_id), KEEP, take)
+        got, over = await community.update(key, KEEP, take)
+        owed += got
+        if over and key != home:
+            finished.append(key)
+    if finished:  # collected from those foreign fights: forget them
+        await community.update(_joined_key(user.id), {"keys": []}, lambda st: st.update(keys=[k for k in st["keys"] if k not in finished]))
     paid = []
     mult = await xp_multiplier(user.id, reg, "fishing")
     for entry in owed:

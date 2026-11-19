@@ -273,6 +273,7 @@ class Cast:
     bycatch: float = 0.0  # the Treasure Hunter's Bycatch: the chance a catch brings a second, different fish
     water: object = None  # the water it was cast in (bycatch comes from there)
     slips_start: int = 0  # the forgiven wrong arrows this cast began with (so a clean reel, using none, can be told)
+    public: bool = False  # the boss fight was opened to everyone (not just your party)
     party_fight: int | None = None  # the number of the party boss fight this reel belongs to (everyone in it reels their own set of arrows)
     quick: bool = False  # a Double Hook "Quick cast": it can never offer another one
 
