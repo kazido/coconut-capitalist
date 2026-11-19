@@ -60,7 +60,7 @@ class MessagesPane(_PagedPane):
 
 class ChangelogPane(_PagedPane):
     label = "Changelog"
-    emoji = emojis.Lazy("ui_milestone", "📰")
+    emoji = emojis.Lazy("ui_milestone", "📜")
     description = "What changed lately, newest first"
     title = "Changelog"
     empty = "Nothing has changed yet."
@@ -72,6 +72,6 @@ class ChangelogPane(_PagedPane):
 class NewsScreen(TabsScreen):
     id = "news"
     label = "News"
-    emoji = emojis.Lazy("ui_quest", "📰")
+    emoji = emojis.Lazy("ui_quest", "📜")
     description = "Messages from the bot and the changelog"
     panes = {"messages": MessagesPane, "changelog": ChangelogPane}
