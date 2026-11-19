@@ -1,4 +1,4 @@
-"""The News page (More -> News): every notice ever sent (Messages), the latest changes (Changelog) and everything older (Older changes), as tabs, newest first and paged.
+"""The News page (More -> News): every notice ever sent (Messages) and the Changelog, as two tabs, newest first and paged.
 
 The text is data: configs/notices.toml and configs/changelog.toml (services/news.py packs it onto pages)."""
 
@@ -69,20 +69,9 @@ class ChangelogPane(_PagedPane):
         return news.changelog_pages()
 
 
-class OlderChangesPane(_PagedPane):
-    label = "Older changes"
-    emoji = emojis.Lazy("ui_milestone", "📜")
-    description = "Changes before the latest few, newest first"
-    title = "Older changes"
-    empty = "No older changes yet."
-
-    def pages(self) -> list[list[str]]:
-        return news.older_changelog_pages()
-
-
 class NewsScreen(TabsScreen):
     id = "news"
     label = "News"
     emoji = emojis.Lazy("ui_quest", "📜")
     description = "Messages from the bot and the changelog"
-    panes = {"messages": MessagesPane, "changelog": ChangelogPane, "older": OlderChangesPane}
+    panes = {"messages": MessagesPane, "changelog": ChangelogPane}

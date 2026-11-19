@@ -87,7 +87,7 @@ async def test_every_news_tab_renders_valid_layout(db, tab, monkeypatch):
     assert nav.total_children_count <= 40 and nav.content_length() <= 4000
     if tab == "changelog":
         assert "E5" in all_text(nav)  # newest first
-    total = len({"messages": news.message_pages, "changelog": news.changelog_pages, "older": news.older_changelog_pages}[tab]())
+    total = len({"messages": news.message_pages, "changelog": news.changelog_pages}[tab]())
     if total == 1:
         return
     assert find_button(nav, f"1/{total}").disabled  # the page counter is a label, not a button

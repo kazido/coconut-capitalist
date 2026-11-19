@@ -38,12 +38,14 @@ def entry_text(entry: ChangelogEntry) -> str:
     return f"### {star}{entry.title}\n-# {day(entry.date)}\n{entry.body.strip()}"
 
 
-def pages(blocks: list[str], per_page: int = PAGE_CHARS) -> list[list[str]]:
-    """Blocks packed in order onto pages of at most `per_page` characters (a block longer than that gets a page of its own). Always one page."""
+def pages(blocks: list[str], per_page: int = PAGE_CHARS, max_blocks: int | None = None) -> list[list[str]]:
+    """Blocks packed in order onto pages of at most `per_page` characters (a block longer than that gets a page of its own),
+    and at most `max_blocks` blocks per page if given. Always one page."""
     out: list[list[str]] = [[]]
     size = 0
     for block in blocks:
-        if out[-1] and size + len(block) > per_page:
+        full = max_blocks is not None and len(out[-1]) >= max_blocks
+        if out[-1] and (full or size + len(block) > per_page):
             out.append([])
             size = 0
         out[-1].append(block)
@@ -55,14 +57,8 @@ def message_pages() -> list[list[str]]:
     return pages([notice_text(n) for n in get_registry().notices])
 
 
-RECENT_CHANGES = 3  # the Changelog tab shows this many newest entries on one page; older ones go to the Older changes tab
+CHANGES_PER_PAGE = 3  # about this many changes per Changelog page (long ones still get their own page if needed)
 
 
 def changelog_pages() -> list[list[str]]:
-    """The newest few changes. Packed like any other tab, so three long entries still fit Discord's limits (paged if needed)."""
-    return pages([entry_text(e) for e in get_registry().changelog[:RECENT_CHANGES]])
-
-
-def older_changelog_pages() -> list[list[str]]:
-    """Every change after the newest RECENT_CHANGES, newest first, packed onto pages."""
-    return pages([entry_text(e) for e in get_registry().changelog[RECENT_CHANGES:]])
+    return pages([entry_text(e) for e in get_registry().changelog], max_blocks=CHANGES_PER_PAGE)

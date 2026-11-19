@@ -1,16 +1,12 @@
-"""The Changelog tab shows only the newest RECENT_CHANGES entries; the rest are paged on Older changes."""
+"""The Changelog pages hold about CHANGES_PER_PAGE changes each, newest first, with nothing lost."""
 
 from cococap.registry import get_registry
 from cococap.services import news
 
 
-def test_changelog_tab_shows_only_the_newest_entries():
+def test_changelog_pages_hold_a_few_changes_each_in_order():
     entries = get_registry().changelog
-    shown = [block for page in news.changelog_pages() for block in page]
-    assert shown == [news.entry_text(e) for e in entries[:news.RECENT_CHANGES]]
-
-
-def test_older_changes_hold_the_rest_with_nothing_lost():
-    entries = get_registry().changelog
-    older = [block for page in news.older_changelog_pages() for block in page]
-    assert older == [news.entry_text(e) for e in entries[news.RECENT_CHANGES:]]
+    pages = news.changelog_pages()
+    assert all(1 <= len(page) <= news.CHANGES_PER_PAGE for page in pages)
+    flat = [block for page in pages for block in page]
+    assert flat == [news.entry_text(e) for e in entries]
