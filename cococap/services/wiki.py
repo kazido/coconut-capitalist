@@ -121,10 +121,10 @@ def _foraging(reg: Registry) -> list[str]:
         "Stuck on a bad grain? Use a **rotation wedge** (find it chopping or buy it in the shop) to move off at once: the Iron and Gilded wedges, made at the Workbench, lean toward the good grains. A good chop hits extra hard.",
         f"**Special spots** are rare and wear out fast, but chopped in the right style they pay off: {emojis.icon('gem', '💎')} **Heartwood** hits the tree several times harder, {emojis.icon('sparkle', '✨')} **Golden Knot** pays double xp, "
         f"and {emojis.icon('page', '🏷️')} **Rich Seam** marks a tree of your own for more drops when it falls. Better wedges make them likelier. An axe with **Double Strike** sometimes chops twice.",
-        f"**Releaf Foundation** (level {f.releaf.min_level}, a button on the foraging page): the whole server gives **rare** foraging drops (rarity {f.releaf.min_rarity} or more; the item is gone for good) "
-        f"to one shared meter, worth {', '.join(f'{p} for rarity {r}' for r, p in sorted(f.releaf.points.items()))}. At **{f.releaf.meter_goal}** a **Bloom** starts for {f.releaf.bloom_hours:g} hours: "
+        f"**Releaf Foundation** (level {f.releaf.min_level}, a button on the foraging page): the whole server gives foraging drops of any rarity (the item is gone for good) "
+        f"to one shared meter, worth {', '.join(f'{p} for rarity {r}' for r, p in sorted(f.releaf.points.items()))}. When the meter is full (the goal is **{f.releaf.share_points}** points per active forager) a **Bloom** starts for {f.releaf.bloom_hours:g} hours: "
         f"**+{f.releaf.bloom_xp:.0%}** foraging xp and **+{f.releaf.bloom_drops:.0%}** drop chances for EVERYONE, whether they gave or not. Giving is closed during a Bloom, "
-        f"and one person can give at most {f.releaf.max_share:.0%} of the goal per round. There is no personal reward, only the thank-you list.",
+        f"and one person can give at most {f.releaf.share_cap:g} shares ({int(f.releaf.share_points * f.releaf.share_cap)} points) per round. There is no personal reward, only the thank-you list.",
         *([_species_text(reg)] if _species_text(reg) else []),
         f"**The community tree.** One grows every hour and stands for {c.open_minutes} minutes. Everyone's chops add up; "
         f"chop at least {c.min_share:.0%} of it to be paid, and a bigger crowd earns a bonus. Rewards arrive in your own panel, even if you were offline.",

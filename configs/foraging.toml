@@ -170,10 +170,14 @@ refresh_seconds = 5
 
 [releaf]                          # the Releaf Foundation: the whole server gives rare drops to ONE shared meter; a full meter starts a temporary server-wide Bloom
 min_level = 10                    # foraging level to give
-min_rarity = 4                    # only items of this rarity or more can be given: it is a real loss, the item is gone
-points = { 4 = 1, 5 = 3, 6 = 8, 7 = 20 }   # meter points one item is worth, by rarity (cheap rarity-4 food is worth little, a rare feather a lot)  TODO(balance)
-meter_goal = 300                  # points that fill the meter and start a Bloom (about 7 hours of a normal server giving, see DESIGN.md)  TODO(balance)
-max_share = 0.25                  # one player can give at most this share of the goal per cycle: at least 4 people are needed
+min_rarity = 1                    # every foraging drop can be given (low tiers are worth little), so a small server can always help
+points = { 1 = 1, 2 = 2, 3 = 3, 4 = 5, 5 = 15, 6 = 40, 7 = 100 }   # meter points one item is worth, by rarity: rises faster than the sell value, so a rare feather is better sold, cheap drops are the efficient gift  TODO(balance)
+share_points = 200                # one forager's share of the goal: about 30 active minutes of mid-game foraging if they give everything  TODO(balance)
+share_cap = 1.5                   # one player can give at most this many shares per cycle, so with 3 foragers two can still fill the meter (one alone cannot)
+min_foragers = 2                  # the goal never counts fewer foragers than this (a one-player server still needs 2 shares)
+active_days = 7                   # a forager counts toward the goal if they pressed anything in this many days and have foraging level >= min_level
+# The goal of a cycle = share_points x active foragers (at least min_foragers), worked out when the cycle starts and fixed until its Bloom ends,
+# so the target never moves while people are giving. A small or quiet server gets a small goal; a busy one a bigger goal.
 bloom_hours = 3                   # a Bloom lasts this long, then the meter is empty and giving reopens
 bloom_xp = 0.10                   # during a Bloom everyone's foraging xp is +10%...  TODO(balance)
 bloom_drops = 0.10                # ...and every drop chance of a foraging tree is +10% (private, community and party trees alike)  TODO(balance)

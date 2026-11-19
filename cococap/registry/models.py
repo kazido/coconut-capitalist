@@ -801,8 +801,10 @@ class ReleafRules(_Data):
     min_level: int = Field(ge=1)  # foraging level to give
     min_rarity: int = Field(ge=1, le=7)  # only items of this rarity or more can be given (a real loss, never the junk)
     points: dict[int, int] = Field(min_length=1)  # rarity -> meter points one item is worth (a rarity with no entry is not accepted)
-    meter_goal: int = Field(ge=1)  # points that fill the meter and start a Bloom
-    max_share: float = Field(gt=0, le=1)  # the most one player can give in one cycle, as a share of the goal (so it takes several people)
+    share_points: int = Field(ge=1)  # one forager's share of the goal; goal = share_points x active foragers
+    share_cap: float = Field(gt=0)  # the most one player can give in one cycle, in shares (1.5 = 1.5 x share_points)
+    min_foragers: int = Field(ge=1)  # the goal never counts fewer foragers than this
+    active_days: float = Field(gt=0)  # a forager is active if they pressed anything within this many days (and have foraging level >= min_level)
     bloom_hours: float = Field(gt=0)  # how long a Bloom lasts
     bloom_xp: float = Field(ge=0)  # +this to every foraging xp reward during a Bloom (0.10 = +10%)
     bloom_drops: float = Field(ge=0)  # +this to every drop chance of foraging trees during a Bloom (0.10 = +10%)

@@ -35,7 +35,7 @@ class ReleafScreen(Screen):
                 f"**+{rules.bloom_xp:.0%}** foraging xp and **+{rules.bloom_drops:.0%}** drop chances on every tree, for **{rules.bloom_hours:g}** hours.\n"
                 f"-# Giving takes the item for good and brings you nothing personal; the Bloom is for everybody, whether they gave or not.")
         body.append(text(head))
-        status_line = f"{emojis.icon('sprout', '🌱')}  {bar(found.meter / found.goal, 12, 'meter')}  **{found.meter}/{found.goal}**"
+        status_line = f"{emojis.icon('sprout', '🌱')}  {bar(found.meter / found.goal, 12, 'meter')}  **{found.meter}/{found.goal}**  (goal for {found.goal // rules.share_points} foragers)"
         if found.bloom_active:
             status_line += f"\n{emojis.icon('flower', '🌸')} **Bloom is up!** Ends <t:{int(found.bloom_until)}:R>. Giving reopens after it."
         elif found.full:
@@ -52,7 +52,7 @@ class ReleafScreen(Screen):
         if self.item not in owned:
             self.item = None
         if not owned:
-            body.append(text(f"You have nothing the Foundation takes. It accepts foraging items of rarity **{rules.min_rarity}** or more."))
+            body.append(text(f"You have nothing the Foundation takes. It accepts any foraging drop (rarity **{rules.min_rarity}** or more)."))
             return Page("Releaf Foundation", body, accent=GREEN)
         ranked = sorted(owned, key=lambda i: (-reg.item(i).rarity, reg.item(i).name))
         options = [discord.SelectOption(label=reg.item(i).name, value=i, emoji=reg.item(i).emoji or None, default=i == self.item,
@@ -61,7 +61,7 @@ class ReleafScreen(Screen):
         body.append(row(select("Give...", options, self._pick)))
         if self.item:
             body.append(text(self._preview(reg, rules, s, owned)))
-            have, fits = owned[self.item], releaf.max_items(releaf.points_of(self.item, reg), found.meter, s.yours, rules) if found.open else 0
+            have, fits = owned[self.item], releaf.max_items(releaf.points_of(self.item, reg), found.meter, s.yours, found.goal, rules) if found.open else 0
             allowed = min(have, fits)
 
             def give(count: int):
@@ -80,7 +80,7 @@ class ReleafScreen(Screen):
         have = owned[self.item]
         if not found.open:
             return "-# The Foundation is closed until the Bloom ends."
-        fits = releaf.max_items(points, found.meter, s.yours, rules)
+        fits = releaf.max_items(points, found.meter, s.yours, found.goal, rules)
         if fits < 1:
             return "-# You have given all you can this round."
         n = min(have, fits)

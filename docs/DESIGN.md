@@ -255,17 +255,18 @@ in `configs/foraging.toml`. It is reached from a button on the Foraging page (fr
 - **One shared meter** for the whole server, kept as one JSON document in the existing `community_state` table (key `releaf`, `services/community.py`: a read-modify-write
   in one serialized transaction, so two givers at once cannot start two Blooms or overfill it; no new table, so no migration). It holds the meter, this round's and lifetime
   points per player, and the recent Bloom windows.
-- **Rare only.** Only foraging items (not tools or key items) of rarity `min_rarity` (4) or more can be given, worth `points` by rarity (1/3/8/20). The item is consumed:
-  a real loss, and the page shows the bits it would have sold for. Items refused or left over (closed, cap, meter nearly full) go straight back.
-- **Bloom.** At `meter_goal` (300 points) a Bloom starts for `bloom_hours` (3): everybody's foraging xp is +10% (the `party.xp_multiplier` hook, foraging only) and every drop
+- **Every rarity counts.** Any foraging item (not tools or key items) can be given, worth `points` by rarity (1/2/3/5/15/40/100, rising faster than sell value, so rare feathers are better sold).
+  The item is consumed: a real loss, and the page shows the bits it would have sold for. Items refused or left over (closed, cap, meter nearly full) go straight back.
+- **The goal scales with the server.** goal = `share_points` (200) x active foragers (at least `min_foragers` 2; active = pressed anything in `active_days` 7 and foraging level >= `min_level`;
+  `activity.active_in_skill`). It is set when a cycle starts (first read or when a Bloom ends) and stored with the forager count in the state (`goal`, `foragers`), so it never moves mid-cycle. The screen shows it.
+- **Bloom.** At the goal a Bloom starts for `bloom_hours` (3): everybody's foraging xp is +10% (the `party.xp_multiplier` hook, foraging only) and every drop
   chance of every foraging tree is +10% (`roll_drops(boost=)`: private trees at the moment they fall; community trees if a Bloom was up at any time in the tree's hour, since
   they settle lazily; party trees take the best boost seen while they were chopped). Then the meter empties, the round's tallies reset and giving reopens.
 - **Why nobody has to give (the four rules):** (a) giving is CLOSED while the meter is full / a Bloom runs, so surplus is never wanted or wasted (the last item may top the meter
   off; the surplus is not counted); (b) the Bloom is temporary and shared, so it is a gift to everyone including non-givers, never a personal to-do, and not giving costs
-  nothing but the bonus a few hours a day; (c) one player can give at most `max_share` (25% = 75 points) per round, so at least four people are needed; (d) there is no personal
-  reward at all, only a thank-you list (top givers this round, your own tally). Because points follow rarity but the sell value follows rarity much faster, the cheap rarity-4
-  drops (honeycomb) are the efficient thing to give; the rare feathers are better sold. The wiki says all of this.
-- **Numbers (sim in the session scratchpad, `releaf_sim.py`):** about 0.19 points per drop roll if every donatable drop were given, ~300 rolls an hour for an active mid-game
+  nothing but the bonus a few hours a day; (c) one player can give at most `share_cap` (1.5 shares = 300 points) per round, so one person alone never fills it, but two of three can; (d) there is no personal
+  reward at all, only a thank-you list (top givers this round, your own tally). The wiki says all of this.
+- **Numbers (old sim, for the previous rarity-4+ points; the new points/goal are untuned):** about 0.19 points per drop roll if every donatable drop were given, ~300 rolls an hour for an active mid-game
   forager. A server of 12 players (half online each hour) that gives 20% of its donatable drops keeps a Bloom up about 29% of the time (a Bloom every ~10 h); 6 players at the same
   rate 18%, 25 players 44%; giving 5% gives 10-18%. Even if everyone gave 40% it stays around 40-55%. The Bloom is worth about +3% xp averaged over the day. TODO(balance)
 - **Removed:** the personal meter, daily limit, `double_ready`, double trees (+hp, jackpot, double_items haul), the Re-leaf buttons on result pages and **growth mode** (never built).

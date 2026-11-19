@@ -96,6 +96,19 @@ async def sweep(now: float | None = None, registry: Registry | None = None) -> l
     return kicked
 
 
+async def active_in_skill(skill: str, min_level: int, days: float, now: float | None = None) -> int:
+    """How many players pressed something in the last `days` and have `skill` at `min_level` or more."""
+    from cococap.user import User
+
+    now = time.time() if now is None else now
+    async with get_database().session() as session:
+        ids = (await session.execute(select(UserRow.discord_id).where(UserRow.last_active >= now - days * 86400))).scalars().all()
+        if not ids:
+            return 0
+        xps = (await session.execute(select(SkillRow.xp).where(SkillRow.user_id.in_(ids), SkillRow.skill == skill))).scalars().all()
+    return sum(1 for xp in xps if User.xp_to_level(xp) >= min_level)
+
+
 async def recent_players(skills: tuple[str, ...], days: float, now: float | None = None) -> tuple[int, float]:
     """(how many players pressed something in the last `days`, their average level across `skills`). Used to size the weekly community shipment."""
     from cococap.user import User

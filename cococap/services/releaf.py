@@ -3,7 +3,7 @@
 Players give rare foraging drops (rarity `min_rarity` or more; the item is gone, a real loss) and each one adds points to the shared meter. At the goal a
 **Bloom** starts for `bloom_hours`: everybody's foraging xp and every drop chance of every tree (private, community, party) get a bonus, whether they gave or
 not. Then the meter empties and giving reopens. Giving is CLOSED while the meter is full / a Bloom is running, so nothing is ever wasted, and one player can
-give at most `max_share` of the goal per cycle, so it takes several people. There is no personal reward (only a donor list), so it is never a must-do.
+give at most `share_cap` shares per cycle, so it takes several people. The goal scales with the server: `share_points` per active forager, fixed per cycle. There is no personal reward (only a donor list), so it is never a must-do.
 
 The shared state is one JSON document (`services/community.py`, key "releaf"), changed in one serialized transaction, so two people giving at the same moment
 can never start two Blooms or overfill the meter.
@@ -16,25 +16,58 @@ from dataclasses import dataclass, field
 from cococap.errors import GameRuleError
 from cococap.registry import Registry, get_registry
 from cococap.registry.models import ReleafRules
-from cococap.services import community
+from cococap.services import activity, community
 from cococap.user import User
 
 KEY = "releaf"
 HOUR = 3600
 KEEP_BLOOMS = 6  # past Bloom windows kept, so a community tree that finished during one can still be paid with it
-DEFAULT: dict = {"meter": 0, "given": {}, "lifetime": {}, "bloom_started": 0.0, "bloom_until": 0.0, "blooms": [], "cycles": 0}
+DEFAULT: dict = {"meter": 0, "given": {}, "lifetime": {}, "bloom_started": 0.0, "bloom_until": 0.0, "blooms": [], "cycles": 0, "goal": 0, "foragers": 0}
 
 
 class ReleafError(GameRuleError):
     """A rule was broken; the message is safe to show the player."""
 
 
-def _tick(data: dict, now: float, rules: ReleafRules) -> None:
-    """Close a Bloom that has run out: the meter empties and this cycle's tallies reset (lifetime tallies stay)."""
-    if data["meter"] >= rules.meter_goal and now >= data["bloom_until"]:
+def goal_for(foragers: int, rules: ReleafRules) -> int:
+    """The goal of a cycle: one share per active forager, never fewer than `min_foragers` of them."""
+    return rules.share_points * max(rules.min_foragers, foragers)
+
+
+def _needs_tick(data: dict, now: float) -> bool:
+    return data.get("goal", 0) <= 0 or (data["meter"] >= data["goal"] and now >= data["bloom_until"])
+
+
+def _tick(data: dict, now: float, rules: ReleafRules, foragers: int) -> None:
+    """Start a cycle's goal when it has none (first read, old saves) and close a Bloom that has run out: the meter empties, this cycle's
+    tallies reset (lifetime tallies stay) and the next goal is sized for `foragers`. The goal is fixed from then until that Bloom ends."""
+    if data.get("goal", 0) > 0 and data["meter"] >= data["goal"] and now >= data["bloom_until"]:
         data["meter"] = 0
         data["given"] = {}
         data["cycles"] += 1
+        data["goal"] = 0
+    if data.get("goal", 0) <= 0:
+        data["foragers"] = foragers
+        data["goal"] = goal_for(foragers, rules)
+
+
+async def _foragers(rules: ReleafRules, now: float) -> int:
+    return await activity.active_in_skill("foraging", rules.min_level, rules.active_days, now)
+
+
+async def _load(now: float, rules: ReleafRules) -> dict:
+    """The shared state as of `now`, with a goal set and an ended Bloom closed (saved, so the goal stays fixed for the cycle)."""
+    data = await community.read(KEY, DEFAULT)
+    if not _needs_tick(data, now):
+        return data
+    foragers = await _foragers(rules, now)
+
+    def tick(d: dict) -> dict:
+        if _needs_tick(d, now):
+            _tick(d, now, rules, foragers)
+        return d
+
+    return await community.update(KEY, DEFAULT, tick)
 
 
 def can_give(item, rules: ReleafRules) -> bool:
@@ -49,15 +82,15 @@ def points_of(item_id: str, registry: Registry) -> int:
 
 def cap_points(rules: ReleafRules) -> int:
     """The most points one player can give in one cycle."""
-    return max(1, math.floor(rules.meter_goal * rules.max_share))
+    return max(1, math.floor(rules.share_points * rules.share_cap))
 
 
-def max_items(points: int, meter: int, yours: int, rules: ReleafRules) -> int:
+def max_items(points: int, meter: int, yours: int, goal: int, rules: ReleafRules) -> int:
     """How many items worth `points` each can still be given: the last one may top the meter off (the surplus is simply not counted),
     but your own cap is strict."""
-    if points <= 0 or meter >= rules.meter_goal:
+    if points <= 0 or meter >= goal:
         return 0
-    to_fill = math.ceil((rules.meter_goal - meter) / points)
+    to_fill = math.ceil((goal - meter) / points)
     under_cap = (cap_points(rules) - yours) // points
     return max(0, min(to_fill, under_cap))
 
@@ -81,6 +114,7 @@ class Foundation:
     cycles: int  # Blooms completed before this one
     top: list[Donor] = field(default_factory=list)  # this cycle's biggest givers
     givers: int = 0  # how many people gave this cycle
+    foragers: int = 0  # the active foragers the goal was sized for
 
     @property
     def full(self) -> bool:
@@ -104,12 +138,11 @@ async def foundation(now: float | None = None, registry: Registry | None = None)
     reg = registry or get_registry()
     rules = reg.foraging.releaf
     now = time.time() if now is None else now
-    data = await community.read(KEY, DEFAULT)
-    _tick(data, now, rules)
+    data = await _load(now, rules)
     ranked = sorted(((u, p) for u, p in data["given"].items() if p > 0), key=lambda kv: (-kv[1], kv[0]))
-    return Foundation(data["meter"], rules.meter_goal, data["bloom_started"], data["bloom_until"],
-                      now < data["bloom_until"] and data["meter"] >= rules.meter_goal, data["cycles"],
-                      await _names(ranked[:rules.top_donors]), len(ranked))
+    return Foundation(data["meter"], data["goal"], data["bloom_started"], data["bloom_until"],
+                      now < data["bloom_until"] and data["meter"] >= data["goal"], data["cycles"],
+                      await _names(ranked[:rules.top_donors]), len(ranked), data["foragers"])
 
 
 @dataclass(frozen=True)
@@ -127,8 +160,7 @@ async def status(user: User, now: float | None = None, registry: Registry | None
     rules = reg.foraging.releaf
     now = time.time() if now is None else now
     skill = await user.skill("foraging")
-    data = await community.read(KEY, DEFAULT)
-    _tick(data, now, rules)
+    data = await _load(now, rules)
     return Status(User.xp_to_level(skill.xp) >= rules.min_level, await foundation(now, reg), data["given"].get(str(user.id), 0),
                   data["lifetime"].get(str(user.id), 0), cap_points(rules), skill.stats.releaf_donations)
 
@@ -171,22 +203,25 @@ async def donate(user: User, item_id: str, quantity: int, now: float | None = No
     uid = str(user.id)
     outcome: dict = {}
 
+    foragers = await _foragers(rules, now)
+
     def give(data: dict) -> None:
-        _tick(data, now, rules)
-        if data["meter"] >= rules.meter_goal:
+        _tick(data, now, rules, foragers)
+        goal = data["goal"]
+        if data["meter"] >= goal:
             outcome["reason"] = "closed"
             return
         yours = data["given"].get(uid, 0)
-        n = min(quantity, max_items(points, data["meter"], yours, rules))
+        n = min(quantity, max_items(points, data["meter"], yours, goal, rules))
         if n <= 0:
             outcome["reason"] = "cap"
             return
-        counted = min(points * n, rules.meter_goal - data["meter"])
+        counted = min(points * n, goal - data["meter"])
         data["meter"] += counted
         data["given"][uid] = yours + counted
         data["lifetime"][uid] = data["lifetime"].get(uid, 0) + counted
-        outcome.update(n=n, counted=counted, meter=data["meter"])
-        if data["meter"] >= rules.meter_goal:  # the goal: ONE Bloom starts (the update is serialized, so a second giver finds the meter full)
+        outcome.update(n=n, counted=counted, meter=data["meter"], goal=goal)
+        if data["meter"] >= goal:  # the goal: ONE Bloom starts (the update is serialized, so a second giver finds the meter full)
             data["bloom_started"], data["bloom_until"] = now, now + rules.bloom_hours * HOUR
             data["blooms"] = (data["blooms"] + [[now, data["bloom_until"]]])[-KEEP_BLOOMS:]
             outcome["bloom"] = True
@@ -208,7 +243,7 @@ async def donate(user: User, item_id: str, quantity: int, now: float | None = No
         skill.stats.releaf_donations += 1
 
     await user.update_skill("foraging", count)
-    return Donation(item_id, given, quantity - given, outcome["counted"], outcome["meter"], rules.meter_goal, bool(outcome.get("bloom")))
+    return Donation(item_id, given, quantity - given, outcome["counted"], outcome["meter"], outcome["goal"], bool(outcome.get("bloom")))
 
 
 # ---- the Bloom's bonuses ---------------------------------------------------------------------------------------
