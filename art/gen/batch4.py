@@ -70,23 +70,63 @@ def axe(c, o, lift=0):
     c.put(hx + 2, hy - 3, "S"); c.put(hx + 2, hy + 3, "S")  # the toe and the beard flare out
 
 
-def chop(o, notch=False, shake=0, chips=0, leaf=None, lift=0):
+GRIP = (2, 14)  # the end of the handle: the swing turns around it
+
+
+def swung_axe(deg):
+    """The axe turned `deg` degrees back (counter-clockwise) around its grip; 0 = the blade in the trunk."""
+    flat = Canvas()
+    axe(flat, 0)
+    a = math.radians(deg)
+    g = [["." for _ in range(N)] for _ in range(N)]
+    for y in range(N):
+        for x in range(N):  # sample backwards so the turned axe has no holes
+            dx, dy = x - GRIP[0], y - GRIP[1]
+            sx = round(GRIP[0] + dx * math.cos(a) - dy * math.sin(a))
+            sy = round(GRIP[1] + dx * math.sin(a) + dy * math.cos(a))
+            if 0 <= sx < N and 0 <= sy < N and flat.g[sy][sx] in "sS":  # only the chunky head is sampled
+                g[y][x] = flat.g[sy][sx]
+    ex, ey = 5, -4  # the eye, from the grip; the thin handle is drawn as a clean line instead of rotated pixels
+    tx = round(GRIP[0] + ex * math.cos(a) + ey * math.sin(a))
+    ty = round(GRIP[1] - ex * math.sin(a) + ey * math.cos(a))
+    c = Canvas(); c.g = g
+    c.line(GRIP[0], GRIP[1], tx, ty, "H"); c.put(GRIP[0], GRIP[1], "h")
+    return c.g
+
+
+def smear(c, frm, to):
+    """A pale arc where the blade's edge just travelled."""
+    r, base = math.hypot(8, 4), math.degrees(math.atan2(4, 8))
+    for k in range(int(min(frm, to)), int(max(frm, to)) + 1, 3):
+        a = math.radians(base + k)
+        x, y = round(GRIP[0] + r * math.cos(a)), round(GRIP[1] - r * math.sin(a))
+        if 0 <= x < N and 0 <= y < N and c.g[y][x] == ".":  # the trail stays behind the tree
+            c.put(x, y, "M")
+
+
+def chop(deg, notch=False, shake=0, chips=0, leaf=None, trail=None):
     c = Canvas()
     tree(c, shake, notch)
-    axe(c, o, lift)
+    if trail:
+        smear(c, *trail)
+    g = swung_axe(deg)
+    for y in range(N):
+        for x in range(N):
+            if g[y][x] != ".":
+                c.put(x, y, g[y][x])
     for i in range(chips):
-        c.put(8 - i * 2, 10 - i * 2, "C"); c.put(7 - i, 8 - i * 2, "C")
+        c.put(8 - i * 2, 9 - i * 2, "C"); c.put(9 - i, 7 - i * 2, "C")
     if leaf:
         c.put(*leaf, "l")
     return c.g
 
 
-ct = [(chop(-3, lift=1), 320), (chop(-1), 60), (chop(0, notch=True, shake=1), 80), (chop(0, notch=True, chips=1), 90),
-      (chop(-1, notch=True, chips=2, leaf=(14, 10)), 120), (chop(-2, notch=True, leaf=(14, 12)), 140),
-      (chop(-3, notch=True, lift=1), 260)]
+ct = [(chop(48), 320), (chop(24, trail=(48, 24)), 60), (chop(0, notch=True, shake=1, trail=(24, 2)), 80),
+      (chop(0, notch=True, chips=1), 90), (chop(0, notch=True, chips=2, leaf=(14, 10)), 120),
+      (chop(20, notch=True, leaf=(14, 12)), 140), (chop(40, notch=True), 160)]
 emit("ui_chop_tree", {"T": "#9a6a44", "U": "#c8905a", "t": "#6a4428", "k": "#2e1c2c", "W": "#f0c890", "C": "#fff0c8",
                       "L": "#8ee05a", "l": "#4ea03c", "g": "#2c6a30", "H": "#c8905a", "h": "#7a4c30", "S": "#f4f8ff",
-                      "s": "#8a96ac"}, ct)
+                      "s": "#8a96ac", "M": "#d8e8ff"}, ct)
 
 
 # ---------------------------------------------------------------- Harvest: a carrot drops into a woven basket of crops.
