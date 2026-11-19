@@ -198,7 +198,7 @@ class OrbScreen(Screen):
 
     async def _hunt(self, interaction: discord.Interaction, values: list[str]) -> None:
         pet = await pets.set_target(self.user, None if values[0] == "none" else values[0])
-        await self.refresh(interaction, f"{emojis.icon('target', '🎯')} Orbs now favour {pet.emoji} **{pet.name}**." if pet else f"{emojis.icon('target', '🎯')} You are not hunting anything now.")
+        await self.refresh(interaction, f"{emojis.icon('target', '🎯')} Orbs now favour {pet.emoji} **{pet.name}**.\n-# {pet.description}" if pet else f"{emojis.icon('target', '🎯')} You are not hunting anything now.")
 
     def _open_orb(self, orb_id: str):
         async def go(interaction: discord.Interaction) -> None:
