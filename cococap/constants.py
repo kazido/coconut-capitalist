@@ -67,7 +67,7 @@ class Rarities(Enum):
     COMMON = (1, "Common", "0x8E9AAF")
     UNCOMMON = (2, "Uncommon", "0x4FCB6B")
     RARE = (3, "Rare", "0x3D8BFF")
-    SUPER_RARE = (4, "Super Rare", "0xC56CF0")
+    SUPER_RARE = (4, "Super Rare", "0xBA36F7")
     LEGENDARY = (5, "Legendary", "0xFFB020")
     MYTHICAL = (6, "Mythical", "0xFF4FD8")
     PREMIUM = (7, "Premium", "0xFF4D4D")
