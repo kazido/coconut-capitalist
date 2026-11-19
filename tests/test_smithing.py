@@ -268,3 +268,19 @@ def test_part_rarity_is_its_tier_and_celestial_is_incredibly_rare():
         if row.area + RULES.area_cap < PART_TIERS:
             assert weights[-1] == 0
     assert "Celestial" in smithing.part_label("base", 8)
+
+
+def test_tier_pace():
+    """Owner pacing: tier 7 is end game (none before area 6; a full tier-7 set takes many dozens of parts in the last
+    area) and tier 8 is near mythical (at most 1 part in 4000 anywhere)."""
+    last = max(w.area for w in RULES.area_weights)
+    for row in RULES.area_weights:
+        w = RULES.weights_for_area(row.area)
+        share = [x / sum(w) for x in w]
+        assert share[7] <= 1 / 4000
+        if row.area < last - 1:
+            assert share[6] == 0, f"area {row.area} must not drop tier 7"
+    w = RULES.weights_for_area(last)
+    t7 = w[6] / sum(w)
+    # one of each part type from random tier-7 drops: 3 * (1 + 1/2 + 1/3) = 5.5 tier-7 drops on average
+    assert 5.5 / t7 >= 60, "a full tier-7 tool should take at least ~60 parts in the last area"

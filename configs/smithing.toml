@@ -17,7 +17,11 @@ part_drop_chance = 0.01                  # TODO(balance)
 legacy_scroll_cap = 2
 
 # A part's TIER IS ITS RARITY (owner decision): 1 Common, 2 Uncommon, 3 Rare, 4 Super Rare, 5 Legendary, 6 Mythical,
-# 7 Premium, 8 Celestial. Tier 8 is incredibly rare: only in the last two areas, about 1 part in 1000 there.
+# 7 Premium, 8 Celestial.
+# Pace (owner): ~1 part per active hour (1% per mine run / catch / tree / harvest). Tier 7 is END GAME: none before
+# area 6, and a full tier-7 tool (one of each part type, ~5.5 tier-7 drops) takes ~90 active hours in area 7. Tier 8 is near
+# mythical: 1 in 5000 parts in area 7 (1 in 20000 in area 6), so most players never see one and the luckiest get one.
+# Guarded by tests/test_smithing.py::test_tier_pace.
 # How many traits a freshly dropped part rolls, by tier 1..8 (capped by the 3 generic part traits that exist now).
 fresh_traits = [1, 1, 2, 2, 3, 3, 3, 3]   # TODO(balance)
 
@@ -25,7 +29,7 @@ fresh_traits = [1, 1, 2, 2, 3, 3, 3, 3]   # TODO(balance)
 # Power a part gives at tier 1..8 (index 0 = tier 1). Three tier-1 parts ~ today's starter tool power (3).
 power = [1, 2, 3, 5, 7, 10, 14, 20]       # TODO(balance)
 
-# Tier drop weights per area (8 numbers, tier 1..8). Relative: they need not add to 100 (areas 6-7 are x10 so Celestial can be 1).
+# Tier drop weights per area (8 numbers, tier 1..8). Relative: areas 1-5 add to 100, area 6 to 20000, area 7 to 5000 (so Celestial can be 1).
 [[area_weights]]
 area = 1
 weights = [70, 25, 5, 0, 0, 0, 0, 0]       # TODO(balance)
@@ -37,16 +41,16 @@ area = 3
 weights = [20, 35, 25, 15, 5, 0, 0, 0]     # TODO(balance)
 [[area_weights]]
 area = 4
-weights = [10, 25, 30, 22, 10, 3, 0, 0]    # TODO(balance)
+weights = [12, 28, 32, 20, 7, 1, 0, 0]    # TODO(balance)
 [[area_weights]]
 area = 5
-weights = [5, 15, 25, 28, 17, 8, 2, 0]       # TODO(balance)
+weights = [6, 16, 28, 30, 17, 3, 0, 0]       # TODO(balance)
 [[area_weights]]
 area = 6
-weights = [20, 80, 180, 270, 250, 150, 50, 1]       # TODO(balance)
+weights = [499, 1800, 4000, 6000, 5000, 2400, 300, 1]       # TODO(balance)
 [[area_weights]]
 area = 7
-weights = [10, 40, 120, 220, 280, 220, 110, 1]      # TODO(balance)
+weights = [50, 250, 750, 1250, 1300, 1100, 299, 1]      # TODO(balance)
 
 # Traits: a named bonus picked from one part. `stat` is a stat name the engines already read (the same names
 # enchants use). `amounts` = the value at each quality grade (Crude, Fine, Superb, Masterwork), scaled by quality mult.
