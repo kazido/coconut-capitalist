@@ -3,7 +3,7 @@ import discord
 from cococap import emojis
 from cococap.errors import CustomError
 from cococap.registry import get_registry
-from cococap.services import farming, shop
+from cococap.services import farming, market, shop, smithing
 from cococap.ui import Page, Screen, PromptModal
 from cococap.ui.components import bits, button, row, section_art, select, sep, text
 from cococap.ui.tabs import TabsScreen
@@ -210,6 +210,79 @@ class ShopPane(Screen):
         return ask
 
 
+def _restock_text(seconds: int) -> str:
+    hours, minutes = divmod(-(-max(seconds, 0) // 60), 60)  # rounds up to whole minutes
+    return f"{hours}h {minutes}m" if hours else f"{minutes}m"
+
+
+class MarketPane(Screen):
+    """A smithing-part shop: a few parts for bits, restocked on a timer, one of each per player (services/market.py)."""
+
+    shop = ""  # "merchant" or "black_market" (configs/market.toml)
+
+    def __init__(self, nav):
+        super().__init__(nav)
+        self.picked: int | None = None  # the slot picked in the dropdown
+
+    async def build(self) -> Page:
+        reg = get_registry()
+        body = [*self.note_block(), text(f"You have **{emojis.bits(self.user.purse)}**")]
+        if not await market.unlocked(self.user, self.shop, reg):
+            body.append(text(market.unlock_text(self.shop, reg)))
+            return Page(self.label, body, accent=discord.Colour.gold().value)
+        offers = await market.stock(self.user, self.shop, registry=reg)
+        body.append(text(f"Restocks in {_restock_text(market.seconds_until_restock(self.shop, registry=reg))}"))
+        rules = smithing._rules(reg)
+        lines = []
+        for o in offers:
+            names = ", ".join(rules.trait(t).name for t in o.traits) or "no traits"
+            status = " · **sold**" if o.bought else ""
+            lines.append(f"**{o.slot + 1}.** Tier {o.tier} {o.part_type.title()} part · {names} · {emojis.bits(o.price)}{status}")
+        body.append(text("\n".join(lines)))
+        open_offers = [o for o in offers if not o.bought]
+        if not open_offers:
+            body.append(text("Sold out until the next restock."))
+            return Page(self.label, body, accent=discord.Colour.gold().value)
+        if self.picked not in {o.slot for o in open_offers}:
+            self.picked = open_offers[0].slot
+        options = [
+            discord.SelectOption(
+                label=f"Slot {o.slot + 1}: Tier {o.tier} {o.part_type.title()}", value=str(o.slot),
+                description=f"{bits(o.price)} bits", default=o.slot == self.picked,
+            )
+            for o in open_offers
+        ]
+        body.append(row(select("Pick a part...", options, self._pick)))
+        body.append(row(button("Buy", emoji=emojis.icon('sell', '💰'), style=discord.ButtonStyle.success, on_click=self._buy)))
+        return Page(self.label, body, accent=discord.Colour.gold().value)
+
+    async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
+        self.picked = int(values[0])
+        await self.refresh(interaction)
+
+    async def _buy(self, interaction: discord.Interaction) -> None:
+        if self.picked is None:
+            await self.refresh(interaction, "Pick a part first.")
+            return
+        offer = await market.buy(self.user, self.shop, self.picked)
+        self.picked = None
+        await self.refresh(interaction, f"Bought a Tier {offer.tier} {offer.part_type.title()} part for {emojis.bits(offer.price)}.")
+
+
+class MerchantPane(MarketPane):
+    shop = "merchant"
+    label = "Merchant"
+    emoji = emojis.Lazy("ui_merchant", "🧳")
+    description = "A travelling merchant with cheap parts, restocked every hour"
+
+
+class BlackMarketPane(MarketPane):
+    shop = "black_market"
+    label = "Black Market"
+    emoji = emojis.Lazy("ui_black_market", "🕶️")
+    description = "Rich parts at steep prices, restocked every day"
+
+
 class ShopScreen(TabsScreen):
     """The Shop page: buy seeds and supplies, and sell what you have one item at a time (ShopPane)."""
 
@@ -217,4 +290,4 @@ class ShopScreen(TabsScreen):
     label = "Shop"
     emoji = emojis.Lazy("ui_shop", "🛒")
     description = "Buy seeds and supplies, or sell what you've gathered one item at a time"
-    panes = {"buy": ShopPane}
+    panes = {"buy": ShopPane, "merchant": MerchantPane, "black_market": BlackMarketPane}

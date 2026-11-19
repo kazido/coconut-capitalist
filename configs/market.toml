@@ -1,0 +1,23 @@
+# Smithing-part market: two shops that sell parts for bits (services/market.py, plan: docs/plans/part-market.md).
+# Each player sees their own stock; it is rerolled every refresh_seconds and is the same all window long.
+# Every number is a first guess (TODO(balance)).
+
+[merchant]
+name = "Travelling Merchant"
+unlock_area = "rust_belt"          # open once you have reached this area
+refresh_seconds = 3600             # new stock every hour
+slots = 3
+tier_weights = [30, 40, 25, 5, 0, 0, 0]          # chance of tier 1..7 per part
+extra_traits = 0                   # on top of the tier's normal fresh trait count
+tier_price = [2000, 6000, 15000, 40000, 100000, 250000, 600000]   # bits per part, by tier
+trait_premium = 0.25               # each trait adds 25% of the base price
+
+[black_market]
+name = "Black Market"
+unlock_area = "star_kingdom"       # open once you have reached this area
+refresh_seconds = 86400            # new stock once a day
+slots = 4
+tier_weights = [0, 0, 0, 40, 30, 20, 10]         # only the rich tiers
+extra_traits = 1                   # one more trait than the tier normally rolls (capped at the pool)
+tier_price = [50000, 120000, 250000, 1000000, 3000000, 8000000, 20000000]
+trait_premium = 0.25
