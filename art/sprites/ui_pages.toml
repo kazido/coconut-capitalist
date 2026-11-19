@@ -206,3 +206,26 @@ rows = [
   "................",
   "................",
 ]
+
+[ui_haul]
+kind = "free"
+outline = true
+palette = { H = "#f4ddb0", m = "#c0905a", s = "#8e6238", D = "#5e3e26", T = "#e8d2a0", t = "#a88a5a", Y = "#ffd84a", W = "#fff6c0", y = "#c07a18", G = "#a0f0ff", g = "#40b8e8", n = "#2468a8" }
+rows = [
+  "................",
+  "......GG........",
+  ".....GGgg.......",
+  "....WYgny.WY....",
+  "...WYyYy.WYy....",
+  "..TYy.TTTYy.t...",
+  "....mmmmsss.....",
+  "...mmmmssssD....",
+  "..mmHmssssDDD...",
+  "..mHmssssDDDD...",
+  "..mHssssDDDDD...",
+  "..mssssDDDDDD...",
+  "...sssDDDDDD.WY.",
+  "....sDDDDDD.WYy.",
+  "......DDD...Yy..",
+  "................",
+]
