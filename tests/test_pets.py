@@ -48,7 +48,7 @@ def test_every_pet_has_a_bonus_and_every_bonus_is_something_the_game_uses():
 def test_pets_cover_every_part_of_the_game():
     stats = {b.stat for p in REG.pets.values() for b in p.bonuses}
     assert {"bite_speed", "rare_luck", "pot_speed", "pot_luck"} <= stats  # fishing and crab pots
-    assert {"danger_reduction", "ore_yield"} <= stats  # mining
+    assert {"ore_yield", "dig_shave"} <= stats  # mining
     assert {"good_chop"} <= stats and {"grow_chance", "extra_harvest"} <= stats  # foraging, farming
     assert {"work_bonus", "xp_all"} <= stats  # the economy
 
@@ -266,8 +266,7 @@ async def test_the_turtle_steadies_the_mine_and_brings_up_more_ore(db):
         await equip(user, "mining", inst.id)
     a, b = await mining.start_run(plain, Random(1)), await mining.start_run(steady, Random(1))
     pet = REG.pets["murk"].bonuses
-    assert b.growth_factor == pytest.approx(a.growth_factor - pet[0].value)
-    assert b.yield_factor == pytest.approx(a.yield_factor * (1 + pet[1].value))
+    assert b.yield_factor == pytest.approx(a.yield_factor * (1 + pet[0].value))
 
 
 async def test_the_frog_makes_crops_grow_more_often_and_the_bee_makes_harvests_bigger(db):

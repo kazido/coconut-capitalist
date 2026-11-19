@@ -349,7 +349,7 @@ and a capped **sidekick bonus** from every inactive pet's levels and stars. The 
 (`pets.fuel`, worth `sell_price x fuel_minutes_per_value` minutes, capped at `tank_cap_hours`; state in `Pethouse.fuel_seconds/last_collect`). `pets.collect`
 banks the xp for the fuel that lasted (a global pet's haul goes to your highest skill). Crops are fuel ONLY; pet xp comes from skill food (which also starts a
 `food_buff_minutes` +`food_buff_bonus` xp-rate buff, `OwnedPet.buff_until`), play xp, Pet Biscuit (shop) and the Burger (1-in-150 per hour of play, `activity.roll_token`).
-A real tool can be lent (`pets.lend_tool`, `OwnedPet.lent_tool`; no screen yet). `pet_score.passive_bonus` exists but is not applied in play yet; haul item drops are not built.
+A real tool can be lent (`pets.lend_tool`, `OwnedPet.lent_tool`; no screen yet). Haul item drops (common drops of the skill, marked with the pet emoji) are built. Every pet has a **score out of 1000** (`pet_score.total`: skills 500, mastery 200, gear 200, ability 100; fixed per species) and one named **trait** (`Pet.trait`, the pet's only effect; the engine reads it through `Pet.bonuses`); level and stars set its strength. See `docs/plans/pet-score-1000.md`.
 
 ### Pet food and pet skills
 

@@ -30,7 +30,7 @@ KNOWN_STATS = frozenset({
     "payout_bonus",  # economy: shipments and the daily check-in pay this much more bits (Raven)
     "sell_bonus",  # economy: every sale pays this much more (Magpie)
     "bite_speed", "rare_luck", "treasure_luck", "pot_speed", "pot_luck",  # fishing and crab pots
-    "danger_reduction", "ore_yield", "dig_shave",  # mining (the Mole's dig_shave takes this share off the pressure every dug row adds)
+    "ore_yield", "dig_shave",  # mining (the Mole's dig_shave takes this share off the pressure every dug row adds)
     "good_chop",  # foraging
     "grow_chance", "extra_harvest",  # farming (the Bee's extra_harvest: the chance a harvested plot gives a whole second harvest)
     "rare_reroll",  # every skill's rare drops (rarity 4 and up): the chance of a free second roll when the first one is not rare (Fox)
@@ -41,7 +41,7 @@ KNOWN_STATS = frozenset({
 
 _STAT_SKILL = {
     "bite_speed": "fishing", "rare_luck": "fishing", "treasure_luck": "fishing", "pot_speed": "fishing", "pot_luck": "fishing",
-    "danger_reduction": "mining", "ore_yield": "mining", "dig_shave": "mining", "good_chop": "foraging", "grow_chance": "farming", "extra_harvest": "farming",
+    "ore_yield": "mining", "dig_shave": "mining", "good_chop": "foraging", "grow_chance": "farming", "extra_harvest": "farming",
 }
 
 
@@ -149,13 +149,15 @@ def describe(pet: Pet, owned: OwnedPet, registry: Registry | None = None) -> lis
     top = (1 + reg.economy.pets.star_bonus * (owned.stars - 1))  # what it gives at the top level, with the stars it has
     lines = [bonus.text.format(v=bonus.value * scale) + (f" (max level: {bonus.value * top:.0%})" if scale < top - 1e-9 else "")
              for bonus in pet.bonuses]
+    if pet.trait:
+        lines = [f"**{pet.trait.name}**: {line}" for line in lines]
     lines += [f"+{reg.economy.pets.spirit_bonus:.0%} {skill} xp (Spirit)" for skill in owned.spirits]
     return lines
 
 
 def max_buffs(pet: Pet) -> str:
     """The pet's buffs at max level with one star, in words (the numbers the wiki lists)."""
-    return " · ".join(bonus.text.format(v=bonus.value) for bonus in pet.bonuses)
+    return " · ".join((f"{pet.trait.name}: " if pet.trait else "") + bonus.text.format(v=bonus.value) for bonus in pet.bonuses)
 
 
 async def bonuses(user: User, registry: Registry | None = None) -> dict[str, float]:

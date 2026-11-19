@@ -38,7 +38,7 @@ def test_a_celestial_pet_would_have_500_skill_points_and_a_mythical_one_100_in_a
     assert ps.total(myth).skills[myth.skill] == 100
 
 
-def test_sidekick_capped_and_empty_tank_stops_haul_but_not_passive():
+def test_sidekick_capped_and_empty_tank_stops_the_haul():
     pet = _pet()
     o = OwnedPet(xp=10**9, stars=5)
     many = [(pet, o)] * 500
@@ -46,8 +46,6 @@ def test_sidekick_capped_and_empty_tank_stops_haul_but_not_passive():
     assert ps.sidekick_bonus([]) == 0
     s = ps.score(pet, o)
     assert ps.haul_xp_per_hour(s, fueled=False) == 0
-    assert ps.passive_bonus(s) > 0
-    assert ps.passive_bonus(10**9) == REG.pet_score.passive_cap
     assert ps.haul_xp_per_hour(s, active_xp_per_hour=100) <= 100 * REG.pet_score.haul_active_share
 
 
@@ -84,7 +82,7 @@ async def test_crops_fill_the_tank_up_to_its_cap_and_the_haul_burns_it(db):
     assert hours * 3600 <= added + 1e-6 and xp > 0 and skill == "fishing"
     assert user.pethouse.fuel_seconds == 0
     _, xp2, _, _ = await pets.collect(user, now=1000.0 + 20 * 3600)
-    assert xp2 == 0  # empty tank: no haul (passive bonus is untouched elsewhere)
+    assert xp2 == 0  # empty tank: no haul (the trait still works)
 
 
 @pytest.mark.asyncio

@@ -1,4 +1,4 @@
-"""Pet sidekicks, the pure part: a pet's score out of 1000, its working strength, the sidekick bonus, the passive bonus and the idle haul.
+"""Pet sidekicks, the pure part: a pet's score out of 1000, its working strength, the sidekick bonus and the idle haul.
 
 No Discord and no DB writes. The numbers live in configs/pet_score.toml (`registry.pet_score`); the loadout in configs/pets.toml.
 See docs/plans/pet-score-1000.md. State (fuel tank, food buff) is in the pethouse.
@@ -65,12 +65,6 @@ def sidekick_bonus(inactive: Iterable[tuple[Pet, OwnedPet]], registry: Registry 
     reg = registry or get_registry()
     rules = reg.pet_score
     return min(rules.sidekick_cap, sum(strength(p, o, reg) for p, o in inactive) * rules.sidekick_per_strength)
-
-
-def passive_bonus(pet_score: float, sidekick: float = 0.0, registry: Registry | None = None) -> float:
-    """The small bonus while you play, as a share (0.05 = +5%). Stays when the fuel tank is empty. (Not applied in play yet.)"""
-    rules = (registry or get_registry()).pet_score
-    return min(rules.passive_cap, pet_score * rules.passive_per_score * (1 + sidekick))
 
 
 def haul_xp_per_hour(pet_score: float, sidekick: float = 0.0, active_xp_per_hour: float | None = None,

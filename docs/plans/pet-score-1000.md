@@ -76,7 +76,7 @@ gets **global xp +35%** (500 skill points, gear/mastery near max).
 
 ## Build order
 1. (BUILT) Score model: `pet_score.toml` budgets (skills/mastery/gear/ability), loadout gets per-skill points + `ability` tier; `pet_score.total(pet)` out of 1000 + breakdown. Test: every pet <= 1000, Celestial = 500 skills.
-2. (PLANNED above) Traits in registry (`Pet.trait` replaces `bonuses`), convert the 25 pets, services read traits, remove `passive_bonus` and flat bonuses (changelog + notice).
+2. (BUILT) Traits in registry (`Pet.trait` replaces `bonuses`), convert the 25 pets, services read traits, remove `passive_bonus` and flat bonuses (changelog + notice).
 3. Pet card shows the breakdown; haul drops show the trait name when it triggered.
 
 ## Open question

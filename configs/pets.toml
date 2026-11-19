@@ -15,7 +15,8 @@ description = "A faithful glow in the grey. Pays you a bit extra every shift."
 tool_tier = 0
 mastery_score = 2
 enchants = {}
-[[cinder.bonuses]]
+[cinder.trait]
+name = "Paymaster"
 stat = "work_bonus"
 value = 0.2
 text = "+{v:.0%} bits from Work"
@@ -31,7 +32,8 @@ description = "A soft blue light. Fish find your hook sooner."
 tool_tier = 1
 mastery_score = 5
 enchants = { keen = 1 }
-[[drizzle.bonuses]]
+[drizzle.trait]
+name = "Quick Bite"
 stat = "bite_speed"
 value = 0.3
 text = "-{v:.0%} time waiting for a bite"
@@ -47,11 +49,8 @@ description = "Slow, steady and sure. The mine creaks less around it."
 tool_tier = 1
 mastery_score = 5
 enchants = { keen = 1 }
-[[murk.bonuses]]
-stat = "danger_reduction"
-value = 0.06
-text = "-{v:.0%} mine pressure"
-[[murk.bonuses]]
+[murk.trait]
+name = "Steady Hand"
 stat = "ore_yield"
 value = 0.1
 text = "+{v:.0%} ore from the mine"
@@ -67,7 +66,8 @@ description = "Loves the rain. Your crops grow more often."
 tool_tier = 1
 mastery_score = 5
 enchants = { keen = 1 }
-[[dew.bonuses]]
+[dew.trait]
+name = "Rainmaker"
 stat = "grow_chance"
 value = 0.12
 text = "+{v:.0%} chance a crop grows each rain"
@@ -83,7 +83,8 @@ description = "Knows exactly where to strike a tree."
 tool_tier = 2
 mastery_score = 8
 enchants = { keen = 2, bounty = 1 }
-[[bough.bonuses]]
+[bough.trait]
+name = "Good Chop"
 stat = "good_chop"
 value = 0.16
 text = "+{v:.0%} chance of a good chop"
@@ -99,7 +100,8 @@ description = "Calm and clever. Everything you learn sticks a little better."
 tool_tier = 2
 mastery_score = 8
 enchants = { keen = 2 }
-[[haze.bonuses]]
+[haze.trait]
+name = "Wanderer"
 stat = "xp_all"
 value = 0.1
 text = "+{v:.0%} xp in every skill"
@@ -115,7 +117,8 @@ description = "A tireless little spark. Now and then a plot gives a whole second
 tool_tier = 1
 mastery_score = 5
 enchants = { keen = 1 }
-[[pollen.bonuses]]
+[pollen.trait]
+name = "Cross-Pollinator"
 stat = "extra_harvest"
 value = 0.1
 text = "{v:.0%} chance of a free extra harvest"
@@ -131,7 +134,8 @@ description = "Sharp-eyed. It spots the big ones below the surface."
 tool_tier = 3
 mastery_score = 12
 enchants = { keen = 3, lure = 1 }
-[[squall.bonuses]]
+[squall.trait]
+name = "Storm Luck"
 stat = "rare_luck"
 value = 0.5
 text = "+{v:.0%} chance of rare fish"
@@ -147,7 +151,8 @@ description = "Patient and deep. Your crab pots fill faster while it watches."
 tool_tier = 3
 mastery_score = 12
 enchants = { keen = 3, lure = 1 }
-[[undertow.bonuses]]
+[undertow.trait]
+name = "Pot Hauler"
 stat = "pot_speed"
 value = 0.5
 text = "+{v:.0%} faster crab pots"
@@ -163,7 +168,8 @@ description = "Knows the seabed. Your crab pots lure rarer fish."
 tool_tier = 3
 mastery_score = 12
 enchants = { keen = 3, lure = 1 }
-[[brine.bonuses]]
+[brine.trait]
+name = "Pot Luck"
 stat = "pot_luck"
 value = 1
 text = "+{v:.0%} rare fish in crab pots"
@@ -179,7 +185,8 @@ description = "Hoards treasure, and can smell it. Hallucinations and chests come
 tool_tier = 4
 mastery_score = 16
 enchants = { keen = 3, lure = 2 }
-[[tempest.bonuses]]
+[tempest.trait]
+name = "Treasure Hunter"
 stat = "treasure_luck"
 value = 0.7
 text = "+{v:.0%} hallucination and chest chance"
@@ -195,7 +202,8 @@ description = "Playful and bright. Finds the fish and teaches you a thing or two
 tool_tier = 1
 mastery_score = 5
 enchants = { keen = 1 }
-[[ripple.bonuses]]
+[ripple.trait]
+name = "Current Reader"
 stat = "xp_fishing"
 value = 0.16
 text = "+{v:.0%} fishing xp"
@@ -211,7 +219,8 @@ description = "A born woodcutter. Trees teach you more around it."
 tool_tier = 1
 mastery_score = 5
 enchants = { keen = 1 }
-[[sprig.bonuses]]
+[sprig.trait]
+name = "Woodwise"
 stat = "xp_foraging"
 value = 0.16
 text = "+{v:.0%} foraging xp"
@@ -227,7 +236,8 @@ description = "Happiest underground. It lights the way ahead and eases the rock,
 tool_tier = 2
 mastery_score = 8
 enchants = { keen = 2, veinfinder = 1 }
-[[lode.bonuses]]
+[lode.trait]
+name = "Lamplight"
 stat = "dig_shave"
 value = 0.07
 text = "-{v:.0%} pressure from every dug row"
@@ -243,7 +253,8 @@ description = "Loves a vegetable patch. Farming comes more easily."
 tool_tier = 1
 mastery_score = 5
 enchants = { keen = 1 }
-[[clover.bonuses]]
+[clover.trait]
+name = "Green Thumb"
 stat = "xp_farming"
 value = 0.16
 text = "+{v:.0%} farming xp"
@@ -259,7 +270,8 @@ description = "A fighter's companion. (Combat is coming.)"
 tool_tier = 2
 mastery_score = 8
 enchants = { keen = 2 }
-[[scorch.bonuses]]
+[scorch.trait]
+name = "Fire Spirit"
 stat = "xp_combat"
 value = 0.2
 text = "+{v:.0%} combat xp"
@@ -275,7 +287,8 @@ description = "A master of the waves. Fishing practice goes a long way."
 tool_tier = 3
 mastery_score = 12
 enchants = { keen = 3, lure = 1 }
-[[eddy.bonuses]]
+[eddy.trait]
+name = "Deep Reader"
 stat = "xp_fishing"
 value = 0.28
 text = "+{v:.0%} fishing xp"
@@ -291,7 +304,8 @@ description = "Knows trees inside out. You learn faster from every one."
 tool_tier = 3
 mastery_score = 12
 enchants = { keen = 3, bounty = 1 }
-[[canopy.bonuses]]
+[canopy.trait]
+name = "Forest Sage"
 stat = "xp_foraging"
 value = 0.28
 text = "+{v:.0%} foraging xp"
@@ -307,7 +321,8 @@ description = "Digs like it was born to. Mining lessons stick."
 tool_tier = 3
 mastery_score = 12
 enchants = { keen = 3, veinfinder = 1 }
-[[cairn.bonuses]]
+[cairn.trait]
+name = "Stone Sense"
 stat = "xp_mining"
 value = 0.28
 text = "+{v:.0%} mining xp"
@@ -323,7 +338,8 @@ description = "Tends the garden with care. Farming practice pays more."
 tool_tier = 3
 mastery_score = 12
 enchants = { keen = 3, fertile = 1 }
-[[thistle.bonuses]]
+[thistle.trait]
+name = "Green Thumb II"
 stat = "xp_farming"
 value = 0.28
 text = "+{v:.0%} farming xp"
@@ -339,7 +355,8 @@ description = "A king among fighters. (Combat is coming.)"
 tool_tier = 4
 mastery_score = 16
 enchants = { keen = 3 }
-[[pyre.bonuses]]
+[pyre.trait]
+name = "Inferno"
 stat = "xp_combat"
 value = 0.36
 text = "+{v:.0%} combat xp"
@@ -355,7 +372,8 @@ description = "Reborn with every lesson. Everything you learn burns a little bri
 tool_tier = 4
 mastery_score = 16
 enchants = { keen = 3 }
-[[halo.bonuses]]
+[halo.trait]
+name = "Blessed"
 stat = "xp_all"
 value = 0.2
 text = "+{v:.0%} xp in every skill"
@@ -373,7 +391,8 @@ description = "Loves anything that shines. Haggles you a better price for whatev
 tool_tier = 2
 mastery_score = 8
 enchants = { keen = 2 }
-[[gloam.bonuses]]
+[gloam.trait]
+name = "Bargain Hunter"
 stat = "sell_bonus"
 value = 0.06
 text = "+{v:.0%} bits from every sale"
@@ -389,7 +408,8 @@ description = "Cunning, and always checks twice. A rare find that slips past som
 tool_tier = 3
 mastery_score = 12
 enchants = { keen = 3 }
-[[lune.bonuses]]
+[lune.trait]
+name = "Lucky Roll"
 stat = "rare_reroll"
 value = 0.15
 text = "{v:.0%} chance of a free 2nd roll on rare drops"
@@ -405,7 +425,8 @@ description = "Keeps watch over every delivery. Shipments and your daily interes
 tool_tier = 4
 mastery_score = 16
 enchants = { keen = 3 }
-[[umbra.bonuses]]
+[umbra.trait]
+name = "Tithe"
 stat = "payout_bonus"
 value = 0.06
 text = "+{v:.0%} bits from shipments and check-in"
