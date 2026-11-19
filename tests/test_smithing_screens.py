@@ -4,13 +4,18 @@ from cococap.constants import STARTER_TOOLS
 from cococap.registry import get_registry
 from cococap.services import smithing
 from cococap.user import User
-from tests.test_hub import all_text, buttons, choose, click, hub, select_named
+from tests.test_hub import all_text, buttons, choose, click, hub, select_named, selects
 
 RULES = get_registry().smithing
 
 
 def _kind_tool(kind: str) -> str:
     return next(i for i in STARTER_TOOLS if get_registry().item(i).tool.kind == kind)
+
+
+def _pane_selects(nav):
+    # The tab dropdown ("Choose a tab") is not part of the smithing pane.
+    return [s for s in selects(nav) if not s.placeholder.startswith("Choose a tab")]
 
 
 async def _give_part(user: User, slot: str, tier: int = 1, traits: list[str] | None = None):
@@ -28,16 +33,63 @@ async def test_smithing_tab_builds_a_tool_from_three_parts(db):
     assert nav.screen.tab == "smithing"
     await choose(nav, inter, select_named(nav, "Pick a tool kind"), "pickaxe")
     await choose(nav, inter, select_named(nav, "Base part"), str(base.id))
-    await choose(nav, inter, select_named(nav, "Trim part"), str(trim.id))
-    await choose(nav, inter, select_named(nav, "Accent part"), str(accent.id))
-    assert "Power" in all_text(nav)
     await choose(nav, inter, select_named(nav, "Base trait"), kind)
+    await click(nav, inter, "Next")
+    await choose(nav, inter, select_named(nav, "Trim part"), str(trim.id))
+    await click(nav, inter, "Next")
+    await choose(nav, inter, select_named(nav, "Accent part"), str(accent.id))
+    await click(nav, inter, "Next")
+    assert "Preview" in all_text(nav) and "Power" in all_text(nav)
     await click(nav, inter, "Smith")
 
     tools = [i for i in await user_1.instances() if i.smith_id == user_1.id]
     assert len(tools) == 1
     assert tools[0].parts["base"]["trait"] == kind
     assert not [i for i in await user_1.instances() if i.template_id.startswith("part_")]
+    assert nav.screen.step == 0
+
+
+async def test_no_smithing_step_shows_more_than_two_dropdowns(db):
+    user_1 = await User.get(1)
+    kind = RULES.traits_for("pickaxe")[0].id
+    base = await _give_part(user_1, "base", 1, [kind])
+    await _give_part(user_1, "trim", 1)
+    await _give_part(user_1, "accent", 1)
+
+    nav, inter = await hub("tools", tab="smithing")
+    assert len(_pane_selects(nav)) <= 2
+    await choose(nav, inter, select_named(nav, "Pick a tool kind"), "pickaxe")
+    assert len(_pane_selects(nav)) <= 2
+    await choose(nav, inter, select_named(nav, "Base part"), str(base.id))
+    assert len(_pane_selects(nav)) == 2
+    await click(nav, inter, "Next")
+    assert len(_pane_selects(nav)) <= 2
+    await click(nav, inter, "Next")
+    assert len(_pane_selects(nav)) <= 2
+    await click(nav, inter, "Next")
+    assert len(_pane_selects(nav)) <= 2
+
+
+async def test_smithing_back_returns_to_previous_step_and_keeps_picks(db):
+    user_1 = await User.get(1)
+    kind = RULES.traits_for("pickaxe")[0].id
+    base = await _give_part(user_1, "base", 1, [kind])
+    trim = await _give_part(user_1, "trim", 1)
+    await _give_part(user_1, "accent", 1)
+
+    nav, inter = await hub("tools", tab="smithing")
+    await choose(nav, inter, select_named(nav, "Pick a tool kind"), "pickaxe")
+    await choose(nav, inter, select_named(nav, "Base part"), str(base.id))
+    await choose(nav, inter, select_named(nav, "Base trait"), kind)
+    await click(nav, inter, "Next")
+    await choose(nav, inter, select_named(nav, "Trim part"), str(trim.id))
+    await click(nav, inter, "Back")
+
+    assert nav.screen.step == 1
+    assert "Step 1/3" in all_text(nav)
+    assert nav.screen.chosen["base"] == base.id and nav.screen.picks[base.id] == kind
+    await click(nav, inter, "Back")
+    assert nav.screen.step == 0 and nav.screen.kind == "pickaxe"
 
 
 async def test_smithing_tab_without_parts_says_where_parts_come_from(db):

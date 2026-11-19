@@ -30,13 +30,18 @@ def _trait_names(inst, rules) -> str:
 
 
 class SmithingPane(Screen):
-    """Pick a tool kind and three parts, optionally one trait per part, then Smith."""
+    """Pick a tool kind, then a base, trim and accent part (one trait each), then Smith.
+
+    Steps: 0 = kind, 1..3 = base, trim, accent (one part + trait dropdown each), 4 = preview.
+    One step at a time keeps at most two dropdowns on the page.
+    """
 
     label = "Smithing"
     emoji = emojis.Lazy("ui_anvil", "🔨")
 
     def __init__(self, nav):
         super().__init__(nav)
+        self.step: int = 0
         self.kind: str | None = None
         self.chosen: dict[str, int | None] = {slot: None for slot in smithing.PART_TYPES}
         self.picks: dict[int, str | None] = {}  # part id -> trait taken from it (None = no trait)
@@ -63,45 +68,88 @@ class SmithingPane(Screen):
             if self.chosen[slot] not in {i.id for i in parts[slot]}:
                 self.chosen[slot] = None
         self.picks = {pid: self.picks.get(pid) for pid in self.chosen.values() if pid is not None}
+        # A preview needs all three parts; fall back to the first missing slot.
+        if self.step == 4 and not all(self.chosen.values()):
+            self.step = 1 + next(n for n, s in enumerate(smithing.PART_TYPES) if self.chosen[s] is None)
 
-        body.append(row(select("Pick a tool kind...", [
-            discord.SelectOption(label=k.title(), value=k, default=k == self.kind) for k in smithing.KINDS
-        ], self._pick_kind)))
-        for slot in smithing.PART_TYPES:
-            options = [
-                discord.SelectOption(label=f"Tier {_tier(i)} · {_trait_names(i, rules)}"[:100], value=str(i.id),
-                                     default=i.id == self.chosen[slot])
-                for i in parts[slot]
-            ]
-            if options:
-                body.append(row(select(f"{slot.title()} part...", options, self._part_handler(slot))))
-            else:
-                body.append(text(f"-# No {slot} parts at your tier."))
+        if self.step == 0:
+            body.append(text("**Kind**"))
+            body.append(row(select("Pick a tool kind...", [
+                discord.SelectOption(label=k.title(), value=k, default=k == self.kind) for k in smithing.KINDS
+            ], self._pick_kind)))
+            return Page("Smithing", body, accent=0xB8860B)
 
-        if all(self.chosen.values()):
-            picked = {slot: next(i for i in parts[slot] if i.id == self.chosen[slot]) for slot in smithing.PART_TYPES}
-            power = smithing.tool_power({s: {"tier": _tier(i)} for s, i in picked.items()}, rules.grades[0].name, rules)
-            body.append(text(f"Power **{power:g}** before quality"))
-            if self.kind:
-                fitting = {t.id for t in rules.traits_for(self.kind)}
-                for slot in smithing.PART_TYPES:
-                    inst = picked[slot]
-                    options = [discord.SelectOption(label="No trait", value="none", default=self.picks.get(inst.id) is None)]
-                    options += [
-                        discord.SelectOption(label=rules.trait(t).name[:100], value=t, default=self.picks.get(inst.id) == t)
-                        for t in inst.traits if t in fitting
-                    ]
-                    body.append(row(select(f"{slot.title()} trait...", options, self._trait_handler(inst.id))))
-                body.append(row(button("Smith", emoji=emojis.icon("craft", "🔨"),
-                                       style=discord.ButtonStyle.success, on_click=self._smith)))
-            else:
-                body.append(text("-# Pick a tool kind to smith."))
+        if self.step == 4:
+            return self._preview(body, parts, rules)
+
+        slot = smithing.PART_TYPES[self.step - 1]
+        summary = " · ".join(f"{s.title()}: {self._summary_of(s, parts, rules)}" for s in smithing.PART_TYPES)
+        body.append(text(f"-# {summary}"))
+        body.append(text(f"**Step {self.step}/3 · {slot.title()}**"))
+        options = [
+            discord.SelectOption(label=f"Tier {_tier(i)} · {_trait_names(i, rules)}"[:100], value=str(i.id),
+                                 default=i.id == self.chosen[slot])
+            for i in parts[slot]
+        ]
+        if not options:
+            body.append(text(f"-# No {slot} parts at your tier."))
         else:
-            body.append(text("-# Pick a base, a trim and an accent part to smith a tool."))
+            body.append(row(select(f"{slot.title()} part...", options, self._part_handler(slot))))
+        picked = next((i for i in parts[slot] if i.id == self.chosen[slot]), None)
+        if picked is not None:
+            fitting = {t.id for t in rules.traits_for(self.kind)} if self.kind else set()
+            trait_options = [discord.SelectOption(label="No trait", value="none",
+                                                  default=self.picks.get(picked.id) is None)]
+            trait_options += [
+                discord.SelectOption(label=rules.trait(t).name[:100], value=t, default=self.picks.get(picked.id) == t)
+                for t in picked.traits if t in fitting
+            ]
+            body.append(row(select(f"{slot.title()} trait...", trait_options, self._trait_handler(picked.id))))
+        body.append(row(button("Back", on_click=self._back),
+                        button("Next", style=discord.ButtonStyle.primary, on_click=self._next,
+                               disabled=self.chosen[slot] is None)))
         return Page("Smithing", body, accent=0xB8860B)
+
+    def _summary_of(self, slot: str, parts: dict, rules) -> str:
+        inst = next((i for i in parts[slot] if i.id == self.chosen[slot]), None)
+        if inst is None:
+            return "-"
+        trait = self.picks.get(inst.id)
+        return f"T{_tier(inst)}" + (f" {rules.trait(trait).name}" if trait else "")
+
+    def _preview(self, body: list, parts: dict, rules) -> Page:
+        picked = {slot: next(i for i in parts[slot] if i.id == self.chosen[slot]) for slot in smithing.PART_TYPES}
+        power = smithing.tool_power({s: {"tier": _tier(i)} for s, i in picked.items()}, rules.grades[0].name, rules)
+        body.append(text("**Preview**"))
+        for slot in smithing.PART_TYPES:
+            inst = picked[slot]
+            trait = self.picks.get(inst.id)
+            name = rules.trait(trait).name if trait else "no trait"
+            body.append(text(f"· {slot.title()}: Tier {_tier(inst)} · {name}"))
+        kind = self.kind.title() if self.kind else "-"
+        body.append(text(f"Kind **{kind}** · power **{power:g}** before quality"))
+        body.append(text("-# Quality is rolled on smithing."))
+        body.append(row(button("Back", on_click=self._back),
+                        button("Smith", emoji=emojis.icon("craft", "🔨"),
+                               style=discord.ButtonStyle.success, on_click=self._smith)))
+        return Page("Smithing", body, accent=0xB8860B)
+
+    async def _back(self, interaction: discord.Interaction) -> None:
+        self.step = max(0, self.step - 1)
+        await self.refresh(interaction)
+
+    async def _next(self, interaction: discord.Interaction) -> None:
+        if 1 <= self.step <= 3 and self.chosen[smithing.PART_TYPES[self.step - 1]] is None:
+            await self.refresh(interaction, "Pick a part first.")
+            return
+        self.step = min(4, self.step + 1)
+        await self.refresh(interaction)
 
     def _part_handler(self, slot: str):
         async def handler(interaction: discord.Interaction, values: list[str]) -> None:
+            old = self.chosen[slot]
+            if old is not None:
+                self.picks.pop(old, None)  # a new part starts with no trait
             self.chosen[slot] = int(values[0])
             await self.refresh(interaction)
         return handler
@@ -115,6 +163,8 @@ class SmithingPane(Screen):
     async def _pick_kind(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.kind = values[0]
         self.picks = {}
+        self.chosen = {slot: None for slot in smithing.PART_TYPES}
+        self.step = 1
         await self.refresh(interaction)
 
     async def _smith(self, interaction: discord.Interaction) -> None:
@@ -127,6 +177,7 @@ class SmithingPane(Screen):
         tool = await smithing.smith(self.user, self.kind, base, trim, accent, picks, random.Random())
         self.chosen = {slot: None for slot in smithing.PART_TYPES}
         self.picks = {}
+        self.step = 0
         power = smithing.tool_power(tool.parts, tool.quality, reg.smithing)
         await self.refresh(interaction, f"{emojis.icon('craft', '🔨')} Smithed a **{reg.item(tool.template_id).name}**: "
                                         f"{tool.quality} quality, power **{power:g}**.")
