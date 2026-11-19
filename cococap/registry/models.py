@@ -1603,6 +1603,14 @@ class SmithLevels(_Data):
     max_tier_by_level: list[tuple[int, int]] = Field(min_length=1)
 
 
+class LegacyGrant(_Data):
+    """What an old upgrade-chain tool of this step turns into at the one-time reset: 3 parts of `tier`, each with `traits` traits."""
+
+    step: Literal["plain", "fork", "fork_up"]
+    tier: int = Field(ge=1, le=PART_TIERS)
+    traits: int = Field(ge=0, le=3)
+
+
 class SmithingRules(_Data):
     part_types: list[str] = Field(min_length=3, max_length=3)
     area_cap: int = Field(ge=0)
@@ -1617,9 +1625,12 @@ class SmithingRules(_Data):
     fresh_traits: FreshTraits
     grades: list[Quality] = Field(alias="quality", min_length=1)
     levels: SmithLevels
+    legacy_grants: list[LegacyGrant] = Field(alias="legacy_grant", min_length=3, max_length=3)
 
     @model_validator(mode="after")
     def _sane(self):
+        if sorted(g.step for g in self.legacy_grants) != ["fork", "fork_up", "plain"]:
+            raise ValueError("legacy_grant needs one row each for plain, fork and fork_up")
         if self.part_types != ["base", "trim", "accent"]:
             raise ValueError("part_types must be exactly base, trim, accent")
         power = self.tiers.get("power", [])

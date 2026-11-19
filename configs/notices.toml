@@ -11,6 +11,16 @@
 #   body  = the message (Discord markdown, at most 1500 characters)
 
 [[notice]]
+id = "tools_reset_2026_11"
+date = 2026-11-19
+title = "Tools are smithed now"
+body = """
+Tools are now built from three parts: a **base**, a **trim** and an **accent**. Parts drop from every skill, and each one can carry up to three traits. Smith them on **Tools → Smithing**.
+
+Your old tools were replaced by free starter tools, already made from tier-1 parts. Every tool you had upgraded came back as a set of parts: the further it got, the better the parts. Your enchants came back as scrolls.
+"""
+
+[[notice]]
 id = "news_page"
 date = 2026-11-19
 title = "News is here"
