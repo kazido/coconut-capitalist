@@ -56,7 +56,7 @@ class ShipmentsScreen(Screen):
             body.append(text(f"### {emoji} {name}\n" + "\n".join(lines) + f"\n-# Ships for **{emojis.bits(reward_bits)}** and {xp_text} xp"))
             usable = any(owned.get(i, 0) and ship.have.get(i, 0) < q for i, q in ship.need.items())
             body.append(row(button("Fill", emoji=emojis.icon('box', '📥'), style=discord.ButtonStyle.primary, disabled=ship.done() or not usable, on_click=self._fill(ship.id)),
-                            button("Ship", emoji=emojis.icon('box', '🚚'), style=discord.ButtonStyle.success, disabled=not ship.done(), on_click=self._ship(ship.id))))
+                            button("Ship", emoji=emojis.icon('send', '🚚'), style=discord.ButtonStyle.success, disabled=not ship.done(), on_click=self._ship(ship.id))))
         else:
             c = reg.shipments.community
             lines = []

@@ -11,7 +11,7 @@ from cococap.ui.components import button, row, sep, text, user_select
 class PartyScreen(Screen):
     id = "party"
     label = "Party"
-    emoji = emojis.Lazy("ui_people", "👥")
+    emoji = emojis.Lazy("ui_group", "👥")
     description = "Team up with other players"
     refresh_every = 5  # so an invite sent while the page is open shows up (and one that expires goes away)
 

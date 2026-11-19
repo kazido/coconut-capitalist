@@ -37,7 +37,6 @@ ui_haul = {cell = [25, 10], framed = false}
 ui_sell = {cell = [9, 13], framed = false}
 ui_upgrade = {cell = [54, 0], framed = false}
 ui_craft = {cell = [7, 13], framed = false}
-ui_star = {cell = [0, 11], framed = false}
 ui_key = {cell = [4, 6], framed = false}
 ui_boss = {cell = [14, 0], framed = false}
 ui_unknown = {cell = [0, 12], framed = false}
@@ -68,7 +67,6 @@ ui_skull = {cell = [14, 0], framed = false}
 ui_party = {cell = [65, 6], framed = false}
 ui_money = {cell = [9, 15], framed = false}
 ui_anvil = {cell = [7, 12], framed = false}
-ui_search = {cell = [7, 6], framed = false}
 ui_fish = {cell = [25, 13], framed = false}
 ui_drop = {cell = [40, 14], ramp = ["#10284a", "#3a8ae0", "#9ad8ff", "#f0ffff"], framed = false}
 ui_wave = {cell = [49, 1], framed = false}
@@ -76,7 +74,6 @@ ui_mist = {cell = [49, 5], framed = false}
 ui_world = {cell = [133, 7], framed = false}
 ui_radar = {cell = [133, 6], framed = false}
 ui_target = {cell = [132, 10], framed = false}
-ui_ruler = {cell = [93, 5], framed = false}
 ui_flag = {cell = [2, 10], framed = false}
 ui_flag_white = {cell = [2, 8], framed = false}
 ui_brain = {cell = [14, 10], framed = false}
@@ -88,7 +85,6 @@ ui_heart = {cell = [41, 2], framed = false}
 ui_heart_green = {cell = [37, 2], framed = false}
 ui_blood = {cell = [46, 5], framed = false}
 ui_eye = {cell = [44, 14], framed = false}
-ui_coconut = {cell = [1, 5], framed = false}
 ui_ship = {cell = [24, 13], framed = false}
 ui_cart = {cell = [1, 8], framed = false}
 ui_basket = {cell = [3, 5], framed = false}
@@ -108,7 +104,6 @@ ui_page = {cell = [6, 8], framed = false}
 ui_trade = {cell = [7, 11], framed = false}
 ui_food = {cell = [29, 3], framed = false}
 ui_apple = {cell = [27, 2], framed = false}
-ui_box = {cell = [25, 10], framed = false}
 
 # Enchant icons (one each; they had only a plain glyph before)
 enchant_soloist = {cell = [67, 0], framed = false}

@@ -56,14 +56,14 @@ class HomeScreen(Screen):
             for member_id in party.members[:PARTY_NAMES_SHOWN]
         ]
         extra = party.member_count() - len(shown)
-        return f"{emojis.icon('people', '👥')} **Party:** {', '.join(shown)}" + (f" +{extra} more" if extra > 0 else "")
+        return f"{emojis.icon('group', '👥')} **Party:** {', '.join(shown)}" + (f" +{extra} more" if extra > 0 else "")
 
     async def invite_sections(self) -> list:
         """A line and a button for a waiting party invite and for a waiting trade invite."""
         out = []
         if (invite := party_invites.pending_for(self.user.id)) is not None:
             out.append(section(
-                f"### {emojis.icon('people', '👥')} Party invite\n{await self.nav.name_of(invite.inviter_id)} invited you to their party.",
+                f"### {emojis.icon('group', '👥')} Party invite\n{await self.nav.name_of(invite.inviter_id)} invited you to their party.",
                 accessory=button("Accept", style=discord.ButtonStyle.success, on_click=_opener(self, "party")),
             ))
         if (offer := trade.invite_for(self.user.id)) is not None:

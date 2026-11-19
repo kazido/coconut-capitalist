@@ -140,7 +140,7 @@ class FishScreen(Screen):
             overflow, needed = User.xp_for_next_level(skill.xp)
             header = f"**Level {User.xp_to_level(skill.xp)}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp"
             if bonus := await xp_bonus(self.user.id):
-                header += f"\n{emojis.icon('people', '👥')} Party bonus: **+{bonus:.0%}** xp"
+                header += f"\n{emojis.icon('group', '👥')} Party bonus: **+{bonus:.0%}** xp"
             body.append(text(header))
             if fight is not None and fight.is_open:
                 if fight.you is None:
@@ -218,7 +218,7 @@ class FishScreen(Screen):
             twists = "\n".join(rules.boss.modifier_text[m] for m in cast.modifiers)
             body += [
                 text(f"### {emojis.icon('boss', '💀')} **{cast.boss}** is on the line!\nA boss! No fish this time, but a mountain of loot if you land it.\n{twists}"
-                     + (f"\n{emojis.icon('people', '👥')} **Party fight:** you reel your own set of arrows, and everyone who lands theirs is paid." if cast.party_fight is not None else "") + "\n"
+                     + (f"\n{emojis.icon('group', '👥')} **Party fight:** you reel your own set of arrows, and everyone who lands theirs is paid." if cast.party_fight is not None else "") + "\n"
                      f"{pattern_line(cast, rules)}{slack}\n-# {arrows} arrows, and some of them turn into **Reel** when you get there. Don't slip!"),
                 row(*reel_buttons(cast, self.rng, self._press, discord.ButtonStyle.danger), button("Let it go", on_click=self._cancel)),
             ]
@@ -344,7 +344,7 @@ class FishScreen(Screen):
         reg = get_registry()
         headline, notes = [], []
         for p in paid:
-            team = f"  ·  {emojis.icon('people', '👥')} team bonus **+{p.bonus:.0%}** ({p.teammates} teammate(s) landed theirs)" if p.teammates else ""
+            team = f"  ·  {emojis.icon('group', '👥')} team bonus **+{p.bonus:.0%}** ({p.teammates} teammate(s) landed theirs)" if p.teammates else ""
             headline.append(f"{emojis.icon('boss', '💀')} **{p.boss}** is beaten!{team}")
             if p.slack_bits:
                 notes.append(f"{emojis.ui('hook', '🪝')} Clean reel bonus included: **+{bits(p.slack_bits)}** bits")
@@ -389,7 +389,7 @@ class FishScreen(Screen):
             fight = await party_boss.open_fight(self.user, cast.boss, cast.modifiers, now())
             if fight is not None:
                 cast.party_fight = fight.number
-                note = f"{emojis.icon('people', '👥')} **Your party can join this fight!** They will see it on their Fishing page."
+                note = f"{emojis.icon('group', '👥')} **Your party can join this fight!** They will see it on their Fishing page."
         await self.refresh(interaction, note)
 
     def _press(self, arrow: str):

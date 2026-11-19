@@ -188,7 +188,7 @@ class ForageScreen(Screen):
 
         header = f"**Level {level}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp"
         if bonus := await xp_bonus(self.user.id):
-            header += f"\n{emojis.icon('people', '👥')} Party bonus: **+{bonus:.0%}** xp"
+            header += f"\n{emojis.icon('group', '👥')} Party bonus: **+{bonus:.0%}** xp"
         body = [*self.note_block(), text(header)]
 
         if stats is None:
@@ -246,19 +246,19 @@ class ForageScreen(Screen):
         party = await Party.for_user(self.user.id)
         self.watching_party = party is not None and party.member_count() >= 2
         if party is None or party.member_count() < 2:
-            return [text(f"-# {emojis.icon('people', '👥')} In a party you can start a **party tree** (pays better).")]
+            return [text(f"-# {emojis.icon('group', '👥')} In a party you can start a **party tree** (pays better).")]
         pt = await party_tree.view(self.user)
         bonus = get_registry().foraging.party_tree
         if pt is not None and pt.standing:
-            line = (f"### {emojis.icon('people', '👥')} Party tree: {species_label(pt.species) or 'forest ' + str(pt.zone)}  ·  forest {pt.zone}\n{bar(pt.fraction_left, 10, 'hp')}  **{pt.hp:,}**/{pt.max_hp:,} hp  ·  "
+            line = (f"### {emojis.icon('group', '👥')} Party tree: {species_label(pt.species) or 'forest ' + str(pt.zone)}  ·  forest {pt.zone}\n{bar(pt.fraction_left, 10, 'hp')}  **{pt.hp:,}**/{pt.max_hp:,} hp  ·  "
                     f"**{len(pt.chops)}** chopping  ·  falls over <t:{int(pt.closes_at)}:R>")
-            return [text(line), row(button("Join the party tree", emoji=emojis.icon("people", "👥"), style=discord.ButtonStyle.success,
+            return [text(line), row(button("Join the party tree", emoji=emojis.icon("group", "👥"), style=discord.ButtonStyle.success,
                                           disabled=stats is None, on_click=self._join_party))]
         best = await party_tree.unlocked_zone(party)
         zone = min(self.zone or 1, best)
-        return [text(f"### {emojis.icon('people', '👥')} Party tree\nNo tree is up. Start one for your party of **{party.member_count()}**: **forest {zone}**, "
+        return [text(f"### {emojis.icon('group', '👥')} Party tree\nNo tree is up. Start one for your party of **{party.member_count()}**: **forest {zone}**, "
                      f"up to **+{bonus.max_group_bonus:.0%}** reward for working together.\n-# The whole party needs an axe and the forest unlocked."),
-                row(button("Start a party tree", emoji=emojis.icon("people", "👥"), style=discord.ButtonStyle.primary, disabled=stats is None,
+                row(button("Start a party tree", emoji=emojis.icon("group", "👥"), style=discord.ButtonStyle.primary, disabled=stats is None,
                            on_click=self._start_party))]
 
     async def _notes(self, interaction: discord.Interaction) -> None:
@@ -463,7 +463,7 @@ class PartyGroveScreen(Screen):
     """Your party's tree: only members can chop it, everyone's chops add up, and it pays a little better for teamwork."""
 
     label = "Party Tree"
-    emoji = f"{emojis.icon('people', '👥')}"
+    emoji = f"{emojis.icon('group', '👥')}"
     description = "Chop your party's tree together"
 
     def __init__(self, nav):

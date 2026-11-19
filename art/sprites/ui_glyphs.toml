@@ -127,26 +127,6 @@ rows = [
   "...oooooooooo...",
 ]
 
-[ui_timer]
-palette = { o = "#2e1c2c", a = "#e8b878", b = "#b87840", c = "#7a4a28", d = "#f0fcff", e = "#b8e4f8", f = "#78a8d8", g = "#fff4a8", h = "#ffc83a", i = "#c8842a" }
-rows = [
-  "..oooooooooooo..",
-  ".oaaaaaaaaaaabo.",
-  ".obccccccccccco.",
-  "..oeddddddddeo..",
-  "...oefffffffo...",
-  "....ohggggho....",
-  ".....ohhhio.....",
-  "......ohio......",
-  "......oeeo......",
-  ".....oegheo.....",
-  "....oeghhheo....",
-  "...oeghhhhheo...",
-  "..oehiiiiiiheo..",
-  ".oaaaaaaaaaaabo.",
-  ".obccccccccccco.",
-  "..oooooooooooo..",
-]
 
 [ui_suit_heart]
 palette = { o = "#2e1c2c", a = "#ffa8a8", b = "#e04848", c = "#a02838" }

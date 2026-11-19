@@ -85,26 +85,6 @@ rows = [
   "..o.............",
 ]
 
-[ui_skill_foraging]
-palette = { W = "#e2ad6c", Z = "#8ccc66", d = "#78461f", o = "#2e1c2c", t = "#5aa84a", u = "#3a7a3a" }
-rows = [
-  ".......oo.......",
-  "......oZuo......",
-  "......oZuo......",
-  ".....oZuuuo.....",
-  ".....ouZuuo.....",
-  "....ouZttuuo....",
-  ".....ouuuuo.....",
-  "....ouZZZuuo....",
-  "...ouZttttuuo...",
-  "...oZttttttuo...",
-  "..oZttttttttuo..",
-  ".ouuuuuuuuuuuuo.",
-  "..oooooWdooooo..",
-  "......oddo......",
-  ".......oo.......",
-  "................",
-]
 
 [ui_swirl]
 palette = { F = "#b8f0ff", f = "#58b8e8", j = "#3078b8", o = "#2e1c2c" }
