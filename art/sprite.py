@@ -23,7 +23,7 @@ GRID = 16
 RAVEN_SHEET = "Full Spritesheet/16x16.png"
 
 
-SHINE_MIN_RARITY = 6  # Mythical, Premium and Celestial items shine; set to 8 to turn the shine off
+SHINE_MIN_RARITY = 9  # off: the rarity outline's gleam (art/rarity_style.py) replaced the old shine
 
 
 class SpriteError(ValueError):
