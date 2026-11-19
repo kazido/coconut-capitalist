@@ -1,3 +1,5 @@
+import math
+
 import discord
 
 from cococap.errors import CustomError
@@ -33,13 +35,21 @@ class TradeScreen(Screen):
     emoji = emojis.Lazy("ui_trade", "🤝")
     description = "Swap items and bits with another player"
     links = ()
-    refresh_every = 3  # so the other player's changes (and a request sent to you) show up on their own
+
+    @property
+    def refresh_every(self) -> float:  # type: ignore[override]
+        """Redraw every 3 s so the other player's changes (and a request sent to you) show up on their own; every second during the countdown."""
+        window = trade.window_of(self.user.id)
+        return 1 if window is not None and trade.countdown_left(window) is not None else 3
 
     async def build(self) -> Page:
         body = [*self.note_block()]
+        await trade.settle(self.user.id)  # (the countdown may have just run out: whoever looks first makes the trade happen)
+        if receipt := trade.receipt_of(self.user.id):
+            return Page("Trade", [*body, *await self._receipt(receipt)], accent=0xE67E73)
         if finished := trade.pop_result(self.user.id):
             body.append(text(f"### {finished}"))
-        if window := trade.window_of(self.user.id):
+        if (window := trade.window_of(self.user.id)) and not window.closed:
             return Page("Trade", [*body, *await self._window(window)], accent=0xE67E73)
         if invite := trade.invite_for(self.user.id):
             who = await self.nav.name_of(invite.sender_id)
@@ -54,14 +64,27 @@ class TradeScreen(Screen):
                  row(user_select("Trade with...", self._ask))]
         return Page("Trade", body, accent=0xE67E73)
 
+    # --- the receipt ------------------------------------------------------------------------------------------------------------------
+    async def _receipt(self, receipt: trade.Receipt) -> list:
+        name = await self.nav.name_of(receipt.partner_id)
+        return [text(f"### {emojis.icon('trade', '🤝')} Trade complete!\n**You gave**\n{describe(receipt.gave_items, receipt.gave_bits)}\n\n"
+                     f"**You got from {name}**\n{describe(receipt.got_items, receipt.got_bits)}"),
+                row(button("Continue", style=discord.ButtonStyle.success, on_click=self._continue))]
+
+    async def _continue(self, interaction: discord.Interaction) -> None:
+        trade.dismiss_receipt(self.user.id)
+        await self.refresh(interaction)
+
     # --- the shared window ------------------------------------------------------------------------------------------------------------
     async def _window(self, window: trade.Window) -> list:
         me, them = self.user.id, window.other(self.user.id)
         name = await self.nav.name_of(them)
         mine, theirs = window.offer(me), window.offer(them)
+        left = trade.countdown_left(window)
+        countdown = f"\n\n### {emojis.icon('timer', '⏳')} Trading in {max(1, math.ceil(left))}... (change anything or undo to stop)" if left is not None else ""
         tick = lambda uid: f" {emojis.icon('check', '✅')} accepted" if uid in window.accepted else ""  # noqa: E731
         body = [text(f"### {emojis.icon('trade', '🤝')} Trading with {name}\n"
-                     f"**You**{tick(me)}\n{describe(*mine)}\n\n**{name}**{tick(them)}\n{describe(*theirs)}"
+                     f"**You**{tick(me)}\n{describe(*mine)}\n\n**{name}**{tick(them)}\n{describe(*theirs)}{countdown}"
                      f"\n-# Any change takes both Accepts back. Tools and gear can't be traded. Closes <t:{int(window.expires_at)}:R> if nothing changes.")]
         stacks = sorted((await trade.tradable(self.user)).items(), key=lambda kv: -get_registry().item(kv[0]).sell_price * kv[1])[:SHOWN_ITEMS]
         if stacks:

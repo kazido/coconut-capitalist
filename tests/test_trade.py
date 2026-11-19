@@ -79,14 +79,22 @@ async def test_both_sides_offer_both_accept_and_everything_swaps(db):
     await trade.put_items(b, "material_tin_ore", 7, now=NOW + 3)
     assert await a.item_quantity("material_copper_ore") == 10  # nothing moves while you are still building
     assert await trade.accept(a, window.version, NOW + 4) is False
-    assert await trade.accept(b, window.version, NOW + 5) is True
+    assert await trade.accept(b, window.version, NOW + 5) is True  # both agreed: the countdown starts, nothing moves yet
+    assert await a.item_quantity("material_copper_ore") == 10 and trade.window_of(1, NOW + 6) is window
+    assert not await trade.settle(1, NOW + 5 + trade.COUNTDOWN_SECONDS - 1)  # (not over yet)
+    assert await trade.settle(2, NOW + 5 + trade.COUNTDOWN_SECONDS)
     for user in (a, b):
         await user.refresh()
     assert await a.item_quantity("material_copper_ore") == 6 and await b.item_quantity("material_copper_ore") == 4
     assert await a.item_quantity("material_tin_ore") == 7 and await b.item_quantity("material_tin_ore") == 0
     assert a.purse == start_a - 500 and b.purse == start_b + 500
     assert trade.window_of(1, NOW + 6) is None and trade.window_of(2, NOW + 6) is None
-    assert "complete" in trade.pop_result(1) and "complete" in trade.pop_result(2)
+    assert trade.pop_result(1) is None  # (a finished trade gives a receipt, not a message)
+    receipt = trade.receipt_of(1)
+    assert receipt.partner_id == 2 and receipt.gave_items == {"material_copper_ore": 4} and receipt.gave_bits == 500 and receipt.got_items == {"material_tin_ore": 7}
+    assert trade.receipt_of(2).got_bits == 500
+    trade.dismiss_receipt(1)
+    assert trade.receipt_of(1) is None and trade.receipt_of(2)
     assert (await a.stats())["trades_done"] == 1
 
 
@@ -107,12 +115,28 @@ async def test_a_change_takes_both_accepts_back_and_an_old_accept_does_not_count
     assert window.accepted == set()
 
 
+async def test_a_change_or_an_undo_during_the_countdown_stops_it(db):
+    a, b = await pair(db)
+    window = open_window()
+    await trade.put_items(a, "material_copper_ore", 3, now=NOW + 2)
+    await trade.accept(a, window.version, NOW + 3)
+    await trade.accept(b, window.version, NOW + 4)
+    await trade.put_items(a, "material_copper_ore", 9, now=NOW + 5)  # a changes the offer in the last second
+    assert window.countdown_ends is None and not await trade.settle(1, NOW + 100)
+    await trade.accept(a, window.version, NOW + 6)
+    await trade.accept(b, window.version, NOW + 6)
+    trade.unaccept(2, NOW + 7)
+    assert window.countdown_ends is None and not await trade.settle(1, NOW + 100)
+    assert await a.item_quantity("material_copper_ore") == 10 and trade.receipt_of(1) is None
+
+
 async def test_a_gift_is_a_trade_where_one_side_offers_nothing(db):
     a, b = await pair(db)
     window = open_window()
     await trade.put_items(a, "material_copper_ore", 3, now=NOW + 2)
     await trade.accept(a, window.version, NOW + 3)
     assert await trade.accept(b, window.version, NOW + 4) is True
+    assert await trade.settle(1, NOW + 4 + trade.COUNTDOWN_SECONDS)
     assert await b.item_quantity("material_copper_ore") == 3
 
 
@@ -122,7 +146,9 @@ async def test_pressing_accept_at_the_same_moment_trades_once(db):
     await trade.put_items(a, "material_copper_ore", 3, now=NOW + 2)
     await trade.accept(a, window.version, NOW + 3)
     results = await asyncio.gather(trade.accept(b, window.version, NOW + 4), trade.accept(b, window.version, NOW + 4), return_exceptions=True)
-    assert results.count(True) == 1
+    assert results.count(True) == 1  # (only one press starts the countdown)
+    settled = await asyncio.gather(trade.settle(1, NOW + 4 + trade.COUNTDOWN_SECONDS), trade.settle(2, NOW + 4 + trade.COUNTDOWN_SECONDS))
+    assert settled.count(True) == 1
     assert await b.item_quantity("material_copper_ore") == 3 and await a.item_quantity("material_copper_ore") == 7
 
 
@@ -168,7 +194,8 @@ async def test_if_someone_spent_things_meanwhile_nothing_moves_and_what_was_take
     await trade.put_items(b, "material_tin_ore", 5, now=NOW + 2)
     await b.remove_item("material_tin_ore", 5)  # b spends theirs after offering
     await trade.accept(a, window.version, NOW + 3)
-    assert await trade.accept(b, window.version, NOW + 4) is True  # (it finished the window, but nothing moved)
+    assert await trade.accept(b, window.version, NOW + 4) is True
+    assert await trade.settle(1, NOW + 4 + trade.COUNTDOWN_SECONDS)  # (it finished the window, but nothing moved)
     await a.refresh()
     assert "nothing moved" in trade.pop_result(1)
     assert await a.item_quantity("material_copper_ore") == 10 and a.purse == 6000  # (the bits came back too)
@@ -218,10 +245,14 @@ async def test_two_players_fill_and_accept_in_the_window_through_the_buttons(db)
     await nav_b.screen.nav.refresh(inter_b)
     assert "accepted" in all_text(nav_b)  # ...and sees a has agreed
     await find_button(nav_b, "Accept").callback(inter_b)
+    assert "Trading in" in all_text(nav_b) and await b.item_quantity("material_copper_ore") == 0  # the countdown runs first
+    window.countdown_ends = time.time() - 1  # (skip the wait)
+    await nav_b.screen.nav.refresh(inter_b)
     assert "Trade complete" in all_text(nav_b) and await b.item_quantity("material_copper_ore") == 4
     await nav_a.screen.nav.refresh(inter_a)
-    assert "Trade complete" in all_text(nav_a) or trade.window_of(1) is None
-    assert window.closed
+    assert "Trade complete" in all_text(nav_a) and window.closed
+    await find_button(nav_a, "Continue").callback(inter_a)  # Continue goes back to the main trade menu
+    assert "Start a trade" in all_text(nav_a) and "Trade complete" not in all_text(nav_a)
 
 
 async def test_the_item_dropdown_lists_ordinary_stacks_but_never_tools_and_cancel_closes_it(db):

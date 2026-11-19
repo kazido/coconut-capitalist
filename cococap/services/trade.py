@@ -5,6 +5,9 @@ see the same window: each adds items and bits to their own side, and both press 
 Accepts back, and an Accept only counts for the exact offer the player was looking at, so nobody can swap things in after you agree.
 A trade where one side adds nothing is simply a gift.
 
+When both have accepted, a short countdown (``COUNTDOWN_SECONDS``) runs; any change or un-accept during it stops it, and when it ends the
+trade goes through (whoever looks at the window next calls ``settle``). Both players then see a receipt until they press Continue.
+
 Finishing is all or nothing: both players' things are taken first (and everything given back if any of it is gone), then each is
 credited. The window is closed before anything moves, so a double press cannot trade twice. Windows live in memory and close after
 ``IDLE_SECONDS`` without a change.
@@ -17,10 +20,10 @@ from dataclasses import dataclass, field
 from cococap.errors import GameRuleError
 from cococap.registry import Registry, get_registry
 from cococap.user import InsufficientFunds, User
-from cococap import emojis
 
 INVITE_SECONDS = 60
 IDLE_SECONDS = 600
+COUNTDOWN_SECONDS = 3  # after both Accept, so a last-second change can still be seen
 MIN_BITS = 100  # (like /pay: no pocket-change spam)
 
 
@@ -35,6 +38,16 @@ class Invite:
     expires_at: float
 
 
+@dataclass(frozen=True)
+class Receipt:
+    """What one player gave and got in a finished trade."""
+    partner_id: int
+    gave_items: dict[str, int]
+    gave_bits: int
+    got_items: dict[str, int]
+    got_bits: int
+
+
 @dataclass
 class Window:
     a: int  # who asked
@@ -45,6 +58,7 @@ class Window:
     version: int = 0  # bumps with every change: an Accept only counts for the version it was pressed on
     expires_at: float = 0.0
     closed: bool = False
+    countdown_ends: float | None = None  # set when both have accepted; the trade goes through at this time
 
     def other(self, user_id: int) -> int:
         return self.b if user_id == self.a else self.a
@@ -55,6 +69,7 @@ class Window:
 
 _invites: dict[int, Invite] = {}  # invited player -> the one invite waiting for them
 _windows: dict[int, Window] = {}  # either player -> their open window
+_receipts: dict[int, Receipt] = {}  # a finished trade's summary, shown until the player presses Continue
 _results: dict[int, str] = {}  # what to tell a player the next time they look (a trade that finished or was called off)
 
 
@@ -74,10 +89,19 @@ def clear() -> None:
     _invites.clear()
     _windows.clear()
     _results.clear()
+    _receipts.clear()
 
 
 def pop_result(user_id: int) -> str | None:
     return _results.pop(user_id, None)
+
+
+def receipt_of(user_id: int) -> Receipt | None:
+    return _receipts.get(user_id)
+
+
+def dismiss_receipt(user_id: int) -> None:
+    _receipts.pop(user_id, None)
 
 
 def can_send(item_id: str, registry: Registry | None = None) -> bool:
@@ -163,11 +187,12 @@ def window_of(user_id: int, now: float | None = None) -> Window | None:
     return window
 
 
-def _close(window: Window, message: str) -> None:
+def _close(window: Window, message: str | None) -> None:
     window.closed = True
     for user_id in (window.a, window.b):
         _windows.pop(user_id, None)
-        _results[user_id] = message
+        if message is not None:
+            _results[user_id] = message
 
 
 def _open(user_id: int, now: float | None) -> Window:
@@ -179,6 +204,7 @@ def _open(user_id: int, now: float | None) -> Window:
 
 def _changed(window: Window, now: float | None) -> None:
     window.accepted.clear()
+    window.countdown_ends = None
     window.version += 1
     window.expires_at = _now(now) + IDLE_SECONDS
 
@@ -230,20 +256,40 @@ def cancel(user_id: int, now: float | None = None) -> bool:
 
 
 async def accept(user: User, version: int, now: float | None = None) -> bool:
-    """Press Accept on the offer you were looking at (`version`). Returns True if that finished the trade.
-    A press on an out-of-date offer is refused, so a change made a moment ago is never agreed to by accident."""
+    """Press Accept on the offer you were looking at (`version`). Returns True if that made both of you accepted, which starts the countdown
+    (the trade itself happens in `settle`). A press on an out-of-date offer is refused, so a change made a moment ago is never agreed to by accident."""
     window = _open(user.id, now)
     if version != window.version:
         raise TradeError("The offer just changed. Look it over again.")
     window.accepted.add(user.id)
-    if window.accepted != {window.a, window.b}:
-        return False
-    await _complete(window)
+    if window.accepted != {window.a, window.b} or window.countdown_ends is not None:
+        return False  # (a second press during the countdown starts nothing new)
+    window.countdown_ends = _now(now) + COUNTDOWN_SECONDS
     return True
 
 
 def unaccept(user_id: int, now: float | None = None) -> None:
-    _open(user_id, now).accepted.discard(user_id)
+    window = _open(user_id, now)
+    window.accepted.discard(user_id)
+    window.countdown_ends = None
+
+
+def countdown_left(window: Window, now: float | None = None) -> float | None:
+    """Seconds until the trade goes through, or None when no countdown is running."""
+    if window.countdown_ends is None or window.closed:
+        return None
+    return max(0.0, window.countdown_ends - _now(now))
+
+
+async def settle(user_id: int, now: float | None = None) -> bool:
+    """Finish the player's trade if its countdown is over. Returns True if the trade went through (or was called off because something was gone)."""
+    window = window_of(user_id, now)
+    if window is None or window.closed or window.countdown_ends is None or window.accepted != {window.a, window.b}:
+        return False
+    if _now(now) < window.countdown_ends:
+        return False
+    await _complete(window)  # (it marks the window closed before anything moves, so two players settling at once trade once)
+    return True
 
 
 async def _complete(window: Window) -> None:
@@ -267,9 +313,10 @@ async def _complete(window: Window) -> None:
     for giver_id, giver in people.items():
         receiver = people[window.other(giver_id)]
         items, bits = window.offer(giver_id)
+        _receipts[giver_id] = Receipt(receiver.id, dict(items), bits, dict(window.offer(receiver.id)[0]), window.offer(receiver.id)[1])
         for item_id, quantity in items.items():
             await receiver.add_item(item_id, quantity)
         if bits:
             await receiver.add_bits(bits)
         await giver.inc_stat("trades_done")
-    _close(window, f"{emojis.icon('trade', '🤝')} Trade complete!")
+    _close(window, None)  # (no message: both players get a receipt instead)

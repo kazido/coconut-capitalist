@@ -331,7 +331,7 @@ class Navigator(ui.LayoutView):
     async def _tick(self, screen: Screen, seconds: float) -> None:
         try:
             while self.screen is screen and not self.is_finished():
-                await asyncio.sleep(seconds)
+                await asyncio.sleep(screen.refresh_every or seconds)  # (a screen may speed itself up, e.g. a countdown)
                 if self._lock.locked():
                     continue  # the player just clicked: never make their click wait for a redraw
                 async with self._lock:
