@@ -322,16 +322,33 @@ class MineScreen(Screen):
 
     async def _end(self, note: str | None) -> None:
         """The run is over: bank it, and maybe a scarab shows up (after any mine, however it ended)."""
-        self.summary = summary = await mining.settle_run(self.user, self.run)
-        titles = {"left": "You climbed out safely", "collapse": "The mine collapsed!", "wyrmhole": "You broke into a wyrmhole!", "mini_wyrmhole": "You slipped into the small wyrmhole!", "floor": "You reached the vault!"}
-        self.result = rewards_result(
-            titles[self.run.outcome], items=summary.haul, xp=summary.xp,
-            headline=[f"Row **{summary.depth}** of {self.run.floor}  ·  **{summary.lodes}** lodes dug", *filter(None, [note])],
-            odds=odds.mining(depth=summary.depth), emoji=emojis.icon("dig", "⛏️"), accent=0x2ECC71 if self.run.outcome != "collapse" else 0xE74C3C, back_label="Continue")
+        self.summary = await mining.settle_run(self.user, self.run)
         rules = get_registry().mining
         if mining.scarab_appears(rules, random.Random()):
             self.challenge = mining.make_scarab(_words(), rules, random.Random())
             self.challenge_deadline = time.time() + self.challenge.seconds
+        self._show_loot(note)
+
+    def _show_loot(self, note: str | None = None) -> None:
+        """Build the reward screen of the finished mine (separate from `_end` so a scarab turning up later can be added to it)."""
+        summary = self.summary
+        titles = {"left": "You climbed out safely", "collapse": "The mine collapsed!", "wyrmhole": "You broke into a wyrmhole!", "mini_wyrmhole": "You slipped into the small wyrmhole!", "floor": "You reached the vault!"}
+        # The reward screen is the LAST screen of a mine: the next action starts from it (on the last rare-drop page when there are rare drops).
+        choices: list[tuple[str, str, object]] = []
+        if self.run.outcome == "wyrmhole":
+            choices.append(("Enter the wyrmhole", emojis.icon("wyrmhole", "🌀"), self._wyrmhole))
+        elif self.run.outcome == "mini_wyrmhole":
+            choices.append(("Enter the small wyrmhole", emojis.icon("small_wyrmhole", "🕳️"), self._wyrmhole_small))
+        notes = []
+        if self.challenge is not None:
+            notes.append(f"{emojis.icon('scarab', '🪲')} **A subterranean scarab appears!** It holds a scroll: **{self.challenge.scrambled}**\n"
+                         f"Unscramble it before <t:{int(self.challenge_deadline)}:R> and it will reward you!")
+            choices += [("Answer", emojis.icon("scroll", "📜"), self._ask_scarab), ("Ignore", emojis.icon("cross", "✖️"), self._skip_scarab)]
+        self.result = rewards_result(
+            titles[self.run.outcome], items=summary.haul, xp=summary.xp, notes=notes,
+            headline=[f"Row **{summary.depth}** of {self.run.floor}  ·  **{summary.lodes}** lodes dug", *filter(None, [note])],
+            odds=odds.mining(depth=summary.depth), emoji=emojis.icon("dig", "⛏️"), accent=0x2ECC71 if self.run.outcome != "collapse" else 0xE74C3C,
+            again=self._again, again_label="Mine again", back=self._to_menu, back_label="Mining page", actions=choices)
 
     async def _ask_scarab(self, interaction: discord.Interaction) -> None:
         async def submitted(modal_interaction: discord.Interaction, answer: str) -> None:
@@ -348,6 +365,8 @@ class MineScreen(Screen):
                 self.scarab_result = f"{emojis.icon('scarab', '🪲')} The scarab is pleased! **{win.name}**:\n" + "\n".join(gifts)
             else:
                 self.scarab_result = f"{emojis.icon('scarab', '🪲')} Wrong! The scarab scuttles away. (It was **{challenge.word}**.)"
+            self.result = rewards_result("The scarab", headline=[self.scarab_result], emoji=emojis.icon("scarab", "🪲"), again=self._again, again_label="Mine again",
+                                         back=self._to_menu, back_label="Mining page")
             await self.refresh(modal_interaction)
 
         await interaction.response.send_modal(PromptModal("Unscramble the scroll", "Your answer", submitted, max_length=40))
@@ -360,6 +379,10 @@ class MineScreen(Screen):
         self.run = await mining.start_run(self.user, random.Random(), location=self.run.site.id)  # (the same mine again)
         self.summary = self.challenge = self.scarab_result = None
         await self.refresh(interaction)
+
+    async def _to_menu(self, interaction: discord.Interaction) -> None:
+        """Leave the finished mine for the Mining page (the reward screen was the end of the run)."""
+        await self.go(interaction, "mining")
 
     async def _wyrmhole(self, interaction: discord.Interaction) -> None:
         hole = await mining.enter_wyrmhole(self.user, random.Random())

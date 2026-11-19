@@ -63,7 +63,7 @@ def find_button(nav, label=None, emoji=None):
 
 async def continue_through(nav, inter, label="Continue"):
     """Click Continue on the reward screen and on every rare-drop page after it, until the screen it came from is back."""
-    while nav.screen.id == "result":
+    while nav.screen.id == "result" and any(b.label == label for b in buttons(nav)):  # (a mine's last page ends with its own choices: Mine again, wyrmhole, ...)
         await click(nav, inter, label)
 
 
@@ -701,11 +701,15 @@ async def test_leave_banks_the_haul_and_unlocks_navigation(db):
     await click(nav, inter, "Leave & bank")
     assert nav.screen.id == "result" and "climbed out safely" in all_text(nav) and nav.screen.locked  # the haul is shown first, then you carry on
     await continue_through(nav, inter)
-    assert "climbed out safely" in all_text(nav) and not nav.screen.locked
-    assert await user.items() == carried
-    assert (await user.skill("mining")).xp == 30 and not find_button(nav, "Home").disabled
-    await click(nav, inter, "Mine again")
+    assert await user.items() == carried and (await user.skill("mining")).xp == 30
+    await click(nav, inter, "Mine again")  # the reward screen is the last page of the mine: the next run starts from it
     assert nav.screen.run.depth == 0 and not nav.screen.run.finished
+    nav2, inter2 = await enter_mines()  # ...or leave it for the Mining page
+    nav2.screen.run.leave()
+    await nav2.screen._end(None)
+    await nav2.screen.refresh(inter2)
+    await click(nav2, inter2, "Mining page")
+    assert nav2.screen.id == "mining" and not nav2.screen.locked and not find_button(nav2, "Home").disabled
 
 
 async def test_a_collapse_halves_the_haul_and_still_gives_xp(db):
@@ -720,6 +724,7 @@ async def test_a_collapse_halves_the_haul_and_still_gives_xp(db):
     await find_button(nav, "Dig").callback(inter)
     assert "collapsed" in all_text(nav) and await user.item_quantity("material_copper_ore") == 5
     await continue_through(nav, inter)
+    await click(nav, inter, "Mining page")
     assert (await user.skill("mining")).xp == 10 and not nav.screen.locked
 
 
@@ -823,6 +828,7 @@ async def test_scarab_answered_in_time_pays_out_and_late_or_wrong_does_not(db):
         await nav.screen._end(None)
         nav.screen.challenge = ScarabChallenge("lantern", "ternlan", 30)
         nav.screen.challenge_deadline = time.time() + 30 - delay
+        nav.screen._show_loot()  # (the reward screen carries the scarab's buttons)
         await nav.screen.refresh(inter)
         await continue_through(nav, inter)
         await find_button(nav, "Answer").callback(inter)
@@ -1798,7 +1804,7 @@ async def test_a_scarab_can_turn_up_after_any_mine_and_never_says_level_six(db, 
         await nav.screen._end(None)
         await nav.screen.refresh(inter)
         await continue_through(nav, inter)
-        assert nav.screen.challenge is not None, how
+        assert nav.screen.origin.challenge is not None, how
         text = all_text(nav)
         assert "scarab" in text and "level 6" not in text.lower() and "reward you" in text, how
 
