@@ -36,6 +36,15 @@ def rare_embed(finds: list[tuple[int, Item, int, Odds | None]]) -> discord.Embed
     return embed
 
 
+def rare_lines(finds: list[tuple[int, Item, int, Odds | None]]) -> str:
+    """The rare finds of one action as plain lines for a result screen: item, quantity, rarity and drop odds."""
+    out = []
+    for lvl, item, quantity, odds in finds:
+        rate = odds.text() if odds else Rarities.from_value(item.rarity).rarity_name
+        out.append(f"{emojis.icon('sparkle', '✨')} **{'Super rare find' if lvl == 2 else 'Rare find'}:** {item.emoji or ''} {quantity:,} × {item.name}  ·  {rate}")
+    return "\n".join(out)
+
+
 def sorted_finds(items: dict[str, int], lookup) -> list[tuple[int, Item, int, Odds | None]]:
     """The rare finds in `items` with their odds from `lookup` (item id -> Odds or None), best first."""
     return [(lvl, item, q, lookup(item.id) if lookup else None) for lvl, item, q in flair.finds(items)]
@@ -46,12 +55,23 @@ class PopupView(discord.ui.View):
         super().__init__(timeout=TIMEOUT)
         self.embed, self.owner = embed, owner
 
+    async def refuse_non_owner(self, interaction: discord.Interaction) -> bool:
+        """True (and a private note sent) when someone other than the player clicks. Popups can be public (level-ups)."""
+        if interaction.user.id == self.owner.id:
+            return False
+        await interaction.response.send_message("Only the player this popup is for can use these buttons.", ephemeral=True)
+        return True
+
     @discord.ui.button(label="Share", style=discord.ButtonStyle.primary)
     async def share(self, interaction: discord.Interaction, _button: discord.ui.Button) -> None:
+        if await self.refuse_non_owner(interaction):
+            return
         await interaction.response.edit_message(view=ShareView(self))
 
     @discord.ui.button(label="Close", style=discord.ButtonStyle.secondary)
     async def close(self, interaction: discord.Interaction, _button: discord.ui.Button) -> None:
+        if await self.refuse_non_owner(interaction):
+            return
         await interaction.response.defer()
         await interaction.delete_original_response()
         self.stop()
@@ -68,6 +88,8 @@ class ShareView(discord.ui.View):
         self.add_item(picker)
 
     async def picked(self, interaction: discord.Interaction) -> None:
+        if await self.popup.refuse_non_owner(interaction):
+            return
         channel = self.children[0].values[0]
         note = await self.post(interaction, channel)
         await interaction.response.edit_message(content=note, view=self.popup)

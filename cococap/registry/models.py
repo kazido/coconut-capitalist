@@ -212,6 +212,12 @@ class PetBonus(_Data):
     text: str  # how it reads, with {v} for the number
 
 
+class PetTrait(PetBonus):
+    """A pet's one named effect (what its old bonus was). It scales with the pet's level and stars (see services/pets.py)."""
+
+    name: str
+
+
 class PetLoadout(_Data):
     """The simulated "mini you" a pet is scored from (see PetScoreRules and services/pet_score.py). Nothing here is a real item."""
 
@@ -221,23 +227,20 @@ class PetLoadout(_Data):
 
 
 class PetScoreRules(_Data):
-    """configs/pet_score.toml: formula constants, sidekick bonus, passive and haul caps, fuel tank. All TODO(balance)."""
+    """configs/pet_score.toml: formula constants, sidekick bonus, haul caps, fuel tank. All TODO(balance)."""
 
-    tool_tier_weight: float = Field(ge=0)
-    enchant_level_weight: float = Field(ge=0)
-    mastery_weight: float = Field(ge=0)
-    rarity_weight: float = Field(ge=0)
+    mastery_per_point: float = Field(ge=0)
+    gear_per_tier: float = Field(ge=0)
+    gear_per_enchant_level: float = Field(ge=0)
+    ability_points: dict[str, int]  # "none" / "mid" / "high" -> points out of 100
+    skill_points: dict[str, dict[int, int]]  # "specialist" (one skill) and "global_total" (spread over five), by pet rarity
     level_floor: float = Field(gt=0, le=1)
     star_bonus: float = Field(ge=0)
-    global_proficiency: float = Field(gt=0, le=1)
-    lent_tool_weight: float = Field(ge=0)
-    sidekick_per_points: float = Field(gt=0)
-    sidekick_star_weight: float = Field(ge=0)
+    sidekick_per_strength: float = Field(ge=0)
     sidekick_cap: float = Field(ge=0)
-    passive_per_score: float = Field(ge=0)
-    passive_cap: float = Field(ge=0)
     haul_active_share: float = Field(gt=0, le=1)
     haul_xp_per_score_hour: float = Field(ge=0)
+    haul_drop_rolls_per_score_hour: float = Field(ge=0)  # each hour of work rolls the skill's COMMON drop table this many times per point of score
     tank_cap_hours: float = Field(gt=0)
     fuel_minutes_per_value: float = Field(gt=0)
     food_buff_bonus: float = Field(ge=0)  # skill food gives the pet this much extra xp rate...
@@ -249,12 +252,18 @@ class Pet(_Data):
     name: str
     skill: Literal["global", "mining", "farming", "foraging", "fishing", "combat"] = "global"  # the one skill it looks after
     emoji_raw: str | None = Field(default=None, alias="emoji")
-    rarity: int = Field(default=1, ge=1, le=5)
+    rarity: int = Field(default=1, ge=1, le=8)  # 6 Mythical, 8 Celestial (no pets of those yet)
+    ability: Literal["none", "mid", "high"] = "none"  # worth 0 / 50 / 100 of the 1000 score points
     description: str = ""
-    bonuses: list[PetBonus] = Field(default_factory=list)
+    trait: PetTrait | None = None  # a pet may have no trait
     loadout: PetLoadout
 
     _id = field_validator("id")(check_id)
+
+    @property
+    def bonuses(self) -> list[PetBonus]:
+        """The engine reads a pet's effects as a list of bonuses: its trait is the only one."""
+        return [self.trait] if self.trait else []
 
     @property
     def emoji(self) -> str | None:

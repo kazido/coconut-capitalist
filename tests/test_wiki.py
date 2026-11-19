@@ -77,7 +77,7 @@ def test_the_party_page_states_the_bonus_for_each_size():
 
 def test_the_wiki_follows_the_data(monkeypatch):
     cat = REG.pets["drizzle"]
-    stronger = cat.model_copy(update={"bonuses": [cat.bonuses[0].model_copy(update={"value": 0.77})]})
+    stronger = cat.model_copy(update={"trait": cat.trait.model_copy(update={"value": 0.77})})
     monkeypatch.setitem(REG.pets, "drizzle", stronger)
     assert "77%" in all_blocks("pets2")  # change the data and the wiki changes with it
 

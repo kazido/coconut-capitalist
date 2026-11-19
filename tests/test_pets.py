@@ -48,7 +48,7 @@ def test_every_pet_has_a_bonus_and_every_bonus_is_something_the_game_uses():
 def test_pets_cover_every_part_of_the_game():
     stats = {b.stat for p in REG.pets.values() for b in p.bonuses}
     assert {"bite_speed", "rare_luck", "pot_speed", "pot_luck"} <= stats  # fishing and crab pots
-    assert {"danger_reduction", "ore_yield"} <= stats  # mining
+    assert {"ore_yield", "dig_shave"} <= stats  # mining
     assert {"good_chop"} <= stats and {"grow_chance", "extra_harvest"} <= stats  # foraging, farming
     assert {"work_bonus", "xp_all"} <= stats  # the economy
 
@@ -90,7 +90,7 @@ def test_orbs_give_common_pets_often_and_rare_ones_rarely():
         pet = pets.roll_pet(rng, REG)
         seen[pet.rarity] = seen.get(pet.rarity, 0) + 1
     weights = RULES.orbs[pets.ORB]
-    assert set(seen) == set(weights) and seen[1] > seen[2] > seen[3] > seen[4] > seen[5] > 0
+    assert set(seen) == {r for r, w in weights.items() if w > 0} and seen[1] > seen[2] > seen[3] > seen[4] > seen[5] > 0
     total = sum(seen.values())
     assert seen[5] / total == pytest.approx(weights[5] / sum(weights.values()), abs=0.01)
 
@@ -266,8 +266,7 @@ async def test_the_turtle_steadies_the_mine_and_brings_up_more_ore(db):
         await equip(user, "mining", inst.id)
     a, b = await mining.start_run(plain, Random(1)), await mining.start_run(steady, Random(1))
     pet = REG.pets["murk"].bonuses
-    assert b.growth_factor == pytest.approx(a.growth_factor - pet[0].value)
-    assert b.yield_factor == pytest.approx(a.yield_factor * (1 + pet[1].value))
+    assert b.yield_factor == pytest.approx(a.yield_factor * (1 + pet[0].value))
 
 
 async def test_the_frog_makes_crops_grow_more_often_and_the_bee_makes_harvests_bigger(db):
@@ -403,7 +402,7 @@ def test_the_odds_add_up_and_a_target_is_much_likelier_with_every_miss_making_it
     chances = [pets.orb_odds(REG, "tempest", misses)["tempest"] for misses in (0, 5, 10, 20, 100)]
     assert chances == sorted(chances) and chances[-1] > chances[0] * 2
     assert pets.target_boost(10**6, REG) == RULES.max_boost  # there is a ceiling
-    assert all(aimed[p] < plain[p] for p in plain if p != "tempest")  # everything else is a little less likely
+    assert all(aimed[p] < plain[p] for p in plain if p != "tempest" and plain[p] > 0)  # everything else is a little less likely
 
 
 def test_aiming_really_does_get_you_the_pet_more_often():
@@ -483,7 +482,7 @@ def test_every_pet_has_one_fixed_skill_that_matches_what_it_does():
     for pet in REG.pets.values():
         assert pet.skill == pets.default_skill(pet), pet.id  # the data and the bonuses agree
         assert pet.skill in pets.SKILL_EMOJI
-    assert {p.id for p in REG.pets.values() if p.skill == "global"} == {"cinder", "haze", "halo", "gloam", "lune", "umbra"}  # work wage, every-skill xp, sales
+    assert {p.id for p in REG.pets.values() if p.skill == "global"} == {"cinder", "haze", "halo", "gloam", "lune", "umbra", "aurora"}  # work wage, every-skill xp, sales
     assert REG.pets["drizzle"].skill == "fishing" and REG.pets["dew"].skill == "farming" and REG.pets["ripple"].skill == "fishing"
     assert {p.skill for p in REG.pets.values()} >= {"fishing", "mining", "farming", "foraging", "global"}
     assert not hasattr(pets, "set_skill")  # a pet's skill is not something you change

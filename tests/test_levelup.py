@@ -14,7 +14,7 @@ def test_every_skill_with_an_icon_is_watched():
 
 async def test_a_click_that_levels_you_up_sends_the_notification(db, monkeypatch):
     from cococap.services import foraging
-    from tests.test_hub import chop, click, freeze_time, hub, with_axe
+    from tests.test_hub import all_text, chop, click, find_button, freeze_time, hub, with_axe
 
     freeze_time(monkeypatch)
     user = await with_axe()
@@ -27,8 +27,8 @@ async def test_a_click_that_levels_you_up_sends_the_notification(db, monkeypatch
     await click(nav, inter, "Chop a tree")
     nav.screen.tree = foraging.Tree(1, 1, 1)
     await chop(nav, inter)
-    assert inter.followup.send.await_count == 1
-    assert inter.followup.send.await_args.kwargs["ephemeral"] is False and inter.followup.send.await_args.kwargs["embed"].title == "Level up!"
+    assert "level up!" in all_text(nav) and find_button(nav, "Share") is not None  # on the loot screen itself, no popup
+    assert inter.followup.send.await_count == 0
 
 
 async def test_jumping_several_levels_in_one_click_is_one_notice_old_to_new(db):
@@ -69,3 +69,22 @@ async def test_the_active_pet_levelling_up_rides_in_the_same_notice(db):
     await levelup.check(inter, user, seen)
     assert inter.followup.send.await_count == 1
     assert "Drizzle" in inter.followup.send.await_args.kwargs["embed"].description and "1 -> 3" in inter.followup.send.await_args.kwargs["embed"].description
+
+
+async def test_the_pets_xp_bonus_sits_next_to_the_xp_in_the_totals_line(db):
+    from cococap.models.pethouse import OwnedPet
+    from cococap.registry import get_registry
+    from cococap.services import pets
+
+    reg = get_registry()
+    pet = next(p for p in reg.pets.values() if any(b.stat == "xp_all" for b in p.bonuses))
+    user = await User.get(1)
+
+    def adopt(house):
+        house.pets[pet.id] = OwnedPet(stars=1, xp=pets.level_xp(reg.economy.pets.max_level, pet.rarity, reg))
+        house.active = pet.id
+
+    await user.update_pethouse(adopt)
+    lines = await levelup.tag_pet_xp(user, "forage", ["✨ **+40** xp", "other"])
+    assert pet.emoji in lines[0] and "(" in lines[0] and lines[1] == "other"
+    assert await levelup.tag_pet_xp(user, "casino", ["✨ **+40** xp"]) == ["✨ **+40** xp"]

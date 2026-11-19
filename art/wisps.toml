@@ -14,24 +14,28 @@
 # Cinder
 [pet_cinder]
 kind = "flame"
+rarity = 1
 face = "core"
 base = "#8c8c8c"
 
 # Gloam
 [pet_gloam]
 kind = "flame"
+rarity = 3
 face = "visor"
 base = "#686868"
 
 # Haze
 [pet_haze]
 kind = "flame"
+rarity = 3
 face = "sleepy"
 base = "#b0b0b0"
 
 # Lune
 [pet_lune]
 kind = "flame"
+rarity = 4
 face = "fang"
 base = "#dcdcdc"
 accent = "#9aa0c0"
@@ -39,6 +43,7 @@ accent = "#9aa0c0"
 # Halo
 [pet_halo]
 kind = "flame"
+rarity = 5
 face = "horned"
 base = "#ffffff"
 accent = "#c8c8dc"
@@ -46,6 +51,7 @@ accent = "#c8c8dc"
 # Umbra
 [pet_umbra]
 kind = "flame"
+rarity = 5
 face = "cyclops"
 base = "#26262c"
 accent = "#5a5a74"
@@ -53,42 +59,49 @@ accent = "#5a5a74"
 # Drizzle
 [pet_drizzle]
 kind = "flame"
+rarity = 2
 face = "sleepy"
 base = "#63a1db"
 
 # Ripple
 [pet_ripple]
 kind = "flame"
+rarity = 2
 face = "eyes"
 base = "#4fb8c8"
 
 # Squall
 [pet_squall]
 kind = "flame"
+rarity = 4
 face = "fang"
 base = "#2c70f5"
 
 # Undertow
 [pet_undertow]
 kind = "flame"
+rarity = 4
 face = "visor"
 base = "#3a4fd0"
 
 # Brine
 [pet_brine]
 kind = "flame"
+rarity = 4
 face = "grin"
 base = "#2fb0b0"
 
 # Eddy
 [pet_eddy]
 kind = "flame"
+rarity = 4
 face = "cyclops"
 base = "#2cd0e8"
 
 # Tempest
 [pet_tempest]
 kind = "flame"
+rarity = 5
 face = "horned"
 base = "#00b8ff"
 accent = "#7a5cff"
@@ -96,18 +109,21 @@ accent = "#7a5cff"
 # Murk
 [pet_murk]
 kind = "flame"
+rarity = 2
 face = "core"
 base = "#9f63db"
 
 # Lode
 [pet_lode]
 kind = "flame"
+rarity = 3
 face = "slim"
 base = "#b84beb"
 
 # Cairn
 [pet_cairn]
 kind = "flame"
+rarity = 4
 face = "visor"
 base = "#6c2cf5"
 accent = "#ff9a3c"
@@ -115,18 +131,21 @@ accent = "#ff9a3c"
 # Sprig
 [pet_sprig]
 kind = "flame"
+rarity = 2
 face = "eyes"
 base = "#63db84"
 
 # Bough
 [pet_bough]
 kind = "flame"
+rarity = 3
 face = "grin"
 base = "#4beb5b"
 
 # Canopy
 [pet_canopy]
 kind = "flame"
+rarity = 4
 face = "horned"
 base = "#3cf52c"
 accent = "#d8f23c"
@@ -134,18 +153,21 @@ accent = "#d8f23c"
 # Dew
 [pet_dew]
 kind = "flame"
+rarity = 2
 face = "sleepy"
 base = "#c9d870"
 
 # Clover
 [pet_clover]
 kind = "flame"
+rarity = 2
 face = "slim"
 base = "#dbc863"
 
 # Pollen
 [pet_pollen]
 kind = "flame"
+rarity = 2
 face = "fang"
 base = "#c3db63"
 accent = "#ffa83c"
@@ -153,6 +175,7 @@ accent = "#ffa83c"
 # Thistle
 [pet_thistle]
 kind = "flame"
+rarity = 4
 face = "cyclops"
 base = "#b5f52c"
 accent = "#3fae4a"
@@ -160,12 +183,55 @@ accent = "#3fae4a"
 # Scorch
 [pet_scorch]
 kind = "flame"
+rarity = 3
 face = "fang"
 base = "#eb554b"
 
 # Pyre
 [pet_pyre]
 kind = "flame"
+rarity = 5
 face = "horned"
 base = "#ff3d00"
 accent = "#ffd23c"
+
+# Tremor
+[pet_tremor]
+kind = "flame"
+rarity = 6
+face = "horned"
+base = "#9b4dff"
+accent = "#ffb020"
+
+# Maelstrom
+[pet_maelstrom]
+kind = "flame"
+rarity = 6
+face = "fang"
+base = "#00d4ff"
+accent = "#2b5cff"
+
+# Verdant
+[pet_verdant]
+kind = "flame"
+rarity = 6
+face = "sleepy"
+base = "#3ddc5a"
+accent = "#c8ff4d"
+
+# Solstice
+[pet_solstice]
+kind = "flame"
+rarity = 6
+face = "core"
+base = "#c8f542"
+accent = "#ffd23d"
+
+# Aurora
+[pet_aurora]
+kind = "flame"
+special = "aurora"
+rarity = 8
+face = "eyes"
+base = "#f4f1ff"
+accent = "#7af0ff"

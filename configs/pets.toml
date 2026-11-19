@@ -9,12 +9,14 @@ name = "Cinder"
 skill = "global"
 emoji = "🐕"
 rarity = 1
+ability = "none"
 description = "A faithful glow in the grey. Pays you a bit extra every shift."
 [cinder.loadout]
 tool_tier = 0
 mastery_score = 2
 enchants = {}
-[[cinder.bonuses]]
+[cinder.trait]
+name = "Paymaster"
 stat = "work_bonus"
 value = 0.2
 text = "+{v:.0%} bits from Work"
@@ -24,12 +26,14 @@ name = "Drizzle"
 skill = "fishing"
 emoji = "🐈"
 rarity = 2
+ability = "none"
 description = "A soft blue light. Fish find your hook sooner."
 [drizzle.loadout]
 tool_tier = 1
 mastery_score = 5
-enchants = { double_hook = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[drizzle.bonuses]]
+enchants = { keen = 1 }
+[drizzle.trait]
+name = "Quick Bite"
 stat = "bite_speed"
 value = 0.3
 text = "-{v:.0%} time waiting for a bite"
@@ -39,16 +43,14 @@ name = "Murk"
 skill = "mining"
 emoji = "🐢"
 rarity = 2
+ability = "none"
 description = "Slow, steady and sure. The mine creaks less around it."
 [murk.loadout]
 tool_tier = 1
 mastery_score = 5
-enchants = { echo_strike = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[murk.bonuses]]
-stat = "danger_reduction"
-value = 0.06
-text = "-{v:.0%} mine pressure"
-[[murk.bonuses]]
+enchants = { keen = 1 }
+[murk.trait]
+name = "Steady Hand"
 stat = "ore_yield"
 value = 0.1
 text = "+{v:.0%} ore from the mine"
@@ -58,12 +60,14 @@ name = "Dew"
 skill = "farming"
 emoji = "🐸"
 rarity = 2
+ability = "none"
 description = "Loves the rain. Your crops grow more often."
 [dew.loadout]
 tool_tier = 1
 mastery_score = 5
-enchants = { golden_sprout = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[dew.bonuses]]
+enchants = { keen = 1 }
+[dew.trait]
+name = "Rainmaker"
 stat = "grow_chance"
 value = 0.12
 text = "+{v:.0%} chance a crop grows each rain"
@@ -73,12 +77,14 @@ name = "Bough"
 skill = "foraging"
 emoji = "🐒"
 rarity = 3
+ability = "mid"
 description = "Knows exactly where to strike a tree."
 [bough.loadout]
 tool_tier = 2
 mastery_score = 8
-enchants = { double_strike = 2, ember_bite = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[bough.bonuses]]
+enchants = { keen = 2, bounty = 1 }
+[bough.trait]
+name = "Good Chop"
 stat = "good_chop"
 value = 0.16
 text = "+{v:.0%} chance of a good chop"
@@ -88,12 +94,14 @@ name = "Haze"
 skill = "global"
 emoji = "🐨"
 rarity = 3
+ability = "mid"
 description = "Calm and clever. Everything you learn sticks a little better."
 [haze.loadout]
 tool_tier = 2
 mastery_score = 8
-enchants = { echo_strike = 2 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[haze.bonuses]]
+enchants = { keen = 2 }
+[haze.trait]
+name = "Wanderer"
 stat = "xp_all"
 value = 0.1
 text = "+{v:.0%} xp in every skill"
@@ -103,12 +111,14 @@ name = "Pollen"
 skill = "farming"
 emoji = "🐝"
 rarity = 2
+ability = "none"
 description = "A tireless little spark. Now and then a plot gives a whole second harvest."
 [pollen.loadout]
 tool_tier = 1
 mastery_score = 5
-enchants = { golden_sprout = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[pollen.bonuses]]
+enchants = { keen = 1 }
+[pollen.trait]
+name = "Cross-Pollinator"
 stat = "extra_harvest"
 value = 0.1
 text = "{v:.0%} chance of a free extra harvest"
@@ -118,12 +128,14 @@ name = "Squall"
 skill = "fishing"
 emoji = "🦅"
 rarity = 4
+ability = "mid"
 description = "Sharp-eyed. It spots the big ones below the surface."
 [squall.loadout]
 tool_tier = 3
 mastery_score = 12
-enchants = { double_hook = 3, steady_line = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[squall.bonuses]]
+enchants = { keen = 3, lure = 1 }
+[squall.trait]
+name = "Storm Luck"
 stat = "rare_luck"
 value = 0.5
 text = "+{v:.0%} chance of rare fish"
@@ -133,12 +145,14 @@ name = "Undertow"
 skill = "fishing"
 emoji = "🐍"
 rarity = 4
+ability = "mid"
 description = "Patient and deep. Your crab pots fill faster while it watches."
 [undertow.loadout]
 tool_tier = 3
 mastery_score = 12
-enchants = { double_hook = 3, steady_line = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[undertow.bonuses]]
+enchants = { keen = 3, lure = 1 }
+[undertow.trait]
+name = "Pot Hauler"
 stat = "pot_speed"
 value = 0.5
 text = "+{v:.0%} faster crab pots"
@@ -148,12 +162,14 @@ name = "Brine"
 skill = "fishing"
 emoji = "🦀"
 rarity = 4
+ability = "mid"
 description = "Knows the seabed. Your crab pots lure rarer fish."
 [brine.loadout]
 tool_tier = 3
 mastery_score = 12
-enchants = { double_hook = 3, steady_line = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[brine.bonuses]]
+enchants = { keen = 3, lure = 1 }
+[brine.trait]
+name = "Pot Luck"
 stat = "pot_luck"
 value = 1
 text = "+{v:.0%} rare fish in crab pots"
@@ -163,12 +179,14 @@ name = "Tempest"
 skill = "fishing"
 emoji = "🐉"
 rarity = 5
+ability = "high"
 description = "Hoards treasure, and can smell it. Hallucinations and chests come more often."
 [tempest.loadout]
 tool_tier = 4
 mastery_score = 16
-enchants = { double_hook = 3, steady_line = 2 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[tempest.bonuses]]
+enchants = { keen = 3, lure = 2 }
+[tempest.trait]
+name = "Treasure Hunter"
 stat = "treasure_luck"
 value = 0.7
 text = "+{v:.0%} hallucination and chest chance"
@@ -178,12 +196,14 @@ name = "Ripple"
 skill = "fishing"
 emoji = "🦦"
 rarity = 2
+ability = "none"
 description = "Playful and bright. Finds the fish and teaches you a thing or two about fishing."
 [ripple.loadout]
 tool_tier = 1
 mastery_score = 5
-enchants = { double_hook = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[ripple.bonuses]]
+enchants = { keen = 1 }
+[ripple.trait]
+name = "Current Reader"
 stat = "xp_fishing"
 value = 0.16
 text = "+{v:.0%} fishing xp"
@@ -193,12 +213,14 @@ name = "Sprig"
 skill = "foraging"
 emoji = "🦫"
 rarity = 2
+ability = "none"
 description = "A born woodcutter. Trees teach you more around it."
 [sprig.loadout]
 tool_tier = 1
 mastery_score = 5
-enchants = { double_strike = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[sprig.bonuses]]
+enchants = { keen = 1 }
+[sprig.trait]
+name = "Woodwise"
 stat = "xp_foraging"
 value = 0.16
 text = "+{v:.0%} foraging xp"
@@ -208,12 +230,14 @@ name = "Lode"
 skill = "mining"
 emoji = "🐀"
 rarity = 3
+ability = "mid"
 description = "Happiest underground. It lights the way ahead and eases the rock, so every row you dig adds less pressure."
 [lode.loadout]
 tool_tier = 2
 mastery_score = 8
-enchants = { echo_strike = 2, prospectors_ping = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[lode.bonuses]]
+enchants = { keen = 2, veinfinder = 1 }
+[lode.trait]
+name = "Lamplight"
 stat = "dig_shave"
 value = 0.07
 text = "-{v:.0%} pressure from every dug row"
@@ -223,12 +247,14 @@ name = "Clover"
 skill = "farming"
 emoji = "🐇"
 rarity = 2
+ability = "none"
 description = "Loves a vegetable patch. Farming comes more easily."
 [clover.loadout]
 tool_tier = 1
 mastery_score = 5
-enchants = { golden_sprout = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[clover.bonuses]]
+enchants = { keen = 1 }
+[clover.trait]
+name = "Green Thumb"
 stat = "xp_farming"
 value = 0.16
 text = "+{v:.0%} farming xp"
@@ -238,12 +264,14 @@ name = "Scorch"
 skill = "combat"
 emoji = "🐺"
 rarity = 3
+ability = "mid"
 description = "A fighter's companion. (Combat is coming.)"
 [scorch.loadout]
 tool_tier = 2
 mastery_score = 8
-enchants = { echo_strike = 2 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[scorch.bonuses]]
+enchants = { keen = 2 }
+[scorch.trait]
+name = "Fire Spirit"
 stat = "xp_combat"
 value = 0.2
 text = "+{v:.0%} combat xp"
@@ -253,12 +281,14 @@ name = "Eddy"
 skill = "fishing"
 emoji = "🦭"
 rarity = 4
+ability = "mid"
 description = "A master of the waves. Fishing practice goes a long way."
 [eddy.loadout]
 tool_tier = 3
 mastery_score = 12
-enchants = { double_hook = 3, steady_line = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[eddy.bonuses]]
+enchants = { keen = 3, lure = 1 }
+[eddy.trait]
+name = "Deep Reader"
 stat = "xp_fishing"
 value = 0.28
 text = "+{v:.0%} fishing xp"
@@ -268,12 +298,14 @@ name = "Canopy"
 skill = "foraging"
 emoji = "🐦"
 rarity = 4
+ability = "mid"
 description = "Knows trees inside out. You learn faster from every one."
 [canopy.loadout]
 tool_tier = 3
 mastery_score = 12
-enchants = { double_strike = 3, ember_bite = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[canopy.bonuses]]
+enchants = { keen = 3, bounty = 1 }
+[canopy.trait]
+name = "Forest Sage"
 stat = "xp_foraging"
 value = 0.28
 text = "+{v:.0%} foraging xp"
@@ -283,12 +315,14 @@ name = "Cairn"
 skill = "mining"
 emoji = "🦡"
 rarity = 4
+ability = "mid"
 description = "Digs like it was born to. Mining lessons stick."
 [cairn.loadout]
 tool_tier = 3
 mastery_score = 12
-enchants = { echo_strike = 3, prospectors_ping = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[cairn.bonuses]]
+enchants = { keen = 3, veinfinder = 1 }
+[cairn.trait]
+name = "Stone Sense"
 stat = "xp_mining"
 value = 0.28
 text = "+{v:.0%} mining xp"
@@ -298,12 +332,14 @@ name = "Thistle"
 skill = "farming"
 emoji = "🦔"
 rarity = 4
+ability = "mid"
 description = "Tends the garden with care. Farming practice pays more."
 [thistle.loadout]
 tool_tier = 3
 mastery_score = 12
-enchants = { golden_sprout = 3, seedkeeper = 1 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[thistle.bonuses]]
+enchants = { keen = 3, fertile = 1 }
+[thistle.trait]
+name = "Green Thumb II"
 stat = "xp_farming"
 value = 0.28
 text = "+{v:.0%} farming xp"
@@ -313,12 +349,14 @@ name = "Pyre"
 skill = "combat"
 emoji = "🦁"
 rarity = 5
+ability = "high"
 description = "A king among fighters. (Combat is coming.)"
 [pyre.loadout]
 tool_tier = 4
 mastery_score = 16
-enchants = { echo_strike = 3 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[pyre.bonuses]]
+enchants = { keen = 3 }
+[pyre.trait]
+name = "Inferno"
 stat = "xp_combat"
 value = 0.36
 text = "+{v:.0%} combat xp"
@@ -328,12 +366,14 @@ name = "Halo"
 skill = "global"
 emoji = "🔥"
 rarity = 5
+ability = "high"
 description = "Reborn with every lesson. Everything you learn burns a little brighter."
 [halo.loadout]
 tool_tier = 4
 mastery_score = 16
-enchants = { echo_strike = 3 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[halo.bonuses]]
+enchants = { keen = 3 }
+[halo.trait]
+name = "Blessed"
 stat = "xp_all"
 value = 0.2
 text = "+{v:.0%} xp in every skill"
@@ -345,12 +385,14 @@ name = "Gloam"
 skill = "global"
 emoji = "🦜"
 rarity = 3
+ability = "mid"
 description = "Loves anything that shines. Haggles you a better price for whatever you sell."
 [gloam.loadout]
 tool_tier = 2
 mastery_score = 8
-enchants = { echo_strike = 2 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[gloam.bonuses]]
+enchants = { keen = 2 }
+[gloam.trait]
+name = "Bargain Hunter"
 stat = "sell_bonus"
 value = 0.06
 text = "+{v:.0%} bits from every sale"
@@ -360,12 +402,14 @@ name = "Lune"
 skill = "global"
 emoji = "🦊"
 rarity = 4
+ability = "mid"
 description = "Cunning, and always checks twice. A rare find that slips past sometimes gets a second look."
 [lune.loadout]
 tool_tier = 3
 mastery_score = 12
-enchants = { echo_strike = 3 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[lune.bonuses]]
+enchants = { keen = 3 }
+[lune.trait]
+name = "Lucky Roll"
 stat = "rare_reroll"
 value = 0.15
 text = "{v:.0%} chance of a free 2nd roll on rare drops"
@@ -375,12 +419,99 @@ name = "Umbra"
 skill = "global"
 emoji = "🐦"
 rarity = 5
+ability = "high"
 description = "Keeps watch over every delivery. Shipments and your daily interest pay a little more."
 [umbra.loadout]
 tool_tier = 4
 mastery_score = 16
-enchants = { echo_strike = 3 }  # stand-ins (the old stat enchants were retired); only the level total is scored
-[[umbra.bonuses]]
+enchants = { keen = 3 }
+[umbra.trait]
+name = "Tithe"
 stat = "payout_bonus"
 value = 0.06
 text = "+{v:.0%} bits from shipments and check-in"
+
+[tremor]
+name = "Tremor"
+skill = "mining"
+emoji = "🌋"
+rarity = 6
+ability = "high"
+description = "The mountain itself, listening."
+[tremor.loadout]
+tool_tier = 4
+mastery_score = 20
+enchants = { keen = 3, veinfinder = 2 }
+[tremor.trait]
+name = "Deep Knowledge"
+stat = "xp_mining"
+value = 0.5
+text = "+{v:.0%} mining xp"
+
+[maelstrom]
+name = "Maelstrom"
+skill = "fishing"
+emoji = "🌀"
+rarity = 6
+ability = "high"
+description = "A tide with a mind of its own."
+[maelstrom.loadout]
+tool_tier = 4
+mastery_score = 20
+enchants = { keen = 3, lure = 2 }
+[maelstrom.trait]
+name = "Tidal Mind"
+stat = "xp_fishing"
+value = 0.5
+text = "+{v:.0%} fishing xp"
+
+[verdant]
+name = "Verdant"
+skill = "foraging"
+emoji = "🌳"
+rarity = 6
+ability = "high"
+description = "Every tree leans toward it."
+[verdant.loadout]
+tool_tier = 4
+mastery_score = 20
+enchants = { keen = 3, bounty = 2 }
+[verdant.trait]
+name = "Old Growth"
+stat = "xp_foraging"
+value = 0.5
+text = "+{v:.0%} foraging xp"
+
+[solstice]
+name = "Solstice"
+skill = "farming"
+emoji = "🌻"
+rarity = 6
+ability = "high"
+description = "It remembers every harvest."
+[solstice.loadout]
+tool_tier = 4
+mastery_score = 20
+enchants = { keen = 3, fertile = 2 }
+[solstice.trait]
+name = "Evergreen"
+stat = "xp_farming"
+value = 0.5
+text = "+{v:.0%} farming xp"
+
+[aurora]
+name = "Aurora"
+skill = "global"
+emoji = "🌌"
+rarity = 8
+ability = "high"
+description = "There is only one. It lights every road you walk."
+[aurora.loadout]
+tool_tier = 4
+mastery_score = 20
+enchants = { keen = 3 }
+[aurora.trait]
+name = "Everything Under The Sky"
+stat = "xp_all"
+value = 0.35
+text = "+{v:.0%} xp in every skill"

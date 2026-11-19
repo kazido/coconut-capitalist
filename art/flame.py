@@ -8,6 +8,7 @@ tongues of the flame are tall and where the embers float, so a list of them is c
 from __future__ import annotations
 
 import colorsys
+import math
 
 from PIL import Image
 
@@ -118,3 +119,31 @@ def render_flame(base: str, face: str = "core", frame: int = 0, embers: bool = T
 
 def render_flame_frames(base: str, face: str = "core", embers: bool = True, accent: str | None = None) -> list[Image.Image]:
     return [render_flame(base, face, f, embers, accent) for f in range(FRAMES)]
+
+
+AURORA_FRAMES = 8
+AURORA_MS = 120
+
+
+def render_aurora_frames() -> list[Image.Image]:
+    """The Celestial pet: a flame whose colour flows like the northern lights (teal -> green -> blue -> violet -> pink bands drifting
+    up the body), as one slow band drifting up its body. Eyes and plate stay as the normal "core" face."""
+    out = []
+    for f in range(AURORA_FRAMES):
+        im = render_flame("#7af0d0", "core", f % FRAMES, embers=False)
+        phase = f / AURORA_FRAMES
+        px = im.load()
+        for y in range(16):
+            for x in range(16):
+                r, g, b, a = px[x, y]
+                if not a:
+                    continue
+                h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+                if s < 0.12 or v < 0.3:  # the white eyes and the dark face plate keep their colour
+                    continue
+                wave = 0.5 + 0.5 * math.sin(6.2832 * (y / 14.0 - phase))
+                hue = 0.40 + 0.40 * wave  # 0.40 green-teal ... 0.80 violet, one slow band drifting up
+                nr, ng, nb = colorsys.hsv_to_rgb(hue % 1.0, min(1.0, 0.45 + 0.5 * s), min(1.0, v * 1.05))
+                px[x, y] = (round(nr * 255), round(ng * 255), round(nb * 255), 255)
+        out.append(im)
+    return out

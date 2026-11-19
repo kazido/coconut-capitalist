@@ -105,11 +105,11 @@ class PetScreen(Screen):
         fuel = house.fuel_seconds
         working = max(0.0, min(fuel, now - house.last_collect)) if house.last_collect else 0.0  # idle time waiting to be collected
         hourly = pet_score.haul_xp_per_hour(score, side, registry=reg)
-        lo = pet.loadout
+        breakdown = pet_score.total(pet, reg)
         nxt = emojis.icon("next", "▸")
         lines = [
             "**Sidekick work** (idle while you are away)",
-            f"{nxt} Score **{score:.1f}**  ·  tool tier {lo.tool_tier}, {sum(lo.enchants.values())} enchant levels, mastery {lo.mastery_score}",
+            f"{nxt} Score **{breakdown.total}/1000**  ·  skills {breakdown.skills_total}, mastery {breakdown.mastery}, gear {breakdown.gear}, ability {breakdown.ability}",
             f"{nxt} Sidekicks: **+{side:.0%}** from your resting pets (max +{rules.sidekick_cap:.0%})",
             f"{nxt} Tank {xp_bar(fuel / cap if cap else 0)} {fuel / 3600:.1f}/{cap / 3600:.0f} h  ·  hauls about {hourly:,.0f} xp/h",
             f"-# {working / 3600:.1f} h of work waiting to collect" if working > 0 else "-# Fill the tank with crops: it only works while it has fuel.",
@@ -124,11 +124,17 @@ class PetScreen(Screen):
                 for c, q in crops][:25], self._fuel)))
 
     async def _collect(self, interaction: discord.Interaction) -> None:
-        skill, xp, hours = await pets.collect(self.user)
+        skill, xp, hours, drops = await pets.collect(self.user)
         if xp <= 0 or not skill:
             await self.refresh(interaction, "Nothing to collect yet.")
             return
-        await self.refresh(interaction, f"{emojis.icon('sparkle', '✨')} Your pet worked {hours:.1f} h and brought back **{xp:,}** {skill} xp.")
+        await self.refresh(interaction, f"{emojis.icon('sparkle', '✨')} Your pet worked {hours:.1f} h and brought back **{xp:,}** {skill} xp." + ("\n" + self._drop_lines(drops) if drops else ""))
+
+    def _drop_lines(self, drops: dict[str, int]) -> str:
+        """What the haul found, each marked with the active pet's emoji (like its xp bonus on result screens)."""
+        reg = get_registry()
+        pet = reg.pets[self.user.pethouse.active]
+        return "  ".join(f"{reg.item(i).emoji} {q:,} × {reg.item(i).name} ({pet.emoji})" for i, q in drops.items())
 
     async def _fuel(self, interaction: discord.Interaction, values: list[str]) -> None:
         crop_id = values[0]

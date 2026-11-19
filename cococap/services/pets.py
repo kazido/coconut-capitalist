@@ -30,7 +30,7 @@ KNOWN_STATS = frozenset({
     "payout_bonus",  # economy: shipments and the daily check-in pay this much more bits (Raven)
     "sell_bonus",  # economy: every sale pays this much more (Magpie)
     "bite_speed", "rare_luck", "treasure_luck", "pot_speed", "pot_luck",  # fishing and crab pots
-    "danger_reduction", "ore_yield", "dig_shave",  # mining (the Mole's dig_shave takes this share off the pressure every dug row adds)
+    "ore_yield", "dig_shave",  # mining (the Mole's dig_shave takes this share off the pressure every dug row adds)
     "good_chop",  # foraging
     "grow_chance", "extra_harvest",  # farming (the Bee's extra_harvest: the chance a harvested plot gives a whole second harvest)
     "rare_reroll",  # every skill's rare drops (rarity 4 and up): the chance of a free second roll when the first one is not rare (Fox)
@@ -41,7 +41,7 @@ KNOWN_STATS = frozenset({
 
 _STAT_SKILL = {
     "bite_speed": "fishing", "rare_luck": "fishing", "treasure_luck": "fishing", "pot_speed": "fishing", "pot_luck": "fishing",
-    "danger_reduction": "mining", "ore_yield": "mining", "dig_shave": "mining", "good_chop": "foraging", "grow_chance": "farming", "extra_harvest": "farming",
+    "ore_yield": "mining", "dig_shave": "mining", "good_chop": "foraging", "grow_chance": "farming", "extra_harvest": "farming",
 }
 
 
@@ -149,13 +149,15 @@ def describe(pet: Pet, owned: OwnedPet, registry: Registry | None = None) -> lis
     top = (1 + reg.economy.pets.star_bonus * (owned.stars - 1))  # what it gives at the top level, with the stars it has
     lines = [bonus.text.format(v=bonus.value * scale) + (f" (max level: {bonus.value * top:.0%})" if scale < top - 1e-9 else "")
              for bonus in pet.bonuses]
+    if pet.trait:
+        lines = [f"**{pet.trait.name}**: {line}" for line in lines]
     lines += [f"+{reg.economy.pets.spirit_bonus:.0%} {skill} xp (Spirit)" for skill in owned.spirits]
     return lines
 
 
 def max_buffs(pet: Pet) -> str:
     """The pet's buffs at max level with one star, in words (the numbers the wiki lists)."""
-    return " · ".join(bonus.text.format(v=bonus.value) for bonus in pet.bonuses)
+    return " · ".join((f"{pet.trait.name}: " if pet.trait else "") + bonus.text.format(v=bonus.value) for bonus in pet.bonuses)
 
 
 async def bonuses(user: User, registry: Registry | None = None) -> dict[str, float]:
@@ -261,8 +263,15 @@ def haul_skill(house: Pethouse, pet: Pet, skill_xp: dict[str, int]) -> str | Non
     return max(skill_xp, key=skill_xp.get) if pet.skill == "global" and skill_xp else None
 
 
-async def collect(user: User, registry: Registry | None = None, now: float | None = None) -> tuple[str | None, int, float]:
-    """Bank the active pet's idle haul (skill xp, burning fuel). Returns (skill, xp, hours worked). Empty tank: nothing."""
+def haul_drop_pool(skill: str, registry: Registry) -> list[Item]:
+    """The items an idle haul can find: the skill's COMMON drops (materials of rarity 3 or less that are not rare finds)."""
+    from cococap.ui import flair
+
+    return [i for i in registry.items_for_skill(skill) if i.category == "material" and i.drop and i.rarity <= 3 and flair.level(i) == 0]
+
+
+async def collect(user: User, registry: Registry | None = None, now: float | None = None, rng: random.Random | None = None) -> tuple[str | None, int, float, dict[str, int]]:
+    """Bank the active pet's idle haul (skill xp and common drops, burning fuel). Returns (skill, xp, hours worked, drops). Empty tank: nothing."""
     from cococap.services import pet_score as ps
 
     reg = registry or get_registry()
@@ -284,10 +293,24 @@ async def collect(user: User, registry: Registry | None = None, now: float | Non
     hours = done["worked"] / 3600
     others = [(reg.pets[k], o) for k, o in user.pethouse.pets.items() if k != house.active]
     side = ps.sidekick_bonus(others, reg)
-    xp = round(ps.haul_xp_per_hour(ps.score(pet, owned, registry=reg), side, registry=reg) * hours) if skill else 0
+    score = ps.score(pet, owned, registry=reg)
+    xp = round(ps.haul_xp_per_hour(score, side, registry=reg) * hours) if skill else 0
     if xp > 0 and skill:
         await user.add_xp(skill, xp)
-    return skill, xp, hours
+    drops: dict[str, int] = {}
+    if xp > 0 and skill:
+        from cococap.services.loot import roll_drop
+
+        rng = rng or random.Random()
+        expected = score * (1 + side) * hours * reg.pet_score.haul_drop_rolls_per_score_hour
+        rolls = int(expected) + (1 if rng.random() < expected - int(expected) else 0)
+        for _ in range(rolls):
+            for item in haul_drop_pool(skill, reg):
+                if quantity := roll_drop(item, rng):
+                    drops[item.id] = drops.get(item.id, 0) + quantity
+        for item_id, quantity in drops.items():
+            await user.add_item(item_id, quantity)
+    return skill, xp, hours, drops
 
 
 async def lend_tool(user: User, instance_id: str | None, pet_id: str | None = None, registry: Registry | None = None) -> None:

@@ -11,6 +11,12 @@
 
 [[entry]]
 date = "2026-11-19"
+title = "Pets work while you are away"
+body = "- Your active pet now has a **score** and works while you are away, as long as its fuel tank has crops in it. Press **Collect** on the Pets page to bring home its skill xp.\n- **Fuel the tank** with crops (the better the crop, the longer it runs). Crops no longer feed pets xp: pets level on skill food, which also gives a **+50% pet xp buff for 30 minutes**.\n- Pets you are not using add a **sidekick bonus** (up to +50%) to your active pet's work.\n- New foods: **Pet Biscuit** (shop, any pet), the **Burger** (found while playing, any pet) and farming foods (Harvest Mash, Garden Stew, Golden Ear).\n- Every pet now has a **score out of 1000** and one named **trait** (its effect). Murk now only boosts ore, not mine pressure.\n- Level-ups, rare finds and your pet's xp now show on the result screen, with a **Share** button."
+major = true
+
+[[entry]]
+date = "2026-11-19"
 title = "Tending gives fewer byproducts"
 body = "- Tending your farm now gives about 30% fewer materials (compost, fiber, dewdrops, and so on) in most fields. It was paying more than it should.\n- Farming pets get new foods that drop with harvests: Harvest Mash, Garden Stew and Golden Ear."
 major = false
