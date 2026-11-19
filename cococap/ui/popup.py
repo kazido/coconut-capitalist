@@ -36,6 +36,15 @@ def rare_embed(finds: list[tuple[int, Item, int, Odds | None]]) -> discord.Embed
     return embed
 
 
+def rare_lines(finds: list[tuple[int, Item, int, Odds | None]]) -> str:
+    """The rare finds of one action as plain lines for a result screen: item, quantity, rarity and drop odds."""
+    out = []
+    for lvl, item, quantity, odds in finds:
+        rate = odds.text() if odds else Rarities.from_value(item.rarity).rarity_name
+        out.append(f"{emojis.icon('sparkle', '✨')} **{'Super rare find' if lvl == 2 else 'Rare find'}:** {item.emoji or ''} {quantity:,} × {item.name}  ·  {rate}")
+    return "\n".join(out)
+
+
 def sorted_finds(items: dict[str, int], lookup) -> list[tuple[int, Item, int, Odds | None]]:
     """The rare finds in `items` with their odds from `lookup` (item id -> Odds or None), best first."""
     return [(lvl, item, q, lookup(item.id) if lookup else None) for lvl, item, q in flair.finds(items)]

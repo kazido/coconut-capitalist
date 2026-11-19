@@ -95,7 +95,9 @@ class Result:
     live: Callable[[], tuple[list[str], bool]] | None = None  # (extra lines for now, keep redrawing?): fading numbers...
     actions: list[tuple[str, str, Handler]] = field(default_factory=list)  # extra buttons: (label, emoji, handler of the origin screen)
     again_locked: bool = False  # Again greyed out until a timed event on this screen (the scarab) is dealt with
-    rare: list = field(default_factory=list)  # rare finds (popup.sorted_finds): shown as an ephemeral popup after this screen
+    rare: list = field(default_factory=list)  # rare finds (popup.sorted_finds): listed on this screen (and shared with its Share button)
+    levelups: list[str] = field(default_factory=list)  # level-up lines (skills and the pet) since the last screen, filled in by the navigator
+    progress: str | None = None  # the "you and your pet" level and bar line, filled in by the navigator
 
 
 async def report_error(interaction: discord.Interaction, error: Exception, where: str) -> None:
@@ -186,7 +188,6 @@ class Navigator(ui.LayoutView):
         # The last result page that was built but may never have reached the player (a self-refresh whose edit failed because the message was too
         # old, say). It stays here until an edit succeeds, and the next click shows it first, so what you were paid is never paid without being seen.
         self._unsent: Result | None = None
-        self._popup_rare: list = []  # rare finds of the result just drawn, popped up once its edit has gone out
         self._levels: dict[str, int] | None = None  # skill levels at the last look, for the level-up notification
 
     async def name_of(self, user_id: int) -> str:
@@ -274,11 +275,6 @@ class Navigator(ui.LayoutView):
             from .levelup import check  # local import: levelup needs the finished ui package
 
             self._levels = await check(interaction, self.user, self._levels)
-            if self._popup_rare:
-                from .popup import rare_embed, send
-
-                finds, self._popup_rare = self._popup_rare, []
-                await send(interaction, rare_embed(finds), self.owner)
         except (discord.NotFound, discord.InteractionResponded) as error:
             log.warning("interaction response failed (%s); editing the message directly", error)
             if self.message is None:
@@ -423,7 +419,10 @@ class Navigator(ui.LayoutView):
         if screen.result is not None:  # a win or a loss: show what happened on a page of its own first
             result, screen.result = screen.result, None
             self._unsent = result
-            self._popup_rare = result.rare
+            from .levelup import collect, progress_line  # local import: levelup needs the finished ui package
+
+            result.levelups, self._levels = await collect(self.user, self._levels)  # shown on the result itself, not as a popup
+            result.progress = await progress_line(self.user, screen.id)
             screen = self.screen = ResultScreen(self, result, screen)
             page = await screen.build()
         self._swap_items()
@@ -531,12 +530,37 @@ class ResultScreen(Screen):
             extra, self._ticking = r.live()
             lines += extra
         body = [text(line) for line in lines]  # (the panel header already shows the title)
+        if r.levelups:
+            body.append(text("\n".join(r.levelups)))
+        if r.rare:
+            from .popup import rare_lines
+
+            body.append(text(rare_lines(r.rare)))
+        if r.progress:
+            body.append(text(r.progress))
         buttons = [button(label, emoji=emoji, on_click=self._act(handler)) for label, emoji, handler in r.actions]
         if r.again is not None:
             buttons.append(button(r.again_label, emoji=emojis.icon('again', '🔁'), style=discord.ButtonStyle.primary, on_click=self._again, disabled=r.again_locked))
         buttons.append(button(r.back_label, emoji=emojis.icon('next', '➡️'), on_click=self._back))
+        if r.levelups or r.rare:
+            buttons.append(button("Share", emoji=emojis.icon('sparkle', '✨'), on_click=self._share))
         body.append(row(*buttons))
         return Page(r.title, body, accent=r.accent)
+
+    async def _share(self, interaction: discord.Interaction) -> None:
+        """Post this screen's level-ups and rare finds in the channel, with the player's name on it."""
+        from .popup import rare_lines
+
+        r = self.shown
+        parts = [*r.levelups, *([rare_lines(r.rare)] if r.rare else [])]
+        embed = discord.Embed(title="Level up!" if r.levelups else "A rare find!", description="\n".join(parts), colour=discord.Colour.gold())
+        embed.set_author(name=interaction.user.display_name, icon_url=interaction.user.display_avatar.url if interaction.user.display_avatar else None)
+        try:
+            await interaction.channel.send(embed=embed)
+            note = "Shared in this channel."
+        except (discord.Forbidden, discord.HTTPException, AttributeError):
+            note = "I can't post in this channel."
+        await interaction.response.send_message(note, ephemeral=True)
 
     def _act(self, handler: Handler):
         async def run(interaction: discord.Interaction) -> None:

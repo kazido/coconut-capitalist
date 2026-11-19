@@ -51,6 +51,45 @@ def pet_message(pet_id: str, old: int, new: int, xp: int, registry=None) -> str:
     return f"{emojis.icon('pet', '🐾')} {pet.emoji} **{pet.name}** level up! **{old} -> {new}**  {xp_bar(fraction, 6)} {tail}"
 
 
+async def collect(user: User, seen: dict[str, int] | None) -> tuple[list[str], dict[str, int]]:
+    """The level-up lines since `seen` (skills and the active pet, one line each) and the levels to remember. No popup: a result screen shows them itself."""
+    now = await snapshot(user)
+    if seen is None:
+        return [], now
+    blocks = []
+    for name, level in now.items():
+        if level <= seen.get(name, level):
+            continue
+        if name.startswith(PET):
+            blocks.append(pet_message(name[len(PET):], seen[name], level, user.pethouse.pets[name[len(PET):]].xp))
+        else:
+            blocks.append(message(name, seen[name], level, (await user.skill(name)).xp))
+    return blocks, now
+
+
+# The skill a screen belongs to (for the "you and your pet" progress line on its result screens).
+SCREEN_SKILL = {"mining": "mining", "mine": "mining", "reactor": "mining", "fish": "fishing", "fishlog": "fishing", "fishpots": "fishing",
+                "forage": "foraging", "trees": "foraging", "farm": "farming"}
+
+
+async def progress_line(user: User, screen_id: str) -> str | None:
+    """One compact line on a result screen: your level and bar in the skill you were playing, and your active pet's level and bar."""
+    skill = SCREEN_SKILL.get(screen_id)
+    if skill is None:
+        return None
+    xp = (await user.skill(skill)).xp
+    overflow, needed = User.xp_for_next_level(xp)
+    parts = [f"{emojis.skill(skill)} Lv {User.xp_to_level(xp)} {xp_bar(overflow / needed if needed else 0, 6)} {overflow:,}/{needed:,}"]
+    house, reg = user.pethouse, get_registry()
+    if house.active in house.pets:
+        pet, owned = reg.pets[house.active], house.pets[house.active]
+        level = pets.pet_level(owned.xp, pet.rarity, reg)
+        low, high = pets.level_xp(level, pet.rarity, reg), pets.level_xp(level + 1, pet.rarity, reg)
+        top = level >= reg.economy.pets.max_level or high <= low
+        parts.append(f"{pet.emoji} Lv {level} {xp_bar(1.0 if top else (owned.xp - low) / (high - low), 6)}" + ("" if top else f" {owned.xp - low:,}/{high - low:,}"))
+    return "-# " + "   ".join(parts)
+
+
 async def check(interaction: discord.Interaction, user: User, seen: dict[str, int] | None) -> dict[str, int]:
     """Compare levels with the last look and send ONE notice (one block per skill that went up, old -> new level). Returns the new levels to
     remember. A failure here must never break the click that caused it."""

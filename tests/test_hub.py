@@ -1929,7 +1929,7 @@ async def test_home_shows_pending_party_and_trade_invites(db):
         trade._invites.clear()
 
 
-async def test_rare_drops_are_on_the_one_loot_screen_with_again_and_the_odds_in_a_popup(db):
+async def test_rare_drops_are_on_the_one_loot_screen_with_again_and_the_odds(db):
     from cococap.services import odds
     from cococap.ui.rewards import rewards_result
 
@@ -1942,10 +1942,9 @@ async def test_rare_drops_are_on_the_one_loot_screen_with_again_and_the_odds_in_
     await screen.refresh(inter)
     assert nav.screen.id == "result" and "Copper Ore" in all_text(nav) and "Keen" in all_text(nav) and "Wedge" in all_text(nav)
     assert {b.label for b in buttons(nav)} >= {"Another tree", "Back to foraging"} and not find_button(nav, "Another tree").disabled
-    kw = inter.followup.send.await_args.kwargs  # ONE popup, only for the player, with Share and Close
-    spec = get_registry().scrolls.foraging
-    assert inter.followup.send.await_count == 1 and kw["ephemeral"] is True and [c.label for c in kw["view"].children] == ["Share", "Close"]
-    assert "SUPER" in kw["embed"].title.upper() and f"1 in {spec.odds * len(spec.pool):,} trees felled" in kw["embed"].fields[0].value
+    spec = get_registry().scrolls.foraging  # no popup any more: the rare find, its odds and a Share button are on the loot screen
+    assert inter.followup.send.await_count == 0 and "Super rare find" in all_text(nav) and f"1 in {spec.odds * len(spec.pool):,} trees felled" in all_text(nav)
+    assert find_button(nav, "Share") is not None
     await click(nav, inter, "Back to foraging")
     assert nav.screen.id == "forage"
 

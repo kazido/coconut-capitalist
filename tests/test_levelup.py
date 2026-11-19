@@ -14,7 +14,7 @@ def test_every_skill_with_an_icon_is_watched():
 
 async def test_a_click_that_levels_you_up_sends_the_notification(db, monkeypatch):
     from cococap.services import foraging
-    from tests.test_hub import chop, click, freeze_time, hub, with_axe
+    from tests.test_hub import all_text, chop, click, find_button, freeze_time, hub, with_axe
 
     freeze_time(monkeypatch)
     user = await with_axe()
@@ -27,8 +27,8 @@ async def test_a_click_that_levels_you_up_sends_the_notification(db, monkeypatch
     await click(nav, inter, "Chop a tree")
     nav.screen.tree = foraging.Tree(1, 1, 1)
     await chop(nav, inter)
-    assert inter.followup.send.await_count == 1
-    assert inter.followup.send.await_args.kwargs["ephemeral"] is False and inter.followup.send.await_args.kwargs["embed"].title == "Level up!"
+    assert "level up!" in all_text(nav) and find_button(nav, "Share") is not None  # on the loot screen itself, no popup
+    assert inter.followup.send.await_count == 0
 
 
 async def test_jumping_several_levels_in_one_click_is_one_notice_old_to_new(db):
