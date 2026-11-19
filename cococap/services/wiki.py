@@ -20,7 +20,7 @@ TOPICS: list[tuple[str, str, str]] = [  # (id, title, emoji)
     ("tools", "Tools and upgrades", "🔨"),
     ("enchants", "Enchants and scrolls", "📜"),
     ("stars", "Starred materials", "⭐"),
-    ("pets", "Pets", "🔮"),
+    ("pets", "Pets", "🐾"),
     ("party", "Parties", "👥"),
     ("items", "Item lookup", "🎒"),
 ]

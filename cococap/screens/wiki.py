@@ -11,6 +11,13 @@ from utils.items.items import item_attributes
 PER_PAGE = 25
 
 
+def topic_emoji(topic: str, fallback: str) -> str:
+    """The dropdown icon for a topic. Pets use the same ui_pets emoji as the Play page; the rest use their skill's icon."""
+    if topic == "pets":
+        return emojis.icon("pets", fallback)
+    return emojis.skill(topic, fallback)
+
+
 class WikiScreen(Screen):
     """Everything in the game, written from the game's own data so it is never out of date."""
 
@@ -35,7 +42,7 @@ class WikiScreen(Screen):
         emoji = emojis.skill(self.topic, emoji)
         body = [*self.note_block()]
         body.append(row(select("Pick a topic...", [
-            discord.SelectOption(label=title, value=topic, emoji=emojis.skill(topic, icon), default=topic == self.topic) for topic, title, icon in wiki.TOPICS],
+            discord.SelectOption(label=title, value=topic, emoji=topic_emoji(topic, icon), default=topic == self.topic) for topic, title, icon in wiki.TOPICS],
             self._pick_topic)))
         body.append(sep())
         if self.topic == "items":
