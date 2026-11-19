@@ -30,3 +30,4 @@ fuel_minutes_per_value = 0.02 # minutes of fuel per bit of crop sell price
 # ---- Skill food buff ---------------------------------------------------------------------------------------------------------------------
 food_buff_bonus = 0.5         # skill food also gives +50% pet xp ...
 food_buff_minutes = 30        # ... for this long; feeding again refreshes it (never stacks)
+haul_drop_rolls_per_score_hour = 0.1  # TODO(balance): the haul also finds common drops of its skill (never rare ones)

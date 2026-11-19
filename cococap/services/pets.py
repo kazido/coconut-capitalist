@@ -261,8 +261,15 @@ def haul_skill(house: Pethouse, pet: Pet, skill_xp: dict[str, int]) -> str | Non
     return max(skill_xp, key=skill_xp.get) if pet.skill == "global" and skill_xp else None
 
 
-async def collect(user: User, registry: Registry | None = None, now: float | None = None) -> tuple[str | None, int, float]:
-    """Bank the active pet's idle haul (skill xp, burning fuel). Returns (skill, xp, hours worked). Empty tank: nothing."""
+def haul_drop_pool(skill: str, registry: Registry) -> list[Item]:
+    """The items an idle haul can find: the skill's COMMON drops (materials of rarity 3 or less that are not rare finds)."""
+    from cococap.ui import flair
+
+    return [i for i in registry.items_for_skill(skill) if i.category == "material" and i.drop and i.rarity <= 3 and flair.level(i) == 0]
+
+
+async def collect(user: User, registry: Registry | None = None, now: float | None = None, rng: random.Random | None = None) -> tuple[str | None, int, float, dict[str, int]]:
+    """Bank the active pet's idle haul (skill xp and common drops, burning fuel). Returns (skill, xp, hours worked, drops). Empty tank: nothing."""
     from cococap.services import pet_score as ps
 
     reg = registry or get_registry()
@@ -284,10 +291,24 @@ async def collect(user: User, registry: Registry | None = None, now: float | Non
     hours = done["worked"] / 3600
     others = [(reg.pets[k], o) for k, o in user.pethouse.pets.items() if k != house.active]
     side = ps.sidekick_bonus(others, reg)
-    xp = round(ps.haul_xp_per_hour(ps.score(pet, owned, registry=reg), side, registry=reg) * hours) if skill else 0
+    score = ps.score(pet, owned, registry=reg)
+    xp = round(ps.haul_xp_per_hour(score, side, registry=reg) * hours) if skill else 0
     if xp > 0 and skill:
         await user.add_xp(skill, xp)
-    return skill, xp, hours
+    drops: dict[str, int] = {}
+    if xp > 0 and skill:
+        from cococap.services.loot import roll_drop
+
+        rng = rng or random.Random()
+        expected = score * (1 + side) * hours * reg.pet_score.haul_drop_rolls_per_score_hour
+        rolls = int(expected) + (1 if rng.random() < expected - int(expected) else 0)
+        for _ in range(rolls):
+            for item in haul_drop_pool(skill, reg):
+                if quantity := roll_drop(item, rng):
+                    drops[item.id] = drops.get(item.id, 0) + quantity
+        for item_id, quantity in drops.items():
+            await user.add_item(item_id, quantity)
+    return skill, xp, hours, drops
 
 
 async def lend_tool(user: User, instance_id: str | None, pet_id: str | None = None, registry: Registry | None = None) -> None:

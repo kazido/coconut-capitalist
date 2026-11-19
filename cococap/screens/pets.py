@@ -124,11 +124,17 @@ class PetScreen(Screen):
                 for c, q in crops][:25], self._fuel)))
 
     async def _collect(self, interaction: discord.Interaction) -> None:
-        skill, xp, hours = await pets.collect(self.user)
+        skill, xp, hours, drops = await pets.collect(self.user)
         if xp <= 0 or not skill:
             await self.refresh(interaction, "Nothing to collect yet.")
             return
-        await self.refresh(interaction, f"{emojis.icon('sparkle', '✨')} Your pet worked {hours:.1f} h and brought back **{xp:,}** {skill} xp.")
+        await self.refresh(interaction, f"{emojis.icon('sparkle', '✨')} Your pet worked {hours:.1f} h and brought back **{xp:,}** {skill} xp." + ("\n" + self._drop_lines(drops) if drops else ""))
+
+    def _drop_lines(self, drops: dict[str, int]) -> str:
+        """What the haul found, each marked with the active pet's emoji (like its xp bonus on result screens)."""
+        reg = get_registry()
+        pet = reg.pets[self.user.pethouse.active]
+        return "  ".join(f"{reg.item(i).emoji} {q:,} × {reg.item(i).name} ({pet.emoji})" for i, q in drops.items())
 
     async def _fuel(self, interaction: discord.Interaction, values: list[str]) -> None:
         crop_id = values[0]

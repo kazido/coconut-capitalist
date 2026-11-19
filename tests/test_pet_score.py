@@ -67,10 +67,10 @@ async def test_crops_fill_the_tank_up_to_its_cap_and_the_haul_burns_it(db):
     assert 0 < added <= pets.tank_cap_seconds(REG)
     assert user.pethouse.fuel_seconds == added
     # an hour later: the haul only counts the fuel that lasted
-    skill, xp, hours = await pets.collect(user, now=1000.0 + 10 * 3600)
+    skill, xp, hours, drops = await pets.collect(user, now=1000.0 + 10 * 3600)
     assert hours * 3600 <= added + 1e-6 and xp > 0 and skill == "fishing"
     assert user.pethouse.fuel_seconds == 0
-    _, xp2, _ = await pets.collect(user, now=1000.0 + 20 * 3600)
+    _, xp2, _, _ = await pets.collect(user, now=1000.0 + 20 * 3600)
     assert xp2 == 0  # empty tank: no haul (passive bonus is untouched elsewhere)
 
 
@@ -100,3 +100,19 @@ def test_a_maxed_fully_fueled_pet_hauls_at_most_the_configured_share_of_active_p
                for p in REG.pets.values())
     haul = ps.haul_xp_per_hour(best, REG.pet_score.sidekick_cap)
     assert haul <= active * REG.pet_score.haul_active_share * 1.0, (round(haul), round(active))
+
+
+@pytest.mark.asyncio
+async def test_the_haul_finds_only_common_drops_of_its_skill(db):
+    import random
+
+    user = await with_pet("drizzle", xp=10**9)
+    pool = pets.haul_drop_pool("fishing", REG)
+    assert pool and all(i.rarity <= 3 and i.skill == "fishing" for i in pool)
+    crop = _crop()
+    await user.add_item(crop.id, 100000)
+    await pets.fuel(user, crop.id, 100000, now=1000.0)
+    _, xp, _, drops = await pets.collect(user, now=1000.0 + 100 * 3600, rng=random.Random(1))
+    assert xp > 0 and drops and set(drops) <= {i.id for i in pool}
+    for item_id, quantity in drops.items():
+        assert await user.item_quantity(item_id) >= quantity

@@ -230,6 +230,7 @@ class PetScoreRules(_Data):
     passive_cap: float = Field(ge=0)
     haul_active_share: float = Field(gt=0, le=1)
     haul_xp_per_score_hour: float = Field(ge=0)
+    haul_drop_rolls_per_score_hour: float = Field(ge=0)  # each hour of work rolls the skill's COMMON drop table this many times per point of score
     tank_cap_hours: float = Field(gt=0)
     fuel_minutes_per_value: float = Field(gt=0)
     food_buff_bonus: float = Field(ge=0)  # skill food gives the pet this much extra xp rate...
