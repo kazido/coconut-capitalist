@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import LOCATIONS_PER_AREA, AreaRules, ChangelogEntry, Notice, Location, ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
+from .models import LOCATIONS_PER_AREA, AreaRules, ChangelogEntry, Notice, Location, ScrollRules, ShipmentRules, SmithingRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -88,6 +88,7 @@ class Registry:
         areas: AreaRules | None = None,
         locations: dict[str, list[Location]] | None = None,
         notices: list[Notice] | None = None,
+        smithing: SmithingRules | None = None,
         changelog: list[ChangelogEntry] | None = None,
     ):
         # Player news, newest first (a stable sort keeps the file order for entries of the same day, so write new ones at the top).
@@ -110,6 +111,7 @@ class Registry:
         self.mastery = mastery
         self.tools = tools
         self.shipments = shipments
+        self.smithing = smithing
         self.scrolls = scrolls
         self.recipes: dict[str, Recipe] = {r.id: r for r in recipes or []}
         self.drop_tables: dict[str, DropTable] = {t.id: t for t in drop_tables or []}
@@ -199,6 +201,13 @@ class Registry:
         problems += [f"farming.toml field_seeds: duplicate '{s}'" for s in sorted({s for s in seeds if seeds.count(s) > 1})]
         return problems
 
+    def _validate_smithing(self) -> list[str]:
+        """Every trait must name a stat some enchant already uses, so the engines know how to read it."""
+        if self.smithing is None:
+            return []
+        known = {getattr(e, "stat", None) for enchant in self.enchants.values() for e in enchant.effects}
+        return [f"smithing.toml [{t.id}]: unknown stat '{t.stat}'" for t in self.smithing.trait_pool if t.stat not in known]
+
     def _validate_mining(self, rules: MiningRules) -> list[str]:
         return _validate_mining_items(self, rules)
 
@@ -234,6 +243,7 @@ class Registry:
                 if crop is None or crop.crop is None:
                     problems.append(f"{item.id}: seed.grows_into '{item.seed.grows_into}' is not a crop")
         problems += self._validate_recipes()
+        problems += self._validate_smithing()
         if self.scrolls is not None:
             for skill in ("mining", "foraging", "farming"):
                 problems += [f"scrolls.toml [{skill}]: '{i}' is not a scroll item" for i in getattr(self.scrolls, skill).pool
@@ -435,6 +445,7 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     mastery = _build(MasteryRules, "mastery", [("mastery", _read(config_dir, "mastery"))])[0]
     tools = _build(ToolRules, "tools", [("tools", _read(config_dir, "tools"))])[0]
     shipments = _build(ShipmentRules, "shipments", [("shipments", _read(config_dir, "shipments"))])[0]
+    smithing = _build(SmithingRules, "smithing", [("smithing", _read(config_dir, "smithing"))])[0]
     scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
     recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
     notices = _build(Notice, "notices", ((n.get("id", f"#{i}"), n) for i, n in enumerate(_read(config_dir, "notices").get("notice", []))))
@@ -443,7 +454,7 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
         raise RegistryError(f"notices.toml: duplicate id(s) {dupes} (seen ids are stored per player, so every notice needs its own)")
     changelog = _build(ChangelogEntry, "changelog", ((f"entry {i + 1}", e) for i, e in enumerate(_read(config_dir, "changelog").get("entry", []))))
     return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools,
-                    shipments, scrolls, recipes, areas, locations, notices=notices, changelog=changelog)
+                    shipments, scrolls, recipes, areas, locations, notices=notices, changelog=changelog, smithing=smithing)
 
 
 def _name_waters(rules: FishingRules, locations: dict[str, list[Location]]) -> FishingRules:

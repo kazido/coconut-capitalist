@@ -1,0 +1,127 @@
+# Smithing: a tool is built from three PARTS (base, trim, accent) plus up to 3 TRAITS picked from the parts.
+# Parts drop from skill actions. Every part type gives the SAME power for the same tier (owner decision).
+# Everything here is balance data. TODO(balance) marks first guesses. Plan: docs/plans/tools-smithing.md.
+
+part_types = ["base", "trim", "accent"]   # a tool needs exactly one part of each type
+
+# A player in area A can roll parts of tier up to A + area_cap. Weights above that cap are ignored.
+area_cap = 2
+# A tool never holds more than max_traits. bonus_trait_chance adds one more trait when fewer than 3 are picked.
+max_traits = 3
+bonus_trait_chance = 0.25                 # TODO(balance)
+cosmetic_chance = 0.10                    # chance a smithed tool gets a cosmetic look (palette/frame/overlay)
+
+[tiers]
+# Power a part gives at tier 1..7 (index 0 = tier 1). Three tier-1 parts ~ today's starter tool power (3).
+power = [1, 2, 3, 5, 7, 10, 14]           # TODO(balance)
+
+# Tier drop weights per area (7 numbers, tier 1..7).
+[[area_weights]]
+area = 1
+weights = [70, 25, 5, 0, 0, 0, 0]         # TODO(balance)
+[[area_weights]]
+area = 2
+weights = [40, 40, 15, 5, 0, 0, 0]        # TODO(balance)
+[[area_weights]]
+area = 3
+weights = [20, 35, 25, 15, 5, 0, 0]       # TODO(balance)
+[[area_weights]]
+area = 4
+weights = [10, 25, 30, 22, 10, 3, 0]      # TODO(balance)
+[[area_weights]]
+area = 5
+weights = [5, 15, 25, 28, 17, 8, 2]       # TODO(balance)
+[[area_weights]]
+area = 6
+weights = [2, 8, 18, 27, 25, 15, 5]       # TODO(balance)
+[[area_weights]]
+area = 7
+weights = [1, 4, 12, 22, 28, 22, 11]      # TODO(balance)
+
+# Traits: a named bonus picked from one part. `stat` is a stat name the engines already read (the same names
+# enchants use). `amounts` = the value at each quality grade (Crude, Fine, Superb, Masterwork), scaled by quality mult.
+# `kinds` = which tool kinds the trait fits.
+# Traits are STAT bonuses only. Abilities (double_hook, double_strike, iron_frame, seedkeeper, gleaner,
+# deepcall, seasoned...) stay enchants, one per tool. Amounts are in each stat's own unit: TODO(balance) in step 4.
+[[trait]]
+id = "power_core"
+name = "Power Core"
+stat = "power"
+amounts = [1, 2, 3, 4]                    # TODO(balance)
+kinds = ["pickaxe", "rod", "axe", "can"]
+[[trait]]
+id = "scholar_edge"
+name = "Scholar's Edge"
+stat = "scholar"
+amounts = [1, 2, 3, 4]                    # TODO(balance)
+kinds = ["pickaxe", "rod", "axe", "can"]
+[[trait]]
+id = "appraiser_eye"
+name = "Appraiser's Eye"
+stat = "appraise"
+amounts = [1, 2, 3, 4]                    # TODO(balance)
+kinds = ["pickaxe", "rod", "axe", "can"]
+[[trait]]
+id = "vein_sense"
+name = "Vein Sense"
+stat = "rich_chance"
+amounts = [1, 2, 3, 4]                    # TODO(balance)
+kinds = ["pickaxe"]
+[[trait]]
+id = "ore_bounty"
+name = "Ore Bounty"
+stat = "ore_yield"
+amounts = [1, 2, 3, 4]                    # TODO(balance)
+kinds = ["pickaxe"]
+[[trait]]
+id = "steady_hold"
+name = "Steady Hold"
+stat = "danger_reduction"
+amounts = [1, 2, 3, 4]                    # TODO(balance)
+kinds = ["pickaxe", "axe"]
+[[trait]]
+id = "sharp_cut"
+name = "Sharp Cut"
+stat = "good_chop"
+amounts = [1, 2, 3, 4]                    # TODO(balance)
+kinds = ["axe"]
+[[trait]]
+id = "fertile_blade"
+name = "Fertile Blade"
+stat = "crop_yield"
+amounts = [1, 2, 3, 4]                    # TODO(balance)
+kinds = ["can"]
+
+# How many traits a freshly dropped part rolls, by part rarity.
+[fresh_traits]
+common = 1                                # TODO(balance)
+uncommon = 2
+rare = 3
+epic = 4
+
+# Quality grades a smithed tool can get. `mult` scales the tool's power and every trait amount.
+# `base_odds` are percent weights; `levels.quality_shift_per_level` moves percent points off Crude per smithing level.
+[[quality]]
+name = "Crude"
+mult = 1.0
+base_odds = 60                            # TODO(balance)
+[[quality]]
+name = "Fine"
+mult = 1.15
+base_odds = 28
+[[quality]]
+name = "Superb"
+mult = 1.35
+base_odds = 10
+[[quality]]
+name = "Masterwork"
+mult = 1.6
+base_odds = 2
+
+[levels]
+xp_per_smith = 40                         # smithing xp per tool smithed    TODO(balance)
+xp_per_salvage = 15                       # smithing xp per tool salvaged
+quality_shift_per_level = 0.5             # percent points moved off Crude per smithing level (TODO(balance))
+swap_unlock_level = 10                    # smithing level that unlocks swapping one part of an existing tool
+# Max part tier you can smith with, by smithing level: [level, tier] steps (the highest step reached counts).
+max_tier_by_level = [[1, 1], [5, 2], [10, 3], [15, 4], [20, 5], [30, 6], [40, 7]]   # TODO(balance)

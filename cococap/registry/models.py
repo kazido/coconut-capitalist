@@ -1554,3 +1554,102 @@ class ChangelogEntry(_Data):
     title: str = Field(min_length=1, max_length=200)
     body: str = Field(min_length=1, max_length=1500)
     major: bool = False
+
+
+# ---- Smithing (configs/smithing.toml) ----------------------------------------------------------------------------------------------
+PART_TIERS = 7
+
+
+class AreaWeights(_Data):
+    area: int = Field(ge=1)
+    weights: list[int] = Field(min_length=PART_TIERS, max_length=PART_TIERS)
+
+    @field_validator("weights")
+    @classmethod
+    def _weights_sane(cls, v: list[int]) -> list[int]:
+        if any(w < 0 for w in v) or sum(v) <= 0:
+            raise ValueError("weights must be >= 0 and not all zero")
+        return v
+
+
+class SmithTrait(_Data):
+    id: str
+    name: str
+    stat: str
+    amounts: list[float] = Field(min_length=4, max_length=4)  # one per quality grade
+    kinds: list[ToolKind] = Field(min_length=1)
+
+    _id = field_validator("id")(check_id)
+
+
+class FreshTraits(_Data):
+    common: int = Field(ge=0)
+    uncommon: int = Field(ge=0)
+    rare: int = Field(ge=0)
+    epic: int = Field(ge=0)
+
+
+class Quality(_Data):
+    name: str
+    mult: float = Field(gt=0)
+    base_odds: int = Field(ge=0)
+
+
+class SmithLevels(_Data):
+    xp_per_smith: int = Field(ge=0)
+    xp_per_salvage: int = Field(ge=0)
+    quality_shift_per_level: float = Field(ge=0)
+    swap_unlock_level: int = Field(ge=1)
+    max_tier_by_level: list[tuple[int, int]] = Field(min_length=1)
+
+
+class SmithingRules(_Data):
+    part_types: list[str] = Field(min_length=3, max_length=3)
+    area_cap: int = Field(ge=0)
+    max_traits: int = Field(ge=1)
+    bonus_trait_chance: float = Field(ge=0, le=1)
+    cosmetic_chance: float = Field(ge=0, le=1)
+    tiers: dict[str, list[int]]  # {"power": [...]}: power per part tier, index 0 = tier 1
+    area_weights: list[AreaWeights] = Field(min_length=1)
+    trait_pool: list[SmithTrait] = Field(alias="trait", min_length=1)
+    fresh_traits: FreshTraits
+    grades: list[Quality] = Field(alias="quality", min_length=1)
+    levels: SmithLevels
+
+    @model_validator(mode="after")
+    def _sane(self):
+        if self.part_types != ["base", "trim", "accent"]:
+            raise ValueError("part_types must be exactly base, trim, accent")
+        power = self.tiers.get("power", [])
+        if len(power) != PART_TIERS or any(b <= a for a, b in zip(power, power[1:], strict=False)):
+            raise ValueError("tiers.power must be 7 strictly increasing ints")
+        ids = [t.id for t in self.trait_pool]
+        if len(set(ids)) != len(ids):
+            raise ValueError("trait ids must be unique")
+        if self.max_traits != 3:
+            raise ValueError("max_traits must be 3")
+        mults = [q.mult for q in self.grades]
+        if any(b <= a for a, b in zip(mults, mults[1:], strict=False)):
+            raise ValueError("quality mults must increase in order")
+        return self
+
+    def tier_power(self, tier: int) -> int:
+        return self.tiers["power"][tier - 1]
+
+    def max_tier_for_area(self, area: int) -> int:
+        return min(PART_TIERS, area + self.area_cap)
+
+    def weights_for_area(self, area: int) -> list[int]:
+        """Drop weights for tiers 1..7 in this area, with anything above the area cap zeroed (ignored)."""
+        row = next(w for w in self.area_weights if w.area == area)
+        cap = self.max_tier_for_area(area)
+        return [w if i + 1 <= cap else 0 for i, w in enumerate(row.weights)]
+
+    def trait(self, trait_id: str) -> SmithTrait:
+        return next(t for t in self.trait_pool if t.id == trait_id)
+
+    def traits_for(self, kind: str) -> list[SmithTrait]:
+        return [t for t in self.trait_pool if kind in t.kinds]
+
+    def quality(self, name: str) -> Quality:
+        return next(q for q in self.grades if q.name == name)
