@@ -96,7 +96,7 @@ def base_map():
     _forests_fine(up)
     _mountains_fine(up)
     _route_fine(up)
-    _projected_text(up, "THE OLD PEAKS", [(40 * F, 26 * F), (54 * F, 21 * F), (68 * F, 20 * F), (84 * F, 24 * F)])
+    _projected_text(up, "THE OLD PEAKS", [(44 * F, 53 * F), (64 * F, 52 * F), (86 * F, 53 * F)])
     _projected_text(up, "SILT RIVER", [(p[0] * F, p[1] * F - 7) for p in RIVER_PATH[4:9]])
     _projected_text(up, "MIREWOOD", [(x * F, y * F) for x, y in MIREWOOD_PATH], step=11)  # down a clear lane through the wood
     _compass(up, 222 * F, 22 * F, F)
@@ -172,14 +172,42 @@ def _landmark(im, i, x, y):
                 line(cx + 6 * ca - w * sa, cy - 6 * sa - w * ca, cx + 8.5 * ca - w * sa, cy - 8.5 * sa - w * ca)
             line(cx + 8.5 * ca - 1.3 * sa, cy - 8.5 * sa - 1.3 * ca, cx + 8.5 * ca + 1.3 * sa, cy - 8.5 * sa + 1.3 * ca)
         hatch(lambda a, b: 2.5 < math.hypot(a - cx, b - cy) < 5.5 and a + b > cx + cy, cx - 6, cy - 6, cx + 6, cy + 6)
-    elif i == 3:  # Cadrega City: a skyline of towers, a spire, windows
-        line(x - 13, y, x + 13, y)
-        for x0, x1, top in ((-13, -8, 9), (-8, -4, 14), (-4, 1, 18), (1, 6, 11), (6, 9, 16), (9, 13, 8)):
-            line(x + x0, y, x + x0, y - top), line(x + x0, y - top, x + x1, y - top), line(x + x1, y - top, x + x1, y)
-            for wy in range(3, top - 1, 4):
-                ink(x + (x0 + x1) / 2, y - wy, 0.8)
-        line(x - 1.5, y - 18, x - 1.5, y - 22)
-        hatch(lambda a, b: True, x + 1, y - 11, x + 6, y - 1)
+    elif i == 3:  # Cadrega City: a walled city with domes, pointed roofs and a tall spire, drawn in light ink
+        k = 0.6
+        line(x - 14, y, x + 14, y, k)  # the ground
+        line(x - 14, y - 4, x + 14, y - 4, k)  # the city wall
+        for cx in range(-14, 15, 3):
+            line(x + cx, y - 4, x + cx, y - 5.5, k)  # its battlements
+        for x0, w, top, roof in ((-12, 5, 10, "point"), (-6, 5, 13, "dome"), (0, 4, 19, "spire"), (5, 5, 12, "dome"), (10, 4, 9, "point")):
+            line(x + x0, y - 4, x + x0, y - top, k), line(x + x0 + w, y - 4, x + x0 + w, y - top, k)
+            if roof == "dome":
+                arc(x + x0 + w / 2, y - top, w / 2, w / 2.2, 0, 180, k)
+            elif roof == "point":
+                line(x + x0, y - top, x + x0 + w / 2, y - top - 3.5, k), line(x + x0 + w / 2, y - top - 3.5, x + x0 + w, y - top, k)
+            else:
+                line(x + x0, y - top, x + x0 + w / 2, y - top - 7, k), line(x + x0 + w / 2, y - top - 7, x + x0 + w, y - top, k)
+            for wy in range(7, top - 1, 3):
+                ink(x + x0 + w / 2, y - wy, 0.45)  # lit windows: just a soft dot
+        hatch(lambda a, b: True, x + 6, y - 11, x + 9, y - 5, 0.25)
+    elif i == 5:  # Star Kingdom: a castle with conical-roofed towers, flags, a keep and a gate, under three stars
+        k = 0.6
+        line(x - 14, y, x + 14, y, k)
+        for tx in (-12, 9):  # the two outer towers with pointed roofs and flags
+            line(x + tx, y, x + tx, y - 11, k), line(x + tx + 3, y, x + tx + 3, y - 11, k)
+            line(x + tx - 1, y - 11, x + tx + 1.5, y - 16, k), line(x + tx + 1.5, y - 16, x + tx + 4, y - 11, k)
+            line(x + tx + 1.5, y - 16, x + tx + 1.5, y - 19, k), line(x + tx + 1.5, y - 19, x + tx + 4, y - 18, k)
+        line(x - 9, y - 6, x + 9, y - 6, k)  # the curtain wall
+        for cx in range(-9, 10, 2):
+            line(x + cx, y - 6, x + cx, y - 7.5, k)
+        line(x - 4, y - 6, x - 4, y - 13, k), line(x + 4, y - 6, x + 4, y - 13, k)  # the keep
+        line(x - 5, y - 13, x, y - 18, k), line(x, y - 18, x + 5, y - 13, k)
+        arc(x, y - 2.5, 2.2, 3, 0, 180, k), line(x - 2.2, y, x - 2.2, y - 2.5, k), line(x + 2.2, y, x + 2.2, y - 2.5, k)
+        ink(x, y - 10, 0.45), ink(x - 8, y - 8, 0.45), ink(x + 8, y - 8, 0.45)
+        hatch(lambda a, b: True, x + 10, y - 10, x + 12, y - 1, 0.25)
+        for sx_, sy_, r_ in ((0, -24, 3), (-9, -23, 2), (9, -23, 2)):
+            line(x + sx_ - r_, y + sy_, x + sx_ + r_, y + sy_), line(x + sx_, y + sy_ - r_, x + sx_, y + sy_ + r_)
+            line(x + sx_ - r_ * 0.6, y + sy_ - r_ * 0.6, x + sx_ + r_ * 0.6, y + sy_ + r_ * 0.6, 0.6)
+            line(x + sx_ - r_ * 0.6, y + sy_ + r_ * 0.6, x + sx_ + r_ * 0.6, y + sy_ - r_ * 0.6, 0.6)
     elif i == 4:  # Aerial Glades: a floating island, its underside hatched, a pond spilling off as a waterfall, a tree
         arc(x, y - 8, 12, 3, 0, 360)
         line(x - 12, y - 8, x, y + 2), line(x + 12, y - 8, x, y + 2)
@@ -188,18 +216,6 @@ def _landmark(im, i, x, y):
         line(x + 10, y - 7, x + 10, y + 4, 0.6), line(x + 12, y - 7, x + 12, y + 6, 0.6)
         line(x + 4, y - 9, x + 4, y - 12)
         arc(x + 2.5, y - 14, 2.2, 2.2, 60, 300), arc(x + 5.5, y - 14, 2.2, 2.2, -120, 120), arc(x + 4, y - 16, 2.4, 2.0, 0, 180)
-    elif i == 5:  # Star Kingdom: a castle with towers, crenellations and a gate, three stars above
-        for x0, x1, top in ((-12, -7, 12), (7, 12, 12), (-6, 6, 9)):
-            line(x + x0, y, x + x0, y - top), line(x + x1, y, x + x1, y - top), line(x + x0, y - top, x + x1, y - top)
-            for cx in range(x0, x1 + 1, 2):
-                line(x + cx, y - top, x + cx, y - top - 1.5)
-        line(x - 12, y, x + 12, y)
-        arc(x, y - 4, 2.5, 3.5, 0, 180), line(x - 2.5, y, x - 2.5, y - 4), line(x + 2.5, y, x + 2.5, y - 4)
-        hatch(lambda a, b: True, x + 8, y - 11, x + 11, y - 1)
-        for sx_, sy_, r_ in ((0, -21, 3), (-9, -18, 2), (9, -18, 2)):
-            line(x + sx_ - r_, y + sy_, x + sx_ + r_, y + sy_), line(x + sx_, y + sy_ - r_, x + sx_, y + sy_ + r_)
-            line(x + sx_ - r_ * 0.6, y + sy_ - r_ * 0.6, x + sx_ + r_ * 0.6, y + sy_ + r_ * 0.6, 0.6)
-            line(x + sx_ - r_ * 0.6, y + sy_ + r_ * 0.6, x + sx_ + r_ * 0.6, y + sy_ - r_ * 0.6, 0.6)
     elif i == 6:  # The Void: a black hole, a solid ink core inside a tilted, hatched ring
         cx, cy = x, y - 8
         for yy in range(int(cy - 4), int(cy + 5)):
@@ -333,18 +349,18 @@ def _forests_fine(up):
     (each row tucked under the one behind), a slightly darker canopy tone, and a few trunks along the bottom edge."""
     F = FINE
     px = up.load()
-    woods = [(124, 102, 16, 9), (26, 88, 8, 5), (152, 118, 7, 4), (200, 52, 8, 5)]
-    r = 4.2
+    woods = [(124, 103, 21, 12), (26, 88, 9, 6), (156, 120, 8, 5), (200, 52, 9, 6)]
+    r = 2.8
     for wx, wy, rx, ry in woods:
         crowns = []
-        for gy in range(-ry * F, ry * F + 1, 5):
-            for gx in range(-rx * F, rx * F + 1, 6):
-                x = wx * F + gx + (3 if (gy // 5) % 2 else 0) + (_hash(gx, gy, wx) - 0.5) * 1.5
+        for gy in range(-ry * F, ry * F + 1, 4):
+            for gx in range(-rx * F, rx * F + 1, 4):
+                x = wx * F + gx + (2 if (gy // 4) % 2 else 0) + (_hash(gx, gy, wx) - 0.5) * 1.5
                 y = wy * F + gy + (_hash(gy, gx, wy) - 0.5) * 1.5
                 edge = ((x / F - wx) / rx) ** 2 + ((y / F - wy) / ry) ** 2 + (_hash(int(x), int(y), 2) - 0.5) * 0.3
                 if edge > 1 or land(x / F, y / F) < 0.06 or not _clear_of_sites(x / F, y / F, 11):
                     continue
-                if _near_path(x / F, y / F, MIREWOOD_PATH, 3.5):
+                if _near_path(x / F, y / F, MIREWOOD_PATH, 6.5):
                     continue
                 crowns.append((x, y))
         if not crowns:
@@ -356,21 +372,19 @@ def _forests_fine(up):
                     if math.hypot(xx - cx, yy - cy) <= r:
                         inside.add((xx, yy))
         for xx, yy in inside:
-            _ink(px, xx, yy, 0.12, up.size)  # the canopy's tone
-        for xx, yy in inside:  # one outline round the whole canopy
+            _ink(px, xx, yy, 0.1, up.size)  # the canopy's tone
+            if (xx * 3 + yy) % 7 == 0 and (xx, yy - 2) in inside:
+                _ink(px, xx, yy, 0.4, up.size)  # little foliage ticks
+                _ink(px, xx, yy + 1, 0.3, up.size)
+        for xx, yy in inside:  # one outline round the whole wood
             if any((xx + dx, yy + dy) not in inside for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
-                _ink(px, xx, yy, 0.85, up.size)
-        for cx, cy in crowns:  # crown arcs inside: the lower edge of each crown, where it sits over the row in front
-            for a in range(200, 341, 12):
-                xx, yy = cx + (r - 0.5) * math.cos(math.radians(a)), cy - (r - 0.5) * math.sin(math.radians(a))
-                if (int(round(xx)), int(round(yy)) + 1) in inside:
-                    _ink(px, xx, yy, 0.45, up.size)
+                _ink(px, xx, yy, 0.75, up.size)
         bottom = {}
         for xx, yy in inside:
             bottom[xx] = max(bottom.get(xx, -1), yy)
-        for xx in sorted(bottom)[2:-2:7]:  # a few trunks under the canopy
-            for k in range(1, 4):
-                _ink(px, xx, bottom[xx] + k, 0.8, up.size)
+        for xx in sorted(bottom)[1:-1:3]:  # a row of short trunks under the canopy
+            for k in (1, 2):
+                _ink(px, xx, bottom[xx] + k, 0.6, up.size)
 
 
 def _river_fine(up):
@@ -381,7 +395,7 @@ def _river_fine(up):
     total = sum(math.hypot(x1 - x0, y1 - y0) for (x0, y0), (x1, y1) in zip(pts, pts[1:]))
     run = 0.0
     px = up.load()
-    water, bank = set(), set()
+    water, bank = set(), {}
     for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
         L = math.hypot(x1 - x0, y1 - y0)
         n = int(L * 2)
@@ -389,22 +403,31 @@ def _river_fine(up):
             t = i / n
             x = x0 + (x1 - x0) * t + math.sin((y0 + (y1 - y0) * t) * 0.17) * 3
             y = y0 + (y1 - y0) * t
-            if land(x / F, y / F) <= 0:
-                break
-            half = (3 + 5 * (run + L * t) / total) / 2
+            h_land = land(x / F, y / F)
+            if h_land <= -0.03:
+                break  # out at sea: the mouth has already faded away
+            along = (run + L * t) / total
+            half = (0.5 + 7.5 * min(1.0, along / 0.12) * (0.4 + 0.6 * along)) / 2  # a spring that swells into a river
+            if h_land < 0.05:
+                half += (0.05 - h_land) * 60  # the mouth opens out toward the sea
             nx, ny = -(y1 - y0) / L, (x1 - x0) / L
             for k in range(-int(half * 2), int(half * 2) + 1):
                 o = k / 2
                 q = (int(round(x + nx * o)), int(round(y + ny * o)))
                 if _clear_of_sites(q[0] / F, q[1] / F, 9):
-                    (bank if abs(o) >= half - 0.5 else water).add(q)
+                    fade = max(0.0, min(1.0, h_land / 0.05)) if h_land < 0.05 else 1.0
+                    if abs(o) >= half - 0.5:
+                        bank[q] = max(bank.get(q, 0.0), 0.7 * fade)
+                    else:
+                        water.add(q)
         run += L
-    for x, y in water - bank:
+    for x, y in water - set(bank):
         if 0 <= x < up.width and 0 <= y < up.height and px[x, y][3]:
             r_, g, b, a = px[x, y]
             px[x, y] = (int(r_ * 0.86), int(g * 0.93), int(b * 1.0), a)  # a faint cool wash, the paper still showing
-    for x, y in bank:
-        _ink(px, x, y, 0.7, up.size)
+    for (x, y), k in bank.items():
+        if k > 0.05:
+            _ink(px, x, y, k, up.size)
 
 
 def _put(im, x, y, c):
@@ -607,7 +630,7 @@ def _mountains(im):
                 _peak(im, x, y, h)
 
 
-RIVER_PATH = [(40, 50), (50, 70), (46, 84), (56, 96), (62, 110), (80, 122), (104, 125), (126, 129), (142, 138), (150, 150)]
+RIVER_PATH = [(34, 48), (48, 70), (46, 84), (56, 96), (62, 110), (80, 122), (104, 125), (126, 129), (142, 138), (150, 150)]
 
 
 def _river(im):
