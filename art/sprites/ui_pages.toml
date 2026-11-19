@@ -95,23 +95,23 @@ rows = [
 [ui_skills]
 kind = "free"
 outline = true
-palette = { k = "#2e2a3a", S = "#dfe8f4", W = "#c8905a", F = "#6ab4f0", f = "#e8f4ff", L = "#8ade5a", l = "#3c8a34", Y = "#ffd84a" }
+palette = { 1 = "#4a3a34", 2 = "#6a5448", 3 = "#1e3a6a", 4 = "#2e5490", 5 = "#1e4a2a", 6 = "#2e6a3a", 7 = "#5a4418", 8 = "#7a6026", S = "#dfe8f4", W = "#c8905a", F = "#6ab4f0", f = "#e8f4ff", L = "#8ade5a", l = "#3c8a34", Y = "#ffd84a" }
 rows = [
   "................",
-  ".kkkkkkkkkkkkkk.",
-  ".kkSSSkkkkkkkkk.",
-  ".kSkkWSkkkfFFkF.",
-  ".kkkWkkkkFFFFFk.",
-  ".kkkWkkkkkFFkkF.",
-  ".kkWkkkkkkkkkkk.",
-  ".kkkkkkkkkkkkkk.",
-  ".kkkkkkkkkkkkkk.",
-  ".kkkkLlkkkkYkkk.",
-  ".kkkLlLkkkYYYkk.",
-  ".kkLlLkkkkYYYkk.",
-  ".kLlLkkkkLYYYlk.",
-  ".klLkkkkkLkYklk.",
-  ".kkkkkkkkkkkkkk.",
+  ".22222224444444.",
+  ".21SSS114333333.",
+  ".2S11WS143fFFF3.",
+  ".211W1114FFFF.3.",
+  ".211W11143FF3F3.",
+  ".21W11114333333.",
+  ".21111114333333.",
+  ".66666668888888.",
+  ".6555Ll5877Y777.",
+  ".655LlL587YYY77.",
+  ".65LlL5587YYY77.",
+  ".6LlL5558LYYYl7.",
+  ".6lL55558L7Y7l7.",
+  ".65555558777777.",
   "................",
 ]
 
