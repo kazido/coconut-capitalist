@@ -355,6 +355,23 @@ class Navigator(ui.LayoutView):
         except Exception:
             log.exception("self-refresh of %s failed", screen.id)
 
+    async def redraw_by_itself(self, change: Callable[[], "Screen | None"]) -> None:
+        """Redraw the panel without a click, e.g. when a timer on the page runs out (the scarab's scroll).
+        `change` runs under the lock; it returns the screen to draw, or None when there is nothing to redraw."""
+        if self.message is None or self.is_finished():
+            return
+        async with self._lock:
+            screen = change()
+            if screen is None:
+                return
+            self.screen = screen
+            try:
+                await self._render()
+                await self._push()
+            except (discord.HTTPException, asyncio.TimeoutError):
+                pass  # the message is gone or slow: the next click shows the new state anyway
+        self._restart_ticker()
+
     async def back(self, interaction: discord.Interaction) -> None:
         if len(self.stack) > 1:
             self.stack.pop()

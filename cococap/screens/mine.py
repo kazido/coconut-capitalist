@@ -1,3 +1,4 @@
+import asyncio
 import random
 import time
 from collections import Counter
@@ -10,7 +11,7 @@ from cococap.services import mining
 from cococap.services import odds
 from cococap.ui import flair
 from cococap.ui.rewards import rewards_result
-from cococap.ui import Page, PromptModal, Screen
+from cococap.ui import Page, PromptModal, ResultScreen, Screen
 from cococap.ui.components import bar, button, row, sep, text
 
 from cococap import emojis
@@ -333,7 +334,31 @@ class MineScreen(Screen):
         if mining.scarab_appears(rules, random.Random()):
             self.challenge = mining.make_scarab(_words(), rules, random.Random())
             self.challenge_deadline = time.time() + self.challenge.seconds
+            self._arm_scarab_timer()
         self._show_loot(note)
+
+    def _arm_scarab_timer(self) -> None:
+        """When the scroll's time runs out, the scarab leaves by itself: the page shows the word and Mine again unlocks.
+        (Without this the page just sat there, its Discord timestamp counting up "x seconds ago".)"""
+        challenge = self.challenge
+
+        async def expire() -> None:
+            await asyncio.sleep(max(0.0, self.challenge_deadline - time.time()))
+            await self.nav.redraw_by_itself(lambda: self._expire_scarab(challenge))
+
+        self._scarab_timer = asyncio.get_running_loop().create_task(expire())  # (kept so the task is not garbage-collected)
+
+    def _expire_scarab(self, challenge: mining.ScarabChallenge) -> Screen | None:
+        """The scroll's time is up: the scarab scuttles off. Returns the screen to redraw, or None if nothing to do."""
+        if self.challenge is not challenge:
+            return None  # already answered or ignored (or a new mine started)
+        self.challenge = None
+        self.scarab_result = f"{emojis.icon('scarab', '🪲')} Too slow! The scarab scuttled away. (It was **{challenge.word}**.)"
+        shown = self.nav.screen
+        if not (isinstance(shown, ResultScreen) and shown.origin is self):
+            return None  # the player left the loot page: the mine page shows the result on its next draw
+        self._show_loot()
+        return self
 
     def _show_loot(self, note: str | None = None) -> None:
         """Build the reward screen of the finished mine (separate from `_end` so a scarab turning up later can be added to it)."""
@@ -350,6 +375,8 @@ class MineScreen(Screen):
             notes.append(f"{emojis.icon('scarab', '🪲')} **A subterranean scarab appears!** It holds a scroll: **{self.challenge.scrambled}**\n"
                          f"Unscramble it before <t:{int(self.challenge_deadline)}:R> and it will reward you!")
             choices += [("Answer", emojis.icon("scroll", "📜"), self._ask_scarab), ("Ignore", emojis.icon("cross", "✖️"), self._skip_scarab)]
+        elif self.scarab_result:
+            notes.append(self.scarab_result)  # (the scarab left: time ran out)
         self.result = rewards_result(
             titles[self.run.outcome], items=summary.haul, xp=summary.xp, notes=notes,
             headline=[f"Row **{summary.depth}** of {self.run.floor}  ·  **{summary.lodes}** lodes dug", *filter(None, [note])],

@@ -841,6 +841,27 @@ async def test_the_scarab_greys_out_mine_again_until_answered_or_ignored_and_the
     assert nav.screen.id == "result" and not find_button(nav, "Mine again").disabled  # the loot screen again, now free to go on
 
 
+async def test_when_the_scarab_timer_runs_out_the_page_reveals_the_word_by_itself(db):
+    import time
+
+    from cococap.services.mining import ScarabChallenge
+
+    nav, inter = await enter_mines()
+    mine = nav.screen
+    mine.run.leave()
+    await mine._end(None)
+    scroll = mine.challenge = ScarabChallenge("lantern", "ternlan", 30)
+    mine.challenge_deadline = time.time() - 1  # already out of time
+    mine._show_loot()
+    await mine.refresh(inter)
+    nav.message = SimpleNamespace(edit=AsyncMock())
+    await nav.redraw_by_itself(lambda: mine._expire_scarab(scroll))
+    assert nav.screen.id == "result" and "lantern" in all_text(nav)
+    assert not find_button(nav, "Mine again").disabled and nav.message.edit.await_count == 1
+    await nav.redraw_by_itself(lambda: mine._expire_scarab(scroll))
+    assert nav.message.edit.await_count == 1  # it leaves only once
+
+
 async def test_leaving_the_hub_idle_mid_run_banks_the_haul(db):
     user = await User.get(1)
     nav, inter = await enter_mines()
