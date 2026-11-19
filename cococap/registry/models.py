@@ -601,6 +601,7 @@ class MineType(_Data):
     xp_mult: float = Field(default=1.0, ge=0.5, le=3.0)  # x the mining xp the run pays
     yield_mult: float = Field(default=1.0, ge=0.5, le=3.0)  # x the quantity of every cell
     rich_chance_add: float = Field(default=0.0, ge=0, le=0.5)  # added to every cell's chance of being a rich lode
+    wyrmhole_mult: float = Field(default=1.0, ge=1, le=20)  # x the chance of a big wyrmhole (per cell) and of a small one (per mine)
     ore_boost: dict[str, float] = Field(default_factory=dict)  # item -> x its drop chance (other ores stay possible; more of a hard ore also means more pressure)
     ore_yield: dict[str, float] = Field(default_factory=dict)  # item -> x the quantity of that item (no extra pressure)
 
@@ -647,7 +648,7 @@ class MiningRules(_Data):
         if "standard" not in ids:
             raise ValueError("mining.toml: there must be a 'standard' mine type")
         standard = self.mine_type("standard")
-        if (standard.pressure_mult, standard.xp_mult, standard.yield_mult, standard.rich_chance_add, standard.ore_boost, standard.ore_yield) != (1.0, 1.0, 1.0, 0.0, {}, {}):
+        if (standard.pressure_mult, standard.xp_mult, standard.yield_mult, standard.rich_chance_add, standard.wyrmhole_mult, standard.ore_boost, standard.ore_yield) != (1.0, 1.0, 1.0, 0.0, 1.0, {}, {}):
             raise ValueError("mining.toml: the 'standard' mine type must change nothing")
         if standard.weight * 2 <= sum(t.weight for t in self.mine_types):
             raise ValueError("mining.toml: the 'standard' mine type must be at least half of all mines")

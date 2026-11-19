@@ -1011,7 +1011,7 @@ rare items. A signature item is a foraging item with no `[drop]` block, so it ne
 
 Every mine you enter ("Enter the mines" and "Mine again") rolls a TYPE by weight (`mining.roll_mine_type`, from `start_run`; `start_run(..., mine_type=)` forces one for tests).
 It is shown on the mine page before the first dig and kept on the `MineRun` (`run.mine_type`); nothing is stored. `[[mine_types]]` in `configs/mining.toml`:
-id, name, emoji, weight, description and effects, all neutral by default. Standard (first in the list, 75 of 100) must exist, change nothing and be at least half of all
+id, name, emoji, weight, description and effects, all neutral by default. Standard (first in the list, 74 of 100) must exist, change nothing and be at least half of all
 mines (validated in `MiningRules`; ore ids are checked in `_validate_mining_items`; bounds: pressure/xp/yield 0.25-3, rich add 0-0.5, boosts 1-5).
 
 | type | weight | effect |
@@ -1022,6 +1022,7 @@ mines (validated in `MiningRules`; ore ids are checked in `_validate_mining_item
 | Quiet Shaft | 3 | `pressure_mult` 0.93, applied in `growth_factor` AFTER the reactor/tool/pet cap (`max_reduction`) |
 | Scholar's Cavern | 2.5 | `xp_mult` 2.0, applied in `settle_run` on top of the rank/party xp multiplier |
 | Deep Pocket | 2.5 | `rich_chance_add` +0.12 (added to the cell chance and the Prospector bonus) and `yield_mult` 1.05 |
+| Wyrm Tunnels | 1 | `wyrmhole_mult` 10: big wyrmhole odds per cell AND small wyrmhole odds per mine are divided by 10 (floor 1) |
 
 Why quantity and not just drop chance for the ores: a bigger share of a hard ore means more pressure per row, so a pure chance boost made the run end sooner and the type
 a trap (Gold x2 chance: gold income +30% but the whole run -20%). `ore_yield` pays more of the ore with the same pressure (it rounds at random so +20% on a 1-3 ore

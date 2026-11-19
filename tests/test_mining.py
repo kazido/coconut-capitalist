@@ -1351,6 +1351,16 @@ def _run(type_id=None, seed=1, **kw):
     return m.MineRun(RULES, REG, Random(seed), cursors=[2], mine_type=TYPES[type_id] if type_id else None, **kw)
 
 
+def test_wyrm_tunnels_make_wyrmholes_likelier_in_proportion_to_its_multiplier():
+    mult = TYPES["wyrm_tunnels"].wyrmhole_mult
+    assert mult > 1 and TYPES["standard"].wyrmhole_mult == 1
+    n = 20000
+    plain = sum(m.roll_mini_wyrmhole(RULES, Random(i)) for i in range(n))
+    boosted = sum(m.roll_mini_wyrmhole(RULES, Random(i), mult) for i in range(n))
+    assert boosted > plain * mult / 2  # ~mult x as many small wyrmholes (noisy: plain is ~n/odds)
+    assert round(RULES.wyrmhole.odds / mult) < RULES.wyrmhole.odds
+
+
 def test_the_mine_type_weights_validate_and_standard_dominates():
     assert "standard" in TYPES and len(RULES.mine_types) >= 6
     total = sum(t.weight for t in RULES.mine_types)

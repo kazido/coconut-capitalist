@@ -187,7 +187,7 @@ class MineRun:
         self.vents_dug = self.braces_used = self.magnet_rows = 0  # for the Mining stats page (settle_run banks them)
         self.xp_awarded = 0
         self.last_risk = self.last_pressure = 0.0
-        self.wyrmhole_odds = wyrmhole_odds_value or rules.wyrmhole.odds
+        self.wyrmhole_odds = max(1, round((wyrmhole_odds_value or rules.wyrmhole.odds) / self.mine_type.wyrmhole_mult))  # Wyrm Tunnels: wyrmholes are likelier
         self.depth = 0  # rows dug so far == the index of the row you're about to dig
         self.danger = 0.0  # pressure, 0-100
         self.haul: Counter[str] = Counter()
@@ -678,9 +678,9 @@ async def _mining_state(user: User) -> tuple[Mining, int]:
     return mining, User.xp_to_level(mining.xp)
 
 
-def roll_mini_wyrmhole(rules: MiningRules, rng: random.Random) -> bool:
-    """Does this mine have a small wyrmhole? 1 in `mini_wyrmhole.odds`."""
-    return rng.randint(1, rules.mini_wyrmhole.odds) == 1
+def roll_mini_wyrmhole(rules: MiningRules, rng: random.Random, mult: float = 1.0) -> bool:
+    """Does this mine have a small wyrmhole? 1 in `mini_wyrmhole.odds`, divided by the mine type's `wyrmhole_mult`."""
+    return rng.randint(1, max(1, round(rules.mini_wyrmhole.odds / mult))) == 1
 
 
 async def open_mines(user: User, registry: Registry | None = None) -> list[MineSite]:
@@ -706,7 +706,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         if site is None:
             raise MiningError("You haven't opened that mine yet.")
     kind = rules.mine_type(mine_type) if isinstance(mine_type, str) else mine_type or roll_mine_type(rules, rng)
-    has_mini = roll_mini_wyrmhole(rules, rng) if mini_wyrmhole is None else mini_wyrmhole
+    has_mini = roll_mini_wyrmhole(rules, rng, kind.wyrmhole_mult) if mini_wyrmhole is None else mini_wyrmhole
     d = rules.descent
     tool = await equipped_stats(user, "mining", reg)
     if tool is None:

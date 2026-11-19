@@ -227,7 +227,7 @@ hardness_mult = 1.0
 id = "standard"
 name = "Standard"
 emoji = "⛏️"
-weight = 75
+weight = 74
 description = "A plain shaft."
 
 [[mine_types]]
@@ -279,6 +279,14 @@ weight = 2.5
 description = "Fat lodes: more rich cells, and a little more of everything."
 rich_chance_add = 0.12
 yield_mult = 1.05
+
+[[mine_types]]
+id = "wyrm_tunnels"
+name = "Wyrm Tunnels"
+emoji = "🌀"
+weight = 1
+description = "The walls are riddled with burrows: wyrmholes are 10x as likely, big and small."
+wyrmhole_mult = 10
 
 [wyrmhole]
 odds = 25000                       # 1-in-N per cell below `min_row`
