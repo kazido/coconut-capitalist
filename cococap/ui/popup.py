@@ -88,9 +88,9 @@ class ShareView(discord.ui.View):
         return f"Shared in {getattr(target, 'mention', 'the channel')}."
 
 
-async def send(interaction: discord.Interaction, embed: discord.Embed, owner: discord.abc.User | None = None) -> None:
-    """Send the popup as an ephemeral follow-up. Errors are logged and swallowed."""
+async def send(interaction: discord.Interaction, embed: discord.Embed, owner: discord.abc.User | None = None, ephemeral: bool = True) -> None:
+    """Send the popup as a follow-up (ephemeral by default: only the player sees it). Errors are logged and swallowed."""
     try:
-        await interaction.followup.send(embed=embed, view=PopupView(embed, owner or interaction.user), ephemeral=True)
+        await interaction.followup.send(embed=embed, view=PopupView(embed, owner or interaction.user), ephemeral=ephemeral)
     except Exception:
         log.exception("popup failed")
