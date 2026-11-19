@@ -329,6 +329,7 @@ async def test_shop_buy_opens_a_modal_and_buying_works(db):
     await set_columns(await User.get(1), purse=10_000_000)
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")  # seeds stack, so they ask how many (tools do not: see the next test)
+    await choose(nav, inter, select_named(nav, "Pick an item"), "seed_apple")  # (Farming now lists a basic accessory first)
     await click(nav, inter, "Buy custom")
     modal = await submit(inter, "2")
     await modal.on_submit(inter)
@@ -362,8 +363,9 @@ async def test_shop_modal_rejects_nonsense_and_cant_overspend(db):
     assert len(item_buy_buttons(nav)) == 2 and select_named(nav, "Pick an item").options
     # a brand-new player can afford the cheapest item but not the priciest: picking it disables Buy
     opts = select_named(nav, "Pick an item").options
-    await choose(nav, inter, select_named(nav, "Pick an item"), opts[-1].value)
-    assert opts[-1].value and item_buy_buttons(nav)[0].disabled
+    priciest = max((o.value for o in opts), key=lambda v: get_registry().item(v).price)
+    await choose(nav, inter, select_named(nav, "Pick an item"), priciest)
+    assert item_buy_buttons(nav)[0].disabled
     await set_columns(await User.get(1), purse=200_000)
     nav, inter = await hub("shop")
     await click(nav, inter, emoji="🌽")

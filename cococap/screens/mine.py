@@ -8,7 +8,7 @@ import discord
 from cococap.constants import PROJECT_ROOT
 from cococap.registry import get_registry
 from cococap.services import mining
-from cococap.services import odds, smithing
+from cococap.services import accessories, odds, smithing
 from cococap.ui import flair
 from cococap.ui.rewards import rewards_result
 from cococap.ui import Page, PromptModal, ResultScreen, Screen
@@ -394,6 +394,8 @@ class MineScreen(Screen):
             notes.append(self.scarab_result)  # (the scarab left: time ran out)
         if summary.part is not None:
             notes.append(smithing.part_line(summary.part))
+        if summary.accessory is not None:
+            notes.append(accessories.accessory_line(summary.accessory))
         self.result = rewards_result(
             titles[self.run.outcome], items=summary.haul, xp=summary.xp, notes=notes,
             headline=[f"Row **{summary.depth}** of {self.run.floor}  ·  **{summary.lodes}** lodes dug", *filter(None, [note])],

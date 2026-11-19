@@ -35,6 +35,8 @@ async def buy(user: User, item_id: str, quantity: int = 1, registry: Registry | 
         raise ShopError(f"Reach {field} to buy that seed.")
     if not 1 <= quantity <= MAX_PER_PURCHASE:
         raise ShopError(f"You can buy between 1 and {MAX_PER_PURCHASE:,} at a time.")
+    if item.category == "accessory" and quantity != 1:
+        raise ShopError("Accessories are bought one at a time.")
     if item.is_instance:
         await _check_can_own_another(user, item, quantity, reg)
     total = item.price * quantity

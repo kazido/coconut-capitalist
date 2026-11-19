@@ -7,7 +7,7 @@ import discord
 from cococap.registry import get_registry
 from cococap.services import farming
 from cococap.services.equipment import equipped_stats
-from cococap.services import odds, smithing
+from cococap.services import accessories, odds, smithing
 from cococap.ui.rewards import rewards_result
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import button, row, sep, select, text, xp_bar
@@ -155,6 +155,7 @@ class FarmScreen(Screen):
         if any(h.anomaly for h in harvests):
             notes.append(f"{emojis.icon('sparkle', '✨')} **An agricultural anomaly!** Marvelous! Your work and daily are ready again.")
         notes += [smithing.part_line(h.part) for h in harvests if h.part is not None]
+        notes += [accessories.accessory_line(h.accessory) for h in harvests if h.accessory is not None]
         self.result = rewards_result("Harvest!", items=crops + extras, xp=sum(h.xp for h in harvests), notes=notes, odds=odds.farming(),
                                      emoji=emojis.icon('basket', '🧺'), accent=0x2F919E, back_label="Back to the farm")
         await self.refresh(interaction)

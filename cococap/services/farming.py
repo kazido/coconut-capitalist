@@ -22,7 +22,7 @@ from cococap.errors import GameRuleError
 from cococap.models.skills.farming import Farming, Plot
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
-from cococap.services import areas, pets, scrolls, smithing, stars
+from cococap.services import accessories, areas, pets, scrolls, smithing, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
@@ -420,6 +420,7 @@ class Harvest:
     extras: Counter = field(default_factory=Counter)  # leftovers from the harvest (plant fiber...)
     replanted: bool = False  # Evergreen: the plot is growing the same crop again
     part: ItemInstance | None = None  # a smithing part from this harvest, if any
+    accessory: ItemInstance | None = None  # a rare accessory from this harvest, if any
     golden: bool = False  # Golden Sprout: this plot grew golden, so the harvest is tripled
 
 
@@ -552,6 +553,7 @@ async def harvest(
     extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0, taken["zone"])
     extras = stars.apply(extras, stars.progress(taken["zone"], len(reg.farming.field_seeds)), rng, reg)  # starred materials: the further the field, the better the star
     part = await smithing.maybe_drop_part(user, taken["zone"], rng, reg)  # one part roll per harvest
+    accessory = await accessories.maybe_drop_accessory(user, "farming", rng, reg)  # one accessory roll per harvest
     anomaly = rng.randint(1, rules.anomaly_odds) == 1
     if crop_scroll := reg.item(taken["crop"]).crop.scroll:  # a rare scroll only this crop drops: 1 in its odds harvests
         if rng.randint(1, crop_scroll.odds) == 1:
@@ -565,7 +567,7 @@ async def harvest(
     if anomaly:
         await user.refresh_cooldowns(Cooldowns.WORK, Cooldowns.DAILY)
         await user.inc_stat("anomalies")  # stats page
-    return Harvest(number, taken["crop"], taken["amount"], taken["xp"], anomaly, extras, taken.get("replanted", False), part=part, golden=taken["golden"])
+    return Harvest(number, taken["crop"], taken["amount"], taken["xp"], anomaly, extras, taken.get("replanted", False), part=part, accessory=accessory, golden=taken["golden"])
 
 
 async def harvest_all(

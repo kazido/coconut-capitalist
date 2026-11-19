@@ -29,7 +29,7 @@ from cococap.models.skills.foraging import Foraging
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
 from cococap.registry.models import ForagingRules, Grain, Species, Wedge
-from cococap.services import releaf, smithing, stars
+from cococap.services import accessories, releaf, smithing, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services import pets
 from cococap.services.loot import roll_drop, skewed_roll
@@ -423,6 +423,7 @@ class Reward:
     window: int | None = None  # the community tree it came from
     party: bool = False  # ...or it came from a party tree
     part: ItemInstance | None = None  # a smithing part from a tree you felled yourself
+    accessory: ItemInstance | None = None  # a rare accessory from a tree you felled yourself
     timber: bool = False  # Timber!: this tree toppled into the next one
 
 
@@ -501,6 +502,7 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
                        await releaf.drop_boost(reg))
     drops = stars.apply(drops, stars.progress(tree.zone, rules.zones), rng, reg)  # starred materials: how deep the forest is
     part = await smithing.maybe_drop_part(user, tree.zone, rng, reg)  # one part roll per tree felled
+    accessory = await accessories.maybe_drop_accessory(user, "foraging", rng, reg)  # one accessory roll per tree felled
     for scroll in roll_tree_scrolls(tree, rng, reg):  # a rare scroll per source (its species, its grain), one roll each whatever the size
         drops[scroll] += 1
     bits = round(tree.max_hp * rules.bits_per_hp * zone_reward_factor(tree.zone, rules) * (1 + tree.bonus + final_cut))
@@ -508,7 +510,7 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     await _pay(user, drops, bits, xp, trees=1)
     if tree.species:  # stats page: species felled
         await user.inc_stat(f"felled:{tree.species}")
-    return Reward(drops, bits, xp, part=part, timber=timber)
+    return Reward(drops, bits, xp, part=part, accessory=accessory, timber=timber)
 
 
 # ---- the community tree: the clock ---------------------------------------------------------------------------

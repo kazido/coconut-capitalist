@@ -25,7 +25,7 @@ from cococap.registry.loader import BOMB_ITEM
 from cococap.registry.models import MiningRules, MineSite, MineType, Milestone, RiskLabel
 from cococap.services.equipment import equipped_stats
 from cococap.services.loot import roll_table, skewed_roll
-from cococap.services import areas, pets, scrolls, smithing, stars
+from cococap.services import accessories, areas, pets, scrolls, smithing, stars
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -578,6 +578,7 @@ class RunSummary:
     lodes: int
     depth: int
     part: ItemInstance | None = None  # a smithing part the run dropped, if any (kept out of the stackable haul)
+    accessory: ItemInstance | None = None  # a rare accessory the run dropped, if any
 
 
 # ---- the wyrmhole -----------------------------------------------------------------------------
@@ -822,11 +823,12 @@ async def settle_run(user: User, run: MineRun, registry: Registry | None = None)
     mine_no = next((i for i, s in enumerate(rules.mines, 1) if s.id == run.site.id), 1)
     run.haul = stars.apply(run.haul, stars.progress(mine_no, len(rules.mines)), run.rng, registry)
     part = await smithing.maybe_drop_part(user, mine_no, run.rng, registry)  # one roll per run banked
+    accessory = await accessories.maybe_drop_accessory(user, "mining", run.rng, registry)  # one accessory roll per run banked
     if run.mine_type.scroll and run.rng.random() < 1 / run.mine_type.scroll.odds:  # a mine type's own scroll: 1 in `odds` banked runs of it
         run.haul[run.mine_type.scroll.item] += 1
     if run.reached_top and run.outcome != "collapse" and run.rng.random() < 1 / rules.descent.second_wind_odds:  # Second Wind's scroll: runs that got to the top label
         run.haul[rules.descent.second_wind_item] += 1
-    summary = replace(summary, haul=Counter(run.haul), part=part)
+    summary = replace(summary, haul=Counter(run.haul), part=part, accessory=accessory)
     for item_id, quantity in run.haul.items():
         await user.add_item(item_id, quantity)
 

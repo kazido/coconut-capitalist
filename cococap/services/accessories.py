@@ -52,6 +52,17 @@ async def maybe_drop_accessory(
     return await roll_accessory(user, skill, rng, registry=registry)
 
 
+def accessory_line(inst: ItemInstance, registry: Registry | None = None) -> str:
+    """One line for a skill's result screen: the accessory's name and traits (names from the registry)."""
+    reg = registry or get_registry()
+    rules = _rules(reg)
+    template = rules.template(inst.template_id)
+    emoji = reg.item(inst.template_id).emoji or "🧿"
+    names = [rules.trait(t).name for t in inst.traits]
+    named = f" ({', '.join(names)})" if names else ""
+    return f"{emoji} Found a **{template.name}**{named}! Wear it on Tools → Accessories."
+
+
 async def equip(user: User, skill: str, instance_id: int, slot: int, registry: Registry | None = None) -> ItemInstance:
     """Put an accessory you own into one of the skill's slots. Each accessory sits in one slot at a time."""
     rules = _rules(registry)

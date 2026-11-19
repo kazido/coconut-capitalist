@@ -8,6 +8,7 @@ from cococap.services import shop
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
+from cococap.screens.accessories import AccessoriesPane
 from cococap.screens.enchant import EnchantPane
 from cococap.screens.smithing import PartsPane, SmithingPane
 from cococap.ui.tabs import TabsScreen
@@ -101,4 +102,4 @@ class ToolsScreen(TabsScreen):
     emoji = emojis.Lazy("ui_anvil", "🧰")
     description = "Your tools: smith, enchant and salvage them"
     links = ("inventory",)
-    panes = {"tools": ToolsPane, "enchant": EnchantPane, "smithing": SmithingPane, "parts": PartsPane}
+    panes = {"tools": ToolsPane, "enchant": EnchantPane, "smithing": SmithingPane, "parts": PartsPane, "accessories": AccessoriesPane}
