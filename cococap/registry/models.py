@@ -1422,7 +1422,7 @@ class ScrollSource(_Data):
 
 
 class ScrollRules(_Data):
-    mining: ScrollSource
+    mining: ScrollSource | None = None  # no mining scrolls for now (their enchant was retired); the loader and roll skip a missing source
     foraging: ScrollSource
     farming: ScrollSource
 
@@ -1680,3 +1680,29 @@ class SmithingRules(_Data):
 
     def quality(self, name: str) -> Quality:
         return next(q for q in self.grades if q.name == name)
+
+
+# ---- Part market (configs/market.toml) ---------------------------------------------------------------------------------------------
+class MarketShop(_Data):
+    """One shop that sells smithing parts for bits. Its stock is rerolled every `refresh_seconds` (services/market.py)."""
+
+    name: str
+    unlock_area: str  # area id; the shop stays closed until you have reached it
+    refresh_seconds: int = Field(ge=60)
+    slots: int = Field(ge=1, le=10)
+    tier_weights: list[int] = Field(min_length=PART_TIERS, max_length=PART_TIERS)  # tiers 1..7
+    extra_traits: int = Field(ge=0, le=3)  # added to the tier's fresh trait count (capped at the pool)
+    tier_price: list[int] = Field(min_length=PART_TIERS, max_length=PART_TIERS)  # bits per part, by tier
+    trait_premium: float = Field(ge=0)  # price x (1 + this x traits)
+
+    @field_validator("tier_weights")
+    @classmethod
+    def _weights_sane(cls, v: list[int]) -> list[int]:
+        if any(w < 0 for w in v) or sum(v) <= 0:
+            raise ValueError("tier_weights must be >= 0 and not all zero")
+        return v
+
+
+class MarketRules(_Data):
+    merchant: MarketShop
+    black_market: MarketShop

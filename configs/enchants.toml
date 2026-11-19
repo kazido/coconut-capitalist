@@ -13,18 +13,6 @@ max_level = 1
 type = "flag"
 flag = "soloist"
 
-[lure]
-name = "Lure"
-emoji = "🪝"
-description = "Fish find your hook sooner: 10% shorter waits per level."
-applies_to = ["rod"]
-max_level = 3
-
-[[lure.effects]]
-type = "stat_add"
-stat = "bite_speed"
-amount = 0.10
-
 [steady_line]
 name = "Steady Line"
 emoji = "🧵"
@@ -49,30 +37,6 @@ type = "stat_add"
 stat = "double_hook"
 amount = 0.04
 
-[iron_frame]
-name = "Iron Frame"
-emoji = "🛡️"
-description = "A braced pickaxe slows the mine's creaking: 3% less pressure per level."
-applies_to = ["pickaxe"]
-max_level = 3
-
-[[iron_frame.effects]]
-type = "stat_add"
-stat = "danger_reduction"
-amount = 0.03
-
-[seasoned]
-name = "Seasoned"
-emoji = "🌰"
-description = "A well-seasoned handle: plain and good grains wear out 15% slower per level, but bad grains (knotty, twisted) wear out 15% faster, so you leave them sooner."
-applies_to = ["axe"]
-max_level = 3
-
-[[seasoned.effects]]
-type = "stat_add"
-stat = "wear_slow"
-amount = 0.15
-
 [double_strike]
 name = "Double Strike"
 emoji = "⚡"
@@ -85,18 +49,6 @@ type = "stat_add"
 stat = "double_chop"
 amount = 0.08
 
-[deepcall]
-name = "Deepcall"
-emoji = "🌊"
-description = "Something old answers the line: +10% odds of the rare fish per level."
-applies_to = ["rod"]
-max_level = 3
-
-[[deepcall.effects]]
-type = "stat_add"
-stat = "rare_luck"
-amount = 0.10
-
 [seedkeeper]
 name = "Seedkeeper"
 emoji = "🫘"
@@ -108,15 +60,3 @@ max_level = 3
 type = "stat_add"
 stat = "seed_back"
 amount = 0.04
-
-[gleaner]
-name = "Gleaner"
-emoji = "🧵"
-description = "Nothing in the field goes to waste: +12% more farming drops per level."
-applies_to = ["can"]
-max_level = 3
-
-[[gleaner.effects]]
-type = "stat_add"
-stat = "drop_luck"
-amount = 0.12

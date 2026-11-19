@@ -252,9 +252,9 @@ async def test_an_old_tool_without_parts_keeps_its_template_stats():
 
 async def test_an_old_tool_still_keeps_both_enchants():
     user = await player()
-    tool = await user.give_instance("tool_axe_starter")
-    await user.add_item("scroll_seasoned", 1)
-    await user.add_item("scroll_double_strike", 1)
-    await enchanting.apply_scroll(user, "scroll_seasoned", tool.id, REG)
-    done = await enchanting.apply_scroll(user, "scroll_double_strike", tool.id, REG)
-    assert set(done.enchants) == {"seasoned", "double_strike"}
+    tool = await user.give_instance("tool_rod_starter")
+    await user.add_item("scroll_double_hook", 1)
+    await user.add_item("scroll_steady_line", 1)
+    await enchanting.apply_scroll(user, "scroll_double_hook", tool.id, REG)
+    done = await enchanting.apply_scroll(user, "scroll_steady_line", tool.id, REG)
+    assert set(done.enchants) == {"double_hook", "steady_line"}

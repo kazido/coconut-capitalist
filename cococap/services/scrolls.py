@@ -21,7 +21,7 @@ def roll(skill: str, rng: random.Random, registry: Registry | None = None, rolls
 def scroll_skills(item_id: str, registry: Registry | None = None) -> list[str]:
     """The skills whose scroll source (or, for fishing, chest and boss loot) can give this scroll."""
     reg = registry or get_registry()
-    found = [s for s in ("mining", "foraging", "farming") if reg.scrolls and item_id in getattr(reg.scrolls, s).pool]
+    found = [s for s in ("mining", "foraging", "farming") if reg.scrolls and getattr(reg.scrolls, s) is not None and item_id in getattr(reg.scrolls, s).pool]
     if reg.fishing and any(entry.item == item_id for entry in (*reg.fishing.treasure.loot, *reg.fishing.boss.loot)):
         found.append("fishing")
     return found

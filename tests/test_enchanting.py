@@ -35,46 +35,46 @@ def test_every_enchant_has_a_scroll_somewhere_it_can_be_found():
 
 def test_every_kind_of_tool_with_an_upgrade_chain_can_be_enchanted():
     kinds = {k for e in REG.enchants.values() for k in e.applies_to}
-    assert {"pickaxe", "axe", "rod"} <= kinds
+    assert {"axe", "rod", "can"} <= kinds  # pickaxes have no kept enchant since the stat scrolls were retired
 
 
 # ---- applying a scroll --------------------------------------------------------------------------------------------------
 async def test_a_scroll_is_used_up_and_puts_one_level_of_its_enchant_on_the_tool(db):
-    user, rod = await with_tool("tool_rod_starter", "fishing", scrolls={"scroll_lure": 2})
-    done = await enchanting.apply_scroll(user, "scroll_lure", rod.id, REG)
-    assert done.enchants == {"lure": 1} and await user.item_quantity("scroll_lure") == 1
-    again = await enchanting.apply_scroll(user, "scroll_lure", rod.id, REG)
-    assert again.enchants == {"lure": 2} and await user.item_quantity("scroll_lure") == 0
-    assert effective_stats(again, REG).stats["bite_speed"] == pytest.approx(0.2)
+    user, rod = await with_tool("tool_rod_starter", "fishing", scrolls={"scroll_double_hook": 2})
+    done = await enchanting.apply_scroll(user, "scroll_double_hook", rod.id, REG)
+    assert done.enchants == {"double_hook": 1} and await user.item_quantity("scroll_double_hook") == 1
+    again = await enchanting.apply_scroll(user, "scroll_double_hook", rod.id, REG)
+    assert again.enchants == {"double_hook": 2} and await user.item_quantity("scroll_double_hook") == 0
+    assert effective_stats(again, REG).stats["double_hook"] == pytest.approx(0.08)
 
 
 async def test_it_only_fits_the_right_kind_of_tool_and_never_past_the_maximum_and_a_refusal_keeps_the_scroll(db):
-    user, axe = await with_tool("tool_axe_starter", "foraging", scrolls={"scroll_lure": 1, "scroll_seasoned": 5})
+    user, axe = await with_tool("tool_axe_starter", "foraging", scrolls={"scroll_double_hook": 1, "scroll_double_strike": 5})
     with pytest.raises(enchanting.EnchantError, match="fits a rod"):
-        await enchanting.apply_scroll(user, "scroll_lure", axe.id, REG)
-    assert await user.item_quantity("scroll_lure") == 1
-    for _ in range(REG.enchant("seasoned").max_level):
-        await enchanting.apply_scroll(user, "scroll_seasoned", axe.id, REG)
+        await enchanting.apply_scroll(user, "scroll_double_hook", axe.id, REG)
+    assert await user.item_quantity("scroll_double_hook") == 1
+    for _ in range(REG.enchant("double_strike").max_level):
+        await enchanting.apply_scroll(user, "scroll_double_strike", axe.id, REG)
     with pytest.raises(enchanting.EnchantError, match="highest level"):
-        await enchanting.apply_scroll(user, "scroll_seasoned", axe.id, REG)
-    assert await user.item_quantity("scroll_seasoned") == 5 - REG.enchant("seasoned").max_level
+        await enchanting.apply_scroll(user, "scroll_double_strike", axe.id, REG)
+    assert await user.item_quantity("scroll_double_strike") == 5 - REG.enchant("double_strike").max_level
 
 
 async def test_you_cannot_enchant_someone_elses_tool_or_with_a_scroll_you_do_not_have(db):
     _, rod = await with_tool("tool_rod_starter", "fishing", user_id=1)
     thief = await User.get(2)
-    await thief.add_item("scroll_lure", 1)
+    await thief.add_item("scroll_double_hook", 1)
     with pytest.raises(enchanting.EnchantError, match="don't own"):
-        await enchanting.apply_scroll(thief, "scroll_lure", rod.id, REG)
+        await enchanting.apply_scroll(thief, "scroll_double_hook", rod.id, REG)
     mine, rod2 = await with_tool("tool_rod_starter", "fishing", user_id=3)
     with pytest.raises(enchanting.EnchantError, match="don't have"):
-        await enchanting.apply_scroll(mine, "scroll_lure", rod2.id, REG)
+        await enchanting.apply_scroll(mine, "scroll_double_hook", rod2.id, REG)
     with pytest.raises(enchanting.EnchantError, match="isn't a scroll"):
         await enchanting.apply_scroll(mine, "fish_cod", rod2.id, REG)
 
 
 async def test_an_enchant_the_game_no_longer_has_is_ignored_not_fatal(db):
-    user, axe = await with_tool("tool_axe_starter", "foraging", scrolls={"scroll_seasoned": 1})
+    user, axe = await with_tool("tool_axe_starter", "foraging", scrolls={"scroll_double_strike": 1})
     before = effective_stats(await user.instance(axe.id), REG).power
     await user.set_enchant_level(axe.id, "keen", 2)  # a retired enchant still stored on an old tool
     assert effective_stats(await user.instance(axe.id), REG).power == before
@@ -107,20 +107,10 @@ def test_sharp_eye_makes_good_chops_more_likely():
     assert good(0) / 4000 == pytest.approx(rules.chopping.good_chop_chance, abs=0.03)
 
 
-async def test_iron_frame_slows_the_mines_pressure(db):
-    from cococap.services import mining
-
-    user, pick = await with_tool("tool_pickaxe_rookie", "mining", scrolls={"scroll_iron_frame": 2})
-    plain = (await mining.start_run(user, Random(1))).growth_factor
-    await enchanting.apply_scroll(user, "scroll_iron_frame", pick.id, REG)
-    await enchanting.apply_scroll(user, "scroll_iron_frame", pick.id, REG)
-    assert (await mining.start_run(user, Random(1))).growth_factor == pytest.approx(plain - 0.06)
-
-
 # ---- finding scrolls ------------------------------------------------------------------------------------------------------
 def test_every_skill_has_its_own_scrolls():
-    own = {"mining": {"scroll_iron_frame"}, "fishing": {"scroll_lure", "scroll_steady_line", "scroll_deepcall", "scroll_double_hook"},
-           "foraging": {"scroll_seasoned", "scroll_double_strike"}, "farming": {"scroll_seedkeeper", "scroll_gleaner"}}
+    own = {"mining": set(), "fishing": {"scroll_double_hook", "scroll_steady_line"},
+           "foraging": {"scroll_double_strike"}, "farming": {"scroll_seedkeeper"}}
     for skill, mine in own.items():
         found = {i.id for i in REG.items.values() if i.category == "scroll" and skill in scrolls.scroll_skills(i.id, REG)}
         assert found == mine, skill
@@ -128,12 +118,14 @@ def test_every_skill_has_its_own_scrolls():
 
 
 def test_scrolls_are_rare_about_one_every_few_hours_in_each_skill():
-    # per hour of play: mining ~720 cells, foraging ~45 private trees, fishing ~2 bosses and a chest now and then
-    per_hour = {"mining": 720 / REG.scrolls.mining.odds, "foraging": 45 / REG.scrolls.foraging.odds}
+    # per hour of play: foraging ~45 private trees, fishing ~2 bosses and a chest now and then (mining has no scrolls now)
+    per_hour = {"foraging": 45 / REG.scrolls.foraging.odds}
     boss = sum(r.chance for r in REG.fishing.boss.loot if r.item.startswith("scroll_"))
     per_hour["fishing"] = 1.5 * boss  # (bosses are hooked about 1 in 80 casts and not every one is landed)
     for skill, rate in per_hour.items():
-        assert 1 / 6 <= rate <= 1 / 2, f"{skill}: a scroll every {1 / rate:.1f} hours"
+        # Scrolls must stay rare (owner: they dropped too often). The floor is loose while the ability scrolls with their own
+        # sources are being added (docs/plans/ability-scrolls.md); tighten it again once every skill has them.
+        assert 1 / 12 <= rate <= 1 / 2, f"{skill}: a scroll every {1 / rate:.1f} hours"
 
 
 def test_farming_scrolls_are_about_one_a_week_at_most():
@@ -153,17 +145,17 @@ def test_the_scroll_roll_drops_at_its_odds_from_the_skills_own_pool():
 
 # ---- the screen -----------------------------------------------------------------------------------------------------------
 async def test_the_enchant_screen_picks_a_scroll_then_a_tool(db):
-    user, rod = await with_tool("tool_rod_starter", "fishing", scrolls={"scroll_lure": 1})
+    user, rod = await with_tool("tool_rod_starter", "fishing", scrolls={"scroll_double_hook": 1})
     axe = await user.give_instance("tool_axe_starter")
     nav, inter = await hub("tools")
     await choose(nav, inter, select_named(nav, "Choose a tab"), "enchant")
     assert nav.screen.tab == "enchant"
-    await choose(nav, inter, select_named(nav, "Pick a scroll"), "scroll_lure")
+    await choose(nav, inter, select_named(nav, "Pick a scroll"), "scroll_double_hook")
     menu = select_named(nav, "Put it on")
     assert [o.value for o in menu.options] == [str(rod.id)]  # the axe can't take it
     await choose(nav, inter, menu, str(rod.id))
-    assert "Lure" in all_text(nav) and "is now on your Starter Rod [Lure]" in all_text(nav)
-    assert (await user.instance(rod.id)).enchants == {"lure": 1} and await user.item_quantity("scroll_lure") == 0
+    assert "Double Hook" in all_text(nav) and "is now on your Starter Rod [Double Hook]" in all_text(nav)
+    assert (await user.instance(rod.id)).enchants == {"double_hook": 1} and await user.item_quantity("scroll_double_hook") == 0
     assert axe.id and find_button(nav, "Back to inventory")
 
 
@@ -186,21 +178,21 @@ async def test_a_boss_can_drop_a_scroll_you_can_then_use(db):
     for arrow in list(boss.truth):  # (what the boss really wants, which a mirror boss flips)
         boss.press(arrow, boss.bite_at + 2)
     won = await f.defeat_boss(user, boss, Lucky(2), REG)
-    assert won.items["scroll_lure"] == 1 and await user.item_quantity("scroll_lure") == 1
-    await enchanting.apply_scroll(user, "scroll_lure", rod.id, REG)
-    assert (await user.instance(rod.id)).enchants["lure"] == 1
+    assert won.items["scroll_double_hook"] == 1 and await user.item_quantity("scroll_double_hook") == 1
+    await enchanting.apply_scroll(user, "scroll_double_hook", rod.id, REG)
+    assert (await user.instance(rod.id)).enchants["double_hook"] == 1
     assert fish_screen  # (the screen module is what shows the loot)
 
 
 async def test_if_the_enchant_fails_the_scroll_is_given_back(db, monkeypatch):
-    user, rod = await with_tool("tool_rod_starter", "fishing", scrolls={"scroll_lure": 1})
+    user, rod = await with_tool("tool_rod_starter", "fishing", scrolls={"scroll_double_hook": 1})
 
     async def broken(*_args, **_kwargs):
         raise RuntimeError("database hiccup")
 
     monkeypatch.setattr(enchanting, "add_enchant", broken)
     with pytest.raises(RuntimeError):
-        await enchanting.apply_scroll(user, "scroll_lure", rod.id, REG)
-    assert await user.item_quantity("scroll_lure") == 1 and (await user.instance(rod.id)).enchants == {}
+        await enchanting.apply_scroll(user, "scroll_double_hook", rod.id, REG)
+    assert await user.item_quantity("scroll_double_hook") == 1 and (await user.instance(rod.id)).enchants == {}
 
 

@@ -1169,20 +1169,6 @@ kind = "axe"
 power = 3  # TODO(balance): grows with rarity
 requirement = 0
 
-[scroll_lure]
-name = "Scroll of the Lure"
-description = "Fish seem to find your hook sooner."
-wiki = "Use it from your inventory (Enchant) to put Lure on a fitting tool. One use."
-emoji = "📜"
-rarity = 4
-skill = "fishing"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_lure.scroll]
-enchant = "lure"
-
 [scroll_steady_line]
 name = "Scroll of the Steady Line"
 description = "Your line holds when your hands slip."
@@ -1197,20 +1183,6 @@ sell_price = 400000  # TODO(balance)
 [scroll_steady_line.scroll]
 enchant = "steady_line"
 
-[scroll_seasoned]
-name = "Scroll of Seasoning"
-description = "Spots wear out more slowly under your axe."
-wiki = "Use it from your inventory (Enchant) to put Seasoned on an axe. One use."
-emoji = "📜"
-rarity = 4
-skill = "foraging"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_seasoned.scroll]
-enchant = "seasoned"
-
 [scroll_double_strike]
 name = "Scroll of the Double Strike"
 description = "Your axe bites twice."
@@ -1224,20 +1196,6 @@ sell_price = 1200000  # TODO(balance)
 
 [scroll_double_strike.scroll]
 enchant = "double_strike"
-
-[scroll_iron_frame]
-name = "Scroll of the Iron Frame"
-description = "Braces a pickaxe against the creaking mine."
-wiki = "Use it from your inventory (Enchant) to put Iron Frame on a fitting tool. One use."
-emoji = "📜"
-rarity = 4
-skill = "mining"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_iron_frame.scroll]
-enchant = "iron_frame"
 
 [key_gemstone_balance]
 name = "Balance"
@@ -2109,20 +2067,6 @@ category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 400
 
-[scroll_deepcall]
-name = "Scroll of the Deepcall"
-description = "Something old answers your line."
-wiki = "Use it from your inventory (Enchant) to put Deepcall on a rod. One use."
-emoji = "📜"
-rarity = 4
-skill = "fishing"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_deepcall.scroll]
-enchant = "deepcall"
-
 [scroll_double_hook]
 name = "Scroll of the Double Hook"
 description = "A second line, already biting."
@@ -2151,22 +2095,7 @@ sell_price = 400000  # TODO(balance)
 [scroll_seedkeeper.scroll]
 enchant = "seedkeeper"
 
-[scroll_gleaner]
-name = "Scroll of the Gleaner"
-description = "Nothing in the field goes to waste."
-wiki = "Use it from your inventory (Enchant) to put Gleaner on a watering can. One use."
-emoji = "📜"
-rarity = 4
-skill = "farming"
-category = "scroll"
-price = 0
-sell_price = 400000  # TODO(balance)
-
-[scroll_gleaner.scroll]
-enchant = "gleaner"
-
 # ---- Tree species signature drops (see [[species]] in foraging.toml). No [drop] block: they only drop from their species. ----
-
 [material_twilight_fuel]
 name = "Twilight Fuel"
 description = "Burned by your ship to make the first trip to Twilight Desert."

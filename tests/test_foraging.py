@@ -657,15 +657,6 @@ def test_the_wedges_get_better_and_cost_more():
     assert sells == sorted(sells)
 
 
-async def test_the_seasoned_enchant_slows_wear_on_the_axe(db):
-    user = await player(1)
-    inst = await user.give_instance("tool_axe_starter")
-    await equip(user, "foraging", inst.id)
-    await add_enchant(user, inst.id, "seasoned")
-    stats = effective_stats(await user.instance(inst.id), REG)
-    assert stats.stats["wear_slow"] == pytest.approx(0.15)
-
-
 # ---- the notes -------------------------------------------------------------------------------------------------------------------------
 async def test_a_right_style_is_remembered_and_a_wrong_one_is_crossed_off(db):
     user = await player(1)
@@ -910,7 +901,7 @@ def test_flair_marks_rare_finds_and_not_the_everyday_ones():
     from cococap.ui import flair
 
     assert flair.level(REG.item("material_copper_ore")) == 0 and flair.level(REG.item("material_gold_ore")) == 0 and flair.level(REG.item("food_golden_sap")) == 0
-    assert flair.level(REG.item("scroll_seasoned")) == 2  # scrolls are always a big moment
+    assert flair.level(REG.item("scroll_double_strike")) == 2  # scrolls are always a big moment
     assert flair.level(REG.item("material_iron_wedge")) == 1 and flair.level(REG.item("food_burger")) == 1
     assert flair.level(REG.item("material_gilded_wedge")) == 2 and flair.level(REG.item("spirit_of_the_forest")) == 2
     assert flair.banner({"material_copper_ore": 5}) == ""
@@ -929,8 +920,8 @@ def test_every_item_and_enchant_has_an_emoji_and_scrolls_say_what_they_do():
 
     assert [i.id for i in REG.items.values() if not i.emoji_raw] == []
     assert all(e.emoji for e in REG.enchants.values())
-    text = item_attributes(REG.item("scroll_seasoned"))
-    assert REG.enchants["seasoned"].description in text and "Max level" in text
+    text = item_attributes(REG.item("scroll_double_strike"))
+    assert REG.enchants["double_strike"].description in text and "Max level" in text
 
 
 def test_wear_slowing_gear_makes_bad_grains_wear_faster_by_the_same_amount():
