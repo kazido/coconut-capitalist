@@ -11,6 +11,7 @@ credited. The window is closed before anything moves, so a double press cannot t
 """
 
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from cococap.errors import GameRuleError
@@ -55,6 +56,14 @@ class Window:
 _invites: dict[int, Invite] = {}  # invited player -> the one invite waiting for them
 _windows: dict[int, Window] = {}  # either player -> their open window
 _results: dict[int, str] = {}  # what to tell a player the next time they look (a trade that finished or was called off)
+
+
+_listeners: list[Callable[[int], None]] = []  # told when someone is asked to trade (the UI refreshes that player's menu); services never import discord
+
+
+def add_listener(listener: Callable[[int], None]) -> None:
+    if listener not in _listeners:
+        _listeners.append(listener)
 
 
 def _now(now: float | None) -> float:
@@ -112,6 +121,8 @@ def ask(sender_id: int, recipient_id: int, *, is_bot: bool = False, now: float |
         del _invites[old.recipient_id]  # (asking someone else takes back the earlier ask)
     invite = Invite(sender_id, recipient_id, when + INVITE_SECONDS)
     _invites[recipient_id] = invite
+    for listener in _listeners:
+        listener(recipient_id)
     return invite
 
 

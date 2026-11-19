@@ -9,13 +9,14 @@ think about navigation, so no screen can be a dead end.
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from typing import ClassVar
 
 import discord
 from discord import ui
 
 from cococap.errors import CustomError, GameRuleError
+from cococap.services import community, trade
 from cococap.user import InsufficientFunds, User
 
 from .components import button, row, sep, text
@@ -26,6 +27,36 @@ log = logging.getLogger(__name__)
 BLURPLE = 0x5865F2
 TICKER_TASK = "nav-ticker"  # the name of every panel's self-refresh task
 TICK_EDIT_TIMEOUT = 2.0  # seconds a self-refresh may take to reach Discord before it is skipped
+
+
+_LIVE: dict[int, "Navigator"] = {}  # player id -> their open /play menu (one at a time)
+
+
+def _menu_key(user_id: int) -> str:
+    return f"menu:{user_id}"
+
+
+async def poke(user_id: int) -> None:
+    """Redraw a player's open menu right now if it is on a page that shows invitations (Home, Trade): so a trade request appears without them clicking."""
+    nav = _LIVE.get(user_id)
+    if nav is None or nav.message is None or nav.is_finished() or nav.screen is None or nav.screen.id not in ("home", "trade") or nav._lock.locked():
+        return
+    try:
+        async with nav._lock:
+            await nav._render()
+            await asyncio.wait_for(nav._push(), TICK_EDIT_TIMEOUT)
+    except Exception:  # a missed redraw is fine: the next click or tick shows it
+        log.debug("could not refresh the menu of %s", user_id, exc_info=True)
+
+
+def _on_trade_ask(recipient_id: int) -> None:
+    try:
+        asyncio.get_running_loop().create_task(poke(recipient_id))
+    except RuntimeError:  # no event loop (plain tests)
+        pass
+
+
+trade.add_listener(_on_trade_ask)
 
 
 async def stop_all_tickers() -> None:
@@ -62,7 +93,8 @@ class Result:
     back_label: str = "Continue"
     live: Callable[[], tuple[list[str], bool]] | None = None  # (extra lines for now, keep redrawing?): fading numbers...
     actions: list[tuple[str, str, Handler]] = field(default_factory=list)  # extra buttons: (label, emoji, handler of the origin screen)
-    then: list["Result"] = field(default_factory=list)  # screens that follow this one (a rare drop's own page): "Continue" shows the first; it carries the rest
+    again_locked: bool = False  # Again greyed out until a timed event on this screen (the scarab) is dealt with
+    rare: list = field(default_factory=list)  # rare finds (popup.sorted_finds): shown as an ephemeral popup after this screen
 
 
 async def report_error(interaction: discord.Interaction, error: Exception, where: str) -> None:
@@ -153,6 +185,7 @@ class Navigator(ui.LayoutView):
         # The last result page that was built but may never have reached the player (a self-refresh whose edit failed because the message was too
         # old, say). It stays here until an edit succeeds, and the next click shows it first, so what you were paid is never paid without being seen.
         self._unsent: Result | None = None
+        self._popup_rare: list = []  # rare finds of the result just drawn, popped up once its edit has gone out
         self._levels: dict[str, int] | None = None  # skill levels at the last look, for the level-up notification
 
     async def name_of(self, user_id: int) -> str:
@@ -180,7 +213,39 @@ class Navigator(ui.LayoutView):
         await interaction.response.send_message(view=self)
         self._unsent = None
         self.message = await interaction.original_response()
+        await self._replace_old_menu(interaction)
         self._restart_ticker()
+
+    async def _replace_old_menu(self, interaction: discord.Interaction) -> None:
+        """One menu per player: delete the one they had open before (also across a bot restart: its message id is stored), and remember this one."""
+        try:
+            old = _LIVE.get(self.owner.id)
+            if old is not None and old is not self:
+                await old.close_menu()
+            stored = await community.read(_menu_key(self.owner.id), {})
+            if old is None and stored and stored.get("message") != self.message.id:
+                try:  # (a menu left over from before a restart has no Navigator any more: delete its message by id)
+                    await interaction.client.get_partial_messageable(stored["channel"]).get_partial_message(stored["message"]).delete()
+                except discord.HTTPException:
+                    pass  # already gone, or no permission
+            _LIVE[self.owner.id] = self
+            mine = {"channel": self.message.channel.id, "message": self.message.id}
+            await community.update(_menu_key(self.owner.id), {}, lambda data: (data.clear(), data.update(mine)))
+        except Exception:  # never break /play over housekeeping
+            log.exception("could not replace the old menu")
+
+    async def close_menu(self) -> None:
+        """Take this menu away: stop it and delete its message."""
+        self.stop()
+        if self._ticker is not None:
+            self._ticker.cancel()
+        if _LIVE.get(self.owner.id) is self:
+            del _LIVE[self.owner.id]
+        if self.message is not None:
+            try:
+                await self.message.delete()
+            except discord.HTTPException:
+                pass
 
     async def _respond(self, interaction: discord.Interaction) -> None:
         """Answer a click by showing the new panel. If Discord won't take the answer any more (the click was
@@ -192,6 +257,11 @@ class Navigator(ui.LayoutView):
             from .levelup import check  # local import: levelup needs the finished ui package
 
             self._levels = await check(interaction, self.user, self._levels)
+            if self._popup_rare:
+                from .popup import rare_embed, send
+
+                finds, self._popup_rare = self._popup_rare, []
+                await send(interaction, rare_embed(finds), self.owner)
         except (discord.NotFound, discord.InteractionResponded) as error:
             log.warning("interaction response failed (%s); editing the message directly", error)
             if self.message is None:
@@ -319,6 +389,7 @@ class Navigator(ui.LayoutView):
         if screen.result is not None:  # a win or a loss: show what happened on a page of its own first
             result, screen.result = screen.result, None
             self._unsent = result
+            self._popup_rare = result.rare
             screen = self.screen = ResultScreen(self, result, screen)
             page = await screen.build()
         self._swap_items()
@@ -367,6 +438,8 @@ class Navigator(ui.LayoutView):
         await report_error(interaction, error, self.screen.id if self.screen else "?")
 
     async def on_timeout(self) -> None:
+        if _LIVE.get(self.owner.id) is self:
+            del _LIVE[self.owner.id]
         if self._ticker is not None:
             self._ticker.cancel()
         if self.screen is not None:
@@ -424,9 +497,9 @@ class ResultScreen(Screen):
             extra, self._ticking = r.live()
             lines += extra
         body = [text(line) for line in lines]  # (the panel header already shows the title)
-        buttons = [] if r.then else [button(label, emoji=emoji, on_click=self._act(handler)) for label, emoji, handler in r.actions]
-        if r.again is not None and not r.then:  # (with more pages to come, the choices wait for the last one)
-            buttons.append(button(r.again_label, emoji=emojis.icon('again', '🔁'), style=discord.ButtonStyle.primary, on_click=self._again))
+        buttons = [button(label, emoji=emoji, on_click=self._act(handler)) for label, emoji, handler in r.actions]
+        if r.again is not None:
+            buttons.append(button(r.again_label, emoji=emojis.icon('again', '🔁'), style=discord.ButtonStyle.primary, on_click=self._again, disabled=r.again_locked))
         buttons.append(button(r.back_label, emoji=emojis.icon('next', '➡️'), on_click=self._back))
         body.append(row(*buttons))
         return Page(r.title, body, accent=r.accent)
@@ -444,11 +517,7 @@ class ResultScreen(Screen):
 
     async def _back(self, interaction: discord.Interaction) -> None:
         self.nav.screen = self.origin
-        if self.shown.then:
-            following, *rest = self.shown.then
-            self.origin.result = replace(following, then=rest)  # the next page carries the ones after it
-            await self.origin.refresh(interaction)
-        elif self.shown.back is not None:
+        if self.shown.back is not None:
             await self.shown.back(interaction)
         else:
             await self.origin.refresh(interaction)

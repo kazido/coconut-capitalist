@@ -924,6 +924,7 @@ A gadget (an upgrade level on your fishing skill, like the mining reactor, not a
 - **Burger** is now a pet feast (`pet_food.xp_mult = 5` on a tier-3 food: 25,000 pet xp, x3 to a foraging pet). Not sellable.
 - **Scroll wiki pages** show the enchant they apply (its description, what it goes on, max level).
 - **Rare-drop fanfare** (`cococap/ui/flair.py`): level 1 (rarity 4+, odds 1-in-100 or rarer) is a highlighted line; level 2 (rarity 5+ or 1-in-700+) is a big banner. Everyday finds, fish and crops never get one. Wired into chopping, digging, banked mining loot, fishing extras/boss loot/chests and farming extras.
+- **Loot screen and popups** (`ui/rewards.py`, `ui/popup.py`, `ui/levelup.py`): the loot screen is the LAST screen of every action and carries the next-action buttons (Again greys out only while a timed event, the mining scarab, waits). Rare drops are listed like any item and also sent (`Result.rare`) as ONE ephemeral embed popup (item, quantity, rarity colour, drop odds) with Share (pick a text channel, posts publicly with the player's name) and Close. Level-ups use the same popup (one per click, multi-level jumps as one). Popups never break the click: errors are logged and swallowed.
 - **Emoji:** every item and enchant now has a placeholder emoji (a test fails if one has none), ready to be swapped for custom ones.
 
 ## Seasoning trade-off, everything sells, rare scrolls, no chop bits, Back = up one level
