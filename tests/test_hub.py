@@ -444,9 +444,8 @@ async def test_the_tools_page_is_a_compact_list_without_equip_buttons_and_leads_
     text = all_text(nav)
     assert "Starter Axe" in text and "Tin Watering Can" in text and "Farming" in text and "Foraging" in text and "power" in text
     assert "✅" not in text and not [b for b in buttons(nav) if b.label in ("Equip", "Equipped")]
-    await choose(nav, inter, select_named(nav, "Choose a tab"), "upgrade")
-    assert nav.screen.tab == "upgrade"
-    await click(nav, inter, "Back to tools")
+    await choose(nav, inter, select_named(nav, "Choose a tab"), "enchant")
+    assert nav.screen.tab == "enchant"
     assert nav.screen.id == "tools"
 
 
@@ -1372,11 +1371,25 @@ from cococap.services import foraging as foraging_service  # noqa: E402
 OPEN_HOUR = 490_000 * 3600 + 60  # a minute into an hour: the community tree is standing
 
 
+# a smithed axe: the starter template with three high-tier parts (the old upgrade chain is gone)
+SMITHED_PARTS = {"base": {"tier": 4, "trait": None}, "trim": {"tier": 4, "trait": None}, "accent": {"tier": 4, "trait": None}}
+
+
+async def axe_power(user):
+    """The power the player's equipped foraging axe really swings with (a smithed one is not the bare template)."""
+    from cococap.services.equipment import effective_stats
+
+    return effective_stats(await user.equipped_instance("foraging"), get_registry()).power
+
+
 async def with_axe(user_id=1, flags=(), template="tool_axe_starter"):
     from cococap.services.equipment import add_enchant, equip
 
     user = await User.get(user_id)
-    axe = await user.give_instance(template)
+    if template == "smithed":
+        axe = await user.give_instance("tool_axe_starter", parts=SMITHED_PARTS, quality="Crude")
+    else:
+        axe = await user.give_instance(template)
     await equip(user, "foraging", axe.id)
     if "soloist" in flags:
         await add_enchant(user, axe.id, "soloist")
@@ -1436,10 +1449,10 @@ async def test_a_second_chop_click_on_a_fallen_tree_does_not_pay_twice(db, monke
 async def test_heavy_trees_are_slower_for_a_lone_chopper_and_soloist_fixes_it(db, monkeypatch):
     freeze_time(monkeypatch)
     heavy = get_registry().foraging.heavy_zone
-    await with_axe(1, template="tool_axe_reinforced")
+    await with_axe(1, template="smithed")
     nav, _ = await hub("trees", tab="own", tree=foraging_service.Tree(heavy, 100, 100))
     assert "Heavy tree" in all_text(nav)
-    await with_axe(2, flags=("soloist",), template="tool_axe_reinforced")
+    await with_axe(2, flags=("soloist",), template="smithed")
     nav, _ = await hub("trees", tab="own", tree=foraging_service.Tree(heavy, 100, 100), user_id=2)
     assert "Heavy tree" not in all_text(nav)
 
@@ -1556,8 +1569,8 @@ async def test_home_only_says_whether_check_in_is_ready_and_the_timers_live_on_t
 
 async def test_a_spot_wears_out_and_moves_on_by_itself_and_a_wrong_style_only_glances_off(db, monkeypatch):
     freeze_time(monkeypatch)
-    user = await with_axe(template="tool_axe_reinforced")
-    power = get_registry().item("tool_axe_reinforced").tool.power
+    user = await with_axe(template="smithed")
+    power = await axe_power(user)
     nav, inter = await hub("trees", tab="own", tree=foraging_service.Tree(1, 1_000_000, 1_000_000))
     rules = get_registry().foraging
     right = nav.screen.spot.stance(rules)
@@ -1575,8 +1588,8 @@ async def test_a_spot_wears_out_and_moves_on_by_itself_and_a_wrong_style_only_gl
 
 async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
     freeze_time(monkeypatch, good_chops=True)
-    await with_axe(template="tool_axe_reinforced")
-    power = get_registry().item("tool_axe_reinforced").tool.power
+    user = await with_axe(template="smithed")
+    power = await axe_power(user)
     nav, inter = await hub("trees", tab="own", tree=foraging_service.Tree(1, 10_000, 10_000))
     await chop(nav, inter)
     bonus = round(power * (1 + RULES_CHOP.good_chop_bonus))
@@ -1589,8 +1602,8 @@ async def test_a_good_chop_does_extra_damage_and_says_so(db, monkeypatch):
 
 async def test_the_community_tree_has_the_same_spot_and_wear(db, monkeypatch):
     freeze_time(monkeypatch)
-    user = await with_axe(template="tool_axe_reinforced")
-    power = get_registry().item("tool_axe_reinforced").tool.power
+    user = await with_axe(template="smithed")
+    power = await axe_power(user)
     nav, inter = await hub("trees", tab="grove")
     assert "left (about" in all_text(nav) and "per swing" in all_text(nav)
     await chop(nav, inter, zone=3)

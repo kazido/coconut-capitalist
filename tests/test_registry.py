@@ -179,7 +179,7 @@ async def test_stars_are_their_own_stacks(db):
     assert await user.items() == {"material_gold_ore": 5, "material_gold_ore_s2": 2}
 
 
-@pytest.mark.parametrize("ids,problem", [('"no_such_item"', "does not exist"), ('"material_hardwood", "tool_pickaxe_steel"', "plain material"), ('"material_hardwood", "material_hardwood_s2"', "does not exist")])
+@pytest.mark.parametrize("ids,problem", [('"no_such_item"', "does not exist"), ('"material_hardwood", "tool_pickaxe_rookie"', "plain material"), ('"material_hardwood", "material_hardwood_s2"', "does not exist")])
 def test_bad_starrable_lists_are_rejected(data, ids, problem):
     text = (data / "economy.toml").read_text()
     start = text.index("starrable = [")

@@ -9,7 +9,7 @@ from cococap.screens import fish as fish_screen
 from cococap.services import fishing as f
 from cococap.services import mining
 from cococap.services import shop
-from cococap.services.equipment import EffectiveStats, equip
+from cococap.services.equipment import EffectiveStats, effective_stats, equip
 from cococap.services.party import Party
 from cococap.user import User
 from tests.conftest import set_columns
@@ -24,10 +24,20 @@ def rod(power=3):
     return EffectiveStats(power=power, requirement=0, stats={"power": float(power)})
 
 
+# a smithed rod: the starter template with three high-tier parts (the old upgrade chain is gone)
+SMITHED = {"base": {"tier": 4, "trait": None}, "trim": {"tier": 4, "trait": None}, "accent": {"tier": 4, "trait": None}}
+
+
+async def give_rod(user, rod_name):
+    if rod_name == "tool_rod_starter":
+        return await user.give_instance(rod_name)
+    return await user.give_instance("tool_rod_starter", parts=SMITHED, quality="Crude")
+
+
 async def player(user_id=1, rod_name="tool_rod_starter"):
     user = await User.get(user_id)
     if rod_name:
-        inst = await user.give_instance(rod_name)
+        inst = await give_rod(user, rod_name)
         await equip(user, "fishing", inst.id)
     return user
 
@@ -343,7 +353,7 @@ async def test_pulling_up_the_line_costs_nothing(db, clock):
 
 
 async def test_a_better_rod_shows_how_many_slips_it_forgives(db):
-    user = await player(1, "tool_rod_masterwork")
+    user = await player(1, "tool_rod_starter_smithed")
     nav, _ = await hub("fish")
     assert "forgives" in all_text(nav)
 
@@ -541,33 +551,6 @@ async def test_landing_a_fish_can_bring_coral_with_it(db):
 
 
 # ---- the pickaxe: the first upgrade is plain ore, later ones add a little from other skills ----------------------------------
-def test_the_first_pickaxe_upgrade_needs_only_ore_and_the_next_adds_a_little_from_other_skills():
-    first = REG.item("tool_pickaxe_rookie").tool.upgrade.items
-    assert {REG.item(i).skill for i in first} == {"mining"}
-    second = REG.item("tool_pickaxe_reinforced").tool.upgrade.items
-    skills = {REG.item(i).skill for i in second}
-    assert skills == {"mining"}  # (the first two steps of a long chain use only the tool's own skill)
-    third = REG.item("tool_pickaxe_masterwork").tool.upgrade.items
-    assert "mining" in {REG.item(i).skill for i in third} and len({REG.item(i).skill for i in third}) > 1
-    for item_id in (*first, *second, *third):  # every material really drops somewhere
-        assert REG.item(item_id).drop is not None, item_id
-
-
-async def test_you_can_upgrade_a_pickaxe_with_nothing_but_ore_at_first(db):
-    from cococap.services import upgrades
-
-    user = await User.get(1)
-    await set_columns(user, purse=10**6)
-    pick = await user.give_instance("tool_pickaxe_rookie")
-    await equip(user, "mining", pick.id)
-    cost = REG.item("tool_pickaxe_rookie").tool.upgrade
-    for item_id, quantity in cost.items.items():
-        await user.add_item(item_id, quantity)
-    done = await upgrades.upgrade(user, pick.id, REG)
-    assert done.target.id == "tool_pickaxe_reinforced"
-    assert (await user.instance(pick.id)).template_id == "tool_pickaxe_reinforced"
-
-
 async def test_a_harvest_can_bring_plant_fiber(db):
     from cococap.services import farming
 
@@ -1778,20 +1761,12 @@ async def test_the_field_notes_open_while_reeling_and_the_reel_carries_on_where_
 
 
 # ---- a better rod is a noticeably faster rod ----------------------------------------------------------------------------------------------------
-def test_each_rod_upgrade_cuts_the_wait_by_something_you_can_feel():
-    starter, reinforced, master = (f.typical_wait(REG.item(r).tool.power, RULES) for r in ("tool_rod_starter", "tool_rod_reinforced", "tool_rod_masterwork"))
-    assert reinforced < 0.7 * starter and master < 0.65 * reinforced  # each step is a third or more off the wait
-    assert master < 0.4 * starter
-    assert f.typical_wait(100, RULES) >= RULES.bite.wait_min * RULES.bite.min_wait_factor  # (it still never hits zero)
-    assert f.typical_wait(3, RULES, bite_speed=0.2) < f.typical_wait(3, RULES)  # a Lure on top
-
-
 async def test_the_fishing_page_tells_you_how_long_your_rod_takes_to_bite(db):
     user = await User.get(1)
-    inst = await user.give_instance("tool_rod_reinforced")
+    inst = await give_rod(user, "tool_rod_starter_smithed")
     await equip(user, "fishing", inst.id)
     nav, _ = await hub("fish")
-    expected = f.typical_wait(REG.item("tool_rod_reinforced").tool.power, RULES)
+    expected = f.typical_wait(effective_stats(inst, REG).power, RULES)  # the smithed rod, not the bare template
     assert f"bites in ~**{expected:.0f}s**" in all_text(nav)
 
 
@@ -1818,14 +1793,6 @@ async def test_the_water_sets_the_xp_and_a_better_rod_does_not_change_it(db):
         assert cast.xp == deep.xp
         results[power] = cast.xp
     assert results[3] == results[120]
-
-
-def test_a_fishing_boss_pays_a_haul_of_the_fish_tools_are_upgraded_with():
-    loot = {row.item: row for row in REG.fishing.boss.loot}
-    for fish in ("fish_salmon", "fish_trout"):
-        assert loot[fish].chance == 1.0 and loot[fish].max >= 6  # a sure haul, like the mining vault
-    upgrade_fish = {i for t in REG.items.values() if t.tool and t.tool.upgrade for i in t.tool.upgrade.items if REG.item(i).category == "fish"}
-    assert {"fish_salmon", "fish_trout", "fish_pufferfish", "fish_tuna"} <= upgrade_fish and {"fish_salmon", "fish_trout", "fish_pufferfish", "fish_tuna"} <= set(loot)
 
 
 # ---- a clean reel pays, and a cast tells you how long to wait ---------------------------------------------------------------------------
@@ -1883,7 +1850,7 @@ async def test_a_boss_reel_with_slack_left_pays_a_bonus_on_its_bits(db):
 
 async def test_the_catch_page_says_it_was_a_clean_reel_and_the_reel_page_says_slack_pays(db, clock, monkeypatch):
     monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
-    user, nav, inter = await open_fishing(power_item="tool_rod_reinforced")  # power 8: forgives a wrong arrow
+    user, nav, inter = await open_fishing(power_item="tool_rod_starter_smithed")  # power 8: forgives a wrong arrow
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
     clock[0] = cast.bite_at + 1
@@ -1897,13 +1864,13 @@ async def test_the_catch_page_says_it_was_a_clean_reel_and_the_reel_page_says_sl
 async def test_casting_tells_you_how_long_the_bite_should_take_and_a_better_rod_shortens_it(db, clock, monkeypatch):
     monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: REG.item("fish_cod"))
     waits = {}
-    for uid, item in ((1, "tool_rod_starter"), (2, "tool_rod_masterwork")):
+    for uid, item in ((1, "tool_rod_starter"), (2, "tool_rod_starter_smithed")):
         user, nav, inter = await open_fishing(uid, item)
         await click(nav, inter, "Cast")
         line = next(l for l in all_text(nav).split("\n") if "A bite in about" in l)
         waits[item] = (int(line.split("**")[1].rstrip("s")), "starter rod" in line)
     assert waits["tool_rod_starter"][1] is False  # (a starter rod's own line does not compare itself with itself)
-    assert waits["tool_rod_masterwork"][0] < waits["tool_rod_starter"][0] and waits["tool_rod_masterwork"][1] is True
+    assert waits["tool_rod_starter_smithed"][0] < waits["tool_rod_starter"][0] and waits["tool_rod_starter_smithed"][1] is True
     starter_wait = round(f.typical_wait(REG.item("tool_rod_starter").tool.power, RULES) * f.water_by_id(REG, nav.screen.water).wait_multiplier)
     assert waits["tool_rod_starter"][0] == starter_wait
 
@@ -1938,16 +1905,6 @@ def test_without_auto_reel_you_start_at_the_first_arrow():
     assert cast.progress == 0
 
 
-def test_a_cast_carries_the_rods_abilities():
-    from cococap.models.instance import ItemInstance
-    from cococap.services.equipment import effective_stats
-
-    for template, field, value in (("tool_rod_tidecaller", "auto_steps", 1), ("tool_rod_abyssal", "auto_steps", 2), ("tool_rod_lantern", "bycatch", 0.10)):
-        stats = effective_stats(ItemInstance(id=1, owner_id=1, template_id=template, enchants={}, rolled={}), REG)
-        cast = f.cast_line(stats, Random(1), T0, REG)
-        assert getattr(cast, field) == pytest.approx(value), template
-
-
 async def test_bycatch_brings_a_second_different_fish_and_counts_it(db):
     user = await player(1)
     cast = cast_of("fish_cod", slips=0)
@@ -1967,7 +1924,7 @@ async def test_bycatch_brings_a_second_different_fish_and_counts_it(db):
 async def test_the_catch_page_mentions_the_bycatch(db, clock, monkeypatch):
     fish = iter([REG.item("fish_cod"), REG.item("fish_bass")])  # the cast brings a cod; the bycatch roll brings a bass
     monkeypatch.setattr(f, "roll_fish", lambda rng, reg=None, water=None, rare_luck=0.0: next(fish))
-    user, nav, inter = await open_fishing(power_item="tool_rod_lantern")
+    user, nav, inter = await open_fishing(power_item="tool_rod_starter_smithed")
     await click(nav, inter, "Cast")
     cast = nav.screen.cast
     cast.bycatch = 1.0
@@ -1976,16 +1933,6 @@ async def test_the_catch_page_mentions_the_bycatch(db, clock, monkeypatch):
     await click(nav, inter, "Pull up the line")
     await reel_in(nav, inter, cast)
     assert "Bycatch" in all_text(nav) and await user.item_quantity("fish_bass") == 1
-
-
-def test_the_rod_roads_data_each_road_has_its_own_ability_and_fish():
-    angler = ["tool_rod_tidecaller", "tool_rod_moonlit", "tool_rod_leviathan", "tool_rod_abyssal", "tool_rod_poseidon"]
-    treasure = ["tool_rod_lantern", "tool_rod_siren", "tool_rod_trident", "tool_rod_kraken", "tool_rod_trophy"]
-    steps = [REG.item(a).tool.stats["auto_reel"] for a in angler]
-    chances = [REG.item(t).tool.stats["bycatch"] for t in treasure]
-    assert steps == sorted(steps) and chances == sorted(chances) and steps[-1] > steps[0]
-    for a, t in zip(angler, treasure, strict=True):
-        assert REG.item(a).tool.ability == "auto_reel" and REG.item(t).tool.ability == "bycatch"
 
 
 async def test_bycatch_is_never_a_second_helping_of_the_same_fish(db, monkeypatch):
@@ -2010,7 +1957,7 @@ def test_big_accomplishments_pay_well_in_xp():
 
 async def test_the_wait_estimate_can_be_turned_off_in_settings(db):
     user = await User.get(1)
-    await equip(user, "fishing", (await user.give_instance("tool_rod_reinforced")).id)
+    await equip(user, "fishing", (await give_rod(user, "tool_rod_starter_smithed")).id)
     await user.set_setting("fishing_estimate", False)
     nav, _ = await hub("fish")
     assert "bites in" not in all_text(nav) and "Rod **" in all_text(nav)

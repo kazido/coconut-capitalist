@@ -52,7 +52,7 @@ async def reset_player(user: User, rng: random.Random, registry: Registry | None
     old: list[tuple[ItemInstance, str]] = []  # (instance, its tool kind)
     best: dict[str, str | None] = {}  # kind -> the best step reached on that kind's chain
     enchants: list[tuple[int, str]] = []  # (level, scroll id) of every enchant on an old tool
-    for inst in await user.instances():
+    for inst in await user.instances(include_unknown=True):
         frozen = reg.legacy_tools.get(inst.template_id)  # frozen record of an old template, if it was one
         if frozen is not None and frozen.step == "starter":
             frozen = None if inst.parts else frozen
@@ -99,7 +99,7 @@ async def reset_player(user: User, rng: random.Random, registry: Registry | None
             parts_given += 1
 
     # Starters: one for each kind the player has no tool of now (smithed ones count as a tool).
-    have = {item.tool.kind for i in await user.instances() if (item := reg.find_item(i.template_id)) and item.tool}
+    have = {item.tool.kind for i in await user.instances(include_unknown=True) if (item := reg.find_item(i.template_id)) and item.tool}
     for starter in STARTER_TOOLS:
         kind = reg.item(starter).tool.kind
         if kind in have:

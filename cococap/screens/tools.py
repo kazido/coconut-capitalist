@@ -10,14 +10,32 @@ from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
 from cococap.screens.enchant import EnchantPane
 from cococap.screens.smithing import PartsPane, SmithingPane
-from cococap.screens.upgrade import UpgradePane, describe_stats
 from cococap.ui.tabs import TabsScreen
+
+# what a tool's extra stats say in words: stat -> (label, how to show the amount)
+STAT_WORDS = {
+    "danger_reduction": ("less creaking", "pct"), "ore_yield": ("more ore", "pct"), "bite_speed": ("faster bites", "pct"),
+    "rare_luck": ("better odds of rare fish", "pct"), "treasure_luck": ("better treasure odds", "pct"), "slips": ("extra forgiven arrow(s)", "int"),
+    "boss_luck": ("more bosses", "pct"), "braces": ("extra brace(s)", "int"),
+}
+
+
+def describe_stats(stats: dict[str, float]) -> str:
+    """"+4% more ore, 2% more creaking" for a tool's extra stats (a negative one reads as the opposite)."""
+    opposite = {"less creaking": "more creaking", "more ore": "less ore", "faster bites": "slower bites"}
+    parts = []
+    for stat, amount in stats.items():
+        label, how = STAT_WORDS.get(stat, (stat.replace("_", " "), "pct"))
+        if amount < 0:
+            label, amount = opposite.get(label, f"less {label}"), -amount
+        parts.append(f"+{amount:.0%} {label}" if how == "pct" else f"+{amount:g} {label}")
+    return ", ".join(parts)
 
 KIND_LABEL = {"pickaxe": "Mining", "axe": "Foraging", "sword": "Combat", "rod": "Fishing", "can": "Farming"}
 
 
 class ToolsPane(Screen):
-    """Your tool for each skill, as a compact list. Upgrade, Enchant, Smithing and Parts are the other tabs."""
+    """Your tool for each skill, as a compact list. Enchant, Smithing and Parts are the other tabs."""
 
     label = "Tools"
     emoji = emojis.Lazy("ui_anvil", "🧰")
@@ -46,7 +64,7 @@ class ToolsPane(Screen):
             inst = next((i for i in mine if i.id in equipped), mine[0])
             item = reg.item(inst.template_id)
             tool = item.tool
-            extra = ([f"{tool.path} path"] if tool.path else []) + ([describe_stats(tool.stats)] if tool.stats else [])
+            extra = [describe_stats(tool.stats)] if tool.stats else []
             if inst.parts:  # smithed: quality grade and the traits picked from its parts
                 extra += ([inst.quality] if inst.quality else []) + [reg.smithing.trait(p["trait"]).name for p in inst.parts.values() if p.get("trait")]
             lines.append(f"{item.emoji or emojis.icon('craft', '🔨')} **{instance_label(inst)}**  ·  {KIND_LABEL[kind]}  ·  power **{effective_stats(inst, reg).power}**"
@@ -76,11 +94,11 @@ class ToolsPane(Screen):
 
 
 class ToolsScreen(TabsScreen):
-    """The Tools page: your tools (the list), then Upgrade, Enchant, Smithing and Parts as tabs."""
+    """The Tools page: your tools (the list), then Enchant, Smithing and Parts as tabs."""
 
     id = "tools"
     label = "Tools"
     emoji = emojis.Lazy("ui_anvil", "🧰")
-    description = "Your tools: upgrade and enchant them"
+    description = "Your tools: smith, enchant and salvage them"
     links = ("inventory",)
-    panes = {"tools": ToolsPane, "upgrade": UpgradePane, "enchant": EnchantPane, "smithing": SmithingPane, "parts": PartsPane}
+    panes = {"tools": ToolsPane, "enchant": EnchantPane, "smithing": SmithingPane, "parts": PartsPane}

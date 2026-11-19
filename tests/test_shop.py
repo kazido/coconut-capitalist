@@ -32,7 +32,7 @@ async def test_the_shop_sells_no_tools_and_starter_tools_are_free_once(db):
     reg = get_registry()
     assert not [i.id for i in reg.shop_items() if i.tool]
     user = await rich()
-    for item_id in (*STARTER_TOOLS, "tool_axe_reinforced"):
+    for item_id in (*STARTER_TOOLS, "tool_dreamnail"):
         with pytest.raises(ShopError, match="isn't sold"):
             await buy(user, item_id)
     assert sorted(await claim_starter_tools(user)) == sorted(STARTER_TOOLS)
@@ -46,7 +46,7 @@ async def test_claiming_starters_skips_kinds_you_own_and_tools_you_already_had(d
     from cococap.services.shop import claim_starter_tools
 
     user = await rich()
-    await user.give_instance("tool_axe_reinforced")  # an axe of another make: no free axe
+    await user.give_instance("tool_axe_starter", smith_id=user.id, parts={"base": {"tier": 1, "trait": None}, "trim": {"tier": 1, "trait": None}, "accent": {"tier": 1, "trait": None}}, quality="Crude")  # a smithed axe: no free axe
     got = await claim_starter_tools(user)
     assert "tool_axe_starter" not in got and len(got) == 3
     assert await claim_starter_tools(user) == []  # each is handed out once ever

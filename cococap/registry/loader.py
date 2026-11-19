@@ -222,22 +222,6 @@ class Registry:
                     problems.append(f"{item.id}: crop.seed '{item.crop.seed}' is not a seed item")
                 elif seed.seed.grows_into != item.id:
                     problems.append(f"{item.id}: seed '{seed.id}' grows into '{seed.seed.grows_into}'")
-            if item.tool and item.tool.upgrade:
-                up = item.tool.upgrade
-                target = self.items.get(up.to)
-                if target is None or target.tool is None or target.tool.kind != item.tool.kind:
-                    problems.append(f"{item.id}: upgrade target '{up.to}' is not a {item.tool.kind}")
-                elif target.tool.power <= item.tool.power:
-                    problems.append(f"{item.id}: upgrade target '{up.to}' must be stronger")
-                problems += [f"{item.id}: upgrade needs unknown item '{m}'" for m in up.items if m not in self.items]
-            if item.tool and item.tool.fork:
-                fork = item.tool.fork
-                target = self.items.get(fork.to)
-                if target is None or target.tool is None or target.tool.kind != item.tool.kind or target.tool.power <= item.tool.power:
-                    problems.append(f"{item.id}: fork target '{fork.to}' must be a stronger {item.tool.kind}")
-                if item.tool.upgrade is None:
-                    problems.append(f"{item.id}: a fork needs a normal upgrade as the other path")
-                problems += [f"{item.id}: fork needs unknown item '{m}'" for m in fork.items if m not in self.items]
             if item.scroll and item.scroll.enchant not in self.enchants:
                 problems.append(f"{item.id}: scroll of unknown enchant '{item.scroll.enchant}'")
             if item.seed:

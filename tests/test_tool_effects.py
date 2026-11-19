@@ -19,13 +19,6 @@ def test_every_kind_of_tool_starts_at_power_three():
     assert {kind: REG.item(item).tool.power for kind, item in STARTERS.items()} == {kind: 3 for kind in STARTERS}
 
 
-def test_a_starter_pickaxe_digs_plain_ore_and_each_step_still_pays_what_it_did():
-    d = REG.mining.descent
-    ore = lambda tool: tool_effects.effects("pickaxe", REG.item(tool).tool.power)[0].value  # noqa: E731
-    assert ore("tool_pickaxe_rookie") == "×1.00" and ore("tool_pickaxe_reinforced") == "×1.50" and ore("tool_pickaxe_masterwork") == "×2.50"
-    assert d.power_base == 3  # (the jump from level to level is the same as when it started at power 1)
-
-
 def test_a_starter_sword_hits_as_hard_as_it_did_when_it_started_at_power_one():
     p = REG.combat.player
     assert p.base_attack + p.attack_per_power * REG.item("tool_largebranch").tool.power == 17  # (14 + 3 x 1 before)
@@ -51,45 +44,6 @@ def test_every_kind_has_a_plain_sentence_about_what_power_is_for_and_a_better_to
     assert tool_effects.summary("axe", 5).startswith("Hit points per chop 5")
 
 
-async def test_the_upgrade_page_says_what_the_tool_does_and_what_the_next_one_changes(db):
-    user = await User.get(1)
-    for kind, item in STARTERS.items():
-        await user.give_instance(item)
-    nav, inter = await hub("tools", tab="upgrade")
-    seen = {}
-    for skill in ("Mining", "Foraging", "Combat", "Fishing", "Farming"):
-        await click(nav, inter, skill)
-        text = all_text(nav)
-        seen[next(line for line in text.split("\n") if line.startswith("### "))] = text
-    joined = "\n".join(seen.values())
-    assert len(seen) == 5
-    assert "Ore per lode: ×1.00 → **×1.50**" in joined  # the pickaxe
-    assert "Hit points per chop: 3 → **5**" in joined  # the axe
-    assert "Plots watered an hour: 3 → **4**" in joined  # the can
-    assert "Wait for a bite" in joined and "Forgiven wrong arrows" in joined and "Rare fish" in joined and "Extra fish per catch" in joined  # the rod
-    assert "Attack from the sword: +9 → **+15**" in joined  # the sword
-    for how in tool_effects.HOW.values():
-        assert how in joined  # each page opens with what power is for
-
-
-async def test_an_enchant_or_rolled_bonus_is_counted_in_the_before_and_after(db):
-    user = await User.get(1)
-    await set_columns(user, purse=10**9)
-    await user.give_instance("tool_pickaxe_rookie", rolled={"power": 2})
-    nav, _ = await hub("tools", tab="upgrade")
-    # now 3 + 2 = 5 (x1.50), after 5 + 2 = 7 (x2.00): the bonus carries over to the better pickaxe
-    assert "Power **5** → **7**" in all_text(nav) and "Ore per lode: ×1.50 → **×2.00**" in all_text(nav)
-
-
-async def test_a_new_ability_is_announced_on_the_upgrade_that_gives_it(db):
-    user = await User.get(1)
-    await user.give_instance("tool_rustedbroadsword")
-    nav, _ = await hub("tools", tab="upgrade")
-    assert "New ability" in all_text(nav) and REG.item("tool_dreamnail").tool.ability_name in all_text(nav)
-    nav2, _ = await hub("tools", tab="upgrade", user_id=2)  # (nobody has anything to upgrade: no page)
-    assert "Nothing to upgrade" in all_text(nav2)
-
-
 async def test_the_tools_page_shows_each_tool_with_its_power(db):
     user = await User.get(1)
     for kind, item in STARTERS.items():
@@ -99,23 +53,6 @@ async def test_the_tools_page_shows_each_tool_with_its_power(db):
     lines = all_text(nav).split("\n")
     for skill in ("Mining", "Foraging", "Fishing", "Farming", "Combat"):
         assert sum(skill in line and "power **" in line for line in lines) == 1, skill  # one compact line per skill
-
-
-async def test_each_requirement_of_an_upgrade_is_on_its_own_line(db):
-    from tests.test_upgrades import cost_of
-
-    user = await User.get(1)
-    await user.give_instance("tool_axe_starter")
-    nav, _ = await hub("tools", tab="upgrade")
-    lines = all_text(nav).split("\n")
-    cost = cost_of("tool_axe_starter")
-    wanted = [f"{REG.item(i).display}  **0/{q}**" for i, q in cost.items.items()]
-    assert len(wanted) >= 2
-    for requirement in wanted:
-        assert sum(requirement in line for line in lines) == 1
-    bits_line = next(line for line in lines if "(you have" in line)
-    assert all(requirement not in bits_line for requirement in wanted) and "·" not in bits_line  # (the bits are not squeezed onto the same line)
-    assert len({lines.index(next(line for line in lines if r in line)) for r in wanted}) == len(wanted)
 
 
 # ---- every upgrade changes several things at once -------------------------------------------------------------------------------------
@@ -139,55 +76,6 @@ def test_more_power_never_gives_less_of_anything():
         assert all(high[k] >= low[k] for k in low) and any(high[k] > low[k] for k in low), kind
 
 
-async def test_the_extras_are_in_the_stats_the_games_read(db):
-    from cococap.services.equipment import effective_stats
-
-    user = await User.get(1)
-    pick = effective_stats(await user.give_instance("tool_pickaxe_ironbound"))
-    assert pick.stats["danger_reduction"] == pytest.approx(0.003 * 12 * 1.6) and pick.stats["braces"] == 0 and pick.stats["rich_chance"] == 0  # (the Warden leans safe)
-    deep = effective_stats(await user.give_instance("tool_pickaxe_mythril"))
-    assert deep.stats["braces"] == 1 and deep.stats["danger_reduction"] > pick.stats["danger_reduction"]
-    prospector = effective_stats(await user.give_instance("tool_pickaxe_prospector"))
-    assert prospector.stats["danger_reduction"] == 0 and prospector.stats["braces"] == 0 and prospector.stats["rich_chance"] == pytest.approx(0.0006 * 12 * 2.5)
-    axe = effective_stats(await user.give_instance("tool_axe_masterwork"))
-    assert axe.stats["good_chop"] > 0 and axe.stats["wear_slow"] > 0 and effective_stats(await user.give_instance("tool_axe_starter")).stats["good_chop"] == 0
-
-
-async def test_a_better_pickaxe_makes_a_safer_and_richer_start_to_a_dig(db):
-    from cococap.services import mining
-
-    user = await User.get(1)
-    await equip(user, "mining", (await user.give_instance("tool_pickaxe_rookie")).id)
-    plain = await mining.start_run(user, Random(1))
-    inst = await user.give_instance("tool_pickaxe_mythril")  # a Warden: safety and braces
-    await equip(user, "mining", inst.id)
-    deep = await mining.start_run(user, Random(1))
-    assert deep.growth_factor < plain.growth_factor and deep.braces > plain.braces and deep.auto_bomb_every == 17
-    await equip(user, "mining", (await user.give_instance("tool_pickaxe_veinhunter")).id)  # a Prospector: rich lodes and Multi-Mine, no pressure slow
-    rich = await mining.start_run(user, Random(1))
-    assert rich.growth_factor == 1.0 and rich.rich_bonus > plain.rich_bonus and rich.multi_mine == 0.55 and rich.auto_bomb_every == 0
-
-
-async def test_a_better_can_gives_bigger_harvests_and_sometimes_the_seed_back(db):
-    from cococap.services import farming as f
-
-    users = {}
-    for uid, can in ((1, "tool_can_tin"), (2, "tool_can_moonwell")):
-        user = await User.get(uid)
-        await equip(user, "farming", (await user.give_instance(can)).id)
-        users[uid] = user
-    back = {}
-    for uid, user in users.items():
-        back[uid] = 0
-        for i in range(120):
-            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
-            await user.add_item("seed_apple", 1)
-            await f.plant(user, 1, "seed_apple", now=0, registry=REG)
-            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
-            back[uid] += (await f.harvest(user, 1, Random(i), 0, REG)).extras["seed_apple"]
-    assert back[1] == 0 and back[2] > 10  # (the starter can never gives a seed back: 18% for the best can)
-
-
 async def test_a_better_sword_makes_you_tougher_not_only_stronger_and_a_starter_is_as_before(db):
     from cococap.services import combat
 
@@ -201,13 +89,3 @@ async def test_a_better_sword_makes_you_tougher_not_only_stronger_and_a_starter_
     dream = await combat.build_player(user, REG)
     assert dream.max_hp > starter.max_hp and dream.defense > starter.defense and dream.attack > starter.attack
 
-
-async def test_the_upgrade_page_lists_each_of_the_several_changes_for_every_tool(db):
-    user = await User.get(1)
-    for item in STARTERS.values():
-        await user.give_instance(item)
-    nav, inter = await hub("tools", tab="upgrade")
-    for skill in ("Mining", "Foraging", "Combat", "Fishing", "Farming"):
-        await click(nav, inter, skill)
-        arrows = [line for line in all_text(nav).split("\n") if "→ **" in line and ":" in line and "Power" not in line]
-        assert len(arrows) >= 3, arrows  # at least three "label: now → after" lines on every tool's page

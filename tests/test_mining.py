@@ -1004,15 +1004,6 @@ def test_going_deeper_is_a_real_choice_not_always_the_right_one():
     assert balanced > cautious and balanced > reckless * 1.2
 
 
-def test_one_vault_is_a_part_of_the_next_pickaxe_not_the_whole_of_it():
-    """The reward for reaching the bottom should not pay for a pickaxe upgrade on its own: the ores it holds are a fraction of what Masterwork asks."""
-    ask = REG.item("tool_pickaxe_steel").tool.upgrade.items  # (the step into Masterwork)
-    for ore, quantity in D.vault_ore.items():
-        assert quantity <= ask[ore], ore  # never more than the whole ask of any ore...
-    shares = [D.vault_ore[ore] / ask[ore] for ore in ask if ore in D.vault_ore]
-    assert min(shares) <= 0.35 and max(shares) < 1  # ...and well under half of at least one of them: it takes several trips
-
-
 # ---- checkpoints: landmark rows ---------------------------------------------------------------------------------------------------
 def calm_run(**kw):
     run = make_run(rules=rules_with(rich_chance=0.0, vent_chance=0.0, cache_chance=0.0, **kw))
@@ -1127,27 +1118,6 @@ def test_the_pools_open_up_as_you_go_deeper():
         seen |= set(table)
 
 
-def test_the_new_finds_all_sell_and_each_road_of_the_pickaxe_upgrades_with_its_own_rock():
-    new = ("material_coal", "material_clay", "material_amber", "material_tin_ore", "material_silver_ore", "material_garnet", "material_obsidian", "material_platinum_ore", "material_sapphire", "material_emerald")
-    for item_id in new:
-        item = REG.item(item_id)
-        assert item.skill == "mining" and item.sell_price > 0 and item.drop and item_id in D.hardness
-    def spent_on(road):
-        found, tool = set(), REG.item("tool_pickaxe_masterwork")
-        costs = [tool.tool.upgrade if road == "Warden" else tool.tool.fork]
-        item = REG.item(costs[0].to)
-        while item.tool.upgrade:
-            costs.append(item.tool.upgrade)
-            item = REG.item(item.tool.upgrade.to)
-        for cost in costs:
-            found |= set(cost.items)
-        return found
-    warden, prospector = spent_on("Warden"), spent_on("Prospector")
-    assert {"material_coal", "material_clay", "material_tin_ore", "material_silver_ore", "material_amber", "material_garnet"} <= warden  # soft and firm rock
-    assert {"material_obsidian", "material_platinum_ore", "material_sapphire", "material_emerald", "material_gold_ore"} <= prospector  # hard rock
-    assert not {i for i in new if rock_of(i) == "hard"} & warden and not {i for i in new if rock_of(i) != "hard"} & prospector
-
-
 def test_in_each_pool_the_harder_rock_holds_the_better_stuff():
     worth = {"soft": set(), "firm": set(), "hard": set()}
     for table in RULES.depth_tables[:3]:  # (above the gems and the spirit, which would swamp the comparison)
@@ -1215,20 +1185,6 @@ def test_multi_mine_never_digs_a_wyrmhole_or_the_column_you_already_dug():
         run.rng = Random(seed)
         result = run.dig()
         assert result.multi in ((1,), ()) and 2 not in result.multi and 3 not in result.multi
-
-
-def test_the_roads_chain_climbs_the_abilities_and_the_numbers_in_the_text_match_the_stats():
-    wardens = ["tool_pickaxe_ironbound", "tool_pickaxe_crystal", "tool_pickaxe_deepdelver", "tool_pickaxe_mythril", "tool_pickaxe_worldsplitter"]
-    prospectors = ["tool_pickaxe_prospector", "tool_pickaxe_geode", "tool_pickaxe_seekers", "tool_pickaxe_veinhunter", "tool_pickaxe_motherlode"]
-    bombs = [REG.item(w).tool.stats["auto_bomb"] for w in wardens]
-    multis = [REG.item(p).tool.stats["multi_mine"] for p in prospectors]
-    assert bombs == sorted(bombs, reverse=True) and multis == sorted(multis)  # better tools: sooner bombs, more multi-mining
-    for w, b in zip(wardens, bombs, strict=True):
-        tool = REG.item(w).tool
-        assert tool.ability == "auto_bomb" and tool.ability_name == "Auto-Bomb" and f"Every {int(b)} rows" in tool.ability_description
-    for p, mm in zip(prospectors, multis, strict=True):
-        tool = REG.item(p).tool
-        assert tool.ability == "multi_mine" and tool.ability_name == "Multi-Mine" and f"{mm:.0%}" in tool.ability_description
 
 
 # ---- Mastery capstones -----------------------------------------------------------------------------------------------------------------------------

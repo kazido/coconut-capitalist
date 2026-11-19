@@ -540,14 +540,6 @@ async def test_a_can_only_waters_as_many_plots_an_hour_as_its_power(db):
     assert can.id
 
 
-async def test_a_better_can_waters_more_plots(db):
-    user = await User.get(1)
-    await with_can(user, "tool_can_iron")
-    await plant_many(user, 6)
-    report = await f.water(user, T0, REG)
-    assert report.watered == REG.item("tool_can_iron").tool.power == 5 and report.thirsty == 1
-
-
 async def test_plots_watered_before_a_new_one_is_planted_still_use_up_the_can(db):
     user = await User.get(1)
     await with_can(user)
@@ -557,36 +549,6 @@ async def test_plots_watered_before_a_new_one_is_planted_still_use_up_the_can(db
     await f.plant(user, 4, "seed_coconut", now=T0, registry=REG)
     late = await f.water(user, T0 + 30, REG)
     assert late.watered == 0 and late.thirsty == 1  # the can was already used on three plots this hour
-
-
-def test_the_can_chain_is_a_chain_of_waters_that_ends_at_the_whole_farm():
-    chain = []
-    tool = REG.item("tool_can_tin")
-    while tool:
-        chain.append(tool)
-        tool = REG.item(tool.tool.upgrade.to) if tool.tool.upgrade else None
-    assert [t.tool.power for t in chain] == sorted({t.tool.power for t in chain}) and chain[0].tool.power == 3 and chain[-1].tool.power == f.PLOTS
-    assert all(t.tool.kind == "can" and t.skill == "farming" for t in chain)
-    assert all(t.price == 0 for t in chain)  # none is sold (the first is a free starter tool)
-
-
-async def test_a_better_can_brings_bigger_harvests_and_more_drops(db):
-    plain, rich = await User.get(1), await User.get(2)
-    await with_can(plain)
-    await with_can(rich, "tool_can_moonwell")
-    amounts, drops = {}, {}
-    for user in (plain, rich):
-        total, found = 0, 0
-        for i in range(80):
-            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
-            await user.add_item("seed_lemon", 1)
-            await f.plant(user, 1, "seed_lemon", now=T0, registry=SURE)
-            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
-            h = await f.harvest(user, 1, Random(i), T0, SURE)
-            total += h.amount
-            found += sum(h.extras.values())
-        amounts[user.id], drops[user.id] = total, found
-    assert amounts[2] > 1.1 * amounts[1] and drops[2] > 1.2 * drops[1]
 
 
 def test_longer_crops_roll_the_farming_drop_table_more_often():
@@ -615,17 +577,6 @@ async def test_a_harvest_pays_farming_materials_in_proportion_to_the_crop(db):
     assert sum(found["seed_watermelon"].values()) > 8 * sum(found["seed_apple"].values())
     table = {i.id for i in f.zone_materials(f.seed_zone("seed_watermelon", RULES), REG)}
     assert "material_compost" in found["seed_watermelon"] and {i.removesuffix("_s2").removesuffix("_s3") for i in found["seed_watermelon"] if i.startswith("material_")} <= table  # only its own zone's table
-
-
-def test_the_farming_materials_are_used_by_upgrades_across_the_game():
-    made = {"material_compost", "material_dewdrop", "material_beeswax", "material_living_vine"}
-    assert all(REG.item(m).skill == "farming" and REG.item(m).drop for m in made)
-    used = {m for t in REG.items.values() if t.tool and t.tool.upgrade for m in t.tool.upgrade.items}
-    assert made <= used  # every one of them is something you spend
-    outside = {t.tool.kind for t in REG.items.values() if t.tool and t.tool.kind != "can" and t.tool.upgrade and made & set(t.tool.upgrade.items)}
-    assert {"axe", "pickaxe", "rod", "sword"} <= outside  # ...in other skills' tools too, not only the can
-    rates = [REG.item(m).drop.rate for m in ("material_compost", "material_dewdrop", "material_beeswax", "material_living_vine")]
-    assert rates == sorted(rates) and len(set(rates)) == 4  # each rarer than the last
 
 
 async def test_a_plot_you_watered_and_then_harvested_does_not_use_up_the_can(db):
@@ -718,38 +669,6 @@ async def test_a_page_number_beyond_the_last_page_falls_back_to_the_last_one(db,
     nav.screen.page = 7  # (say a plot count shrank, or a stale click)
     await nav.screen.nav.refresh(inter)
     assert "Page 2/2" in [b.label for b in buttons_of(nav)] and nav.screen.page == 1
-
-
-async def test_a_sprinkler_can_sometimes_grows_a_second_cycle_and_an_alchemist_can_sometimes_doubles_a_harvest(db):
-    plain, sprinkler, alchemist = [await User.get(i) for i in (1, 2, 3)]
-    await with_can(plain, "tool_can_moonwell")
-    await with_can(sprinkler, "tool_can_moonwell")
-    await with_can(alchemist, "tool_can_athanor")
-    # the Sprinkler: with the roll forced to succeed, a watered plot grows two cycles; with `sprinkle` removed it grows one
-    sprinkle = sprinkler_can_stat = (await f.can_stats(sprinkler)).stats["sprinkle"]
-    assert sprinkle > 0 and (await f.can_stats(alchemist)).stats["transmute"] > 0 and "sprinkle" not in (await f.can_stats(alchemist)).stats
-    for user in (sprinkler,):
-        await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
-        await user.add_item("seed_lemon", 1)
-        await f.plant(user, 1, "seed_lemon", now=T0, registry=SURE)
-    cycles = set()
-    for hour in range(40):
-        await sprinkler.update_skill("farming", lambda m: (setattr(m.farm.plot_1, "cycle", 0), setattr(m.farm.plot_1, "watered", -1), setattr(m.farm.plot_1, "can_harvest", False)))
-        await f.water(sprinkler, T0 + hour * HOUR, registry_with(grow_chance=0.0, blessing_chance=0.0))  # (no rain: only the can grows it)
-        cycles.add((await sprinkler.skill("farming")).farm.plot_1.cycle)
-    assert cycles == {1, 2} and sprinkler_can_stat
-    # the Alchemist: some of 120 harvests come up double (a plain can never does)
-    sizes = {}
-    for user in (plain, alchemist):
-        amounts = []
-        for i in range(120):
-            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "unlocked", True))
-            await user.add_item("seed_lemon", 1)
-            await f.plant(user, 1, "seed_lemon", now=T0, registry=SURE)
-            await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
-            amounts.append((await f.harvest(user, 1, Random(i), T0, SURE)).amount)
-        sizes[user.id] = amounts
-    assert max(sizes[3]) >= 2 * min(sizes[3]) and sum(sizes[3]) > 1.3 * sum(sizes[1])
 
 
 # ---- Mastery capstones: Evergreen, Heirloom, Haggler -----------------------------------------------------------------------------------------------

@@ -507,15 +507,20 @@ class User:
             cosmetic=dict(row.cosmetic or {}),
         )
 
-    async def instances(self) -> list[ItemInstance]:
-        """Every unique item this player owns, oldest first."""
+    async def instances(self, include_unknown: bool = False) -> list[ItemInstance]:
+        """Every unique item this player owns, oldest first.
+
+        An instance whose template id is gone from the registry (an old upgrade-chain tool, removed from items.toml)
+        is skipped, so no screen crashes on it before the one-time reset runs. include_unknown=True keeps them."""
+        reg = get_registry()
         async with get_database().session() as session:
             rows = await session.scalars(
                 select(ItemInstanceRow)
                 .where(ItemInstanceRow.owner_id == self.id)
                 .order_by(ItemInstanceRow.id)
             )
-            return [self._to_instance(r) for r in rows]
+            found = [self._to_instance(r) for r in rows]
+        return found if include_unknown else [i for i in found if reg.find_item(i.template_id) is not None]
 
     async def instance(self, instance_id: int) -> ItemInstance | None:
         """One of this player's instances (None if it doesn't exist or belongs to someone else)."""

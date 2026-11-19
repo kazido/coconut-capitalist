@@ -24,13 +24,9 @@ async def _real_db(db):
     yield
 
 
-def _fork_and_past_it(starter: str) -> tuple[str, str]:
-    """The first fork tool on this starter's chain and the tool one upgrade past it, found by walking the data."""
-    tid = starter
-    while (tool := REG.item(tid).tool).fork is None:
-        tid = tool.upgrade.to
-    fork_tool = tool.fork.to
-    return fork_tool, REG.item(fork_tool).tool.upgrade.to
+# Old upgrade-chain templates are gone from items.toml, but their frozen records (configs/legacy_tools.toml) remain.
+OLD_FORK_UP_PICKAXE = "tool_pickaxe_geode"  # a fork_up step
+OLD_PLAIN_AXE = "tool_axe_thornwhip"  # a plain step
 
 
 def _scroll_for(enchant: str) -> str:
@@ -38,13 +34,13 @@ def _scroll_for(enchant: str) -> str:
 
 
 async def _instances_without_parts(user: User) -> list:
-    return [i for i in await user.instances() if REG.item(i.template_id).tool and not i.parts]
+    return [i for i in await user.instances(include_unknown=True) if REG.find_item(i.template_id) and REG.item(i.template_id).tool and not i.parts]
 
 
 async def test_reset_turns_old_upgrades_into_parts_scrolls_and_starters():
     user = await User.get(1)
-    pickaxe_old = await user.give_instance(_fork_and_past_it(STARTER["pickaxe"])[1], enchants={"keen": 2})
-    axe_plain = await user.give_instance(REG.item(STARTER["axe"]).tool.upgrade.to, enchants={"scholar": 1, "appraiser": 3})
+    pickaxe_old = await user.give_instance(OLD_FORK_UP_PICKAXE, enchants={"keen": 2})
+    axe_plain = await user.give_instance(OLD_PLAIN_AXE, enchants={"scholar": 1, "appraiser": 3})
 
     result = await legacy_tools.reset_player(user, random.Random(1))
 
@@ -83,7 +79,7 @@ async def test_reset_turns_old_upgrades_into_parts_scrolls_and_starters():
 
 async def test_reset_runs_once_and_changes_nothing_on_second_call():
     user = await User.get(1)
-    await user.give_instance(REG.item(STARTER["axe"]).tool.upgrade.to)
+    await user.give_instance(OLD_PLAIN_AXE)
     assert await legacy_tools.reset_player(user, random.Random(2)) is not None
     before = sorted(i.id for i in await user.instances())
 
@@ -123,7 +119,7 @@ def test_frozen_legacy_table_covers_every_starter_chain():
 
 async def test_old_tool_missing_from_items_is_deleted_and_graded_by_its_frozen_step(monkeypatch):
     # The template is gone from items.toml (find_item says None), but the frozen record still says it was a fork_up pickaxe.
-    gone = REG.item(STARTER["axe"]).tool.upgrade.to
+    gone = OLD_FORK_UP_PICKAXE
     user = await User.get(4)
     await user.give_instance(gone)
     monkeypatch.setattr(REG, "legacy_tools", {**REG.legacy_tools, gone: LegacyTool(kind="pickaxe", step="fork_up")})
