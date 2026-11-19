@@ -1963,9 +1963,9 @@ async def test_rare_drops_are_on_the_one_loot_screen_with_again_and_the_odds_in_
     assert nav.screen.id == "result" and "Copper Ore" in all_text(nav) and "Double Strike" in all_text(nav) and "Wedge" in all_text(nav)
     assert {b.label for b in buttons(nav)} >= {"Another tree", "Back to foraging"} and not find_button(nav, "Another tree").disabled
     kw = inter.followup.send.await_args.kwargs  # ONE popup, only for the player, with Share and Close
-    spec = get_registry().scrolls.foraging
+    burl_odds = next(g.scroll.odds for g in get_registry().foraging.chopping.grains if g.id == "burl")  # Double Strike: Burl grain only
     assert inter.followup.send.await_count == 1 and kw["ephemeral"] is True and [c.label for c in kw["view"].children] == ["Share", "Close"]
-    assert "SUPER" in kw["embed"].title.upper() and f"1 in {spec.odds * len(spec.pool):,} trees felled" in kw["embed"].fields[0].value
+    assert "SUPER" in kw["embed"].title.upper() and f"1 in {burl_odds:,} trees felled" in kw["embed"].fields[0].value
     await click(nav, inter, "Back to foraging")
     assert nav.screen.id == "forage"
 

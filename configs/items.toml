@@ -2109,6 +2109,34 @@ sell_price = 1200000  # TODO(balance)
 [scroll_echo_strike.scroll]
 enchant = "echo_strike"
 
+[scroll_timber]
+name = "Scroll of Timber!"
+description = "Your axe sometimes topples a felled tree into the next one."
+wiki = "Use it from your inventory (Enchant) to put Timber! on an axe. One use. Only Redwood trees and their rare grain drop it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "foraging"
+category = "scroll"
+price = 0
+sell_price = 1200000  # TODO(balance)
+
+[scroll_timber.scroll]
+enchant = "timber"
+
+[scroll_ember_bite]
+name = "Scroll of Ember Bite"
+description = "Your chops sometimes set the trunk smouldering, so the next ones hit harder."
+wiki = "Use it from your inventory (Enchant) to put Ember Bite on an axe. One use. Only Emberwood trees drop it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "foraging"
+category = "scroll"
+price = 0
+sell_price = 1200000  # TODO(balance)
+
+[scroll_ember_bite.scroll]
+enchant = "ember_bite"
+
 [scroll_second_wind]
 name = "Scroll of Second Wind"
 description = "Once per mine, a collapse is held off long enough to press Brace!."

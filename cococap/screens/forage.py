@@ -27,12 +27,24 @@ def reward_headline(reward: foraging.Reward) -> str:
     return what + where
 
 
-def rewards_page(rewards: list[foraging.Reward], title: str, **after) -> Result:
+def timber_note(reward: foraging.Reward) -> str:
+    """The felled-tree note for Timber! (an axe enchant): shown only when the tree really toppled into the next one."""
+    return "**Timber!** It crashed into the next tree." if reward.timber else ""
+
+
+def ember_line(tree: foraging.Tree) -> str:
+    """The tree view's flame line while Ember Bite is burning ("" when it is not)."""
+    if not tree.smouldering:
+        return ""
+    return f"\n🔥 Smouldering: {tree.smouldering} chop{'s' if tree.smouldering != 1 else ''} left"
+
+
+def rewards_page(rewards: list[foraging.Reward], title: str, note: str = "", **after) -> Result:
     """The shared reward screen for one or several trees: what you got in all, rare drops on pages of their own (their odds from the forest's tables)."""
     return rewards_result(
         title, items=sum((r.drops for r in rewards), Counter()), bits=sum(r.bits for r in rewards), xp=sum(r.xp for r in rewards),
         headline=[reward_headline(r) for r in rewards],
-        notes=[smithing.part_line(r.part) for r in rewards if r.part is not None],
+        notes=[n for n in (note, *(smithing.part_line(r.part) for r in rewards if r.part is not None)) if n],
         odds=odds.foraging(), emoji=emojis.icon("tree", "🌳"), accent=0x2E7D32, **after)
 
 
@@ -330,7 +342,7 @@ class TreeScreen(Screen):
         power = foraging.swing_power(stats, tree.zone, rules)
         self.spot.on_tree(id(tree))  # (a new tree starts the right-style streak over before the panel draws it)
         body = [*self.note_block()]
-        body.append(text(f"**Forest {tree.zone}**{self._species_line(tree.species)}\n{bar(tree.hp / tree.max_hp, 10, 'hp')}  **{tree.hp:,}**/{tree.max_hp:,} hp"
+        body.append(text(f"**Forest {tree.zone}**{self._species_line(tree.species)}\n{bar(tree.hp / tree.max_hp, 10, 'hp')}  **{tree.hp:,}**/{tree.max_hp:,} hp{ember_line(tree)}"
                          f"\n{await spot_panel(self, power)}" + (f"\n{emojis.icon('page', '🏷️')} Marked: **+{tree.bonus:.0%}** drops when it falls" if tree.bonus else "") + (
                              f"\n-# Heavy tree: alone you swing at half your axe's {stats.power}. A Soloist axe fixes that."
                              if power < stats.power else "")))
@@ -356,13 +368,18 @@ class TreeScreen(Screen):
             return await self.refresh(interaction)
         reg = get_registry()
         stats = await foraging.axe_stats(self.user)
-        swing, note = await swing_at(self, foraging.swing_power(stats, tree.zone, reg.foraging), stance, id(tree), tree.species)
+        tree.grain = self.spot.grain  # the grain it is chopped on (its scroll source, if any)
+        base = foraging.swing_power(stats, tree.zone, reg.foraging)
+        swing, note = await swing_at(self, foraging.ember_power(tree, base, reg.foraging), stance, id(tree), tree.species)
         applied = tree.chop(swing.damage, swing.effort)
+        if foraging.ember_tick(tree, stats.stats.get("ember_bite", 0.0), self.rng, reg.foraging):
+            note += "  🔥 The trunk starts to smoulder!"
         if swing.mark:
             tree.bonus = min(reg.foraging.chopping.mark_cap, tree.bonus + swing.mark)
         if tree.felled:
             self.reward = await foraging.fell_private(self.user, tree, self.rng)
-            self.result = rewards_page([self.reward], "TIMBER!", again=self._again, again_label="Another tree", back=self._stop, back_label="Back to foraging")
+            self.result = rewards_page([self.reward], "TIMBER!", note=timber_note(self.reward), again=self._again, again_label="Another tree",
+                                       back=self._stop, back_label="Back to foraging")
             return await self.refresh(interaction)
         await self.refresh(interaction, note)
 
@@ -371,7 +388,10 @@ class TreeScreen(Screen):
         await self.refresh(interaction)
 
     async def _again(self, interaction: discord.Interaction) -> None:
+        toppled = self.reward is not None and self.reward.timber  # Timber!: this one crashed into the next tree
         self.tree = foraging.roll_tree(self.tree.zone, self.rng, get_registry().foraging)
+        if toppled:
+            foraging.topple(self.tree, get_registry().foraging)
         self.reward = None
         self.spot.rotate(get_registry().foraging, self.rng)
         await self.refresh(interaction)

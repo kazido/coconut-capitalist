@@ -243,6 +243,11 @@ class Registry:
                     continue
                 problems += [f"scrolls.toml [{skill}]: '{i}' is not a scroll item" for i in source.pool
                              if i not in self.items or self.items[i].category != "scroll"]
+        if self.foraging is not None:
+            tree_scrolls = [(f"species '{sp.id}'", sp.scroll) for sp in self.foraging.species] + [(f"grain '{g.id}'", g.scroll) for g in self.foraging.chopping.grains]
+            for where, scroll in tree_scrolls:
+                if scroll is not None and (scroll.item not in self.items or self.items[scroll.item].category != "scroll"):
+                    problems.append(f"foraging.toml {where}: '{scroll.item}' is not a scroll item")
         if self.mining is not None:
             problems += self._validate_mining(self.mining)
         if self.fishing is not None:

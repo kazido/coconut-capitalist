@@ -10,7 +10,9 @@ from cococap.screens import mine as mine_screen
 from cococap.screens.mine import echo_note
 from cococap.services import mining as m
 from cococap.services.mining import MiningError
+from cococap.services import foraging as forage
 from cococap.services import scrolls
+from cococap.screens.forage import ember_line, timber_note
 from cococap.services.equipment import equip
 from cococap.user import User
 
@@ -247,3 +249,79 @@ async def test_ping_scroll_drops_only_from_scholars_cavern(db):
         if t.id != "scholars_cavern":
             summary = await banked(db, t.id, 0.0)
             assert PING.id not in summary.haul, t.id
+
+
+# ---- Timber! and Ember Bite (axe enchants; Redwood and Emberwood each drop one; Double Strike moved to Burl grain) ------------
+FRULES = REG.foraging
+
+
+def test_timber_and_ember_bite_are_axe_enchants_and_each_scroll_has_one_tree_source():
+    for enchant, scroll, species in (("timber", "scroll_timber", "redwood"), ("ember_bite", "scroll_ember_bite", "emberwood")):
+        assert REG.enchant(enchant).applies_to == ["axe"] and REG.item(scroll).scroll.enchant == enchant
+        assert scrolls.scroll_skills(scroll, REG) == ["foraging"]
+        assert [sp.id for sp in FRULES.species if sp.scroll and sp.scroll.item == scroll] == [species]
+
+
+def test_double_strike_drops_only_from_burl_grain_and_foraging_has_no_general_pool():
+    assert {g.id for g in FRULES.chopping.grains if g.scroll and g.scroll.item == "scroll_double_strike"} == {"burl"}
+    assert all(sp.scroll is None or sp.scroll.item != "scroll_double_strike" for sp in FRULES.species)
+    assert REG.scrolls.foraging is None and scrolls.roll("foraging", Random(1), REG) is None
+
+
+def test_each_tree_source_drops_its_own_scroll_and_no_other_species_or_grain_does():
+    rng = Random(7)
+    for sp in FRULES.species:
+        tree = forage.Tree(1, 10, 0, species=sp.id)
+        got = {item for _ in range(20_000) for item in forage.roll_tree_scrolls(tree, rng, REG)}
+        assert got <= ({sp.scroll.item} if sp.scroll else set()), sp.id
+    for grain in FRULES.chopping.grains:
+        tree = forage.Tree(1, 10, 0, grain=grain.id)
+        got = {item for _ in range(20_000) for item in forage.roll_tree_scrolls(tree, rng, REG)}
+        assert got <= ({grain.scroll.item} if grain.scroll else set()), grain.id
+
+
+def test_tree_scrolls_drop_at_their_odds():
+    tree = forage.Tree(1, 10, 0, species="redwood")
+    rng = Random(3)
+    hits = sum(len(forage.roll_tree_scrolls(tree, rng, REG)) for _ in range(30_000))
+    odds = next(sp.scroll.odds for sp in FRULES.species if sp.id == "redwood")
+    assert hits == pytest.approx(30_000 / odds, rel=0.25)
+
+
+def test_ember_bite_sets_the_trunk_smouldering_and_the_next_chops_hit_harder_then_it_stops():
+    tree = forage.Tree(1, 100, 100)
+    assert forage.ember_tick(tree, 0.0, Rig(0.0), FRULES) is False and tree.smouldering == 0  # no enchant: never catches
+    assert forage.ember_tick(tree, 0.04, Rig(0.99), FRULES) is False and tree.smouldering == 0  # a missed roll
+    assert forage.ember_tick(tree, 0.04, Rig(0.0), FRULES) is True and tree.smouldering == FRULES.chopping.ember_chops
+    powers = []
+    for _ in range(4):
+        powers.append(forage.ember_power(tree, 10, FRULES))
+        forage.ember_tick(tree, 0.0, Rig(0.99), FRULES)
+    boosted = round(10 * FRULES.chopping.ember_mult)
+    assert powers == [boosted] * FRULES.chopping.ember_chops + [10] and tree.smouldering == 0
+
+
+def test_timber_topples_a_tree_into_the_next_half_chopped():
+    tree = forage.roll_tree(1, Random(2), FRULES, species="pine")
+    forage.topple(tree, FRULES)
+    assert tree.hp == tree.max_hp - round(tree.max_hp * FRULES.chopping.timber_share) and not tree.felled
+
+
+def test_the_timber_and_ember_notes_show_only_when_they_happen():
+    assert timber_note(forage.Reward(Counter(), 0, 0, timber=True)) and timber_note(forage.Reward(Counter(), 0, 0)) == ""
+    assert ember_line(forage.Tree(1, 10, 0, smouldering=2)) == "\n🔥 Smouldering: 2 chops left"
+    assert ember_line(forage.Tree(1, 10, 0, smouldering=1)).endswith("1 chop left")
+    assert ember_line(forage.Tree(1, 10, 0)) == ""
+
+
+async def test_timber_only_happens_with_the_enchant_on_the_axe(db):
+    lucky = Rig(0.0)  # every chance roll passes
+    user = await User.get(1)
+    axe = await user.give_instance("tool_axe_starter", enchants={"timber": 3})
+    await equip(user, "foraging", axe.id)
+    reward = await forage.fell_private(user, forage.Tree(1, 10, 0, species="pine"), lucky, REG)
+    assert reward.timber is True
+    plain = await User.get(2)
+    bare = await plain.give_instance("tool_axe_starter")
+    await equip(plain, "foraging", bare.id)
+    assert (await forage.fell_private(plain, forage.Tree(1, 10, 0, species="pine"), Rig(0.0), REG)).timber is False

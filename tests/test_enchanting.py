@@ -110,7 +110,7 @@ def test_sharp_eye_makes_good_chops_more_likely():
 # ---- finding scrolls ------------------------------------------------------------------------------------------------------
 def test_every_skill_has_its_own_scrolls():
     own = {"mining": {"scroll_echo_strike", "scroll_second_wind", "scroll_prospectors_ping"}, "fishing": {"scroll_double_hook", "scroll_steady_line"},
-           "foraging": {"scroll_double_strike"}, "farming": {"scroll_seedkeeper"}}
+           "foraging": {"scroll_double_strike", "scroll_timber", "scroll_ember_bite"}, "farming": {"scroll_seedkeeper"}}
     for skill, mine in own.items():
         found = {i.id for i in REG.items.values() if i.category == "scroll" and skill in scrolls.scroll_skills(i.id, REG)}
         assert found == mine, skill
@@ -119,7 +119,7 @@ def test_every_skill_has_its_own_scrolls():
 
 def test_scrolls_are_rare_about_one_every_few_hours_in_each_skill():
     # per hour of play: foraging ~45 private trees, fishing ~2 bosses and a chest now and then (mining has no scrolls now)
-    per_hour = {"foraging": 45 / REG.scrolls.foraging.odds}
+    per_hour = {}  # foraging's scrolls each come from ONE species or grain (their rates: tests/test_ability_scrolls.py)
     boss = sum(r.chance for r in REG.fishing.boss.loot if r.item.startswith("scroll_"))
     per_hour["fishing"] = 1.5 * boss  # (bosses are hooked about 1 in 80 casts and not every one is landed)
     for skill, rate in per_hour.items():
@@ -135,12 +135,8 @@ def test_farming_scrolls_are_about_one_a_week_at_most():
     assert weekly >= 0.3, "farming scrolls are now almost never"
 
 
-def test_the_scroll_roll_drops_at_its_odds_from_the_skills_own_pool():
-    rng = Random(1)
-    hits = [scrolls.roll("foraging", rng, REG) for _ in range(30_000)]
-    got = [h for h in hits if h]
-    assert len(got) == pytest.approx(30_000 / REG.scrolls.foraging.odds, rel=0.25)
-    assert set(got) <= set(REG.scrolls.foraging.pool) and set(got) == set(REG.scrolls.foraging.pool)
+def test_foraging_has_no_general_scroll_pool_any_more():
+    assert REG.scrolls.foraging is None and scrolls.roll("foraging", Random(1), REG) is None
 
 
 # ---- the screen -----------------------------------------------------------------------------------------------------------

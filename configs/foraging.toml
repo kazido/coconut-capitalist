@@ -42,6 +42,9 @@ streak_bonus = 0.05               # every GRAIN you finish with every chop in it
 streak_max = 3                    # ...up to this many grains (+15%). One wrong-style chop on a grain (or a new tree) starts it over. A private tree only has a grain or two, so it is worth
                                   # up to +5-10% there; shared trees go on long enough to hit the cap. Damage only: no extra xp. The same cap on private, party and community trees
 mark_cap = 0.5                    # marks can put at most +50% on one tree's rewards
+ember_mult = 1.5                  # Ember Bite: a smouldering trunk's next chops hit this much harder (x)
+ember_chops = 3                   # ...for this many chops
+timber_share = 0.5                # Timber!: a tree toppled into the next one starts with this share of its hp gone
 
 # Every spot has a grain, and every grain likes ONE chop style: o = overhead, s = sidecut, u = undercut. Chop in that style for the
 # full effect; any other is a glancing blow. Your Grain notes remember what you find out, so you learn each grain once and know it
@@ -90,6 +93,7 @@ multiplier = 1.4
 weight = 0.10
 stance = "u"
 wear = 0.6
+scroll = { item = "scroll_double_strike", odds = 200 }  # TODO(balance): 1 in 200 trees felled with Burl grain
 
 # Special spots: rare. Chop one in its grain's RIGHT style and it does something big (a wrong style is just a glancing blow). They wear out
 # fast, so you get a few good chops. The spot shows its name, so you know to get the style right.  TODO(balance): all numbers
@@ -242,6 +246,7 @@ emoji = "🎄"
 zone_min = 10
 zone_max = 14
 weight = 1.0
+scroll = { item = "scroll_timber", odds = 300 }  # TODO(balance): 1 in 300 Redwoods felled
 [[species]]
 id = "emberwood"
 name = "Emberwood"
@@ -249,3 +254,4 @@ emoji = "🔥"
 zone_min = 11
 zone_max = 14
 weight = 1.0
+scroll = { item = "scroll_ember_bite", odds = 300 }  # TODO(balance): 1 in 300 Emberwoods felled

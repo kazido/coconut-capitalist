@@ -96,3 +96,27 @@ max_level = 1
 type = "stat_add"
 stat = "prospectors_ping"
 amount = 1.0
+
+[timber]
+name = "Timber!"
+emoji = "🪵"
+description = "Your axe can topple a tree: a percent chance per level that a tree you fell crashes into the next one, which starts half chopped."
+applies_to = ["axe"]
+max_level = 3  # TODO(balance): the chance per level is a guess
+
+[[timber.effects]]
+type = "stat_add"
+stat = "timber"
+amount = 0.05
+
+[ember_bite]
+name = "Ember Bite"
+emoji = "🔥"
+description = "A chop can set the trunk smouldering: a percent chance per level, then the next chops on that tree hit harder."
+applies_to = ["axe"]
+max_level = 3  # TODO(balance): the chance per level is a guess
+
+[[ember_bite.effects]]
+type = "stat_add"
+stat = "ember_bite"
+amount = 0.04

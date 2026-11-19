@@ -743,6 +743,13 @@ class CommunityRules(_Data):
     refresh_seconds: float = Field(gt=0)
 
 
+class TreeScroll(_Data):
+    """A scroll one tree species or one wood grain can drop: 1 in `odds` private trees felled with it (foraging rolls it once per source)."""
+
+    item: str
+    odds: int = Field(ge=1)
+
+
 class Grain(_Data):
     """A kind of wood at the place you chop. It sets how hard the spot is to cut and how fast it wears out, and it wants one chop style."""
 
@@ -752,6 +759,7 @@ class Grain(_Data):
     weight: float = Field(gt=0)  # how often a new spot has this grain
     stance: Literal["o", "s", "u"]  # the one style it likes: o = overhead, s = sidecut, u = undercut
     wear: float = Field(gt=0)  # how fast a chop wears the spot out, relative to 1 (good grains last, bad ones go quickly)
+    scroll: TreeScroll | None = None  # the scroll this grain alone can drop (see TreeScroll)
 
 
 class Special(_Data):
@@ -794,6 +802,9 @@ class ChoppingRules(_Data):
     streak_bonus: float = Field(ge=0, default=0.0)  # damage added per right-style chop in a row on the same tree...
     streak_max: int = Field(ge=0, default=0)  # ...up to this many (so the most it can add is streak_bonus x streak_max)
     mark_cap: float = Field(ge=0)  # the most extra reward (+0.5 = +50%) marks can put on one tree
+    ember_mult: float = Field(ge=1)  # Ember Bite: a smouldering trunk's next chops hit this much harder
+    ember_chops: int = Field(ge=1)  # ...for this many chops
+    timber_share: float = Field(ge=0, lt=1)  # Timber!: a tree it toppled into starts with this share of its hp gone
     grains: list[Grain] = Field(min_length=2)
     specials: list[Special] = Field(min_length=1)
 
@@ -877,6 +888,7 @@ class Species(_Data):
     zone_max: int = Field(ge=1)
     weight: float = Field(gt=0)  # how common it is among the species of a zone
     drops: list[SpeciesDrop] = Field(default_factory=list)  # optional signature drops (none for now: the materials were cut)
+    scroll: TreeScroll | None = None  # the scroll only this species can drop (see TreeScroll)
 
     _id = field_validator("id")(check_id)
 
@@ -1433,7 +1445,7 @@ class ScrollSource(_Data):
 
 class ScrollRules(_Data):
     mining: ScrollSource | None = None  # no mining scrolls for now (their enchant was retired); the loader and roll skip a missing source
-    foraging: ScrollSource
+    foraging: ScrollSource | None = None  # none: foraging's scrolls come from one species or grain each (TreeScroll)
     farming: ScrollSource
 
 

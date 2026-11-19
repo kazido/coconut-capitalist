@@ -2,9 +2,7 @@
 # and every skill's source hands out one of its pool at random. Aim: about one scroll per three hours of play in each skill, so a session or so; a scroll is an event, not routine. TODO(balance)
 # (Fishing has no entry: its scrolls come from treasure chests and boss loot, see fishing.toml.)
 
-[foraging]
-odds = 150                        # 1 in this many private trees felled (about 45 trees an hour whatever your axe: better axes meet bigger trees)
-pool = ["scroll_double_strike"]
+# Foraging has no general pool: its scrolls come from one species or grain each (foraging.toml `scroll = { item, odds }`).
 
 [farming]
 odds = 2000                       # 1 in this many growth cycles of what you harvest (a long crop is 100+ cycles). Nine plots watered every hour for a WEEK is ~1,500 cycles: under one scroll a week at the very most. TODO(balance)

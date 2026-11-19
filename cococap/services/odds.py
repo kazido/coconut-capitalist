@@ -43,11 +43,17 @@ def species_odds(item_id: str, reg: Registry) -> Odds | None:
     return Odds(1 / rate, "drop rolls") if rate > 0 else None
 
 
+def tree_scroll(item_id: str, reg: Registry) -> Odds | None:
+    """A scroll a tree species or a grain gives when a private tree is felled: 1 in its odds trees (the best odds if several)."""
+    odds = [s.scroll.odds for s in (*reg.foraging.species, *reg.foraging.chopping.grains) if s.scroll and s.scroll.item == item_id]
+    return Odds(min(odds), "trees felled") if odds else None
+
+
 def foraging(reg: Registry | None = None) -> Lookup:
     reg = reg or get_registry()
 
     def lookup(item_id: str) -> Odds | None:
-        if found := _scroll("foraging", item_id, reg) or species_odds(item_id, reg):
+        if found := _scroll("foraging", item_id, reg) or tree_scroll(item_id, reg) or species_odds(item_id, reg):
             return found
         return _own_drop(item_id, reg, "drop rolls")
 
