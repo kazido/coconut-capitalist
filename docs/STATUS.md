@@ -24,5 +24,6 @@ Screens are consolidated into tab pages (33 registered). Item ids are prefixed (
 - Old-player migration from Mongo waits on a working login (`scripts/import_mongo.py`). Hosting (VPS, backups, deploy) is unbuilt: `docs/HOSTING.md`.
 - ART TODO (waiting on the new art pipeline): pet foods still use unicode emoji (`food_harvest_mash`, `food_garden_stew`, `food_golden_ear`, `food_pet_biscuit`, and the older `food_*` ones); each needs real art named by its id.
 - ART TODO (pets): new Mythical pets and 1 Celestial pet (see `plans/pet-score-1000.md`), and all pets drawn with the rarity border and a dark outline.
+- ART TODO: the 8 accessories (`acc_*`) all use a 💍 placeholder emoji; each needs framed item art named by its id.
 - Emoji upload state may lag the art: check with `scripts/upload_emojis.py` (dry run) before assuming; restart the bot after uploading.
 - Not built yet: fishing minigame rework, party versions of each skill, channel drops (`exts/economy/drops.py` is old Mongo code), combat drops and tiers.

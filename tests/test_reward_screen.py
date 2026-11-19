@@ -36,9 +36,8 @@ def test_rare_drops_are_listed_like_any_item_and_handed_to_the_popup_best_first(
 
 
 def test_drop_rate_is_worked_out_from_the_loot_tables():
-    pool = REG.scrolls.foraging.pool
-    n = REG.scrolls.foraging.odds * len(pool)
-    embed = rare_embed(rewards_result("x", items={pool[0]: 1}, odds=odds.foraging()).rare)
+    n = next(g.scroll.odds for g in REG.foraging.chopping.grains if g.id == "burl")  # Double Strike: Burl grain only
+    embed = rare_embed(rewards_result("x", items={"scroll_double_strike": 1}, odds=odds.foraging()).rare)
     assert f"1 in {n:,} trees felled" in embed.fields[0].value
     # a table item: the first that drops wins, so a later item needs the earlier ones to miss first
     table = REG.mining.depth_tables[-1]
