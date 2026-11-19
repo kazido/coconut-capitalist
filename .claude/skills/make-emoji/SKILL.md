@@ -51,7 +51,13 @@ Animated sprites build to `.webp`; delete the old `art/out/<name>.png` before up
 `.env` is in the master checkout; load it without printing: `set -a; . ./.env; set +a`. Then
 `python scripts/upload_emojis.py --only <prefix>` (dry run) -> add `--yes`. Changed existing art: `--replace <name>` (repeatable).
 `art/out/` also holds stale/unrelated files (cut items, previews), so ALWAYS filter with `--only` (one prefix per run); delete stale
-`art/out` files of names you renamed. Tell the owner to restart the bot. Never push.
+`art/out` files of names you renamed. Never push.
+
+## Route it into the UI (after upload)
+A new icon shows nowhere until the code asks for it. `grep -rn "<old plain glyph>" cococap` and switch each spot to
+`emojis.icon("<name>", "<plain glyph>")` (UI/action icons, `ui_<name>`), `emojis.for_id("item", id)` (items), `emojis.skill(...)`,
+`emojis.bits(n)` / `currency(...)`. Message text and `emoji=` only: button labels and select text stay plain text. Reusing an item's
+art as an action icon = add it to `ITEM_ICONS` in `cococap/emojis.py`.
 
 ## Checks
 `python -m pytest -q tests/test_art.py tests/test_glyphs.py tests/test_emojis.py`; ruff clean.

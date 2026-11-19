@@ -13,7 +13,6 @@ Screens are consolidated into tab pages (33 registered). Item ids are prefixed (
 - `area-gating.md`: features need area + level. Written, NOT approved or built.
 - `foraging-materials-needed.md`: foraging has too few materials; needs designer input.
 - `starred-materials.md`: drops wired in all 4 skills; open: zone->forest text rename, late upgrade costs, UI check.
-- `commit-audit-skills.md`: NEXT UP: audit commit history for recurring requests, turn them into skills.
 - `notes-2026-11-18.md`: bigger ideas (fuels, recipe rebalance, tutorial/lore, screen streamlining).
 - `ui_emoji_progress.md`: open emoji art items (ship icons; all location icons are done).
 
