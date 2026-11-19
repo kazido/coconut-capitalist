@@ -2322,3 +2322,11 @@ def test_a_repeated_arrow_on_a_reel_step_costs_slack_not_ignored():
     cast = Cast(fish=None, bite_at=0, expires_at=100, pattern=[LEFT, REEL, LEFT], truth=[LEFT, REEL, LEFT], slips_left=2, hooked=True, echo_window=2.0)
     assert cast.press(LEFT, 0.0) == "ok"
     assert cast.press(LEFT, 0.5) == "slip" and cast.slips_left == 1  # the Reel step is up: pressing the arrow again is a miss, not an echo
+
+
+async def test_restart_does_not_use_up_a_live_hallucination(db):
+    user = await player(1)
+    await armed_chest(user)  # live until T0 + 600
+    assert await f.pause_treasure(T0 + 100, T0 + 400) == 1  # down for 300 s
+    assert (await user.skill("fishing")).treasure.armed_until == T0 + 900
+    assert await f.pause_treasure(T0 + 2000, T0 + 2300) == 0  # a window that had already ended is left alone

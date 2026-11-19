@@ -1005,6 +1005,24 @@ async def complete_book(user: User, registry: Registry | None = None) -> BookRew
 
 
 # ---- treasure ---------------------------------------------------------------------------------------------
+async def pause_treasure(stopped_at: float, resumed_at: float) -> int:
+    """The bot was down from `stopped_at` to `resumed_at`: push every hallucination that was still live back by that long, so a restart
+    never eats the window (the numbers you wrote down stay good). Returns how many players it touched."""
+    from cococap.db import get_database
+    from cococap.db.tables import SkillRow
+    from sqlalchemy import select
+    gap, touched = resumed_at - stopped_at, 0
+    if gap <= 0:
+        return 0
+    async with get_database().session() as session:
+        for row in (await session.execute(select(SkillRow).where(SkillRow.skill == "fishing"))).scalars():
+            treasure = (row.data or {}).get("treasure") or {}
+            if treasure.get("code") and treasure.get("armed_until", 0) > stopped_at:
+                row.data = {**row.data, "treasure": {**treasure, "armed_until": treasure["armed_until"] + gap}}
+                touched += 1
+    return touched
+
+
 async def chests_possible(user: User, now: float | None = None) -> bool:
     """Is a hallucination still working on you (so a cast might bring up a chest)?"""
     now = time.time() if now is None else now

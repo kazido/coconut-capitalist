@@ -1,3 +1,6 @@
+import os
+import time
+
 import discord
 from logging import getLogger
 
@@ -7,13 +10,15 @@ from pydis_core import BotBase, StartupError
 from cococap import emojis, exts, glyphs
 from cococap.constants import DATABASE_PATH, DISABLED_EXTENSIONS
 from cococap.db import Database, close_database, init_database
-from cococap.services import activity
+from cococap.services import activity, fishing
 from cococap.ui.nav import stop_all_tickers
 from utils import logs
 
 log = getLogger("bot")
 
 __all__ = ["Bot", "StartupError"]
+
+STOPPED_AT_FILE = os.path.join(os.path.dirname(DATABASE_PATH), "stopped_at.txt")  # when the bot last shut down cleanly
 
 
 class Bot(BotBase):
@@ -33,10 +38,23 @@ class Bot(BotBase):
         await emojis.refresh(self)
         glyphs.install()  # plain unicode emoji in any message become our own icons on the way out
 
+        await self._resume_timers()
         self.idle_sweep.start()
 
         # Load our own extensions using function from discord.py's own bot
         await self.load_extensions(exts)
+
+    async def _resume_timers(self) -> None:
+        """A restart must not use up a live fishing hallucination's window: push it back by the time the bot was down."""
+        try:
+            with open(STOPPED_AT_FILE) as f:
+                stopped_at = float(f.read())
+            log.info("Paused %s hallucination timers for the restart", await fishing.pause_treasure(stopped_at, time.time()))
+            os.remove(STOPPED_AT_FILE)
+        except FileNotFoundError:
+            pass
+        except Exception:  # noqa: BLE001 - never block startup
+            log.exception("Could not resume timers")
 
     async def on_interaction(self, interaction: discord.Interaction) -> None:
         """Every command and button press says the player is around (see services/activity)."""
@@ -67,5 +85,10 @@ class Bot(BotBase):
     async def close(self) -> None:
         self.idle_sweep.cancel()
         await stop_all_tickers()  # panels refreshing themselves must stop before the database goes away
+        try:
+            with open(STOPPED_AT_FILE, "w") as f:
+                f.write(str(time.time()))
+        except OSError:
+            log.exception("Could not record the shutdown time")
         await super().close()
         await close_database()
