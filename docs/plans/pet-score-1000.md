@@ -37,7 +37,7 @@ Each of the 25 pets keeps what it did as a named trait (e.g. Drizzle "Quick Bite
 unique trait only where it makes sense. Traits replace `bonuses` in `pets.toml`; the old stats keep working through the trait.
 
 ## Build order
-1. Score model: `pet_score.toml` budgets (skills/mastery/gear/ability), loadout gets per-skill points + `ability` tier; `pet_score.total(pet)` out of 1000 + breakdown. Test: every pet <= 1000, Celestial = 500 skills.
+1. (BUILT) Score model: `pet_score.toml` budgets (skills/mastery/gear/ability), loadout gets per-skill points + `ability` tier; `pet_score.total(pet)` out of 1000 + breakdown. Test: every pet <= 1000, Celestial = 500 skills.
 2. Traits in registry (`Pet.trait` replaces `bonuses`), convert the 25 pets, services read traits, remove `passive_bonus` and flat bonuses (changelog + notice).
 3. Pet card shows the breakdown; haul drops show the trait name when it triggered.
 

@@ -3,25 +3,24 @@
 # Nothing is visible and nothing real is simulated. See docs/plans/pet-sidekicks.md.   TODO(balance): every number in this file
 
 # ---- Score formula -------------------------------------------------------------------------------------------------------------------
-tool_tier_weight = 1.0        # score from each tool tier of the loadout (0 = a fresh tool ... 4 = forked)
-enchant_level_weight = 0.6    # score from each enchant level on the loadout
-mastery_weight = 0.15         # score from each mastery point in the loadout
-rarity_weight = 0.5           # extra score per rarity above 1 (rare pets also gain more xp)
+# The SCORE is out of 1000 and fixed per pet species (level and stars never change it): 500 skills (100 per skill x 5), 200 mastery, 200 gear, 100 ability.
+mastery_per_point = 10        # mastery score (0-20 points a pet "spent") x this = mastery points (max 200)
+gear_per_tier = 30            # gear points per tool tier of the loadout (0-4)
+gear_per_enchant_level = 10   # gear points per enchant level (gear is capped at 200)
+ability_points = { none = 0, mid = 50, high = 100 }
+# ---- Strength (how much of its score a pet brings to bear) ---------------------------------------------------------------------------------
 level_floor = 0.1             # a level-1 pet counts this share of its loadout; max level counts all of it
 star_bonus = 0.25             # each extra star adds this share (matches the old pet bonus curve)
-global_proficiency = 0.6      # global pets (Dog, Koala, Phoenix...) work in every skill at this share of a specialist's score
-lent_tool_weight = 0.5        # a real tool lent to the pet adds its power times this to the score
 
 # ---- Sidekicks: inactive pets help the active one --------------------------------------------------------------------------------------
-sidekick_per_points = 10      # +1% output per this many combined (level + stars-weighted) points of ALL inactive pets
-sidekick_star_weight = 5      # one star counts as this many levels
+sidekick_per_strength = 0.05  # each inactive pet adds (score / 1000 x its level-and-star strength) x this to the active pet's output (a maxed 1000 pet = +5%)
 sidekick_cap = 0.5            # the sidekick bonus never exceeds +50%
 
 # ---- Passive bonus and idle haul -------------------------------------------------------------------------------------------------------
 passive_per_score = 0.01      # passive bonus (a share, e.g. 0.01 = +1%) per point of score
 passive_cap = 0.25            # the passive bonus never exceeds +25%
 haul_active_share = 0.15      # a fully fueled MAX pet earns at most this share of an active player's pay per hour (guard test)
-haul_xp_per_score_hour = 12   # skill xp per hour for each point of score (before the cap)
+haul_xp_per_score_hour = 3   # skill xp per hour for each point of score (before the cap)
 
 # ---- Fuel tank (crops fuel the ACTIVE pet; online play never needs fuel) -----------------------------------------------------------------
 tank_cap_hours = 8            # the tank holds this many hours of work
@@ -31,3 +30,23 @@ fuel_minutes_per_value = 0.02 # minutes of fuel per bit of crop sell price
 food_buff_bonus = 0.5         # skill food also gives +50% pet xp ...
 food_buff_minutes = 30        # ... for this long; feeding again refreshes it (never stacks)
 haul_drop_rolls_per_score_hour = 0.1  # TODO(balance): the haul also finds common drops of its skill (never rare ones)
+
+# Skill points by rarity (max 100 per skill). A specialist puts them all in its one skill; a global pet spreads its TOTAL evenly over the five skills.
+[skill_points.specialist]
+1 = 25
+2 = 40
+3 = 55
+4 = 70
+5 = 85
+6 = 100
+7 = 100
+8 = 100
+[skill_points.global_total]
+1 = 25
+2 = 40
+3 = 60
+4 = 100
+5 = 150
+6 = 300
+7 = 400
+8 = 500

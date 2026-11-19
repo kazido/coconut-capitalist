@@ -15,21 +15,34 @@ def test_score_rises_with_level_stars_and_lent_tool():
     hi_xp = OwnedPet(xp=10**9, stars=1)
     assert ps.score(pet, hi_xp) > ps.score(pet, lo)
     assert ps.score(pet, OwnedPet(xp=0, stars=3)) > ps.score(pet, lo)
-    assert ps.score(pet, lo, lent_tool_power=10) > ps.score(pet, lo)
 
 
-def test_global_pet_scores_below_a_specialist_with_the_same_kit():
-    pet = _pet()
-    glob = pet.model_copy(update={"skill": "global"})
-    o = OwnedPet(xp=10**9, stars=1)
-    assert ps.score(glob, o) < ps.score(pet, o)
+def test_every_pets_score_is_out_of_1000_and_fixed_by_its_kit_not_its_level():
+    for pet in REG.pets.values():
+        s = ps.total(pet)
+        assert 0 < s.total <= 1000 and all(0 <= v <= 100 for v in s.skills.values()) and s.mastery <= 200 and s.gear <= 200
+        assert s.ability == {"none": 0, "mid": 50, "high": 100}[pet.ability]
+        assert s.total == ps.total(pet).total  # nothing about the owned pet goes in
+
+
+def test_a_specialist_scores_in_one_skill_and_a_global_pet_spreads_its_points():
+    spec, glob = _pet(), next(p for p in REG.pets.values() if p.skill == "global")
+    assert sum(1 for v in ps.total(spec).skills.values() if v) == 1 and ps.total(spec).skills[spec.skill] > 0
+    assert len({v for v in ps.total(glob).skills.values()}) == 1 and ps.total(glob).skills_total <= 500
+
+
+def test_a_celestial_pet_would_have_500_skill_points_and_a_mythical_one_100_in_a_skill():
+    glob = next(p for p in REG.pets.values() if p.skill == "global").model_copy(update={"rarity": 8})
+    assert ps.total(glob).skills_total == 500
+    myth = _pet().model_copy(update={"rarity": 6})
+    assert ps.total(myth).skills[myth.skill] == 100
 
 
 def test_sidekick_capped_and_empty_tank_stops_haul_but_not_passive():
     pet = _pet()
     o = OwnedPet(xp=10**9, stars=5)
     many = [(pet, o)] * 500
-    assert ps.sidekick_bonus(many) == REG.pet_score.sidekick_cap
+    assert ps.sidekick_bonus(many) == REG.pet_score.sidekick_cap  # (500 maxed pets: capped)
     assert ps.sidekick_bonus([]) == 0
     s = ps.score(pet, o)
     assert ps.haul_xp_per_hour(s, fueled=False) == 0
@@ -100,6 +113,9 @@ def test_a_maxed_fully_fueled_pet_hauls_at_most_the_configured_share_of_active_p
                for p in REG.pets.values())
     haul = ps.haul_xp_per_hour(best, REG.pet_score.sidekick_cap)
     assert haul <= active * REG.pet_score.haul_active_share * 1.0, (round(haul), round(active))
+    # ...and a perfect 1000-point pet at max level and stars (the future Celestial) fits too
+    top = pets_service.strength(OwnedPet(xp=10**9, stars=REG.economy.pets.max_stars), 5, REG) * 100
+    assert ps.haul_xp_per_hour(top, REG.pet_score.sidekick_cap) <= active * REG.pet_score.haul_active_share
 
 
 @pytest.mark.asyncio

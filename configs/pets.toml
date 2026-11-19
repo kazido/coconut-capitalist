@@ -9,6 +9,7 @@ name = "Cinder"
 skill = "global"
 emoji = "🐕"
 rarity = 1
+ability = "none"
 description = "A faithful glow in the grey. Pays you a bit extra every shift."
 [cinder.loadout]
 tool_tier = 0
@@ -24,6 +25,7 @@ name = "Drizzle"
 skill = "fishing"
 emoji = "🐈"
 rarity = 2
+ability = "none"
 description = "A soft blue light. Fish find your hook sooner."
 [drizzle.loadout]
 tool_tier = 1
@@ -39,6 +41,7 @@ name = "Murk"
 skill = "mining"
 emoji = "🐢"
 rarity = 2
+ability = "none"
 description = "Slow, steady and sure. The mine creaks less around it."
 [murk.loadout]
 tool_tier = 1
@@ -58,6 +61,7 @@ name = "Dew"
 skill = "farming"
 emoji = "🐸"
 rarity = 2
+ability = "none"
 description = "Loves the rain. Your crops grow more often."
 [dew.loadout]
 tool_tier = 1
@@ -73,6 +77,7 @@ name = "Bough"
 skill = "foraging"
 emoji = "🐒"
 rarity = 3
+ability = "mid"
 description = "Knows exactly where to strike a tree."
 [bough.loadout]
 tool_tier = 2
@@ -88,6 +93,7 @@ name = "Haze"
 skill = "global"
 emoji = "🐨"
 rarity = 3
+ability = "mid"
 description = "Calm and clever. Everything you learn sticks a little better."
 [haze.loadout]
 tool_tier = 2
@@ -103,6 +109,7 @@ name = "Pollen"
 skill = "farming"
 emoji = "🐝"
 rarity = 2
+ability = "none"
 description = "A tireless little spark. Now and then a plot gives a whole second harvest."
 [pollen.loadout]
 tool_tier = 1
@@ -118,6 +125,7 @@ name = "Squall"
 skill = "fishing"
 emoji = "🦅"
 rarity = 4
+ability = "mid"
 description = "Sharp-eyed. It spots the big ones below the surface."
 [squall.loadout]
 tool_tier = 3
@@ -133,6 +141,7 @@ name = "Undertow"
 skill = "fishing"
 emoji = "🐍"
 rarity = 4
+ability = "mid"
 description = "Patient and deep. Your crab pots fill faster while it watches."
 [undertow.loadout]
 tool_tier = 3
@@ -148,6 +157,7 @@ name = "Brine"
 skill = "fishing"
 emoji = "🦀"
 rarity = 4
+ability = "mid"
 description = "Knows the seabed. Your crab pots lure rarer fish."
 [brine.loadout]
 tool_tier = 3
@@ -163,6 +173,7 @@ name = "Tempest"
 skill = "fishing"
 emoji = "🐉"
 rarity = 5
+ability = "high"
 description = "Hoards treasure, and can smell it. Hallucinations and chests come more often."
 [tempest.loadout]
 tool_tier = 4
@@ -178,6 +189,7 @@ name = "Ripple"
 skill = "fishing"
 emoji = "🦦"
 rarity = 2
+ability = "none"
 description = "Playful and bright. Finds the fish and teaches you a thing or two about fishing."
 [ripple.loadout]
 tool_tier = 1
@@ -193,6 +205,7 @@ name = "Sprig"
 skill = "foraging"
 emoji = "🦫"
 rarity = 2
+ability = "none"
 description = "A born woodcutter. Trees teach you more around it."
 [sprig.loadout]
 tool_tier = 1
@@ -208,6 +221,7 @@ name = "Lode"
 skill = "mining"
 emoji = "🐀"
 rarity = 3
+ability = "mid"
 description = "Happiest underground. It lights the way ahead and eases the rock, so every row you dig adds less pressure."
 [lode.loadout]
 tool_tier = 2
@@ -223,6 +237,7 @@ name = "Clover"
 skill = "farming"
 emoji = "🐇"
 rarity = 2
+ability = "none"
 description = "Loves a vegetable patch. Farming comes more easily."
 [clover.loadout]
 tool_tier = 1
@@ -238,6 +253,7 @@ name = "Scorch"
 skill = "combat"
 emoji = "🐺"
 rarity = 3
+ability = "mid"
 description = "A fighter's companion. (Combat is coming.)"
 [scorch.loadout]
 tool_tier = 2
@@ -253,6 +269,7 @@ name = "Eddy"
 skill = "fishing"
 emoji = "🦭"
 rarity = 4
+ability = "mid"
 description = "A master of the waves. Fishing practice goes a long way."
 [eddy.loadout]
 tool_tier = 3
@@ -268,6 +285,7 @@ name = "Canopy"
 skill = "foraging"
 emoji = "🐦"
 rarity = 4
+ability = "mid"
 description = "Knows trees inside out. You learn faster from every one."
 [canopy.loadout]
 tool_tier = 3
@@ -283,6 +301,7 @@ name = "Cairn"
 skill = "mining"
 emoji = "🦡"
 rarity = 4
+ability = "mid"
 description = "Digs like it was born to. Mining lessons stick."
 [cairn.loadout]
 tool_tier = 3
@@ -298,6 +317,7 @@ name = "Thistle"
 skill = "farming"
 emoji = "🦔"
 rarity = 4
+ability = "mid"
 description = "Tends the garden with care. Farming practice pays more."
 [thistle.loadout]
 tool_tier = 3
@@ -313,6 +333,7 @@ name = "Pyre"
 skill = "combat"
 emoji = "🦁"
 rarity = 5
+ability = "high"
 description = "A king among fighters. (Combat is coming.)"
 [pyre.loadout]
 tool_tier = 4
@@ -328,6 +349,7 @@ name = "Halo"
 skill = "global"
 emoji = "🔥"
 rarity = 5
+ability = "high"
 description = "Reborn with every lesson. Everything you learn burns a little brighter."
 [halo.loadout]
 tool_tier = 4
@@ -345,6 +367,7 @@ name = "Gloam"
 skill = "global"
 emoji = "🦜"
 rarity = 3
+ability = "mid"
 description = "Loves anything that shines. Haggles you a better price for whatever you sell."
 [gloam.loadout]
 tool_tier = 2
@@ -360,6 +383,7 @@ name = "Lune"
 skill = "global"
 emoji = "🦊"
 rarity = 4
+ability = "mid"
 description = "Cunning, and always checks twice. A rare find that slips past sometimes gets a second look."
 [lune.loadout]
 tool_tier = 3
@@ -375,6 +399,7 @@ name = "Umbra"
 skill = "global"
 emoji = "🐦"
 rarity = 5
+ability = "high"
 description = "Keeps watch over every delivery. Shipments and your daily interest pay a little more."
 [umbra.loadout]
 tool_tier = 4
