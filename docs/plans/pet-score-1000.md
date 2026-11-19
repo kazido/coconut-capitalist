@@ -1,6 +1,6 @@
 # Pet score out of 1000 + traits
 
-Status: PROPOSED (owner's spec below; open question at the end). Builds on `pet-sidekicks.md` (which stays for the tank/haul/UI parts).
+Status: APPROVED in direction (owner's spec below; rarity table still to confirm). Builds on `pet-sidekicks.md` (which stays for the tank/haul/UI parts).
 
 ## Owner's spec
 - Every pet has a score out of 1000 (a perfect pet = 1000), shown on its card, with the parts visible:
@@ -12,6 +12,13 @@ Status: PROPOSED (owner's spec below; open question at the end). Builds on `pet-
   (Mythical = 100 in one skill + that skill's XP buff; Celestial = 500 across all five + global XP buff). Other pets get a different trait where it makes sense; traits are optional.
 - A haul find is shown with the active pet's emoji; if a trait caused it, the trait's name is shown next to it.
 - Lending a tool is ON HOLD.
+
+## Score vs level and stars (decided)
+- The **score out of 1000 is a fixed trait of the pet species** (skills + mastery + gear + ability): it tells a player how strong a pet is. Level and stars do NOT change it.
+- **Level and stars** make that pet stronger when it works, and feed the **sidekick bonus**: every pet you own adds `score/1000 x its level and star strength`
+  to a pool that gives the ACTIVE pet a small capped bonus (nothing game breaking; cap and rate in `pet_score.toml`, TODO(balance)).
+- Haul = (score/1000) x (own level/star strength) x haul constants x (1 + sidekick bonus). The guard test (maxed pet <= 15% of active play) stays.
+- New pets: several **Mythical** and exactly **1 Celestial** pet (rarity range 1-8; Premium unused). Their art is on STATUS: pets get the rarity border art and a dark outline.
 
 ## Proposed skill-point table (total points in skills by rarity)
 | Rarity | specialist (one skill) | global pet (spread over 5 skills) |

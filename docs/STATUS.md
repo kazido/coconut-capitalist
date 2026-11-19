@@ -14,6 +14,7 @@ Screens are consolidated into tab pages (33 registered). Item ids are prefixed (
 - `area-gating.md`: features need area + level. Written, NOT approved or built.
 - `foraging-materials-needed.md`: foraging has too few materials; needs designer input.
 - `starred-materials.md`: drops wired in all 4 skills; open: zone->forest text rename, late upgrade costs, UI check.
+- `pet-score-1000.md`: pet score out of 1000 + traits + Mythical/Celestial pets. Direction approved, not built.
 - `pet-sidekicks.md`: APPROVED, built on master: loadouts, score, tank, Collect/Fuel UI, food buff, foods, guard test. Open: apply the passive bonus (replace flat bonuses), lend-tool screen + equipped check, haul drop tables, balance pass, pet-food art.
 - `notes-2026-11-18.md`: bigger ideas (fuels, recipe rebalance, tutorial/lore, screen streamlining).
 
@@ -22,5 +23,6 @@ Screens are consolidated into tab pages (33 registered). Item ids are prefixed (
   waters 5-14 reuse placeholder fish.
 - Old-player migration from Mongo waits on a working login (`scripts/import_mongo.py`). Hosting (VPS, backups, deploy) is unbuilt: `docs/HOSTING.md`.
 - ART TODO (waiting on the new art pipeline): pet foods still use unicode emoji (`food_harvest_mash`, `food_garden_stew`, `food_golden_ear`, `food_pet_biscuit`, and the older `food_*` ones); each needs real art named by its id.
+- ART TODO (pets): new Mythical pets and 1 Celestial pet (see `plans/pet-score-1000.md`), and all pets drawn with the rarity border and a dark outline.
 - Emoji upload state may lag the art: check with `scripts/upload_emojis.py` (dry run) before assuming; restart the bot after uploading.
 - Not built yet: fishing minigame rework, party versions of each skill, channel drops (`exts/economy/drops.py` is old Mongo code), combat drops and tiers.
