@@ -6,7 +6,8 @@ Numbers live in configs/smithing.toml; plan: docs/plans/tools-smithing.md.
 
 import random
 
-from cococap.constants import STARTER_TOOLS
+from cococap import emojis
+from cococap.constants import STARTER_TOOLS, Rarities
 from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
@@ -48,6 +49,13 @@ def max_part_tier(level: int, rules: SmithingRules) -> int:
     return min(tier, PART_TIERS)
 
 
+def part_label(slot: str, tier: int) -> str:
+    """How a part reads everywhere: its tier emoji (framed in its rarity) + "Tier 8 Celestial Base".
+    A part's rarity is its tier (SmithingRules.part_rarity)."""
+    rarity = Rarities.from_value(SmithingRules.part_rarity(tier)).rarity_name
+    return f"{emojis.get(f'part_{slot}_t{tier}', '🧩')} Tier {tier} {rarity} {slot.title()}"
+
+
 def _part_tier(part: ItemInstance) -> int:
     return int(part.rolled.get("tier", 1))
 
@@ -79,10 +87,9 @@ def part_line(part: ItemInstance, registry: Registry | None = None) -> str:
     reg = registry or get_registry()
     rules = _rules(reg)
     slot = part.template_id.removeprefix("part_")
-    emoji = reg.item(part.template_id).emoji or "🧩"
     names = [rules.trait(t).name for t in part.traits]
     named = f" ({', '.join(names)})" if names else ""
-    return f"{emoji} Found a **Tier {_part_tier(part)} {slot.title()} part**{named}! Smith with it on Tools → Smithing."
+    return f"Found a **{part_label(slot, _part_tier(part))} part**{named}! Smith with it on Tools → Smithing."
 
 
 async def maybe_drop_part(

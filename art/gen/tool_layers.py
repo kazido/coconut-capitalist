@@ -8,7 +8,7 @@ A tool is 3 parts, one per layer, each coloured by its own tier from the one sha
 
 `layers()` returns {kind: 16x16 letter grid}; `palette(b, t, a)` colours it for base/trim/accent tiers b/t/a.
 The list emoji (tool_<kind>_t<n>) are all three parts at tier n; the bot's runtime renderer recolours the
-same grids per tool. Run: python art/gen/tool_layers.py <out.toml> [preview]
+same grids per tool. A part's tier is also its rarity (8 = Celestial). Run: python art/gen/tool_layers.py <out.toml> [preview]
 
 `generic` writes the one list emoji per kind (tool_<kind>): a framed Common item in GENERIC tiers. Every smithed
 tool shows that pixel emoji; its own colours and cosmetics only appear in the big runtime picture (art_runtime).
@@ -30,6 +30,7 @@ TIERS = {
     5: ("#ffffff", "#e4f4f8", "#aed0dc", "#6e94a4"),  # platinum (bright, icy)
     6: ("#b8ffe0", "#48d8a0", "#20a070", "#106048"),  # emerald / crystal
     7: ("#d8b8ff", "#9860e0", "#6030a8", "#341864"),  # void
+    8: ("#fffbe0", "#ffe680", "#58d8e8", "#2a7890"),  # celestial: starlight gold fading to sky cyan (incredibly rare)
 }
 
 

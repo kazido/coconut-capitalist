@@ -37,8 +37,9 @@ def _palette(base: int, trim: int, accent: int) -> dict[str, tuple[int, int, int
 
 
 def _check_tier(name: str, tier: int) -> None:
-    if not isinstance(tier, int) or not 1 <= tier <= 7:
-        raise ValueError(f"{name} tier must be 1..7, got {tier!r}")
+    top = len(_data()["tiers"])  # 8: a part's tier is its rarity, 8 = Celestial
+    if not isinstance(tier, int) or not 1 <= tier <= top:
+        raise ValueError(f"{name} tier must be 1..{top}, got {tier!r}")
 
 
 def _draw(kind: str, base: int, trim: int, accent: int, scale: int) -> bytes:

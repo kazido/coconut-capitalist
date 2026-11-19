@@ -1,8 +1,7 @@
 """Smithing part icons: one drawing per part type (Base, Trim, Accent), tinted by tier with the shared TIERS ramps.
 
-21 emoji: part_<type>_t<n>, n = 1..7 (docs/plans/tools-smithing.md, Art). Parts are items like any other, so each
-sits in the rarity frame (art/rarity_style.py) of its tier's rarity: RARITY_BY_TIER mirrors `rarity_by_tier` in
-configs/smithing.toml (common 1, uncommon 2, rare 3, epic -> 4 Super Rare); keep the two in step. Every part uses the 4 letters P p q Q
+24 emoji: part_<type>_t<n>, n = 1..8 (docs/plans/tools-smithing.md, Art). Parts are items like any other, so each
+sits in the rarity frame (art/rarity_style.py) of its rarity, and a part's tier IS its rarity (1 Common .. 8 Celestial). Every part uses the 4 letters P p q Q
 (light -> dark) = TIERS[n], so a tier-3 part has exactly the colour a tier-3 head or handle has on a tool.
   base    an ingot block: the working end a tool is forged from
   trim    a wrapped grip: what you hold
@@ -16,7 +15,6 @@ sys.path.insert(0, ".")
 from art.draw import Canvas  # noqa: E402
 from art.gen.tool_layers import TIERS, grab, poly  # noqa: E402
 
-RARITY_BY_TIER = {1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4}
 
 
 def drawings():
@@ -70,7 +68,7 @@ def toml(sprites):
     for name, (g, ramp) in sprites.items():
         pal = dict(zip("PpqQ", ramp))
         used = {ch for row in g for ch in row if ch != "."}
-        lines += [f"[{name}]", f"rarity = {RARITY_BY_TIER[int(name.rsplit('_t', 1)[1])]}",
+        lines += [f"[{name}]", f"rarity = {name.rsplit('_t', 1)[1]}",
                   "palette = { " + ", ".join(f'{k} = "{v}"' for k, v in pal.items() if k in used) + " }",
                   "rows = ["] + [f'  "{"".join(r)}",' for r in g] + ["]", ""]
     return "\n".join(lines)
@@ -78,6 +76,6 @@ def toml(sprites):
 
 if __name__ == "__main__":
     grids = drawings()
-    sprites = {f"part_{kind}_t{n}": (grids[kind], TIERS[n]) for kind in grids for n in range(1, 8)}
+    sprites = {f"part_{kind}_t{n}": (grids[kind], TIERS[n]) for kind in grids for n in TIERS}
     open(sys.argv[1], "w", encoding="utf-8").write(toml(sprites))
     print(" ".join(sprites))

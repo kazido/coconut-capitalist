@@ -17,7 +17,7 @@ DATA_PATH = Path(art_runtime.__file__).resolve().parent / "assets" / "tool_layer
 
 
 @pytest.mark.parametrize("kind", KINDS)
-@pytest.mark.parametrize("tiers", [(1, 1, 1), (3, 3, 1), (7, 7, 7)])
+@pytest.mark.parametrize("tiers", [(1, 1, 1), (3, 3, 1), (7, 7, 7), (8, 8, 8)])
 def test_every_kind_renders_a_valid_png(kind, tiers):
     scale = 4
     png = art_runtime.render_tool(kind, *tiers, scale=scale, cache_dir=None)
@@ -45,7 +45,7 @@ def test_cache_file_is_written_and_reused(tmp_path):
 
 @pytest.mark.parametrize(
     "kind, tier",
-    [("nope", 1), ("pickaxe", 0), ("pickaxe", 8)],
+    [("nope", 1), ("pickaxe", 0), ("pickaxe", 9)],
 )
 def test_bad_kind_or_tier_raises(kind, tier):
     with pytest.raises(ValueError):
@@ -54,7 +54,7 @@ def test_bad_kind_or_tier_raises(kind, tier):
 
 def test_bad_trim_or_accent_tier_raises():
     with pytest.raises(ValueError):
-        art_runtime.render_tool("can", 1, 8, 1, cache_dir=None)
+        art_runtime.render_tool("can", 1, 9, 1, cache_dir=None)
     with pytest.raises(ValueError):
         art_runtime.render_tool("can", 1, 1, 0, cache_dir=None)
 

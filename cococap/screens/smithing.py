@@ -8,6 +8,7 @@ import random
 import discord
 
 from cococap import emojis
+from cococap.constants import Rarities
 from cococap.registry import get_registry
 from cococap.services import smithing
 from cococap.services.equipment import TOOL_FOR_SKILL
@@ -22,6 +23,11 @@ def _slot_of(inst) -> str:
 
 def _tier(inst) -> int:
     return int(inst.rolled.get("tier", 1))
+
+
+def _rarity(inst) -> str:
+    """A part's rarity name: its tier is its rarity."""
+    return Rarities.from_value(_tier(inst)).rarity_name
 
 
 def _trait_names(inst, rules) -> str:
@@ -87,7 +93,7 @@ class SmithingPane(Screen):
         body.append(text(f"-# {summary}"))
         body.append(text(f"**Step {self.step}/3 · {slot.title()}**"))
         options = [
-            discord.SelectOption(label=f"Tier {_tier(i)} · {_trait_names(i, rules)}"[:100], value=str(i.id),
+            discord.SelectOption(label=f"Tier {_tier(i)} {_rarity(i)} · {_trait_names(i, rules)}"[:100], value=str(i.id),
                                  default=i.id == self.chosen[slot])
             for i in parts[slot]
         ]
@@ -125,7 +131,7 @@ class SmithingPane(Screen):
             inst = picked[slot]
             trait = self.picks.get(inst.id)
             name = rules.trait(trait).name if trait else "no trait"
-            body.append(text(f"· {slot.title()}: Tier {_tier(inst)} · {name}"))
+            body.append(text(f"· {smithing.part_label(slot, _tier(inst))} · {name}"))
         kind = self.kind.title() if self.kind else "-"
         body.append(text(f"Kind **{kind}** · power **{power:g}** before quality"))
         body.append(text("-# Quality is rolled on smithing."))
@@ -199,7 +205,7 @@ class PartsPane(Screen):
         body = [*self.note_block()]
         for slot in smithing.PART_TYPES:
             ps = [i for i in mine if _slot_of(i) == slot]
-            lines = [f"· Tier {_tier(i)} · {_trait_names(i, rules)}" for i in ps] or ["· none"]
+            lines = [f"· {smithing.part_label(slot, _tier(i))} · {_trait_names(i, rules)}" for i in ps] or ["· none"]
             body.append(text("\n".join([f"**{slot.title()}** ({len(ps)})", *lines])))
 
         body += [sep(), text("**Salvage**")]

@@ -16,35 +16,37 @@ part_drop_chance = 0.01                  # TODO(balance)
 # enchants first, one scroll each). Scrolls already dropped too often, so the reset must not flood players (owner decision).
 legacy_scroll_cap = 2
 
-# Rarity of a part by its tier (tier 1..7). A fresh part rolls fresh_traits[its rarity] traits.
-rarity_by_tier = ["common", "common", "uncommon", "uncommon", "rare", "rare", "epic"]  # TODO(balance)
+# A part's TIER IS ITS RARITY (owner decision): 1 Common, 2 Uncommon, 3 Rare, 4 Super Rare, 5 Legendary, 6 Mythical,
+# 7 Premium, 8 Celestial. Tier 8 is incredibly rare: only in the last two areas, about 1 part in 1000 there.
+# How many traits a freshly dropped part rolls, by tier 1..8 (capped by the 3 generic part traits that exist now).
+fresh_traits = [1, 1, 2, 2, 3, 3, 3, 3]   # TODO(balance)
 
 [tiers]
-# Power a part gives at tier 1..7 (index 0 = tier 1). Three tier-1 parts ~ today's starter tool power (3).
-power = [1, 2, 3, 5, 7, 10, 14]           # TODO(balance)
+# Power a part gives at tier 1..8 (index 0 = tier 1). Three tier-1 parts ~ today's starter tool power (3).
+power = [1, 2, 3, 5, 7, 10, 14, 20]       # TODO(balance)
 
-# Tier drop weights per area (7 numbers, tier 1..7).
+# Tier drop weights per area (8 numbers, tier 1..8). Relative: they need not add to 100 (areas 6-7 are x10 so Celestial can be 1).
 [[area_weights]]
 area = 1
-weights = [70, 25, 5, 0, 0, 0, 0]         # TODO(balance)
+weights = [70, 25, 5, 0, 0, 0, 0, 0]       # TODO(balance)
 [[area_weights]]
 area = 2
-weights = [40, 40, 15, 5, 0, 0, 0]        # TODO(balance)
+weights = [40, 40, 15, 5, 0, 0, 0, 0]      # TODO(balance)
 [[area_weights]]
 area = 3
-weights = [20, 35, 25, 15, 5, 0, 0]       # TODO(balance)
+weights = [20, 35, 25, 15, 5, 0, 0, 0]     # TODO(balance)
 [[area_weights]]
 area = 4
-weights = [10, 25, 30, 22, 10, 3, 0]      # TODO(balance)
+weights = [10, 25, 30, 22, 10, 3, 0, 0]    # TODO(balance)
 [[area_weights]]
 area = 5
-weights = [5, 15, 25, 28, 17, 8, 2]       # TODO(balance)
+weights = [5, 15, 25, 28, 17, 8, 2, 0]       # TODO(balance)
 [[area_weights]]
 area = 6
-weights = [2, 8, 18, 27, 25, 15, 5]       # TODO(balance)
+weights = [20, 80, 180, 270, 250, 150, 50, 1]       # TODO(balance)
 [[area_weights]]
 area = 7
-weights = [1, 4, 12, 22, 28, 22, 11]      # TODO(balance)
+weights = [10, 40, 120, 220, 280, 220, 110, 1]      # TODO(balance)
 
 # Traits: a named bonus picked from one part. `stat` is a stat name the engines already read (the same names
 # enchants use). `amounts` = the value at each quality grade (Crude, Fine, Superb, Masterwork), scaled by quality mult.
@@ -72,12 +74,6 @@ stat = "appraise"
 amounts = [1, 2, 3, 4]                    # TODO(balance)
 kinds = ["pickaxe", "rod", "axe", "can"]
 
-# How many traits a freshly dropped part rolls, by part rarity.
-[fresh_traits]
-common = 1                                # TODO(balance)
-uncommon = 2
-rare = 3
-epic = 3                                # TODO(balance): capped at the 3 generic part traits (only 3 exist now)
 
 # Quality grades a smithed tool can get. `mult` scales the tool's power and every trait amount.
 # `base_odds` are percent weights; `levels.quality_shift_per_level` moves percent points off Crude per smithing level.
@@ -104,7 +100,7 @@ xp_per_salvage = 15                       # smithing xp per tool salvaged
 quality_shift_per_level = 0.5             # percent points moved off Crude per smithing level (TODO(balance))
 swap_unlock_level = 10                    # smithing level that unlocks swapping one part of an existing tool
 # Max part tier you can smith with, by smithing level: [level, tier] steps (the highest step reached counts).
-max_tier_by_level = [[1, 1], [5, 2], [10, 3], [15, 4], [20, 5], [30, 6], [40, 7]]   # TODO(balance)
+max_tier_by_level = [[1, 1], [5, 2], [10, 3], [15, 4], [20, 5], [30, 6], [40, 7], [50, 8]]   # TODO(balance)
 
 # One-time reset of OLD upgrade-chain tools (services/legacy_tools.py). Each tool kind gets ONE grant: the best step the
 # player reached on that kind's chain. Each grant is one base, one trim and one accent part of `tier`, each rolling `traits`

@@ -1648,7 +1648,7 @@ class ChangelogEntry(_Data):
 
 
 # ---- Smithing (configs/smithing.toml) ----------------------------------------------------------------------------------------------
-PART_TIERS = 7
+PART_TIERS = 8  # a part's tier IS its rarity (1 Common .. 7 Premium, 8 Celestial)
 
 
 class AreaWeights(_Data):
@@ -1671,13 +1671,6 @@ class SmithTrait(_Data):
     kinds: list[ToolKind] = Field(min_length=1)
 
     _id = field_validator("id")(check_id)
-
-
-class FreshTraits(_Data):
-    common: int = Field(ge=0)
-    uncommon: int = Field(ge=0)
-    rare: int = Field(ge=0)
-    epic: int = Field(ge=0)
 
 
 class Quality(_Data):
@@ -1717,11 +1710,10 @@ class SmithingRules(_Data):
     bonus_trait_chance: float = Field(ge=0, le=1)
     cosmetic_chance: float = Field(ge=0, le=1)
     part_drop_chance: float = Field(ge=0, le=1)
-    rarity_by_tier: list[str] = Field(min_length=PART_TIERS, max_length=PART_TIERS)
     tiers: dict[str, list[int]]  # {"power": [...]}: power per part tier, index 0 = tier 1
     area_weights: list[AreaWeights] = Field(min_length=1)
     trait_pool: list[SmithTrait] = Field(alias="trait", min_length=1)
-    fresh_traits: FreshTraits
+    fresh_traits: list[int] = Field(min_length=PART_TIERS, max_length=PART_TIERS)  # traits a fresh part rolls, by tier
     grades: list[Quality] = Field(alias="quality", min_length=1)
     levels: SmithLevels
     legacy_grants: list[LegacyGrant] = Field(alias="legacy_grant", min_length=3, max_length=3)
@@ -1735,12 +1727,12 @@ class SmithingRules(_Data):
             raise ValueError("part_types must be exactly base, trim, accent")
         power = self.tiers.get("power", [])
         if len(power) != PART_TIERS or any(b <= a for a, b in zip(power, power[1:], strict=False)):
-            raise ValueError("tiers.power must be 7 strictly increasing ints")
+            raise ValueError(f"tiers.power must be {PART_TIERS} strictly increasing ints")
         ids = [t.id for t in self.trait_pool]
         if len(set(ids)) != len(ids):
             raise ValueError("trait ids must be unique")
-        if any(r not in ("common", "uncommon", "rare", "epic") for r in self.rarity_by_tier):
-            raise ValueError("rarity_by_tier must name common, uncommon, rare or epic")
+        if any(n < 0 for n in self.fresh_traits):
+            raise ValueError("fresh_traits must be >= 0")
         if self.max_traits != 3:
             raise ValueError("max_traits must be 3")
         mults = [q.mult for q in self.grades]
@@ -1749,7 +1741,12 @@ class SmithingRules(_Data):
         return self
 
     def fresh_trait_count(self, tier: int) -> int:
-        return getattr(self.fresh_traits, self.rarity_by_tier[tier - 1])
+        return self.fresh_traits[tier - 1]
+
+    @staticmethod
+    def part_rarity(tier: int) -> int:
+        """A part's rarity is its tier (owner decision): tier 1 Common ... 7 Premium, 8 Celestial."""
+        return tier
 
     def tier_power(self, tier: int) -> int:
         return self.tiers["power"][tier - 1]
@@ -1758,7 +1755,7 @@ class SmithingRules(_Data):
         return min(PART_TIERS, area + self.area_cap)
 
     def weights_for_area(self, area: int) -> list[int]:
-        """Drop weights for tiers 1..7 in this area, with anything above the area cap zeroed (ignored)."""
+        """Drop weights for tiers 1..8 in this area, with anything above the area cap zeroed (ignored)."""
         row = next(w for w in self.area_weights if w.area == area)
         cap = self.max_tier_for_area(area)
         return [w if i + 1 <= cap else 0 for i, w in enumerate(row.weights)]
@@ -1856,7 +1853,7 @@ class MarketShop(_Data):
     unlock_area: str  # area id; the shop stays closed until you have reached it
     refresh_seconds: int = Field(ge=60)
     slots: int = Field(ge=1, le=10)
-    tier_weights: list[int] = Field(min_length=PART_TIERS, max_length=PART_TIERS)  # tiers 1..7
+    tier_weights: list[int] = Field(min_length=PART_TIERS, max_length=PART_TIERS)  # tiers 1..8
     extra_traits: int = Field(ge=0, le=3)  # added to the tier's fresh trait count (capped at the pool)
     tier_price: list[int] = Field(min_length=PART_TIERS, max_length=PART_TIERS)  # bits per part, by tier
     trait_premium: float = Field(ge=0)  # price x (1 + this x traits)

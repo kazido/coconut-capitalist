@@ -23,7 +23,7 @@ rows = [
 ]
 
 [part_base_t2]
-rarity = 1
+rarity = 2
 palette = { P = "#a49c8e", p = "#7c7468", q = "#575148", Q = "#38342e" }
 rows = [
   "................",
@@ -45,7 +45,7 @@ rows = [
 ]
 
 [part_base_t3]
-rarity = 2
+rarity = 3
 palette = { P = "#c0cad8", p = "#8a96a8", q = "#5a6678", Q = "#38404e" }
 rows = [
   "................",
@@ -67,7 +67,7 @@ rows = [
 ]
 
 [part_base_t4]
-rarity = 2
+rarity = 4
 palette = { P = "#fff0a0", p = "#f0c040", q = "#c08820", Q = "#7c5410" }
 rows = [
   "................",
@@ -89,7 +89,7 @@ rows = [
 ]
 
 [part_base_t5]
-rarity = 3
+rarity = 5
 palette = { P = "#ffffff", p = "#e4f4f8", q = "#aed0dc", Q = "#6e94a4" }
 rows = [
   "................",
@@ -111,7 +111,7 @@ rows = [
 ]
 
 [part_base_t6]
-rarity = 3
+rarity = 6
 palette = { P = "#b8ffe0", p = "#48d8a0", q = "#20a070", Q = "#106048" }
 rows = [
   "................",
@@ -133,8 +133,30 @@ rows = [
 ]
 
 [part_base_t7]
-rarity = 4
+rarity = 7
 palette = { P = "#d8b8ff", p = "#9860e0", q = "#6030a8", Q = "#341864" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "................",
+  "................",
+  "....PPPPPPPPQ...",
+  "...PPPpppppQQ...",
+  "..PPPPPPPPQQQ...",
+  "..ppppppppQQQ...",
+  "..ppppppppQQ....",
+  "..ppppppppQ.....",
+  "..pqqqqqqq......",
+  "................",
+  "................",
+  "................",
+  "................",
+]
+
+[part_base_t8]
+rarity = 8
+palette = { P = "#fffbe0", p = "#ffe680", q = "#58d8e8", Q = "#2a7890" }
 rows = [
   "................",
   "................",
@@ -177,7 +199,7 @@ rows = [
 ]
 
 [part_trim_t2]
-rarity = 1
+rarity = 2
 palette = { P = "#a49c8e", p = "#7c7468", q = "#575148", Q = "#38342e" }
 rows = [
   "................",
@@ -199,7 +221,7 @@ rows = [
 ]
 
 [part_trim_t3]
-rarity = 2
+rarity = 3
 palette = { P = "#c0cad8", p = "#8a96a8", q = "#5a6678", Q = "#38404e" }
 rows = [
   "................",
@@ -221,7 +243,7 @@ rows = [
 ]
 
 [part_trim_t4]
-rarity = 2
+rarity = 4
 palette = { P = "#fff0a0", p = "#f0c040", q = "#c08820", Q = "#7c5410" }
 rows = [
   "................",
@@ -243,7 +265,7 @@ rows = [
 ]
 
 [part_trim_t5]
-rarity = 3
+rarity = 5
 palette = { P = "#ffffff", p = "#e4f4f8", q = "#aed0dc", Q = "#6e94a4" }
 rows = [
   "................",
@@ -265,7 +287,7 @@ rows = [
 ]
 
 [part_trim_t6]
-rarity = 3
+rarity = 6
 palette = { P = "#b8ffe0", p = "#48d8a0", q = "#20a070", Q = "#106048" }
 rows = [
   "................",
@@ -287,8 +309,30 @@ rows = [
 ]
 
 [part_trim_t7]
-rarity = 4
+rarity = 7
 palette = { P = "#d8b8ff", p = "#9860e0", q = "#6030a8", Q = "#341864" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "..........pq....",
+  ".........PPqQ...",
+  "........ppppQ...",
+  ".......PPqqQ....",
+  "......pPppQ.....",
+  ".....PpqpQ......",
+  "....pPpqQ.......",
+  "...ppqpQ........",
+  "...qqqQ.........",
+  "....QQ..........",
+  "................",
+  "................",
+  "................",
+]
+
+[part_trim_t8]
+rarity = 8
+palette = { P = "#fffbe0", p = "#ffe680", q = "#58d8e8", Q = "#2a7890" }
 rows = [
   "................",
   "................",
@@ -331,7 +375,7 @@ rows = [
 ]
 
 [part_accent_t2]
-rarity = 1
+rarity = 2
 palette = { P = "#a49c8e", p = "#7c7468", q = "#575148", Q = "#38342e" }
 rows = [
   "................",
@@ -353,7 +397,7 @@ rows = [
 ]
 
 [part_accent_t3]
-rarity = 2
+rarity = 3
 palette = { P = "#c0cad8", p = "#8a96a8", q = "#5a6678", Q = "#38404e" }
 rows = [
   "................",
@@ -375,7 +419,7 @@ rows = [
 ]
 
 [part_accent_t4]
-rarity = 2
+rarity = 4
 palette = { P = "#fff0a0", p = "#f0c040", q = "#c08820", Q = "#7c5410" }
 rows = [
   "................",
@@ -397,7 +441,7 @@ rows = [
 ]
 
 [part_accent_t5]
-rarity = 3
+rarity = 5
 palette = { P = "#ffffff", p = "#e4f4f8", q = "#aed0dc", Q = "#6e94a4" }
 rows = [
   "................",
@@ -419,7 +463,7 @@ rows = [
 ]
 
 [part_accent_t6]
-rarity = 3
+rarity = 6
 palette = { P = "#b8ffe0", p = "#48d8a0", q = "#20a070", Q = "#106048" }
 rows = [
   "................",
@@ -441,8 +485,30 @@ rows = [
 ]
 
 [part_accent_t7]
-rarity = 4
+rarity = 7
 palette = { P = "#d8b8ff", p = "#9860e0", q = "#6030a8", Q = "#341864" }
+rows = [
+  "................",
+  "................",
+  "................",
+  "................",
+  ".....pPPPP......",
+  "....pppPPpp.....",
+  "...ppppppppp....",
+  "...pqqqqqQQQQ...",
+  "....ppppqqqq....",
+  ".....pppqqq.....",
+  "......ppqq......",
+  ".......pq.......",
+  "................",
+  "................",
+  "................",
+  "................",
+]
+
+[part_accent_t8]
+rarity = 8
+palette = { P = "#fffbe0", p = "#ffe680", q = "#58d8e8", Q = "#2a7890" }
 rows = [
   "................",
   "................",

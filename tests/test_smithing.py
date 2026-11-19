@@ -255,3 +255,16 @@ async def test_an_old_tool_still_keeps_both_enchants():
     await enchanting.apply_scroll(user, "scroll_double_hook", tool.id, REG)
     done = await enchanting.apply_scroll(user, "scroll_steady_line", tool.id, REG)
     assert set(done.enchants) == {"double_hook", "steady_line"}
+
+
+def test_part_rarity_is_its_tier_and_celestial_is_incredibly_rare():
+    """Owner rule: tier = rarity (1 Common .. 8 Celestial). Tier 8 never drops early and stays below 1 part in 500."""
+    assert PART_TIERS == 8
+    assert [RULES.part_rarity(t) for t in range(1, PART_TIERS + 1)] == list(range(1, 9))
+    for row in RULES.area_weights:
+        weights = RULES.weights_for_area(row.area)
+        share = weights[-1] / sum(weights)
+        assert share < 1 / 500
+        if row.area + RULES.area_cap < PART_TIERS:
+            assert weights[-1] == 0
+    assert "Celestial" in smithing.part_label("base", 8)
