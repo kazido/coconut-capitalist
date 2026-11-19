@@ -290,6 +290,8 @@ def test_the_drop_boost_raises_drop_chances_and_zero_boost_changes_nothing():
 async def test_a_bloom_boosts_drops_on_private_community_and_party_trees(db):
     now = time.time()
     user = await with_axe(1)
+    # the community hour is only open for its first minutes, so start the Bloom inside an open window
+    now = f.window_of(now) * f.HOUR + 60
     # private: the boost is read inside fell_private
     seen = []
     real = f.roll_drops

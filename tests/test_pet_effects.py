@@ -139,7 +139,7 @@ def test_a_fox_makes_rare_ore_likelier_in_the_mine():
 
     def rare(chance: float) -> int:
         total = 0
-        for seed in range(40):
+        for seed in range(400):
             run = mining.MineRun(REG.mining, REG, Random(seed), cursors=[2], rare_reroll=chance)
             for depth in range(40, 60):
                 total += sum(1 for cell in run.row(depth) if cell and REG.item(cell[0]).rarity >= pets.RARE_FROM)

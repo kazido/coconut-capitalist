@@ -697,10 +697,15 @@ async def test_leave_banks_the_haul_and_unlocks_navigation(db):
     for _ in range(3):
         await find_button(nav, "Dig").callback(inter)
     carried = dict(run.haul)
+    # the mine type is rolled on entry and some types scale xp, so expect the plain 30 times this run's multiplier
+    expected_xp = round(30 * run.mine_type.xp_mult)
     await click(nav, inter, "Leave & bank")
     assert nav.screen.id == "result" and "climbed out safely" in all_text(nav) and nav.screen.locked  # the haul is shown first, then you carry on
     await continue_through(nav, inter)
-    assert await user.items() == carried and (await user.skill("mining")).xp == 30
+    # banking may star some ore (run.haul is rewritten with the starred ids), but never adds or loses any
+    items = await user.items()
+    assert items == dict(run.haul) and sum(items.values()) == sum(carried.values())
+    assert (await user.skill("mining")).xp == expected_xp
     await click(nav, inter, "Mine again")  # the reward screen is the last page of the mine: the next run starts from it
     assert nav.screen.run.depth == 0 and not nav.screen.run.finished
     nav2, inter2 = await enter_mines()  # ...or leave it for the Mining page
