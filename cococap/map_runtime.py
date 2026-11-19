@@ -1,7 +1,7 @@
 """Runtime world map for the Travel page (pure Python + Pillow; no discord, no art/ imports).
 
 Reads cococap/assets/world_map.png and world_map.json (one site per area, in registry order). Areas up to the
-highest one reached are shown, the area ahead of it is revealed too, and everything beyond is fogged. A red X
+highest one reached are shown, the area ahead of it is revealed too, and everything beyond shows only a ? on the open map. A red X
 marks where the player is now.
 """
 import io
@@ -11,11 +11,10 @@ from pathlib import Path
 from PIL import Image
 
 _ASSETS = Path(__file__).resolve().parent / "assets"
-_FOG_IN = (0xE6, 0xCF, 0x98, 255)
-_FOG_EDGE = (0xD6, 0xB9, 0x7C, 255)
+_PAPER = (0xF1, 0xE0, 0xB4, 255)
 _INK = (0x4B, 0x31, 0x20, 255)
 _RED = (0xE8, 0x28, 0x1C, 255)
-_QUESTION = ["ooo", "..o", ".o.", "...", ".o."]  # stamped centred on the site
+_QUESTION = [".hhhhh.", "hoooooh", "hohhhoh", "hhh.hoh", ".hhooh.", "..hoh..", "..hhh..", "..hoh..", "..hhh.."]  # an ink ? with a paper halo
 _X = [
     "oo...oo",
     "oRo.oRo",
@@ -27,17 +26,15 @@ _X = [
 ]  # the "you are here" mark, top-left at (site x + 4, site y - 14)
 _BASE: Image.Image | None = None
 _SITES: list[tuple[int, int]] | None = None
-_FOG: tuple[float, float] = (0.0, 0.0)  # fog ellipse radii (rx, ry), from world_map.json
 _UNIT = 1  # map pixels per drawing pixel: the base map is drawn at a finer grid; marks are stamped in unit-sized blocks
 
 
 def _load() -> None:
-    global _BASE, _SITES, _FOG, _UNIT
+    global _BASE, _SITES, _UNIT
     if _BASE is None:
         _BASE = Image.open(_ASSETS / "world_map.png").convert("RGBA")
         data = json.loads((_ASSETS / "world_map.json").read_text(encoding="utf-8"))
         _SITES = [(int(x), int(y)) for x, y in data["sites"]]
-        _FOG = (float(data["fog"][0]), float(data["fog"][1]))
         _UNIT = int(data.get("unit", 1))
 
 
@@ -54,27 +51,27 @@ def _stamp(img: Image.Image, left: int, top: int, rows: list[str], pal: dict[str
                         img.putpixel((x, y), pal[ch])
 
 
-def _fog(img: Image.Image, sx: int, sy: int) -> None:
-    """A soft parchment ellipse covering the landmark and its name label (6 px below the site): solid inside,
-    checkerboard dither at the edge. The ink "?" sits at the centre."""
-    rx, ry = _FOG
+def _unknown(img: Image.Image, sx: int, sy: int) -> None:
+    """An area the player cannot see yet: the open map with just a ? where its landmark will be."""
     u = _UNIT
-    cx, cy = sx, sy + 6 * u
-    for y in range(max(0, cy - int(ry) - 1), min(img.height, cy + int(ry) + 2)):
-        for x in range(max(0, cx - int(rx) - 1), min(img.width, cx + int(rx) + 2)):
-            d = ((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2
-            if d <= 0.6:
-                img.putpixel((x, y), _FOG_IN)
-            elif d <= 1.0 and (x // u + y // u) % 2 == 0:
-                img.putpixel((x, y), _FOG_EDGE)
-    _stamp(img, cx - 1 * u, cy - 2 * u, _QUESTION, {"o": _INK})
+    _stamp(img, sx - 3 * u, sy - 10 * u, _QUESTION, {"o": _INK, "h": _PAPER})
+
+
+_OVERLAYS: list[Image.Image] = []
+
+
+def _overlay(i: int) -> Image.Image:
+    """Area i's landmark and name (a transparent layer the size of the map), loaded once."""
+    while len(_OVERLAYS) <= i:
+        _OVERLAYS.append(Image.open(_ASSETS / f"world_map_area_{len(_OVERLAYS)}.png").convert("RGBA"))
+    return _OVERLAYS[i]
 
 
 def _art_version() -> str:
     """A short fingerprint of the map art, so a redrawn map never serves stale cached images."""
     import zlib
 
-    return f"{zlib.crc32(_ASSETS.joinpath('world_map.png').read_bytes() + _ASSETS.joinpath('world_map.json').read_bytes()):08x}"
+    return f"{zlib.crc32(b''.join(f.read_bytes() for f in sorted(_ASSETS.glob('world_map*')))):08x}"
 
 
 def render_map(
@@ -101,8 +98,11 @@ def render_map(
             return path.read_bytes()
 
     img = _BASE.copy()
-    for i in range(revealed, count):
-        _fog(img, *_SITES[i])
+    for i in range(count):
+        if i < revealed:
+            img.alpha_composite(_overlay(i))
+        else:
+            _unknown(img, *_SITES[i])
     cx, cy = _SITES[current]
     _stamp(img, cx + 4 * _UNIT, cy - 14 * _UNIT, _X, {"o": _INK, "R": _RED})
     img = img.resize((img.width * scale, img.height * scale), Image.NEAREST)

@@ -1,4 +1,4 @@
-"""The Travel page's world map: rendered per player, fogged past the area ahead, X where you are."""
+"""The Travel page's world map: rendered per player; areas past the one ahead show only a ?; X where you are."""
 import io
 import json
 
@@ -13,20 +13,13 @@ DATA = json.loads((map_runtime._ASSETS / "world_map.json").read_text(encoding="u
 W, H = DATA["size"]
 SITES = [tuple(s) for s in DATA["sites"]]
 UNIT = DATA.get("unit", 1)  # map pixels per drawing pixel
-RX, RY = DATA["fog"]
-FOG = {(0xE6, 0xCF, 0x98, 255), (0xD6, 0xB9, 0x7C, 255)}
+INK = (0x4B, 0x31, 0x20, 255)
 RED = (0xE8, 0x28, 0x1C, 255)
 SCALE = 2
 
 
 def _image(png: bytes) -> Image.Image:
     return Image.open(io.BytesIO(png)).convert("RGBA")
-
-
-def _inside_fog(site: tuple[int, int]) -> tuple[int, int]:
-    """A pixel inside the fog ellipse, clear of the ink "?" in its centre."""
-    sx, sy = site
-    return sx - RX // 2, sy + 6
 
 
 def test_render_is_a_png_at_scaled_size():
@@ -48,14 +41,28 @@ def test_x_marks_the_current_area():
     assert RED in near
 
 
-def test_areas_past_the_one_ahead_are_fogged():
-    # highest = 1: areas 0..1 are reached, area 2 is the one ahead (revealed), area 3 is fogged.
+BASE = Image.open(map_runtime._ASSETS / "world_map.png").convert("RGBA")
+
+
+def _shown(im, layer, scale):
+    """(pixels of a landmark layer that show in the render, pixels it would change on the bare map)."""
+    changes = [(x, y) for y in range(layer.height) for x in range(layer.width)
+               if layer.getpixel((x, y))[3] and BASE.getpixel((x, y)) != layer.getpixel((x, y))]
+    return sum(1 for x, y in changes if im.getpixel((x * scale, y * scale)) == layer.getpixel((x, y))), len(changes)
+
+
+def test_areas_past_the_one_ahead_show_only_a_question_mark():
+    # highest = 1: areas 0..1 are reached, area 2 is the one ahead (its landmark shows), area 3 is unknown (just a ?).
     im = _image(render_map(1, 1, scale=SCALE, cache_dir=None))
-    base = Image.open(map_runtime._ASSETS / "world_map.png").convert("RGBA")
-    ahead = _inside_fog(SITES[2])
-    beyond = _inside_fog(SITES[3])
-    assert im.getpixel((beyond[0] * SCALE, beyond[1] * SCALE)) in FOG
-    assert im.getpixel((ahead[0] * SCALE, ahead[1] * SCALE)) == base.getpixel(ahead)
+    ahead = map_runtime._overlay(2)
+    beyond = map_runtime._overlay(3)
+    shown, total = _shown(im, ahead, SCALE)
+    assert shown > 0.9 * total
+    shown, total = _shown(im, beyond, SCALE)
+    assert shown < 0.1 * total
+    sx, sy = SITES[3]
+    near = {im.getpixel((x * SCALE, y * SCALE)) for x in range(sx - 4 * UNIT, sx + 4 * UNIT) for y in range(sy - 11 * UNIT, sy)}
+    assert INK in near  # the ? is there
 
 
 def test_cache_returns_identical_bytes(tmp_path):
