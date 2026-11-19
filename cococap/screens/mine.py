@@ -144,7 +144,7 @@ HELP = (
     f"Read the rock: {_soft()} **soft** (little pressure, mostly copper)  ·  {_firm()} **firm** (iron)  ·  {_hard()} **hard** (a lot of pressure, the top ore).\n"
     "Inside it hides ore, nothing, a **vent** that cools the tunnel, or a **cache** with a brace.\n"
     "cell_upgraded: a **rich lode**, a mystery with better loot  ·  wyrmhole: dig it to drop into a hole of treasure (what you carry is banked)\n"
-    f"{_bomb()} **bomb**: blasts 10 rows (no collapse risk)  ·  {_magnet()} the magnet aims at the richest column and marks vents while it has fuel"
+    f"{_bomb()} **bomb**: blasts {get_registry().mining.descent.bomb_layers} rows (no collapse risk)  ·  {_magnet()} the magnet aims at the richest column and marks vents while it has fuel"
 )
 
 

@@ -1772,7 +1772,7 @@ material_coral_shard = 20
 [tool_scarab_bomb]
 name = "Scarab Bomb"
 description = "Careful handling these, they can be quite dangerous."
-wiki = "Take it down the mines (up to 3 per run). Blows 10 rows down at once: you collect every cell in them, vents and lodes included. It adds no pressure and has no collapse check. A wyrmhole in those rows is taken after the blast."
+wiki = "Take it down the mines (up to 3 per run). Blows 5 rows down at once: you collect every cell in them, vents and lodes included. It adds no pressure and has no collapse check. A wyrmhole in those rows is taken after the blast."
 emoji = "💣"
 rarity = 4
 skill = "mining"

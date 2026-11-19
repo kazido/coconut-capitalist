@@ -38,8 +38,9 @@ name = "Scarab Bomb"
 emoji = "💣"
 output = "tool_scarab_bomb"
 quantity = 1
-# Was 100,000 bits. Mined ore: gold ~48 an hour, iron ~180, copper ~720, so about 40 minutes of digging per bomb.
-inputs = { material_gold_ore = 30, material_iron_ore = 100, material_copper_ore = 200 }
+# Was 100,000 bits. A 10-row blast pays out far more of the common ores than one bomb needs, so the bomb now asks for a spread of
+# ore types (copper, iron, tin, silver, gold, plus the rarer obsidian and amber), so one blast can't cover a bomb on its own.  TODO(balance): guessed amounts, check with scripts.balance.
+inputs = { material_copper_ore = 150, material_iron_ore = 80, material_tin_ore = 40, material_silver_ore = 20, material_gold_ore = 30, material_obsidian = 8, material_amber = 12 }
 
 [material_twilight_fuel]
 name = "Twilight Fuel"
