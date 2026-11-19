@@ -39,7 +39,7 @@ class ReactorPane(Screen):
             if core.gem_id:
                 slots.append(f"{number}. {reg.item(core.gem_id).display}")
             else:
-                slots.append(f"{number}. {emojis.get('cell_empty', '▫️')} *empty: {reg.item(wanted).name}*")
+                slots.append(f"{number}. {emojis.get('cell_empty', '▫️')} *{reg.item(wanted).name}*")
         if not status["gem_slots_open"]:
             slots.append(f"-# Gem slots unlock at mining level {rules.reactor.gem_slot_level}.")
 
@@ -76,7 +76,7 @@ class ReactorPane(Screen):
             text(auto + "\n-# " + prestige),
         ]
         body.append(row(
-            button("Claim lodes", emoji=emojis.skill("mining", "⛏️"), style=discord.ButtonStyle.success, disabled=status["pending_lodes"] == 0, on_click=self._claim),
+            button("Claim lodes", emoji=emojis.icon("rock_firm", "🪨"), style=discord.ButtonStyle.success, disabled=status["pending_lodes"] == 0, on_click=self._claim),
             button("Insert gems", emoji=reg.item(rules.reactor.core_gems[0]).emoji or None, on_click=self._insert, disabled=not status["gem_slots_open"]),
             button("Prestige", emoji=reg.item(rules.wyrmhole.implosion_item).emoji or None, on_click=self._prestige, disabled=not status["prestige_unlocked"]),
         ))
