@@ -66,7 +66,7 @@ class TradeScreen(Screen):
         stacks = sorted((await trade.tradable(self.user)).items(), key=lambda kv: -get_registry().item(kv[0]).sell_price * kv[1])[:SHOWN_ITEMS]
         if stacks:
             body.append(row(select("Add an item...", [
-                discord.SelectOption(label=get_registry().item(i).name[:90], description=f"you have {q:,}", value=i) for i, q in stacks], self._add_item)))
+                discord.SelectOption(label=get_registry().item(i).name[:90], description=f"you have {q:,}", value=i, emoji=get_registry().item(i).emoji or None) for i, q in stacks], self._add_item)))
         accepted = me in window.accepted
         body.append(row(button("Add bits", emoji=emojis.currency("bits"), on_click=self._add_bits),
                         button("Empty my side", disabled=not (mine[0] or mine[1]), on_click=self._empty),
