@@ -8,7 +8,7 @@ import discord
 from cococap import emojis
 from cococap.constants import Rarities
 from cococap.registry import get_registry
-from cococap.services import areas, fishing, fishing_community, party_boss, pets, pots
+from cococap.services import areas, fishing, fishing_community, party_boss, pets, pots, smithing
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import xp_bonus
 from cococap.services import odds
@@ -310,8 +310,9 @@ class FishScreen(Screen):
             live = flash_live
         else:
             live = offer_live if self.offer is not None else None
+        part_notes = [smithing.part_line(catch.part)] if catch.part is not None else []
         return rewards_result(f"You caught a {catch.fish.display}!", items=Counter({catch.fish.id: 1 + catch.extra_fish}) + Counter(catch.extras), xp=catch.xp,
-                              notes=lines[1:], headline=lines[:1], odds=odds.fishing_catch(), emoji=emojis.skill("fishing", "🎣"), accent=int(rarity.color, 16),
+                              notes=lines[1:] + part_notes, headline=lines[:1], odds=odds.fishing_catch(), emoji=emojis.skill("fishing", "🎣"), accent=int(rarity.color, 16),
                               again=self._cast, again_label="Cast again", live=live, actions=actions)
 
     # ---- handlers --------------------------------------------------------------------------------

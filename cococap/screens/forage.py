@@ -9,7 +9,7 @@ from cococap.registry import get_registry
 from cococap.services import areas, foraging, party_tree, pets, releaf
 from cococap.services.equipment import equipped_stats
 from cococap.services.party import Party, xp_bonus
-from cococap.services import odds
+from cococap.services import odds, smithing
 from cococap.ui.rewards import rewards_result
 from cococap.ui.tabs import TabsScreen
 from cococap.ui import Page, Result, Screen
@@ -32,6 +32,7 @@ def rewards_page(rewards: list[foraging.Reward], title: str, **after) -> Result:
     return rewards_result(
         title, items=sum((r.drops for r in rewards), Counter()), bits=sum(r.bits for r in rewards), xp=sum(r.xp for r in rewards),
         headline=[reward_headline(r) for r in rewards],
+        notes=[smithing.part_line(r.part) for r in rewards if r.part is not None],
         odds=odds.foraging(), emoji=emojis.icon("tree", "🌳"), accent=0x2E7D32, **after)
 
 

@@ -14,6 +14,7 @@ from cococap.services import smithing
 from cococap.user import User
 from tests.test_farming import HOUR, SURE, T0 as FARM_T0, ripe_farm
 from tests.test_fishing import T0 as FISH_T0, cast_of
+from tests.test_hub import all_text, enter_mines, hub, click
 
 REG = get_registry()
 RULES = REG.smithing
@@ -112,3 +113,60 @@ async def test_no_part_when_the_chance_is_zero_in_every_skill(db, monkeypatch):
     assert (await fg.fell_private(user, tree, Random(3), REG)).part is None
     await ripe_farm(user)
     assert (await farm.harvest(user, 1, Random(1), now=FARM_T0 + 1000 * HOUR, registry=SURE)).part is None
+
+
+# ---- the result screens say what you found -----------------------------------------------------------------------
+
+def fake_part_drop(monkeypatch, slot: str = "trim", tier: int = 3, traits: list[str] | None = None) -> None:
+    """Every skill's one roll gives a part of this type and tier, with the first pool trait (no randomness)."""
+    picked = [RULES.trait_pool[0].id] if traits is None else traits
+
+    async def drop(user, location, rng, registry=None):
+        return await user.give_instance(f"part_{slot}", rolled={"tier": tier}, traits=picked)
+
+    monkeypatch.setattr(smithing, "maybe_drop_part", drop)
+
+
+async def test_part_line_names_tier_type_and_traits(db, monkeypatch):
+    fake_part_drop(monkeypatch, "trim", 3)
+    user = await User.get(1)
+    part = await smithing.maybe_drop_part(user, 1, Random(1), REG)
+    line = smithing.part_line(part, REG)
+    assert "Tier 3" in line and "Trim part" in line
+    assert RULES.trait_pool[0].name in line
+    assert "Smith with it" in line
+
+
+async def test_part_line_has_no_parentheses_without_traits(db, monkeypatch):
+    fake_part_drop(monkeypatch, "base", 1, traits=[])
+    user = await User.get(1)
+    part = await smithing.maybe_drop_part(user, 1, Random(1), REG)
+    line = smithing.part_line(part, REG)
+    assert "Base part" in line and "(" not in line
+
+
+async def test_mining_result_screen_shows_the_part(db, monkeypatch):
+    fake_part_drop(monkeypatch, "trim", 3)
+    nav, inter = await enter_mines()
+    mine = nav.screen
+    mine.run.leave()
+    await mine._end(None)
+    mine._show_loot()
+    await mine.refresh(inter)
+    text = all_text(nav)
+    assert "Tier 3" in text and "Trim part" in text
+
+
+async def test_farm_harvest_screen_shows_the_part(db, monkeypatch):
+    from tests.test_hub import ripen, open_all_zones
+
+    fake_part_drop(monkeypatch, "accent", 2)
+    user = await User.get(1)
+    await user.update_skill("farming", lambda m: setattr(m, "starter_given", True))
+    await open_all_zones(user)
+    await user.add_item("seed_lemon", 5)
+    await ripen(user, 1)
+    nav, inter = await hub("farm")
+    await click(nav, inter, "Harvest all")
+    text = all_text(nav)
+    assert "Tier 2" in text and "Accent part" in text

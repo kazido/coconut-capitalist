@@ -74,6 +74,17 @@ async def roll_part(
     return await user.give_instance(f"part_{part_type}", rolled={"tier": tier}, traits=traits)
 
 
+def part_line(part: ItemInstance, registry: Registry | None = None) -> str:
+    """One line for a skill's result screen: the part's tier, type and traits (names from the registry)."""
+    reg = registry or get_registry()
+    rules = _rules(reg)
+    slot = part.template_id.removeprefix("part_")
+    emoji = reg.item(part.template_id).emoji or "🧩"
+    names = [rules.trait(t).name for t in part.traits]
+    named = f" ({', '.join(names)})" if names else ""
+    return f"{emoji} Found a **Tier {_part_tier(part)} {slot.title()} part**{named}! Smith with it on Tools → Smithing."
+
+
 async def maybe_drop_part(
     user: User, location: int, rng: random.Random, registry: Registry | None = None
 ) -> ItemInstance | None:
