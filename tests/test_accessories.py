@@ -169,6 +169,7 @@ async def test_shop_sells_a_basic_accessory_for_its_price_one_at_a_time(db):
 
     user = await player()
     basic = next(t for t in RULES.templates if t.skill == "mining" and t.shop_price > 0)
+    await user.add_bits(basic.shop_price * 3)  # (a new player may not afford one)
     before = await user.get_bits()
     purchase = await shop.buy(user, basic.id)
     assert purchase.total == basic.shop_price
