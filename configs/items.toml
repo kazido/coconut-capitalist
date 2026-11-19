@@ -1135,10 +1135,9 @@ max = 1
 [food_burger]
 name = "Burger"
 description = "A burger, somehow still warm. Every pet will fight you for it."
-wiki = "A rare find while chopping. Feed it to a pet from the Pets page: it is worth five times Golden Sap in pet xp (25,000), and more again to a foraging pet. Not sellable."
+wiki = "A rare find: each hour you play (press anything) has a small chance of one. Feed it to a pet from the Pets page: it is worth five times Golden Sap in pet xp (25,000), and more again to a foraging pet. Not sellable."
 emoji = "🍔"
 rarity = 4
-skill = "foraging"
 category = "pet_food"
 price = 0
 sell_price = 100000  # TODO(balance)
@@ -1148,7 +1147,7 @@ tier = 3
 xp_mult = 5
 
 [food_burger.drop]
-rate = 200
+rate = 150  # 1-in-N per hour of play (activity.roll_token), any skill
 min = 1
 max = 1
 

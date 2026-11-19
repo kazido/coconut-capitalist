@@ -40,21 +40,31 @@ def pop_notices(user_id: int) -> list[str]:
 
 
 async def roll_token(user_id: int, now: float, registry: Registry | None = None) -> bool:
-    """Once an hour of play, a chance of one token. The roll is fixed by (player, hour), and the hour is written first in one
-    statement, so a second press, a second process or a restart cannot roll it again."""
-    chance = (registry or get_registry()).economy.token_drop_chance
+    """Once an hour of play, a chance of one token (and a smaller one of a Burger, the no-skill pet feast). The roll is fixed by
+    (player, hour), and the hour is written first in one statement, so a second press, a second process or a restart cannot roll it again."""
+    reg = registry or get_registry()
+    chance = reg.economy.token_drop_chance
+    burger = get_registry().find_item("food_burger")  # (the real item list, even when a test passes a stand-in registry for the odds)
     hour = int(now // 3600)
+    got_token = got_burger = False
     async with get_database().session() as session:
         claimed = await session.execute(
             update(UserRow).where(UserRow.discord_id == user_id, UserRow.last_token_roll < hour).values(last_token_roll=hour))
-        if claimed.rowcount != 1 or random.Random(f"token:{user_id}:{hour}").random() >= chance:
+        if claimed.rowcount != 1:
             return False
-        await session.execute(update(UserRow).where(UserRow.discord_id == user_id).values(tokens=UserRow.tokens + 1))
+        got_burger = burger is not None and burger.drop is not None and random.Random(f"burger:{user_id}:{hour}").random() < 1 / burger.drop.rate
+        got_token = random.Random(f"token:{user_id}:{hour}").random() < chance
+        if got_token:
+            await session.execute(update(UserRow).where(UserRow.discord_id == user_id).values(tokens=UserRow.tokens + 1))
     from cococap.user import User
 
     user = await User.get(user_id)
-    await user.inc_stat("tokens_earned")
-    return True
+    if got_token:
+        await user.inc_stat("tokens_earned")
+    if got_burger:
+        await user.add_item("food_burger", 1)
+        notices.setdefault(user_id, []).append(f"{burger.emoji} You found a **Burger** while you were out and about! (pet food)")
+    return got_token
 
 
 @dataclass(frozen=True)
