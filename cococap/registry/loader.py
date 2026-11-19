@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import LOCATIONS_PER_AREA, AreaRules, Location, ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
+from .models import LOCATIONS_PER_AREA, AreaRules, ChangelogEntry, Notice, Location, ScrollRules, ShipmentRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -87,7 +87,12 @@ class Registry:
         recipes: list[Recipe] | None = None,
         areas: AreaRules | None = None,
         locations: dict[str, list[Location]] | None = None,
+        notices: list[Notice] | None = None,
+        changelog: list[ChangelogEntry] | None = None,
     ):
+        # Player news, newest first (a stable sort keeps the file order for entries of the same day, so write new ones at the top).
+        self.notices: list[Notice] = sorted(notices or [], key=lambda n: n.date, reverse=True)
+        self.changelog: list[ChangelogEntry] = sorted(changelog or [], key=lambda e: e.date, reverse=True)
         self.areas = areas
         self.locations: dict[str, list[Location]] = locations or {}  # skill -> its named locations, in unlock order
         self.items: dict[str, Item] = {i.id: i for i in items}
@@ -432,7 +437,13 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     shipments = _build(ShipmentRules, "shipments", [("shipments", _read(config_dir, "shipments"))])[0]
     scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
     recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
-    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools, shipments, scrolls, recipes, areas, locations)
+    notices = _build(Notice, "notices", ((n.get("id", f"#{i}"), n) for i, n in enumerate(_read(config_dir, "notices").get("notice", []))))
+    seen = [n.id for n in notices]
+    if dupes := sorted({i for i in seen if seen.count(i) > 1}):
+        raise RegistryError(f"notices.toml: duplicate id(s) {dupes} (seen ids are stored per player, so every notice needs its own)")
+    changelog = _build(ChangelogEntry, "changelog", ((f"entry {i + 1}", e) for i, e in enumerate(_read(config_dir, "changelog").get("entry", []))))
+    return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools,
+                    shipments, scrolls, recipes, areas, locations, notices=notices, changelog=changelog)
 
 
 def _name_waters(rules: FishingRules, locations: dict[str, list[Location]]) -> FishingRules:
