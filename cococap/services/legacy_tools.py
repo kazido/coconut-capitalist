@@ -74,7 +74,7 @@ async def reset_player(user: User, rng: random.Random, registry: Registry | None
 
     old: list[ItemInstance] = []
     best: dict[str, str | None] = {}  # kind -> the best step reached on that kind's chain
-    scrolls_given = 0
+    enchants: list[tuple[int, str]] = []  # (level, scroll id) of every enchant on an old tool
     for inst in await user.instances():
         item = reg.find_item(inst.template_id)
         if item is None or item.tool is None or inst.parts:
@@ -87,8 +87,14 @@ async def reset_player(user: User, rng: random.Random, registry: Registry | None
         for enchant, level in inst.enchants.items():
             scroll = _scroll_for(reg, enchant)
             if scroll and level > 0:
-                await user.add_item(scroll, level)
-                scrolls_given += level
+                enchants.append((level, scroll))
+
+    # Only a couple of scrolls come back (legacy_scroll_cap): the strongest enchants first, one scroll each.
+    enchants.sort(reverse=True)
+    scrolls_given = 0
+    for _level, scroll in enchants[: rules.legacy_scroll_cap]:
+        await user.add_item(scroll, 1)
+        scrolls_given += 1
 
     # Old tools go first: deleting one also clears any skill that had it equipped.
     for inst in old:

@@ -1626,6 +1626,7 @@ class SmithingRules(_Data):
     grades: list[Quality] = Field(alias="quality", min_length=1)
     levels: SmithLevels
     legacy_grants: list[LegacyGrant] = Field(alias="legacy_grant", min_length=3, max_length=3)
+    legacy_scroll_cap: int = Field(2, ge=0)  # most scrolls the one-time reset gives back per player
 
     @model_validator(mode="after")
     def _sane(self):

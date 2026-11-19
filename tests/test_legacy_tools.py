@@ -43,7 +43,7 @@ async def _instances_without_parts(user: User) -> list:
 async def test_reset_turns_old_upgrades_into_parts_scrolls_and_starters():
     user = await User.get(1)
     pickaxe_old = await user.give_instance(_fork_and_past_it(STARTER["pickaxe"])[1], enchants={"keen": 2})
-    axe_plain = await user.give_instance(REG.item(STARTER["axe"]).tool.upgrade.to)
+    axe_plain = await user.give_instance(REG.item(STARTER["axe"]).tool.upgrade.to, enchants={"scholar": 1, "appraiser": 3})
 
     result = await legacy_tools.reset_player(user, random.Random(1))
 
@@ -64,9 +64,12 @@ async def test_reset_turns_old_upgrades_into_parts_scrolls_and_starters():
         pool = RULES.traits_for("pickaxe" if part.rolled["tier"] == ROWS["fork_up"].tier else "axe")
         assert len(part.traits) == min(ROWS["fork_up"].traits, len(pool))
 
-    # Enchant comes back as its scroll, one per level.
-    assert await user.item_quantity(_scroll_for("keen")) == 2
-    assert result.scrolls_given == 2
+    # Only legacy_scroll_cap scrolls come back, one each, strongest enchants first (appraiser 3, keen 2; scholar 1 is dropped).
+    assert RULES.legacy_scroll_cap == 2  # the levels picked above assume a cap of 2
+    assert result.scrolls_given == RULES.legacy_scroll_cap
+    assert await user.item_quantity(_scroll_for("appraiser")) == 1
+    assert await user.item_quantity(_scroll_for("keen")) == 1
+    assert await user.item_quantity(_scroll_for("scholar")) == 0
 
     # Four starters, each made of tier-1 parts and equipped for its skill.
     for kind, starter in STARTER.items():

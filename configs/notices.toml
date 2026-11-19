@@ -17,7 +17,7 @@ title = "Tools are smithed now"
 body = """
 Tools are now built from three parts: a **base**, a **trim** and an **accent**. Parts drop from every skill, and each one can carry up to three traits. Smith them on **Tools → Smithing**.
 
-Your old tools were replaced by free starter tools, already made from tier-1 parts. Every tool you had upgraded came back as a set of parts: the further it got, the better the parts. Your enchants came back as scrolls.
+Your old tools were replaced by free starter tools, already made from tier-1 parts. Every tool you had upgraded came back as a set of parts: the further it got, the better the parts. If your tools had enchants, your strongest two came back as scrolls.
 """
 
 [[notice]]
