@@ -21,7 +21,7 @@ def rows(p) -> dict[str, object]:
 
 
 async def settle(user, outcome="left", depth=1, haul=None):
-    run = await mining.start_run(user, Random(1), mini_wyrmhole=False)
+    run = await mining.start_run(user, Random(1))
     run.outcome, run.depth, run.lodes = outcome, depth, 4
     run.haul = Counter(haul or {})
     await mining.settle_run(user, run)

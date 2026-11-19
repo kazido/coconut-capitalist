@@ -285,14 +285,18 @@ id = "wyrm_tunnels"
 name = "Wyrm Tunnels"
 emoji = "🌀"
 weight = 1
-description = "The walls are riddled with burrows: wyrmholes are 10x as likely, big and small."
+description = "The walls are riddled with burrows: wyrmholes are 10x as likely."
 wyrmhole_mult = 10
 
 [wyrmhole]
-odds = 25000                       # 1-in-N per cell below `min_row`
-gem_bonus = 5000                   # N shrinks by this for every gem placed in the reactor
-min_odds = 1000                    # ...but never below this
-min_depth = 2                      # first row (0-based) wyrmholes can hide in
+# A wyrmhole is a cell in the shaft that shows up (3 rows ahead) in place of a lode: dig it and the mine ends (the haul is yours) and you drop into the hole. What is in
+# there is rolled when you enter: a SMALL one (the usual case, see [mini_wyrmhole]) or, with `big_chance`, a BIG one (below), the only place the implosion gem is.
+odds = 450                         # 1-in-N per cell between `min_depth` and `max_depth`: about 1 mine in 15 shows one
+gem_bonus = 60                     # N shrinks by this for every gem placed in the reactor
+min_odds = 200                     # ...but never below this
+min_depth = 2                      # first row (0-based) wyrmholes can show in
+max_depth = 9                      # ...and the last. Deeper and a player sees one, then the mine collapses before they can reach it: never tease them
+big_chance = 0.2                   # chance a wyrmhole you dig into is a big one
 implosion_item = "key_gemstone_implosion"
 # A big wyrmhole is a small mine of its own: no hazard and no empty cells, you dig ONE of `columns` hidden nodes on each row and keep every pick. Each row pays from
 # its own pool (item = quantity). ONLY the LAST row holds a gem: one of its nodes is the implosion gem, or a reactor core gem you do not own yet. The chance it is the
@@ -311,25 +315,24 @@ pool = { material_gold_ore = 10, material_obsidian = 6, material_amber = 10, too
 [[wyrmhole.rows]]
 pool = { material_gold_ore = 20, material_obsidian = 10, tool_scarab_bomb = 10 }
 
-# ---- Small wyrmholes: now and then a mine has one (decided when the mine starts, shown on the mine page). It is a 3-wide hole `rows` deep, no hazard and no empty cell: on each row you
-# pick ONE of 3 hidden nodes, and everything you pick is banked. Each row pays from its own pool (item = quantity; the 3 hidden nodes are drawn from it), better
-# than a normal row, and a little better each row. No gems in here (those are the big wyrmhole's last row). `last_row_bonus` is added when you finish the last row.
-# `xp_per_row` is mining xp for each row dug. About +15-30% of a normal mine's value, in 1 mine in 100, so a treat and not an income.  TODO(balance)
+# ---- Small wyrmholes: what most wyrmholes turn out to be (see [wyrmhole]). It is a 3-wide hole `rows` deep, no hazard and no empty cell: on each row you
+# pick ONE of 3 hidden nodes, and everything you pick is banked. Each row pays from its own pool (item = quantity; the 3 hidden nodes are drawn from it), much
+# better than a normal row, and better each row. No gems in here (those are the big wyrmhole's last row). `last_row_bonus` is added when you finish the last row.
+# `xp_per_row` is mining xp for each row dug. A whole hole is worth several normal mines, so the odds of digging into one stay low.  TODO(balance)
 [mini_wyrmhole]
-xp_per_row = 40
-odds = 100                         # 1 in N mines
+xp_per_row = 120
 columns = 3
-last_row_bonus = { material_gold_ore = 1 }
+last_row_bonus = { material_gold_ore = 4 }
 [[mini_wyrmhole.rows]]
-pool = { material_copper_ore = 24, material_iron_ore = 4, material_tin_ore = 6 }
+pool = { material_copper_ore = 70, material_iron_ore = 14, material_tin_ore = 20 }
 [[mini_wyrmhole.rows]]
-pool = { material_iron_ore = 6, material_tin_ore = 9, material_silver_ore = 2 }
+pool = { material_iron_ore = 20, material_tin_ore = 28, material_silver_ore = 7 }
 [[mini_wyrmhole.rows]]
-pool = { material_iron_ore = 8, material_silver_ore = 2, material_obsidian = 1, material_amber = 2 }
+pool = { material_iron_ore = 26, material_silver_ore = 8, material_obsidian = 3, material_amber = 7 }
 [[mini_wyrmhole.rows]]
-pool = { material_silver_ore = 3, material_amber = 2, material_obsidian = 1, material_gold_ore = 1 }
+pool = { material_silver_ore = 10, material_amber = 7, material_obsidian = 3, material_gold_ore = 4 }
 [[mini_wyrmhole.rows]]
-pool = { material_gold_ore = 2, material_amber = 2, material_silver_ore = 2, material_obsidian = 2 }
+pool = { material_gold_ore = 7, material_amber = 7, material_silver_ore = 7, material_obsidian = 6 }
 
 [reactor]
 gem_slot_level = 10                # mining level needed to place gems

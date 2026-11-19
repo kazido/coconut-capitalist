@@ -747,37 +747,40 @@ async def test_a_wyrmhole_leads_to_a_one_pick_screen_and_banks_it(db):
     assert nav.screen.id == "mining"
 
 
-async def _mine_with_a_small_wyrmhole(carry=None):
+async def _dig_into_a_wyrmhole(monkeypatch, carry=None):
+    """A mine whose first lode is a wyrmhole, dug into; the hole is forced to be a small one."""
+    real = mine_service.enter_wyrmhole
+
+    async def small(user, rng, registry=None, *, small=None):
+        return await real(user, rng, registry, small=True)
+
+    monkeypatch.setattr(mine_service, "enter_wyrmhole", small)
     nav, inter = await enter_mines()
     run = nav.screen.run
-    run.mini_wyrmhole = True  # (the 1-in-100 roll is covered in test_mining)
+    run.wyrmholes_ahead()
+    run._holes[0] = {2}
     if carry:
         run.haul = Counter(carry)
-    await click(nav, inter, "Tips")  # redraw
+    await find_button(nav, "Dig").callback(inter)
     return nav, inter, run
 
 
-async def test_a_mine_with_a_small_wyrmhole_says_so_and_a_plain_one_does_not(db):
+async def test_a_mine_page_has_no_button_to_a_wyrmhole_only_the_lode_leads_there(db):
     nav, inter = await enter_mines()
-    nav.screen.run.mini_wyrmhole = False
-    await click(nav, inter, "Tips")
-    assert "small wyrmhole" not in all_text(nav) and not any(b.label == "Enter the small wyrmhole" for b in buttons(nav))
-    nav, inter, run = await _mine_with_a_small_wyrmhole()
-    assert "A small wyrmhole has opened in this mine!" in all_text(nav)
-    assert find_button(nav, "Enter the small wyrmhole")
+    assert not any("wyrmhole" in (b.label or "").lower() for b in buttons(nav))
 
 
-async def test_entering_the_small_wyrmhole_banks_the_pack_then_one_pick_per_row_banks_the_rest(db):
+async def test_digging_a_wyrmhole_banks_the_pack_then_the_small_hole_is_one_pick_per_row(db, monkeypatch):
     user = await User.get(1)
-    nav, inter, run = await _mine_with_a_small_wyrmhole(carry={"material_copper_ore": 7})
-    await click(nav, inter, "Enter the small wyrmhole")
-    assert run.outcome == "mini_wyrmhole" and await user.item_quantity("material_copper_ore") == 7  # banked first, like the big wyrmhole
+    nav, inter, run = await _dig_into_a_wyrmhole(monkeypatch, carry={"material_copper_ore": 7})
+    assert run.outcome == "wyrmhole" and await user.item_quantity("material_copper_ore") == 7  # banked first
     await continue_through(nav, inter)
-    await find_button(nav, "Enter the small wyrmhole").callback(inter)
+    await find_button(nav, "Enter the wyrmhole").callback(inter)
     assert nav.screen.id == "mine" and nav.screen.locked
     hole = nav.screen.hole
-    assert hole.small and "Row **1** of 5" in all_text(nav)
-    for r in range(5):
+    rows = len(hole.rows)
+    assert hole.small and f"Row **1** of {rows}" in all_text(nav)
+    for r in range(rows):
         assert nav.screen.id == "mine" and hole.row == r and nav.screen.locked
         await find_button(nav, "Dig").callback(inter)
     assert nav.screen.id == "result" and hole.finished and hole.banked
@@ -787,17 +790,16 @@ async def test_entering_the_small_wyrmhole_banks_the_pack_then_one_pick_per_row_
     assert nav.screen.id == "mining"
 
 
-async def test_walking_away_mid_small_wyrmhole_banks_the_rest(db):
+async def test_walking_away_mid_small_wyrmhole_banks_the_rest(db, monkeypatch):
     user = await User.get(1)
-    nav, inter, run = await _mine_with_a_small_wyrmhole()
-    await click(nav, inter, "Enter the small wyrmhole")
+    nav, inter, run = await _dig_into_a_wyrmhole(monkeypatch)
     await continue_through(nav, inter)
-    await find_button(nav, "Enter the small wyrmhole").callback(inter)
+    await find_button(nav, "Enter the wyrmhole").callback(inter)
     await find_button(nav, "Dig").callback(inter)
     hole = nav.screen.hole
     assert not hole.finished
     await nav.screen.on_abandon()
-    assert hole.banked and len(hole.picks) == 5
+    assert hole.banked and len(hole.picks) == len(hole.rows)
     for item_id, qty in hole.loot().items():
         assert await user.item_quantity(item_id) >= qty
 

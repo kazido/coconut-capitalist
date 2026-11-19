@@ -88,10 +88,10 @@ effects = [{ stat = "ore_yield", amount = 0.2 }, { stat = "danger_reduction", am
 [[trees.branches.nodes]]
 id = "vein_sense"
 name = "Vein Sense"
-description = "+6% chance of a rich lode in every cell."
+description = "+4% chance of a rich lode in every cell, and +30% wyrmholes."
 level = 35
 cost = 2
-effects = [{ stat = "rich_chance", amount = 0.06 }]
+effects = [{ stat = "rich_chance", amount = 0.04 }, { stat = "wyrmhole_chance", amount = 0.3 }]
 
 [[trees.branches.nodes]]
 id = "gold_rush"
@@ -116,12 +116,12 @@ cost = 1
 effects = [{ stat = "vault_gem", amount = 0.5 }]
 
 [[trees.branches.nodes]]
-id = "tidy_digger"
-name = "Tidy Digger"
-description = "A little ore for a little less luck: +5% ore, 2% less creaking."
+id = "wyrm_whisperer"
+name = "Wyrm Whisperer"
+description = "+50% chance that a lode is a wyrmhole."
 level = 10
 cost = 1
-effects = [{ stat = "ore_yield", amount = 0.05 }, { stat = "danger_reduction", amount = 0.02 }]
+effects = [{ stat = "wyrmhole_chance", amount = 0.5 }]
 
 [[trees.branches.nodes]]
 id = "gem_sense"
@@ -134,10 +134,10 @@ effects = [{ stat = "vault_gem", amount = 1.0 }]
 [[trees.branches.nodes]]
 id = "crystal_veins"
 name = "Crystal Veins"
-description = "+3% rich lodes and +50% vault gems."
+description = "+3% rich lodes, +50% vault gems and +50% wyrmholes."
 level = 35
 cost = 2
-effects = [{ stat = "rich_chance", amount = 0.03 }, { stat = "vault_gem", amount = 0.5 }]
+effects = [{ stat = "rich_chance", amount = 0.03 }, { stat = "vault_gem", amount = 0.5 }, { stat = "wyrmhole_chance", amount = 0.5 }]
 
 [[trees.branches.nodes]]
 id = "geode_cracker"

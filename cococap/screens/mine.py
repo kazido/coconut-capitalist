@@ -143,7 +143,7 @@ def carrying(haul: Counter) -> str:
 HELP = (
     f"Read the rock: {_soft()} **soft** (little pressure, mostly copper)  ·  {_firm()} **firm** (iron)  ·  {_hard()} **hard** (a lot of pressure, the top ore).\n"
     "Inside it hides ore, nothing, a **vent** that cools the tunnel, or a **cache** with a brace.\n"
-    "cell_upgraded: a **rich lode**, a mystery with better loot  ·  wyrmhole: a way out, if you dig it\n"
+    "cell_upgraded: a **rich lode**, a mystery with better loot  ·  wyrmhole: dig it to drop into a hole of treasure (what you carry is banked)\n"
     f"{_bomb()} **bomb**: clears a whole row  ·  {_magnet()} the magnet aims at the richest column and marks vents while it has fuel"
 )
 
@@ -191,7 +191,7 @@ class MineScreen(Screen):
         warning = run.warning
         body = [
             *self.note_block(),
-            text(type_line(run) + (f"\n{emojis.icon('small_wyrmhole', '🕳️')} **A small wyrmhole has opened in this mine!**" if run.mini_wyrmhole else "")),
+            text(type_line(run)),
             text(f"**Row {run.depth + 1} of {run.floor}**  ·  {next_landmark(run)}     {warning.emoji} **{risk_text(run.risk)}** collapse risk"
                  + (f"\n{emojis.icon('bomb', '💣')} Auto-Bomb: **{'this dig!' if run.auto_bomb_in == 1 else f'in {run.auto_bomb_in} rows'}**" if run.auto_bomb_every else "")
                  + (f"\n{_magnet()} Magnet: **{run.magnet_rows_left}** rows of fuel" if run.magnet_rows_left is not None else "")
@@ -209,8 +209,6 @@ class MineScreen(Screen):
         extra = [button(f"Brace ({run.braces})", emoji=emojis.icon("brace", "🛡️"), disabled=run.braces == 0 or run.danger == 0, on_click=self._brace)]
         if run.bombs or run.bombs_used:
             extra.append(button(f"Bomb ({run.bombs})", emoji=_bomb(), disabled=run.bombs == 0, on_click=self._bomb))
-        if run.mini_wyrmhole:
-            extra.append(button("Enter the small wyrmhole", emoji=emojis.icon("small_wyrmhole", "🕳️"), style=discord.ButtonStyle.success, on_click=self._enter_small))
         extra.append(button("Leave & bank", emoji=emojis.icon("haul", "🎒"), style=discord.ButtonStyle.success, on_click=self._leave))
         extra.append(button(
             "Hide tips" if self.show_help else "Tips", emoji=emojis.icon("tips", "❔"),
@@ -225,7 +223,6 @@ class MineScreen(Screen):
         titles = {"left": (f"{emojis.icon('haul', '🎒')} You climbed out safely", 0x2ECC71),
                   "collapse": (f"{emojis.icon('boom', '💥')} The mine collapsed!", 0xE74C3C),
                   "wyrmhole": (f"{emojis.icon('wyrmhole', '🌀')} You broke into a wyrmhole!", 0x9B59B6),
-                  "mini_wyrmhole": (f"{emojis.icon('small_wyrmhole', '🕳️')} You slipped into the small wyrmhole!", 0x9B59B6),
                   "floor": (f"{_vault()} You reached the vault!", 0xF1C40F)}
         title, accent = titles[run.outcome]
         body = [*self.note_block(), text(f"## {title}")]
@@ -243,8 +240,6 @@ class MineScreen(Screen):
         actions = [button("Mine again", emoji=emojis.icon("again", "🔄"), style=discord.ButtonStyle.primary, on_click=self._again)]
         if run.outcome == "wyrmhole":
             actions.insert(0, button("Enter the wyrmhole", emoji=emojis.icon("wyrmhole", "🌀"), style=discord.ButtonStyle.success, on_click=self._wyrmhole))
-        elif run.outcome == "mini_wyrmhole":
-            actions.insert(0, button("Enter the small wyrmhole", emoji=emojis.icon("small_wyrmhole", "🕳️"), style=discord.ButtonStyle.success, on_click=self._wyrmhole_small))
         body.append(row(*actions))
         return Page("The Mines", body, accent=accent)
 
@@ -320,13 +315,6 @@ class MineScreen(Screen):
         await self._end(None)
         await self.refresh(interaction)
 
-    async def _enter_small(self, interaction: discord.Interaction) -> None:
-        if self.run.finished:
-            return await self.refresh(interaction)
-        self.run.enter_mini_wyrmhole()  # what you carry is banked first, like the big wyrmhole
-        await self._end(None)
-        await self.refresh(interaction)
-
     async def _end(self, note: str | None) -> None:
         """The run is over: bank it, and maybe a scarab shows up (after any mine, however it ended)."""
         self.summary = await mining.settle_run(self.user, self.run)
@@ -363,13 +351,11 @@ class MineScreen(Screen):
     def _show_loot(self, note: str | None = None) -> None:
         """Build the reward screen of the finished mine (separate from `_end` so a scarab turning up later can be added to it)."""
         summary = self.summary
-        titles = {"left": "You climbed out safely", "collapse": "The mine collapsed!", "wyrmhole": "You broke into a wyrmhole!", "mini_wyrmhole": "You slipped into the small wyrmhole!", "floor": "You reached the vault!"}
+        titles = {"left": "You climbed out safely", "collapse": "The mine collapsed!", "wyrmhole": "You broke into a wyrmhole!", "floor": "You reached the vault!"}
         # The reward screen is the LAST screen of a mine: the next action starts from it (on the last rare-drop page when there are rare drops).
         choices: list[tuple[str, str, object]] = []
         if self.run.outcome == "wyrmhole":
             choices.append(("Enter the wyrmhole", emojis.icon("wyrmhole", "🌀"), self._wyrmhole))
-        elif self.run.outcome == "mini_wyrmhole":
-            choices.append(("Enter the small wyrmhole", emojis.icon("small_wyrmhole", "🕳️"), self._wyrmhole_small))
         notes = []
         if self.challenge is not None:
             notes.append(f"{emojis.icon('scarab', '🪲')} **A subterranean scarab appears!** It holds a scroll: **{self.challenge.scrambled}**\n"
@@ -422,10 +408,6 @@ class MineScreen(Screen):
     # ---- the wyrmhole: a small mine of its own (no hazards, nothing empty), drawn on this same screen ----------------
     async def _wyrmhole(self, interaction: discord.Interaction) -> None:
         self.hole = await mining.enter_wyrmhole(self.user, random.Random())
-        await self.refresh(interaction)
-
-    async def _wyrmhole_small(self, interaction: discord.Interaction) -> None:
-        self.hole = await mining.enter_wyrmhole(self.user, random.Random(), small=True)
         await self.refresh(interaction)
 
     def _hole_page(self, hole: mining.WyrmholeSession) -> Page:

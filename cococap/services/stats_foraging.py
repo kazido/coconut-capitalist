@@ -29,4 +29,4 @@ async def page(user: User, stats: dict[str, int]) -> StatPage:
         ("Releaf", [("Releaf donations", skill.stats.releaf_donations)]),
         ("Level", [("Level", User.xp_to_level(skill.xp)), ("XP", f"{skill.xp:,}")]),
     ]
-    return StatPage("foraging", "Foraging", emojis.icon("scroll", "📊"), groups)
+    return StatPage("foraging", "Foraging", emojis.skill("foraging", "🌳"), groups)

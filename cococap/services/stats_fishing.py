@@ -29,7 +29,7 @@ async def page(user: User, stats: dict[str, int]) -> StatPage:
     return StatPage(
         "fishing",
         "Fishing",
-        emojis.icon("scroll", "📊"),
+        emojis.skill("fishing", "🎣"),
         [
             ("Catches", [
                 ("Fish caught", fishing.fish_caught),
