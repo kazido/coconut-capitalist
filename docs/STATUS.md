@@ -14,7 +14,7 @@ Screens are consolidated into tab pages (33 registered). Item ids are prefixed (
 - `area-gating.md`: features need area + level. Written, NOT approved or built.
 - `foraging-materials-needed.md`: foraging has too few materials; needs designer input.
 - `starred-materials.md`: drops wired in all 4 skills; open: zone->forest text rename, late upgrade costs, UI check.
-- `pet-sidekicks.md`: APPROVED, building on master: loadouts, score, fuel tank, food buff, farming foods done; open: screens (Fuel/Collect), haul drop tables, guard test, changelog.
+- `pet-sidekicks.md`: APPROVED, built on master: loadouts, score, tank, Collect/Fuel UI, food buff, foods, guard test. Open: apply the passive bonus (replace flat bonuses), lend-tool screen + equipped check, haul drop tables, balance pass, pet-food art.
 - `notes-2026-11-18.md`: bigger ideas (fuels, recipe rebalance, tutorial/lore, screen streamlining).
 
 ## Known open items

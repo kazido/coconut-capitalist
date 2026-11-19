@@ -21,7 +21,7 @@ sidekick_cap = 0.5            # the sidekick bonus never exceeds +50%
 passive_per_score = 0.01      # passive bonus (a share, e.g. 0.01 = +1%) per point of score
 passive_cap = 0.25            # the passive bonus never exceeds +25%
 haul_active_share = 0.15      # a fully fueled MAX pet earns at most this share of an active player's pay per hour (guard test)
-haul_xp_per_score_hour = 20   # skill xp per hour for each point of score (before the cap)
+haul_xp_per_score_hour = 12   # skill xp per hour for each point of score (before the cap)
 
 # ---- Fuel tank (crops fuel the ACTIVE pet; online play never needs fuel) -----------------------------------------------------------------
 tank_cap_hours = 8            # the tank holds this many hours of work

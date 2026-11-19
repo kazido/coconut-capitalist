@@ -11,6 +11,18 @@
 #   body  = the message (Discord markdown, at most 1500 characters)
 
 [[notice]]
+id = "pet_sidekicks"
+date = 2026-11-19
+title = "Pets work while you are away"
+body = """
+Pets are more than a bonus now. Your active pet **works while you are away** and brings back skill xp: fill its **fuel tank** with crops on the Pets page, then press **Collect**. Pets you are not using add a **sidekick bonus** to it.
+
+**Crops are fuel now, not food.** Pets level on skill food (which also gives a short xp buff), the new **Pet Biscuit** from the shop, or the **Burger** you can find while playing.
+
+Level-ups and rare finds now appear on the result screen instead of a popup. Use **Share** to post them.
+"""
+
+[[notice]]
 id = "news_page"
 date = 2026-11-19
 title = "News is here"

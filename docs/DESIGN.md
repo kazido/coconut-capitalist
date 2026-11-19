@@ -340,6 +340,17 @@ the shop at 1.5M), which hatch a random pet by rarity (`economy.toml` `[pets.orb
 a **Spirit** item for +15% xp in its skill. A bonus is its listed value x stars (+25%
 each) x level (a fresh pet does a tenth, a max one all of it). A level costs xp by the pet's rarity (`[pets.xp_scale]`: common quickest, legendary slowest); old saves were rescaled once (`Pethouse.curve_version`, `pets.upgrade_curve`) so no pet changed level.
 
+### Pet sidekicks (idle work)
+
+Pets are a simulated "mini you" in one skill. `Pet.loadout` (tool tier 0-4, mastery score, enchants; checked against `enchants.toml`) plus level,
+stars, rarity and the skill (global pets use `global_proficiency`) give a **score** (`services/pet_score.py`, constants in `configs/pet_score.toml`).
+The score drives the **idle haul** (skill xp per hour, `haul_xp_per_score_hour`; a guard test keeps a maxed pet under `haul_active_share` of active play)
+and a capped **sidekick bonus** from every inactive pet's levels and stars. The haul needs **fuel**: crops poured into ONE tank for the active pet
+(`pets.fuel`, worth `sell_price x fuel_minutes_per_value` minutes, capped at `tank_cap_hours`; state in `Pethouse.fuel_seconds/last_collect`). `pets.collect`
+banks the xp for the fuel that lasted (a global pet's haul goes to your highest skill). Crops are fuel ONLY; pet xp comes from skill food (which also starts a
+`food_buff_minutes` +`food_buff_bonus` xp-rate buff, `OwnedPet.buff_until`), play xp, Pet Biscuit (shop) and the Burger (1-in-150 per hour of play, `activity.roll_token`).
+A real tool can be lent (`pets.lend_tool`, `OwnedPet.lent_tool`; no screen yet). `pet_score.passive_bonus` exists but is not applied in play yet; haul item drops are not built.
+
 ### Pet food and pet skills
 
 Crops are no longer the only food. **Every skill drops its own food in three tiers** (`category = "pet_food"` in

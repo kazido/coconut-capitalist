@@ -83,3 +83,20 @@ async def test_skill_food_starts_a_timed_buff_that_expires(db):
     owned = user.pethouse.pets["drizzle"]
     assert pets.buff_multiplier(owned, REG) == 1 + REG.pet_score.food_buff_bonus
     assert pets.buff_multiplier(owned, REG, now=owned.buff_until + 1) == 1.0
+
+
+def test_a_maxed_fully_fueled_pet_hauls_at_most_the_configured_share_of_active_play():
+    """Guard: the best pet (max level, 5 stars, sidekick bonus at its cap) never out-earns haul_active_share of what an active player makes an hour
+    in the slowest skill at starting tools (scripts.balance numbers)."""
+    from scripts import balance as b
+
+    from cococap.services import pets as pets_service
+
+    per_hour = 3600 / b.CLICK_SECONDS
+    starter = REG.item("tool_axe_starter").tool.power
+    active = min(b.mining_xp_per_click() * per_hour, b.fishing_xp_per_minute(REG.item("tool_rod_starter").tool.power) * 60,
+                 b.foraging_xp_per_click(starter) * per_hour)
+    best = max(ps.score(p, OwnedPet(xp=pets_service.level_xp(REG.economy.pets.max_level, p.rarity, REG), stars=REG.economy.pets.max_stars))
+               for p in REG.pets.values())
+    haul = ps.haul_xp_per_hour(best, REG.pet_score.sidekick_cap)
+    assert haul <= active * REG.pet_score.haul_active_share * 1.0, (round(haul), round(active))
