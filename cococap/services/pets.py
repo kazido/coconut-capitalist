@@ -79,8 +79,11 @@ def food_skill(item: Item) -> str | None:
 
 
 def food_multiplier(pet: Pet, item: Item, registry: Registry | None = None) -> float:
-    """How much more this food is worth to this pet: x3 for its own skill, x2 for a pet with no skill, x1 otherwise."""
+    """How much more this food is worth to this pet: x3 for its own skill, x2 for a pet with no skill, x1 otherwise.
+    Crops are the exception: any pet gets the full matched bonus from them (they are a sellable currency, not a free drop)."""
     rules = (registry or get_registry()).economy.pets
+    if item.crop:
+        return rules.matched_food_multiplier
     skill = pet.skill
     if skill == "global":
         return rules.global_food_multiplier

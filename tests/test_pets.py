@@ -357,7 +357,7 @@ async def test_the_pet_house_switches_pets_feeds_crops_and_hands_over_spirits(db
     assert "xp each" in modal.children[0].description
     await modal._handler(inter, "3")
     await user.refresh()
-    assert user.pethouse.pets["drizzle"].xp == before + 3 * REG.item("crop_lemon").crop.pet_xp and await user.item_quantity("crop_lemon") == 1  # (a fishing cat: x1)
+    assert user.pethouse.pets["drizzle"].xp == before + 3 * REG.item("crop_lemon").crop.pet_xp * REG.economy.pets.matched_food_multiplier and await user.item_quantity("crop_lemon") == 1  # (a fishing cat still gets the crop bonus)
     await choose(nav, inter, select_named(nav, "Give a Spirit"), "spirit_of_the_forest")
     await user.refresh()
     assert user.pethouse.pets["drizzle"].spirits == ["foraging"] and "Spirit" in all_text(nav)
@@ -508,10 +508,13 @@ async def test_food_of_a_pets_own_skill_is_worth_triple_a_global_pet_gets_double
     assert await user.item_quantity("food_fish_flakes") == 10 - 2 - 1 and user.pethouse.active == "drizzle"  # (feeding a pet does not make it active)
 
 
-async def test_crops_are_farming_food_so_a_farming_pet_gets_triple_for_them(db):
+async def test_crops_give_every_pet_the_matched_bonus(db):
     user = await with_pet("dew", xp=0)
     await user.add_item("crop_lemon", 2)
     assert (await pets.feed(user, "crop_lemon", 2, REG)).xp == 2 * REG.item("crop_lemon").crop.pet_xp * REG.economy.pets.matched_food_multiplier
+    cat = await with_pet("cinder", xp=0)  # a non-farming pet gets the same
+    await cat.add_item("crop_lemon", 1)
+    assert (await pets.feed(cat, "crop_lemon", 1, REG)).xp == REG.item("crop_lemon").crop.pet_xp * REG.economy.pets.matched_food_multiplier
 
 
 async def test_feeding_can_name_a_pet_you_do_not_have_and_gives_the_food_back_when_it_fails(db):

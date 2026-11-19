@@ -142,7 +142,7 @@ sell_price = 50000000
 seed = "seed_ambrosia"
 min_harvest = 1
 max_harvest = 1
-pet_xp = 1666667
+pet_xp = 2500000
 
 [crop_apple]
 name = "Apple"
@@ -159,7 +159,7 @@ sell_price = 1000
 seed = "seed_apple"
 min_harvest = 10
 max_harvest = 20
-pet_xp = 33
+pet_xp = 50
 
 [crop_coconut]
 name = "Coconut"
@@ -176,7 +176,7 @@ sell_price = 2000000
 seed = "seed_coconut"
 min_harvest = 1
 max_harvest = 1
-pet_xp = 66667
+pet_xp = 100000
 
 [crop_dusty_dandelion]
 name = "Dusty Dandelion"
@@ -193,7 +193,7 @@ sell_price = 50000
 seed = "seed_dusty_dandelion"
 min_harvest = 1
 max_harvest = 1
-pet_xp = 1667
+pet_xp = 2500
 
 [crop_hot_pepper]
 name = "Hot Pepper"
@@ -210,7 +210,7 @@ sell_price = 300000
 seed = "seed_hot_pepper"
 min_harvest = 1
 max_harvest = 3
-pet_xp = 10000
+pet_xp = 15000
 
 [crop_lemon]
 name = "Lemon"
@@ -227,7 +227,7 @@ sell_price = 35000
 seed = "seed_lemon"
 min_harvest = 3
 max_harvest = 5
-pet_xp = 1167
+pet_xp = 1750
 
 [crop_wilted_rose]
 name = "Wilted Rose"
@@ -244,7 +244,7 @@ sell_price = 1000000
 seed = "seed_wilted_rose"
 min_harvest = 1
 max_harvest = 3
-pet_xp = 33333
+pet_xp = 50000
 
 [key_graveyard]
 name = "Graveyard Key"
@@ -1802,7 +1802,7 @@ sell_price = 40000
 seed = "seed_blueberry"
 min_harvest = 6
 max_harvest = 9
-pet_xp = 1333
+pet_xp = 2000
 
 [seed_blueberry]
 name = "Blueberry Seed"
@@ -1834,7 +1834,7 @@ sell_price = 400000
 seed = "seed_watermelon"
 min_harvest = 2
 max_harvest = 4
-pet_xp = 13333
+pet_xp = 20000
 
 [seed_watermelon]
 name = "Watermelon Seed"
@@ -1866,7 +1866,7 @@ sell_price = 1500000
 seed = "seed_starfruit"
 min_harvest = 1
 max_harvest = 2
-pet_xp = 50000
+pet_xp = 75000
 
 [seed_starfruit]
 name = "Starfruit Seed"
@@ -1899,7 +1899,7 @@ sell_price = 100000
 seed = "seed_rustroot"
 min_harvest = 2
 max_harvest = 4
-pet_xp = 3333
+pet_xp = 5000
 
 [seed_rustroot]
 name = "Rustroot Seed"
@@ -1931,7 +1931,7 @@ sell_price = 700000
 seed = "seed_marketfig"
 min_harvest = 1
 max_harvest = 3
-pet_xp = 23333
+pet_xp = 35000
 
 [seed_marketfig]
 name = "Marketfig Seed"
@@ -1963,7 +1963,7 @@ sell_price = 1200000
 seed = "seed_cloudberry"
 min_harvest = 1
 max_harvest = 3
-pet_xp = 40000
+pet_xp = 60000
 
 [seed_cloudberry]
 name = "Cloudberry Seed"
@@ -1995,7 +1995,7 @@ sell_price = 10000000
 seed = "seed_voidbloom"
 min_harvest = 1
 max_harvest = 1
-pet_xp = 333333
+pet_xp = 500000
 
 [seed_voidbloom]
 name = "Voidbloom Seed"

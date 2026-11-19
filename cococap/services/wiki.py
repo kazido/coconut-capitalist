@@ -269,7 +269,7 @@ def _pets(reg: Registry) -> list[str]:
         f"Every pet has **one skill**, shown as an emoji after its name: {emojis.icon('rod', '🎣')} fishing, {emojis.icon('pickaxe', '⛏️')} mining, {emojis.icon('tree', '🌳')} foraging, {emojis.icon('can', '🌽')} farming, {emojis.icon('sword', '⚔️')} combat, or {emojis.icon('world', '🌐')} **global** "
         f"for pets whose bonus works everywhere ({', '.join(p.name for p in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)) if p.skill == 'global')}). "
         f"Food of **a pet's own skill is worth x{rules.matched_food_multiplier:g}** to it, a {emojis.icon('world', '🌐')} global pet gets **x{rules.global_food_multiplier:g}** from any food, "
-        "and food of another skill is worth the plain amount. "
+        "and food of another skill is worth the plain amount. **Crops are the exception: every pet gets x{rules.matched_food_multiplier:g} from them.** "
         "A pet's numbers are shown at its current level (a fresh pet gives a tenth) with the max level in brackets.",
         "**Orbs** come in three kinds, bought on the Familiar Orbs page. A cheaper orb mostly gives common pets, a pricier one mostly rare ones "
         "(chance of each rarity):\n" + "\n".join(orb_lines),
