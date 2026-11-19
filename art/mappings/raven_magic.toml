@@ -33,7 +33,6 @@ ui_crab = {cell = [22, 5], framed = false}
 ui_book = {cell = [6, 0], framed = false}
 ui_record = {cell = [0, 14], framed = false}
 ui_bolt = {cell = [64, 0], framed = false}
-ui_haul = {cell = [25, 10], framed = false}
 ui_sell = {cell = [9, 13], framed = false}
 ui_upgrade = {cell = [54, 0], framed = false}
 ui_craft = {cell = [7, 13], framed = false}
@@ -55,7 +54,6 @@ ui_rock_soft = {cell = [12, 3], framed = false}
 ui_rock_firm = {cell = [13, 3], framed = false}
 ui_rock_hard = {cell = [13, 3], ramp = ["#4a2a10", "#a86a18", "#f0b830", "#fff2a8"], framed = false}
 ui_vent = {cell = [45, 4], framed = false}
-ui_wyrmhole = {cell = [48, 4], framed = false}
 ui_small_wyrmhole = {cell = [43, 11], framed = false}
 ui_lifeline = {cell = [41, 2], framed = false}
 ui_cache = {cell = [9, 13], framed = false}

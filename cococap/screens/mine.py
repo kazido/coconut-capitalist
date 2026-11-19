@@ -19,7 +19,7 @@ from cococap import emojis
 def _cell() -> str: return emojis.get("cell", "⬛")
 def _cell_empty() -> str: return emojis.get("cell_empty", "▫️")
 def _rich() -> str: return emojis.icon("rock_rich", "🟦")
-def _hole() -> str: return emojis.get("wyrmhole", "🌀")
+def _hole() -> str: return emojis.icon("wyrmhole", "🌀")
 def _wyrm_rock() -> str: return emojis.icon("rock_wyrm", "🟪")  # a hidden cell inside a wyrmhole
 def _vent() -> str: return emojis.icon("vent", "💨")
 def _cache() -> str: return emojis.icon("cache", "📦")
