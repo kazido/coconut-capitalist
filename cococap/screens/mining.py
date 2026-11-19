@@ -35,7 +35,7 @@ class MiningScreen(Screen):
             (reg.item(c.gem_id).emoji or emojis.icon("gem", "💎")) if c.gem_id else emojis.get("cell", "⬛")
             for c in (reactor.core_1, reactor.core_2, reactor.core_3, reactor.core_4)
         )
-        lines = [f"{emojis.get('autominer', '⚙️')} **Reactor Lv {reactor.level}**  ·  cores {cores}  ·  **{status['pending_lodes']:,}** lodes waiting"]
+        lines = [f"{emojis.icon('reactor', '⚙️')} **Reactor Lv {reactor.level}**  ·  cores {cores}  ·  **{status['pending_lodes']:,}** lodes waiting"]
         if level < rules.reactor.gem_slot_level:
             lines.append(f"-# Gem slots unlock at mining level {rules.reactor.gem_slot_level}.")
         tool = await equipped_stats(self.user, "mining")
@@ -64,7 +64,7 @@ class MiningScreen(Screen):
             row(
                 button("Enter the mines", emoji=emojis.icon("dig", "⛏️"), style=discord.ButtonStyle.primary, disabled=tool is None,
                        on_click=self._enter),
-                button("Reactor", emoji=emojis.get("autominer", "⚙️"), on_click=self._reactor),
+                button("Reactor", emoji=emojis.icon("reactor", "⚙️"), on_click=self._reactor),
                 button("Mastery", emoji=emojis.icon("mastery", "🌟"), on_click=self._mastery),
             ),
         ]

@@ -170,7 +170,7 @@ SKILL_ICONS = {
     "fishing": ("ui_skill_fishing", "🎣"),
     "foraging": ("ui_skill_foraging", "🌳"),
     "farming": ("ui_skill_farming", "🌽"),
-    "combat": ("tool_largebranch", "⚔️"),
+    "combat": ("ui_skill_combat", "⚔️"),
 }
 
 

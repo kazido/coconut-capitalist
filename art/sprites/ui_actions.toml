@@ -1,27 +1,6 @@
 # UI action icons: procedural (art/make script), light from top-left. Awaiting owner review.
 
 
-[ui_dig]
-palette = { H = "#f2f6fa", W = "#e2ad6c", d = "#78461f", h = "#bccbd8", m = "#7f93a9", o = "#2e1c2c" }
-rows = [
-  "................",
-  ".....oooooo.....",
-  "....ommmmHmo....",
-  ".....oooomhmo...",
-  ".........omhmo..",
-  "..........omhmo.",
-  ".........oWdmhmo",
-  "........oWdooHmo",
-  ".......oWdo.oHmo",
-  "......oWdo..oHmo",
-  ".....oWdo...ommo",
-  "....oWdo.....oo.",
-  "...oWdo.........",
-  "..oWdo..........",
-  ".oddo...........",
-  "..oo............",
-]
-
 [ui_grain]
 palette = { R = "#c89060", W = "#e2ad6c", o = "#2e1c2c", q = "#6e4424", r = "#a06a3a" }
 rows = [

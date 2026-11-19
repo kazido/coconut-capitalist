@@ -18,7 +18,7 @@ class ReactorPane(Screen):
     """Gems, auto-miner, prestige and the magnet. The Reactor tab of the Reactor page (ReactorScreen)."""
 
     label = "Reactor"
-    emoji = emojis.Lazy("autominer", "⚙️")
+    emoji = emojis.Lazy("ui_reactor", "⚙️")
     description = "Gems, auto-miner, prestige and the magnet"
 
     def __init__(self, nav):
@@ -39,7 +39,7 @@ class ReactorPane(Screen):
             if core.gem_id:
                 slots.append(f"{number}. {reg.item(core.gem_id).display}")
             else:
-                slots.append(f"{number}. {emojis.get('empty_cell', '⬛')} *empty: {reg.item(wanted).name}*")
+                slots.append(f"{number}. {emojis.get('cell_empty', '▫️')} *empty: {reg.item(wanted).name}*")
         if not status["gem_slots_open"]:
             slots.append(f"-# Gem slots unlock at mining level {rules.reactor.gem_slot_level}.")
 
@@ -71,7 +71,7 @@ class ReactorPane(Screen):
 
         body = [
             *self.note_block(),
-            text(f"### {emojis.get('autominer', '⚙️')} Reactor Level {reactor.level} / {rules.reactor.max_prestige}\n" + "\n".join(slots) + "\n" + perks),
+            text(f"### {emojis.icon('reactor', '⚙️')} Reactor Level {reactor.level} / {rules.reactor.max_prestige}\n" + "\n".join(slots) + "\n" + perks),
             sep(),
             text(auto + "\n-# " + prestige),
         ]
@@ -264,7 +264,7 @@ class ReactorScreen(TabsScreen):
 
     id = "reactor"
     label = "Reactor"
-    emoji = emojis.Lazy("autominer", "⚙️")
+    emoji = emojis.Lazy("ui_reactor", "⚙️")
     description = "Gems, auto-miner, prestige, the magnet and wyrmholes"
     links = ("mining",)
     panes = {"reactor": ReactorPane, "wyrmholes": WyrmholePane}
