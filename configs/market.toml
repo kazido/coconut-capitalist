@@ -9,7 +9,7 @@ refresh_seconds = 3600             # new stock every hour
 slots = 3
 tier_weights = [30, 40, 25, 5, 0, 0, 0, 0]       # chance of tier 1..8 per part (Celestial is never sold)
 extra_traits = 0                   # on top of the tier's normal fresh trait count
-tier_price = [2000, 6000, 15000, 40000, 100000, 250000, 600000, 1500000]   # bits per part, by tier
+tier_price = [5000, 20000, 60000, 250000, 1000000, 5000000, 20000000, 60000000]   # bits per part, by tier (only tiers 1-4 are stocked)
 trait_premium = 0.25               # each trait adds 25% of the base price
 
 [black_market]
@@ -17,7 +17,8 @@ name = "Black Market"
 unlock_area = "star_kingdom"       # open once you have reached this area
 refresh_seconds = 86400            # new stock once a day
 slots = 4
-tier_weights = [0, 0, 0, 40, 30, 20, 10, 0]       # only the rich tiers
+tier_weights = [0, 0, 0, 50, 35, 15, 0, 0]        # only the rich tiers. Tier 7-8 are NEVER sold: drops only (owner)
 extra_traits = 1                   # one more trait than the tier normally rolls (capped at the pool)
-tier_price = [50000, 120000, 250000, 1000000, 3000000, 8000000, 20000000, 60000000]
+# Owner: start expensive, ease later. A few days of play (~10M bits) must not buy end-game parts: tier 6 is 100M.
+tier_price = [50000, 200000, 1000000, 5000000, 25000000, 100000000, 400000000, 1000000000]
 trait_premium = 0.25

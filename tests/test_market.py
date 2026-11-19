@@ -113,3 +113,9 @@ async def test_both_market_panes_show_the_offers_and_buy(db):
     assert (await market.stock(user, "merchant", NOW))[2] is not None
     nav, _ = await hub("shop", tab="black_market")
     assert "closed until you reach Star Kingdom" in all_text(nav)
+
+
+def test_markets_never_sell_end_game_parts():
+    """Owner: tier 7 and 8 parts come from drops only; no shop stocks them."""
+    for cfg in (MERCHANT, BLACK):
+        assert cfg.tier_weights[6] == 0 and cfg.tier_weights[7] == 0
