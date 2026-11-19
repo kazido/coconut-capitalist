@@ -770,3 +770,25 @@ async def test_a_stored_old_house_keeps_every_level_when_the_player_is_loaded_an
     for pet_id, xp in old_xp.items():
         assert pets.pet_level(again.pethouse.pets[pet_id].xp, REG.pets[pet_id].rarity, REG) == 1 + int((xp / 300) ** 0.5)
     assert again.pethouse.pets["cinder"].xp < old_xp["cinder"] < again.pethouse.pets["tempest"].xp  # common sooner, legendary later
+
+
+async def test_the_pets_page_shows_the_tank_and_fuels_and_collects(db):
+    from cococap.services import farming  # noqa: F401  (crops come from farming)
+
+    user = await with_pet("drizzle", xp=0)
+    crop = next(i for i in REG.items.values() if i.crop and i.sell_price > 0)
+    await user.add_item(crop.id, 50)
+    nav, inter = await hub("pets")
+    assert "Sidekick work" in all_text(nav) and "Tank" in all_text(nav)
+    assert find_button(nav, "Collect").disabled  # nothing worked yet
+    await choose(nav, inter, select_named(nav, "Fuel the tank"), crop.id)
+    modal = inter.response.send_modal.await_args.args[0]
+    await modal._handler(inter, "5")
+    await user.refresh()
+    assert user.pethouse.fuel_seconds > 0 and await user.item_quantity(crop.id) < 50
+    user.pethouse.last_collect = 1.0  # long ago: the whole tank has been worked
+    await user.update_pethouse(lambda h: setattr(h, "last_collect", 1.0))
+    nav, inter = await hub("pets")
+    await click(nav, inter, "Collect")
+    await user.refresh()
+    assert user.pethouse.fuel_seconds == 0

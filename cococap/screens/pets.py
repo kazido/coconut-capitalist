@@ -1,11 +1,12 @@
 import random
+import time
 
 import discord
 
 from cococap import emojis
 from cococap.constants import Rarities
 from cococap.registry import get_registry
-from cococap.services import pets, shop
+from cococap.services import pet_score, pets, shop
 from cococap.ui import Page, PromptModal, Result, Screen
 from cococap.ui.tabs import TabsScreen
 from cococap.ui.components import button, row, select, sep, text, xp_bar
@@ -72,6 +73,8 @@ class PetScreen(Screen):
             discord.SelectOption(label=f"{reg.pets[i].name} {'⭐' * p.stars}", value=i, emoji=reg.pets[i].emoji, default=i == focus,  # (unicode stars: custom emoji do not render in dropdown text)
                                  description=self._option_text(reg.pets[i], p, i == house.active, reg))
             for i, p in sorted(house.pets.items())][:25], self._switch)))
+        if focus == house.active:
+            await self._sidekick_block(body, pet, mine, house, owned_items, reg)
         body.append(sep())
         foods = [(reg.item(i), q) for i, q in owned_items.items() if q > 0 and (it := reg.find_item(i)) and pets.food_xp(it, reg) > 0]
         foods.sort(key=lambda e: (pets.food_skill(e[0]) or "", pets.food_xp(e[0], reg)))
@@ -80,8 +83,8 @@ class PetScreen(Screen):
                 discord.SelectOption(label=f"{c.name} ×{q:,}", value=c.id, emoji=c.emoji, description=self._food_note(c, pet, reg))
                 for c, q in foods][:25], self._feed)))
         else:
-            body.append(text(f"-# {emojis.icon('food', '🍽️')} Pets eat crops and the food your skills drop: Acorn Mix from trees, Fish Flakes from fishing, "
-                             "Stone Biscuits from the mine. Food of a pet's own skill is worth more."))
+            body.append(text(f"-# {emojis.icon('food', '🍽️')} Pets level on the food your skills drop (Acorn Mix from trees, Fish Flakes from fishing, "
+                             "Stone Biscuits from the mine, Harvest Mash from harvests) or Pet Biscuits from the shop. Food of a pet's own skill is worth more. Crops fuel its idle work."))
         spirits = [(reg.item(i), q) for i, q in owned_items.items() if q > 0 and (it := reg.find_item(i)) and it.category == "pet_item"
                    and it.skill and it.skill not in mine.spirits]
         if spirits:
@@ -90,6 +93,57 @@ class PetScreen(Screen):
                                      description=f"+{rules.spirit_bonus:.0%} {s.skill} xp while it is active") for s, q in spirits][:25],
                                    self._spirit)))
         return Page("Pets", body, accent=0x27AE60)
+
+    async def _sidekick_block(self, body: list, pet, mine, house, owned_items: dict, reg) -> None:
+        """The active pet's mini-you: score, sidekick bonus from the pets resting, the fuel tank, and Collect / Fuel."""
+        rules = reg.pet_score
+        others = [(reg.pets[k], o) for k, o in house.pets.items() if k != house.active]
+        side = pet_score.sidekick_bonus(others, reg)
+        score = pet_score.score(pet, mine, registry=reg)
+        cap = pets.tank_cap_seconds(reg)
+        now = time.time()
+        fuel = house.fuel_seconds
+        working = max(0.0, min(fuel, now - house.last_collect)) if house.last_collect else 0.0  # idle time waiting to be collected
+        hourly = pet_score.haul_xp_per_hour(score, side, registry=reg)
+        lo = pet.loadout
+        nxt = emojis.icon("next", "▸")
+        lines = [
+            "**Sidekick work** (idle while you are away)",
+            f"{nxt} Score **{score:.1f}**  ·  tool tier {lo.tool_tier}, {sum(lo.enchants.values())} enchant levels, mastery {lo.mastery_score}",
+            f"{nxt} Sidekicks: **+{side:.0%}** from your resting pets (max +{rules.sidekick_cap:.0%})",
+            f"{nxt} Tank {xp_bar(fuel / cap if cap else 0)} {fuel / 3600:.1f}/{cap / 3600:.0f} h  ·  hauls about {hourly:,.0f} xp/h",
+            f"-# {working / 3600:.1f} h of work waiting to collect" if working > 0 else "-# Fill the tank with crops: it only works while it has fuel.",
+        ]
+        body.append(text("\n".join(lines)))
+        crops = [(reg.item(i), q) for i, q in owned_items.items() if q > 0 and (it := reg.find_item(i)) and it.crop is not None and it.sell_price > 0]
+        crops.sort(key=lambda e: e[0].sell_price)
+        body.append(row(button("Collect", style=discord.ButtonStyle.primary, on_click=self._collect, disabled=working <= 0)))
+        if crops:
+            body.append(row(select("Fuel the tank with crops...", [
+                discord.SelectOption(label=f"{c.name} ×{q:,}", value=c.id, emoji=c.emoji, description=f"{c.sell_price * rules.fuel_minutes_per_value:.1f} min of fuel each")
+                for c, q in crops][:25], self._fuel)))
+
+    async def _collect(self, interaction: discord.Interaction) -> None:
+        skill, xp, hours = await pets.collect(self.user)
+        if xp <= 0 or not skill:
+            await self.refresh(interaction, "Nothing to collect yet.")
+            return
+        await self.refresh(interaction, f"{emojis.icon('sparkle', '✨')} Your pet worked {hours:.1f} h and brought back **{xp:,}** {skill} xp.")
+
+    async def _fuel(self, interaction: discord.Interaction, values: list[str]) -> None:
+        crop_id = values[0]
+        reg = get_registry()
+        have = await self.user.item_quantity(crop_id)
+
+        async def submitted(modal_interaction: discord.Interaction, raw: str) -> None:
+            try:
+                quantity = have if raw.strip().lower() in ("all", "") else int(raw.replace(",", ""))
+            except ValueError:
+                raise pets.PetError("Enter a whole number, or 'all'.") from None
+            added = await pets.fuel(self.user, crop_id, quantity)
+            await self.refresh(modal_interaction, f"{reg.item(crop_id).emoji} Fuel added: **{added / 3600:.1f} h** of work.")
+
+        await interaction.response.send_modal(PromptModal(f"Fuel with {reg.item(crop_id).name}", f"How many? (you have {have:,})", submitted, default=str(have), max_length=9))
 
     @staticmethod
     def _food_note(food, pet, reg) -> str:
