@@ -121,29 +121,37 @@ def render_flame_frames(base: str, face: str = "core", embers: bool = True, acce
     return [render_flame(base, face, f, embers, accent) for f in range(FRAMES)]
 
 
-AURORA_FRAMES = 8
-AURORA_MS = 120
+SERAPH_FRAMES = 8
+SERAPH_MS = 110
 
 
-def render_aurora_frames() -> list[Image.Image]:
-    """The Celestial pet: a flame whose colour flows like the northern lights (teal -> green -> blue -> violet -> pink bands drifting
-    up the body), as one slow band drifting up its body. Eyes and plate stay as the normal "core" face."""
+def render_seraph_frames() -> list[Image.Image]:
+    """The Celestial pet: an angelic fire. White-hot at the heart, melting through pale gold and yellow to orange at the rim and the base,
+    with a slow shimmer rising through it. Eyes and plate stay as the normal "core" face."""
     out = []
-    for f in range(AURORA_FRAMES):
-        im = render_flame("#7af0d0", "core", f % FRAMES, embers=False)
-        phase = f / AURORA_FRAMES
+    for f in range(SERAPH_FRAMES):
+        im = render_flame("#ffd23d", "core", f % FRAMES, embers=False)
         px = im.load()
+        xs = [x for x in range(16) for y in range(16) if px[x, y][3]]
+        cx = (min(xs) + max(xs)) / 2
+        half = max(1.0, (max(xs) - min(xs)) / 2)
+        ys = [y for x in range(16) for y in range(16) if px[x, y][3]]
+        y0, y1 = min(ys), max(ys)
         for y in range(16):
             for x in range(16):
                 r, g, b, a = px[x, y]
                 if not a:
                     continue
                 h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-                if s < 0.12 or v < 0.3:  # the white eyes and the dark face plate keep their colour
+                if s < 0.12 or v < 0.5:  # the white eyes and the dark face plate keep their colour
                     continue
-                wave = 0.5 + 0.5 * math.sin(6.2832 * (y / 14.0 - phase))
-                hue = 0.40 + 0.40 * wave  # 0.40 green-teal ... 0.80 violet, one slow band drifting up
-                nr, ng, nb = colorsys.hsv_to_rgb(hue % 1.0, min(1.0, 0.45 + 0.5 * s), min(1.0, v * 1.05))
+                heat = 1.05 - min(1.0, abs(x - cx) / half) * 0.55 - (y - y0) / max(1, y1 - y0) * 0.4  # 1 = the white-hot heart
+                heat += 0.12 * math.sin(6.2832 * ((y - y0) / 8.0 - f / SERAPH_FRAMES))  # a slow shimmer rising through the fire
+                heat = max(0.0, min(1.0, heat))
+                hue = 0.145 - 0.085 * (1 - heat) ** 1.3  # golden yellow (heat 1) ... orange (heat 0)
+                sat = 0.1 + 0.8 * (1 - heat) ** 0.8 if heat < 0.82 else 0.0  # a white-hot heart
+                val = min(1.0, 0.9 + 0.1 * heat)
+                nr, ng, nb = colorsys.hsv_to_rgb(hue, sat, val)
                 px[x, y] = (round(nr * 255), round(ng * 255), round(nb * 255), 255)
         out.append(im)
     return out

@@ -482,7 +482,7 @@ def test_every_pet_has_one_fixed_skill_that_matches_what_it_does():
     for pet in REG.pets.values():
         assert pet.skill == pets.default_skill(pet), pet.id  # the data and the bonuses agree
         assert pet.skill in pets.SKILL_EMOJI
-    assert {p.id for p in REG.pets.values() if p.skill == "global"} == {"cinder", "haze", "halo", "gloam", "lune", "umbra", "aurora"}  # work wage, every-skill xp, sales
+    assert {p.id for p in REG.pets.values() if p.skill == "global"} == {"cinder", "haze", "halo", "gloam", "lune", "umbra", "seraph"}  # work wage, every-skill xp, sales
     assert REG.pets["drizzle"].skill == "fishing" and REG.pets["dew"].skill == "farming" and REG.pets["ripple"].skill == "fishing"
     assert {p.skill for p in REG.pets.values()} >= {"fishing", "mining", "farming", "foraging", "global"}
     assert not hasattr(pets, "set_skill")  # a pet's skill is not something you change

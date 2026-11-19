@@ -227,10 +227,10 @@ face = "core"
 base = "#c8f542"
 accent = "#ffd23d"
 
-# Aurora
-[pet_aurora]
+# Seraph
+[pet_seraph]
 kind = "flame"
-special = "aurora"
+special = "seraph"
 rarity = 8
 face = "eyes"
 base = "#f4f1ff"
