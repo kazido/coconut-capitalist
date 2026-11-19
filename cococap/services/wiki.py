@@ -78,7 +78,7 @@ def _mining(reg: Registry) -> list[str]:
         "mines lodes for you while you are away.",
         "**Kinds of mine.** Every mine you enter is rolled: most are **Standard**, but now and then you get one with a twist, shown at the top of the mine before you dig. "
         + "; ".join(f"{t.emoji} **{t.name}** ({t.description.rstrip('.').lower()})" for t in m.mine_types[1:]) + ".",
-        f"**Wyrmholes.** Now and then a lode in the shaft is replaced by a **wyrmhole** (you see them {m.descent.lookahead} rows ahead, only in rows {m.wyrmhole.min_depth + 1} to {m.wyrmhole.max_depth + 1}). "
+        f"**Wyrmholes.** Now and then a lode in the shaft is replaced by a **wyrmhole** (you see them {m.descent.lookahead} rows ahead, only in row {m.wyrmhole.min_depth + 1} and down{'' if m.wyrmhole.max_depth is None else f' to row {m.wyrmhole.max_depth + 1}'}). "
         "Dig it and the mine ends (what you carry is banked) and you drop in. Most are **small**: "
         f"{m.mini_wyrmhole.columns} nodes wide and {len(m.mini_wyrmhole.rows)} rows deep, pick **one** node on each row, deeper rows pay better ore. About 1 in {round(1 / m.wyrmhole.big_chance)} is **big**, "
         "and its LAST row hides a gem: the implosion gem, or a reactor core gem you do not own yet. No hazards and no empty nodes in either, and you earn mining xp for every row.",

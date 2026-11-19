@@ -11,6 +11,12 @@
 
 [[entry]]
 date = 2026-11-19
+title = "Wyrmholes can show deeper"
+body = "- Wyrmholes can now show up in every row from row 6 down, not just rows 6 to 10."
+major = false
+
+[[entry]]
+date = 2026-11-19
 title = "News and Changelog"
 major = true
 body = """

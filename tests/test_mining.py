@@ -491,17 +491,17 @@ def test_wyrmholes_never_show_in_the_rows_visible_when_a_mine_opens():
     assert RULES.wyrmhole.min_depth > RULES.descent.lookahead  # (else you could reset mines until one shows)
 
 
-def test_wyrmholes_only_show_between_the_minimum_and_maximum_depth():
-    deep_holes = 0
+def test_wyrmholes_never_show_above_the_minimum_depth_and_show_deep_down():
+    holes = 0
     for seed in range(60):
         run = make_run(seed, wyrmhole_odds_value=2)  # 50% per cell, to make them common
-        for depth in range(RULES.wyrmhole.max_depth + 4):
+        for depth in range(RULES.wyrmhole.min_depth + 40):
             run.row(depth)
-            if not RULES.wyrmhole.min_depth <= depth <= RULES.wyrmhole.max_depth:  # (too deep and the mine would collapse before you reach it)
+            if depth < RULES.wyrmhole.min_depth:
                 assert run._holes[depth] == set(), (seed, depth)
             else:
-                deep_holes += len(run._holes[depth])
-    assert deep_holes > 100
+                holes += len(run._holes[depth])
+    assert holes > 100
 
 
 def test_digging_several_columns_collects_each_and_adds_each_ones_pressure():

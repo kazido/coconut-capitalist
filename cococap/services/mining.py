@@ -251,7 +251,7 @@ class MineRun:
             self._holes[depth] = {
                 col
                 for col in range(self.rules.columns)
-                if depth >= self.rules.wyrmhole.min_depth and self.rng.randint(1, self.wyrmhole_odds) == 1 and depth <= self.rules.wyrmhole.max_depth  # (always rolled, so the dice do not shift)
+                if depth >= self.rules.wyrmhole.min_depth and self.rng.randint(1, self.wyrmhole_odds) == 1 and (self.rules.wyrmhole.max_depth is None or depth <= self.rules.wyrmhole.max_depth)  # (always rolled, so the dice do not shift)
             }
             self._kinds[depth] = self._roll_kinds(depth)
         return self._rows[depth]

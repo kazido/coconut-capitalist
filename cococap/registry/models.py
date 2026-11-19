@@ -454,7 +454,7 @@ class WyrmholeRules(_Data):
     gem_bonus: int = Field(ge=0)
     min_odds: int = Field(ge=2)
     min_depth: int = Field(ge=0)  # first row (0-based) a wyrmhole can show in...
-    max_depth: int = Field(ge=0)  # ...and the last: deeper ones would only tease a player whose mine collapses before they reach it
+    max_depth: int | None = Field(default=None, ge=0)  # ...and the last, or None for no cap (every row from min_depth down can hold one)
     big_chance: float = Field(gt=0, le=1)  # digging into a wyrmhole opens a BIG one with this chance, else a small one
     implosion_item: str
     columns: int = Field(ge=2)  # nodes per row
@@ -465,7 +465,7 @@ class WyrmholeRules(_Data):
 
     @model_validator(mode="after")
     def _depths(self):
-        if self.max_depth < self.min_depth:
+        if self.max_depth is not None and self.max_depth < self.min_depth:
             raise ValueError("wyrmhole: max_depth must be at least min_depth")
         return self
 

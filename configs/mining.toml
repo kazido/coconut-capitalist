@@ -295,7 +295,7 @@ odds = 1500                        # 1-in-N per cell between `min_depth` and `ma
 gem_bonus = 200                    # N shrinks by this for every gem placed in the reactor
 min_odds = 600                     # ...but never below this
 min_depth = 5                      # first row (0-based) wyrmholes can show in: below the rows you can see when a mine opens (`descent.lookahead`), so resetting mines never farms them
-max_depth = 9                      # ...and the last. Deeper and a player sees one, then the mine collapses before they can reach it: never tease them
+# max_depth unset = no cap: wyrmholes can show in every row from min_depth down (a deep one you never reach just leaves a sighting)
 big_chance = 0.2                   # chance a wyrmhole you dig into is a big one
 implosion_item = "key_gemstone_implosion"
 # A big wyrmhole is a small mine of its own: no hazard and no empty cells, you dig ONE of `columns` hidden nodes on each row and keep every pick. Each row pays from
