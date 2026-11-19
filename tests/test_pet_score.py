@@ -36,3 +36,12 @@ def test_sidekick_capped_and_empty_tank_stops_haul_but_not_passive():
     assert ps.passive_bonus(s) > 0
     assert ps.passive_bonus(10**9) == REG.pet_score.passive_cap
     assert ps.haul_xp_per_hour(s, active_xp_per_hour=100) <= 100 * REG.pet_score.haul_active_share
+
+
+def test_old_pethouse_json_loads_with_empty_tank():
+    from cococap.models.pethouse import Pethouse
+
+    house = Pethouse.model_validate({"active": "cinder", "pets": {"cinder": {"stars": 2, "xp": 50}}, "curve_version": 1})
+    assert house.fuel_seconds == 0 and house.last_collect == 0
+    assert house.pets["cinder"].lent_tool is None and house.pets["cinder"].buff_until == 0
+    assert house.pets["cinder"].stars == 2 and house.pets["cinder"].xp == 50
