@@ -131,16 +131,6 @@ min = 1
 max = 1
 chance = 0.03
 [[treasure.loot]]
-item = "scroll_steady_line"
-min = 1
-max = 1
-chance = 0.03
-[[treasure.loot]]
-item = "scroll_double_hook"
-min = 1
-max = 1
-chance = 0.02
-[[treasure.loot]]
 item = "spirit_of_the_sea"
 min = 1
 max = 1
@@ -193,6 +183,10 @@ server_bits_multiplier = 2.0      # a new server record pays this x the fish's s
 # Bosses. Now and then (`odds`) what bites is not a fish but a boss: it bites like anything else, but once you pull up
 # the line it takes a long reel (`length` arrows, with your rod's usual forgiveness). Win, and there is no fish to keep:
 # you are paid a big pile of bits, xp and loot instead.  TODO(balance): all of it
+[net]                            # Net Cast (rod enchant): a net hauls this many of the water's commonest fish at once
+fish = 3
+cooldown_seconds = 1800  # TODO(balance): 30 minutes between nets
+
 [boss]
 odds = 80                         # 1 in 80 casts
 length = 15
@@ -211,6 +205,7 @@ max_bonus = 1.0                   # ...up to doubling it
 [[boss.bosses]]
 name = "Old Whiskers"
 modifiers = ["mirror"]
+scroll = { item = "scroll_net_cast", odds = 4 }  # TODO(balance): the only source of Net Cast
 [[boss.bosses]]
 name = "The Drowned Duke"
 modifiers = ["reverse"]
@@ -226,6 +221,7 @@ modifiers = ["wild"]
 [[boss.bosses]]
 name = "Grandfather Carp"
 modifiers = ["mirror", "shuffle"]
+scroll = { item = "scroll_double_hook", odds = 3 }  # TODO(balance): the only source of Double Hook
 [[boss.bosses]]
 name = "Kraken Jr."
 modifiers = ["reverse", "fog"]
@@ -380,6 +376,7 @@ id = "cadrega_canals"
 description = "Narrow canals and busy gondola lanes. Swordfish cruise the traffic."
 wait_multiplier = 1.65
 xp = 111  # TODO(balance)
+scroll = { item = "scroll_steady_line", odds = 200 }  # TODO(balance): the only source of Steady Line, about one every 5 hours of catches here
 [waters.fish]
 fish_golden_koi = 2500
 fish_marlin = 250
@@ -500,16 +497,6 @@ item = "key_orb_familiar"
 min = 1
 max = 1
 chance = 0.08
-[[boss.loot]]
-item = "scroll_steady_line"
-min = 1
-max = 1
-chance = 0.04
-[[boss.loot]]
-item = "scroll_double_hook"
-min = 1
-max = 1
-chance = 0.03
 
 # Crab pots: an AFK extra. Craft a pot, put it in a water you have opened, load it with bait and it catches rare fish
 # (`min_rarity` and up) while you are away, one per interval, using one bait each, until it is full or out of bait. The

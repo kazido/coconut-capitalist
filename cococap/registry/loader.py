@@ -283,6 +283,10 @@ class Registry:
                          if row.item not in self.items]
             problems += [f"fishing.toml treasure: unknown loot item '{row.item}'" for row in self.fishing.treasure.loot
                          if row.item not in self.items]
+            fishing_scrolls = [(f"boss '{b.name}'", b.scroll) for b in self.fishing.boss.bosses] + [(f"water '{w.id}'", w.scroll) for w in self.fishing.waters]
+            for where, scroll in fishing_scrolls:
+                if scroll is not None and (scroll.item not in self.items or self.items[scroll.item].category != "scroll"):
+                    problems.append(f"fishing.toml {where}: '{scroll.item}' is not a scroll item")
         if self.foraging is not None:
             problems += [f"foraging.toml rotate: unknown wedge item '{w.item}'" for w in self.foraging.rotate.wedges if w.item not in self.items]
         if self.foraging is not None:

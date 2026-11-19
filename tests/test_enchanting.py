@@ -109,7 +109,7 @@ def test_sharp_eye_makes_good_chops_more_likely():
 
 # ---- finding scrolls ------------------------------------------------------------------------------------------------------
 def test_every_skill_has_its_own_scrolls():
-    own = {"mining": {"scroll_echo_strike", "scroll_second_wind", "scroll_prospectors_ping"}, "fishing": {"scroll_double_hook", "scroll_steady_line"},
+    own = {"mining": {"scroll_echo_strike", "scroll_second_wind", "scroll_prospectors_ping"}, "fishing": {"scroll_double_hook", "scroll_steady_line", "scroll_net_cast"},
            "foraging": {"scroll_double_strike", "scroll_timber", "scroll_ember_bite"}, "farming": {"scroll_seedkeeper"}}
     for skill, mine in own.items():
         found = {i.id for i in REG.items.values() if i.category == "scroll" and skill in scrolls.scroll_skills(i.id, REG)}
@@ -120,8 +120,10 @@ def test_every_skill_has_its_own_scrolls():
 def test_scrolls_are_rare_about_one_every_few_hours_in_each_skill():
     # per hour of play: foraging ~45 private trees, fishing ~2 bosses and a chest now and then (mining has no scrolls now)
     per_hour = {}  # foraging's scrolls each come from ONE species or grain (their rates: tests/test_ability_scrolls.py)
-    boss = sum(r.chance for r in REG.fishing.boss.loot if r.item.startswith("scroll_"))
-    per_hour["fishing"] = 1.5 * boss  # (bosses are hooked about 1 in 80 casts and not every one is landed)
+    # each boss fight picks one of the bosses at random, and each boss's own scroll is 1 in its odds of those
+    boss = sum(1 / (len(REG.fishing.boss.bosses) * b.scroll.odds) for b in REG.fishing.boss.bosses if b.scroll)
+    water = sum(40 / w.scroll.odds for w in REG.fishing.waters if w.scroll)  # ~40 catches an hour in the one water that has a scroll (a guess)
+    per_hour["fishing"] = 1.5 * boss + water  # (bosses are hooked about 1 in 80 casts and not every one is landed)
     for skill, rate in per_hour.items():
         # Scrolls must stay rare (owner: they dropped too often). The floor is loose while the ability scrolls with their own
         # sources are being added (docs/plans/ability-scrolls.md); tighten it again once every skill has them.
@@ -170,6 +172,7 @@ async def test_a_boss_can_drop_a_scroll_you_can_then_use(db):
 
     user, rod = await with_tool("tool_rod_starter", "fishing")
     boss = f.cast_line(equipment.EffectiveStats(power=3, requirement=0, stats={"power": 3.0}), Lucky(1), 0, REG)
+    f.make_boss(boss, "Grandfather Carp", REG.fishing, Lucky(1))  # only Grandfather Carp drops Double Hook
     boss.hook(boss.bite_at + 1)
     for arrow in list(boss.truth):  # (what the boss really wants, which a mirror boss flips)
         boss.press(arrow, boss.bite_at + 2)

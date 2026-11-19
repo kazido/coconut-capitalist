@@ -1070,11 +1070,19 @@ class CommunityRules(_Data):
     min_share: float = Field(ge=0, le=1)  # you must have done this share of a goal to be paid for it
 
 
+class FishingScroll(_Data):
+    """A scroll one boss or one water alone can drop: 1 in `odds` boss fights landed (or catches in that water)."""
+
+    item: str
+    odds: int = Field(ge=1)
+
+
 class BossEntry(_Data):
     """One boss and the twist that makes its reel different."""
 
     name: str
     modifiers: list[Literal["mirror", "reverse", "shuffle", "fog", "wild"]] = Field(min_length=1)
+    scroll: FishingScroll | None = None  # the scroll only this boss can drop (defeat_boss rolls it)
 
 
 class PartyBossRules(_Data):
@@ -1117,6 +1125,7 @@ class WaterRules(_Data):
     wait_multiplier: float = Field(gt=0)  # deeper water takes longer to bite
     xp: int = Field(ge=0)  # xp for every fish landed here: deeper waters pay more, a better rod never does
     fish: dict[str, int] = Field(min_length=1)
+    scroll: FishingScroll | None = None  # the scroll only this water can drop (land rolls it per catch here)
 
     @property
     def emoji(self) -> str:
@@ -1175,6 +1184,13 @@ class DoubleHookRules(_Data):
     cap: float = Field(gt=0, le=1)  # the chance never goes above this
 
 
+class NetRules(_Data):
+    """Net Cast: one net hauls this many of the water's commonest fish at once, then it cools down."""
+
+    fish: int = Field(ge=1)
+    cooldown_seconds: int = Field(ge=0)  # between two nets
+
+
 class FishingRules(_Data):
     xp_per_catch: int = Field(ge=0)  # xp for landing a fish when the water does not set its own: one catch pays the same whatever the fish or the rod
     xp_per_rarity: int = Field(ge=0)
@@ -1191,6 +1207,7 @@ class FishingRules(_Data):
     pots: PotRules
     radar: RadarRules
     double_hook: DoubleHookRules
+    net: NetRules
 
 
 class MinigamePayout(_Data):

@@ -25,6 +25,18 @@ type = "stat_add"
 stat = "slips"
 amount = 1
 
+[net_cast]
+name = "Net Cast"
+emoji = "🥅"
+description = "Once per fishing trip (each visit to the Fishing page, or each new water), a Net button hauls in 3 of the water's commonest fish at once."
+applies_to = ["rod"]
+max_level = 1
+
+[[net_cast.effects]]
+type = "stat_add"
+stat = "net_cast"
+amount = 1.0
+
 [double_hook]
 name = "Double Hook"
 emoji = "⚡"

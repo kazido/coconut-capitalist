@@ -11,7 +11,12 @@ from cococap.screens.mine import echo_note
 from cococap.services import mining as m
 from cococap.services.mining import MiningError
 from cococap.services import foraging as forage
+from cococap.services import enchanting, equipment
+from cococap.services import fishing as f
 from cococap.services import scrolls
+from cococap.services.equipment import equip
+from cococap.services.fishing import FishingError
+from tests.test_hub import buttons, click, hub
 from cococap.screens.forage import ember_line, timber_note
 from cococap.services.equipment import equip
 from cococap.user import User
@@ -325,3 +330,128 @@ async def test_timber_only_happens_with_the_enchant_on_the_axe(db):
     bare = await plain.give_instance("tool_axe_starter")
     await equip(plain, "foraging", bare.id)
     assert (await forage.fell_private(plain, forage.Tree(1, 10, 0, species="pine"), Rig(0.0), REG)).timber is False
+
+
+# ---- fishing: Net Cast, Steady Line and Double Hook each come from ONE source ----------------------------------------------
+NET = REG.items["scroll_net_cast"]
+STEADY = REG.items["scroll_steady_line"]
+DOUBLE = REG.items["scroll_double_hook"]
+FISH_STATS = equipment.EffectiveStats(power=3, requirement=0, stats={"power": 3.0})
+
+
+class Always(Random):
+    """A generator whose random() is 0 (every 1-in-N roll hits) and whose randint() is the low end."""
+
+    def randint(self, a, b):
+        return a
+
+    def random(self):
+        return 0.0
+
+
+class Never(Random):
+    """A generator whose random() is just under 1 (no 1-in-N roll hits)."""
+
+    def randint(self, a, b):
+        return b
+
+    def random(self):
+        return 0.999999
+
+
+async def net_rod(user_id=1):
+    user = await User.get(user_id)
+    rod = await user.give_instance("tool_rod_starter")
+    await equip(user, "fishing", rod.id)
+    await user.add_item("scroll_net_cast", 1)
+    await enchanting.apply_scroll(user, "scroll_net_cast", rod.id, REG)
+    return user
+
+
+def test_net_cast_is_a_rod_enchant_and_only_old_whiskers_drops_it():
+    enchant = REG.enchant("net_cast")
+    assert enchant.applies_to == ["rod"] and enchant.max_level == 1
+    assert NET.scroll.enchant == "net_cast" and scrolls.scroll_skills(NET.id, REG) == ["fishing"]
+    assert [b.name for b in REG.fishing.boss.bosses if b.scroll and b.scroll.item == NET.id] == ["Old Whiskers"]
+    assert not any(w.scroll and w.scroll.item == NET.id for w in REG.fishing.waters)
+    assert not any(r.item == NET.id for r in (*REG.fishing.treasure.loot, *REG.fishing.boss.loot))
+
+
+async def test_net_cast_needs_the_enchant(db):
+    user = await User.get(1)
+    rod = await user.give_instance("tool_rod_starter")
+    await equip(user, "fishing", rod.id)
+    with pytest.raises(FishingError):
+        await f.net_cast(user, REG.fishing.waters[0], REG)
+
+
+async def test_net_cast_hauls_three_of_the_commonest_fish_at_once(db):
+    user = await net_rod()
+    water = REG.fishing.waters[1]  # the river
+    fish_id = min(water.fish, key=water.fish.get)
+    got, count, xp = await f.net_cast(user, water, REG)
+    assert got == fish_id and count == 3 == REG.fishing.net.fish
+    assert await user.item_quantity(fish_id) == 3 and xp == round(water.xp * 3)
+
+
+async def test_net_cast_has_a_cooldown_that_a_second_net_must_wait_out(db):
+    user = await net_rod()
+    water = REG.fishing.waters[0]
+    cool = REG.fishing.net.cooldown_seconds
+    fish_id = min(water.fish, key=water.fish.get)
+    await f.net_cast(user, water, REG, now=1000.0)
+    with pytest.raises(FishingError, match="drying"):
+        await f.net_cast(user, water, REG, now=1000.0 + cool - 1)
+    assert await user.item_quantity(fish_id) == 3  # the refused net caught nothing
+    assert await f.net_ready_in(user, 1000.0 + cool - 1, REG) == pytest.approx(1)
+    await f.net_cast(user, water, REG, now=1000.0 + cool)  # ready again once the cooldown has passed
+    assert await user.item_quantity(fish_id) == 6
+
+
+async def test_the_net_button_shows_its_cooldown_and_reopening_the_page_does_not_reset_it(db):
+    user = await net_rod()
+    nav, inter = await hub("fish")
+    await click(nav, inter, "Net")
+    assert await user.item_quantity(min(REG.fishing.waters[0].fish, key=REG.fishing.waters[0].fish.get)) == 3
+    nav, inter = await hub("fish")  # reopening the page is not a new trip
+    labels = [b.label for b in buttons(nav)]
+    assert any(label and label.startswith("Net ready in") for label in labels), labels
+    assert not any(label == "Net" for label in labels)
+
+
+async def test_each_boss_drops_only_its_own_scroll(db):
+    user = await User.get(1)
+    for boss in REG.fishing.boss.bosses:
+        cast = f.cast_line(FISH_STATS, Always(1), 0, REG)
+        f.make_boss(cast, boss.name, REG.fishing, Always(1))
+        cast.hook(cast.bite_at + 1)
+        for arrow in list(cast.truth):
+            cast.press(arrow, cast.bite_at + 2)
+        won = await f.defeat_boss(user, cast, Always(2), REG)
+        got = {i for i in won.items if i.startswith("scroll_")}
+        assert got == ({boss.scroll.item} if boss.scroll else set()), boss.name
+        cast = f.cast_line(FISH_STATS, Never(1), 0, REG)
+        f.make_boss(cast, boss.name, REG.fishing, Never(1))
+        cast.hook(cast.bite_at + 1)
+        for arrow in list(cast.truth):
+            cast.press(arrow, cast.bite_at + 2)
+        lost = await f.defeat_boss(user, cast, Never(2), REG)
+        assert not any(i.startswith("scroll_") for i in lost.items), boss.name
+
+
+def test_double_hook_and_steady_line_have_one_source_each():
+    assert [b.name for b in REG.fishing.boss.bosses if b.scroll and b.scroll.item == DOUBLE.id] == ["Grandfather Carp"]
+    assert [w.id for w in REG.fishing.waters if w.scroll and w.scroll.item == STEADY.id] == ["cadrega_canals"]
+    assert not any(r.item in (DOUBLE.id, STEADY.id) for r in (*REG.fishing.treasure.loot, *REG.fishing.boss.loot))
+    assert scrolls.scroll_skills(DOUBLE.id, REG) == ["fishing"] and scrolls.scroll_skills(STEADY.id, REG) == ["fishing"]
+
+
+async def test_a_water_drops_its_scroll_only_in_that_water(db):
+    user = await User.get(1)
+    for water in REG.fishing.waters:
+        cast = f.cast_line(FISH_STATS, Always(1), 0, REG, water=water, plain=True)
+        cast.hook(cast.bite_at + 1)
+        for arrow in list(cast.truth):
+            cast.press(arrow, cast.bite_at + 2)
+        await f.land(user, cast, REG, now=cast.bite_at + 3, rng=Always(2))  # every 1-in-N roll hits
+    assert await user.item_quantity(STEADY.id) == 1  # only the cadrega_canals catch dropped it

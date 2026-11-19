@@ -80,3 +80,4 @@ class Fishing(Skill):
     radar: Radar = Field(default_factory=Radar)
     stats: Stats = Field(default_factory=Stats)
     streak: int = 0  # clean reels in a row (the Angler's Hot Streak)
+    net_cast_at: float = 0.0  # unix time of your last Net Cast (its cooldown runs from here)

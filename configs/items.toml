@@ -2081,6 +2081,20 @@ sell_price = 400000  # TODO(balance)
 [scroll_double_hook.scroll]
 enchant = "double_hook"
 
+[scroll_net_cast]
+name = "Scroll of Net Cast"
+description = "A net that hauls in a few fish at once."
+wiki = "Use it from your inventory (Enchant) to put Net Cast on a rod. One use. Only Old Whiskers drops it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "fishing"
+category = "scroll"
+price = 0
+sell_price = 1200000  # TODO(balance)
+
+[scroll_net_cast.scroll]
+enchant = "net_cast"
+
 [scroll_seedkeeper]
 name = "Scroll of the Seedkeeper"
 description = "More plants go to seed."

@@ -1,4 +1,5 @@
 import datetime
+import math
 import random
 import time
 from collections import Counter
@@ -193,6 +194,10 @@ class FishScreen(Screen):
             body.append(row(button("Crab pots", emoji=emojis.icon("crab", "🦀"), disabled=level < reg.fishing.pots.min_level, on_click=self._pots),
                             button("Mastery", emoji=emojis.icon("star", "🌟"), on_click=self._mastery)))
             body.append(row(button("Radar", emoji=emojis.icon('radar', '📡'), disabled=level < reg.fishing.radar.unlock_level, on_click=self._radar)))
+            if stats is not None and stats.stats.get("net_cast", 0.0) > 0:  # the Net Cast enchant shows its button
+                left = await fishing.net_ready_in(self.user)
+                label = "Net" if left <= 0 else f"Net ready in {math.ceil(left / 60)}m"
+                body.append(row(button(label, emoji=emojis.icon("net", "🥅"), disabled=left > 0, on_click=self._net)))
             return Page("Fishing", body, accent=ACCENT)
 
         status = cast.status(now())
@@ -335,6 +340,13 @@ class FishScreen(Screen):
         self.missed = None
         self.cast = fishing.quick_cast(stats, self.rng, now(), offer[1], get_registry(), await pets.bonuses(self.user))
         await self.refresh(interaction, f"{emojis.icon('bolt', '⚡')} A second line is biting! Pull it up.")
+
+    async def _net(self, interaction: discord.Interaction) -> None:
+        """Net Cast: a net hauls a few of the water's commonest fish at once, then it cools down."""
+        open_waters = await fishing.open_waters(self.user)
+        water = next((w for w in open_waters if w.id == self.water), open_waters[-1])  # closed or unknown: the newest open one
+        _, count, _ = await fishing.net_cast(self.user, water)
+        await self.refresh(interaction, f"{emojis.icon('net', '🥅')} **Net Cast!** You hauled in {count} fish.")
 
     async def _pick_water(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.water = values[0]

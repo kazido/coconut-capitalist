@@ -125,14 +125,27 @@ def fishing_boss(reg: Registry | None = None) -> Lookup:
     return lambda item_id: _treasure(item_id, reg.fishing.boss.loot, "boss fights")
 
 
-def fishing_catch(reg: Registry | None = None) -> Lookup:
-    """What washes up with a catch: an item's own drop odds, or (Salvage) a chest's loot."""
+def fishing_scroll(reg: Registry | None = None) -> Lookup:
+    """A scroll one boss gives (1 in odds x the number of bosses, as a boss is drawn at random) or one water gives (1 in odds catches there)."""
     reg = reg or get_registry()
-    chest = fishing_chest(reg)
-    return lambda item_id: _own_drop(item_id, reg, "catches") or chest(item_id)
+    bosses = reg.fishing.boss.bosses
+
+    def lookup(item_id: str) -> Odds | None:
+        options = [Odds(b.scroll.odds * len(bosses), "boss fights") for b in bosses if b.scroll and b.scroll.item == item_id]
+        options += [Odds(w.scroll.odds, "catches here") for w in reg.fishing.waters if w.scroll and w.scroll.item == item_id]
+        return min(options, key=lambda o: o.one_in) if options else None
+
+    return lookup
+
+
+def fishing_catch(reg: Registry | None = None) -> Lookup:
+    """What washes up with a catch: an item's own drop odds, or (Salvage) a chest's loot, or a water's scroll."""
+    reg = reg or get_registry()
+    chest, scroll = fishing_chest(reg), fishing_scroll(reg)
+    return lambda item_id: _own_drop(item_id, reg, "catches") or chest(item_id) or scroll(item_id)
 
 
 def for_source(name: str, reg: Registry | None = None, **kw) -> Lookup:
     """`name` is one of foraging, farming, mining, fishing_chest, fishing_boss, fishing_catch, mini_wyrmhole."""
     return {"foraging": foraging, "farming": farming, "mining": mining, "fishing_chest": fishing_chest,
-            "fishing_boss": fishing_boss, "fishing_catch": fishing_catch, "mini_wyrmhole": mini_wyrmhole}[name](reg, **kw)
+            "fishing_boss": fishing_boss, "fishing_catch": fishing_catch, "fishing_scroll": fishing_scroll, "mini_wyrmhole": mini_wyrmhole}[name](reg, **kw)
