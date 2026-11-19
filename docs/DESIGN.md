@@ -1048,8 +1048,8 @@ The wyrmhole code is untouched: a later "small wyrmhole" mine should decide its 
 
 One kind of wyrmhole in the shaft, two sizes inside. `[wyrmhole]` and `[mini_wyrmhole]` in `configs/mining.toml`.
 
-- **In the shaft:** a wyrmhole is a CELL that replaces a lode (shown 3 rows ahead). `odds` per cell (450, about 1 mine in 15 shows one), only in rows `min_depth`..`max_depth`
-  (2..9: deeper and a player sees one, then the mine collapses before they can reach it). Placed gems (`gem_bonus`), the Wyrm Tunnels mine type and the Mastery stat
+- **In the shaft:** a wyrmhole is a CELL that replaces a lode (shown 3 rows ahead). `odds` per cell (1500, about 1 mine in 100 shows one), only in rows `min_depth`..`max_depth`
+  (5..9, below the rows visible when a mine opens so resetting cannot farm them; deeper and a player sees one, then the mine collapses before they can reach it). Placed gems (`gem_bonus`), the Wyrm Tunnels mine type and the Mastery stat
   `wyrmhole_chance` (Wyrm Whisperer, Vein Sense, Crystal Veins: `+x` divides the odds by `1 + x`) make them likelier. There is NO button to enter one.
 - **Entering:** dig the cell: the mine ends (outcome `wyrmhole`), `settle_run` banks what you carry, the reward screen offers "Enter the wyrmhole", and `enter_wyrmhole` rolls the
   size: BIG with `big_chance` (0.2), else SMALL. (If you leave that page without entering, the hole is gone.)

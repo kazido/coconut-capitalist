@@ -20,7 +20,7 @@ def test_columns_dug_grows_every_five_reactor_levels(level, expected):
     assert m.columns_dug(level, RULES) == expected
 
 
-@pytest.mark.parametrize("gems, odds", [(0, 450), (1, 390), (4, 210), (10, 200)])
+@pytest.mark.parametrize("gems, odds", [(0, 1500), (1, 1300), (4, 700), (10, 600)])
 def test_wyrmhole_odds_improve_with_gems_but_have_a_floor(gems, odds):
     assert m.wyrmhole_odds(gems, RULES) == odds
 
@@ -485,6 +485,10 @@ def test_breaking_into_a_wyrmhole_ends_the_run_and_keeps_the_haul():
     run.haul = Counter(material_copper_ore=4)
     result = run.dig()
     assert result.wyrmhole and run.outcome == "wyrmhole" and run.haul == Counter(material_copper_ore=4) and run.depth == 0
+
+
+def test_wyrmholes_never_show_in_the_rows_visible_when_a_mine_opens():
+    assert RULES.wyrmhole.min_depth > RULES.descent.lookahead  # (else you could reset mines until one shows)
 
 
 def test_wyrmholes_only_show_between_the_minimum_and_maximum_depth():

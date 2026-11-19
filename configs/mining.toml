@@ -291,10 +291,10 @@ wyrmhole_mult = 10
 [wyrmhole]
 # A wyrmhole is a cell in the shaft that shows up (3 rows ahead) in place of a lode: dig it and the mine ends (the haul is yours) and you drop into the hole. What is in
 # there is rolled when you enter: a SMALL one (the usual case, see [mini_wyrmhole]) or, with `big_chance`, a BIG one (below), the only place the implosion gem is.
-odds = 450                         # 1-in-N per cell between `min_depth` and `max_depth`: about 1 mine in 15 shows one
-gem_bonus = 60                     # N shrinks by this for every gem placed in the reactor
-min_odds = 200                     # ...but never below this
-min_depth = 2                      # first row (0-based) wyrmholes can show in
+odds = 1500                        # 1-in-N per cell between `min_depth` and `max_depth` (15 cells): about 1 mine in 100 has one
+gem_bonus = 200                    # N shrinks by this for every gem placed in the reactor
+min_odds = 600                     # ...but never below this
+min_depth = 5                      # first row (0-based) wyrmholes can show in: below the rows you can see when a mine opens (`descent.lookahead`), so resetting mines never farms them
 max_depth = 9                      # ...and the last. Deeper and a player sees one, then the mine collapses before they can reach it: never tease them
 big_chance = 0.2                   # chance a wyrmhole you dig into is a big one
 implosion_item = "key_gemstone_implosion"
