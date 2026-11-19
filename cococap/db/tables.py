@@ -95,6 +95,13 @@ class ItemInstanceRow(Base):
     template_id: Mapped[str] = mapped_column(String)
     rolled: Mapped[dict] = mapped_column(JSON, default=dict)  # {"power": 3}: fixed at creation
     enchants: Mapped[dict] = mapped_column(JSON, default=dict)  # {"soloist": 1}
+    # Smithing (configs/smithing.toml). A part keeps its picked traits in `traits`; a smithed tool keeps `parts`
+    # ({"base": {"tier": 2, "trait": "power_core"}, ...}), the grade in `quality` and cosmetic looks in `cosmetic`.
+    traits: Mapped[list] = mapped_column(JSON, default=list)
+    smith_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)  # None = made by the game
+    parts: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    quality: Mapped[str | None] = mapped_column(String, nullable=True)
+    cosmetic: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now())
 
 

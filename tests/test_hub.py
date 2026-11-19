@@ -878,7 +878,10 @@ async def test_leaving_the_hub_idle_mid_run_banks_the_haul(db):
     carried = dict(nav.screen.run.haul)
     nav.message = SimpleNamespace(edit=AsyncMock())
     await nav.on_timeout()
-    assert nav.screen.run.finished and await user.items() == carried
+    # banking may star some ore (the run's haul is rewritten with the starred ids) but never adds or loses any
+    items = await user.items()
+    assert nav.screen.run.finished and items == dict(nav.screen.run.haul)
+    assert sum(items.values()) == sum(carried.values())
 
 
 # ---- the brain games (in-window) -------------------------------------------------------------------------

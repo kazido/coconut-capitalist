@@ -3735,3 +3735,36 @@ rarity = 7
 category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 1000
+
+[part_base]
+name = "Base Part"
+description = "One third of a smithed tool. Its tier sets its power; picked traits go on the finished tool."
+wiki = "Dropped by skill work. Smith three parts into a tool at the Smithy."
+emoji = "part_base"
+rarity = 2
+skill = "mining"
+category = "part"
+price = 0
+sell_price = 0
+
+[part_trim]
+name = "Trim Part"
+description = "One third of a smithed tool. Its tier sets its power; picked traits go on the finished tool."
+wiki = "Dropped by skill work. Smith three parts into a tool at the Smithy."
+emoji = "part_trim"
+rarity = 2
+skill = "mining"
+category = "part"
+price = 0
+sell_price = 0
+
+[part_accent]
+name = "Accent Part"
+description = "One third of a smithed tool. Its tier sets its power; picked traits go on the finished tool."
+wiki = "Dropped by skill work. Smith three parts into a tool at the Smithy."
+emoji = "part_accent"
+rarity = 2
+skill = "mining"
+category = "part"
+price = 0
+sell_price = 0

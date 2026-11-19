@@ -500,6 +500,11 @@ class User:
             template_id=row.template_id,
             rolled=dict(row.rolled or {}),
             enchants=dict(row.enchants or {}),
+            traits=list(row.traits or []),
+            smith_id=row.smith_id,
+            parts=dict(row.parts) if row.parts is not None else None,
+            quality=row.quality,
+            cosmetic=dict(row.cosmetic or {}),
         )
 
     async def instances(self) -> list[ItemInstance]:
@@ -526,6 +531,11 @@ class User:
         *,
         enchants: dict[str, int] | None = None,
         rolled: dict[str, float] | None = None,
+        traits: list[str] | None = None,
+        smith_id: int | None = None,
+        parts: dict | None = None,
+        quality: str | None = None,
+        cosmetic: dict | None = None,
     ) -> ItemInstance:
         """Create a new unique item owned by this player."""
         async with get_database().session() as session:
@@ -534,10 +544,31 @@ class User:
                 template_id=template_id,
                 rolled=dict(rolled or {}),
                 enchants=dict(enchants or {}),
+                traits=list(traits or []),
+                smith_id=smith_id,
+                parts=parts,
+                quality=quality,
+                cosmetic=dict(cosmetic or {}),
             )
             session.add(row)
             await session.flush()
             return self._to_instance(row)
+
+    async def set_instance_parts(self, instance_id: int, parts: dict) -> None:
+        """Replace the parts of one of this player's smithed tools (swapping a part)."""
+        async with get_database().session() as session:
+            row = await session.get(ItemInstanceRow, instance_id)
+            if row is None or row.owner_id != self.id:
+                raise ValueError("You don't own that item.")
+            row.parts = parts
+
+    async def delete_instance(self, instance_id: int) -> None:
+        """Remove one of this player's unique items (a tool salvaged or a part spent)."""
+        async with get_database().session() as session:
+            row = await session.get(ItemInstanceRow, instance_id)
+            if row is None or row.owner_id != self.id:
+                raise ValueError("You don't own that item.")
+            await session.delete(row)
 
     async def set_enchant_level(self, instance_id: int, enchant_id: str, level: int) -> ItemInstance:
         """Set an enchant's level on an instance this player owns (level 0 removes it)."""

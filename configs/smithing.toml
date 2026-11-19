@@ -11,6 +11,9 @@ max_traits = 3
 bonus_trait_chance = 0.25                 # TODO(balance)
 cosmetic_chance = 0.10                    # chance a smithed tool gets a cosmetic look (palette/frame/overlay)
 
+# Rarity of a part by its tier (tier 1..7). A fresh part rolls fresh_traits[its rarity] traits.
+rarity_by_tier = ["common", "common", "uncommon", "uncommon", "rare", "rare", "epic"]  # TODO(balance)
+
 [tiers]
 # Power a part gives at tier 1..7 (index 0 = tier 1). Three tier-1 parts ~ today's starter tool power (3).
 power = [1, 2, 3, 5, 7, 10, 14]           # TODO(balance)

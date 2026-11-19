@@ -13,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from cococap import emojis
 
 Skill = Literal["farming", "foraging", "fishing", "mining", "combat", "shepherding"]
-Category = Literal["material", "tool", "key_item", "pet_item", "pet_food", "crop", "seed", "fish", "scroll", "bait"]
+Category = Literal["material", "tool", "key_item", "pet_item", "pet_food", "crop", "seed", "fish", "scroll", "bait", "part"]
 ToolKind = Literal["pickaxe", "axe", "sword", "rod", "can"]
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
@@ -178,8 +178,8 @@ class Item(_Data):
 
     @property
     def is_instance(self) -> bool:
-        """Tools are unique objects (can carry enchants); everything else is a stackable counter."""
-        return self.tool is not None
+        """Tools and smithing parts are unique objects (own tier/traits/enchants); everything else is a stackable counter."""
+        return self.tool is not None or self.category == "part"
 
     @property
     def buyable(self) -> bool:
@@ -1609,6 +1609,7 @@ class SmithingRules(_Data):
     max_traits: int = Field(ge=1)
     bonus_trait_chance: float = Field(ge=0, le=1)
     cosmetic_chance: float = Field(ge=0, le=1)
+    rarity_by_tier: list[str] = Field(min_length=PART_TIERS, max_length=PART_TIERS)
     tiers: dict[str, list[int]]  # {"power": [...]}: power per part tier, index 0 = tier 1
     area_weights: list[AreaWeights] = Field(min_length=1)
     trait_pool: list[SmithTrait] = Field(alias="trait", min_length=1)
@@ -1626,12 +1627,17 @@ class SmithingRules(_Data):
         ids = [t.id for t in self.trait_pool]
         if len(set(ids)) != len(ids):
             raise ValueError("trait ids must be unique")
+        if any(r not in ("common", "uncommon", "rare", "epic") for r in self.rarity_by_tier):
+            raise ValueError("rarity_by_tier must name common, uncommon, rare or epic")
         if self.max_traits != 3:
             raise ValueError("max_traits must be 3")
         mults = [q.mult for q in self.grades]
         if any(b <= a for a, b in zip(mults, mults[1:], strict=False)):
             raise ValueError("quality mults must increase in order")
         return self
+
+    def fresh_trait_count(self, tier: int) -> int:
+        return getattr(self.fresh_traits, self.rarity_by_tier[tier - 1])
 
     def tier_power(self, tier: int) -> int:
         return self.tiers["power"][tier - 1]

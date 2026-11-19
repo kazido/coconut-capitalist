@@ -1,0 +1,237 @@
+"""Smithing: a tool is built from three PARTS (base, trim, accent) and up to three TRAITS picked from those parts.
+
+Rules only (no Discord). All randomness comes from the `random.Random` the caller passes in, so tests can seed it.
+Numbers live in configs/smithing.toml; plan: docs/plans/tools-smithing.md.
+"""
+
+import random
+
+from cococap.constants import STARTER_TOOLS
+from cococap.errors import GameRuleError
+from cococap.models.instance import ItemInstance
+from cococap.registry import Registry, get_registry
+from cococap.registry.models import PART_TIERS, SmithingRules
+from cococap.services.equipment import skill_for_tool
+from cococap.user import User
+
+PART_TYPES = ("base", "trim", "accent")
+KINDS = ("pickaxe", "rod", "axe", "can")
+XP_STAT = "smithing_xp"  # per-user counter; no migration needed
+
+
+def _rules(registry: Registry | None) -> SmithingRules:
+    reg = registry or get_registry()
+    if reg.smithing is None:
+        raise RuntimeError("configs/smithing.toml is missing")
+    return reg.smithing
+
+
+async def smithing_xp(user: User) -> int:
+    return await user.get_stat(XP_STAT)
+
+
+async def smithing_level(user: User) -> int:
+    return User.xp_to_level(await smithing_xp(user))
+
+
+async def add_smithing_xp(user: User, amount: int) -> None:
+    if amount:
+        await user.stat_add(XP_STAT, amount)
+
+
+def max_part_tier(level: int, rules: SmithingRules) -> int:
+    """The highest part tier a player of this smithing level may work with."""
+    tier = 1
+    for needed_level, max_tier in rules.levels.max_tier_by_level:
+        if level >= needed_level:
+            tier = max(tier, max_tier)
+    return min(tier, PART_TIERS)
+
+
+def _part_tier(part: ItemInstance) -> int:
+    return int(part.rolled.get("tier", 1))
+
+
+async def _owned_part(user: User, part_id: int, slot: str) -> ItemInstance:
+    part = await user.instance(part_id)
+    if part is None or part.owner_id != user.id or part.template_id != f"part_{slot}":
+        raise GameRuleError(f"Pick a {slot} part you own.")
+    return part
+
+
+async def roll_part(
+    user: User, area: int, rng: random.Random, part_type: str | None = None, registry: Registry | None = None
+) -> ItemInstance:
+    """A new part from a skill action in `area`: random type (unless given), tier from the area's weights,
+    and fresh traits (distinct, from the whole pool) by the tier's rarity. Kind is chosen later, at smithing."""
+    rules = _rules(registry)
+    part_type = part_type or rng.choice(PART_TYPES)
+    if part_type not in PART_TYPES:
+        raise GameRuleError("Unknown part type.")
+    tier = rng.choices(range(1, PART_TIERS + 1), weights=rules.weights_for_area(area))[0]
+    pool = [t.id for t in rules.trait_pool]
+    traits = rng.sample(pool, min(rules.fresh_trait_count(tier), len(pool)))
+    return await user.give_instance(f"part_{part_type}", rolled={"tier": tier}, traits=traits)
+
+
+def tool_power(parts: dict, quality: str, rules: SmithingRules) -> float:
+    """Sum of the three parts' tier power, times the quality grade's multiplier."""
+    return sum(rules.tier_power(parts[slot]["tier"]) for slot in PART_TYPES) * rules.quality(quality).mult
+
+
+def _roll_quality(rules: SmithingRules, level: int, rng: random.Random) -> str:
+    """Quality grade. Higher smithing level moves odds off Crude (the first grade) onto the better grades."""
+    odds = [float(q.base_odds) for q in rules.grades]
+    shift = min(level * rules.levels.quality_shift_per_level, odds[0])
+    odds[0] -= shift
+    for i in range(1, len(odds)):
+        odds[i] += shift / (len(odds) - 1)
+    return rng.choices(rules.grades, weights=odds)[0].name
+
+
+def _fits(rules: SmithingRules, trait_id: str, kind: str) -> bool:
+    return any(t.id == trait_id for t in rules.traits_for(kind))
+
+
+async def smith(
+    user: User,
+    kind: str,
+    base_id: int,
+    trim_id: int,
+    accent_id: int,
+    picks: dict[int, str | list[str] | None],
+    rng: random.Random,
+    registry: Registry | None = None,
+) -> ItemInstance:
+    """Build a tool of `kind` from three owned parts. `picks` maps a part id to the trait taken from it
+    (at most one per part, at most max_traits in total). The three parts are used up."""
+    rules = _rules(registry)
+    reg = registry or get_registry()
+    if kind not in KINDS:
+        raise GameRuleError("A tool can be a pickaxe, rod, axe or can.")
+    ids = {"base": base_id, "trim": trim_id, "accent": accent_id}
+    parts = {slot: await _owned_part(user, pid, slot) for slot, pid in ids.items()}
+    level = await smithing_level(user)
+    cap = max_part_tier(level, rules)
+    if any(_part_tier(p) > cap for p in parts.values()):
+        raise GameRuleError("Your smithing level is too low for a part that high.")
+
+    slot_trait: dict[str, str | None] = {slot: None for slot in PART_TYPES}
+    slot_of = {pid: slot for slot, pid in ids.items()}
+    for pid, value in picks.items():
+        if pid not in slot_of:
+            raise GameRuleError("That trait is not on this tool's parts.")
+        if isinstance(value, list) and len(value) > 1:
+            raise GameRuleError("Each part gives at most one trait.")
+        trait = value[0] if isinstance(value, list) and value else value
+        if trait is None:
+            continue
+        slot = slot_of[pid]
+        if trait not in parts[slot].traits:
+            raise GameRuleError("That trait is not on that part.")
+        if not _fits(rules, trait, kind):
+            raise GameRuleError("That trait does not fit this kind of tool.")
+        slot_trait[slot] = trait
+    if sum(1 for t in slot_trait.values() if t) > rules.max_traits:
+        raise GameRuleError("A tool holds at most three traits.")
+
+    # A bonus trait sometimes lands on a free slot when fewer than max_traits were picked.
+    picked = {t for t in slot_trait.values() if t}
+    if len(picked) < rules.max_traits and rng.random() < rules.bonus_trait_chance:
+        open_slots = [s for s in PART_TYPES if slot_trait[s] is None]
+        candidates = [t.id for t in rules.traits_for(kind) if t.id not in picked]
+        if open_slots and candidates:
+            slot_trait[rng.choice(open_slots)] = rng.choice(candidates)
+
+    tool_parts = {slot: {"tier": _part_tier(parts[slot]), "trait": slot_trait[slot]} for slot in PART_TYPES}
+    quality = _roll_quality(rules, level, rng)
+    cosmetic = {"rolled": True} if rng.random() < rules.cosmetic_chance else {}
+    template = next(i for i in STARTER_TOOLS if reg.item(i).tool.kind == kind)
+
+    for pid in ids.values():
+        await user.delete_instance(pid)
+    tool = await user.give_instance(
+        template, smith_id=user.id, parts=tool_parts, quality=quality, cosmetic=cosmetic
+    )
+    await add_smithing_xp(user, rules.levels.xp_per_smith)
+    return tool
+
+
+async def _smithed_tool(user: User, tool_id: int, registry: Registry | None) -> tuple[ItemInstance, str]:
+    """A tool this player owns that has smithing parts. Returns (tool, its kind)."""
+    reg = registry or get_registry()
+    tool = await user.instance(tool_id)
+    if tool is None or tool.owner_id != user.id:
+        raise GameRuleError("That tool isn't yours.")
+    if not tool.parts:
+        raise GameRuleError("Only smithed tools have parts.")
+    item = reg.find_item(tool.template_id)
+    if item is None or item.tool is None:
+        raise GameRuleError("That isn't a tool.")
+    skill = skill_for_tool(item.tool.kind)
+    if skill and (equipped := await user.equipped_instance(skill)) and equipped.id == tool.id:
+        raise GameRuleError("Unequip the tool before you change it.")
+    return tool, item.tool.kind
+
+
+async def salvage(user: User, tool_id: int, registry: Registry | None = None) -> list[ItemInstance]:
+    """Break a tool you did NOT smith down into its three parts. Each part keeps its tier and only the trait
+    the smith picked from it. The tool is deleted."""
+    rules = _rules(registry)
+    tool, _kind = await _smithed_tool(user, tool_id, registry)
+    if tool.smith_id is None:
+        raise GameRuleError("Game-made tools can't be salvaged.")
+    if tool.smith_id == user.id:
+        raise GameRuleError("You can't salvage a tool you smithed yourself.")
+    given: list[ItemInstance] = []
+    for slot in PART_TYPES:
+        info = tool.parts[slot]
+        trait = info.get("trait")
+        given.append(
+            await user.give_instance(f"part_{slot}", rolled={"tier": info["tier"]}, traits=[trait] if trait else [])
+        )
+    await user.delete_instance(tool.id)
+    await add_smithing_xp(user, rules.levels.xp_per_salvage)
+    return given
+
+
+async def swap_part(
+    user: User,
+    tool_id: int,
+    slot: str,
+    part_id: int,
+    trait_id: str | None = None,
+    registry: Registry | None = None,
+) -> ItemInstance:
+    """Swap one part of a smithed tool for one of yours. The old part comes back as a part (with its picked
+    trait only). Quality is kept. Needs the smithing level from levels.swap_unlock_level."""
+    rules = _rules(registry)
+    if slot not in PART_TYPES:
+        raise GameRuleError("Unknown part slot.")
+    level = await smithing_level(user)
+    if level < rules.levels.swap_unlock_level:
+        raise GameRuleError(f"Swapping parts unlocks at smithing level {rules.levels.swap_unlock_level}.")
+    tool, kind = await _smithed_tool(user, tool_id, registry)
+    new_part = await _owned_part(user, part_id, slot)
+    if _part_tier(new_part) > max_part_tier(level, rules):
+        raise GameRuleError("Your smithing level is too low for a part that high.")
+
+    parts = {s: dict(tool.parts[s]) for s in PART_TYPES}
+    others = sum(1 for s in PART_TYPES if s != slot and parts[s].get("trait"))
+    if trait_id is not None:
+        if trait_id not in new_part.traits:
+            raise GameRuleError("That trait is not on that part.")
+        if not _fits(rules, trait_id, kind):
+            raise GameRuleError("That trait does not fit this kind of tool.")
+        if others + 1 > rules.max_traits:
+            raise GameRuleError("A tool holds at most three traits.")
+
+    old = parts[slot]
+    old_trait = old.get("trait")
+    returned = await user.give_instance(
+        f"part_{slot}", rolled={"tier": old["tier"]}, traits=[old_trait] if old_trait else []
+    )
+    await user.delete_instance(new_part.id)
+    parts[slot] = {"tier": _part_tier(new_part), "trait": trait_id}
+    await user.set_instance_parts(tool.id, parts)
+    return returned
