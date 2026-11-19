@@ -86,12 +86,12 @@ class TabsScreen(Screen):
     # ---- drawing ---------------------------------------------------------------------------------
     async def build(self) -> Page:
         page = await self.pane.build()
-        if len(self.panes) > 1:
+        if len(self.panes) > 1 and not self.pane.locked:  # (mid-action the page cannot be left: no point drawing a dead dropdown)
             options = [
                 discord.SelectOption(label=cls.label, value=key, emoji=cls.emoji or None, default=key == self._tab)
                 for key, cls in self.panes.items()
             ]
-            menu = select(self.tab_placeholder, options, self._pick, disabled=self.pane.locked)
+            menu = select(self.tab_placeholder, options, self._pick)
             page.body.insert(0, discord.ui.ActionRow(menu))
         return page
 
