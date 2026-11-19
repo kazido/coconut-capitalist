@@ -144,7 +144,27 @@ def toml(sprites):
     return "\n".join(lines)
 
 
+def export(path):
+    """Write the runtime data (tier ramps + 16x16 letter grids) as JSON for cococap/art_runtime.py."""
+    import json
+    import os
+
+    grids = layers()
+    data = {
+        "tiers": {str(n): list(ramp) for n, ramp in TIERS.items()},
+        "kinds": {k: ["".join(row) for row in g] for k, g in grids.items()},
+    }
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=1)
+        f.write("\n")
+    print(path)
+
+
 if __name__ == "__main__":
+    if len(sys.argv) > 1 and sys.argv[1] == "--export":
+        export("cococap/assets/tool_layers.json")
+        sys.exit(0)
     grids = layers()
     if len(sys.argv) > 2 and sys.argv[2] == "preview":
         combos = [(1, 1, 1), (3, 3, 1), (2, 5, 3), (5, 2, 4), (6, 4, 6), (7, 7, 7)]
