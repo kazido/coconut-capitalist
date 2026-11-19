@@ -29,15 +29,7 @@ Art work is done directly on `master` (no art branch). Python: the master venv (
    and leave the changes uncommitted. When committing, stage only the accepted sprites (if a file also holds unaccepted work, commit
    the accepted blocks only). Message format: what changed and why. This overrides the generic commit-after-every-change rule in CLAUDE.md.
 
-## Design rules learned (apply on the first pass)
-- 16x16, 1px diagonal handle bottom-left to top-right, head at the top. Same family look within a tool kind.
-- Head size ~ a third of the handle length at most. Better tiers get a distinct SHAPE (crescent, beard, double-bit, gems),
-  never just a bigger head. Cutting edges are curved, not straight diagonals.
-- Colour tells the theme (Elderwood = bark + amber glow, not light blue). Keep the user's palette when they say they like it.
-- Early tiers are plain and smaller; later tiers look cooler through shape and accent colour.
-- Reference images the user pastes are the style target: match their silhouette first, then recolour.
-
-## 3. Upload (only when the user says so)
-`scripts/upload_emojis.py` needs `BOT_TOKEN`; the `.env` lives in the master checkout; load it without
-printing it: `set -a; . <master>/.env; set +a`. Dry run first. Replace changed emoji with repeated `--replace <name>`
-plus `--only <prefix>` so unrelated new emoji (e.g. `flame_*`) are not uploaded. Tell the user to restart the bot.
+## Style rules and upload
+All style rules (light, contrast, margins, no letters, ramps not hue shifts, gears, balance, tools) and the upload-in-passes steps live in
+the `make-emoji` skill: read its "Style rules" and "Upload" sections before the first pass. Self-critique and redo weak icons before
+sending any sheet.

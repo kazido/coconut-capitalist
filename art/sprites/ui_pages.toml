@@ -95,23 +95,46 @@ rows = [
 [ui_skills]
 kind = "free"
 outline = true
-palette = { B = "#5a9cf0", b = "#2c5aa8", H = "#fff2a8", G = "#f0b830", g = "#b8781c", d = "#6c4214", S = "#fffbe0" }
+palette = { k = "#2e2a3a", S = "#dfe8f4", W = "#c8905a", F = "#6ab4f0", f = "#e8f4ff", L = "#8ade5a", l = "#3c8a34", Y = "#ffd84a" }
 rows = [
   "................",
-  "....Bb....BB....",
-  ".....Bb..BBb....",
-  ".....Bb..BB.....",
-  "......BbBB......",
-  "......BbBB......",
-  "......HHHG......",
-  ".....HHHGGG.....",
-  "....HHHSSGgg....",
-  "....HHSSSSgg....",
-  "....HSGSSgSg....",
-  "....GGSSSSgd....",
-  "....GGSggSdd....",
-  ".....ggggdd.....",
-  "......ggdd......",
+  ".kkkkkkkkkkkkkk.",
+  ".kkSSSkkkkkkkkk.",
+  ".kSkkWSkkkfFFkF.",
+  ".kkkWkkkkFFFFFk.",
+  ".kkkWkkkkkFFkkF.",
+  ".kkWkkkkkkkkkkk.",
+  ".kkkkkkkkkkkkkk.",
+  ".kkkkkkkkkkkkkk.",
+  ".kkkkLlkkkkYkkk.",
+  ".kkkLlLkkkYYYkk.",
+  ".kkLlLkkkkYYYkk.",
+  ".kLlLkkkkLYYYlk.",
+  ".klLkkkkkLkYklk.",
+  ".kkkkkkkkkkkkkk.",
+  "................",
+]
+
+[ui_ranks]
+kind = "free"
+outline = true
+palette = { G = "#f0b830", B = "#3aa04a", b = "#267038", A = "#ffffff", a = "#c8d8e8" }
+rows = [
+  "................",
+  ".......GG.......",
+  "....GGGGGGGG....",
+  "...GGBBBBBBGG...",
+  "..GGBBBAaBBBGG..",
+  "..GBBBAAaaBBBG..",
+  "..GBBAAAaaaBbG..",
+  ".GGBAAAAaaaabGG.",
+  ".GGBBBBAaBbbbGG.",
+  "..GBBBBAabbbbG..",
+  "..GBBBBAabbbbG..",
+  "..GGBBBAabbbGG..",
+  "...GGBbbbbbGG...",
+  "....GGGGGGGG....",
+  ".......GG.......",
   "................",
 ]
 
