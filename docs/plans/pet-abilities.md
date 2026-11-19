@@ -1,59 +1,49 @@
 # Pet abilities
 
-Status: DESIGN (decided: passive, one per pet; not built)
+Status: DESIGN (direction decided; ability list is a shortlist to approve; not built)
 
-## Decision
-Every pet keeps its small stat bonus AND gets one named **ability** (passive, no new buttons). The ability is active from level 1 of the
-pet and scales with its level, the same way the stat does (`level_floor` 0.1 at level 1 up to 1.0 at level 100, so the numbers grow ~10x).
-Abilities must be clearly weaker than tool enchants and mastery capstones: a flavour/utility proc, not a multiplier on everything.
+## Decisions
+- **Rarity 1-2 pets stay strictly small stat bonuses** (no ability).
+- **Rarity 3+ pets** keep stat bonuses (the same kinds, but better) AND get one named passive **ability**. It is active from the pet's
+  first level and scales with level (same `level_floor` curve as stats) and stars. No new buttons or screens.
+- **No overlap with tools or mastery.** Already covered, so do NOT reuse: Double Hook (free second fish), Double Strike (chop hits twice),
+  Seedkeeper (seed back), Fertile (bigger harvests), Bounty (more ore), Veinfinder (rich cells), Iron Frame (less pressure), Sharp Eye
+  (good chop), Lure, Steady Line, Soloist, Appraiser (sell bonus), Scholar (xp), Gleaner (farming drops), Lifeline (collapse save).
+  Rule: an ability must do something no enchant or capstone does (check `configs/enchants.toml` and `mastery.toml` before adding one).
 
-## Rules of thumb
-- One ability per pet, one sentence on its card, with the live number shown at the current level (max in brackets), like stats today.
-- Procs need an engine hook that already exists or is tiny. Rarer pets get a more interesting ability, not just a bigger number.
-- Stars (existing +25% per star) scale the ability number too.
-- Guard test: ability strength by rarity stays in a band (like the capstone guard tests).
-
-## Ability ideas (rough; numbers TODO(balance))
-Fishing
-- Drizzle (r2): **Second Cast** - a bite has a chance to hook a second, common fish.
-- Squall (r4): **Big Game** - a chance that a catch's size/rarity roll is taken twice, keeping the better.
-- Tempest (r5): **Storm Surge** - after a rare catch, the next few casts bite faster.
-- Undertow/Brine (r4): **Full Nets** - a crab pot you empty has a chance to refill half-full at once.
-Mining
-- Murk (r2): **Steady Hands** - once per run, a pressure spike is absorbed.
-- Lode (r3): **Lantern** - the next row after a rich vein is revealed before you pick it.
-- Cairn (r4): **Rockfall Recovery** - a collapse keeps a share of that run's ore.
-Foraging
-- Bough (r3): **Clean Cut** - a chance a chop counts as two swings.
-- Sprig (r2): **Seedling** - felled trees sometimes drop a sapling/plant fibre extra.
-- Canopy (r4): **Hollow Log** - a chance for a bonus food (acorn mix) from a tree.
+## Shortlist (rarity 3+; numbers TODO(balance); each needs an engine-hook check before building)
 Farming
-- Dew (r2): **Morning Dew** - a watering also waters one extra plot.
-- Pollen (r2): **Cross-pollinate** - a harvest has a chance to give a seed of the same crop back.
-- Clover (r2): **Lucky Patch** - a chance a harvest becomes one crop tier richer in sell value.
-- Thistle (r4): **Hardy** - a plot keeps growing through a missed rain (no lost cycle).
+- Thistle (r4) **Second Wind**: watering has a small chance to grow the plot two cycles instead of one.
+Fishing
+- Squall (r4) **Lucky Streak**: a pity counter: every catch without a rare adds a little to the next rare odds, reset on a rare.
+- Undertow / Brine (r4) **Tidal Haul**: emptying a crab pot has a chance to also give a bonus catch.
+- Tempest (r5) **Treasure Tide**: after a chest or hallucination, the next few casts have boosted treasure odds (a cluster, not a multiplier).
+Mining
+- Cairn (r4) **Prospector's Luck**: the same pity counter, on rare ore.
+- Lode (r3) **Pressure Valve**: every Nth row dug vents some pressure (periodic, not a flat % cut).
+Foraging
+- Bough (r3) **Second Growth**: a felled tree has a chance to regrow at once in the same spot.
+- Canopy (r4) **Heartwood**: a felled tree sometimes drops from the next-better wood table.
 Global
-- Cinder (r1): **Warm Glow** - first action each hour pays a small bit bonus.
-- Haze (r3): **Quick Study** - the first xp of a skill each session is boosted.
-- Gloam (r3): **Haggler** - selling one item in a stack of 10+ gets a chance at a bonus.
-- Lune (r4): **Second Look** - rare drops that fail the flair roll get one reroll (already `rare_reroll`; make it the named ability).
-- Umbra (r5): **Quartermaster** - shipments have a chance to pay a bonus crate item.
-- Halo (r5): **Echo** - a level-up refunds some of the xp toward the next one.
+- Umbra (r5) **Quartermaster**: a finished shipment can add one bonus crate item.
+- Halo (r5) **Echo**: a level-up refunds a slice of the xp toward the next level.
+- Lune (r4) **Second Look**: already the `rare_reroll` stat; keep it as the stat and give it a different ability, or leave it stat-only.
+- Haze, Gloam (r3): need a non-overlapping idea (a flat sell/xp bonus is already a stat): leave stat-only until one is found.
 
-## New pets (also need art; each is a new species + sprite via the make-emoji skill)
-Gaps to fill: no mining pet above r4, no farming r5, no foraging r5, no r1 pet except Cinder, combat has only two.
-- r1 starters per skill (cheap, tutorial-friendly): a mining pebble, a foraging seedling, a fishing minnow, a farming sprout.
-- r5 per skill (the dream drops): a mining gem-eater, a foraging elder-stag, a farming harvest spirit.
-- Each new pet ships with its own ability from the list style above.
+## Another way to make pets desirable (if abilities are too fiddly)
+Pick one or two of these instead of, or as well as, abilities:
+- **Errands**: an active pet "fetches" a small item of its skill every few hours (collected from the pet page). Tools cannot do this, it
+  rewards owning many pets (one fetch per pet slot), and needs only a timer plus the drop tables.
+- **Cross-skill finds**: a pet sometimes drops a material from a skill other than its own, so owning a mining pet helps farmers a bit.
+- **Collection**: a pet dex with a reward per rarity completed, titles on the profile, a star showcase.
+
+## New pets (also need art, via the make-emoji skill)
+Gaps: no pet above r4 in mining, none at r5 for farming or foraging, combat has only two. New r3+ species ship with their own ability
+(from the list style above); new r1-2 ones are plain stats.
 
 ## Build order
-1. Registry: add `ability` (id + per-level `value`) to the pet model; config in `configs/pets.toml`; loader validates ids.
-2. Services: `services/pet_abilities.py` maps ability id -> engine hook (mining/fishing/foraging/farming/shipments); pets service exposes the
-   active pet's current value.
+1. Registry: optional `ability` (id) on a pet model; loader rejects an ability on rarity 1-2; config in `configs/pets.toml`.
+2. `services/pet_abilities.py`: ability id -> engine hook; pets service exposes the active pet's current value.
 3. Pet card + wiki show the ability line with the live number.
-4. Add the existing pets' abilities first (pick ~10 easy hooks), then new species + art.
-5. Tests: one per ability (proc fires at value 1.0, never at 0), a guard test on strength by rarity; changelog + notice.
-
-## Open questions for the owner
-- Which existing pets get an ability first (suggest the farming and fishing ones: hooks already exist).
-- How many new species, and in which skills.
+4. Build the cheapest hooks first (Second Wind, Tidal Haul, Echo, Quartermaster), then pity and the rest, then new species + art.
+5. Tests: one per ability (fires at full value, never at 0), guard test: ability strength by rarity; changelog + notice.
