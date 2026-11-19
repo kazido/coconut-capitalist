@@ -430,3 +430,88 @@ name = "Tithe"
 stat = "payout_bonus"
 value = 0.06
 text = "+{v:.0%} bits from shipments and check-in"
+
+[tremor]
+name = "Tremor"
+skill = "mining"
+emoji = "🌋"
+rarity = 6
+ability = "high"
+description = "The mountain itself, listening."
+[tremor.loadout]
+tool_tier = 4
+mastery_score = 20
+enchants = { keen = 3, veinfinder = 2 }
+[tremor.trait]
+name = "Deep Knowledge"
+stat = "xp_mining"
+value = 0.5
+text = "+{v:.0%} mining xp"
+
+[maelstrom]
+name = "Maelstrom"
+skill = "fishing"
+emoji = "🌀"
+rarity = 6
+ability = "high"
+description = "A tide with a mind of its own."
+[maelstrom.loadout]
+tool_tier = 4
+mastery_score = 20
+enchants = { keen = 3, lure = 2 }
+[maelstrom.trait]
+name = "Tidal Mind"
+stat = "xp_fishing"
+value = 0.5
+text = "+{v:.0%} fishing xp"
+
+[verdant]
+name = "Verdant"
+skill = "foraging"
+emoji = "🌳"
+rarity = 6
+ability = "high"
+description = "Every tree leans toward it."
+[verdant.loadout]
+tool_tier = 4
+mastery_score = 20
+enchants = { keen = 3, bounty = 2 }
+[verdant.trait]
+name = "Old Growth"
+stat = "xp_foraging"
+value = 0.5
+text = "+{v:.0%} foraging xp"
+
+[solstice]
+name = "Solstice"
+skill = "farming"
+emoji = "🌻"
+rarity = 6
+ability = "high"
+description = "It remembers every harvest."
+[solstice.loadout]
+tool_tier = 4
+mastery_score = 20
+enchants = { keen = 3, fertile = 2 }
+[solstice.trait]
+name = "Evergreen"
+stat = "xp_farming"
+value = 0.5
+text = "+{v:.0%} farming xp"
+
+[aurora]
+name = "Aurora"
+skill = "global"
+emoji = "🌌"
+rarity = 8
+ability = "high"
+description = "There is only one. It lights every road you walk."
+[aurora.loadout]
+tool_tier = 4
+mastery_score = 20
+enchants = { keen = 3 }
+[aurora.trait]
+name = "Everything Under The Sky"
+stat = "xp_all"
+value = 0.35
+text = "+{v:.0%} xp in every skill"

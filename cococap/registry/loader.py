@@ -302,8 +302,8 @@ class Registry:
         if set(self.economy.pets.orbs) != orb_ids:
             problems.append(f"economy.toml [pets.orbs] must have one odds table per orb item (ids starting key_orb_): {sorted(orb_ids)}")
         for orb_id, weights in self.economy.pets.orbs.items():
-            if sum(weights.values()) <= 0 or any(w < 0 for w in weights.values()) or any(not 1 <= r <= 5 for r in weights):
-                problems.append(f"economy.toml [pets.orbs.{orb_id}]: weights must be >= 0, add up to something, and be for rarities 1-5")
+            if sum(weights.values()) <= 0 or any(w < 0 for w in weights.values()) or any(not 1 <= r <= 8 for r in weights):
+                problems.append(f"economy.toml [pets.orbs.{orb_id}]: weights must be >= 0, add up to something, and be for rarities 1-8")
         for pet in self.pets.values():
             for eid, lvl in pet.loadout.enchants.items():
                 if eid not in self.enchants:
