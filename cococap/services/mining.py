@@ -101,6 +101,7 @@ class DigResult:
     vault: Counter[str] = field(default_factory=Counter)  # what the vault gave, if this dig reached the floor
     auto_bombed: bool = False  # the Warden's Auto-Bomb went off on this row
     multi: tuple[int, ...] = ()  # extra columns the Prospector's Multi-Mine dug beside yours
+    echo: tuple[int, ...] = ()  # the column Echo Strike cracked beside a dug one (its loot is in `found`, its pressure is not charged)
     milestone: Milestone | None = None  # the landmark row this dig finished, if any (already applied)
     milestone_haul: Counter[str] = field(default_factory=Counter)  # the ore it gave
     lifeline: bool = False  # the Lifeline capstone held the tunnel on this dig (a collapse would have ended the mine)
@@ -165,6 +166,7 @@ class MineRun:
         mine_type: MineType | None = None,
         wyrmhole_bonus: float = 0.0,
         site: MineSite | None = None,
+        echo_strike: float = 0.0,
     ):
         self.rules, self.registry, self.rng = rules, registry, rng
         self.site = site or rules.mines[0]  # which named mine this is (its ore tables, yield and hardness)
@@ -179,6 +181,7 @@ class MineRun:
         self.lifeline_ready, self.lifeline_fired = lifeline_ready, False
         self.rich_bonus, self.vault_gem_bonus = rich_bonus + self.mine_type.rich_chance_add, vault_gem_bonus  # Mastery: more rich lodes, more vault gems
         self.auto_bomb_every, self.multi_mine = auto_bomb_every, multi_mine  # pickaxe abilities (0: none)
+        self.echo_strike = echo_strike  # pickaxe enchant: the chance a dig also cracks the tile beside it (0: none)
         self.lifeline, self.gold_rush, self.geode = lifeline, gold_rush, geode  # Mastery capstones (0: none): a second chance from a collapse, every Nth cell pays triple, geodes with gems
         self.rare_reroll = rare_reroll  # a Fox: a cell that rolled nothing rare has this chance of one free second roll
         self.cells_mined = 0
@@ -490,11 +493,19 @@ class MineRun:
                       if c not in columns and c not in self._holes[self.depth]]
             if beside:
                 extra = [self.rng.choice(sorted(beside))]
-        found, vents, caches, hardness = self._mine(sorted(columns + extra))
+        echo: list[int] = []
+        if self.echo_strike and self.rng.random() < self.echo_strike:  # Echo Strike: the pick cracks the tile beside a dug one too
+            taken = set(columns + extra) | self._holes[self.depth]
+            beside = [c for c in {(col + step) % self.rules.columns for col in columns for step in (-1, 1)} if c not in taken]
+            if beside:
+                echo = [self.rng.choice(sorted(beside))]
+        found, vents, caches, hardness = self._mine(sorted(columns + extra + echo))
+        # the echoed tile pays its loot but adds no pressure: take its hardness back off
+        hardness -= sum(self.hardness(self._rows[self.depth][c]) * self.site.hardness_mult for c in echo)
         self.auto_counter += 1
         vault = self._descend(d.creak + hardness, vents)
-        return DigResult(found, vented=vents, caches=caches, vault=vault, multi=tuple(extra), milestone=self.passed, milestone_haul=self.passed_haul,
-                         lifeline=saved is not None, lifeline_lost=saved or Counter())
+        return DigResult(found, vented=vents, caches=caches, vault=vault, multi=tuple(extra), echo=tuple(echo), milestone=self.passed,
+                         milestone_haul=self.passed_haul, lifeline=saved is not None, lifeline_lost=saved or Counter())
 
     def bomb(self) -> DigResult:
         """Blow the whole row (except wyrmholes): every cell, one flat pressure hit, no collapse check."""
@@ -725,6 +736,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         vault_gem_bonus=tool.stats.get("vault_gem", 0.0),
         auto_bomb_every=int(tool.stats.get("auto_bomb", 0)),
         multi_mine=tool.stats.get("multi_mine", 0.0),
+        echo_strike=tool.stats.get("echo_strike", 0.0),
         lifeline=int(tool.stats.get("lifeline", 0)),
         gold_rush=int(tool.stats.get("gold_rush", 0)),
         geode=tool.stats.get("geode", 0.0),
@@ -779,6 +791,8 @@ async def settle_run(user: User, run: MineRun, registry: Registry | None = None)
     mine_no = next((i for i, s in enumerate(rules.mines, 1) if s.id == run.site.id), 1)
     run.haul = stars.apply(run.haul, stars.progress(mine_no, len(rules.mines)), run.rng, registry)
     part = await smithing.maybe_drop_part(user, mine_no, run.rng, registry)  # one roll per run banked
+    if run.mine_type.scroll and run.rng.random() < 1 / run.mine_type.scroll.odds:  # a mine type's own scroll: 1 in `odds` banked runs of it
+        run.haul[run.mine_type.scroll.item] += 1
     summary = replace(summary, haul=Counter(run.haul), part=part)
     for item_id, quantity in run.haul.items():
         await user.add_item(item_id, quantity)

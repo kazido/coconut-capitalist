@@ -24,4 +24,6 @@ def scroll_skills(item_id: str, registry: Registry | None = None) -> list[str]:
     found = [s for s in ("mining", "foraging", "farming") if reg.scrolls and getattr(reg.scrolls, s) is not None and item_id in getattr(reg.scrolls, s).pool]
     if reg.fishing and any(entry.item == item_id for entry in (*reg.fishing.treasure.loot, *reg.fishing.boss.loot)):
         found.append("fishing")
+    if "mining" not in found and reg.mining and any(t.scroll and t.scroll.item == item_id for t in reg.mining.mine_types):
+        found.append("mining")  # a mine type's own scroll (mining.toml [[mine_types]] scroll)
     return found

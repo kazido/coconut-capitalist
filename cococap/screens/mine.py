@@ -134,6 +134,11 @@ def risk_text(risk: float) -> str:
     return "<1%" if risk < 0.005 else f"{risk:.0%}"
 
 
+def echo_note(result: mining.DigResult) -> str:
+    """The dig note line for Echo Strike (a pickaxe enchant): shown only when the echo actually cracked a tile."""
+    return "🔁 **Echo Strike!** The tile beside it cracked too. " if result.echo else ""
+
+
 def carrying(haul: Counter) -> str:
     if not haul:
         return "-# Nothing in your pack yet."
@@ -272,7 +277,7 @@ class MineScreen(Screen):
             lost = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.lost.items())
             note = "The tunnel gave way!" + (f" You lost {lost}." if lost else "")
         else:
-            note = auto + multi + (f"{emojis.icon('boom', '💥')} BOOM! " if result.bombed and not result.auto_bombed else "") + (f"Found {found}." if found else ("" if result.wyrmhole else "Nothing here."))
+            note = auto + multi + echo_note(result) + (f"{emojis.icon('boom', '💥')} BOOM! " if result.bombed and not result.auto_bombed else "") + (f"Found {found}." if found else ("" if result.wyrmhole else "Nothing here."))
             if result.lifeline:
                 lost_text = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.lifeline_lost.items())
                 note = f"{emojis.icon('lifeline', '🛟')} **Lifeline!** The reactor held the tunnel when it would have collapsed" + (f" (it cost you {lost_text})" if lost_text else "") + ". " + note

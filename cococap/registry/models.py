@@ -597,6 +597,13 @@ class DescentRules(_Data):
         return self
 
 
+class MineScroll(_Data):
+    """A scroll only one mine type can drop: 1 in `odds` banked runs of that type (settle_run rolls it)."""
+
+    item: str
+    odds: int = Field(ge=1)
+
+
 class MineType(_Data):
     """One kind of mine you can roll when you head down (shown before you dig). Every effect is a plain number; 1.0 / 0 / {} changes nothing."""
 
@@ -612,6 +619,7 @@ class MineType(_Data):
     wyrmhole_mult: float = Field(default=1.0, ge=1, le=20)  # x the chance of a big wyrmhole (per cell) and of a small one (per mine)
     ore_boost: dict[str, float] = Field(default_factory=dict)  # item -> x its drop chance (other ores stay possible; more of a hard ore also means more pressure)
     ore_yield: dict[str, float] = Field(default_factory=dict)  # item -> x the quantity of that item (no extra pressure)
+    scroll: MineScroll | None = None  # the scroll this mine type alone can drop (see MineScroll)
 
     @model_validator(mode="after")
     def _boosts_are_sane(self):

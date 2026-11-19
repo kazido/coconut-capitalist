@@ -60,3 +60,15 @@ max_level = 3
 type = "stat_add"
 stat = "seed_back"
 amount = 0.04
+
+[echo_strike]
+name = "Echo Strike"
+emoji = "🔁"
+description = "Your pick echoes: 6% chance per level that a dug tile also breaks the tile beside it (you get its loot, it adds no pressure)."
+applies_to = ["pickaxe"]
+max_level = 3  # TODO(balance): the 6% per level is a guess
+
+[[echo_strike.effects]]
+type = "stat_add"
+stat = "echo_strike"
+amount = 0.06

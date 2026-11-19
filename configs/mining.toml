@@ -287,6 +287,7 @@ emoji = "🌀"
 weight = 1
 description = "The walls are riddled with burrows: wyrmholes are 10x as likely."
 wyrmhole_mult = 10
+scroll = { item = "scroll_echo_strike", odds = 40 }  # TODO(balance): 1 in 40 banked Wyrm Tunnels runs
 
 [wyrmhole]
 # A wyrmhole is a cell in the shaft that shows up (3 rows ahead) in place of a lode: dig it and the mine ends (the haul is yours) and you drop into the hole. What is in

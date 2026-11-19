@@ -382,6 +382,10 @@ def _validate_mining_items(reg: "Registry", rules: MiningRules) -> list[str]:
             need(item_id, f"mine type '{t.id}' ore_boost/ore_yield")
             if item_id in reg.items and item_id not in in_tables:
                 problems.append(f"mining.toml mine type '{t.id}': '{item_id}' is in no depth table, so boosting it would do nothing")
+        if t.scroll:
+            need(t.scroll.item, f"mine type '{t.id}' scroll")
+            if t.scroll.item in reg.items and reg.items[t.scroll.item].scroll is None:
+                problems.append(f"mining.toml mine type '{t.id}': '{t.scroll.item}' is not a scroll")
     mini = rules.mini_wyrmhole
     for item_id in (*(i for r in mini.rows for i in r.pool), *mini.last_row_bonus, *(i for r in rules.wyrmhole.rows for i in r.pool), rules.wyrmhole.implosion_item, *rules.reactor.core_gems,
                     *(i for prize in rules.scarab.prizes for i in prize.items), BOMB_ITEM,

@@ -2095,6 +2095,20 @@ sell_price = 400000  # TODO(balance)
 [scroll_seedkeeper.scroll]
 enchant = "seedkeeper"
 
+[scroll_echo_strike]
+name = "Scroll of Echo Strike"
+description = "Your pick sometimes cracks the tile beside the one you dig."
+wiki = "Use it from your inventory (Enchant) to put Echo Strike on a pickaxe. One use. Only Wyrm Tunnels drop it, now and then."
+emoji = "📜"
+rarity = 5
+skill = "mining"
+category = "scroll"
+price = 0
+sell_price = 1200000  # TODO(balance)
+
+[scroll_echo_strike.scroll]
+enchant = "echo_strike"
+
 # ---- Tree species signature drops (see [[species]] in foraging.toml). No [drop] block: they only drop from their species. ----
 [material_twilight_fuel]
 name = "Twilight Fuel"
