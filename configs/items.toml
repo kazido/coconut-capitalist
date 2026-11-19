@@ -1073,10 +1073,9 @@ max = 1
 [food_burger]
 name = "Burger"
 description = "A burger, somehow still warm. Every pet will fight you for it."
-wiki = "A rare find while chopping. Feed it to a pet from the Pets page: it is worth five times Golden Sap in pet xp (25,000), and more again to a foraging pet. Not sellable."
+wiki = "A rare find: each hour you play (press anything) has a small chance of one. Feed it to a pet from the Pets page: it is worth five times Golden Sap in pet xp (25,000), and more again to a foraging pet. Not sellable."
 emoji = "🍔"
 rarity = 4
-skill = "foraging"
 category = "pet_food"
 price = 0
 sell_price = 100000  # TODO(balance)
@@ -1086,7 +1085,7 @@ tier = 3
 xp_mult = 5
 
 [food_burger.drop]
-rate = 200
+rate = 150  # 1-in-N per hour of play (activity.roll_token), any skill
 min = 1
 max = 1
 
@@ -1617,8 +1616,8 @@ sell_price = 2000000  # TODO(balance)
 grows_into = "crop_voidbloom"
 cycles = 300
 
-# ---- pet food: each skill drops its own, in three tiers (worth 200 / 1,000 / 5,000 pet xp; see [pets] in economy.toml). Crops are
-# farming's food. Not sold. A pet assigned to the skill gets x3, a pet with no skill x2. TODO(balance): the drop rates aim at
+# ---- pet food: each skill drops its own, in three tiers (worth 200 / 1,000 / 5,000 pet xp; see [pets] in economy.toml). Farming's food comes
+# along with a harvest (crops are the pet fuel tank's fuel, not food). Not sold. A pet assigned to the skill gets x3, a pet with no skill x2. TODO(balance): the drop rates aim at
 # roughly 3-5k base pet xp an hour in each skill (python -m scripts.balance prints it).
 [food_acorn_mix]
 name = "Acorn Mix"
@@ -2376,3 +2375,64 @@ skill = "farming"
 category = "accessory"
 price = 0
 sell_price = 0
+
+[food_harvest_mash]
+name = "Harvest Mash"
+emoji = "🥣"
+description = "Leftovers from the harvest, mashed into a warm bowl."
+wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the farming skill gets extra xp from it. Comes along with a harvest."
+rarity = 2
+skill = "farming"
+category = "pet_food"
+sell_price = 500  # TODO(balance)
+[food_harvest_mash.pet_food]
+tier = 1
+[food_harvest_mash.drop]
+rate = 4
+min = 1
+max = 1
+
+[food_garden_stew]
+name = "Garden Stew"
+emoji = "🍲"
+description = "Everything good from the garden, slow-cooked."
+wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the farming skill gets extra xp from it. Comes along with a harvest."
+rarity = 4
+skill = "farming"
+category = "pet_food"
+sell_price = 6000  # TODO(balance)
+[food_garden_stew.pet_food]
+tier = 2
+[food_garden_stew.drop]
+rate = 25
+min = 1
+max = 1
+
+[food_golden_ear]
+name = "Golden Ear"
+emoji = "🌽"
+description = "One perfect ear of corn. Pets would do anything for it."
+wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the farming skill gets extra xp from it. Comes along with a harvest."
+rarity = 5
+skill = "farming"
+category = "pet_food"
+sell_price = 60000  # TODO(balance)
+[food_golden_ear.pet_food]
+tier = 3
+[food_golden_ear.drop]
+rate = 150
+min = 1
+max = 1
+
+# Basic pet food for ANY pet (no skill): bought in the shop with bits, so it is a bit sink. A pet with no skill of its own gets x2 from it, others x1.
+[food_pet_biscuit]
+name = "Pet Biscuit"
+emoji = "🍪"
+description = "Plain, filling and good for any pet."
+wiki = "Basic pet food from the shop. Feed it to any pet from the Pet House. Worth the same pet xp as a first-tier skill food, with no skill bonus (pets with no skill of their own get double)."
+rarity = 1
+category = "pet_food"
+price = 1000  # TODO(balance)
+sell_price = 100  # TODO(balance)
+[food_pet_biscuit.pet_food]
+tier = 1

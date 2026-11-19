@@ -170,8 +170,8 @@ class Item(_Data):
                 raise ValueError(f"'{section}' section must be present iff category is '{category}'")
         if (self.pet_food is not None) != (self.category == "pet_food"):
             raise ValueError("'pet_food' section must be present iff category is 'pet_food'")
-        if self.category == "pet_food" and not self.skill:
-            raise ValueError("pet food belongs to a skill")
+        if self.category == "pet_food" and not self.skill and self.price <= 0 and self.drop is None:
+            raise ValueError("pet food with no skill must be sold in the shop or drop from something")
         if self.tool is not None and self.category != "tool":
             raise ValueError("'tool' section requires category 'tool'")
         return self

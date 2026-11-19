@@ -28,7 +28,7 @@ async def test_a_click_that_levels_you_up_sends_the_notification(db, monkeypatch
     nav.screen.tree = foraging.Tree(1, 1, 1)
     await chop(nav, inter)
     assert inter.followup.send.await_count == 1
-    assert inter.followup.send.await_args.kwargs["ephemeral"] is True and inter.followup.send.await_args.kwargs["embed"].title == "Level up!"
+    assert inter.followup.send.await_args.kwargs["ephemeral"] is False and inter.followup.send.await_args.kwargs["embed"].title == "Level up!"
 
 
 async def test_jumping_several_levels_in_one_click_is_one_notice_old_to_new(db):
@@ -44,3 +44,28 @@ async def test_jumping_several_levels_in_one_click_is_one_notice_old_to_new(db):
     assert new > seen["mining"] + 1  # a real multi-level jump
     assert f"{seen['mining']} -> {new}" in inter.followup.send.await_args.kwargs["embed"].description
     assert inter.followup.send.await_args.kwargs["view"] is not None  # Share + Close
+
+
+async def test_the_active_pet_levelling_up_rides_in_the_same_notice(db):
+    from unittest.mock import AsyncMock, MagicMock
+
+    from cococap.registry import get_registry
+    from cococap.services import pets
+
+    reg = get_registry()
+    user = await User.get(1)
+
+    def adopt(house):
+        from cococap.models.pethouse import OwnedPet
+
+        house.pets["drizzle"] = OwnedPet(stars=1, xp=0)
+        house.active = "drizzle"
+
+    await user.update_pethouse(adopt)
+    seen = await levelup.snapshot(user)
+    assert seen["pet:drizzle"] == 1
+    await user.update_pethouse(lambda h: setattr(h.pets["drizzle"], "xp", pets.level_xp(3, reg.pets["drizzle"].rarity, reg)))
+    inter = MagicMock(followup=MagicMock(send=AsyncMock()))
+    await levelup.check(inter, user, seen)
+    assert inter.followup.send.await_count == 1
+    assert "Drizzle" in inter.followup.send.await_args.kwargs["embed"].description and "1 -> 3" in inter.followup.send.await_args.kwargs["embed"].description

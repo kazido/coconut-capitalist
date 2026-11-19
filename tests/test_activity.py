@@ -170,3 +170,14 @@ async def test_touching_says_so_when_a_token_turns_up_and_the_screen_shows_it_on
     assert "found a **token**" in all_text(nav) or "found a token" in all_text(nav)
     nav2, _ = await hub("home", user_id=5)
     assert "found a" not in all_text(nav2)
+
+
+async def test_a_burger_turns_up_by_the_hour_and_is_not_rolled_twice(db):
+    user = await User.get(3)
+    rate = REG.item("food_burger").drop.rate
+    assert REG.item("food_burger").skill is None  # no skill: it comes from playing, not from one skill
+    win = next(h for h in range(100_000) if random.Random(f"burger:3:{h}").random() < 1 / rate)
+    now = win * 3600 + 5
+    await activity.roll_token(3, now, with_chance(0.0))
+    await activity.roll_token(3, now + 60, with_chance(0.0))  # same hour: no second roll
+    assert await user.item_quantity("food_burger") == 1

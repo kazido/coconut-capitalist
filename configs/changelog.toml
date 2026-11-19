@@ -11,6 +11,12 @@
 
 [[entry]]
 date = "2026-11-19"
+title = "Tending gives fewer byproducts"
+body = "- Tending your farm now gives about 30% fewer materials (compost, fiber, dewdrops, and so on) in most fields. It was paying more than it should.\n- Farming pets get new foods that drop with harvests: Harvest Mash, Garden Stew and Golden Ear."
+major = false
+
+[[entry]]
+date = "2026-11-19"
 title = "Scarab bombs blast 5 rows, and cost a spread of ores"
 body = "- A Scarab Bomb now blows 5 rows down at once (was 10). It still adds no pressure and has no collapse risk.\n- Scarab Bombs now take 7 kinds of ore to craft (copper, iron, tin, silver, gold, obsidian, amber), not 3."
 major = false

@@ -1,4 +1,4 @@
-"""Render every sprite to art/out/<name>.png (static) or .webp (animated), 64x64, plus contact sheets.
+"""Render every sprite to art/out/<name>.png (static) or .webp (animated): free sprites 64x64, framed items 120x120 (art/rarity_style.py), plus contact sheets.
 
     .venv/bin/python -m art.build [--only NAME] [--sheets]
 """
@@ -12,13 +12,13 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from art.palette import ART_DIR, frame_image, outline_color
+from art import rarity_style
+from art.palette import ART_DIR, outline_color
 from art.sprite import Sprite, load_all
 
 SCALE = 4  # 16 -> 64
 OUT_DIR = ART_DIR / "out"
 IMG2WEBP = shutil.which("img2webp") or "/opt/homebrew/bin/img2webp"
-_FRAMES: dict[int, Image.Image] = {}
 
 
 def add_outline(im: Image.Image) -> Image.Image:
@@ -37,23 +37,21 @@ def add_outline(im: Image.Image) -> Image.Image:
 
 
 def compose(sprite: Sprite, frame: Image.Image) -> Image.Image:
-    """One 16x16 frame as it is exported: in its rarity cell (framed) or alone, outlined if asked (free)."""
-    if sprite.framed:
-        if sprite.rarity not in _FRAMES:
-            _FRAMES[sprite.rarity] = frame_image(sprite.rarity)
-        base = _FRAMES[sprite.rarity].copy()
-        base.alpha_composite(frame)  # the sprite may overlap the border; the cell's transparent corners stay as they are
-        corners = _FRAMES[sprite.rarity]
-        for x, y in ((0, 0), (15, 0), (0, 15), (15, 15)):
-            if corners.getpixel((x, y))[3] == 0:
-                base.putpixel((x, y), (0, 0, 0, 0))
-        return base
+    """One free 16x16 frame as it is exported: outlined if asked. (Framed items are built by rarity_style.framed.)"""
     return add_outline(frame) if sprite.outline else frame.copy()
 
 
+def render_timed(sprite: Sprite) -> tuple[list[Image.Image], list[int]]:
+    """The exported frames of a sprite and their ms (ms empty when the output is still)."""
+    if sprite.framed:
+        frames, ms = rarity_style.framed(sprite)
+        return [rarity_style.scale(f) for f in frames], ms
+    return [compose(sprite, f).resize((16 * SCALE, 16 * SCALE), Image.NEAREST) for f in sprite.frames], sprite.ms
+
+
 def render(sprite: Sprite) -> list[Image.Image]:
-    """The 64x64 frames of a sprite."""
-    return [compose(sprite, f).resize((16 * SCALE, 16 * SCALE), Image.NEAREST) for f in sprite.frames]
+    """The exported frames of a sprite (see render_timed)."""
+    return render_timed(sprite)[0]
 
 
 def write_webp(frames: list[Image.Image], ms: list[int], path: Path) -> None:
@@ -72,20 +70,23 @@ def write_webp(frames: list[Image.Image], ms: list[int], path: Path) -> None:
 
 def build_one(sprite: Sprite, out_dir: Path = OUT_DIR) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
-    frames = render(sprite)
-    if sprite.animated:
+    frames, ms = render_timed(sprite)
+    if len(frames) > 1:
         path = out_dir / f"{sprite.name}.webp"
-        write_webp(frames, sprite.ms, path)
+        write_webp(frames, ms, path)
+        stale = out_dir / f"{sprite.name}.png"
     else:
         path = out_dir / f"{sprite.name}.png"
         frames[0].save(path)
+        stale = out_dir / f"{sprite.name}.webp"
+    stale.unlink(missing_ok=True)  # the uploader marks a name INVALID when both files exist
     return path
 
 
 def contact_sheet(sprites: list[Sprite], path: Path, cols: int = 6) -> None:
-    """Every sprite at 64px on a Discord-dark background, labelled with its name (first frame if animated)."""
+    """Every sprite on a Discord-dark background, labelled with its name (first frame if animated)."""
     font = ImageFont.load_default(size=10)
-    cw, ch, pad = 120, 64 + 28, 12
+    cw, ch, pad = 124, 124 + 28, 12
     rows = -(-len(sprites) // cols)
     sheet = Image.new("RGBA", (cols * cw + pad, rows * ch + pad), (0x31, 0x33, 0x38, 255))
     d = ImageDraw.Draw(sheet)
@@ -95,7 +96,7 @@ def contact_sheet(sprites: list[Sprite], path: Path, cols: int = 6) -> None:
         label = s.name
         while d.textlength(label, font=font) > cw - 8 and len(label) > 3:
             label = label[:-2]
-        d.text((x, y + 68), label + (" *" if s.animated else ""), fill=(210, 214, 220, 255), font=font)
+        d.text((x, y + 128), label + (" *" if s.animated else ""), fill=(210, 214, 220, 255), font=font)
     path.parent.mkdir(parents=True, exist_ok=True)
     sheet.save(path)
 

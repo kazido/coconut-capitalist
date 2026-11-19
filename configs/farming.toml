@@ -19,7 +19,7 @@ deed_item = "key_land_deed"
 # table per cycle, by field (the same order as field_seeds); one full roll of the table is worth about 618 bits, set so a crop's byproducts are about 15-40% of what
 # the crop itself earns an hour (a guard test keeps it). Later fields also roll starred materials (services/stars.py). Xp is NOT paid for tending: it stays at xp_per_cycle per cycle at harvest.
 byproduct_max_cycles = 3
-byproduct_rolls = [8, 11, 15, 27, 27, 27, 33, 35, 12, 41, 41, 45, 51, 58]  # sized so a Tend pays about what it did before zones (each zone's table is worth a different amount per roll)
+byproduct_rolls = [6, 11, 10, 23, 19, 19, 23, 24, 8, 29, 29, 31, 36, 41]  # NERFED x0.7 (tending paid too much compost); was [8, 11, 15, 27, 27, 27, 33, 35, 12, 41, 41, 45, 51, 58]  # sized so a Tend pays about what it did before zones (each zone's table is worth a different amount per roll)
 # FARM ZONES: zone N (= field N) rolls ONLY these materials for its plots' byproducts (Tend and harvest). Early zones: fiber + compost, then compost + dewdrop, dewdrop + beeswax, beeswax + living vine (dewdrop and beeswax are spent in tool upgrades, so they must keep dropping).
 # One roll of any zone's table is worth about 618 bits (a guard test checks the share of the crop).
 zone_materials = [
