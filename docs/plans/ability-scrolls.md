@@ -1,5 +1,5 @@
 # Ability scrolls (draft, waiting on owner)
-Status: draft, ideas not approved yet.
+Status: built on design (Echo Strike, Second Wind, Prospector's Ping, Timber!, Ember Bite, Net Cast, Golden Sprout; Rain Dance dropped). Delete when design lands.
 
 Rule (owner, 2026-11-19): an enchant is ALWAYS a unique ability you can see or trigger, never a plain stat.
 Stat bonuses (xp, less pressure, slower wear, shorter waits, rare odds) belong to mastery, pets and accessories.
