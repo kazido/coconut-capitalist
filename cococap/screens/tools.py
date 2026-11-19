@@ -9,6 +9,7 @@ from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
 from cococap.screens.enchant import EnchantPane
+from cococap.screens.smithing import PartsPane, SmithingPane
 from cococap.screens.upgrade import UpgradePane, describe_stats
 from cococap.ui.tabs import TabsScreen
 
@@ -16,7 +17,7 @@ KIND_LABEL = {"pickaxe": "Mining", "axe": "Foraging", "sword": "Combat", "rod": 
 
 
 class ToolsPane(Screen):
-    """Your tool for each skill, as a compact list. Upgrade and Enchant are the other tabs of the Tools page."""
+    """Your tool for each skill, as a compact list. Upgrade, Enchant, Smithing and Parts are the other tabs."""
 
     label = "Tools"
     emoji = emojis.Lazy("ui_anvil", "🧰")
@@ -46,6 +47,8 @@ class ToolsPane(Screen):
             item = reg.item(inst.template_id)
             tool = item.tool
             extra = ([f"{tool.path} path"] if tool.path else []) + ([describe_stats(tool.stats)] if tool.stats else [])
+            if inst.parts:  # smithed: quality grade and the traits picked from its parts
+                extra += ([inst.quality] if inst.quality else []) + [reg.smithing.trait(p["trait"]).name for p in inst.parts.values() if p.get("trait")]
             lines.append(f"{item.emoji or emojis.icon('craft', '🔨')} **{instance_label(inst)}**  ·  {KIND_LABEL[kind]}  ·  power **{effective_stats(inst, reg).power}**"
                          + "".join(f"  ·  {e}" for e in extra) + (f"  ·  {emojis.icon('sparkle', '✨')} {tool.ability_name}" if tool.ability_name else ""))
         if lines:
@@ -73,11 +76,11 @@ class ToolsPane(Screen):
 
 
 class ToolsScreen(TabsScreen):
-    """The Tools page: your tools (the list), then Upgrade and Enchant as tabs of the same page."""
+    """The Tools page: your tools (the list), then Upgrade, Enchant, Smithing and Parts as tabs."""
 
     id = "tools"
     label = "Tools"
     emoji = emojis.Lazy("ui_anvil", "🧰")
     description = "Your tools: upgrade and enchant them"
     links = ("inventory",)
-    panes = {"tools": ToolsPane, "upgrade": UpgradePane, "enchant": EnchantPane}
+    panes = {"tools": ToolsPane, "upgrade": UpgradePane, "enchant": EnchantPane, "smithing": SmithingPane, "parts": PartsPane}
