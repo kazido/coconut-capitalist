@@ -16,6 +16,7 @@ import discord
 from discord import ui
 
 from cococap.errors import CustomError, GameRuleError
+from cococap.services import community, trade
 from cococap.user import InsufficientFunds, User
 
 from .components import button, row, sep, text
@@ -26,6 +27,36 @@ log = logging.getLogger(__name__)
 BLURPLE = 0x5865F2
 TICKER_TASK = "nav-ticker"  # the name of every panel's self-refresh task
 TICK_EDIT_TIMEOUT = 2.0  # seconds a self-refresh may take to reach Discord before it is skipped
+
+
+_LIVE: dict[int, "Navigator"] = {}  # player id -> their open /play menu (one at a time)
+
+
+def _menu_key(user_id: int) -> str:
+    return f"menu:{user_id}"
+
+
+async def poke(user_id: int) -> None:
+    """Redraw a player's open menu right now if it is on a page that shows invitations (Home, Trade): so a trade request appears without them clicking."""
+    nav = _LIVE.get(user_id)
+    if nav is None or nav.message is None or nav.is_finished() or nav.screen is None or nav.screen.id not in ("home", "trade") or nav._lock.locked():
+        return
+    try:
+        async with nav._lock:
+            await nav._render()
+            await asyncio.wait_for(nav._push(), TICK_EDIT_TIMEOUT)
+    except Exception:  # a missed redraw is fine: the next click or tick shows it
+        log.debug("could not refresh the menu of %s", user_id, exc_info=True)
+
+
+def _on_trade_ask(recipient_id: int) -> None:
+    try:
+        asyncio.get_running_loop().create_task(poke(recipient_id))
+    except RuntimeError:  # no event loop (plain tests)
+        pass
+
+
+trade.add_listener(_on_trade_ask)
 
 
 async def stop_all_tickers() -> None:
@@ -182,7 +213,39 @@ class Navigator(ui.LayoutView):
         await interaction.response.send_message(view=self)
         self._unsent = None
         self.message = await interaction.original_response()
+        await self._replace_old_menu(interaction)
         self._restart_ticker()
+
+    async def _replace_old_menu(self, interaction: discord.Interaction) -> None:
+        """One menu per player: delete the one they had open before (also across a bot restart: its message id is stored), and remember this one."""
+        try:
+            old = _LIVE.get(self.owner.id)
+            if old is not None and old is not self:
+                await old.close_menu()
+            stored = await community.read(_menu_key(self.owner.id), {})
+            if old is None and stored and stored.get("message") != self.message.id:
+                try:  # (a menu left over from before a restart has no Navigator any more: delete its message by id)
+                    await interaction.client.get_partial_messageable(stored["channel"]).get_partial_message(stored["message"]).delete()
+                except discord.HTTPException:
+                    pass  # already gone, or no permission
+            _LIVE[self.owner.id] = self
+            mine = {"channel": self.message.channel.id, "message": self.message.id}
+            await community.update(_menu_key(self.owner.id), {}, lambda data: (data.clear(), data.update(mine)))
+        except Exception:  # never break /play over housekeeping
+            log.exception("could not replace the old menu")
+
+    async def close_menu(self) -> None:
+        """Take this menu away: stop it and delete its message."""
+        self.stop()
+        if self._ticker is not None:
+            self._ticker.cancel()
+        if _LIVE.get(self.owner.id) is self:
+            del _LIVE[self.owner.id]
+        if self.message is not None:
+            try:
+                await self.message.delete()
+            except discord.HTTPException:
+                pass
 
     async def _respond(self, interaction: discord.Interaction) -> None:
         """Answer a click by showing the new panel. If Discord won't take the answer any more (the click was
@@ -375,6 +438,8 @@ class Navigator(ui.LayoutView):
         await report_error(interaction, error, self.screen.id if self.screen else "?")
 
     async def on_timeout(self) -> None:
+        if _LIVE.get(self.owner.id) is self:
+            del _LIVE[self.owner.id]
         if self._ticker is not None:
             self._ticker.cancel()
         if self.screen is not None:
