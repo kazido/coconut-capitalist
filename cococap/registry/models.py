@@ -1609,6 +1609,7 @@ class SmithingRules(_Data):
     max_traits: int = Field(ge=1)
     bonus_trait_chance: float = Field(ge=0, le=1)
     cosmetic_chance: float = Field(ge=0, le=1)
+    part_drop_chance: float = Field(ge=0, le=1)
     rarity_by_tier: list[str] = Field(min_length=PART_TIERS, max_length=PART_TIERS)
     tiers: dict[str, list[int]]  # {"power": [...]}: power per part tier, index 0 = tier 1
     area_weights: list[AreaWeights] = Field(min_length=1)

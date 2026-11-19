@@ -16,9 +16,10 @@ from dataclasses import dataclass, field, replace
 from cococap.constants import Rarities
 from cococap.errors import GameRuleError
 from cococap.models.skills.fishing import TreasureState
+from cococap.models.instance import ItemInstance
 from cococap.registry import Item, Registry, get_registry
 from cococap.registry.models import FishingRules, WaterRules
-from cococap.services import areas, shop, stars
+from cococap.services import areas, shop, smithing, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop, roll_table
 from cococap.services import pets
@@ -703,6 +704,7 @@ class Catch:
     slack_bits: int = 0  # ...and what they paid
     bycatch: Item | None = None  # a second, different fish the Treasure Hunter's rod brought up
     streak_bits: int = 0  # what the Angler's Hot Streak added (clean reels in a row)
+    part: ItemInstance | None = None  # a smithing part that came up with the fish, if any
 
 
 def catch_extras(rng: random.Random, registry: Registry) -> Counter:
@@ -740,9 +742,12 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     if bycatch is not None:
         await user.add_item(bycatch.id, 1)
     extras = catch_extras(rng or random.Random(), reg)
+    part_area = 1
     if cast.water is not None:  # starred materials: the deeper the water (its place in the list), the likelier a better star
         location = next(i for i, w in enumerate(rules.waters) if w.id == cast.water.id) + 1
+        part_area = location
         extras = stars.apply(extras, stars.progress(location, len(rules.waters)), rng or random.Random(), reg)
+    part = await smithing.maybe_drop_part(user, part_area, rng or random.Random(), reg)  # one part roll per catch
     for item_id, quantity in extras.items():
         await user.add_item(item_id, quantity)
     finished: list[Quest] = []
@@ -827,7 +832,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
     if slack_bits + streak_bits:
         await user.add_bits(slack_bits + streak_bits)
     return Catch(cast.fish, xp, tuple(finished), quest_bits, extras, seen[0] if seen else None,
-                 tuple(cast.reveals), cast.extra_fish, cast.size, bool(best), server_record, record_bits, holder, cast.slips_left, slack_bits, bycatch, streak_bits)
+                 tuple(cast.reveals), cast.extra_fish, cast.size, bool(best), server_record, record_bits, holder, cast.slips_left, slack_bits, bycatch, streak_bits, part=part)
 
 
 RECORDS_KEY = "fishing_records"

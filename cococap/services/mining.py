@@ -19,12 +19,13 @@ from dataclasses import dataclass, field, replace
 
 from cococap.errors import GameRuleError
 from cococap.models.skills.mining import Mining
+from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
 from cococap.registry.loader import BOMB_ITEM
 from cococap.registry.models import MiningRules, MineSite, MineType, Milestone, RiskLabel
 from cococap.services.equipment import equipped_stats
 from cococap.services.loot import roll_table, skewed_roll
-from cococap.services import areas, pets, scrolls, stars
+from cococap.services import areas, pets, scrolls, smithing, stars
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -536,6 +537,7 @@ class RunSummary:
     xp: int
     lodes: int
     depth: int
+    part: ItemInstance | None = None  # a smithing part the run dropped, if any (kept out of the stackable haul)
 
 
 # ---- the wyrmhole -----------------------------------------------------------------------------
@@ -776,7 +778,8 @@ async def settle_run(user: User, run: MineRun, registry: Registry | None = None)
     # starred ores: the further down the list of mines, the likelier a better star (one roll per ore stack)
     mine_no = next((i for i, s in enumerate(rules.mines, 1) if s.id == run.site.id), 1)
     run.haul = stars.apply(run.haul, stars.progress(mine_no, len(rules.mines)), run.rng, registry)
-    summary = replace(summary, haul=Counter(run.haul))
+    part = await smithing.maybe_drop_part(user, mine_no, run.rng, registry)  # one roll per run banked
+    summary = replace(summary, haul=Counter(run.haul), part=part)
     for item_id, quantity in run.haul.items():
         await user.add_item(item_id, quantity)
 

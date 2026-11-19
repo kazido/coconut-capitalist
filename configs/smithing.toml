@@ -10,6 +10,8 @@ area_cap = 2
 max_traits = 3
 bonus_trait_chance = 0.25                 # TODO(balance)
 cosmetic_chance = 0.10                    # chance a smithed tool gets a cosmetic look (palette/frame/overlay)
+# Chance that ONE skill action (a mine banked, a fish landed, a tree felled, a crop harvested) also drops a part.
+part_drop_chance = 0.01                  # TODO(balance)
 
 # Rarity of a part by its tier (tier 1..7). A fresh part rolls fresh_traits[its rarity] traits.
 rarity_by_tier = ["common", "common", "uncommon", "uncommon", "rare", "rare", "epic"]  # TODO(balance)

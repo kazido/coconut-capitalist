@@ -74,6 +74,25 @@ async def roll_part(
     return await user.give_instance(f"part_{part_type}", rolled={"tier": tier}, traits=traits)
 
 
+async def maybe_drop_part(
+    user: User, location: int, rng: random.Random, registry: Registry | None = None
+) -> ItemInstance | None:
+    """Roll once for a part from a skill action (every skill calls this once per action). Most actions give nothing.
+
+    `location` is the skill's 1-based location number (mine, water, forest zone, field); the part's tier comes from
+    the AREA that location lives in (two locations per area), so all four skills drop the same tiers in one area.
+    """
+    from cococap.services.areas import area_of_location
+
+    rules = _rules(registry)
+    if rng.random() >= rules.part_drop_chance:
+        return None
+    area = area_of_location(max(location, 1)) + 1
+    # Areas past the last configured row use the last row's weights.
+    area = min(area, max(w.area for w in rules.area_weights))
+    return await roll_part(user, area, rng, registry=registry)
+
+
 def tool_power(parts: dict, quality: str, rules: SmithingRules) -> float:
     """Sum of the three parts' tier power, times the quality grade's multiplier."""
     return sum(rules.tier_power(parts[slot]["tier"]) for slot in PART_TYPES) * rules.quality(quality).mult

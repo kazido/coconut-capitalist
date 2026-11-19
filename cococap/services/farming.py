@@ -20,8 +20,9 @@ from dataclasses import dataclass, field
 
 from cococap.errors import GameRuleError
 from cococap.models.skills.farming import Farming, Plot
+from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
-from cococap.services import areas, pets, scrolls, stars
+from cococap.services import areas, pets, scrolls, smithing, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services.loot import roll_drop
 from cococap.services.party import xp_multiplier
@@ -413,6 +414,7 @@ class Harvest:
     anomaly: bool
     extras: Counter = field(default_factory=Counter)  # leftovers from the harvest (plant fiber...)
     replanted: bool = False  # Evergreen: the plot is growing the same crop again
+    part: ItemInstance | None = None  # a smithing part from this harvest, if any
 
 
 # ---- Tend: byproducts of every growth cycle ---------------------------------------------------------------------------------------
@@ -540,6 +542,7 @@ async def harvest(
     await user.inc_stat(f"harvested:{taken['crop']}", taken["amount"])  # stats page: harvests by crop
     extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0, taken["zone"])
     extras = stars.apply(extras, stars.progress(taken["zone"], len(reg.farming.field_seeds)), rng, reg)  # starred materials: the further the field, the better the star
+    part = await smithing.maybe_drop_part(user, taken["zone"], rng, reg)  # one part roll per harvest
     if scroll := scrolls.roll("farming", rng, reg, reg.item(taken["seed"]).seed.cycles):  # a rare scroll: one chance per growth cycle of what you harvest
         extras[scroll] += 1
     if can and rng.random() < can.stats.get("seed_back", 0.0):  # a good can lets a plant go to seed: the seed comes back
@@ -550,7 +553,7 @@ async def harvest(
     if anomaly:
         await user.refresh_cooldowns(Cooldowns.WORK, Cooldowns.DAILY)
         await user.inc_stat("anomalies")  # stats page
-    return Harvest(number, taken["crop"], taken["amount"], taken["xp"], anomaly, extras, taken.get("replanted", False))
+    return Harvest(number, taken["crop"], taken["amount"], taken["xp"], anomaly, extras, taken.get("replanted", False), part=part)
 
 
 async def harvest_all(
