@@ -484,7 +484,7 @@ def drop_rolls(cycles: int, rules, rng: random.Random, luck: float = 0.0) -> int
 def harvest_extras(rng: random.Random, registry: Registry, cycles: int = 4, luck: float = 0.0, zone: int = 1) -> Counter:
     """Materials that come along with a harvest (the planted zone's own table): longer crops roll more."""
     found: Counter = Counter()
-    materials = zone_materials(zone, registry)
+    materials = zone_materials(zone, registry) + [i for i in registry.items_for_skill("farming") if i.category == "pet_food" and i.drop]
     for _ in range(drop_rolls(cycles, registry.farming, rng, luck)):
         for item in materials:
             if quantity := roll_drop(item, rng):

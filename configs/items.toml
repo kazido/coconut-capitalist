@@ -2012,8 +2012,8 @@ sell_price = 2000000  # TODO(balance)
 grows_into = "crop_voidbloom"
 cycles = 300
 
-# ---- pet food: each skill drops its own, in three tiers (worth 200 / 1,000 / 5,000 pet xp; see [pets] in economy.toml). Crops are
-# farming's food. Not sold. A pet assigned to the skill gets x3, a pet with no skill x2. TODO(balance): the drop rates aim at
+# ---- pet food: each skill drops its own, in three tiers (worth 200 / 1,000 / 5,000 pet xp; see [pets] in economy.toml). Farming's food comes
+# along with a harvest (crops are the pet fuel tank's fuel, not food). Not sold. A pet assigned to the skill gets x3, a pet with no skill x2. TODO(balance): the drop rates aim at
 # roughly 3-5k base pet xp an hour in each skill (python -m scripts.balance prints it).
 [food_acorn_mix]
 name = "Acorn Mix"
@@ -3735,3 +3735,51 @@ rarity = 7
 category = "material"
 price = 0  # crafted at the Workbench (configs/recipes.toml)
 sell_price = 1000
+
+[food_harvest_mash]
+name = "Harvest Mash"
+emoji = "🥣"
+description = "Leftovers from the harvest, mashed into a warm bowl."
+wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the farming skill gets extra xp from it. Comes along with a harvest."
+rarity = 2
+skill = "farming"
+category = "pet_food"
+sell_price = 500  # TODO(balance)
+[food_harvest_mash.pet_food]
+tier = 1
+[food_harvest_mash.drop]
+rate = 4
+min = 1
+max = 1
+
+[food_garden_stew]
+name = "Garden Stew"
+emoji = "🍲"
+description = "Everything good from the garden, slow-cooked."
+wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the farming skill gets extra xp from it. Comes along with a harvest."
+rarity = 4
+skill = "farming"
+category = "pet_food"
+sell_price = 6000  # TODO(balance)
+[food_garden_stew.pet_food]
+tier = 2
+[food_garden_stew.drop]
+rate = 25
+min = 1
+max = 1
+
+[food_golden_ear]
+name = "Golden Ear"
+emoji = "🌽"
+description = "One perfect ear of corn. Pets would do anything for it."
+wiki = "Pet food. Feed it to a pet from the Pet House; a pet of the farming skill gets extra xp from it. Comes along with a harvest."
+rarity = 5
+skill = "farming"
+category = "pet_food"
+sell_price = 60000  # TODO(balance)
+[food_golden_ear.pet_food]
+tier = 3
+[food_golden_ear.drop]
+rate = 150
+min = 1
+max = 1
