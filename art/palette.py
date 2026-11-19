@@ -42,7 +42,7 @@ def outline_color() -> RGBA:
 
 
 def rarity_colors() -> dict[int, str]:
-    """rarity value (1-7) -> '#RRGGBB'."""
+    """rarity value (1-8) -> '#RRGGBB' (a two-tone rarity also has `color2`)."""
     return {r["value"]: r["color"] for r in load()["rarity"]}
 
 

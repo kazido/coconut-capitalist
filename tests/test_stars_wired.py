@@ -6,6 +6,7 @@ from random import Random
 from cococap.registry import get_registry
 from cococap.services import farming as f
 from cococap.services import mining as m
+from cococap.services import stars
 from cococap.user import User
 from tests.test_farm_fields import skip_zone_gate, work_zone
 from tests.test_farming import HOUR, SURE, T0, ripe_farm
@@ -21,14 +22,17 @@ async def stars_from_mining(site_index, tries=60):
         run.haul = Counter({"material_iron_ore": 10})
         run.leave()
         await m.settle_run(user, run)
-    return [await user.item_quantity(i) for i in ("material_iron_ore", "material_iron_ore_s2", "material_iron_ore_s3")]
+    return [await user.item_quantity(i) for i in IRON_IDS]
 
 
-async def test_the_first_mine_never_pays_three_stars_but_the_last_does(db):
-    one, two, three = await stars_from_mining(0)
-    assert one > 0 and three == 0
+IRON_IDS = ["material_iron_ore"] + [stars.star_id("material_iron_ore", n) for n in (1, 2, 3)]  # plain, 1-, 2-, 3-star
+
+
+async def test_the_first_mine_never_pays_two_or_three_stars_but_the_last_does(db):
+    plain, one, two, three = await stars_from_mining(0)
+    assert plain > 0 and one > 0 and two == 0 and three == 0  # the curve gives no 2- or 3-star at progress 0
     last = await stars_from_mining(len(REG.mining.mines) - 1)
-    assert last[2] > 0 and last[1] > 0  # (counts include what the first mine gave)
+    assert last[3] > 0 and last[2] > 0  # (counts include what the first mine gave)
 
 
 async def test_a_mine_run_summary_shows_the_starred_ids(db):
@@ -39,7 +43,7 @@ async def test_a_mine_run_summary_shows_the_starred_ids(db):
         run.haul = Counter({"material_iron_ore": 10})
         run.leave()
         summary = await m.settle_run(user, run)
-        assert sum(summary.haul.values()) == 10 and set(summary.haul) <= {"material_iron_ore", "material_iron_ore_s2", "material_iron_ore_s3"}
+        assert sum(summary.haul.values()) == 10 and set(summary.haul) <= set(IRON_IDS)
 
 
 async def harvest_extras_stars(seed, tries):

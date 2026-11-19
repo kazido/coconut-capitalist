@@ -7,6 +7,8 @@ class OwnedPet(BaseModel):
     stars: int = 1
     xp: int = 0
     spirits: list[str] = Field(default_factory=list)  # skills this pet was given a Spirit for
+    lent_tool: str | None = None  # id of the one real tool lent to this pet (it stays yours but you cannot use it meanwhile)
+    buff_until: float = 0.0  # unix time its skill-food xp buff ends (0 = none)
 
 
 class Pethouse(BaseModel):
@@ -14,6 +16,8 @@ class Pethouse(BaseModel):
     pets: dict[str, OwnedPet] = Field(default_factory=dict)  # species id -> your one pet of that kind
     target: str | None = None  # the pet you are hunting: orbs are likelier to give it
     misses: int = 0  # orbs opened since that missed it (makes the next one likelier)
+    fuel_seconds: float = 0.0  # the ONE tank, for the active pet: seconds of idle work left (crops fill it, capped by pet_score.toml)
+    last_collect: float = 0.0  # unix time the idle haul was last collected or the tank last topped up (0 = never)
     curve_version: int = CURVE_VERSION  # which xp curve the stored xp is on (see CURVE_VERSION)
 
     @model_validator(mode="before")

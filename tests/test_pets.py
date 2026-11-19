@@ -144,10 +144,11 @@ async def test_switching_pets_only_works_for_pets_you_own(db):
 # ---- feeding and spirits ------------------------------------------------------------------------------------------------------
 async def test_feeding_crops_levels_the_active_pet_up(db):
     user = await with_pet("dew", xp=0)  # a farming pet: crops are its own skill's food
-    await user.add_item("crop_hot_pepper", 3)  # 1,450 pet xp each, x3 for a farming pet
+    await user.add_item("crop_hot_pepper", 3)  # x3 for a farming pet
+    each = REG.item("crop_hot_pepper").crop.pet_xp * 3
     fed = await pets.feed(user, "crop_hot_pepper", 2, REG)
-    assert fed.xp == 2 * 1450 * 3 and fed.level_before == 1 and fed.level_after == pets.pet_level(8700, REG.pets["dew"].rarity, REG) > 1
-    assert user.pethouse.pets["dew"].xp == 8700 and await user.item_quantity("crop_hot_pepper") == 1
+    assert fed.xp == 2 * each and fed.level_before == 1 and fed.level_after == pets.pet_level(2 * each, REG.pets["dew"].rarity, REG) > 1
+    assert user.pethouse.pets["dew"].xp == 2 * each and await user.item_quantity("crop_hot_pepper") == 1
 
 
 async def test_feeding_refuses_nonsense_and_keeps_your_crops(db):
@@ -356,7 +357,7 @@ async def test_the_pet_house_switches_pets_feeds_crops_and_hands_over_spirits(db
     assert "xp each" in modal.children[0].description
     await modal._handler(inter, "3")
     await user.refresh()
-    assert user.pethouse.pets["drizzle"].xp == before + 3 * REG.item("crop_lemon").crop.pet_xp and await user.item_quantity("crop_lemon") == 1  # (a fishing cat: x1)
+    assert user.pethouse.pets["drizzle"].xp == before + 3 * REG.item("crop_lemon").crop.pet_xp * REG.economy.pets.matched_food_multiplier and await user.item_quantity("crop_lemon") == 1  # (a fishing cat still gets the crop bonus)
     await choose(nav, inter, select_named(nav, "Give a Spirit"), "spirit_of_the_forest")
     await user.refresh()
     assert user.pethouse.pets["drizzle"].spirits == ["foraging"] and "Spirit" in all_text(nav)
@@ -440,7 +441,7 @@ async def test_choosing_a_new_target_starts_the_count_again_and_nonsense_is_refu
     await pets.set_target(user, "tempest", REG)  # same one: keep the misses
     assert user.pethouse.misses == 7
     await pets.set_target(user, "drizzle", REG)
-    assert user.pethouse.target == "drizzle" and user.pethouse.misses == 0
+    assert user.pethouse.target == "drizzle" and user.pethouse.misses == 7  # switching keeps the pity
     assert await pets.set_target(user, None, REG) is None and user.pethouse.target is None
     with pytest.raises(pets.PetError, match="no such pet"):
         await pets.set_target(user, "unicorn", REG)
@@ -457,7 +458,7 @@ async def test_the_pet_house_lets_you_aim_and_shows_your_chances(db):
     await user.refresh()
     assert user.pethouse.target == "tempest"
     page = all_text(nav)
-    assert "Tempest" in page and "Hunting" in page and "%" in page
+    assert "Tempest" in page and "Hunting" in page and "boost" in page
     await choose(nav, inter, select_named(nav, "Hunt a pet"), "none")
     await user.refresh()
     assert user.pethouse.target is None and "Hunting" not in all_text(nav)
@@ -507,10 +508,13 @@ async def test_food_of_a_pets_own_skill_is_worth_triple_a_global_pet_gets_double
     assert await user.item_quantity("food_fish_flakes") == 10 - 2 - 1 and user.pethouse.active == "drizzle"  # (feeding a pet does not make it active)
 
 
-async def test_crops_are_farming_food_so_a_farming_pet_gets_triple_for_them(db):
+async def test_crops_give_every_pet_the_matched_bonus(db):
     user = await with_pet("dew", xp=0)
     await user.add_item("crop_lemon", 2)
     assert (await pets.feed(user, "crop_lemon", 2, REG)).xp == 2 * REG.item("crop_lemon").crop.pet_xp * REG.economy.pets.matched_food_multiplier
+    cat = await with_pet("cinder", xp=0)  # a non-farming pet gets the same
+    await cat.add_item("crop_lemon", 1)
+    assert (await pets.feed(cat, "crop_lemon", 1, REG)).xp == REG.item("crop_lemon").crop.pet_xp * REG.economy.pets.matched_food_multiplier
 
 
 async def test_feeding_can_name_a_pet_you_do_not_have_and_gives_the_food_back_when_it_fails(db):
@@ -584,7 +588,7 @@ async def test_the_pet_page_puts_the_description_under_the_name_and_stars_only_o
     head = next(c.content for c in nav.walk_children() if isinstance(c, ui.TextDisplay) and "Haze" in c.content and "###" in c.content)
     lines = head.splitlines()
     assert "Haze" in lines[0] and "⭐⭐⭐" in lines[0]
-    assert lines[1] == f"-# {REG.pets['haze'].description}"  # right under the name, above the xp bar
+    assert lines[1] == f"-# {pets.max_buffs(REG.pets['haze'])} (max level)"  # right under the name, above the xp bar
     assert "Global 🌐" in head and "Looks after" not in head and "any food" not in head
     menu = select_named(nav, "Look at a pet")
     assert [o.label for o in menu.options] == ["Drizzle ⭐⭐", "Haze ⭐⭐⭐"]  # unicode stars in the dropdown label (custom emoji do not render there)

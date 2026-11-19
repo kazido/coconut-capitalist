@@ -158,7 +158,7 @@ class Item(_Data):
     crop: Crop | None = None
     seed: Seed | None = None
     tool: Tool | None = None
-    stars: int = Field(default=1, ge=1, le=3)  # quality tier. Tier 2 and 3 items are GENERATED from a base item (`star_of`), see StarRules
+    stars: int = Field(default=0, ge=0, le=3)  # quality tier (0 = no star, the default). Tier 1-3 items are GENERATED from a base item (`star_of`), see StarRules
     star_of: str | None = None  # the base (1-star) item id, for a generated star variant
 
     _id = field_validator("id")(check_id)
@@ -200,7 +200,7 @@ class Item(_Data):
     @property
     def display(self) -> str:
         """Emoji (if any) followed by the name; a starred material shows star icons instead of the ★ marks in its name."""
-        name = self.name.rsplit(" ", 1)[0] + " " + emojis.stars(self.stars) if self.star_of and self.stars > 1 else self.name
+        name = self.name.rsplit(" ", 1)[0] + " " + emojis.stars(self.stars) if self.star_of and self.stars > 0 else self.name
         return f"{self.emoji} {name}" if self.emoji else name
 
 
@@ -212,6 +212,36 @@ class PetBonus(_Data):
     text: str  # how it reads, with {v} for the number
 
 
+class PetLoadout(_Data):
+    """The simulated "mini you" a pet is scored from (see PetScoreRules and services/pet_score.py). Nothing here is a real item."""
+
+    tool_tier: int = Field(ge=0, le=4)  # 0 = a fresh tool ... 4 = a forked one
+    mastery_score: int = Field(ge=0, le=100)  # mastery points the pet "has spent"
+    enchants: dict[str, int] = Field(default_factory=dict)  # enchant id -> level (checked against enchants.toml by the registry)
+
+
+class PetScoreRules(_Data):
+    """configs/pet_score.toml: formula constants, sidekick bonus, passive and haul caps, fuel tank. All TODO(balance)."""
+
+    tool_tier_weight: float = Field(ge=0)
+    enchant_level_weight: float = Field(ge=0)
+    mastery_weight: float = Field(ge=0)
+    rarity_weight: float = Field(ge=0)
+    level_floor: float = Field(gt=0, le=1)
+    star_bonus: float = Field(ge=0)
+    global_proficiency: float = Field(gt=0, le=1)
+    lent_tool_weight: float = Field(ge=0)
+    sidekick_per_points: float = Field(gt=0)
+    sidekick_star_weight: float = Field(ge=0)
+    sidekick_cap: float = Field(ge=0)
+    passive_per_score: float = Field(ge=0)
+    passive_cap: float = Field(ge=0)
+    haul_active_share: float = Field(gt=0, le=1)
+    haul_xp_per_score_hour: float = Field(ge=0)
+    tank_cap_hours: float = Field(gt=0)
+    fuel_minutes_per_value: float = Field(gt=0)
+
+
 class Pet(_Data):
     id: str
     name: str
@@ -220,6 +250,7 @@ class Pet(_Data):
     rarity: int = Field(default=1, ge=1, le=5)
     description: str = ""
     bonuses: list[PetBonus] = Field(default_factory=list)
+    loadout: PetLoadout
 
     _id = field_validator("id")(check_id)
 
@@ -462,7 +493,7 @@ class WyrmholeRules(_Data):
     gem_bonus: int = Field(ge=0)
     min_odds: int = Field(ge=2)
     min_depth: int = Field(ge=0)  # first row (0-based) a wyrmhole can show in...
-    max_depth: int = Field(ge=0)  # ...and the last: deeper ones would only tease a player whose mine collapses before they reach it
+    max_depth: int | None = Field(default=None, ge=0)  # ...and the last, or None for no cap (every row from min_depth down can hold one)
     big_chance: float = Field(gt=0, le=1)  # digging into a wyrmhole opens a BIG one with this chance, else a small one
     implosion_item: str
     columns: int = Field(ge=2)  # nodes per row
@@ -473,7 +504,7 @@ class WyrmholeRules(_Data):
 
     @model_validator(mode="after")
     def _depths(self):
-        if self.max_depth < self.min_depth:
+        if self.max_depth is not None and self.max_depth < self.min_depth:
             raise ValueError("wyrmhole: max_depth must be at least min_depth")
         return self
 
@@ -580,7 +611,8 @@ class DescentRules(_Data):
     cache_chance: float = Field(ge=0, le=1)  # supplies: +braces
     cache_min_depth: int = Field(ge=0)
     cache_braces: int = Field(ge=1)
-    bomb_pressure: float = Field(ge=0)  # a bomb clears a whole row for this flat pressure
+    bomb_pressure: float = Field(ge=0)  # the Auto-Bomb charge clears a whole row for this flat pressure
+    bomb_layers: int = Field(ge=1)  # rows a scarab bomb blows down, with no pressure added
     bombs_per_run: int = Field(ge=0)  # most bombs you can carry into one run
     lookahead: int = Field(ge=1, le=3)  # how many rows ahead you can see
     vault_gem_chance: float = Field(ge=0, le=1)  # chance the vault also holds one random reactor gem (gems are rare!)
@@ -1270,27 +1302,27 @@ class PetRules(_Data):
 
 class StarAnchor(_Data):
     """One point of the star curve: at `progress` (0 = the first forest / the top of the mine / the shallowest water, 1 = the deepest) a starrable
-    drop is 1, 2 or 3 stars with these relative weights. Between anchors the weights are blended in a straight line."""
+    drop is plain, 1, 2 or 3 stars with these relative weights. Between anchors the weights are blended in a straight line."""
 
     progress: float = Field(ge=0, le=1)
-    weights: list[float] = Field(min_length=3, max_length=3)  # 1-star, 2-star, 3-star
+    weights: list[float] = Field(min_length=4, max_length=4)  # no star, 1-star, 2-star, 3-star
 
     @model_validator(mode="after")
     def _sane(self):
         if any(w < 0 for w in self.weights) or sum(self.weights) <= 0:
             raise ValueError("star weights must be non-negative and not all zero")
-        if self.weights[2] >= sum(self.weights) / 2:
+        if self.weights[3] >= sum(self.weights) / 2:
             raise ValueError("3-star must never be the majority drop")
         return self
 
 
 class StarRules(_Data):
-    """Starred materials: a material in `starrable` also exists as `<id>_s2` and `<id>_s3` (2- and 3-star), each its own inventory stack.
-    The plain id is the 1-star one. Stars only drop, they are never crafted up. Which star drops where is `configs/stars.toml` (later)."""
+    """Starred materials: a material in `starrable` also exists as `<id>_s1`, `<id>_s2` and `<id>_s3` (1-, 2- and 3-star), each its own inventory stack.
+    The plain id is the no-star one (the default drop; stars are the special, better ones). Stars only drop, they are never crafted up. Which star drops where is `configs/stars.toml` (later)."""
 
-    sell_multipliers: list[float] = Field(default_factory=lambda: [1.0, 2.5, 6.0], min_length=3, max_length=3)  # sell price of 1, 2, 3 stars x the base
+    sell_multipliers: list[float] = Field(default_factory=lambda: [1.0, 1.5, 2.5, 6.0], min_length=4, max_length=4)  # sell price of plain, 1, 2, 3 stars x the base
     starrable: list[str] = Field(default_factory=list)
-    curve: list[StarAnchor] = Field(default_factory=lambda: [StarAnchor(progress=0, weights=[1, 0, 0]), StarAnchor(progress=1, weights=[1, 0, 0])])
+    curve: list[StarAnchor] = Field(default_factory=lambda: [StarAnchor(progress=0, weights=[1, 0, 0, 0]), StarAnchor(progress=1, weights=[1, 0, 0, 0])])
 
     @model_validator(mode="after")
     def _climbing(self):

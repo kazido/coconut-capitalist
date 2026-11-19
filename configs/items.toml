@@ -1,6 +1,6 @@
 # Item registry (typed; validated by cococap/registry on startup).
 # Ids are lowercase snake_case and are what players' inventories store -- never rename one without a data migration.
-# Seeds are `<crop>_seed`. rarity: 1 Common .. 7 Mythical. price 0 = not sold in the shop; drop.rate = 1-in-N.
+# Seeds are `<crop>_seed`. rarity: 1 Common .. 6 Mythical, 7 Premium, 8 Celestial. price 0 = not sold in the shop; drop.rate = 1-in-N.
 
 [spirit_of_the_sword]
 name = "Spirit of the Sword"
@@ -142,7 +142,7 @@ sell_price = 50000000
 seed = "seed_ambrosia"
 min_harvest = 1
 max_harvest = 1
-pet_xp = 500000
+pet_xp = 2500000
 
 [crop_apple]
 name = "Apple"
@@ -159,7 +159,7 @@ sell_price = 1000
 seed = "seed_apple"
 min_harvest = 10
 max_harvest = 20
-pet_xp = 5
+pet_xp = 50
 
 [crop_coconut]
 name = "Coconut"
@@ -176,7 +176,7 @@ sell_price = 2000000
 seed = "seed_coconut"
 min_harvest = 1
 max_harvest = 1
-pet_xp = 10000
+pet_xp = 100000
 
 [crop_dusty_dandelion]
 name = "Dusty Dandelion"
@@ -193,7 +193,7 @@ sell_price = 50000
 seed = "seed_dusty_dandelion"
 min_harvest = 1
 max_harvest = 1
-pet_xp = 250
+pet_xp = 2500
 
 [crop_hot_pepper]
 name = "Hot Pepper"
@@ -210,7 +210,7 @@ sell_price = 300000
 seed = "seed_hot_pepper"
 min_harvest = 1
 max_harvest = 3
-pet_xp = 1450
+pet_xp = 15000
 
 [crop_lemon]
 name = "Lemon"
@@ -228,7 +228,7 @@ scroll = { item = "scroll_seedkeeper", odds = 40 }  # Seedkeeper comes only from
 seed = "seed_lemon"
 min_harvest = 3
 max_harvest = 5
-pet_xp = 175
+pet_xp = 1750
 
 [crop_wilted_rose]
 name = "Wilted Rose"
@@ -245,7 +245,7 @@ sell_price = 1000000
 seed = "seed_wilted_rose"
 min_harvest = 1
 max_harvest = 3
-pet_xp = 5000
+pet_xp = 50000
 
 [key_graveyard]
 name = "Graveyard Key"
@@ -1377,7 +1377,7 @@ requirement = 0
 [tool_scarab_bomb]
 name = "Scarab Bomb"
 description = "Careful handling these, they can be quite dangerous."
-wiki = "Take it down the mines (up to 3 per run). Blows an entire row at once: you collect every cell in it, vents and lodes included, for a flat bit of pressure and no collapse check."
+wiki = "Take it down the mines (up to 3 per run). Blows 5 rows down at once: you collect every cell in them, vents and lodes included. It adds no pressure and has no collapse check. A wyrmhole in those rows is taken after the blast."
 emoji = "💣"
 rarity = 4
 skill = "mining"
@@ -1407,7 +1407,7 @@ sell_price = 40000
 seed = "seed_blueberry"
 min_harvest = 6
 max_harvest = 9
-pet_xp = 200
+pet_xp = 2000
 
 [seed_blueberry]
 name = "Blueberry Seed"
@@ -1439,7 +1439,7 @@ sell_price = 400000
 seed = "seed_watermelon"
 min_harvest = 2
 max_harvest = 4
-pet_xp = 2000
+pet_xp = 20000
 
 [seed_watermelon]
 name = "Watermelon Seed"
@@ -1471,7 +1471,7 @@ sell_price = 1500000
 seed = "seed_starfruit"
 min_harvest = 1
 max_harvest = 2
-pet_xp = 7500
+pet_xp = 75000
 
 [seed_starfruit]
 name = "Starfruit Seed"
@@ -1504,7 +1504,7 @@ sell_price = 100000
 seed = "seed_rustroot"
 min_harvest = 2
 max_harvest = 4
-pet_xp = 500
+pet_xp = 5000
 
 [seed_rustroot]
 name = "Rustroot Seed"
@@ -1536,7 +1536,7 @@ sell_price = 700000
 seed = "seed_marketfig"
 min_harvest = 1
 max_harvest = 3
-pet_xp = 3500
+pet_xp = 35000
 
 [seed_marketfig]
 name = "Marketfig Seed"
@@ -1568,7 +1568,7 @@ sell_price = 1200000
 seed = "seed_cloudberry"
 min_harvest = 1
 max_harvest = 3
-pet_xp = 6000
+pet_xp = 60000
 
 [seed_cloudberry]
 name = "Cloudberry Seed"
@@ -1600,7 +1600,7 @@ sell_price = 10000000
 seed = "seed_voidbloom"
 min_harvest = 1
 max_harvest = 1
-pet_xp = 40000
+pet_xp = 500000
 
 [seed_voidbloom]
 name = "Voidbloom Seed"

@@ -67,10 +67,11 @@ class Rarities(Enum):
     COMMON = (1, "Common", "0x8E9AAF")
     UNCOMMON = (2, "Uncommon", "0x4FCB6B")
     RARE = (3, "Rare", "0x3D8BFF")
-    SUPER_RARE = (4, "Super Rare", "0xA855F7")
+    SUPER_RARE = (4, "Super Rare", "0xC56CF0")
     LEGENDARY = (5, "Legendary", "0xFFB020")
-    PREMIUM = (6, "Premium", "0xFF4D4D")
-    MYTHICAL = (7, "Mythical", "0xFF4FD8")
+    MYTHICAL = (6, "Mythical", "0xFF4FD8")
+    PREMIUM = (7, "Premium", "0xFF4D4D")
+    CELESTIAL = (8, "Celestial", "0xFFF3A0")  # reserved for later; its art border is a gold -> cyan gradient (art/palette.toml color2)
 
     def __new__(cls, value, name, color):
         obj = object.__new__(cls)

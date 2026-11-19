@@ -1,0 +1,28 @@
+# Pet sidekicks: a pet is a simulated "mini you" in ONE skill. Its SCORE comes from its loadout (tool tier, enchants, mastery score) times
+# its proficiency, level and stars; the score sets a small passive bonus while you play plus an idle haul while the fuel tank lasts.
+# Nothing is visible and nothing real is simulated. See docs/plans/pet-sidekicks.md.   TODO(balance): every number in this file
+
+# ---- Score formula -------------------------------------------------------------------------------------------------------------------
+tool_tier_weight = 1.0        # score from each tool tier of the loadout (0 = a fresh tool ... 4 = forked)
+enchant_level_weight = 0.6    # score from each enchant level on the loadout
+mastery_weight = 0.15         # score from each mastery point in the loadout
+rarity_weight = 0.5           # extra score per rarity above 1 (rare pets also gain more xp)
+level_floor = 0.1             # a level-1 pet counts this share of its loadout; max level counts all of it
+star_bonus = 0.25             # each extra star adds this share (matches the old pet bonus curve)
+global_proficiency = 0.6      # global pets (Dog, Koala, Phoenix...) work in every skill at this share of a specialist's score
+lent_tool_weight = 0.5        # a real tool lent to the pet adds its power times this to the score
+
+# ---- Sidekicks: inactive pets help the active one --------------------------------------------------------------------------------------
+sidekick_per_points = 10      # +1% output per this many combined (level + stars-weighted) points of ALL inactive pets
+sidekick_star_weight = 5      # one star counts as this many levels
+sidekick_cap = 0.5            # the sidekick bonus never exceeds +50%
+
+# ---- Passive bonus and idle haul -------------------------------------------------------------------------------------------------------
+passive_per_score = 0.01      # passive bonus (a share, e.g. 0.01 = +1%) per point of score
+passive_cap = 0.25            # the passive bonus never exceeds +25%
+haul_active_share = 0.15      # a fully fueled MAX pet earns at most this share of an active player's pay per hour (guard test)
+haul_xp_per_score_hour = 20   # skill xp per hour for each point of score (before the cap)
+
+# ---- Fuel tank (crops fuel the ACTIVE pet; online play never needs fuel) -----------------------------------------------------------------
+tank_cap_hours = 8            # the tank holds this many hours of work
+fuel_minutes_per_value = 0.02 # minutes of fuel per bit of crop sell price

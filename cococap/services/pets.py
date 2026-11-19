@@ -79,8 +79,11 @@ def food_skill(item: Item) -> str | None:
 
 
 def food_multiplier(pet: Pet, item: Item, registry: Registry | None = None) -> float:
-    """How much more this food is worth to this pet: x3 for its own skill, x2 for a pet with no skill, x1 otherwise."""
+    """How much more this food is worth to this pet: x3 for its own skill, x2 for a pet with no skill, x1 otherwise.
+    Crops are the exception: any pet gets the full matched bonus from them (they are a sellable currency, not a free drop)."""
     rules = (registry or get_registry()).economy.pets
+    if item.crop:
+        return rules.matched_food_multiplier
     skill = pet.skill
     if skill == "global":
         return rules.global_food_multiplier
@@ -147,6 +150,11 @@ def describe(pet: Pet, owned: OwnedPet, registry: Registry | None = None) -> lis
              for bonus in pet.bonuses]
     lines += [f"+{reg.economy.pets.spirit_bonus:.0%} {skill} xp (Spirit)" for skill in owned.spirits]
     return lines
+
+
+def max_buffs(pet: Pet) -> str:
+    """The pet's buffs at max level with one star, in words (the numbers the wiki lists)."""
+    return " · ".join(bonus.text.format(v=bonus.value) for bonus in pet.bonuses)
 
 
 async def bonuses(user: User, registry: Registry | None = None) -> dict[str, float]:
@@ -292,8 +300,8 @@ async def set_target(user: User, pet_id: str | None, registry: Registry | None =
             raise PetError(f"Your {reg.pets[pet_id].name} already has every star.")
 
     def aim(house: Pethouse) -> None:
-        if house.target != pet_id:
-            house.misses = 0  # a new hunt starts from nothing
+        # Misses are kept when you switch: the pity you built up still counts toward whatever you hunt next
+        # (a hit on any pet resets it, in open_orb).
         house.target = pet_id
 
     await user.update_pethouse(aim)

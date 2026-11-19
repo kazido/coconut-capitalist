@@ -511,17 +511,17 @@ def test_wyrmholes_never_show_in_the_rows_visible_when_a_mine_opens():
     assert RULES.wyrmhole.min_depth > RULES.descent.lookahead  # (else you could reset mines until one shows)
 
 
-def test_wyrmholes_only_show_between_the_minimum_and_maximum_depth():
-    deep_holes = 0
+def test_wyrmholes_never_show_above_the_minimum_depth_and_show_deep_down():
+    holes = 0
     for seed in range(60):
         run = make_run(seed, wyrmhole_odds_value=2)  # 50% per cell, to make them common
-        for depth in range(RULES.wyrmhole.max_depth + 4):
+        for depth in range(RULES.wyrmhole.min_depth + 40):
             run.row(depth)
-            if not RULES.wyrmhole.min_depth <= depth <= RULES.wyrmhole.max_depth:  # (too deep and the mine would collapse before you reach it)
+            if depth < RULES.wyrmhole.min_depth:
                 assert run._holes[depth] == set(), (seed, depth)
             else:
-                deep_holes += len(run._holes[depth])
-    assert deep_holes > 100
+                holes += len(run._holes[depth])
+    assert holes > 100
 
 
 def test_digging_several_columns_collects_each_and_adds_each_ones_pressure():
@@ -651,23 +651,40 @@ def test_a_brace_and_the_magnet_drain_read_the_configured_numbers():
 
 
 # ---- bombs ---------------------------------------------------------------------------------------------
-def test_a_bomb_clears_the_whole_row_for_a_flat_pressure_and_skips_wyrmholes():
+L = D.bomb_layers
+ROW = [COPPER, GOLD, None, COPPER, None]
+KINDS = ["ore", "ore", "ore", "ore", "vent"]
+
+
+def test_a_bomb_blows_ten_rows_for_no_pressure():
     run = make_run(bombs=2, cursors=[2])
-    force_row(run, [COPPER, GOLD, None, COPPER, None], kinds=["ore", "ore", "ore", "ore", "vent"], holes={3})
+    for depth in range(L):
+        force_row(run, ROW, kinds=KINDS, depth=depth)
     run.rng = Rig(0.99)
     run.danger = 30
     result = run.bomb()
-    assert result.bombed and run.depth == 1 and run.bombs == 1 and run.bombs_used == 1
-    assert result.found == Counter(material_copper_ore=1, material_gold_ore=1) and run.lodes == 4  # the hole was left alone
-    assert run.history[0].dug == (0, 1, 2, 4)
-    assert run.danger == pytest.approx(30 + D.creak + D.bomb_pressure - D.vent_relief)
+    assert result.bombed and not result.wyrmhole and not run.finished
+    assert run.depth == L and run.bombs == 1 and run.bombs_used == 1
+    assert result.found == Counter(material_copper_ore=2 * L, material_gold_ore=L) and run.lodes == 5 * L
+    assert run.danger == pytest.approx(30)  # the blast adds no pressure
+
+
+def test_a_wyrmhole_in_the_blast_is_taken_after_it_and_the_rest_is_still_blown():
+    run = make_run(bombs=1, cursors=[2])
+    for depth in range(L):
+        force_row(run, ROW, kinds=KINDS, holes={3} if depth == 4 else (), depth=depth)
+    run.rng = Rig(0.99)
+    result = run.bomb()
+    assert result.wyrmhole and run.outcome == "wyrmhole" and run.depth == L
+    assert run.history[4].dug == (0, 1, 2, 4)  # the wyrmhole itself is not blown
+    assert result.found == Counter(material_copper_ore=2 * L, material_gold_ore=L) - Counter(material_copper_ore=1)
 
 
 def test_a_bomb_skips_the_collapse_check_even_when_the_mine_is_about_to_go():
     run = make_run(bombs=1)
     run.danger, run.rng = 95, Rig(0.0)  # the dice would collapse a normal dig
     result = run.bomb()
-    assert not result.collapsed and not run.finished
+    assert not result.collapsed and run.outcome != "collapse"
 
 
 def test_bombs_need_bombs():
@@ -730,8 +747,20 @@ def test_the_vault_holds_all_three_ores_in_proportion_to_how_often_they_drop():
 def test_a_bomb_on_the_last_row_also_opens_the_vault():
     run = make_run(bombs=1)
     run.depth = D.floor - 1
+    force_row(run, ROW, kinds=KINDS)
     run.rng = Rig(0.99)
     assert run.bomb().vault and run.outcome == "floor"
+
+
+def test_a_wyrmhole_is_taken_even_when_the_blast_reaches_the_vault():
+    run = make_run(bombs=1)
+    run.depth = D.floor - 3
+    for depth in range(run.depth, D.floor):
+        force_row(run, ROW, kinds=KINDS, holes={3} if depth == D.floor - 2 else (), depth=depth)
+    run.rng = Rig(0.99)
+    result = run.bomb()
+    assert result.vault and result.wyrmhole and run.outcome == "wyrmhole" and run.depth == D.floor
+    assert sum(result.vault.values()) > 0
 
 
 # ---- why steering matters --------------------------------------------------------------------------------
@@ -893,7 +922,7 @@ async def test_reaching_the_floor_banks_the_vault(db):
         run.danger = 0
         run.dig()
     summary = await m.settle_run(user, run)
-    assert summary.outcome == "floor" and all([sum([await user.item_quantity(i) for i in (ore, f"{ore}_s2", f"{ore}_s3")]) >= q for ore, q in D.vault_ore.items()])  # (a starrable ore may come up starred)
+    assert summary.outcome == "floor" and all([sum([await user.item_quantity(i) for i in (ore, f"{ore}_s1", f"{ore}_s2", f"{ore}_s3")]) >= q for ore, q in D.vault_ore.items()])  # (a starrable ore may come up starred)
 
 
 async def test_settling_an_unfinished_run_is_refused_and_abandoning_climbs_out_safely(db):

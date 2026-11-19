@@ -5,7 +5,7 @@ Keenness, Sharp Eye, Scholar, Appraiser, Veinfinder, Bounty and Fertile are gone
 on a tool are stripped from the tool's `enchants`. The prices are written out here (copied from `configs/items.toml` before the
 items were removed) so this migration does not depend on the config.
 
-Revision ID: 0012
+Revision ID: 0013
 Revises: 0011
 """
 import json
@@ -14,8 +14,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = '0012'
-down_revision = '0011'
+revision = '0013'
+down_revision = '0012'
 branch_labels = None
 depends_on = None
 
@@ -30,7 +30,7 @@ RETIRED_ENCHANTS = {"keen", "sharp_eye", "scholar", "appraiser", "veinfinder", "
 def retire_scrolls(conn) -> None:
     """Pay out and delete every held stack of a retired scroll (star variants too), then strip retired enchants from tools."""
     for scroll_id, price in RETIRED.items():
-        for item_id in (scroll_id, f"{scroll_id}_s2", f"{scroll_id}_s3"):
+        for item_id in (scroll_id, f"{scroll_id}_s1", f"{scroll_id}_s2", f"{scroll_id}_s3"):  # (any star tier)
             held = conn.execute(
                 sa.text("SELECT user_id, quantity FROM user_items WHERE item_id = :item AND quantity > 0"), {"item": item_id}
             ).fetchall()

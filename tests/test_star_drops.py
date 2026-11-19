@@ -55,7 +55,7 @@ async def test_a_felled_forest_drop_lands_as_the_star_apply_chose(db, monkeypatc
     tree = fg.Tree(RULES.zones, 100, 100)
     tree.chop(100, 1.0)
     reward = await fg.fell_private(user, tree, Random(3), REG)
-    star = stars.star_id(HARDWOOD, 3) if stars.weights(1.0)[2] > 0 else stars.star_id(HARDWOOD, 2)
+    star = stars.star_id(HARDWOOD, 3) if stars.weights(1.0)[3] > 0 else stars.star_id(HARDWOOD, 2)
     assert reward.drops == Counter({star: 5})
     assert await user.item_quantity(star) == 5
 
@@ -77,6 +77,6 @@ async def test_landing_a_catch_stars_its_extras_by_water_depth(db, monkeypatch, 
         for arrow in cast.pattern:
             cast.press(arrow, T0 + 11)
         await f.land(user, cast, REG)
-        held = [await user.item_quantity(stars.star_id(CORAL, n)) for n in (1, 2, 3)]
+        held = [await user.item_quantity(stars.star_id(CORAL, n)) for n in range(4)]  # plain + 1/2/3-star
         assert sum(held) == 2
     assert spy_apply == [stars.progress(1, len(waters)), stars.progress(len(waters), len(waters))] == [0.0, 1.0]

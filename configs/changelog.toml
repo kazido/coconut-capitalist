@@ -10,6 +10,24 @@
 #   major = true for a big change (shown with a star), false for a grouped list of small ones
 
 [[entry]]
+date = "2026-11-19"
+title = "Scarab bombs blast 5 rows, and cost a spread of ores"
+body = "- A Scarab Bomb now blows 5 rows down at once (was 10). It still adds no pressure and has no collapse risk.\n- Scarab Bombs now take 7 kinds of ore to craft (copper, iron, tin, silver, gold, obsidian, amber), not 3."
+major = false
+
+[[entry]]
+date = 2026-11-19
+title = "Scarab bombs blast 10 rows"
+body = "- A Scarab Bomb now blows 10 rows down at once, and adds no pressure, so it never adds collapse risk.\n- A wyrmhole inside those rows is taken after the blast, even if the blast reached the vault. Its rewards are banked first."
+major = false
+
+[[entry]]
+date = 2026-11-19
+title = "Wyrmholes can show deeper"
+body = "- Wyrmholes can now show up in every row from row 6 down, not just rows 6 to 10."
+major = false
+
+[[entry]]
 date = 2026-11-19
 title = "Tools are smithed now"
 major = true

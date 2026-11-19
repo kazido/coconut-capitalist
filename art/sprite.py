@@ -23,7 +23,7 @@ GRID = 16
 RAVEN_SHEET = "Full Spritesheet/16x16.png"
 
 
-SHINE_MIN_RARITY = 6  # Premium and Mythical items shine; set to 8 to turn the shine off
+SHINE_MIN_RARITY = 6  # Mythical, Premium and Celestial items shine; set to 8 to turn the shine off
 
 
 class SpriteError(ValueError):
@@ -51,8 +51,8 @@ def _check_name(name: str, where: str) -> None:
 
 
 def _check_rarity(r: int, name: str) -> int:
-    if not isinstance(r, int) or not 1 <= r <= 7:
-        raise SpriteError(f"{name}: rarity must be 1-7, got {r!r}")
+    if not isinstance(r, int) or not 1 <= r <= 8:
+        raise SpriteError(f"{name}: rarity must be 1-8, got {r!r}")
     return r
 
 

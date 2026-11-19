@@ -8,7 +8,7 @@ from pathlib import Path
 
 from pydantic import ValidationError
 
-from .models import LOCATIONS_PER_AREA, AccessoryRules, AreaRules, ChangelogEntry, LegacyTool, MarketRules, Notice, Location, ScrollRules, ShipmentRules, SmithingRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, Rank, Recipe, Skill
+from .models import LOCATIONS_PER_AREA, AccessoryRules, AreaRules, ChangelogEntry, LegacyTool, MarketRules, Notice, Location, ScrollRules, ShipmentRules, SmithingRules, ToolRules, MasteryRules, CombatRules, DropTable, EconomyRules, BestiaryRules, Enchant, Enemy, FarmingRules, FishingRules, ForagingRules, Item, MiningRules, Pet, PetScoreRules, Rank, Recipe, Skill
 
 CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
@@ -89,6 +89,7 @@ class Registry:
         shipments: ShipmentRules | None = None,
         scrolls: ScrollRules | None = None,
         recipes: list[Recipe] | None = None,
+        pet_score: PetScoreRules | None = None,
         areas: AreaRules | None = None,
         locations: dict[str, list[Location]] | None = None,
         notices: list[Notice] | None = None,
@@ -110,6 +111,7 @@ class Registry:
         self.enchants: dict[str, Enchant] = {e.id: e for e in enchants or []}
         self.mining = mining
         self.economy = economy
+        self.pet_score = pet_score
         self.farming = farming
         self.foraging = foraging
         self.fishing = fishing
@@ -340,6 +342,11 @@ class Registry:
             if sum(weights.values()) <= 0 or any(w < 0 for w in weights.values()) or any(not 1 <= r <= 5 for r in weights):
                 problems.append(f"economy.toml [pets.orbs.{orb_id}]: weights must be >= 0, add up to something, and be for rarities 1-5")
         for pet in self.pets.values():
+            for eid, lvl in pet.loadout.enchants.items():
+                if eid not in self.enchants:
+                    problems.append(f"pets.toml [{pet.id}.loadout]: unknown enchant '{eid}'")
+                elif not 1 <= lvl <= self.enchants[eid].max_level:
+                    problems.append(f"pets.toml [{pet.id}.loadout]: enchant '{eid}' level {lvl} is outside 1-{self.enchants[eid].max_level}")
             if pet.rarity not in self.economy.pets.xp_scale:
                 problems.append(f"economy.toml [pets.xp_scale] has no scale for rarity {pet.rarity} ({pet.id})")
         expected = list(range(len(self.ranks)))
@@ -429,11 +436,11 @@ def _validate_mining_items(reg: "Registry", rules: MiningRules) -> list[str]:
     return problems
 
 
-STAR_MARKS = {2: "★★", 3: "★★★"}
+STAR_MARKS = {1: "★", 2: "★★", 3: "★★★"}
 
 
 def star_variants(items: list[Item], rules) -> list[Item]:
-    """The 2- and 3-star versions of every starrable material: `<id>_s2`, `<id>_s3`. Own stacks, never in a drop pool (`drop` is None: stars are
+    """The 1-, 2- and 3-star versions of every starrable material: `<id>_s1`, `<id>_s2`, `<id>_s3`. Own stacks, never in a drop pool (`drop` is None: stars are
     rolled by the star service when the base item drops), not sold in shops, sell price = base x the star multiplier."""
     by_id = {i.id: i for i in items}
     out = []
@@ -441,15 +448,15 @@ def star_variants(items: list[Item], rules) -> list[Item]:
         base = by_id.get(item_id)
         if base is None:
             raise RegistryError(f"economy.toml [stars]: starrable item '{item_id}' does not exist")
-        if base.category != "material" or base.tool or base.stars != 1:
+        if base.category != "material" or base.tool or base.stars != 0:
             raise RegistryError(f"economy.toml [stars]: '{item_id}' must be a plain material")
-        for stars in (2, 3):
+        for stars in (1, 2, 3):
             vid = f"{item_id}_s{stars}"
             if vid in by_id:
                 raise RegistryError(f"economy.toml [stars]: '{vid}' already exists as an item")
             out.append(base.model_copy(update={
                 "id": vid, "name": f"{base.name} {STAR_MARKS[stars]}", "stars": stars, "star_of": item_id, "drop": None, "price": 0,
-                "sell_price": round(base.sell_price * rules.sell_multipliers[stars - 1]) if base.sell_price else 0,
+                "sell_price": round(base.sell_price * rules.sell_multipliers[stars]) if base.sell_price else 0,
                 "wiki": f"{base.wiki} A {stars}-star version: same use, better quality, its own stack (it does not stack with the plain one).".strip(),
             }))
     return out
@@ -486,13 +493,14 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     accessories = _build(AccessoryRules, "accessories", [("accessories", _read(config_dir, "accessories"))])[0]
     scrolls = _build(ScrollRules, "scrolls", [("scrolls", _read(config_dir, "scrolls"))])[0]
     recipes = _build(Recipe, "recipes", ((k, {"id": k, **v}) for k, v in _read(config_dir, "recipes").items()))
+    pet_score = _build(PetScoreRules, "pet_score", [("pet_score", _read(config_dir, "pet_score"))])[0]
     notices = _build(Notice, "notices", ((n.get("id", f"#{i}"), n) for i, n in enumerate(_read(config_dir, "notices").get("notice", []))))
     seen = [n.id for n in notices]
     if dupes := sorted({i for i in seen if seen.count(i) > 1}):
         raise RegistryError(f"notices.toml: duplicate id(s) {dupes} (seen ids are stored per player, so every notice needs its own)")
     changelog = _build(ChangelogEntry, "changelog", ((f"entry {i + 1}", e) for i, e in enumerate(_read(config_dir, "changelog").get("entry", []))))
     return Registry(items, pets, enemies, ranks, enchants, mining, economy, farming, foraging, fishing, combat, drops, bestiary, mastery, tools,
-                    shipments, scrolls, recipes, areas, locations, notices=notices, changelog=changelog, smithing=smithing,
+                    shipments, scrolls, recipes, pet_score, areas, locations, notices=notices, changelog=changelog, smithing=smithing,
                     legacy_tools=legacy_tools, market=market, accessories=accessories)
 
 

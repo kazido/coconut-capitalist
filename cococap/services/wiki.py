@@ -19,6 +19,7 @@ TOPICS: list[tuple[str, str, str]] = [  # (id, title, emoji)
     ("crafting", "Crafting: the Workbench", "🛠️"),
     ("tools", "Tools and upgrades", "🔨"),
     ("enchants", "Enchants and scrolls", "📜"),
+    ("stars", "Starred materials", "⭐"),
     ("pets", "Pets", "🐾"),
     ("party", "Parties", "👥"),
     ("items", "Item lookup", "🎒"),
@@ -34,7 +35,7 @@ def _materials(items: dict[str, int], reg: Registry) -> str:
 
 
 # A topic shown as several pages (the wiki screen pages through them with arrows). Each part is a `_PAGES` id.
-GROUPS: dict[str, list[str]] = {"fish": ["fish", "fish2"], "waters": ["waters", "waters2"], "tools": ["tools", "tools2", "tools3"]}
+GROUPS: dict[str, list[str]] = {"fish": ["fish", "fish2"], "waters": ["waters", "waters2"], "tools": ["tools", "tools2", "tools3"], "pets": ["pets", "pets2"]}
 
 
 def parts(topic: str) -> list[str]:
@@ -71,14 +72,14 @@ def _mining(reg: Registry) -> list[str]:
         f"**Mining** needs a pickaxe. You dig down a **{m.columns}-column mine, {m.descent.floor} rows deep**. Each row you dig makes the mine creak "
         "more (pressure), and the deeper you are the likelier a collapse. A collapse halves what you are carrying, so leave in time.",
         "**Reading the mine.** Signs tell you what lies below: ore, a rich lode, a cooling vent, a cache or a hole. Braces calm the pressure "
-        f"(you start with {m.descent.braces_base}), Scarab Bombs blow a whole row, and the vault at the bottom pays big.",
+        f"(you start with {m.descent.braces_base}), Scarab Bombs blow {m.descent.bomb_layers} rows, and the vault at the bottom pays big.",
         f"**Ores** and other mining materials sell or feed the **magnet** (level {m.magnet.level}): its meter holds {_n(m.magnet.capacity)} points (any mining material is worth "
         f"its sell price / {m.magnet.bits_per_point}, at least 1) and every row you dig with it on marks the richest column and burns {m.magnet.drain_per_row:g}. "
         "What is left stays for the next mine, and you can only feed it outside a mine. **Gems** are rare; with mining level {m.reactor.gem_slot_level} you can set them in the **reactor**, which also "
         "mines lodes for you while you are away.",
         "**Kinds of mine.** Every mine you enter is rolled: most are **Standard**, but now and then you get one with a twist, shown at the top of the mine before you dig. "
         + "; ".join(f"{t.emoji} **{t.name}** ({t.description.rstrip('.').lower()})" for t in m.mine_types[1:]) + ".",
-        f"**Wyrmholes.** Now and then a lode in the shaft is replaced by a **wyrmhole** (you see them {m.descent.lookahead} rows ahead, only in rows {m.wyrmhole.min_depth + 1} to {m.wyrmhole.max_depth + 1}). "
+        f"**Wyrmholes.** Now and then a lode in the shaft is replaced by a **wyrmhole** (you see them {m.descent.lookahead} rows ahead, only in row {m.wyrmhole.min_depth + 1} and down{'' if m.wyrmhole.max_depth is None else f' to row {m.wyrmhole.max_depth + 1}'}). "
         "Dig it and the mine ends (what you carry is banked) and you drop in. Most are **small**: "
         f"{m.mini_wyrmhole.columns} nodes wide and {len(m.mini_wyrmhole.rows)} rows deep, pick **one** node on each row, deeper rows pay better ore. About 1 in {round(1 / m.wyrmhole.big_chance)} is **big**, "
         "and its LAST row hides a gem: the implosion gem, or a reactor core gem you do not own yet. No hazards and no empty nodes in either, and you earn mining xp for every row.",
@@ -251,7 +252,6 @@ def _pets(reg: Registry) -> list[str]:
     rules = reg.economy.pets
     from cococap.services import pets as pet_service
 
-    odds = pet_service.orb_odds(reg)
     kinds = pet_service.orb_ids(reg)
     orb_lines = []
     for orb_id in kinds:
@@ -260,10 +260,6 @@ def _pets(reg: Registry) -> list[str]:
         by_rarity = {r: sum(c for pid, c in chances.items() if reg.pets[pid].rarity == r) for r in sorted(rules.xp_scale)}
         orb_lines.append(f"{orb.emoji} **{orb.name}** ({orb.price:,} bits): " + ", ".join(
             f"{Rarities.from_value(r).rarity_name} {c:.0%}" for r, c in by_rarity.items() if c > 0))
-    lines = []
-    for pet in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)):
-        bonus = ", ".join(b.text.format(v=b.value) for b in pet.bonuses)
-        lines.append(f"{pet.emoji} **{pet.name}** {pet_service.skill_emoji(pet)} ({Rarities.from_value(pet.rarity).rarity_name}, {odds[pet.id]:.1%} per orb): {bonus}")
     return [
         f"**Pets** hatch from **Familiar Orbs** (shop, treasure chests, boss loot). Your active pet's bonuses work everywhere. A duplicate adds a star "
         f"(up to {rules.max_stars}, +{rules.star_bonus:.0%} each), your active pet also levels as you play (it gains {rules.play_xp_share:.0%} of the xp you earn in its own skill; a global pet {rules.play_xp_global:.0%} of any), food and crops level it faster (to {rules.max_level}), and a Spirit adds skill xp. **Hunt** a pet in the "
@@ -273,13 +269,47 @@ def _pets(reg: Registry) -> list[str]:
         f"Every pet has **one skill**, shown as an emoji after its name: {emojis.icon('rod', '🎣')} fishing, {emojis.icon('pickaxe', '⛏️')} mining, {emojis.icon('tree', '🌳')} foraging, {emojis.icon('can', '🌽')} farming, {emojis.icon('sword', '⚔️')} combat, or {emojis.icon('world', '🌐')} **global** "
         f"for pets whose bonus works everywhere ({', '.join(p.name for p in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)) if p.skill == 'global')}). "
         f"Food of **a pet's own skill is worth x{rules.matched_food_multiplier:g}** to it, a {emojis.icon('world', '🌐')} global pet gets **x{rules.global_food_multiplier:g}** from any food, "
-        "and food of another skill is worth the plain amount. "
+        "and food of another skill is worth the plain amount. **Crops are the exception: every pet gets x{rules.matched_food_multiplier:g} from them.** "
         "A pet's numbers are shown at its current level (a fresh pet gives a tenth) with the max level in brackets.",
         "**Orbs** come in three kinds, bought on the Familiar Orbs page. A cheaper orb mostly gives common pets, a pricier one mostly rare ones "
-        "(chance of each rarity; the percentages beside each pet below are for the standard orb):\n" + "\n".join(orb_lines),
+        "(chance of each rarity):\n" + "\n".join(orb_lines),
+    ]
+
+
+def _pets2(reg: Registry) -> list[str]:
+    """The second pets page: levels and the full list (split so each page stays under Discord's text limit)."""
+    rules = reg.economy.pets
+    from cococap.services import pets as pet_service
+
+    odds = pet_service.orb_odds(reg)
+    lines = []
+    for pet in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)):
+        bonus = ", ".join(b.text.format(v=b.value) for b in pet.bonuses)
+        lines.append(f"{pet.emoji} **{pet.name}** {pet_service.skill_emoji(pet)} ({Rarities.from_value(pet.rarity).rarity_name}, {odds[pet.id]:.1%} per orb): {bonus}")
+    return [
         "**Levels.** Common pets level up quickest and rare pets slowest: a level costs xp of "
         + ", ".join(f"{Rarities.from_value(r).rarity_name} x{s / rules.xp_scale[3]:.2g}" for r, s in sorted(rules.xp_scale.items())) + " (relative to a rarity-3 pet).",
-        "**All pets** (bonuses at max level, one star)\n" + "\n".join(lines),
+        "**All pets** (bonuses at max level, one star; the odds are for the standard orb)\n" + "\n".join(lines),
+    ]
+
+
+def _stars(reg: Registry) -> list[str]:
+    from cococap import emojis
+    from cococap.services import stars
+
+    r = reg.economy.stars
+    rows = []
+    for label, at in (("first area", 0.0), ("a quarter down", 0.25), ("halfway", 0.5), ("three quarters down", 0.75), ("the deepest area", 1.0)):
+        w = stars.weights(at, reg)
+        rows.append(f"{label}: " + ", ".join(f"{emojis.stars(n) if n else 'plain'} {p:.0%}" for n, p in enumerate(w) if p >= 0.005))
+    mult = ", ".join(f"{emojis.stars(n) if n else 'plain'} x{m:g}" for n, m in enumerate(r.sell_multipliers))
+    names = ", ".join(reg.item(i).name for i in r.starrable)
+    return [
+        "**Starred materials** are special, higher quality versions of some materials. A normal drop has **no star**; stars (1 to 3) are the lucky ones. "
+        f"A starred material works exactly like the plain one but is its own stack and sells for more ({mult} the plain price). Stars only drop: they cannot be crafted up.",
+        f"**Which materials.** {names}.",
+        "**Where they drop.** Mining, foraging, farming and fishing all roll a star for each material stack you get. The deeper the area you work in "
+        "(the further down the list of mines, forests, waters and fields), the better the stars. Chances by depth:\n" + "\n".join(rows),
     ]
 
 
@@ -311,7 +341,7 @@ def _crafting(reg: Registry) -> list[str]:
 
 
 _PAGES = {"start": _start, "mining": _mining, "farming": _farming, "foraging": _foraging, "fishing": _fishing, "fish": lambda reg: _fish(reg, 7, 4), "fish2": lambda reg: _fish(reg, 3, 1),
-          "waters": lambda reg: _waters(reg, 0, 7), "waters2": lambda reg: _waters(reg, 7), "pots": _pots, "crafting": _crafting, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "party": _party, "items": _items}
+          "waters": lambda reg: _waters(reg, 0, 7), "waters2": lambda reg: _waters(reg, 7), "pots": _pots, "crafting": _crafting, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "pets2": _pets2, "stars": _stars, "party": _party, "items": _items}
 
 SKILL_FILTERS = ["mining", "farming", "foraging", "fishing", "combat", "general"]
 

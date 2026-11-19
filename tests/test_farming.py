@@ -576,7 +576,7 @@ async def test_a_harvest_pays_farming_materials_in_proportion_to_the_crop(db):
         found[seed] = total
     assert sum(found["seed_watermelon"].values()) > 8 * sum(found["seed_apple"].values())
     table = {i.id for i in f.zone_materials(f.seed_zone("seed_watermelon", RULES), REG)}
-    assert "material_compost" in found["seed_watermelon"] and {i.removesuffix("_s2").removesuffix("_s3") for i in found["seed_watermelon"] if i.startswith("material_")} <= table  # only its own zone's table
+    assert "material_compost" in found["seed_watermelon"] and {i.removesuffix("_s1").removesuffix("_s2").removesuffix("_s3") for i in found["seed_watermelon"] if i.startswith("material_")} <= table  # only its own zone's table
 
 
 async def test_a_plot_you_watered_and_then_harvested_does_not_use_up_the_can(db):

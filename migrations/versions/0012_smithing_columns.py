@@ -3,15 +3,15 @@
 Parts (base, trim, accent) are item instances carrying their tier in `rolled` and picked traits in `traits`. A tool smithed by a
 player keeps its `parts`, `quality`, the smith's id (`smith_id`) and cosmetic looks. Game-made items keep smith_id NULL.
 
-Revision ID: 0011
+Revision ID: 0012
 Revises: 0010
 """
 from alembic import op
 import sqlalchemy as sa
 
 
-revision = '0011'
-down_revision = '0010'
+revision = '0012'
+down_revision = '0011'
 branch_labels = None
 depends_on = None
 
