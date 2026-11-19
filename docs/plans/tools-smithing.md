@@ -1,4 +1,4 @@
-Status: APPROVED 2026-11-19. Part A (notices/changelog) proposed as its own session; step 1b (art) next on master.
+Status: BUILT and on master except: (a) the big Pillow tool picture on the Tools detail page + cosmetics (step 9, next, owner said hold until usage resets), (b) step 10 docs. Part tier = rarity (1 Common .. 8 Celestial), shops never sell tier 7-8.
 
 # Tools rework: generic parts + Smithing (replaces the upgrade ladder)
 
