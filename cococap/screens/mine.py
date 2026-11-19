@@ -18,7 +18,7 @@ from cococap import emojis
 # Map emojis come from the bot's application emojis (by name); the plain emoji is the fallback.
 def _cell() -> str: return emojis.get("cell", "⬛")
 def _cell_empty() -> str: return emojis.get("cell_empty", "▫️")
-def _rich() -> str: return emojis.get("cell_upgraded", "🟦")
+def _rich() -> str: return emojis.icon("rock_rich", "🟦")
 def _hole() -> str: return emojis.get("wyrmhole", "🌀")
 def _vent() -> str: return emojis.icon("vent", "💨")
 def _cache() -> str: return emojis.icon("cache", "📦")

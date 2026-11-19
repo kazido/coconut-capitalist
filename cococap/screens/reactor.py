@@ -39,7 +39,7 @@ class ReactorPane(Screen):
             if core.gem_id:
                 slots.append(f"{number}. {reg.item(core.gem_id).display}")
             else:
-                slots.append(f"{number}. {emojis.get('cell', '⬛')} *empty: {reg.item(wanted).name}*")
+                slots.append(f"{number}. {emojis.get('empty_cell', '⬛')} *empty: {reg.item(wanted).name}*")
         if not status["gem_slots_open"]:
             slots.append(f"-# Gem slots unlock at mining level {rules.reactor.gem_slot_level}.")
 

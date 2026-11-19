@@ -12,7 +12,7 @@ from cococap.user import Cooldowns
 class CheckInScreen(Screen):
     id = "checkin"
     label = "Check-in"
-    emoji = emojis.Lazy("ui_page", "📅")
+    emoji = emojis.Lazy("ui_checkin", "📅")
     description = "Claim your work, daily and weekly rewards"
 
     def _claim_button(self, cooldown: Cooldowns, handler):

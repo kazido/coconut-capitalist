@@ -23,7 +23,7 @@ class PetScreen(Screen):
     """Looking after your pets: who they are, who is active, feeding and Spirits. Orbs have their own page."""
 
     label = "Pets"
-    emoji = emojis.Lazy("ui_paw", "🐾")
+    emoji = emojis.Lazy("ui_pets", "🐾")
     description = "Your pets: look at them, feed them, pick who helps you"
 
     def __init__(self, nav):
@@ -227,6 +227,6 @@ class PetsScreen(TabsScreen):
 
     id = "pets"
     label = "Pets"
-    emoji = emojis.Lazy("ui_paw", "🐾")
+    emoji = emojis.Lazy("ui_pets", "🐾")
     description = "Your pets: look at them, feed them, pick who helps you"
     panes = {"pets": PetScreen, "orbs": OrbScreen}

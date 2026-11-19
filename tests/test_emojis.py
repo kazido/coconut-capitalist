@@ -132,3 +132,10 @@ def test_image_url_gives_the_big_cdn_picture_or_none():
     assert emojis.image_url("item", "fish_cod").startswith("https://cdn.discordapp.com/emojis/11.png")
     assert ".gif" in emojis.image_url("pet", "ember", size=64) and "size=64" in emojis.image_url("pet", "ember", size=64)
     assert "/33.png" in emojis.image_url("item", "material_iron_ore")
+
+
+def test_location_emoji_uses_location_id_name_when_loaded():
+    loc = next(iter(get_registry().locations.values()))[0]
+    assert loc.emoji == loc.emoji_raw
+    emojis.load([Emoji(f"location_{loc.id}", 9)])
+    assert loc.emoji == f"<:location_{loc.id}:9>"

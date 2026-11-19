@@ -35,7 +35,7 @@ class ShopPane(Screen):
     """Buy seeds and supplies, or sell what you've gathered one item at a time. The Shop page (ShopScreen)."""
 
     label = "Shop"
-    emoji = emojis.Lazy("ui_sell", "🛒")
+    emoji = emojis.Lazy("ui_shop", "🛒")
     description = "Buy seeds and supplies, or sell what you've gathered"
 
     def __init__(self, nav):
@@ -215,6 +215,6 @@ class ShopScreen(TabsScreen):
 
     id = "shop"
     label = "Shop"
-    emoji = emojis.Lazy("ui_sell", "🛒")
+    emoji = emojis.Lazy("ui_shop", "🛒")
     description = "Buy seeds and supplies, or sell what you've gathered one item at a time"
     panes = {"buy": ShopPane}
