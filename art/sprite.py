@@ -105,11 +105,18 @@ def load_wisps(path: Path) -> list[Sprite]:
     out = []
     for name, d in _read(path).items():
         _check_name(name, str(path))
-        if d.get("kind") == "flame":  # slim flame wisps (art/flame.py): animated, frameless, no outline
+        if d.get("kind") == "flame":  # slim flame wisps (art/flame.py): animated; with `rarity` they get the item rarity outline
             from art.flame import FRAME_MS, render_flame_frames
 
-            frames = render_flame_frames(d["base"], d.get("face", "core"), bool(d.get("embers", True)), d.get("accent"))
-            out.append(Sprite(name, "wisps", frames, [FRAME_MS] * len(frames), False, 1, False))
+            if d.get("special") == "aurora":  # the one Celestial pet: flowing northern-lights colours (art/flame.py)
+                from art.flame import AURORA_MS, render_aurora_frames
+
+                frames = render_aurora_frames()
+                out.append(Sprite(name, "wisps", frames, [AURORA_MS] * len(frames), True, _check_rarity(d["rarity"], name), False))
+                continue
+            framed = "rarity" in d  # pets: the rarity outline (dark ring + rarity ring) like every item, animated by rarity
+            frames = render_flame_frames(d["base"], d.get("face", "core"), bool(d.get("embers", not framed)), d.get("accent"))  # (floating embers would ring as noise)
+            out.append(Sprite(name, "wisps", frames, [FRAME_MS] * len(frames), framed, _check_rarity(d["rarity"], name) if framed else 1, False))
             continue
         framed = "rarity" in d
         im = render_wisp(d["shape"], d["base"], bool(d.get("inverted", False)), framed)
