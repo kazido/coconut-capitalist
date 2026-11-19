@@ -58,7 +58,10 @@ def land(x, y):
     """Land height: one big island with ragged coasts (> 0 = land)."""
     cx, cy = W * 0.5, H * 0.52
     d = math.hypot((x - cx) / (W * 0.46), (y - cy) / (H * 0.45))
-    return 1.0 - d + (fbm(x / 18, y / 18, 3) - 0.5) * 0.7
+    h = 1.0 - d + (fbm(x / 18, y / 18, 3) - 0.5) * 0.7
+    vx, vy = SITES[6]
+    pull = max(0.0, 1 - math.hypot(x - vx, y - (vy + 2)) / 30)  # the land round the Void is smooth and whole
+    return h + 0.35 * pull * pull
 
 
 def base_map():
@@ -92,11 +95,12 @@ def base_map():
     up = im.resize((W * FINE, H * FINE), Image.NEAREST)  # the fine canvas: details below are drawn at twice the detail
     F = FINE
     _coast_echoes(up)
+    _void_warp(up)
     _river_fine(up)
     _forests_fine(up)
     _mountains_fine(up)
     _route_fine(up)
-    _projected_text(up, "THE OLD PEAKS", [(44 * F, 53 * F), (64 * F, 52 * F), (86 * F, 53 * F)])
+    _projected_text(up, "THE OLD PEAKS", [(124 * F, 71 * F), (146 * F, 72 * F), (168 * F, 71 * F)])
     _projected_text(up, "SILT RIVER", [(p[0] * F, p[1] * F - 7) for p in RIVER_PATH[4:9]])
     _projected_text(up, "MIREWOOD", [(x * F, y * F) for x, y in MIREWOOD_PATH], step=11)  # down a clear lane through the wood
     _compass(up, 222 * F, 22 * F, F)
@@ -281,6 +285,33 @@ def _layer_outline(layer, colour):
                 lp[x, y] = colour
 
 
+def _void_warp(up):
+    """Where the map ends: the paper round the Void is pulled into a black hole: spiral arms of ink winding inward,
+    darker toward the middle, fading out into the plain paper."""
+    F = FINE
+    vx, vy = SITES[6][0] * F, (SITES[6][1] - 4) * F
+    px = up.load()
+    R = 40.0
+    for y in range(int(vy - R), int(vy + R) + 1):
+        for x in range(int(vx - R), int(vx + R) + 1):
+            if not (0 <= x < up.width and 0 <= y < up.height) or not px[x, y][3]:
+                continue
+            r = math.hypot(x - vx, (y - vy) * 1.35)  # a little squashed, like a disc seen at an angle
+            if r > R:
+                continue
+            a = math.atan2((y - vy) * 1.35, x - vx)
+            arm = math.sin(2 * a + r * 0.38)  # two arms spiralling in
+            fade = (1 - r / R) ** 0.9
+            k = 0.0
+            if arm > 0.6:
+                k = 0.7 * fade  # the inked edge of each arm
+            elif arm > 0.1:
+                k = 0.22 * fade  # its shaded body
+            k += 0.5 * max(0.0, 1 - r / 7) ** 2  # the dark heart
+            if k > 0.02:
+                _ink(px, x, y, min(0.95, k), up.size)
+
+
 def _coast_echoes(up):
     """Two wavering ink lines echoing the coast out at sea, the way a hand-inked map draws its shoreline."""
     F = FINE
@@ -338,7 +369,8 @@ def _mountains_fine(up):
                 x = (x0 + (x1 - x0) * (i + 0.5 + (0.5 if r % 2 else 0)) / (n + 0.5) + (_hash(i, r, x0) - 0.5) * 3) * F
                 y = (base - r * 6 + (_hash(r, i, x0) - 0.5) * 2) * F
                 h = (8 + _hash(i, r, 9) * 3 - r * 0.8) * F
-                if land(x / F, y / F) > 0.06 and _clear_of_sites(x / F, y / F - 4, 11):
+                hw = h * 0.8 / F
+                if min(land(x / F - hw, y / F), land(x / F + hw, y / F), land(x / F, y / F - h / F)) > 0.06 and _clear_of_sites(x / F, y / F - 4, 11):
                     peaks.append((y, x, h, (_hash(i, r, 7) - 0.5) * 4))
     for y, x, h, lean in sorted(peaks):
         _peak_line(up, clean, x, y, h, lean)
