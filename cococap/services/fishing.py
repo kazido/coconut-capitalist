@@ -7,6 +7,7 @@ Time is passed in, not read, so tests can move the clock. Nothing is paid until 
 All randomness comes from an injected ``random.Random``.
 """
 
+import logging
 import random
 import time
 from collections import Counter
@@ -23,6 +24,8 @@ from cococap.services.loot import roll_drop, roll_table
 from cococap.services import pets
 from cococap.services.party import xp_multiplier
 from cococap.user import InsufficientFunds, User
+
+log = logging.getLogger(__name__)
 
 LEFT, RIGHT = "◄", "►"  # (not ◀ ▶: Discord draws those as blue emoji in some places and as plain text in others)
 REEL, MYSTERY = "🌀", "❓"  # a step that wants the Reel button; an arrow hidden until you press it
@@ -777,6 +780,7 @@ async def land(user: User, cast: Cast, registry: Registry | None = None, now: fl
         t = rules.treasure
         if skill.treasure.armed_until <= now and dice.randint(1, max(1, round(t.hallucination_odds / (1 + pet.get("treasure_luck", 0.0))))) == 1:
             code = "".join(dice.choice("0123456789") for _ in range(t.code_length))
+            log.info("New hallucination for user %s (old code %r, old window ended %.0fs ago)", user.id, skill.treasure.code, now - skill.treasure.armed_until)
             skill.treasure = TreasureState(code=code, armed_until=now + t.armed_minutes * 60)
             seen.append(code)
         if not quests_unlocked(User.xp_to_level(skill.xp - xp), rules):  # unlocked before this catch, not by it
