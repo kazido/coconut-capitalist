@@ -67,6 +67,13 @@ cooldown = 3
 gain = 10
 effects = [{ kind = "defense_down", turns = 3, value = 0.5 }]
 
+[skills.berserk]
+name = "Berserk"
+description = "Spend a full rage bar: +50% damage and half damage taken for 3 turns."
+target = "self"
+cost = 100
+effects = [{ kind = "attack_up", on = "self", turns = 3, value = 0.5 }, { kind = "defense_up", on = "self", turns = 3, value = 3.0 }]
+
 [skills.quick_step]
 name = "Quick Step"
 description = "Move faster for 2 turns and take a step toward your next turn."
@@ -304,7 +311,7 @@ weapon = "sword"
 resource = "rage"
 resource_max = 100
 description = "Rage builds when you hit or get hit; finishers spend it. Burst on one target."
-kit = [{ skill = "slash", level = 0 }, { skill = "cleave", level = 0 }, { skill = "guard_stance", level = 0 }, { skill = "expose", level = 0 }, { skill = "guard_break", level = 6 }, { skill = "quick_step", level = 10 }, { skill = "rampage", level = 15 }]
+kit = [{ skill = "slash", level = 0 }, { skill = "cleave", level = 0 }, { skill = "guard_stance", level = 0 }, { skill = "berserk", level = 0 }, { skill = "expose", level = 0 }, { skill = "guard_break", level = 6 }, { skill = "quick_step", level = 10 }, { skill = "rampage", level = 15 }]
 
 [classes.archer]
 name = "Archer"

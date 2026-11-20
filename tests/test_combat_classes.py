@@ -20,7 +20,7 @@ async def test_each_weapon_equips_into_combat_and_picks_its_class_kit(db):
         await equipment.equip(user, "combat", item.id)
         cls = REG.combat.classes[next(c for c, v in REG.combat.classes.items() if v.weapon == kind)]
         unit = await combat.build_player(user)
-        assert unit.skills == [k.skill for k in cls.kit if k.level <= 1]  # class level 1 on a fresh account
+        assert unit.skills == [k.skill for k in cls.kit if k.level <= 1][: combat.LOADOUT_SIZE]  # class level 1 on a fresh account
         assert combat.class_for(kind) is cls
 
 

@@ -25,7 +25,7 @@ ALWAYS = FixedRng(0.0)  # always crits and always lands effects
 
 
 def hero(**kw) -> Unit:
-    args = dict(id="p1", name="Hero", side="player", max_hp=100, attack=20, defense=0, speed=100, skills=["slash", "cleave", "guard_break", "quick_step", "sanguine_priming", "glistening_haven", "brace"])
+    args = dict(id="p1", name="Hero", side="player", max_hp=100, attack=20, defense=0, speed=100, skills=["slash", "cleave", "berserk", "guard_break", "quick_step", "sanguine_priming", "glistening_haven", "brace"])
     return Unit(**{**args, **kw})
 
 
@@ -365,3 +365,13 @@ def test_planned_fight_stops_after_your_turn_so_slower_enemies_wait():
     b = planned(hero(speed=200), foe(speed=50))
     b.play("slash", "e1")
     assert b.unit("p1").hp == 100 and b.turn_order(1)[0].id == "p1"  # the enemy has not acted yet
+
+
+def test_berserk_spends_a_full_rage_bar_for_damage_up_and_damage_taken_down():
+    b = fight(hero(speed=200, resource_kind="rage", resource=100, resource_max=100), foe(speed=50, max_hp=500))
+    b.play("berserk")
+    h = b.unit("p1")
+    assert h.resource == 0 and h.has("attack_up") and h.has("defense_up")
+    low = fight(hero(resource_kind="rage", resource=99, resource_max=100), foe())
+    with pytest.raises(CombatError):
+        low.play("berserk")
