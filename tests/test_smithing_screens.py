@@ -32,13 +32,10 @@ async def test_smithing_tab_builds_a_tool_from_three_parts(db):
     nav, inter = await hub("tools", tab="smithing")
     assert nav.screen.tab == "smithing"
     await choose(nav, inter, select_named(nav, "Pick a tool kind"), "pickaxe")
-    await choose(nav, inter, select_named(nav, "Base part"), str(base.id))
+    await click(nav, inter, "Pick")
     await choose(nav, inter, select_named(nav, "Base trait"), kind)
-    await click(nav, inter, "Next")
-    await choose(nav, inter, select_named(nav, "Trim part"), str(trim.id))
-    await click(nav, inter, "Next")
-    await choose(nav, inter, select_named(nav, "Accent part"), str(accent.id))
-    await click(nav, inter, "Next")
+    await click(nav, inter, "Pick")
+    await click(nav, inter, "Pick")
     assert "Preview" in all_text(nav) and "power" in all_text(nav)
     await click(nav, inter, "Smith")
 
@@ -60,13 +57,11 @@ async def test_no_smithing_step_shows_more_than_two_dropdowns(db):
     assert len(_pane_selects(nav)) <= 2
     await choose(nav, inter, select_named(nav, "Pick a tool kind"), "pickaxe")
     assert len(_pane_selects(nav)) <= 2
-    await choose(nav, inter, select_named(nav, "Base part"), str(base.id))
-    assert len(_pane_selects(nav)) == 2
-    await click(nav, inter, "Next")
-    assert len(_pane_selects(nav)) <= 2
-    await click(nav, inter, "Next")
-    assert len(_pane_selects(nav)) <= 2
-    await click(nav, inter, "Next")
+    assert len(_pane_selects(nav)) == 1
+    await click(nav, inter, "Pick")
+    assert len(_pane_selects(nav)) == 1
+    await choose(nav, inter, select_named(nav, "Base trait"), kind)
+    await click(nav, inter, "Pick")
     assert len(_pane_selects(nav)) <= 2
 
 
@@ -79,10 +74,8 @@ async def test_smithing_back_returns_to_previous_step_and_keeps_picks(db):
 
     nav, inter = await hub("tools", tab="smithing")
     await choose(nav, inter, select_named(nav, "Pick a tool kind"), "pickaxe")
-    await choose(nav, inter, select_named(nav, "Base part"), str(base.id))
+    await click(nav, inter, "Pick")
     await choose(nav, inter, select_named(nav, "Base trait"), kind)
-    await click(nav, inter, "Next")
-    await choose(nav, inter, select_named(nav, "Trim part"), str(trim.id))
     await click(nav, inter, "Back")
 
     assert nav.screen.step == 1
