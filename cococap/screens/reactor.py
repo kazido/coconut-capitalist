@@ -90,7 +90,7 @@ class ReactorScreen(Screen):
         fed: Counter[str] = Counter()
         lodes, loot = await mining.claim_lodes(self.user, random.Random(), fed_out=fed)
         reg = get_registry()
-        found = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in loot.items()) or "nothing"
+        found = ", ".join(f"{reg.item(i).emoji or ''} {q:,} {reg.item(i).name}".strip() for i, q in loot.items()) or "nothing"
         into = f" {sum(mining.magnet_value(i, reg) * q for i, q in fed.items()):,} meter went into the magnet ({', '.join(f'{q:,} {reg.item(i).name}' for i, q in fed.items())})." if fed else ""
         await self.refresh(interaction, f"Claimed {lodes:,} lodes: {found}.{into}")
 

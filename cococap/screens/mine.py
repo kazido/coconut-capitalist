@@ -291,7 +291,7 @@ class MineScreen(Screen):
 
     async def _after(self, interaction: discord.Interaction, result: mining.DigResult) -> None:
         reg = get_registry()
-        found = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in result.found.items())
+        found = ", ".join(f"{item_emoji(i)} {q:,} {reg.item(i).name}" for i, q in result.found.items())
         auto = f"{emojis.icon('bomb', '💣')} **Auto-Bomb!** " if result.auto_bombed else ""
         multi = f"{emojis.icon('pickaxe', '⛏️')}{emojis.icon('pickaxe', '⛏️')} **Multi-Mine!** (+{len(result.multi)} column) " if result.multi else ""
         if result.second_wind:
