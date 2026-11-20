@@ -75,8 +75,6 @@ Rules never import discord; screens never contain game rules. Player-facing erro
 
 - Plain, readable code and comments that say WHY. Tests read numbers from the registry, never hard-code a configured value.
   Mutation-check important rules (copy the file, break the rule, see a test fail, restore the copy; NEVER `git checkout` over uncommitted work).
-- Keep screens uncluttered: fewer buttons, dropdowns for variants, one concept per page. Tiers as TX, no rarity names in item labels
+- Keep screens uncluttered: fewer buttons, detailed dropdowns with emojis for variants, one concept per page. Tiers as TX, no rarity names in item labels
   ('Base Part (T1)'); an emoji on every dropdown option that has one.
-- Pronouns: they/them for the user. Don't put personal details in external requests.
-- Final replies: short, plain language, say what changed and what is not verified. Never say you cannot test in Discord or that the
-  bot needs a restart: the user knows.
+- Final replies: short, plain language, say what changed and what is not verified. Never say you cannot test in Discord or that the bot needs a restart: the user knows.
