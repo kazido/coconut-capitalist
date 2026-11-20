@@ -58,7 +58,7 @@ output = "material_rust_fuel"
 quantity = 1
 bits = 5000
 # Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
-inputs = { material_iron_ore = 40, fish_bass = 8, material_hardwood = 5, material_dewdrop = 10 }
+inputs = { material_twilight_fuel = 1, material_iron_ore = 40, fish_bass = 8, material_hardwood = 5, material_dewdrop = 10 }
 
 [material_cadrega_fuel]
 name = "Cadrega Fuel"
@@ -67,7 +67,7 @@ output = "material_cadrega_fuel"
 quantity = 1
 bits = 25000
 # Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
-inputs = { material_silver_ore = 30, fish_salmon = 8, material_fine_bark = 5, material_beeswax = 5 }
+inputs = { material_rust_fuel = 1, material_silver_ore = 30, fish_salmon = 8, material_fine_bark = 5, material_beeswax = 5 }
 
 [material_glade_fuel]
 name = "Glade Fuel"
@@ -76,7 +76,7 @@ output = "material_glade_fuel"
 quantity = 1
 bits = 100000
 # Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
-inputs = { material_platinum_ore = 30, fish_swordfish = 8, material_maple_leaf = 5, material_living_vine = 5 }
+inputs = { material_cadrega_fuel = 1, material_platinum_ore = 30, fish_swordfish = 8, material_maple_leaf = 5, material_living_vine = 5 }
 
 [material_star_fuel]
 name = "Star Fuel"
@@ -85,7 +85,7 @@ output = "material_star_fuel"
 quantity = 1
 bits = 500000
 # Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
-inputs = { material_sapphire = 15, fish_marlin = 5, material_aged_feather = 3, crop_starfruit = 3 }
+inputs = { material_glade_fuel = 1, material_sapphire = 15, fish_marlin = 5, material_aged_feather = 3, crop_starfruit = 3 }
 
 [material_void_fuel]
 name = "Void Fuel"
@@ -94,4 +94,4 @@ output = "material_void_fuel"
 quantity = 1
 bits = 2000000
 # Mining, fishing, foraging and farming materials together: every skill is needed. TODO(balance): guessed amounts.
-inputs = { material_emerald = 20, fish_abyssal_angler = 3, material_gilded_wedge = 3, crop_ambrosia = 1 }
+inputs = { material_star_fuel = 1, material_emerald = 20, fish_abyssal_angler = 3, material_gilded_wedge = 3, crop_ambrosia = 1 }

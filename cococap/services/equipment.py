@@ -139,6 +139,11 @@ async def equipped_stats(user: User, skill: str, registry: Registry | None = Non
     extra = dict(mastery.stats((await user.skill(skill)).mastery, registry))
     for stat, amount in (await accessories.bonus(user, skill, registry)).items():  # worn accessories add to the tool's stats
         extra[stat] = extra.get(stat, 0.0) + amount
+    from cococap.services import areas  # (imported here: areas pulls in the registry models like this module)
+
+    drop = (await areas.overdrive_bonus(user, registry))[1]  # a burned fuel adds to every drop
+    if drop:
+        extra["drop_amount"] = extra.get("drop_amount", 0.0) + drop
     if not extra:
         return base
     return replace(base, stats={**base.stats, **{k: base.stats.get(k, 0.0) + v for k, v in extra.items()}})

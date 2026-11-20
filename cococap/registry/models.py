@@ -1526,6 +1526,13 @@ class ShipmentRules(_Data):
 
 
 # ---- Areas and the ship (configs/areas.toml) -------------------------------------------------------------------------------------------
+class Overdrive(_Data):
+    """What burning an area's fuel gives for a while, in every skill: more skill xp and more of every drop (`drop_amount`)."""
+
+    xp: float = Field(ge=0)
+    drop_amount: float = Field(ge=0)
+
+
 class Area(_Data):
     """One area of the world. Each area holds LOCATIONS_PER_AREA locations of every skill (see AreaRules.location_levels).
     `fuel` is what the ship burns to get here for the FIRST time; going back to an area you reached is free."""
@@ -1535,6 +1542,7 @@ class Area(_Data):
     emoji_raw: str = Field(alias="emoji")
     description: str
     fuel: dict[str, int] = Field(default_factory=dict)  # item -> quantity burned on the first trip here
+    overdrive: Overdrive | None = None  # the boost burning this fuel gives anywhere (needs `fuel`)
 
     @property
     def emoji(self) -> str:
@@ -1564,6 +1572,8 @@ class AreaRules(_Data):
     areas: list[Area] = Field(min_length=2)  # in travel order: the starting area first
     location_levels: list[int]  # the skill level that opens location n (1-based n = index + 1), the same for every skill; two per area
     ship_tiers: list[ShipTier] = Field(min_length=1)  # one per area after the first
+    overdrive_minutes: int = Field(default=60, ge=1)  # one burned fuel adds this long
+    overdrive_max_minutes: int = Field(default=180, ge=1)  # the timer never goes past this
 
     @model_validator(mode="after")
     def _fit(self):
@@ -1573,6 +1583,8 @@ class AreaRules(_Data):
             raise ValueError("area ids must be unique")
         if self.areas[0].fuel:
             raise ValueError("the first area is where you start: it needs no fuel")
+        if any(bool(a.fuel) != bool(a.overdrive) for a in self.areas):
+            raise ValueError("every area with fuel needs an overdrive (and only those)")
         levels = self.location_levels
         if len(levels) != LOCATIONS_PER_AREA * len(self.areas):
             raise ValueError(f"locations.min_levels needs {LOCATIONS_PER_AREA} levels per area ({LOCATIONS_PER_AREA * len(self.areas)})")

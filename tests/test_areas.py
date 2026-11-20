@@ -37,9 +37,10 @@ def test_there_are_seven_areas_and_one_ship_tier_per_trip():
 
 def test_every_trip_has_fuel_that_is_craftable_from_all_four_skills():
     crafted = {r.output: r for r in REG.recipes.values()}
+    all_fuels = {f for a in RULES.areas for f in a.fuel}
     for area in RULES.areas[1:]:
         for fuel in area.fuel:
-            skills = {REG.item(i).skill for i in crafted[fuel].inputs}
+            skills = {REG.item(i).skill for i in crafted[fuel].inputs if i not in all_fuels}  # (the previous fuel is a chain step)
             assert skills == set(areas.SKILLS), (fuel, skills)
 
 

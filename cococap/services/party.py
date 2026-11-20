@@ -197,4 +197,7 @@ async def xp_multiplier(user_id: int, registry: Registry | None = None, skill: s
     tool = await equipped_stats(user, skill, reg) if skill in ("mining", "foraging", "fishing", "farming", "combat") else None
     scholar = tool.stats.get("scholar", 0.0) if tool else 0.0  # a Scholar enchant on the tool you use for this skill
     bloom = await releaf.xp_bonus(reg) if skill == "foraging" else 0.0  # the server-wide Releaf Bloom (foraging xp only)
-    return (1 + await xp_bonus(user_id, reg)) * (1 + pet) * (1 + reg.rank(user.rank).xp_bonus) * (1 + scholar) * (1 + bloom)
+    from cococap.services import areas  # (areas does not know parties either)
+
+    overdrive = (await areas.overdrive_bonus(user, reg))[0]  # a burned fuel boosts every skill
+    return (1 + await xp_bonus(user_id, reg)) * (1 + pet) * (1 + reg.rank(user.rank).xp_bonus) * (1 + scholar) * (1 + bloom) * (1 + overdrive)
