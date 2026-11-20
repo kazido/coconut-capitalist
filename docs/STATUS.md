@@ -16,7 +16,7 @@ Screens are consolidated into tab pages (33 registered). Item ids are prefixed (
 - `starred-materials.md`: drops wired in all 4 skills; open: zone->forest text rename, late upgrade costs, UI check.
 - `pet-score-1000.md`: pet score out of 1000 + traits + Mythical/Celestial pets. Direction approved, not built.
 - `pet-sidekicks.md`: APPROVED, built on master: loadouts, score, tank, Collect/Fuel UI, food buff, foods, guard test. Open: Mythical + Celestial pets and their traits, lend-tool screen (on hold) + equipped check, haul drop tables, balance pass, pet-food art.
-- `combat-rework.md`: APPROVED, not built. 4 classes by weapon (sword/bow/staff/shield), 14 zones with Explore, tiered party dungeons.
+- `combat-rework.md`: steps 1-4 built on `design` (classes, engine, 14 zones, Combat page); step 5 (dungeon service) next. 4 classes by weapon (sword/bow/staff/shield), 14 zones with Explore, tiered party dungeons.
 - `notes-2026-11-18.md`: bigger ideas (fuels, recipe rebalance, tutorial/lore, screen streamlining).
 
 ## Known open items
