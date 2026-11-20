@@ -18,9 +18,9 @@ from cococap.ui.tabs import TabsScreen
 # what a tool's extra stats say in words: stat -> (label, how to show the amount)
 STAT_WORDS = {
     "danger_reduction": ("less creaking", "pct"), "ore_yield": ("more ore", "pct"), "bite_speed": ("faster bites", "pct"),
-    "rare_luck": ("better odds of rare fish", "pct"), "treasure_luck": ("better treasure odds", "pct"), "slips": ("extra forgiven arrow(s)", "int"),
+    "rare_luck": ("rare drop luck", "pct"), "treasure_luck": ("better treasure odds", "pct"), "slips": ("extra forgiven arrow(s)", "int"),
     "boss_luck": ("more bosses", "pct"), "braces": ("extra brace(s)", "int"),
-    "power": ("power", "int"), "scholar": ("scholar", "int"), "appraise": ("appraise", "int"), "drop_amount": ("bigger drops", "pct"),
+    "power": ("tool power", "int"), "scholar": ("skill xp", "pct"), "appraise": ("sell price", "pct"), "drop_amount": ("bigger drops", "pct"),
     "rich_chance": ("richer lodes", "pct"),
 }
 
@@ -139,7 +139,7 @@ class ToolsPane(Screen):
                 part = inst.parts.get(slot, {})
                 trait = part.get("trait")
                 lines.append(f"{smithing.part_label(slot, int(part.get('tier', 1)), smithing.is_restricted(part))} "
-                             + smithing.trait_icons([trait] if trait else [], reg.smithing))
+                             + smithing.trait_names([trait] if trait else [], reg.smithing))
             body.append(text("\n".join(lines)))
         extra = []
         if tool.ability_name:

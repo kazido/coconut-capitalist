@@ -254,10 +254,12 @@ class PartsPane(Screen):
         body = [*self.note_block()]
         for slot in smithing.PART_TYPES:
             ps = [i for i in mine if _slot_of(i) == slot]
-            lines = [f"{smithing.part_label(slot, _tier(i), smithing.is_restricted(i))} {smithing.trait_icons(i.traits, rules)}" for i in ps] or ["none"]
+            lines = [f"{smithing.part_label(slot, _tier(i), smithing.is_restricted(i))} {smithing.trait_names(i.traits, rules)}" for i in ps] or ["none"]
             body.append(text("\n".join([f"**{slot.title()}** ({len(ps)})", *lines])))
 
-        body += [sep(), text("**Salvage**")]
+        tips = [f"{smithing.trait_icons([t.id], rules)} **{t.name}**: {smithing.trait_effect(t.id, rules)}, "
+                f"{smithing.TRAIT_WORDS.get(t.stat, ('', 'a bonus to the tool.'))[1]}" for t in rules.trait_pool]
+        body += [sep(), text("\n".join(["**Tips: what the traits do**", *tips, "-# The amount depends on the tool's quality."])), sep(), text("**Salvage**")]
         equipped = {e.id for skill in TOOL_FOR_SKILL if (e := await self.user.equipped_instance(skill))}
         salvageable = [i for i in mine if i.parts and i.smith_id is not None and i.smith_id != self.user.id
                        and i.id not in equipped]

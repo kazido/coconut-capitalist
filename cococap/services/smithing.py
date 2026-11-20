@@ -69,12 +69,27 @@ def trait_icons(trait_ids, rules: SmithingRules, plain: bool = False) -> str:
     return " ".join(icons) or "no trait"
 
 
+# What each trait stat does, in player words: (short label for amounts, one-line help for the Parts tips).
+TRAIT_WORDS = {
+    "power": ("tool power", "makes the tool stronger: better yields and the bonuses power brings."),
+    "scholar": ("skill xp", "more xp from everything you do with this tool's skill."),
+    "appraise": ("sell price", "items of this tool's skill sell for more in the Shop."),
+    "rare_luck": ("rare drop luck", "a missed rare drop may get a second roll (fishing: rare fish bite more)."),
+    "drop_amount": ("bigger drops", "more ore, wood, fish or crops per drop."),
+}
+
+
+def trait_names(trait_ids, rules: SmithingRules) -> str:
+    """"💪 Power Core, 🧾 Scholar's Edge" (or "no trait"): the traits spelled out, for message text."""
+    return ", ".join(f"{trait_icons([t], rules)} {rules.trait(t).name}" for t in trait_ids) or "no trait"
+
+
 def trait_effect(trait_id: str, rules: SmithingRules) -> str:
     """What a trait does, e.g. "+1 to +4 power" or "+3% to +10% rare luck" (the amount grows with the tool's quality)."""
     t = rules.trait(trait_id)
     lo, hi = min(t.amounts), max(t.amounts)
-    fmt = (lambda v: f"{v:.0%}") if hi < 1 else (lambda v: f"{v:g}")
-    return f"+{fmt(lo)} to +{fmt(hi)} {t.stat.replace('_', ' ')}"
+    fmt = (lambda v: f"{v:g}") if t.stat == "power" else (lambda v: f"{v:.0%}")
+    return f"+{fmt(lo)} to +{fmt(hi)} {TRAIT_WORDS.get(t.stat, (t.stat.replace('_', ' '),))[0]}"
 
 
 def is_restricted(part) -> bool:
