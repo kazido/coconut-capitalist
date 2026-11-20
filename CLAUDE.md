@@ -34,9 +34,12 @@ code changed since the last build. Commands (all print `file:Lline`):
 - An item/stat/enchant id -> `Grep -n "<id>" configs cococap tests art` (TOML tables, code, tests, sprites, emoji all in one).
 Then read only the few hunks you need.
 
-**Choosing the model:** Haiku `worker`/`tester`/`writer` for anything the impact map fully pins down (most bugs with a known cause,
-UI tweaks, config + test, art from a known recipe). Sonnet (`model: "sonnet"` on the Agent call) for a bounded change that still needs some judgment
-(e.g. 3+ callers to adapt, a new screen pane copying an existing one). Lead does design, unknown causes, cross-system changes.
+**How the lead works (usage is tight):** plan mode first for almost everything. graphify is the PRIMARY way to find code; then read only
+the hunks you need, once (never re-read a file already in context). Think deep, not wide: if a broad sweep seems needed, send it to an
+`Explore` subagent that returns only a short summary, never raw file dumps. Model split: **Opus** (lead) = design, engines, unknown causes,
+cross-system changes; **Sonnet** (`model: "sonnet"`) = bounded writing/screens needing some judgment (3+ callers, a new pane copying one);
+**Haiku** `worker`/`tester`/`writer` = routine work the impact map fully pins down (known-cause bugs, UI tweaks, config + test, docs).
+Briefs carry `file:line` plus `@path` mentions and only the facts the agent needs; no pasted file contents, no history.
 
 **Brief template** (keep it under ~40 lines; no project background, no history):
 ```
