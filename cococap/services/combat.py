@@ -536,7 +536,8 @@ def roll_foes(zone_id: str, registry: Registry | None = None, rng: random.Random
         raise CombatError("That zone doesn't exist.")
     if zone.rare and rng.randint(1, 100) <= zone.rare_chance:
         return [zone.rare]
-    return [rng.choice(zone.enemies) for _ in range(rng.randint(1, zone.max_foes))]
+    count = rng.choices(range(1, zone.max_foes + 1), weights=reg.combat.foe_weights[: zone.max_foes])[0]
+    return [rng.choice(zone.enemies) for _ in range(count)]
 
 
 async def explore(user: User, zone_id: str, registry: Registry | None = None, rng: random.Random | None = None) -> Battle:

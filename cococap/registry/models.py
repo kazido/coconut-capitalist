@@ -509,6 +509,7 @@ class CombatRules(_Data):
     elements: ElementRules = Field(default_factory=ElementRules)
     encounters: list[Encounter] = Field(min_length=1)
     zones: dict[str, CombatZone] = Field(default_factory=dict)  # by combat location id, in order
+    foe_weights: list[int] = Field(default_factory=lambda: [1, 1, 1, 1], min_length=4, max_length=4)  # Explore: odds of 1, 2, 3, 4 foes
     dungeons: dict[int, DungeonTier] = Field(default_factory=dict)  # by tier (dungeons.toml)
     dungeon_buffs: list[DungeonBuff] = Field(default_factory=list)
 

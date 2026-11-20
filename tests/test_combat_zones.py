@@ -44,3 +44,13 @@ async def test_explore_refuses_a_closed_zone_and_opens_zone_one(db):
         await combat.explore(user, REG.locations["combat"][-1].id)
     battle = await combat.explore(user, "graveyard")
     assert battle.living("enemy") and all(f.hp == f.max_hp for f in battle.living("enemy"))
+
+
+def test_roll_foes_follows_foe_weights():
+    reg = get_registry()
+    zone = next(z for z in reg.combat.zones.values() if not z.rare and z.max_foes >= 3)
+    rng = random.Random(7)
+    counts = [len(combat.roll_foes(zone.id, reg, rng)) for _ in range(3000)]
+    weights = reg.combat.foe_weights[: zone.max_foes]
+    for n, w in enumerate(weights, start=1):
+        assert abs(counts.count(n) / len(counts) - w / sum(weights)) < 0.03
