@@ -319,7 +319,7 @@ weapon = "bow"
 resource = "focus"
 resource_max = 100
 description = "Focus builds each turn you stay unhurt or Aim; Power Shot spends it. Crits, speed and meter pull."
-kit = [{ skill = "quick_shot", level = 0 }, { skill = "aim", level = 0 }, { skill = "power_shot", level = 6 }, { skill = "volley", level = 10 }, { skill = "quick_step", level = 14 }]
+kit = [{ skill = "quick_shot", level = 0 }, { skill = "aim", level = 0 }, { skill = "power_shot", level = 0 }, { skill = "volley", level = 0 }, { skill = "quick_step", level = 14 }]
 
 [classes.wizard]
 name = "Wizard"
