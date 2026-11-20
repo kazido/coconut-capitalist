@@ -20,7 +20,7 @@ async def test_explore_starts_a_battle_and_locks_navigation(db):
     await click(nav, inter, "Explore")
     screen = nav.screen
     assert screen.id == "fight" and screen.battle is not None and screen.locked
-    assert "Turn order" in all_text(nav) and "Slash" in [b.label for b in buttons(nav)]
+    assert "Next to act" in all_text(nav) and "Slash" in [b.label for b in buttons(nav)]
 
 
 async def test_the_fight_page_without_a_battle_points_to_the_combat_page(db):
@@ -158,3 +158,16 @@ async def test_a_round_is_shown_as_you_then_enemy_blocks(db):
     assert [side for side, _ in steps][0] == "you" and not nav.screen.animating
     if len(steps) > 1:
         assert steps[1][0] == "enemy" and "Enemy" in all_text(nav)
+
+
+async def test_planned_fight_waits_for_ready_and_shows_only_the_next_turn(db):
+    nav, inter = await hub("fight")
+    nav.screen.zone = "graveyard"
+    nav.screen.battle = combat.battle_with(await combat.build_player(nav.user), ["zombie"], planned=True)
+    await nav.refresh(inter)
+    foe = nav.screen.battle.living("enemy")[0]
+    assert find_button(nav, "Ready").disabled
+    await click(nav, inter, "Slash")
+    assert nav.screen.plan and foe.hp == foe.max_hp and not find_button(nav, "Ready").disabled  # nothing played yet
+    await click(nav, inter, "Ready")
+    assert nav.screen.plan is None and foe.hp < foe.max_hp

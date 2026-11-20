@@ -346,3 +346,22 @@ def test_brace_makes_a_big_hit_hurt_about_half_as_much():
     braced.unit("p1").hp = 10**6
     braced._use(braced.unit("e1"), RULES.skills["death_knell"], [braced.unit("p1")])
     assert (10**6 - braced.unit("p1").hp) < taken_plain * 0.6
+
+
+def planned(*units) -> Battle:
+    battle = Battle(RULES, list(units), NO_CRIT, planned=True)
+    battle.start()
+    return battle
+
+
+def test_planned_fight_does_nothing_until_you_play_then_a_faster_enemy_goes_first():
+    b = planned(hero(speed=50), foe(speed=200, attack=30))
+    assert b.turns == 0 and b.turn_order(1)[0].id == "e1"  # the display shows who is next, nothing has happened
+    b.play("slash", "e1")
+    assert [side for side, _ in b.steps][-2:] == ["enemy", "you"] and b.unit("p1").hp < 100 and b.unit("e1").hp < 100
+
+
+def test_planned_fight_stops_after_your_turn_so_slower_enemies_wait():
+    b = planned(hero(speed=200), foe(speed=50))
+    b.play("slash", "e1")
+    assert b.unit("p1").hp == 100 and b.turn_order(1)[0].id == "p1"  # the enemy has not acted yet

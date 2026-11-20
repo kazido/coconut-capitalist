@@ -142,8 +142,11 @@ def enemy_unit(enemy: Enemy, uid: str) -> Unit:
 class Battle:
     """One fight. Player units act when the UI calls `play`; enemies act by themselves."""
 
-    def __init__(self, rules: CombatRules, units: list[Unit], rng: random.Random | None = None):
+    def __init__(self, rules: CombatRules, units: list[Unit], rng: random.Random | None = None, planned: bool = False):
         self.rules = rules
+        # planned (solo fights): you choose your move first; nobody acts until `play`, which then runs the enemy turns that come
+        # before yours and then yours. Unplanned (party boss): the fight runs on by itself until a player must choose.
+        self.planned = planned
         self.units = units
         self.rng = rng or random.Random()
         self.log: list[str] = []
@@ -211,12 +214,13 @@ class Battle:
             if u.resource_kind:
                 u.resource = max(u.resource, min(u.resource_max, self._resource_rules(u).start))
         self.log.append(f"{emojis.icon('sword', '⚔️')} The fight begins!")
-        self._advance()
+        if not self.planned:
+            self._advance()
 
     def play(self, skill_id: str, target_id: str | None = None, actor_id: str | None = None) -> None:
         """The active player unit uses a skill, then the fight runs on to the next player turn (or the end).
         In a party fight pass `actor_id` (the clicking player's unit) so nobody plays another member's turn."""
-        actor = self.active
+        actor = self.living("player")[0] if self.planned and self.living("player") else self.active
         if self.outcome or actor is None or actor.side != "player" or (actor_id is not None and actor.id != actor_id):
             raise CombatError("It isn't your turn.")
         if skill_id not in actor.skills:
@@ -235,6 +239,9 @@ class Battle:
         else:
             chosen = pool
         self.steps = []
+        if self.planned:
+            self._play_planned(actor, skill, chosen)
+            return
         mark = len(self.log)
         self._use(actor, skill, chosen)
         self._end_turn(actor)
@@ -242,6 +249,33 @@ class Battle:
         self._advance()
 
     # --- internals -------------------------------------------------------------------------------
+    def _play_planned(self, player: Unit, skill: CombatSkill, chosen: list[Unit]) -> None:
+        """Play the turns in order up to and including the player's: the enemies faster than you act first, then your planned move.
+        Stops right after your turn, so the enemies that follow wait for the next `play`."""
+        while not self.outcome:
+            if self.turns >= self.rules.max_rounds:
+                self.outcome = "loss"
+                self.log.append(f"{emojis.icon('timer', '⌛')} The fight dragged on too long. You retreat.")
+                break
+            actor = self._next_actor()
+            self.active = actor
+            mark = len(self.log)
+            ok = self._start_turn(actor)  # False: died to bleed or was stunned
+            if actor.side == "player":
+                if ok:
+                    # a counter may have killed the chosen target before you got to act: fall back to the next one standing
+                    live = [u for u in chosen if u.alive] or self.targets_for(actor, skill)[:1]
+                    self._use(actor, skill, live)
+                    self._end_turn(actor)
+            elif ok:
+                self._enemy_turn(actor)
+            if len(self.log) > mark:
+                self.steps.append(("you" if actor.side == "player" else "enemy", self.log[mark:]))
+            self._check_end()
+            if actor is player:
+                break
+        self.active = None
+
     def _advance(self) -> None:
         """Run turns until a player must choose, or the fight is over."""
         while not self.outcome:
@@ -425,7 +459,7 @@ class Battle:
         target.shield -= absorbed
         tag = f" {emojis.icon('boom', '💥')} **CRIT**" if crit else ""
         shield = f" ({absorbed} absorbed)" if absorbed else ""
-        self.log.append(f"　{emojis.icon('next', '→')} {target.name} takes **{damage}**{shield}{tag}.")
+        self.log.append(f"　{emojis.icon('heart', '❤️') if target.side == 'player' else emojis.icon('next', '→')} {target.name} takes **{damage}**{shield}{tag}.")
         self._lose_hp(target, damage - absorbed)
         if actor.side == target.side:
             return
@@ -590,21 +624,23 @@ async def build_player(user: User, registry: Registry | None = None, uid: str = 
     )
 
 
-def battle_with(player: Unit, enemy_ids: list[str], registry: Registry | None = None, rng: random.Random | None = None) -> Battle:
+def battle_with(player: Unit, enemy_ids: list[str], registry: Registry | None = None, rng: random.Random | None = None,
+                planned: bool = False) -> Battle:
     """Start a battle against these enemies (ids from enemies.toml, in order) at full hp."""
     reg = registry or get_registry()
     foes = [enemy_unit(reg.enemies[eid], f"e{i + 1}") for i, eid in enumerate(enemy_ids)]
-    battle = Battle(reg.combat, [player, *foes], rng)
+    battle = Battle(reg.combat, [player, *foes], rng, planned)
     battle.start()
     return battle
 
 
-def new_battle(player: Unit, encounter_id: str, registry: Registry | None = None, rng: random.Random | None = None) -> Battle:
+def new_battle(player: Unit, encounter_id: str, registry: Registry | None = None, rng: random.Random | None = None,
+               planned: bool = False) -> Battle:
     reg = registry or get_registry()
     encounter = next((e for e in reg.combat.encounters if e.id == encounter_id), None)
     if encounter is None:
         raise CombatError("That fight doesn't exist.")
-    return battle_with(player, encounter.enemies, reg, rng)
+    return battle_with(player, encounter.enemies, reg, rng, planned)
 
 
 def roll_foes(zone_id: str, registry: Registry | None = None, rng: random.Random | None = None) -> list[str]:
@@ -628,7 +664,7 @@ async def explore(user: User, zone_id: str, registry: Registry | None = None, rn
     if zone_id not in {loc.id for loc in await areas.open_location_list(user, "combat", reg)}:
         raise CombatError("That zone is not open to you yet.")
     rng = rng or random.Random()
-    return battle_with(await build_player(user, reg), roll_foes(zone_id, reg, rng), reg, rng)
+    return battle_with(await build_player(user, reg), roll_foes(zone_id, reg, rng), reg, rng, planned=True)
 
 
 @dataclass
@@ -659,7 +695,7 @@ async def start_fight(user: User, encounter_id: str, registry: Registry | None =
             await user.remove_item(encounter.key, 1)
         except ValueError:
             raise CombatError(f"You need a {key.name} to go in. The monsters of the graveyard drop them.") from None
-    return new_battle(player, encounter_id, reg, rng)
+    return new_battle(player, encounter_id, reg, rng, planned=True)
 
 
 async def settle(user: User, battle: Battle, registry: Registry | None = None, rng: random.Random | None = None) -> Settlement:

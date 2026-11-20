@@ -17,7 +17,7 @@ PAUSE = 1.2  # seconds between the steps of a round (tests set it to 0)
 def hp_line(unit: Unit) -> str:
     shield = f"  {emojis.icon('shield', '🔰')} {unit.shield}" if unit.shield else ""
     res = f"  {bar(unit.resource / unit.resource_max, 8, 'meter')} **{unit.resource}**/{unit.resource_max} {unit.resource_kind}" if unit.resource_kind else ""
-    return f"{bar(unit.hp / unit.max_hp, 8, 'hp')} **{unit.hp}**/{unit.max_hp}{shield}{res}"
+    return f"{emojis.icon('heart', '❤️')} {bar(unit.hp / unit.max_hp, 8, 'hp')} **{unit.hp}**/{unit.max_hp}{shield}{res}"
 
 
 def effect_line(unit: Unit) -> str:
@@ -37,6 +37,7 @@ class FightScreen(Screen):
         self.encounter: str | None = None  # the key fight being played, or None for a zone fight (so "Fight again" knows what to start)
         self.zone: str | None = None  # the zone being explored
         self.picking: str | None = None  # a skill waiting for the player to choose its target
+        self.plan: tuple[str, str | None] | None = None  # (skill, target) chosen and waiting for Ready (solo fights)
         self.animating = False  # a round is being played out: no buttons until it ends
         self.shown: list[tuple[str, list[str]]] = []  # the round being played out (empty = show the log tail)
         self.run: dungeon.Run | None = None  # set when this fight is part of a dungeon run (a tile fight or the shared boss fight)
@@ -73,7 +74,7 @@ class FightScreen(Screen):
         await self.go(interaction, "combat")
 
     async def _begin(self, encounter_id: str) -> None:
-        self.encounter, self.picking, self.shown = encounter_id, None, []
+        self.encounter, self.picking, self.shown, self.plan = encounter_id, None, [], None
         self.battle = await combat.start_fight(self.user, encounter_id)
 
     # --- the fight ---------------------------------------------------------------------------------
@@ -95,9 +96,9 @@ class FightScreen(Screen):
         body.append(text(f"### {me.emoji} {me.name}\n{hp_line(me)}" + (f"\n{effect_line(me)}" if effect_line(me) else "")))
         for ally in (u for u in battle.units if u.side == "player" and u.id != me.id):
             body.append(text(f"{ally.emoji} {ally.name}\n{hp_line(ally)}"))
-        order = f" {emojis.icon('next', '→')} ".join(u.emoji for u in battle.turn_order(7)) if battle.outcome is None else ""
-        if order:
-            body.append(text(f"**Turn order:** {order}"))
+        if battle.planned and battle.outcome is None and not self.animating:
+            nxt = battle.turn_order(1)[0]  # only the next turn: you plan around who goes first
+            body.append(text(f"**Next to act:** {nxt.emoji} {'you' if nxt.side == 'player' else nxt.name}"))
         body.append(sep())
         if self.shown:
             for side, lines in self.shown:
@@ -130,7 +131,12 @@ class FightScreen(Screen):
             cd = me.cooldowns.get(skill_id, 0)
             label = skill.name + (f" ({cd})" if cd else "") + (f" · {skill.cost}" if skill.cost else "")
             style = discord.ButtonStyle.primary if i == 0 else discord.ButtonStyle.secondary
+            if self.plan and self.plan[0] == skill_id:
+                style = discord.ButtonStyle.success  # the move you have lined up
             buttons.append(button(label, style=style, disabled=cd > 0 or me.resource < skill.cost, on_click=self._skill(skill_id)))
+        if battle.planned:
+            ready = button("Ready", emoji=emojis.icon("next", "▶️"), style=discord.ButtonStyle.danger, disabled=self.plan is None, on_click=self._ready)
+            return [row(*buttons), row(ready, button("Flee", emoji=emojis.icon("people", "🏃"), on_click=self._flee))]
         if self.run:  # no running away from a dungeon fight
             return [row(*buttons)]
         return [row(*buttons), row(button("Flee", emoji=emojis.icon("people", "🏃"), on_click=self._flee))]
@@ -144,16 +150,29 @@ class FightScreen(Screen):
                 self.picking = skill_id
                 await self.refresh(interaction)
                 return
-            await self._act(interaction, skill_id, pool[0].id if pool else None)
+            await self._choose(interaction, skill_id, pool[0].id if pool else None)
 
         return use
 
     def _target(self, target_id: str):
         async def pick(interaction: discord.Interaction) -> None:
             skill_id, self.picking = self.picking, None
-            await self._act(interaction, skill_id, target_id)
+            await self._choose(interaction, skill_id, target_id)
 
         return pick
+
+    async def _choose(self, interaction: discord.Interaction, skill_id: str, target_id: str | None) -> None:
+        """Solo fights: line the move up and wait for Ready. Party/dungeon fights: it plays at once."""
+        if self.battle.planned:
+            self.plan = (skill_id, target_id)
+            await self.refresh(interaction)
+        else:
+            await self._act(interaction, skill_id, target_id)
+
+    async def _ready(self, interaction: discord.Interaction) -> None:
+        plan, self.plan = self.plan, None
+        if plan:
+            await self._act(interaction, *plan)
 
     async def _cancel(self, interaction: discord.Interaction) -> None:
         self.picking = None
@@ -188,7 +207,7 @@ class FightScreen(Screen):
             await self.refresh(interaction)
 
     async def _flee(self, interaction: discord.Interaction) -> None:
-        self.battle, self.picking = None, None
+        self.battle, self.picking, self.plan = None, None, None
         await self.refresh(interaction, "You ran away. Nothing gained, nothing lost.")
 
     async def _finish(self, interaction: discord.Interaction) -> None:
@@ -198,6 +217,7 @@ class FightScreen(Screen):
     async def _settle(self) -> None:
         """Pay the finished battle and set the Victory/Defeated page (also called from build when another member ended the boss fight)."""
         battle, boss, self.battle, self.picking, self.shown = self.battle, self._boss, None, None, []
+        self.plan = None
         if boss:
             paid = (await dungeon.finish_boss(self.run)).get(self.user.id)
         elif self.run:
@@ -224,7 +244,7 @@ class FightScreen(Screen):
 
     async def _again(self, interaction: discord.Interaction) -> None:
         if self.zone and not self.encounter:
-            self.battle, self.picking, self.shown = await combat.explore(self.user, self.zone), None, []
+            self.battle, self.picking, self.shown, self.plan = await combat.explore(self.user, self.zone), None, [], None
         else:
             await self._begin(self.encounter)
         await self.refresh(interaction)

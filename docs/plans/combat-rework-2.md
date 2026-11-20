@@ -13,7 +13,7 @@ Uses `ui/rewards.rewards_result` (drops + xp only). Continue goes to Combat.
 - Class tab: dropdown of classes with emoji. Only classes you own a weapon for; picking one auto-equips the best weapon (tool power) of that class.
 - Bestiary paginated, one enemy per page, with its emoji.
 
-## 2. Turn pacing (DONE)
+## 2. Turn pacing (DONE; reworked: plan your move, press Ready, `Battle(planned=True)` plays the turns up to and including yours, display shows only the next turn)
 Fight screen plays a turn in steps with `asyncio.sleep` redraws: your move, pause, enemy telegraph + move, pause, what it did to you.
 The log shows only the latest round, split into "You" and "Enemy" blocks. Needs a step list from `Battle.play` (Battle stays Discord-free).
 
