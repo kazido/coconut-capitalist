@@ -165,7 +165,7 @@ class SmithingPane(Screen):
             inst = picked[slot]
             trait = self.picks.get(inst.id)
             icon = smithing.trait_icons([trait] if trait else [], rules)
-            body.append(text(f"· {smithing.part_label(slot, _tier(inst), smithing.is_restricted(inst))} · {icon}"))
+            body.append(text(f"{smithing.part_label(slot, _tier(inst), smithing.is_restricted(inst))} {icon}"))
         kind = self.kind.title() if self.kind else "-"
         body.append(text(f"Kind **{kind}** · power **{power:g}** before quality"))
         body.append(text("-# Quality is rolled on smithing."))
@@ -254,7 +254,7 @@ class PartsPane(Screen):
         body = [*self.note_block()]
         for slot in smithing.PART_TYPES:
             ps = [i for i in mine if _slot_of(i) == slot]
-            lines = [f"· {smithing.part_label(slot, _tier(i), smithing.is_restricted(i))} · {smithing.trait_icons(i.traits, rules)}" for i in ps] or ["· none"]
+            lines = [f"{smithing.part_label(slot, _tier(i), smithing.is_restricted(i))} {smithing.trait_icons(i.traits, rules)}" for i in ps] or ["none"]
             body.append(text("\n".join([f"**{slot.title()}** ({len(ps)})", *lines])))
 
         body += [sep(), text("**Salvage**")]

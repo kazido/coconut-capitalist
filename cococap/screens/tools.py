@@ -8,7 +8,7 @@ from cococap.errors import GameRuleError
 from cococap.registry import get_registry
 from cococap.registry.models import ACCESSORY_SKILLS
 from cococap.services.equipment import TOOL_FOR_SKILL, effective_stats, skill_for_tool
-from cococap.services import accessories, equipment, shop, smithing
+from cococap.services import accessories, equipment, shop, smithing, tool_effects
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, select, sep, text
@@ -20,6 +20,8 @@ STAT_WORDS = {
     "danger_reduction": ("less creaking", "pct"), "ore_yield": ("more ore", "pct"), "bite_speed": ("faster bites", "pct"),
     "rare_luck": ("better odds of rare fish", "pct"), "treasure_luck": ("better treasure odds", "pct"), "slips": ("extra forgiven arrow(s)", "int"),
     "boss_luck": ("more bosses", "pct"), "braces": ("extra brace(s)", "int"),
+    "power": ("power", "int"), "scholar": ("scholar", "int"), "appraise": ("appraise", "int"), "drop_amount": ("bigger drops", "pct"),
+    "rich_chance": ("richer lodes", "pct"),
 }
 
 
@@ -136,18 +138,17 @@ class ToolsPane(Screen):
             for slot in smithing.PART_TYPES:
                 part = inst.parts.get(slot, {})
                 trait = part.get("trait")
-                lines.append(f"· {smithing.part_label(slot, int(part.get('tier', 1)), smithing.is_restricted(part))}  ·  "
+                lines.append(f"{smithing.part_label(slot, int(part.get('tier', 1)), smithing.is_restricted(part))} "
                              + smithing.trait_icons([trait] if trait else [], reg.smithing))
             body.append(text("\n".join(lines)))
         extra = []
-        if tool.stats:
-            extra.append(describe_stats(tool.stats))
         if tool.ability_name:
             extra.append(f"{emojis.icon('sparkle', '✨')} {tool.ability_name}")
         if inst.enchants:
             extra.append("Enchants: " + ", ".join(reg.enchant(e).name + (f" {lvl}" if lvl > 1 else "") for e, lvl in inst.enchants.items()))
         if extra:
             body.append(text("\n".join(extra)))
+        body.append(text(self._bonuses(inst, reg)))
         skill = skill_for_tool(tool.kind)
         if inst.enchants and await smithing.smithing_level(self.user) >= reg.smithing.removal.enchant_unlock_level:
             body.append(row(select("Remove an enchant (returns its scroll)...", [
@@ -155,6 +156,31 @@ class ToolsPane(Screen):
         if skill in ACCESSORY_SKILLS:
             body += await self._accessory_section(skill)
         return body
+
+    @staticmethod
+    def _bonuses(inst, reg) -> str:
+        """Where the tool's bonuses come from: its quality, each part's trait, its own power, and the tool's built-in stats."""
+        tool = reg.item(inst.template_id).tool
+        rules = reg.smithing
+        lines = ["**Bonuses**"]
+        if inst.parts and inst.quality:
+            grade = rules.quality(inst.quality)
+            lines.append(f"{inst.quality} quality: x{grade.mult:g} on its power and on every trait's amount")
+            idx = [q.name for q in rules.grades].index(inst.quality)
+            for slot in smithing.PART_TYPES:
+                trait_id = (inst.parts.get(slot) or {}).get("trait")
+                if trait_id:
+                    trait = rules.trait(trait_id)
+                    lines.append(f"{smithing.trait_icons([trait_id], rules)} {trait.name}: "
+                                 + describe_stats({trait.stat: trait.amounts[idx] * grade.mult}))
+        if tool.stats:
+            lines.append("This tool: " + describe_stats(tool.stats))
+        from_power = {k: v for k, v in tool_effects.power_stats(tool.kind, effective_stats(inst, reg).power, reg, tool.path).items() if v}
+        if from_power:
+            lines.append(f"{emojis.icon('power', '💪')} Power {effective_stats(inst, reg).power}: " + describe_stats(from_power))
+        if len(lines) == 1:
+            lines.append("none yet")
+        return "\n".join(lines)
 
     async def _accessory_section(self, skill: str) -> list:
         """The skill's two accessory slots, a dropdown of the ones you own (worn ones marked) and one Equip/Unequip toggle."""
