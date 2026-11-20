@@ -44,6 +44,18 @@ def columns_dug(reactor_level: int, rules: MiningRules) -> int:
     return min(rules.columns, 1 + (reactor_level - 1) // rules.reactor.prestige_per_extra_column)
 
 
+def reactor_unlocks(level: int, rules: MiningRules) -> list[str]:
+    """What reaching reactor `level` unlocks (an extra column, an extra brace), in plain words. Empty if nothing discrete.
+    (Every level also adds auto-miner lodes and slows pressure a bit; those are steady, not unlocks.)"""
+    d = rules.descent
+    found = []
+    if level > 1 and columns_dug(level, rules) > columns_dug(level - 1, rules):
+        found.append("+1 column dug per swing")
+    if level > 1 and (level - 1) // d.braces_per_reactor_levels > (level - 2) // d.braces_per_reactor_levels:
+        found.append("+1 brace")
+    return found
+
+
 def gems_placed(mining: Mining) -> int:
     reactor = mining.reactor
     return sum(1 for core in (reactor.core_1, reactor.core_2, reactor.core_3, reactor.core_4) if core.gem_id)
