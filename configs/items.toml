@@ -133,6 +133,94 @@ category = "key_item"
 price = 0
 sell_price = 5000  # TODO(balance)
 
+[key_dungeon_t1]
+name = "T1 Dungeon Key"
+description = "Opens a tier 1 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 1 dungeon from Combat -> Dungeons. Which monsters drop it comes later."
+emoji = "🗝️"
+rarity = 1
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 2000  # TODO(balance)
+
+[key_dungeon_t2]
+name = "T2 Dungeon Key"
+description = "Opens a tier 2 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 2 dungeon from Combat -> Dungeons. Which monsters drop it comes later."
+emoji = "🗝️"
+rarity = 2
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 4000  # TODO(balance)
+
+[key_dungeon_t3]
+name = "T3 Dungeon Key"
+description = "Opens a tier 3 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 3 dungeon from Combat -> Dungeons. Which monsters drop it comes later."
+emoji = "🗝️"
+rarity = 3
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 6000  # TODO(balance)
+
+[key_dungeon_t4]
+name = "T4 Dungeon Key"
+description = "Opens a tier 4 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 4 dungeon from Combat -> Dungeons. Which monsters drop it comes later."
+emoji = "🗝️"
+rarity = 4
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 8000  # TODO(balance)
+
+[key_dungeon_t5]
+name = "T5 Dungeon Key"
+description = "Opens a tier 5 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 5 dungeon from Combat -> Dungeons. Which monsters drop it comes later."
+emoji = "🗝️"
+rarity = 5
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 10000  # TODO(balance)
+
+[key_dungeon_t6]
+name = "T6 Dungeon Key"
+description = "Opens a tier 6 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 6 dungeon from Combat -> Dungeons. Which monsters drop it comes later."
+emoji = "🗝️"
+rarity = 6
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 12000  # TODO(balance)
+
+[key_dungeon_t7]
+name = "T7 Dungeon Key"
+description = "Opens a tier 7 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 7 dungeon from Combat -> Dungeons. Which monsters drop it comes later."
+emoji = "🗝️"
+rarity = 7
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 14000  # TODO(balance)
+
+[key_dungeon_t8]
+name = "T8 Dungeon Key"
+description = "Opens a tier 8 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 8 dungeon from Combat -> Dungeons. Which monsters drop it comes later."
+emoji = "🗝️"
+rarity = 7
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 16000  # TODO(balance)
+
 [key_orb_lesser]
 name = "Lesser Familiar Orb"
 description = "A dull little orb. Something small is curled up inside."

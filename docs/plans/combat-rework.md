@@ -75,6 +75,10 @@ Commits: aae9419 (1), 044d979 (2), e08be5c (3), 96cfa0e (4). Step 1 did not land
   fight kept. Tests: `tests/test_combat_zones.py`.
 - **UI**: `screens/combat.py` CombatScreen (tabs Explore, Class); Skills -> Combat opens it. `screens/fight.py` plays battles (resource
   next to hp, cost on buttons), "Fight again" re-explores. Bestiary shows combat monsters one zone at a time. Add the Dungeons tab in step 6.
+- **Dungeons (step 5)**: `configs/dungeons.toml` (`[tiers.N]`, `[[buffs]]`) -> `CombatRules.dungeons`/`dungeon_buffs`; keys
+  `key_dungeon_t1..t8` in items.toml (no drops yet: step 7). `services/dungeon.py`: `enter(users, tier)`, `move(run, user, dir)` ->
+  moved/reward/buff/fight/boss, `finish_fight`, `finish_boss`, `leave`, `run_of(uid)`; `Run.version` bumps on every change (step 6 pokes on it);
+  `Run.lock` guards each call. Tests: `tests/test_dungeon.py`. Step 6 still owes: poke sync and the 30 s idle auto-basic in the boss fight.
 - **Open notes**: every new number is TODO(balance) (step 7). New weapons/enemies use plain unicode emoji (art later). One unidentified test
   failed once in the step-4 run and never again in 14 reruns: watch for a flaky test. Docs/changelog/DESIGN.md not written yet (step 7).
 

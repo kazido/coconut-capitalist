@@ -353,6 +353,15 @@ class Registry:
 
 def _validate_combat(reg: "Registry", rules: CombatRules) -> list[str]:
     problems = []
+    for tier, d in rules.dungeons.items():
+        where = f"dungeons.toml tiers.{tier}"
+        problems += [f"{where}: unknown enemy '{e}'" for e in [*d.enemies, d.boss] if e not in reg.enemies]
+        if d.loot not in reg.drop_tables:
+            problems.append(f"{where}: unknown drop table '{d.loot}'")
+        if d.key not in reg.items:
+            problems.append(f"{where}: its key item '{d.key}' is missing from items.toml")
+        if not any(d.tiles.values()):
+            problems.append(f"{where}: tiles need a weight above 0")
     for key, skill in rules.skills.items():
         if key != skill.id:
             problems.append(f"combat.toml skill '{key}' has id '{skill.id}'")
@@ -500,6 +509,9 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     raw["classes"] = {k: {"id": k, **v} for k, v in raw.get("classes", {}).items()}
     raw["encounters"] = [{"id": k, **v} for k, v in raw.get("encounters", {}).items()]
     raw["zones"] = {k: {"id": k, **v} for k, v in raw.get("zones", {}).items()}
+    raw_dungeons = _read(config_dir, "dungeons")
+    raw["dungeons"] = {int(k): {"tier": int(k), **v} for k, v in raw_dungeons.get("tiers", {}).items()}
+    raw["dungeon_buffs"] = raw_dungeons.get("buffs", [])
     combat = _build(CombatRules, "combat", [("combat", raw)])[0]
     drops = _build(DropTable, "drops", ((k, {"id": k, **v}) for k, v in _read(config_dir, "drops").items()))
     bestiary = _build(BestiaryRules, "bestiary", [("bestiary", _read(config_dir, "bestiary"))])[0]

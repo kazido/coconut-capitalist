@@ -470,6 +470,31 @@ class CombatZone(_Data):
     rare_chance: int = Field(default=0, ge=0, le=100)  # percent per Explore
 
 
+class DungeonBuff(_Data):
+    """A buff tile's reward: `hp` heals `percent` of max hp now; other stats rise by `percent` for the rest of the run."""
+
+    stat: Literal["hp", "attack", "defense", "speed"]
+    percent: int = Field(ge=1)
+
+
+class DungeonTier(_Data):
+    """One dungeon tier (dungeons.toml). Its key is `key_dungeon_t<tier>`, spent on entry."""
+
+    tier: int = Field(ge=1, le=8)
+    size: int = Field(ge=3, le=12)  # the grid is size x size
+    min_level: int = Field(default=0, ge=0)  # combat level every member needs
+    tiles: dict[Literal["reward", "buff", "enemy", "empty"], int]  # relative weights of the hidden tiles
+    enemies: list[str] = Field(min_length=1)
+    max_foes: int = Field(default=3, ge=1, le=4)
+    boss: str
+    loot: str  # drops.toml table a reward tile rolls
+    loot_rolls: int = Field(default=1, ge=1)
+
+    @property
+    def key(self) -> str:
+        return f"key_dungeon_t{self.tier}"
+
+
 class CombatRules(_Data):
     meter_full: int = Field(ge=1)  # a unit acts when its turn meter reaches this
     defense_scale: int = Field(ge=1)  # damage = attack x power x scale / (scale + defense)
@@ -484,6 +509,8 @@ class CombatRules(_Data):
     elements: ElementRules = Field(default_factory=ElementRules)
     encounters: list[Encounter] = Field(min_length=1)
     zones: dict[str, CombatZone] = Field(default_factory=dict)  # by combat location id, in order
+    dungeons: dict[int, DungeonTier] = Field(default_factory=dict)  # by tier (dungeons.toml)
+    dungeon_buffs: list[DungeonBuff] = Field(default_factory=list)
 
 
 class Rank(_Data):

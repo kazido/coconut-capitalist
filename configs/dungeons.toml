@@ -1,0 +1,103 @@
+# Tiered dungeons (services/dungeon.py). A dungeon key (key_dungeon_t<N>) is spent on entry; the party walks a square grid of hidden
+# tiles from the top-left corner to the boss in the bottom-right one. Hp and buffs carry over between fights inside a run.
+# Every number here is a first guess: TODO(balance) (combat rework step 7).
+
+# Tile buffs: a buff tile gives one of these, picked at random. `stat = "hp"` heals that percent of max hp right away;
+# the others raise the stat by `percent` for every later fight in the run (they stack).
+[[buffs]]
+stat = "hp"
+percent = 40
+
+[[buffs]]
+stat = "attack"
+percent = 15
+
+[[buffs]]
+stat = "defense"
+percent = 15
+
+[[buffs]]
+stat = "speed"
+percent = 10
+
+# [tiers.N]: size = grid side; tiles = relative weights of the hidden tiles; enemies = the pool an enemy tile draws 1..max_foes from;
+# boss = the boss at the end; loot = the drops.toml table a reward tile rolls `loot_rolls` times; min_level = combat level to enter.
+[tiers.1]
+size = 5
+min_level = 0
+tiles = { reward = 3, buff = 2, enemy = 4, empty = 6 }
+enemies = ["zombie", "armored_zombie", "skeleton"]
+max_foes = 2
+boss = "gravewarden"
+loot = "graveyard"
+loot_rolls = 1
+
+[tiers.2]
+size = 5
+min_level = 5
+tiles = { reward = 3, buff = 2, enemy = 4, empty = 6 }
+enemies = ["jelly_slime", "gumdrop_golem"]
+max_foes = 2
+boss = "king_slime"
+loot = "slime_meadow"
+loot_rolls = 1
+
+[tiers.3]
+size = 6
+min_level = 10
+tiles = { reward = 3, buff = 2, enemy = 5, empty = 6 }
+enemies = ["sand_scorpion", "dust_wraith", "mirage_jackal", "sunken_mummy"]
+max_foes = 3
+boss = "dune_pharaoh"
+loot = "mirage_ruins"
+loot_rolls = 2
+
+[tiers.4]
+size = 6
+min_level = 20
+tiles = { reward = 3, buff = 2, enemy = 5, empty = 6 }
+enemies = ["scrap_rat", "rust_bot", "slag_crawler", "foundry_brute"]
+max_foes = 3
+boss = "scrap_titan"
+loot = "rusted_foundry"
+loot_rolls = 2
+
+[tiers.5]
+size = 7
+min_level = 30
+tiles = { reward = 3, buff = 2, enemy = 6, empty = 6 }
+enemies = ["canal_gator", "alley_cutpurse", "brass_automaton", "gear_sprite"]
+max_foes = 3
+boss = "clockwork_regent"
+loot = "clockwork_district"
+loot_rolls = 2
+
+[tiers.6]
+size = 7
+min_level = 40
+tiles = { reward = 3, buff = 2, enemy = 6, empty = 6 }
+enemies = ["cloud_harpy", "mist_elemental", "storm_wisp", "thorn_bloom"]
+max_foes = 3
+boss = "storm_roc"
+loot = "storm_garden"
+loot_rolls = 3
+
+[tiers.7]
+size = 8
+min_level = 50
+tiles = { reward = 3, buff = 2, enemy = 7, empty = 6 }
+enemies = ["comet_imp", "meteor_hound", "star_sentinel", "moon_moth"]
+max_foes = 3
+boss = "star_warden"
+loot = "starfall_temple"
+loot_rolls = 3
+
+[tiers.8]
+size = 8
+min_level = 60
+tiles = { reward = 3, buff = 2, enemy = 7, empty = 6 }
+enemies = ["hollow_shade", "void_hound", "unmade_horror", "null_knight"]
+max_foes = 3
+boss = "the_hollow_king"
+loot = "the_unmade"
+loot_rolls = 4
