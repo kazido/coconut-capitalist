@@ -47,7 +47,7 @@ class FarmScreen(Screen):
 
         overflow, needed = User.xp_for_next_level(skill.xp)
         can = await equipped_stats(self.user, "farming")
-        can_line = (f"{emojis.icon('can', '🚿')} Can waters **{can.power}** plot(s) an hour" if can
+        can_line = (f"{emojis.icon('can', '🚿')} Can adds **{farming.cycles_per_watering(can.power):g}** growth cycle(s) per watering" if can
                     else f"{emojis.icon('can', '🚿')} No watering can: buy a **Tin Watering Can** in the shop")
         pages = max(1, -(-farming.PLOTS // farming.PAGE_PLOTS))
         self.page = min(self.page, pages - 1)
@@ -170,9 +170,7 @@ class FarmScreen(Screen):
         report = await farming.water(self.user)
         if not report.watered:
             return await self.refresh(interaction, f"{emojis.icon('drop', '💧')} Everything growing has been watered this hour. Come back after the next rain!")
-        note = f"{emojis.icon('drop', '💧')} You watered {report.watered} plot(s): **{report.grew}** grew."
-        if report.thirsty:
-            note += f" {emojis.icon('can', '🚿')} Your can only reaches {report.capacity} plots an hour: **{report.thirsty}** plot(s) stayed dry. A better can waters more."
+        note = f"{emojis.icon('drop', '💧')} You watered {report.watered} plot(s): **{report.cycles}** growth cycle(s) in all."
         if report.matured:
             note += " " + ", ".join(f"Plot {n}" for n in report.matured) + (" is" if len(report.matured) == 1 else " are") + " ready!"
         await self.refresh(interaction, note)

@@ -5,6 +5,7 @@ from collections import Counter
 from random import Random
 
 import pytest
+from types import SimpleNamespace
 
 from cococap.models.skills.farming import Farming
 from cococap.registry import get_registry
@@ -398,7 +399,7 @@ async def test_watering_grows_plots_you_have_not_watered_this_hour_and_only_once
     assert later.watered in (0, 1)  # (0 only if it was already ripe)
 
 
-async def test_a_watering_grows_a_plot_about_as_often_as_the_water_chance_says_and_the_roll_cannot_be_redone(db):
+async def test_a_can_below_power_5_grows_a_plot_by_chance_and_the_roll_cannot_be_redone(db):
     grew = 0
     for uid in range(1, 301):
         user = await User.get(uid)
@@ -411,7 +412,8 @@ async def test_a_watering_grows_a_plot_about_as_often_as_the_water_chance_says_a
         grew += report.grew
         assert (await user.skill("farming")).farm.plot_1.cycle == before + report.grew
         assert (await f.water(user, T0, REG)).watered == 0  # looking again changes nothing
-    assert grew == 300  # a watering ALWAYS grows a cycle now (water_chance is 100%)
+    chance = f.cycles_per_watering(REG.item("tool_can_tin").tool.power)
+    assert chance < 1 and abs(grew - 300 * chance) < 40  # (about 5 standard deviations)
 
 
 async def test_watering_can_finish_a_one_cycle_crop_straight_away(db):
@@ -463,9 +465,9 @@ def test_the_estimate_says_how_long_a_crop_will_take_and_how_lucky_or_unlucky_it
         assert e.early < e.typical < e.late
         assert e.typical == pytest.approx(cycles / rules.grow_chance)
     assert f.estimate(20, rules).typical > f.estimate(5, rules).typical
-    watered = f.estimate(20, rules, watered=True)
-    assert watered.typical == pytest.approx(20 / f.hourly_chance(rules, True))
-    assert watered.typical < f.estimate(20, rules).typical / 1.5
+    watered = f.estimate(300, rules, f.cycles_per_watering(20))  # power 20 = 4 cycles a watering, plus the rain
+    assert watered.typical == pytest.approx(300 / (4 + rules.grow_chance)) and watered.early < watered.typical < watered.late
+    assert f.estimate(20, rules, 1.0).typical < f.estimate(20, rules).typical / 1.5
     assert "about" in one.text() and "days" in f.estimate(100, rules).text()
 
 
@@ -518,37 +520,34 @@ async def test_watering_needs_a_can(db):
         await f.water(user, T0, REG)
 
 
-def test_a_watering_always_grows_a_cycle():
-    assert RULES.water_chance == 1.0
-    assert f.hourly_chance(RULES, watered=True) == 1.0
-
-
-async def test_a_can_only_waters_as_many_plots_an_hour_as_its_power(db):
-    user = await User.get(1)
-    can = await with_can(user)
-    await plant_many(user, 6)
-    power = REG.item("tool_can_tin").tool.power
-    report = await f.water(user, T0, REG)
-    assert (report.watered, report.thirsty, report.capacity) == (power, 6 - power, power) and report.grew == power
-    plots = (await user.skill("farming")).farm
-    assert [getattr(plots, f"plot_{n}").watered == T0 // HOUR for n in range(1, 7)] == [True] * power + [False] * (6 - power)  # lowest numbers first
-    again = await f.water(user, T0 + 60, REG)
-    assert again.watered == 0 and again.thirsty == 6 - power  # the can is spent for this hour
-    await user.update_skill("farming", lambda m: None)
-    nxt = await f.water(user, T0 + HOUR + 60, REG)
-    assert nxt.watered == power  # a new hour: the can is full again
-    assert can.id
-
-
-async def test_plots_watered_before_a_new_one_is_planted_still_use_up_the_can(db):
+@pytest.mark.parametrize("power, cycles", [(5, 1), (10, 2), (100, 20)])
+async def test_a_can_adds_power_over_5_cycles_to_every_plot_and_only_once_an_hour(db, monkeypatch, power, cycles):
     user = await User.get(1)
     await with_can(user)
-    await plant_many(user, 3)
-    assert (await f.water(user, T0, REG)).watered == 3
-    await user.add_item("seed_coconut", 1)
-    await f.plant(user, 4, "seed_coconut", now=T0, registry=REG)
-    late = await f.water(user, T0 + 30, REG)
-    assert late.watered == 0 and late.thirsty == 1  # the can was already used on three plots this hour
+    await plant_many(user, 6)  # coconuts: 50 cycles, never ripe in one watering here
+    real = f.can_stats
+    async def strong(u, registry=None):
+        return SimpleNamespace(power=power, stats=(await real(u, registry)).stats)
+    monkeypatch.setattr(f, "can_stats", strong)
+    report = await f.water(user, T0, REG)
+    needed = REG.item("seed_coconut").seed.cycles
+    assert report.watered == 6 and report.cycles == 6 * min(cycles, needed)  # every plot, no per-hour cap
+    plots = (await user.skill("farming")).farm
+    assert all(getattr(plots, f"plot_{n}").cycle == min(cycles, needed) for n in range(1, 7))
+    assert (await f.water(user, T0 + 60, REG)).watered == 0  # once an hour
+    assert (await f.water(user, T0 + HOUR + 60, REG)).watered == 6  # a new hour
+
+
+async def test_a_watering_never_grows_a_plot_past_ripe(db, monkeypatch):
+    user = await User.get(1)
+    await with_can(user)
+    await plant_many(user, 1)
+    async def huge(u, registry=None):
+        return SimpleNamespace(power=10_000, stats={})
+    monkeypatch.setattr(f, "can_stats", huge)
+    report = await f.water(user, T0, REG)
+    plot = (await user.skill("farming")).farm.plot_1
+    assert report.matured == (1,) and plot.can_harvest and plot.cycle == REG.item("seed_coconut").seed.cycles
 
 
 def test_longer_crops_roll_the_farming_drop_table_more_often():
@@ -577,18 +576,6 @@ async def test_a_harvest_pays_farming_materials_in_proportion_to_the_crop(db):
     assert sum(found["seed_watermelon"].values()) > 8 * sum(found["seed_apple"].values())
     table = {i.id for i in f.zone_materials(f.seed_zone("seed_watermelon", RULES), REG)}
     assert "material_compost" in found["seed_watermelon"] and {i.removesuffix("_s1").removesuffix("_s2").removesuffix("_s3") for i in found["seed_watermelon"] if i.startswith("material_")} <= table  # only its own zone's table
-
-
-async def test_a_plot_you_watered_and_then_harvested_does_not_use_up_the_can(db):
-    user = await User.get(1)
-    await with_can(user)
-    await plant_many(user, 4)
-    first = await f.water(user, T0, REG)
-    assert first.watered == 3 and first.thirsty == 1
-    await user.update_skill("farming", lambda m: setattr(m.farm.plot_1, "can_harvest", True))
-    await f.harvest(user, 1, Random(1), T0 + 5, REG)  # plot 1 is empty now: its watering no longer counts
-    again = await f.water(user, T0 + 10, REG)
-    assert again.watered == 1  # the can had one watering left, and plot 4 takes it
 
 
 # ---- pages of plots ---------------------------------------------------------------------------------------------------------------------

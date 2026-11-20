@@ -11,6 +11,12 @@
 
 [[entry]]
 date = "2026-11-20"
+title = "Watering cans grow crops faster"
+body = "- A can's power is now **growth per watering**: power 5 adds 1 growth cycle, power 10 adds 2, and so on (power / 5). The Tin can (power 3) has a 60% chance of 1 cycle.\n- Your can now waters **every** growing plot once an hour. There is no plot limit any more."
+major = false
+
+[[entry]]
+date = "2026-11-20"
 title = "Combat is back: classes, zones and dungeons"
 body = "- **Your weapon is your class.** Smith a sword (Melee, Rage), bow (Archer, Focus), staff (Wizard, Mana) or shield (Tank, Guard). Each class has its own skills, and they unlock as your combat level rises.\n- **14 combat zones.** Pick a zone on Skills -> Combat and press Explore. A fight has one to three foes (usually one). A loss costs nothing.\n- **Dungeon keys T1-T8.** Keys drop from zone kills. A key opens a hidden tiled dungeon: move, find rewards, buffs and enemies, and reach the boss.\n- **Party dungeons.** Your party enters together and every move redraws for everyone. The boss is one shared fight.\n- **Runs keep your progress.** HP and buffs carry over between fights in a run. Losing keeps the loot you found.\n- Dungeon runs live in memory, so a bot restart ends them."
 major = true

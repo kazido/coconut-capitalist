@@ -68,7 +68,7 @@ def fishing_per_cast() -> tuple[float, float]:
 
 def farming_table() -> list[tuple[str, int, float, float, float]]:
     rules = REG.farming
-    per_cycle = 1 - (1 - rules.grow_chance) * (1 - rules.water_chance)  # rain + one watering an hour
+    per_cycle = rules.grow_chance + REG.item("tool_can_tin").tool.power / 5  # rain + one watering an hour (starter can)
     rows = []
     for item in REG.items.values():
         if not item.seed:
@@ -225,7 +225,7 @@ def xp_report() -> None:
     for label, xp in rows.items():
         print(f"  {label:24}{xp:>10,.0f}  " + "".join(f"{level_xp(lv) / xp:>8,.0f}h" for lv in (20, 50, 90)))
     print("  level costs: " + ", ".join(f"L{lv} = {level_xp(lv):,} total ({level_xp(lv + 1) - level_xp(lv):,} for the next level)" for lv in (10, 20, 50, 90)))
-    per_cycle = 1 - (1 - REG.farming.grow_chance) * (1 - REG.farming.water_chance)
+    per_cycle = REG.farming.grow_chance + REG.item("tool_can_tin").tool.power / 5
     print(f"  farming: {REG.farming.xp_per_cycle} xp per growth cycle = {REG.farming.xp_per_cycle * per_cycle:,.0f} xp/hour per watered plot, x9 plots = {9 * REG.farming.xp_per_cycle * per_cycle:,.0f}")
 
 

@@ -1856,7 +1856,7 @@ sell_price = 0
 
 [tool_can_tin.tool]
 kind = "can"
-power = 3  # plots it waters an hour
+power = 3  # growth per watering = power / 5 cycles (3 = a 60% chance of 1 cycle)
 requirement = 0
 
 [tool_sword_starter]

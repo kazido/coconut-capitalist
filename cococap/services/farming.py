@@ -125,20 +125,21 @@ def _span(hours: float) -> str:
     return f"{days:.1f} days" if days < 10 else f"{round(days)} days"
 
 
-def hourly_chance(rules, watered: bool = False) -> float:
-    """The chance a growing plot gains a cycle in one hour: the rain, and (if you water it that hour) the water on top."""
-    rain = rules.grow_chance
-    return 1 - (1 - rain) * (1 - rules.water_chance) if watered else rain
+def cycles_per_watering(power: float) -> float:
+    """What one watering adds to a plot on average: power / 5 cycles (power 5 = 1; below 5 it is a chance, power 3 = 0.6)."""
+    return power / 5
 
 
-def estimate(cycles_left: int, rules, watered: bool = False) -> Estimate:
-    """How long until a crop has grown `cycles_left` more cycles. `watered` means you water it EVERY hour; otherwise only the rain
-    counts. The exact odds for short crops, the normal approximation for long ones (where it is very close)."""
-    n, p = max(0, cycles_left), hourly_chance(rules, watered)
+def estimate(cycles_left: int, rules, per_watering: float = 0.0) -> Estimate:
+    """How long until a crop has grown `cycles_left` more cycles. `per_watering` is the expected cycles your can adds if you water it EVERY
+    hour (0 = only the rain counts). The exact odds for rain-only short crops, the normal approximation otherwise (very close)."""
+    n, p = max(0, cycles_left), rules.grow_chance
     if n == 0:
         return Estimate(0.0, 0, 0)
-    typical = n / p
-    if n <= 60:  # exact: the number of hours until the n-th success
+    frac = per_watering % 1
+    mean = p + per_watering
+    typical = n / mean
+    if per_watering == 0 and n <= 60:  # exact: the number of hours until the n-th success
         done, hours, early, late = [1.0] + [0.0] * n, 0, None, None  # done[k] = P(exactly k cycles so far)
         while late is None and hours < 100_000:
             hours += 1
@@ -150,7 +151,7 @@ def estimate(cycles_left: int, rules, watered: bool = False) -> Estimate:
             if done[n] >= 0.9:
                 late = hours
         return Estimate(typical, early or 1, late or hours)
-    spread = 1.2816 * (n * (1 - p)) ** 0.5 / p  # 10% / 90% of a normal curve
+    spread = 1.2816 * (n * (p * (1 - p) + frac * (1 - frac))) ** 0.5 / mean  # 10% / 90% of a normal curve
     return Estimate(typical, max(1, round(typical - spread)), round(typical + spread))
 
 
@@ -168,9 +169,9 @@ class PlotView:
     watered: bool = False  # you have watered it this hour
     golden: bool = False  # Golden Sprout: this planting will harvest tripled
 
-    def left(self, rules, watered: bool = False) -> Estimate:
+    def left(self, rules, per_watering: float = 0.0) -> Estimate:
         """How long until it is ready, from now (the rain after this one, then the next...)."""
-        return estimate(max(0, self.needed - self.cycle), rules, watered)
+        return estimate(max(0, self.needed - self.cycle), rules, per_watering)
 
     @property
     def empty(self) -> bool:
@@ -296,8 +297,7 @@ class WaterReport:
     watered: int  # plots that took a watering
     grew: int  # ...and how many of them grew a cycle
     matured: tuple[int, ...]  # plots that are ready now
-    thirsty: int = 0  # growing plots the can could not reach this hour (it waters `power` plots an hour)
-    capacity: int = 0  # how many plots the can waters an hour
+    cycles: int = 0  # growth cycles the waterings added in all
 
 
 async def can_stats(user: User, registry: Registry | None = None) -> EffectiveStats:
@@ -308,43 +308,42 @@ async def can_stats(user: User, registry: Registry | None = None) -> EffectiveSt
 
 
 async def water(user: User, now: float | None = None, registry: Registry | None = None) -> WaterReport:
-    """Water your growing plots with your can. Each plot can be watered once an hour and then ALWAYS grows a cycle; the can only waters
-    `power` plots an hour (the plots you already watered this hour count), lowest plot number first. Which hour you watered in is kept, so
-    looking again changes nothing. A way to grow faster than the rain alone, once an hour."""
+    """Water ALL your growing plots with your can, once an hour each. A watering adds `power / 5` cycles (the whole part always, the
+    fraction as a chance: power 3 = a 60% chance of 1 cycle). Which hour you watered in is kept, so looking again changes nothing."""
     reg, now = registry or get_registry(), now if now is not None else time.time()
     can = await can_stats(user, reg)
     hour = hour_of(now)
     pet = (await pets.bonuses(user, reg)).get("grow_chance", 0.0)
-    chance = min(1.0, reg.farming.water_chance + pet)
+    whole = int(cycles_per_watering(can.power))
+    frac = cycles_per_watering(can.power) - whole
     sprinkle = can.stats.get("sprinkle", 0.0)  # (a Sprinkler can: a watered plot sometimes grows a second cycle)
-    outcome: dict = {"watered": 0, "grew": 0, "matured": [], "thirsty": 0}
+    outcome: dict = {"watered": 0, "grew": 0, "matured": [], "cycles": 0}
 
     def pour(m: Farming) -> None:
         apply_rain(m, user.id, now, reg, pet)
-        plots = {n: plot_of(m, n) for n in range(1, PLOTS + 1)}
-        room = can.power - sum(1 for p in plots.values() if p.crop_id and p.watered == hour)  # what the can can still do this hour
-        for number, plot in plots.items():
+        for number in range(1, PLOTS + 1):
+            plot = plot_of(m, number)
             if not plot.crop_id or plot.can_harvest or plot.watered == hour:
                 continue
-            if room <= 0:
-                outcome["thirsty"] += 1
-                continue
-            room -= 1
             plot.watered = hour
             outcome["watered"] += 1
-            if _waters(user.id, number, hour, chance):
-                plot.cycle += 1
+            add = whole + (1 if frac and _waters(user.id, number, hour, frac) else 0)
+            if add and sprinkle and _waters(user.id, number, -hour - 1, sprinkle):
+                add += 1
+            needed = reg.item(plot.crop_id).seed.cycles
+            add = min(add, needed - plot.cycle)  # never past ripe: extra cycles would only inflate the byproducts
+            if add > 0:
+                plot.cycle += add
                 outcome["grew"] += 1
-                if sprinkle and _waters(user.id, number, -hour - 1, sprinkle):
-                    plot.cycle += 1
-                if plot.cycle >= reg.item(plot.crop_id).seed.cycles:
-                    plot.can_harvest = True
-                    outcome["matured"].append(number)
+                outcome["cycles"] += add
+            if plot.cycle >= needed:
+                plot.can_harvest = True
+                outcome["matured"].append(number)
 
     await user.update_skill("farming", pour)
     if outcome["watered"]:
         await user.inc_stat("plots_watered", outcome["watered"])  # stats page
-    return WaterReport(outcome["watered"], outcome["grew"], tuple(outcome["matured"]), outcome["thirsty"], can.power)
+    return WaterReport(outcome["watered"], outcome["grew"], tuple(outcome["matured"]), outcome["cycles"])
 
 
 async def buy_plot(user: User, number: int, registry: Registry | None = None) -> None:
