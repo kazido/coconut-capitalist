@@ -8,12 +8,11 @@ from cococap.errors import GameRuleError
 from cococap.registry import get_registry
 from cococap.registry.models import ACCESSORY_SKILLS
 from cococap.services.equipment import TOOL_FOR_SKILL, effective_stats, skill_for_tool
-from cococap.services import accessories, shop, smithing
+from cococap.services import accessories, equipment, shop, smithing
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, select, sep, text
 from cococap.screens.enchant import EnchantPane
-from cococap.screens.smithing import PartsPane, SmithingPane
 from cococap.ui.tabs import TabsScreen
 
 # what a tool's extra stats say in words: stat -> (label, how to show the amount)
@@ -53,11 +52,14 @@ def _describe(inst, rules) -> str:
 
 
 class ToolsPane(Screen):
-    """Your tool for each skill, as a compact list. Enchant, Smithing and Parts are the other tabs."""
+    """One tool at a time: a dropdown switches skill, the arrows flip between your tools for it, and Equip makes one the tool you use.
+    Enchant and Parts are buttons at the bottom (smithing itself lives on the Smithing skill page)."""
 
     label = "Tools"
     emoji = emojis.Lazy("ui_anvil", "🧰")
-    viewing: int | None = None  # instance id of the tool whose detail page is open
+    skill: str | None = None  # the skill whose tools are showing
+    idx: int = 0  # which of that skill's tools (the arrows move this)
+    viewing: int | None = None  # instance id of the tool on screen (the handlers below act on it)
     picked: int | None = None  # the accessory chosen in the detail page's dropdown
 
     async def _equipped_ids(self) -> set[int]:
@@ -68,52 +70,59 @@ class ToolsPane(Screen):
                 ids.add(equipped)
         return ids
 
-    async def build(self) -> Page:
+    async def _mine(self, skill: str) -> list:
         reg = get_registry()
-        instances = [i for i in await self.user.instances() if reg.item(i.template_id).tool]
+        kind = TOOL_FOR_SKILL[skill]
+        return [i for i in await self.user.instances() if reg.item(i.template_id).tool and reg.item(i.template_id).tool.kind == kind]
+
+    async def _home(self, skill: str) -> int:
+        """Index of the tool you use for `skill` (the one to show first)."""
+        mine = await self._mine(skill)
+        worn = (await self.user.skill(skill)).equipped_instance_id
+        return next((n for n, i in enumerate(mine) if i.id == worn), 0)
+
+    async def build(self) -> Page:
         equipped = await self._equipped_ids()
-        viewed = next((i for i in instances if i.id == self.viewing), None)
-        if viewed is not None:
-            return await self._detail(viewed, viewed.id in equipped)
-        self.viewing = None
+        by_skill = {skill: await self._mine(skill) for skill in TOOL_FOR_SKILL}
+        have = [skill for skill, tools in by_skill.items() if tools]
         body = [*self.note_block()]
-        shown = []
-        if not instances:
+        if not have:
             body.append(text("You have no tools yet. Claim your free starter tools below."))
-        # one compact line per skill: the equipped tool (you hold one tool per skill, so there is nothing to pick between)
-        lines = []
-        for kind in KIND_LABEL:
-            mine = [i for i in instances if reg.item(i.template_id).tool.kind == kind]
-            if not mine:
-                continue
-            inst = next((i for i in mine if i.id in equipped), mine[0])
-            shown.append(inst)
-            item = reg.item(inst.template_id)
-            tool = item.tool
-            extra = [describe_stats(tool.stats)] if tool.stats else []
-            if inst.parts:  # smithed: quality grade and the traits picked from its parts
-                extra += ([inst.quality] if inst.quality else []) + [reg.smithing.trait(p["trait"]).name for p in inst.parts.values() if p.get("trait")]
-            lines.append(f"{tool_emoji(inst, item)} **{instance_label(inst)}**  ·  {KIND_LABEL[kind]}  ·  power **{effective_stats(inst, reg).power}**"
-                         + "".join(f"  ·  {e}" for e in extra) + (f"  ·  {emojis.icon('sparkle', '✨')} {tool.ability_name}" if tool.ability_name else ""))
-        if lines:
-            body.append(text("\n".join(lines)))
-            options = [discord.SelectOption(label=f"{instance_label(i)} · {KIND_LABEL[reg.item(i.template_id).tool.kind]}"[:100], value=str(i.id),
-                                                emoji=reg.item(i.template_id).emoji or None)
-                       for i in shown]
-            body.append(row(select("See a tool's details...", options, self._view)))
+        else:
+            if self.skill not in have:
+                self.skill = have[0]
+                self.idx = await self._home(self.skill)
+            tools = by_skill[self.skill]
+            self.idx = min(self.idx, len(tools) - 1)
+            inst = tools[self.idx]
+            self.viewing = inst.id
+            body.append(row(select("Switch skill...", [
+                discord.SelectOption(label=skill.title(), value=skill, default=skill == self.skill, emoji=emojis.skill(skill) or None)
+                for skill in have], self._pick_skill)))
+            body += await self._detail(inst, inst.id in equipped, self.idx + 1, len(tools))
+            controls = []
+            if len(tools) > 1:
+                controls.append(button(emoji=emojis.icon("prev", "◀️"), on_click=self._flip(-1)))
+            controls.append(button("Equipped" if inst.id in equipped else "Equip", style=discord.ButtonStyle.primary,
+                                   disabled=inst.id in equipped, on_click=self._equip))
+            if len(tools) > 1:
+                controls.append(button(emoji=emojis.icon("next", "▶️"), on_click=self._flip(1)))
+            body.append(row(*controls))
+            body += [sep(), row(button("Enchant", emoji=emojis.icon("scroll", "📜"), on_click=self._enchant),
+                                button("Parts", emoji=emojis.icon("anvil", "🧩"), on_click=self._parts))]
         if await self._unclaimed():
             body += [sep(), row(button("Claim free starter tools", emoji=emojis.icon("gift", "🎁"), style=discord.ButtonStyle.success, on_click=self._claim))]
         body += [sep(), row(button("Inventory", emoji=emojis.icon("bag", "🎒"), on_click=self._inventory))]
         return Page("Tools", body, accent=0xB8860B)
 
-    async def _detail(self, inst, equipped: bool) -> Page:
-        """Everything about one tool: the big picture (a smithed tool is drawn from its three parts' tiers), its numbers,
-        when and by whom it was smithed, and each part with its tier/rarity and the trait picked from it."""
+    async def _detail(self, inst, equipped: bool, n: int, total: int) -> list:
+        """Everything about one tool: its numbers, when and by whom it was smithed, each part with its tier and the trait picked from it,
+        its enchants and (for skills that have them) accessories. The big Pillow picture comes with the cosmetics step."""
         reg = get_registry()
         item = reg.item(inst.template_id)
         tool = item.tool
-        body = [*self.note_block()]  # the big Pillow picture (art_runtime) comes in the cosmetics step
-        head = [f"{tool_emoji(inst, item)} **{instance_label(inst)}**" + ("  ·  equipped" if equipped else ""),
+        count = f"  ({n}/{total})" if total > 1 else ""
+        head = [f"{tool_emoji(inst, item)} **{instance_label(inst)}**" + (f"  {emojis.icon('check', '✅')}" if equipped else "") + count,
                 f"{KIND_LABEL.get(tool.kind, tool.kind.title())}  ·  power **{effective_stats(inst, reg).power}**"
                 + (f"  ·  {inst.quality}" if inst.quality else "")]
         date = f"<t:{int(inst.created_at.replace(tzinfo=timezone.utc).timestamp())}:D>" if inst.created_at else None
@@ -121,7 +130,7 @@ class ToolsPane(Screen):
             head.append(f"Smithed {date or 'on an unknown date'} by <@{inst.smith_id}>")
         elif date:
             head.append(f"Made by the game · {date}")
-        body.append(text("\n".join(head)))
+        body = [text("\n".join(head))]
         if inst.parts:
             lines = ["**Parts**"]
             for slot in smithing.PART_TYPES:
@@ -145,8 +154,7 @@ class ToolsPane(Screen):
                 discord.SelectOption(label=reg.enchant(e).name[:100], value=e, emoji=reg.enchant(e).emoji or None) for e in inst.enchants], self._remove_enchant)))
         if skill in ACCESSORY_SKILLS:
             body += await self._accessory_section(skill)
-        body += [sep(), row(button("Back to tools", emoji=emojis.icon("prev", "⬅️"), on_click=self._back))]
-        return Page("Tools", body, accent=0xB8860B)
+        return body
 
     async def _accessory_section(self, skill: str) -> list:
         """The skill's two accessory slots, a dropdown of the ones you own (worn ones marked) and one Equip/Unequip toggle."""
@@ -201,13 +209,34 @@ class ToolsPane(Screen):
         instance = await accessories.equip(self.user, skill, self.picked, worn_ids.index(None))
         await self.refresh(interaction, f"Wearing **{reg.accessories.template(instance.template_id).name}**.")
 
-    async def _view(self, interaction: discord.Interaction, values: list[str]) -> None:
-        self.viewing = int(values[0])
+    async def _pick_skill(self, interaction: discord.Interaction, values: list[str]) -> None:
+        self.skill = values[0]
+        self.idx = await self._home(self.skill)
+        self.picked = None
         await self.refresh(interaction)
 
-    async def _back(self, interaction: discord.Interaction) -> None:
-        self.viewing = None
+    def _flip(self, step: int):
+        async def flip(interaction: discord.Interaction) -> None:
+            total = len(await self._mine(self.skill))
+            self.idx = (self.idx + step) % max(total, 1)
+            self.picked = None
+            await self.refresh(interaction)
+
+        return flip
+
+    async def _equip(self, interaction: discord.Interaction) -> None:
+        try:
+            inst = await equipment.equip(self.user, self.skill, self.viewing)
+        except GameRuleError as err:
+            return await self.refresh(interaction, str(err))
+        await self.refresh(interaction, f"Now using **{instance_label(inst)}** for {self.skill}.")
+
+    async def _enchant(self, interaction: discord.Interaction) -> None:
+        self.nav.screen.tab = "enchant"
         await self.refresh(interaction)
+
+    async def _parts(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "smithing", tab="parts")
 
     async def _unclaimed(self) -> bool:
         reg = get_registry()
@@ -227,11 +256,22 @@ class ToolsPane(Screen):
 
 
 class ToolsScreen(TabsScreen):
-    """The Tools page: your tools (the list), then Enchant, Smithing and Parts as tabs."""
+    """The Tools page: your tools one at a time. Enchant opens in place (Back returns); smithing, parts and the workbench are on the Smithing page."""
 
     id = "tools"
     label = "Tools"
     emoji = emojis.Lazy("ui_anvil", "🧰")
-    description = "Your tools: smith, enchant and salvage them"
-    links = ("inventory",)
-    panes = {"tools": ToolsPane, "enchant": EnchantPane, "smithing": SmithingPane, "parts": PartsPane}
+    description = "Your tools: equip, inspect and enchant them"
+    links = ("inventory", "smithing")
+    tab_menu = False
+    panes = {"tools": ToolsPane, "enchant": EnchantPane}
+
+    async def build(self) -> Page:
+        page = await super().build()
+        if self.tab != "tools":
+            page.body.append(row(button("Back to the tool", emoji=emojis.icon("prev", "⬅️"), on_click=self._to_tool)))
+        return page
+
+    async def _to_tool(self, interaction: discord.Interaction) -> None:
+        self.tab = "tools"
+        await self.nav.refresh(interaction)

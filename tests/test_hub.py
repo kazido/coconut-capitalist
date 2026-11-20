@@ -403,11 +403,51 @@ async def test_inventory_lists_items_only_and_has_inspect_and_tools_buttons(db):
         await equip(user, skill, (await user.give_instance(template)).id)
     nav, inter = await hub("inventory")
     text = all_text(nav)
-    assert "7 Copper Ore" in text and "Starter Axe" not in text and "Watering Can" not in text  # tools are on the Tools page
+    assert "7 Copper Ore" in text and "Starter Axe" in text and "Watering Can" in text  # owned tools are listed too
     labels = {b.label for b in buttons(nav)}
     assert {"Inspect", "Tools"} <= labels and "Sell" not in labels and "Enchant" not in labels and "Upgrade tools" not in labels
     await click(nav, inter, "Tools")
     assert nav.screen.id == "tools"
+
+
+async def test_inventory_marks_an_equipped_tool_with_a_check(db):
+    from cococap.services.equipment import equip
+
+    user = await User.get(1)
+    pick = await user.give_instance("tool_pickaxe_rookie")
+    await equip(user, "mining", pick.id)
+    nav, _ = await hub("inventory")
+    assert any("Rookie Pickaxe" in line and "✅" in line for line in all_text(nav).split("\n"))
+
+
+async def test_inventory_marks_an_equipped_tool_with_a_check(db):
+    from cococap.services.equipment import equip
+
+    user = await User.get(1)
+    pick = await user.give_instance("tool_pickaxe_rookie")
+    await equip(user, "mining", pick.id)
+    nav, _ = await hub("inventory")
+    assert any("Rookie Pickaxe" in line and "✅" in line for line in all_text(nav).split("\n"))
+
+
+async def test_inventory_marks_an_equipped_tool_with_a_check(db):
+    from cococap.services.equipment import equip
+
+    user = await User.get(1)
+    pick = await user.give_instance("tool_pickaxe_rookie")
+    await equip(user, "mining", pick.id)
+    nav, _ = await hub("inventory")
+    assert any("Rookie Pickaxe" in line and "✅" in line for line in all_text(nav).split("\n"))
+
+
+async def test_inventory_marks_an_equipped_tool_with_a_check(db):
+    from cococap.services.equipment import equip
+
+    user = await User.get(1)
+    pick = await user.give_instance("tool_pickaxe_rookie")
+    await equip(user, "mining", pick.id)
+    nav, _ = await hub("inventory")
+    assert any("Rookie Pickaxe" in line and "✅" in line for line in all_text(nav).split("\n"))
 
 
 async def test_inspect_shows_an_item_page_and_back_returns(db):
@@ -445,10 +485,11 @@ async def test_the_tools_page_lists_one_tool_per_skill_including_the_can(db):
     user = await User.get(1)
     for template in ("tool_axe_starter", "tool_can_tin", "tool_pickaxe_rookie", "tool_rod_starter"):
         await user.give_instance(template)
-    nav, _ = await hub("tools")
-    lines = all_text(nav).split("\n")
+    nav, inter = await hub("tools")
     for name, skill in (("Starter Axe", "Foraging"), ("Tin Watering Can", "Farming"), ("Rookie Pickaxe", "Mining"), ("Starter Rod", "Fishing")):
-        assert sum(name in line for line in lines) == 1 and any(name in line and skill in line and "power" in line for line in lines)
+        await choose(nav, inter, select_named(nav, "Switch skill"), skill.lower())  # one tool on screen at a time
+        text = all_text(nav)
+        assert name in text and skill in text and "power" in text
     assert "✅" not in all_text(nav)
 
 
@@ -459,13 +500,62 @@ async def test_the_tools_page_is_a_compact_list_without_equip_buttons_and_leads_
     axe = await user.give_instance("tool_axe_starter")
     await user.give_instance("tool_can_tin")
     await equip(user, "foraging", axe.id)
-    nav, inter = await hub("tools")
-    text = all_text(nav)
-    assert "Starter Axe" in text and "Tin Watering Can" in text and "Farming" in text and "Foraging" in text and "power" in text
-    assert "✅" not in text and not [b for b in buttons(nav) if b.label in ("Equip", "Equipped")]
-    await choose(nav, inter, select_named(nav, "Choose a tab"), "enchant")
-    assert nav.screen.tab == "enchant"
-    assert nav.screen.id == "tools"
+    nav, inter = await hub("tools", skill="foraging")
+    assert "Starter Axe" in all_text(nav) and "✅" in all_text(nav) and find_button(nav, "Equipped").disabled
+    await choose(nav, inter, select_named(nav, "Switch skill"), "farming")
+    assert "Tin Watering Can" in all_text(nav) and not find_button(nav, "Equip").disabled
+    await click(nav, inter, "Enchant")
+    assert nav.screen.tab == "enchant" and nav.screen.id == "tools"
+    await click(nav, inter, "Back to the tool")
+    assert nav.screen.tab == "tools"
+
+
+async def test_the_tools_page_flips_to_a_spare_pickaxe_and_equips_it(db):
+    user = await User.get(1)
+    first = await user.give_instance("tool_pickaxe_rookie")
+    second = await user.give_instance("tool_pickaxe_rookie")
+    nav, inter = await hub("tools", skill="mining")
+    other = second.id if nav.screen.viewing == first.id else first.id
+    await [b for b in buttons(nav) if b.label is None][-1].callback(inter)  # the emoji-only ▶ arrow
+    assert nav.screen.viewing == other
+    await click(nav, inter, "Equip")
+    assert (await user.skill("mining")).equipped_instance_id == other
+
+
+async def test_the_tools_page_flips_to_a_spare_pickaxe_and_equips_it(db):
+    user = await User.get(1)
+    first = await user.give_instance("tool_pickaxe_rookie")
+    second = await user.give_instance("tool_pickaxe_rookie")
+    nav, inter = await hub("tools", skill="mining")
+    other = second.id if nav.screen.viewing == first.id else first.id
+    await [b for b in buttons(nav) if b.label is None][-1].callback(inter)  # the emoji-only ▶ arrow
+    assert nav.screen.viewing == other
+    await click(nav, inter, "Equip")
+    assert (await user.skill("mining")).equipped_instance_id == other
+
+
+async def test_the_tools_page_flips_to_a_spare_pickaxe_and_equips_it(db):
+    user = await User.get(1)
+    first = await user.give_instance("tool_pickaxe_rookie")
+    second = await user.give_instance("tool_pickaxe_rookie")
+    nav, inter = await hub("tools", skill="mining")
+    other = second.id if nav.screen.viewing == first.id else first.id
+    await [b for b in buttons(nav) if b.label is None][-1].callback(inter)  # the emoji-only ▶ arrow
+    assert nav.screen.viewing == other
+    await click(nav, inter, "Equip")
+    assert (await user.skill("mining")).equipped_instance_id == other
+
+
+async def test_the_tools_page_flips_to_a_spare_pickaxe_and_equips_it(db):
+    user = await User.get(1)
+    first = await user.give_instance("tool_pickaxe_rookie")
+    second = await user.give_instance("tool_pickaxe_rookie")
+    nav, inter = await hub("tools", skill="mining")
+    other = second.id if nav.screen.viewing == first.id else first.id
+    await [b for b in buttons(nav) if b.label is None][-1].callback(inter)  # the emoji-only ▶ arrow
+    assert nav.screen.viewing == other
+    await click(nav, inter, "Equip")
+    assert (await user.skill("mining")).equipped_instance_id == other
 
 
 async def test_the_tools_page_shows_one_line_per_skill_and_the_empty_case(db):
@@ -1857,11 +1947,11 @@ async def test_home_has_no_level_no_progress_button_and_no_picture(db):
 async def test_the_skills_page_shows_each_skill_with_its_level_and_no_blurb(db):
     nav, _ = await hub("skills")
     text = all_text(nav)
-    for skill in ("Mining", "Farming", "Foraging", "Fishing", "Combat"):
+    for skill in ("Mining", "Farming", "Foraging", "Fishing", "Combat", "Smithing"):
         assert skill in text
     for blurb in ("Push your luck", "wait for the rain", "Fell trees", "reel in the big one", "Turn-based"):
         assert blurb not in text
-    assert len([b for b in buttons(nav) if b.label == "Open"]) == 4
+    assert len([b for b in buttons(nav) if b.label == "Open"]) == 5  # every skill but combat (paused) has an Open button
 
 
 async def test_a_scarab_can_turn_up_after_any_mine_and_never_says_level_six(db, monkeypatch):

@@ -1696,6 +1696,7 @@ class Quality(_Data):
 class SmithLevels(_Data):
     xp_per_smith: int = Field(ge=0)
     xp_per_salvage: int = Field(ge=0)
+    xp_per_craft: int = Field(ge=0)
     quality_shift_per_level: float = Field(ge=0)
     swap_unlock_level: int = Field(ge=1)
 

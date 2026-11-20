@@ -283,19 +283,17 @@ def test_tier_pace():
 
 
 async def test_tool_detail_page_lists_parts_tiers_traits_and_smith():
-    """Tools tab: pick a tool from the dropdown to see its parts (tier + rarity), the picked traits and who smithed it."""
-    from tests.test_hub import all_text, choose, click, hub, select_named
+    """Tools page: the tool on screen lists its parts (tier + rarity), the picked traits and who smithed it."""
+    from tests.test_hub import all_text, hub
 
     user = await player()
     trait = RULES.trait_pool[0]
     tool = await smithed_pickaxe(user, RULES.grades[0].name, traits=(trait.id, None, None), tiers=(8, 3, 1))
-    nav, inter = await hub("tools")
-    await choose(nav, inter, select_named(nav, "See a tool's details"), str(tool.id))
+    nav, _ = await hub("tools", skill="mining")
     page = all_text(nav)
     assert "T8" in page and "T3" in page and "T1" in page
     assert smithing.trait_icons([trait.id], RULES) in page and f"<@{user.id}>" in page and "<t:" in page
-    await click(nav, inter, "Back to tools")
-    assert select_named(nav, "See a tool's details")
+    assert nav.screen.id == "tools"
 
 
 async def test_parts_show_in_the_inventory(db):

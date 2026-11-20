@@ -113,6 +113,7 @@ base_odds = 2
 [levels]
 xp_per_smith = 40                         # smithing xp per tool smithed    TODO(balance)
 xp_per_salvage = 15                       # smithing xp per tool salvaged
+xp_per_craft = 5                          # smithing xp per item made at the Workbench (crafting is smithing's only grind)  TODO(balance)
 quality_shift_per_level = 0.5             # percent points moved off Crude per smithing level (TODO(balance))
 swap_unlock_level = 10                    # smithing level that unlocks swapping one part of an existing tool
 

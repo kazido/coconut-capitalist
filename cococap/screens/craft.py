@@ -8,14 +8,12 @@ from cococap.ui.components import bits, button, needs_text, row, select, text
 from cococap.ui.rewards import rewards_result
 
 
-class CraftScreen(Screen):
-    """The Workbench: pick a recipe, see what it needs against what you have, craft one, ten or as many as you can."""
+class WorkbenchPane(Screen):
+    """The Workbench, a tab of the Smithing page: pick a recipe, see what it needs against what you have, craft one, ten or as many as you can.
+    Every craft earns smithing xp."""
 
-    id = "craft"
     label = "Workbench"
     emoji = emojis.Lazy("ui_craft", "🛠️")
-    description = "Make things from materials"
-    links = ()
 
     def __init__(self, nav):
         super().__init__(nav)

@@ -90,6 +90,22 @@ def part_lines(instances: list[ItemInstance]) -> list[str]:
     return [line for _, _, line in _part_rows(instances)]
 
 
-def inventory_entries(items: dict[str, int], instances: list[ItemInstance]) -> list[tuple[str, str]]:
-    """(key, line) for everything the Inventory page lists, in page order: stacks ("item:<id>"), then parts ("part:<instance id>")."""
-    return [(key, line) for _, key, line in _stack_rows(items)] + [(key, line) for _, key, line in _part_rows(instances)]
+def _tool_rows(instances: list[ItemInstance], equipped_ids: set[int]) -> list[tuple]:
+    """Tools (equipped ones get a check mark), as ("tool:<instance id>") rows sorted by name."""
+    reg = get_registry()
+    rows = []
+    for inst in instances:
+        template = reg.find_item(inst.template_id)
+        if template is None or template.tool is None:
+            continue
+        label = instance_label(inst)
+        mark = f" {emojis.icon('check', '✅')}" if inst.id in equipped_ids else ""
+        rows.append((label.lower(), f"tool:{inst.id}", f"{template.emoji or emojis.icon('sword', '🗡️')} {label}{mark}"))
+    return sorted(rows)
+
+
+def inventory_entries(items: dict[str, int], instances: list[ItemInstance], equipped_ids: frozenset[int] | set[int] = frozenset()) -> list[tuple[str, str]]:
+    """(key, line) for everything the Inventory page lists, in page order: stacks ("item:<id>"), tools ("tool:<instance id>",
+    equipped ones checked), then parts ("part:<instance id>")."""
+    return [(key, line) for _, key, line in _stack_rows(items)] + [(key, line) for _, key, line in _tool_rows(instances, set(equipped_ids))] \
+        + [(key, line) for _, key, line in _part_rows(instances)]

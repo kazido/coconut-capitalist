@@ -148,19 +148,25 @@ async def test_unknown_recipe_and_zero_times_are_refused(db):
 
 
 # ---- the screen --------------------------------------------------------------------------------------------------------------------------
-async def test_the_workbench_is_one_button_away_from_the_inventory(db):
-    nav, inter = await hub("inventory")
-    await click(nav, inter, "Workbench")
-    assert nav.screen.id == "craft" and "Radar Battery" in all_text(nav)
-    await click(nav, inter, "Back")
-    assert nav.screen.id == "inventory"
+async def test_the_workbench_is_a_tab_of_the_smithing_page(db):
+    from tests.test_hub import choose, select_named
+
+    nav, inter = await hub("smithing")
+    await choose(nav, inter, select_named(nav, "Choose a tab"), "workbench")
+    assert nav.screen.tab == "workbench" and "Radar Battery" in all_text(nav)
 
 
 async def test_the_screen_crafts_one_ten_and_max_and_shows_the_result(db):
+    from tests.test_hub import select_named
+
+    from tests.test_hub import select_named
+
+    from tests.test_hub import select_named
+
     user = await User.get(1)
     await stock(user, BATTERY, times=12)
-    nav, inter = await hub("craft")
-    sel = selects(nav)[0]
+    nav, inter = await hub("smithing", tab="workbench")
+    sel = select_named(nav, "Pick a recipe")
     await choose(nav, inter, sel, "material_radar_battery")
     assert "Coral Shard" in all_text(nav) and "✅" in all_text(nav)
     assert find_button(nav, "Craft 1") and not find_button(nav, "Craft 10").disabled
@@ -168,7 +174,7 @@ async def test_the_screen_crafts_one_ten_and_max_and_shows_the_result(db):
     assert nav.screen.id == "result" and "Radar Battery" in all_text(nav)
     assert await user.item_quantity("material_radar_battery") == BATTERY.quantity
     await click(nav, inter, "Back to the Workbench")
-    assert nav.screen.id == "craft"
+    assert nav.screen.id == "smithing"
     await click(nav, inter, "Craft 10")
     assert await user.item_quantity("material_radar_battery") == 11 * BATTERY.quantity
     await click(nav, inter, "Back to the Workbench")
@@ -180,7 +186,7 @@ async def test_the_screen_crafts_one_ten_and_max_and_shows_the_result(db):
 
 
 async def test_the_screen_marks_what_is_missing_and_disables_crafting(db):
-    nav, inter = await hub("craft")
+    nav, inter = await hub("smithing", tab="workbench")
     assert all(b.disabled for b in buttons(nav) if (b.label or "").startswith("Craft"))
     assert "❌" in all_text(nav)
 

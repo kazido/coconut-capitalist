@@ -13,7 +13,10 @@ from cococap.services import equipment, smithing
 from cococap.services.equipment import TOOL_FOR_SKILL
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
-from cococap.ui.components import button, row, select, sep, text
+from cococap.screens.craft import WorkbenchPane
+from cococap.ui.components import button, row, section_art, select, sep, text, xp_bar
+from cococap.ui.tabs import TabsScreen
+from cococap.user import User
 
 
 def _slot_of(inst) -> str:
@@ -27,6 +30,10 @@ def _tier(inst) -> int:
 def _part_emoji(slot: str, inst) -> str | None:
     """The part's own emoji (per tier, else the generic part one) for dropdown options."""
     return emojis.for_id("item", f"part_{slot}_t{_tier(inst)}", get_registry().item(inst.template_id).emoji) or None
+
+
+def _thumb(slot: str, inst) -> str | None:
+    return emojis.image_url("item", f"part_{slot}_t{_tier(inst)}")
 
 
 def _trait_names(inst, rules) -> str:
@@ -64,7 +71,9 @@ class SmithingPane(Screen):
                 parts[_slot_of(inst)].append(inst)
 
         body = [*self.note_block()]
-        body.append(text(f"Smithing level **{level}**"))
+        xp = await smithing.smithing_xp(self.user)
+        overflow, needed = User.xp_for_next_level(xp)
+        body.append(text(f"### {emojis.skill('smithing', '⚒️')} Smithing  ·  Lv {level}\n{xp_bar(overflow / needed if needed else 0, 8)}"))
         if not any(parts.values()):
             body.append(text("You have no parts yet. Parts drop from skill actions: mining, fishing, foraging and farming."))
             return Page("Smithing", body, accent=0xB8860B)
@@ -104,8 +113,8 @@ class SmithingPane(Screen):
         part = mine_slot[idx]
 
         if self.sub == "trait":
-            body.append(text(f"{smithing.part_label(slot, _tier(part), smithing.is_restricted(part))}\n"
-                             "Choose the trait this part gives the tool:"))
+            body.append(section_art(f"{smithing.part_label(slot, _tier(part), smithing.is_restricted(part))}\n"
+                                    "Choose the trait this part gives the tool:", _thumb(slot, part)))
             trait_options = [discord.SelectOption(label="No trait", value="none", emoji=emojis.icon("cross", "🚫"), default=self.picks.get(part.id) is None)]
             for t in part.traits:
                 if t in fitting:
@@ -121,8 +130,8 @@ class SmithingPane(Screen):
             return Page("Smithing", body, accent=0xB8860B)
 
         # Browse: the dropdown and the arrows move through the same list of parts.
-        body.append(text(f"{smithing.part_label(slot, _tier(part), smithing.is_restricted(part))} "
-                         f"({idx + 1}/{len(mine_slot)})\n{self._trait_lines(part, rules, fitting)}"))
+        body.append(section_art(f"{smithing.part_label(slot, _tier(part), smithing.is_restricted(part))} "
+                                f"({idx + 1}/{len(mine_slot)})\n{self._trait_lines(part, rules, fitting)}", _thumb(slot, part)))
         start = idx // 25 * 25
         body.append(row(select(f"{slot.title()} part...", [
             discord.SelectOption(label=f"{smithing.part_label(slot, _tier(i))} {_trait_names(i, rules)}"[:100],
@@ -278,3 +287,14 @@ class PartsPane(Screen):
         parts = await smithing.salvage(self.user, self.salvage_id)
         self.salvage_id = None
         await self.refresh(interaction, f"Salvaged **{name}**: got {len(parts)} parts back.")
+
+
+class SmithingScreen(TabsScreen):
+    """The Smithing skill page: smith tools from parts, craft at the Workbench, manage parts and salvage. Crafting and smithing level it up."""
+
+    id = "smithing"
+    label = "Smithing"
+    emoji = emojis.Lazy("ui_anvil", "⚒️")
+    description = "Smith tools, craft things, salvage parts"
+    links = ("tools", "inventory")
+    panes = {"smithing": SmithingPane, "workbench": WorkbenchPane, "parts": PartsPane}

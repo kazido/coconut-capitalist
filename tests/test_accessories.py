@@ -194,8 +194,7 @@ async def test_the_tab_toggle_equips_into_slot_one_and_unequips(db):
     await shop.claim_starter_tools(user)
     reg = get_registry()
     rod = next(i for i in await user.instances() if (t := reg.find_item(i.template_id)) and t.tool and t.tool.kind == "rod")
-    nav, inter = await hub("tools")
-    await choose(nav, inter, select_named(nav, "See a tool"), str(rod.id))
+    nav, inter = await hub("tools", skill="fishing")  # the rod is the only fishing tool
     await choose(nav, inter, select_named(nav, "Pick an accessory"), str(spare.id))
     await click(nav, inter, "Equip")
     assert (await user.skill("fishing")).accessory_ids[0] == spare.id

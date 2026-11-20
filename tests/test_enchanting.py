@@ -145,7 +145,7 @@ async def test_the_enchant_screen_picks_a_scroll_then_a_tool(db):
     user, rod = await with_tool("tool_rod_starter", "fishing", scrolls={"scroll_double_hook": 1})
     axe = await user.give_instance("tool_axe_starter")
     nav, inter = await hub("tools")
-    await choose(nav, inter, select_named(nav, "Choose a tab"), "enchant")
+    await click(nav, inter, "Enchant")
     assert nav.screen.tab == "enchant"
     await choose(nav, inter, select_named(nav, "Pick a scroll"), "scroll_double_hook")
     menu = select_named(nav, "Put it on")

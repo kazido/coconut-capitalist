@@ -15,7 +15,7 @@ class ShipScreen(Screen):
     label = "Travel"
     emoji = emojis.icon('ship', '🚢')
     description = "Sail to new areas and upgrade your ship"
-    links = ("craft",)
+    links = ("smithing",)
 
     async def build(self) -> Page:
         reg = get_registry()

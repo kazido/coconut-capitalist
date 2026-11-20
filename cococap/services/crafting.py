@@ -112,6 +112,8 @@ async def craft(user: User, recipe_id: str, times: int = 1, registry: Registry |
     except Exception:
         await payment.refund(user, bits, inputs)
         raise
+    from cococap.services import smithing  # (here to avoid an import cycle)
+    await smithing.add_smithing_xp(user, reg.smithing.levels.xp_per_craft * times)
     return Crafted(recipe, times, made, bits)
 
 

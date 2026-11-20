@@ -6,6 +6,7 @@ from cococap import emojis
 from cococap.constants import Rarities
 from cococap.registry import get_registry
 from cococap.services import smithing
+from cococap.services.equipment import TOOL_FOR_SKILL, skill_for_tool
 from cococap.services.inventory import inventory_entries
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, section_art, select, sep, text
@@ -22,7 +23,7 @@ class InventoryScreen(Screen):
     label = "Inventory"
     emoji = emojis.Lazy("ui_bag", "🎒")
     description = "Your items"
-    links = ("tools", "shop", "trade", "craft")
+    links = ("tools", "shop", "trade")
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -33,7 +34,8 @@ class InventoryScreen(Screen):
     async def build(self) -> Page:
         # Stacked items, then smithing parts (unique, so listed one per line). Tools live on the Tools page.
         items = await self.user.items()
-        entries = inventory_entries(items, await self.user.instances())
+        equipped = {(await self.user.skill(s)).equipped_instance_id for s in TOOL_FOR_SKILL}
+        entries = inventory_entries(items, await self.user.instances(), equipped)
         if self.inspecting:
             if detail := await self._detail(self.inspecting, items):
                 return Page("Inventory", [*self.note_block(), *detail, row(button("Back", on_click=self._back))], accent=0x99B0A2)
@@ -65,7 +67,7 @@ class InventoryScreen(Screen):
         body += [sep(), row(button("Inspect", emoji=emojis.icon("search", "🔍"), style=discord.ButtonStyle.success, disabled=not lines, on_click=self._inspect),
                             button("Tools", emoji=emojis.icon("anvil", "🧰"), on_click=self._tools),
                             button("Trade", emoji=emojis.icon("trade", "🤝"), on_click=self._trade),
-                            button("Workbench", emoji=emojis.icon("craft", "🛠️"), on_click=self._craft))]
+                            )]
         return Page("Inventory", body, accent=0x99B0A2)
 
     def _turn(self, step: int):
@@ -80,6 +82,13 @@ class InventoryScreen(Screen):
         await self.refresh(interaction)
 
     async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
+        if values[0].startswith("tool:"):  # a tool opens on the Tools page, on that very tool
+            reg = get_registry()
+            inst = await self.user.instance(int(values[0].partition(":")[2]))
+            if inst is not None and (tool := reg.item(inst.template_id).tool):
+                skill = skill_for_tool(tool.kind)
+                mine = [i for i in await self.user.instances() if reg.item(i.template_id).tool and reg.item(i.template_id).tool.kind == tool.kind]
+                return await self.go(interaction, "tools", skill=skill, idx=next(n for n, i in enumerate(mine) if i.id == inst.id))
         self.inspecting = values[0]
         await self.refresh(interaction)
 
@@ -124,5 +133,4 @@ class InventoryScreen(Screen):
     async def _trade(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "trade")
 
-    async def _craft(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "craft")
+

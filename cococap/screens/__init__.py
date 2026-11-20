@@ -11,7 +11,6 @@ from cococap.user import User
 from .bestiary import BestiaryScreen
 from .blackjack import BlackjackPane
 from .checkin import CheckInScreen
-from .craft import CraftScreen
 from .farm import FarmScreen
 from .fight import FightScreen
 from .fish import FishLogScreen, FishPotsScreen, FishScreen
@@ -35,6 +34,7 @@ from .settings import SettingsScreen
 from .ship import ShipScreen
 from .shipments import ShipmentsScreen
 from .shop import ShopScreen
+from .smithing import SmithingScreen
 from .skills import SkillsScreen
 from .tools import ToolsScreen
 from .trade import TradeScreen
@@ -56,6 +56,7 @@ SCREENS: dict[str, type[Screen]] = {
         MasteryScreen,
         CheckInScreen,
         SkillsScreen,
+        SmithingScreen,
         FarmScreen,
         FightScreen,
         ForageScreen,
@@ -71,7 +72,6 @@ SCREENS: dict[str, type[Screen]] = {
         MineScreen,
         GamesScreen,
         InventoryScreen,
-        CraftScreen,
         WikiScreen,
         ShopScreen,
         RankScreen,

@@ -1146,7 +1146,7 @@ Stats are the shared currency (`equipped_stats` adds tool + enchants + Mastery; 
 
 ## Crafting
 
-The **Workbench** (Inventory > Workbench, `screens/craft.py`, rules in `services/crafting.py`, data in `configs/recipes.toml`) makes things from
+The **Workbench** (Skills > Smithing > Workbench tab, `screens/craft.py` `WorkbenchPane`; each craft earns smithing xp `levels.xp_per_craft`, rules in `services/crafting.py`, data in `configs/recipes.toml`) makes things from
 materials instead of buying them. A recipe is `id, name, emoji, output + quantity, inputs {item: qty}, bits` and optionally `skill` + `min_level`.
 `Registry` validates them (`models.Recipe`, `Registry._validate_recipes`): the output and every input exist, nothing is a tool, quantities are above 0,
 and no recipe consumes its own output. `craft(user, recipe_id, times)` takes bits and items together or nothing (`services/payment.py`, shared with

@@ -11,6 +11,12 @@
 
 [[entry]]
 date = "2026-11-20"
+title = "Smithing is a skill, and the Tools page changed"
+body = "- **Smithing** now sits on the Skills page with its own level. Its page holds **Smithing** (build a tool: browse parts with the arrows, Pick one, then choose its trait), the **Workbench** (moved here from the Inventory) and **Parts**. Crafting at the Workbench earns smithing xp.\n- **Tools** shows one tool at a time. Switch skill with the dropdown, flip between your tools with the arrows and press **Equip** to use one. **Enchant** and **Parts** are buttons at the bottom.\n- Your **Inventory** now lists your tools too; the equipped ones have a check mark. Inspecting a tool opens it on the Tools page.\n- Every part's traits are shown with what they do, and parts you already held had their traits rerolled."
+major = true
+
+[[entry]]
+date = "2026-11-20"
 title = "Inventory Inspect and part names"
 body = "- **Inspect** replaces the Sell button on your Inventory: pick an item to see its big picture, stats and details. For tool parts that includes the tier and each **trait**. (Selling is still in the Shop.)\n- Tool parts now read **T2 Tool Base / Tool Trim / Tool Accent** (the tier is the rarity, so no rarity word).\n- Part traits show as **icons** instead of words.\n- Fixed tool parts not showing their picture in your inventory."
 major = false
