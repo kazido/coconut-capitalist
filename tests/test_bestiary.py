@@ -6,7 +6,8 @@ from cococap.registry import get_registry
 from cococap.services import bestiary, combat
 from cococap.user import SKILL_MODELS, User
 from tests.test_combat import foe, hero
-from tests.test_hub import all_text, buttons, click, hub, select_named
+from cococap.screens.bestiary import BestiaryScreen
+from tests.test_hub import all_text, buttons, choose, click, hub, select_named
 
 REG = get_registry()
 RULES = REG.bestiary
@@ -102,11 +103,11 @@ async def test_a_loss_records_no_kills(db):
 async def test_the_bestiary_hides_what_you_have_not_met_and_shows_what_you_have(db):
     user = await User.get(1)
     nav, _ = await hub("bestiary")
-    assert all_text(nav).count("❓ Unknown") == len(REG.enemies) and "Zombie" not in all_text(nav)
+    assert "Unknown" in all_text(nav) and "Zombie" not in all_text(nav)
     await user.update_skill("combat", lambda s: s.kills.update({"zombie": 30}))
     nav, _ = await hub("bestiary")
     text = all_text(nav)
-    assert "Zombie" in text and "Slain **30**" in text and "Moves: Strike" in text and text.count("❓ Unknown") == len(REG.enemies) - 1
+    assert "Zombie" in text and "Slain **30**" in text and "Moves: Strike" in text
     assert f"next goal {RULES.steps[2]}" in text
     assert "point" not in text.lower()  # (it is a record, not a reward)
 
@@ -133,9 +134,23 @@ async def test_the_kill_counter_keeps_climbing_after_the_last_goal(db):
     assert (await user.skill("combat")).kills["zombie"] == (top + 49_000) * 100  # the stat itself has no ceiling
 
 
-async def test_the_fight_lobby_and_the_more_page_lead_to_the_bestiary(db):
-    nav, inter = await hub("fight")
+async def test_the_combat_page_and_the_more_page_lead_to_the_bestiary(db):
+    nav, inter = await hub("combat")
     await click(nav, inter, "Bestiary")
     assert nav.screen.id == "bestiary" and buttons(nav)
     nav, inter = await hub("more")
     assert "Bestiary" in all_text(nav)
+
+
+async def test_every_bestiary_zone_fits_discord_limits_with_every_monster_met(db):
+    user = await User.get(1)
+    await user.update_skill("combat", lambda s: s.kills.update({e: 10**6 for e in REG.enemies}))
+    nav, inter = await hub("bestiary")
+    for loc in REG.locations["combat"]:
+        await choose(nav, inter, select_named(nav, "Zone..."), loc.id)
+        nav.to_components()
+        assert nav.total_children_count <= 40 and nav.content_length() <= 4000, loc.id
+    shown = set()
+    for zone in REG.combat.zones:
+        shown |= set(BestiaryScreen._zone_enemies(REG)[zone])
+    assert shown == set(REG.enemies)  # every monster is on some zone's page

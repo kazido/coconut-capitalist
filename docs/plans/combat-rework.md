@@ -1,4 +1,4 @@
-Status: APPROVED 2026-11-20. Not built. Step 0 done.
+Status: APPROVED 2026-11-20. Steps 0-4 done on design; step 5 (dungeon service) next.
 
 
 ## Context
@@ -58,6 +58,32 @@ Reuse the built turn-meter engine: `services/combat.py`, with `Battle`, `Unit`, 
   - Reuse `screens/fight.py` for battles. Add a resource bar next to hp.
   - The dungeon pane is an emoji grid viewport (about 7x7) plus 4 arrows and one context button (Fight / Loot / Boss / Leave).
 - **Docs:** add a changelog entry (`major = true`), a notice and a new DESIGN.md combat section. Update the "Combat paused" line.
+
+## Built so far (steps 1-4, all on `design`, NOT merged to master yet)
+Commits: aae9419 (1), 044d979 (2), e08be5c (3), 96cfa0e (4). Step 1 did not land on master alone as planned; it rides with the rest.
+- **Class = weapon kind** (owner decision): sword/bow/staff/shield in the combat slot pick the class; no saved class state. Bare hands = `kits.default`.
+  `equipment.WEAPON_KINDS`, `skill_for_tool(kind)` -> "combat"; `combat.class_for(kind)`. Starter templates `tool_<kind>_starter` in
+  `constants.WEAPON_TEMPLATES` (smithing only, not given at signup). Weapon stat profiles in `configs/tools.toml` `[sword|bow|staff|shield]`
+  via `tool_effects.power_stats`.
+- **Classes** `[classes.*]` in `configs/combat.toml`: resource, resource_max, kit of `{skill, level}` (<= 5; first is level 0, no cooldown, no cost).
+- **Engine** (`services/combat.py`): `Unit.resource_kind/resource/resource_max/hurt`; `[resources.*]` (start, per_turn, per_unhurt_turn,
+  on_hit_taken, crit_per_point); skill `cost` (play refuses) / `gain`; effects chill, burn, taunt, counter, reflect; Shatter, Ignite,
+  storm chain (`[elements]`). Enemies hit a taunter, else the lowest-hp player. Party: `Battle.play(skill, target, actor_id)`,
+  `build_player(user, reg, uid)`. Tests: `tests/test_combat_engine.py`, `tests/test_combat_classes.py`.
+- **Zones**: 14 `[combat.*]` in `configs/locations.toml`, `[zones.*]` in combat.toml (pool, max_foes, rare mini-boss), one drop table per
+  zone. `combat.battle_with(player, enemy_ids)`, `roll_foes`, `explore(user, zone_id)`. Old graveyard encounters removed; Gravewarden key
+  fight kept. Tests: `tests/test_combat_zones.py`.
+- **UI**: `screens/combat.py` CombatScreen (tabs Explore, Class); Skills -> Combat opens it. `screens/fight.py` plays battles (resource
+  next to hp, cost on buttons), "Fight again" re-explores. Bestiary shows combat monsters one zone at a time. Add the Dungeons tab in step 6.
+- **Dungeons (step 5)**: `configs/dungeons.toml` (`[tiers.N]`, `[[buffs]]`) -> `CombatRules.dungeons`/`dungeon_buffs`; keys
+  `key_dungeon_t1..t8` in items.toml (no drops yet: step 7). `services/dungeon.py`: `enter(users, tier)`, `move(run, user, dir)` ->
+  moved/reward/buff/fight/boss, `finish_fight`, `finish_boss`, `leave`, `run_of(uid)`; `Run.version` bumps on every change (step 6 pokes on it);
+  `Run.lock` guards each call. Tests: `tests/test_dungeon.py`. Sync: `dungeon.add_listener` -> `ui/nav._on_dungeon_change` pokes every member on home/trade/combat/dungeon/fight.
+- **Dungeon UI (step 6)**: Combat -> Dungeons tab (`DungeonsPane`; the party leader takes the party in), `screens/dungeon.py` map
+  (7x7 viewport, arrows, Leave, Boss fight / Back to the fight), `screens/fight.py` dungeon mode (`run`, `me_id`, no Flee,
+  `dungeon.boss_play`, `auto_play` after 30 s idle, `finish_boss` is idempotent). Tests: `tests/test_dungeon_screen.py`.
+- **Open notes**: every new number is TODO(balance) (step 7). New weapons/enemies use plain unicode emoji (art later). One unidentified test
+  failed once in the step-4 run and never again in 14 reruns: watch for a flaky test. Docs/changelog/DESIGN.md not written yet (step 7).
 
 ## Steps (one commit each; lead reviews diffs and runs targeted tests + ruff only)
 1. **Remove the old sword items** (Sonnet worker, `remove-item` skill). Lands on master alone.

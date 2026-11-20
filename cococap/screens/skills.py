@@ -9,7 +9,7 @@ from cococap.ui.components import button, section, xp_bar
 from cococap.user import User
 
 # skill -> the screen that plays it
-SKILL_SCREENS: dict[str, str | None] = {"mining": "mining", "farming": "farm", "foraging": "forage", "fishing": "fish", "combat": None, "smithing": "smithing"}  # combat is paused while it is redesigned (the fight screen still exists)
+SKILL_SCREENS: dict[str, str | None] = {"mining": "mining", "farming": "farm", "foraging": "forage", "fishing": "fish", "combat": "combat", "smithing": "smithing"}
 
 
 class SkillsScreen(Screen):
@@ -19,7 +19,7 @@ class SkillsScreen(Screen):
     label = "Skills"
     emoji = emojis.Lazy("ui_skills", "📈")
     description = "Mining, farming, foraging, fishing, combat and smithing"
-    links = ("mining", "farm", "forage", "fish", "smithing")
+    links = ("mining", "farm", "forage", "fish", "combat", "smithing")
 
     async def build(self) -> Page:
         body = [*self.note_block()]

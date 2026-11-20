@@ -639,7 +639,7 @@ def reachable_from_home():
 
 
 def test_every_screen_is_reachable_by_following_links_from_home():
-    assert reachable_from_home() == set(SCREENS) - {"fight"}  # (combat is paused: nothing links to it until it is reworked)
+    assert reachable_from_home() == set(SCREENS)
 
 
 async def test_home_links_really_open_the_declared_screens(db):
@@ -658,11 +658,10 @@ async def test_home_links_really_open_the_declared_screens(db):
         assert opened <= set(SCREENS[parent].links) and opened, (parent, opened)
 
 
-async def test_skills_page_lists_all_five_and_combat_is_paused(db):
+async def test_skills_page_lists_all_five_skills(db):
     nav, _ = await hub("skills")
     text = all_text(nav)
     assert all(name in text for name in ("Mining", "Farming", "Foraging", "Fishing", "Combat"))
-    assert [b.label for b in buttons(nav) if b.label in ("Soon", "Paused")] == ["Paused"]  # (combat is paused for its rework)
 
 
 async def test_shop_has_a_section_per_skill_and_filters(db):
@@ -1951,7 +1950,7 @@ async def test_the_skills_page_shows_each_skill_with_its_level_and_no_blurb(db):
         assert skill in text
     for blurb in ("Push your luck", "wait for the rain", "Fell trees", "reel in the big one", "Turn-based"):
         assert blurb not in text
-    assert len([b for b in buttons(nav) if b.label == "Open"]) == 5  # every skill but combat (paused) has an Open button
+    assert len([b for b in buttons(nav) if b.label == "Open"]) == 6  # every skill, combat and smithing included
 
 
 async def test_a_scarab_can_turn_up_after_any_mine_and_never_says_level_six(db, monkeypatch):

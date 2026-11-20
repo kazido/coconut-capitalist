@@ -190,7 +190,7 @@ class Registry:
     def _validate_locations(self, rules: AreaRules) -> list[str]:
         problems = []
         per_skill = LOCATIONS_PER_AREA * len(rules.areas)
-        for skill in ("mining", "fishing", "foraging", "farming"):
+        for skill in ("mining", "fishing", "foraging", "farming", "combat"):
             locs = self.locations.get(skill)
             if not locs:
                 problems.append(f"locations.toml: no locations for '{skill}'")
@@ -353,6 +353,15 @@ class Registry:
 
 def _validate_combat(reg: "Registry", rules: CombatRules) -> list[str]:
     problems = []
+    for tier, d in rules.dungeons.items():
+        where = f"dungeons.toml tiers.{tier}"
+        problems += [f"{where}: unknown enemy '{e}'" for e in [*d.enemies, d.boss] if e not in reg.enemies]
+        if d.loot not in reg.drop_tables:
+            problems.append(f"{where}: unknown drop table '{d.loot}'")
+        if d.key not in reg.items:
+            problems.append(f"{where}: its key item '{d.key}' is missing from items.toml")
+        if not any(d.tiles.values()):
+            problems.append(f"{where}: tiles need a weight above 0")
     for key, skill in rules.skills.items():
         if key != skill.id:
             problems.append(f"combat.toml skill '{key}' has id '{skill.id}'")
@@ -360,8 +369,8 @@ def _validate_combat(reg: "Registry", rules: CombatRules) -> list[str]:
         every = [*enemy.skills, *(s for ph in enemy.phases for s in ph.skills or [])]
         problems += [f"enemies.toml [{enemy.id}]: unknown skill '{s}'" for s in every if s not in rules.skills]
     for kit, skills in rules.kits.items():
-        if kit != "default" and (kit not in reg.items or reg.items[kit].tool is None or reg.items[kit].tool.kind != "sword"):
-            problems.append(f"combat.toml kits: '{kit}' is not a sword")
+        if kit != "default":
+            problems.append(f"combat.toml kits: only 'default' (bare hands) is allowed, not '{kit}'; weapons use [classes]")
         problems += [f"combat.toml kits.{kit}: unknown skill '{s}'" for s in skills if s not in rules.skills]
         if len(skills) > 5:
             problems.append(f"combat.toml kits.{kit}: at most 5 skills (they are one row of buttons)")
@@ -369,6 +378,29 @@ def _validate_combat(reg: "Registry", rules: CombatRules) -> list[str]:
             problems.append(f"combat.toml kits.{kit}: the first skill must have no cooldown")
     if "default" not in rules.kits:
         problems.append("combat.toml kits: a 'default' kit is needed")
+    weapons = [c.weapon for c in rules.classes.values()]
+    for kind in ("sword", "bow", "staff", "shield"):
+        if weapons.count(kind) != 1:
+            problems.append(f"combat.toml classes: weapon '{kind}' needs exactly one class")
+    for cid, cls in rules.classes.items():
+        kit = cls.kit
+        problems += [f"combat.toml classes.{cid}: unknown skill '{k.skill}'" for k in kit if k.skill not in rules.skills]
+        if not kit or len(kit) > 5:
+            problems.append(f"combat.toml classes.{cid}: 1 to 5 skills (one row of buttons)")
+            continue
+        first = rules.skills.get(kit[0].skill)
+        if kit[0].level != 0 or (first and (first.cooldown or first.cost)):
+            problems.append(f"combat.toml classes.{cid}: the first skill must be level 0 with no cooldown or cost")
+        if any(a.level > b.level for a, b in zip(kit, kit[1:], strict=False)):
+            problems.append(f"combat.toml classes.{cid}: kit levels must not go down")
+        if cls.resource not in rules.resources:
+            problems.append(f"combat.toml classes.{cid}: resource '{cls.resource}' has no [resources.{cls.resource}]")
+    if list(rules.zones) != [loc.id for loc in reg.locations.get("combat", [])]:
+        problems.append("combat.toml: [zones.*] must be one per combat location in locations.toml, in the same order")
+    for zone in rules.zones.values():
+        for e in [*zone.enemies, *([zone.rare] if zone.rare else [])]:
+            if e not in reg.enemies:
+                problems.append(f"combat.toml zone '{zone.id}': unknown enemy '{e}'")
     for enc in rules.encounters:
         problems += [f"combat.toml encounter '{enc.id}': unknown enemy '{e}'" for e in enc.enemies if e not in reg.enemies]
         if enc.key and (enc.key not in reg.items or reg.items[enc.key].category != "key_item"):
@@ -474,7 +506,12 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     fishing = _name_waters(_build(FishingRules, "fishing", [("fishing", _read(config_dir, "fishing"))])[0], locations)
     raw = _read(config_dir, "combat")
     raw["skills"] = {k: {"id": k, **v} for k, v in raw.get("skills", {}).items()}
+    raw["classes"] = {k: {"id": k, **v} for k, v in raw.get("classes", {}).items()}
     raw["encounters"] = [{"id": k, **v} for k, v in raw.get("encounters", {}).items()]
+    raw["zones"] = {k: {"id": k, **v} for k, v in raw.get("zones", {}).items()}
+    raw_dungeons = _read(config_dir, "dungeons")
+    raw["dungeons"] = {int(k): {"tier": int(k), **v} for k, v in raw_dungeons.get("tiers", {}).items()}
+    raw["dungeon_buffs"] = raw_dungeons.get("buffs", [])
     combat = _build(CombatRules, "combat", [("combat", raw)])[0]
     drops = _build(DropTable, "drops", ((k, {"id": k, **v}) for k, v in _read(config_dir, "drops").items()))
     bestiary = _build(BestiaryRules, "bestiary", [("bestiary", _read(config_dir, "bestiary"))])[0]

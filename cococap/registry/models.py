@@ -14,7 +14,7 @@ from cococap import emojis
 
 Skill = Literal["farming", "foraging", "fishing", "mining", "combat", "shepherding"]
 Category = Literal["material", "tool", "key_item", "pet_item", "pet_food", "crop", "seed", "fish", "scroll", "bait", "part", "accessory"]
-ToolKind = Literal["pickaxe", "axe", "sword", "rod", "can"]
+ToolKind = Literal["pickaxe", "axe", "sword", "bow", "staff", "shield", "rod", "can"]
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 
@@ -282,9 +282,14 @@ EffectKind = Literal[
     "meter",  # turn meter: value = fraction of a full bar, negative pulls it back
     "empower",  # the unit's next damaging skill deals value x damage (once)
     "reveal",  # the player can see what each enemy will do next
+    "chill",  # frost: slower by value (a fraction); fire or storm hits on a chilled unit Shatter
+    "burn",  # fire: damage every turn like bleed (value = fraction of the caster's attack); a fire hit Ignites it
+    "taunt",  # enemies' single-target skills must hit this unit
+    "counter",  # when hit by a foe, strike back for value x attack
+    "reflect",  # when hit by a foe, send value x the damage back
 ]
 SkillTarget = Literal["enemy", "all_enemies", "self", "ally"]
-BUFFS = frozenset({"attack_up", "defense_up", "speed_up", "shield", "empower", "reveal"})
+BUFFS = frozenset({"attack_up", "defense_up", "speed_up", "shield", "empower", "reveal", "taunt", "counter", "reflect"})
 
 
 class SkillEffect(_Data):
@@ -299,7 +304,7 @@ class SkillEffect(_Data):
 
     @model_validator(mode="after")
     def _needs_value(self):
-        if self.kind not in {"stun", "reveal"} and self.value == 0:
+        if self.kind not in {"stun", "reveal", "taunt"} and self.value == 0:
             raise ValueError(f"effect '{self.kind}' needs a value")
         return self
 
@@ -316,6 +321,9 @@ class CombatSkill(_Data):
     cooldown: int = Field(default=0, ge=0)
     hits: int = Field(default=1, ge=1)
     effects: list[SkillEffect] = Field(default_factory=list)
+    cost: int = Field(default=0, ge=0)  # class resource spent; the skill can't be used without it
+    gain: int = Field(default=0, ge=0)  # class resource gained
+    element: Literal["frost", "fire", "storm"] | None = None
 
     _id = field_validator("id")(check_id)
 
@@ -402,7 +410,6 @@ class PlayerRules(_Data):
     base_hp: int = Field(ge=1)
     hp_per_level: int = Field(ge=0)
     base_attack: int = Field(ge=1)
-    attack_per_power: int = Field(ge=0)  # per point of sword power
     attack_per_level: int = Field(ge=0)
     base_defense: int = Field(ge=0)
     defense_per_level: int = Field(ge=0)
@@ -421,6 +428,73 @@ class Encounter(_Data):
     _id = field_validator("id")(check_id)
 
 
+class KitSkill(_Data):
+    skill: str
+    level: int = Field(ge=0)  # combat level that unlocks it
+
+
+class ResourceRules(_Data):
+    """How a class resource (rage, focus, mana, guard) fills. Every field works for every resource; the config picks."""
+
+    start: int = Field(default=0, ge=0)  # at the start of a fight (capped by the class's resource_max)
+    per_turn: int = Field(default=0, ge=0)  # at the start of each own turn
+    per_unhurt_turn: int = Field(default=0, ge=0)  # at the start of an own turn, if not hurt since the last one
+    on_hit_taken: int = Field(default=0, ge=0)  # each time a foe's hit lands
+    crit_per_point: float = Field(default=0, ge=0)  # extra crit chance (percent) per point held
+
+
+class ElementRules(_Data):
+    shatter: float = Field(default=1.5, ge=1)  # a fire/storm hit on a chilled unit deals this x damage; the chill ends
+    chain: float = Field(default=0.5, ge=0, le=1)  # a single-target storm hit also hits one other foe for this x damage
+
+
+class CombatClass(_Data):
+    """A fighting class, picked by the weapon in the combat slot."""
+
+    id: str
+    name: str
+    weapon: ToolKind
+    resource: str
+    resource_max: int = Field(ge=1)
+    description: str
+    kit: list[KitSkill]
+
+
+class CombatZone(_Data):
+    """What a combat location (zone) throws at you: Explore draws 1..max_foes from `enemies`; `rare` (a mini-boss) fights alone."""
+
+    id: str
+    enemies: list[str] = Field(min_length=1)
+    max_foes: int = Field(default=3, ge=1, le=4)
+    rare: str | None = None
+    rare_chance: int = Field(default=0, ge=0, le=100)  # percent per Explore
+
+
+class DungeonBuff(_Data):
+    """A buff tile's reward: `hp` heals `percent` of max hp now; other stats rise by `percent` for the rest of the run."""
+
+    stat: Literal["hp", "attack", "defense", "speed"]
+    percent: int = Field(ge=1)
+
+
+class DungeonTier(_Data):
+    """One dungeon tier (dungeons.toml). Its key is `key_dungeon_t<tier>`, spent on entry."""
+
+    tier: int = Field(ge=1, le=8)
+    size: int = Field(ge=3, le=12)  # the grid is size x size
+    min_level: int = Field(default=0, ge=0)  # combat level every member needs
+    tiles: dict[Literal["reward", "buff", "enemy", "empty"], int]  # relative weights of the hidden tiles
+    enemies: list[str] = Field(min_length=1)
+    max_foes: int = Field(default=3, ge=1, le=4)
+    boss: str
+    loot: str  # drops.toml table a reward tile rolls
+    loot_rolls: int = Field(default=1, ge=1)
+
+    @property
+    def key(self) -> str:
+        return f"key_dungeon_t{self.tier}"
+
+
 class CombatRules(_Data):
     meter_full: int = Field(ge=1)  # a unit acts when its turn meter reaches this
     defense_scale: int = Field(ge=1)  # damage = attack x power x scale / (scale + defense)
@@ -429,8 +503,15 @@ class CombatRules(_Data):
     max_rounds: int = Field(ge=1)  # a fight this long is a loss (stops stalemates)
     player: PlayerRules
     skills: dict[str, CombatSkill]
-    kits: dict[str, list[str]]  # sword item id (or "default") -> skill ids, basic skill first
+    kits: dict[str, list[str]]  # only "default" (bare hands) -> skill ids, basic skill first
+    classes: dict[str, CombatClass]
+    resources: dict[str, ResourceRules] = Field(default_factory=dict)  # by CombatClass.resource
+    elements: ElementRules = Field(default_factory=ElementRules)
     encounters: list[Encounter] = Field(min_length=1)
+    zones: dict[str, CombatZone] = Field(default_factory=dict)  # by combat location id, in order
+    foe_weights: list[int] = Field(default_factory=lambda: [1, 1, 1, 1], min_length=4, max_length=4)  # Explore: odds of 1, 2, 3, 4 foes
+    dungeons: dict[int, DungeonTier] = Field(default_factory=dict)  # by tier (dungeons.toml)
+    dungeon_buffs: list[DungeonBuff] = Field(default_factory=list)
 
 
 class Rank(_Data):
@@ -1457,16 +1538,21 @@ class CanPower(_Data):
     paths: dict[str, dict[str, float]] = Field(default_factory=dict)  # by road name (Sprinkler, Alchemist): a factor on each stat above (missing = 1)
 
 
-class SwordPower(_Data):
-    hp: float = Field(ge=0)
+class WeaponProfile(_Data):
+    attack: float = Field(ge=0)  # per power point
+    hp: float = Field(ge=0)  # per power point above base
     defense: float = Field(ge=0)
+    speed: float = Field(ge=0)
 
 
 class ToolRules(_Data):
     pickaxe: PickaxePower
     axe: AxePower
     can: CanPower
-    sword: SwordPower
+    sword: WeaponProfile
+    bow: WeaponProfile
+    staff: WeaponProfile
+    shield: WeaponProfile
 
 
 # ---- Shipments (configs/shipments.toml) ------------------------------------------------------------------------------------------------

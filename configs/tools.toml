@@ -48,6 +48,27 @@ crop_yield = 1.5
 drop_luck = 0.6
 seed_back = 0.6
 
+# Weapon profiles. `attack` is per power point (all of it); hp/defense/speed are per power point above the base 3. TODO(balance)
 [sword]
-hp = 3                      # extra max hp in a fight
-defense = 0.25              # extra defense in a fight
+attack = 3
+hp = 3
+defense = 0.25
+speed = 0
+
+[bow]
+attack = 3.8
+hp = 1
+defense = 0.1
+speed = 1
+
+[staff]
+attack = 2.6
+hp = 0.5
+defense = 0
+speed = 0
+
+[shield]
+attack = 2.6
+hp = 6
+defense = 0.6
+speed = 0

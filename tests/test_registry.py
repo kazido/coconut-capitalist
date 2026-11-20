@@ -34,8 +34,6 @@ def test_seeds_and_crops_are_linked_both_ways():
 
 def test_lookups():
     reg = get_registry()
-    assert reg.item("tool_dreamnail").tool.requirement == 10
-    assert reg.item("tool_shiningsilver").tool.ability_description.endswith("50% of their max health.")
     assert reg.item("key_gemstone_implosion").wiki  # recovered from the old database
     assert {i.id for i in reg.items_for_skill("mining")} >= {"material_copper_ore", "tool_scarab_bomb"}
     assert all(i.price > 0 for i in reg.shop_items())

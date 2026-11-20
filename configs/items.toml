@@ -2,131 +2,6 @@
 # Ids are lowercase snake_case and are what players' inventories store -- never rename one without a data migration.
 # Seeds are `<crop>_seed`. rarity: 1 Common .. 6 Mythical, 7 Premium, 8 Celestial. price 0 = not sold in the shop; drop.rate = 1-in-N.
 
-[spirit_of_the_sword]
-name = "Spirit of the Sword"
-emoji = "🗡️"
-description = "Fused with the essence of the battlefield."
-wiki = "Give it to your active pet for a bonus in combat xp."
-rarity = 5
-skill = "combat"
-category = "pet_item"
-price = 0
-sell_price = 500000
-
-[spirit_of_the_sword.drop]
-rate = 1100
-min = 1
-max = 1
-
-[tool_dreamnail]
-name = "Dreamnail"
-emoji = "🪡"
-description = "Shaped in a faraway grounds, with stories of an infected Kingdom sealed inside."
-wiki = "A combat weapon. Combat is paused for now, so it is kept for later. Upgrade it into the Shining Silver."
-rarity = 5
-skill = "combat"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_dreamnail.tool]
-kind = "sword"
-power = 22
-requirement = 10
-ability = "enter_the_mind"
-ability_name = "Enter the Mind"
-ability_description = "Let's the wielder peer inside the mind of his foe, revealing its next move."
-
-[tool_dreamnail.tool.upgrade]
-to = "tool_shiningsilver"
-bits = 200000000  # TODO(balance)
-
-[tool_dreamnail.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_living_vine = 10
-material_gold_ore = 1000
-material_maple_leaf = 100
-material_aged_feather = 3
-fish_pufferfish = 20
-crop_hot_pepper = 20
-material_plant_fiber = 300
-
-[tool_largebranch]
-name = "Large Branch"
-emoji = "🌿"
-description = "A sturdy branch from a sturdy tree."
-wiki = "A combat weapon. Combat is paused for now, so it is kept for later. Upgrade it into the Rusted Broadsword."
-rarity = 1
-skill = "combat"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_largebranch.tool]
-kind = "sword"
-power = 3
-requirement = 0
-
-[tool_largebranch.tool.upgrade]
-to = "tool_rustedbroadsword"
-bits = 50000  # TODO(balance)
-
-[tool_largebranch.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_iron_ore = 40
-material_hardwood = 10
-material_plant_fiber = 10
-fish_bass = 5
-
-[tool_rustedbroadsword]
-name = "Rusted Broadsword"
-emoji = "🗡️"
-description = "A warrior's most trusted possession, now in the hands of another."
-wiki = "A combat weapon. Combat is paused for now, so it is kept for later. Upgrade it into the Dreamnail."
-rarity = 2
-skill = "combat"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_rustedbroadsword.tool]
-kind = "sword"
-power = 5
-requirement = 0
-ability = "sanguine_priming"
-ability_name = "Sanguine Priming"
-ability_description = "1/10 chance to cause enemies to take 2x damage on your next attack."
-
-[tool_rustedbroadsword.tool.upgrade]
-to = "tool_dreamnail"
-bits = 5000000  # TODO(balance)
-
-[tool_rustedbroadsword.tool.upgrade.items]  # TODO(balance): the first steps use only its own skill's materials; later ones add smaller amounts from other skills
-material_beeswax = 10
-material_gold_ore = 200
-material_fine_bark = 25
-material_maple_leaf = 10
-fish_salmon = 10
-material_coral_shard = 30
-crop_lemon = 20
-
-[tool_shiningsilver]
-name = "Shining Silver"
-emoji = "🥈"
-description = "A beautiful expression of forgery, which gleams in the sun."
-wiki = "A combat weapon. Combat is paused for now, so it is kept for later. There is nothing above it."
-rarity = 6
-skill = "combat"
-category = "tool"
-price = 0
-sell_price = 0
-
-[tool_shiningsilver.tool]
-kind = "sword"
-power = 102
-requirement = 50
-ability = "glistening_haven"
-ability_name = "Glistening Haven"
-ability_description = "Attacks heal allies for 50% of their max health."
-
 [crop_ambrosia]
 name = "Olympian Ambrosia"
 emoji = "🍯"
@@ -257,6 +132,94 @@ skill = "combat"
 category = "key_item"
 price = 0
 sell_price = 5000  # TODO(balance)
+
+[key_dungeon_t1]
+name = "T1 Dungeon Key"
+description = "Opens a tier 1 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 1 dungeon from Combat -> Dungeons. A rare drop (about 1 in 50 kills) from the monsters of the combat zones; later areas drop higher tiers."
+emoji = "🗝️"
+rarity = 1
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 2000  # TODO(balance)
+
+[key_dungeon_t2]
+name = "T2 Dungeon Key"
+description = "Opens a tier 2 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 2 dungeon from Combat -> Dungeons. A rare drop (about 1 in 50 kills) from the monsters of the combat zones; later areas drop higher tiers."
+emoji = "🗝️"
+rarity = 2
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 4000  # TODO(balance)
+
+[key_dungeon_t3]
+name = "T3 Dungeon Key"
+description = "Opens a tier 3 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 3 dungeon from Combat -> Dungeons. A rare drop (about 1 in 50 kills) from the monsters of the combat zones; later areas drop higher tiers."
+emoji = "🗝️"
+rarity = 3
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 6000  # TODO(balance)
+
+[key_dungeon_t4]
+name = "T4 Dungeon Key"
+description = "Opens a tier 4 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 4 dungeon from Combat -> Dungeons. A rare drop (about 1 in 50 kills) from the monsters of the combat zones; later areas drop higher tiers."
+emoji = "🗝️"
+rarity = 4
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 8000  # TODO(balance)
+
+[key_dungeon_t5]
+name = "T5 Dungeon Key"
+description = "Opens a tier 5 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 5 dungeon from Combat -> Dungeons. A rare drop (about 1 in 50 kills) from the monsters of the combat zones; later areas drop higher tiers."
+emoji = "🗝️"
+rarity = 5
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 10000  # TODO(balance)
+
+[key_dungeon_t6]
+name = "T6 Dungeon Key"
+description = "Opens a tier 6 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 6 dungeon from Combat -> Dungeons. A rare drop (about 1 in 50 kills) from the monsters of the combat zones; later areas drop higher tiers."
+emoji = "🗝️"
+rarity = 6
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 12000  # TODO(balance)
+
+[key_dungeon_t7]
+name = "T7 Dungeon Key"
+description = "Opens a tier 7 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 7 dungeon from Combat -> Dungeons. A rare drop (about 1 in 50 kills) from the monsters of the combat zones; later areas drop higher tiers."
+emoji = "🗝️"
+rarity = 7
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 14000  # TODO(balance)
+
+[key_dungeon_t8]
+name = "T8 Dungeon Key"
+description = "Opens a tier 8 dungeon. It crumbles in the lock."
+wiki = "Spent when you (and your party) enter a tier 8 dungeon from Combat -> Dungeons. A rare drop (about 1 in 50 kills) from the monsters of the combat zones; later areas drop higher tiers."
+emoji = "🗝️"
+rarity = 7
+skill = "combat"
+category = "key_item"
+price = 0
+sell_price = 16000  # TODO(balance)
 
 [key_orb_lesser]
 name = "Lesser Familiar Orb"
@@ -1894,6 +1857,70 @@ sell_price = 0
 [tool_can_tin.tool]
 kind = "can"
 power = 3  # plots it waters an hour
+requirement = 0
+
+[tool_sword_starter]
+name = "Starter Sword"
+description = "A plain sword. Smith one to fight as a Melee."
+wiki = "The sword sets your combat class."
+emoji = "⚔️"
+rarity = 1
+skill = "combat"
+category = "tool"
+price = 0  # smithed, not sold
+sell_price = 0
+
+[tool_sword_starter.tool]
+kind = "sword"
+power = 3
+requirement = 0
+
+[tool_bow_starter]
+name = "Starter Bow"
+description = "A plain bow. Smith one to fight as a Archer."
+wiki = "The bow sets your combat class."
+emoji = "🏹"
+rarity = 1
+skill = "combat"
+category = "tool"
+price = 0  # smithed, not sold
+sell_price = 0
+
+[tool_bow_starter.tool]
+kind = "bow"
+power = 3
+requirement = 0
+
+[tool_staff_starter]
+name = "Starter Staff"
+description = "A plain staff. Smith one to fight as a Wizard."
+wiki = "The staff sets your combat class."
+emoji = "🪄"
+rarity = 1
+skill = "combat"
+category = "tool"
+price = 0  # smithed, not sold
+sell_price = 0
+
+[tool_staff_starter.tool]
+kind = "staff"
+power = 3
+requirement = 0
+
+[tool_shield_starter]
+name = "Starter Shield"
+description = "A plain shield. Smith one to fight as a Tank."
+wiki = "The shield sets your combat class."
+emoji = "🛡️"
+rarity = 1
+skill = "combat"
+category = "tool"
+price = 0  # smithed, not sold
+sell_price = 0
+
+[tool_shield_starter.tool]
+kind = "shield"
+power = 3
 requirement = 0
 
 [material_coal]

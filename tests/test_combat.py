@@ -233,7 +233,7 @@ def test_xp_is_paid_only_for_a_win():
 
 def test_a_seeded_fight_is_reproducible():
     def run():
-        b = combat.new_battle(hero(), "graveyard_horde", rng=random.Random(7))
+        b = combat.battle_with(hero(), ["armored_zombie", "skeleton", "zombie"], rng=random.Random(7))
         while not b.outcome:
             b.play("slash", b.living("enemy")[0].id)
         return b.log
@@ -251,12 +251,6 @@ async def test_a_fresh_player_fights_bare_handed_and_a_sword_adds_attack_and_ski
     lv = User.xp_to_level(0)
     assert (bare.max_hp, bare.attack, bare.defense, bare.speed) == (
         p.base_hp + p.hp_per_level * lv, p.base_attack + p.attack_per_level * lv, p.base_defense + p.defense_per_level * lv, p.speed)
-    sword = await user.give_instance("tool_rustedbroadsword")
-    await user.equip("combat", sword.id)
-    armed = await combat.build_player(user)
-    power = get_registry().item("tool_rustedbroadsword").tool.power
-    assert armed.attack == bare.attack + p.attack_per_power * power
-    assert armed.skills == RULES.kits["tool_rustedbroadsword"]
 
 
 async def test_settle_pays_xp_and_counts_kills(db):
@@ -277,11 +271,11 @@ def test_the_boss_is_stun_immune_telegraphs_and_has_ordered_phases():
     assert get_registry().combat.encounters[-1].enemies == ["gravewarden"]
 
 
-def test_every_kit_fits_one_row_of_buttons_and_every_sword_kit_can_brace():
+def test_every_kit_fits_one_row_of_buttons():
     for name, kit in RULES.kits.items():
         assert len(kit) <= 5, name
-        if name != "default":
-            assert "brace" in kit, name
+    for cls in RULES.classes.values():
+        assert len(cls.kit) <= 5, cls.id
 
 
 def test_you_get_the_first_turn_against_the_boss_and_see_the_death_knell_coming():

@@ -64,31 +64,31 @@ id = "power_core"
 name = "Power Core"
 stat = "power"
 amounts = [1, 2, 3, 4]                    # TODO(balance)
-kinds = ["pickaxe", "rod", "axe", "can"]
+kinds = ["pickaxe", "rod", "axe", "can", "sword", "bow", "staff", "shield"]
 [[trait]]
 id = "scholar_edge"
 name = "Scholar's Edge"
 stat = "scholar"
 amounts = [0.02, 0.04, 0.06, 0.08]                    # TODO(balance)
-kinds = ["pickaxe", "rod", "axe", "can"]
+kinds = ["pickaxe", "rod", "axe", "can", "sword", "bow", "staff", "shield"]
 [[trait]]
 id = "appraiser_eye"
 name = "Appraiser's Eye"
 stat = "appraise"
 amounts = [0.02, 0.04, 0.06, 0.08]                    # TODO(balance)
-kinds = ["pickaxe", "rod", "axe", "can"]
+kinds = ["pickaxe", "rod", "axe", "can", "sword", "bow", "staff", "shield"]
 [[trait]]
 id = "lucky_charm"
 name = "Lucky Charm"
 stat = "rare_luck"                        # fishing: rare fish likelier; mining, foraging, farming: a missed rare drop may roll again
 amounts = [0.03, 0.05, 0.07, 0.10]        # TODO(balance)
-kinds = ["pickaxe", "rod", "axe", "can"]
+kinds = ["pickaxe", "rod", "axe", "can", "sword", "bow", "staff", "shield"]
 [[trait]]
 id = "bountiful"
 name = "Bountiful"
 stat = "drop_amount"                      # bigger drops: ore (mining), tree drops, farm byproducts, extra fish (+ per catch)
 amounts = [0.03, 0.05, 0.07, 0.10]        # TODO(balance)
-kinds = ["pickaxe", "rod", "axe", "can"]
+kinds = ["pickaxe", "rod", "axe", "can", "sword", "bow", "staff", "shield"]
 
 
 # Quality grades a smithed tool can get. `mult` scales the tool's power and every trait amount.

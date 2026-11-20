@@ -185,8 +185,8 @@ def fishing_xp_per_minute(power: int) -> float:
     return water.xp * n / seconds * 60
 
 
-def combat_xp_per_hour(encounter_id: str, level: int, power: int, kit: str) -> tuple[float, float]:
-    """(xp per hour, win rate) farming one encounter with a plain 'best ready skill' player, one click per CLICK_SECONDS."""
+def combat_xp_per_hour(enemy_ids: list[str], level: int, power: int, kit: str) -> tuple[float, float]:
+    """(xp per hour, win rate) farming one group of enemies with a plain 'best ready skill' player, one click per CLICK_SECONDS."""
     from cococap.services import combat as c
 
     rules = REG.combat
@@ -194,9 +194,9 @@ def combat_xp_per_hour(encounter_id: str, level: int, power: int, kit: str) -> t
     wins, clicks, xp = 0, 0, 0
     for seed in range(200):
         me = c.Unit(id="p1", name="Hero", side="player", max_hp=p.base_hp + p.hp_per_level * level,
-                    attack=p.base_attack + p.attack_per_power * power + p.attack_per_level * level,
+                    attack=p.base_attack + REG.tools.sword.attack * power + p.attack_per_level * level,
                     defense=p.base_defense + p.defense_per_level * level, speed=p.speed, skills=list(rules.kits[kit]))
-        b = c.new_battle(me, encounter_id, rng=Random(seed))
+        b = c.battle_with(me, enemy_ids, rng=Random(seed))
         while not b.outcome:
             ready = [x for x in me.skills if me.ready(x) and x != "brace"]
             b.play(ready[-1], min(b.living("enemy"), key=lambda u: u.hp).id)
@@ -218,8 +218,8 @@ def xp_report() -> None:
         "fishing L1 rod": fishing_xp_per_minute(rod[0].tool.power) * 60,
         "fishing L8 rod": fishing_xp_per_minute(rod[-1].tool.power) * 60,
     }
-    for label, enc, lv, pw, kit in (("combat lv1 lone zombie", "graveyard_lone", 1, 1, "tool_largebranch"),
-                                    ("combat lv8 horde", "graveyard_horde", 8, 20, "tool_dreamnail")):
+    for label, enc, lv, pw, kit in (("combat lv1 lone zombie", ["zombie"], 1, 1, "default"),
+                                    ("combat lv8 horde", ["armored_zombie", "skeleton", "zombie"], 8, 20, "default")):
         rows[label], win = combat_xp_per_hour(enc, lv, pw, kit)
     print(f"  {'':24}{'xp/hour':>10}  " + "".join(f"{'to L' + str(lv):>9}" for lv in (20, 50, 90)) + "   (hours of play from level 1)")
     for label, xp in rows.items():

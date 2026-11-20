@@ -62,6 +62,9 @@ class GamblingChannels(Enum):
 # The tools every player gets for free (the shop sells none): one per skill, claimed on the first /play or from the Tools page.
 STARTER_TOOLS = ("tool_pickaxe_rookie", "tool_axe_starter", "tool_rod_starter", "tool_can_tin")
 
+# Weapons are smithed, never given at signup (so not in STARTER_TOOLS).
+WEAPON_TEMPLATES = ("tool_sword_starter", "tool_bow_starter", "tool_staff_starter", "tool_shield_starter")
+
 
 class Rarities(Enum):
     COMMON = (1, "Common", "0x8E9AAF")

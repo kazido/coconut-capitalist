@@ -11,6 +11,12 @@
 #   body  = the message (Discord markdown, at most 1500 characters)
 
 [[notice]]
+id = "combat_rework_2026_11"
+date = "2026-11-20"
+title = "Combat is back"
+body = "Smith a sword, bow, staff or shield to pick a class. Explore zones from Skills -> Combat. Keys open dungeons you can run with your party. Dungeon runs are lost if the bot restarts."
+
+[[notice]]
 id = "fuel_overdrive_2026_11"
 date = "2026-11-19"
 title = "Fuel recipes changed"

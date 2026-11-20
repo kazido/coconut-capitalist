@@ -11,6 +11,12 @@
 
 [[entry]]
 date = "2026-11-20"
+title = "Combat is back: classes, zones and dungeons"
+body = "- **Your weapon is your class.** Smith a sword (Melee, Rage), bow (Archer, Focus), staff (Wizard, Mana) or shield (Tank, Guard). Each class has its own skills, and they unlock as your combat level rises.\n- **14 combat zones.** Pick a zone on Skills -> Combat and press Explore. A fight has one to three foes (usually one). A loss costs nothing.\n- **Dungeon keys T1-T8.** Keys drop from zone kills. A key opens a hidden tiled dungeon: move, find rewards, buffs and enemies, and reach the boss.\n- **Party dungeons.** Your party enters together and every move redraws for everyone. The boss is one shared fight.\n- **Runs keep your progress.** HP and buffs carry over between fights in a run. Losing keeps the loot you found.\n- Dungeon runs live in memory, so a bot restart ends them."
+major = true
+
+[[entry]]
+date = "2026-11-20"
 title = "Smithing is a skill, and the Tools page changed"
 body = "- **Smithing** now sits on the Skills page with its own level. Its page holds **Smithing** (build a tool: browse parts with the arrows, Pick one, then choose its trait), the **Workbench** (moved here from the Inventory) and **Parts**. Crafting at the Workbench earns smithing xp.\n- **Tools** shows one tool at a time. Switch skill with the dropdown, flip between your tools with the arrows and press **Equip** to use one. **Enchant** and **Parts** are buttons at the bottom.\n- Your **Inventory** now lists your tools too; the equipped ones have a check mark. Inspecting a tool opens it on the Tools page.\n- Every part's traits are shown with what they do, and parts you already held had their traits rerolled."
 major = true

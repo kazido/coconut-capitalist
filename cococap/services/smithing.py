@@ -7,7 +7,7 @@ Numbers live in configs/smithing.toml; plan: docs/plans/tools-smithing.md.
 import random
 
 from cococap import emojis
-from cococap.constants import STARTER_TOOLS, Rarities
+from cococap.constants import STARTER_TOOLS, WEAPON_TEMPLATES, Rarities
 from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
@@ -20,7 +20,7 @@ class RestrictedPartError(GameRuleError):
 
 
 PART_TYPES = ("base", "trim", "accent")
-KINDS = ("pickaxe", "rod", "axe", "can")
+KINDS = ("pickaxe", "rod", "axe", "can", "sword", "bow", "staff", "shield")
 XP_STAT = "smithing_xp"  # per-user counter; no migration needed
 
 
@@ -209,7 +209,7 @@ async def smith(
     rules = _rules(registry)
     reg = registry or get_registry()
     if kind not in KINDS:
-        raise GameRuleError("A tool can be a pickaxe, rod, axe or can.")
+        raise GameRuleError("A tool can be a pickaxe, rod, axe, can, sword, bow, staff or shield.")
     ids = {"base": base_id, "trim": trim_id, "accent": accent_id}
     parts = {slot: await _owned_part(user, pid, slot) for slot, pid in ids.items()}
     level = await smithing_level(user)
@@ -247,7 +247,7 @@ async def smith(
     tool_parts = {slot: {"tier": _part_tier(parts[slot]), "trait": slot_trait[slot], **_flag(parts[slot])} for slot in PART_TYPES}
     quality = _roll_quality(rules, level, rng)
     cosmetic = {"rolled": True} if rng.random() < rules.cosmetic_chance else {}
-    template = next(i for i in STARTER_TOOLS if reg.item(i).tool.kind == kind)
+    template = next(i for i in (*STARTER_TOOLS, *WEAPON_TEMPLATES) if reg.item(i).tool.kind == kind)
 
     for pid in ids.values():
         await user.delete_instance(pid)

@@ -18,7 +18,7 @@ LUCK, AMOUNT = LUCKY.amounts[-1], BOUNTY.amounts[-1]
 def test_the_traits_exist_for_every_tool_kind_and_grow_with_quality():
     assert (LUCKY.stat, BOUNTY.stat) == ("rare_luck", "drop_amount")
     for trait in (LUCKY, BOUNTY):
-        assert set(trait.kinds) == {"pickaxe", "rod", "axe", "can"}
+        assert set(trait.kinds) == {"pickaxe", "rod", "axe", "can", "sword", "bow", "staff", "shield"}
         assert list(trait.amounts) == sorted(trait.amounts) and len(trait.amounts) == 4
 
 

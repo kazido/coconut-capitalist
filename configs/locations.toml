@@ -225,3 +225,60 @@ emoji = "🌷"
 [farming.dreamless_furrows]
 name = "Dreamless Furrows"
 emoji = "💤"
+
+
+[combat.graveyard]
+name = "Graveyard"
+emoji = "🪦"
+
+[combat.slime_meadow]
+name = "Slime Meadow"
+emoji = "🟢"
+
+[combat.dusk_dunes]
+name = "Dusk Dunes"
+emoji = "🏜️"
+
+[combat.mirage_ruins]
+name = "Mirage Ruins"
+emoji = "🏛️"
+
+[combat.scrapyard]
+name = "Scrapyard"
+emoji = "🔩"
+
+[combat.rusted_foundry]
+name = "Rusted Foundry"
+emoji = "🏭"
+
+[combat.canal_alleys]
+name = "Canal Alleys"
+emoji = "🛶"
+
+[combat.clockwork_district]
+name = "Clockwork District"
+emoji = "⚙️"
+
+[combat.cloud_ridge]
+name = "Cloud Ridge"
+emoji = "🌥️"
+
+[combat.storm_garden]
+name = "Storm Garden"
+emoji = "⛈️"
+
+[combat.comet_fields]
+name = "Comet Fields"
+emoji = "☄️"
+
+[combat.starfall_temple]
+name = "Starfall Temple"
+emoji = "🌠"
+
+[combat.hollow_gate]
+name = "Hollow Gate"
+emoji = "🕳️"
+
+[combat.the_unmade]
+name = "The Unmade"
+emoji = "🌑"

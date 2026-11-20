@@ -32,7 +32,7 @@ async def test_the_shop_sells_no_tools_and_starter_tools_are_free_once(db):
     reg = get_registry()
     assert not [i.id for i in reg.shop_items() if i.tool]
     user = await rich()
-    for item_id in (*STARTER_TOOLS, "tool_dreamnail"):
+    for item_id in STARTER_TOOLS:
         with pytest.raises(ShopError, match="isn't sold"):
             await buy(user, item_id)
     assert sorted(await claim_starter_tools(user)) == sorted(STARTER_TOOLS)
