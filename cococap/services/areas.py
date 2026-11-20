@@ -5,6 +5,7 @@ each skill's locations open (`open_locations`). Travelling to an area you have a
 next one burns its fuel and needs the ship tier. State is one small JSON document per player (services.community), so no migration.
 """
 
+import time
 from dataclasses import dataclass
 
 from cococap.errors import GameRuleError
@@ -185,5 +186,53 @@ async def travel(user: User, area_id: str, registry: Registry | None = None) -> 
     except Exception:
         if burned:
             await payment.refund(user, 0, area.fuel)
+        raise
+    return area
+
+
+# ---- Overdrive: a burned fuel boosts every skill for a while (state rides in the ship doc, so no migration).
+
+
+async def overdrive_state(user: User, registry: Registry | None = None) -> tuple[Area, int] | None:
+    """The running overdrive as (its area, seconds left), or None. A malformed or ended entry counts as none."""
+    reg = registry or get_registry()
+    raw = (await community.read(_key(user.id), _DEFAULT)).get("overdrive")
+    try:
+        area, left = reg.areas.areas[int(raw["area"])], int(raw["until"] - time.time())
+    except (TypeError, KeyError, ValueError, IndexError):
+        return None
+    return (area, left) if left > 0 and area.overdrive else None
+
+
+async def overdrive_bonus(user: User, registry: Registry | None = None) -> tuple[float, float]:
+    """(skill xp bonus, drop_amount bonus) of the running overdrive; (0, 0) when none."""
+    running = await overdrive_state(user, registry)
+    od = running[0].overdrive if running else None
+    return (od.xp, od.drop_amount) if od else (0.0, 0.0)
+
+
+async def burn_fuel(user: User, area_id: str, registry: Registry | None = None) -> Area:
+    """Burn one of an area's fuel for an overdrive. The same fuel adds time (capped); a different fuel replaces the running one."""
+    reg = registry or get_registry()
+    areas = reg.areas.areas
+    idx = next((i for i, a in enumerate(areas) if a.id == area_id), None)
+    if idx is None or not areas[idx].fuel:
+        raise AreaError("That has no fuel to burn.")
+    area = areas[idx]
+    if idx > (await state(user, reg)).highest:
+        raise AreaError(f"You have not reached {area.name} yet.")
+    await payment.pay(user, 0, area.fuel, reg, AreaError)
+    add, cap = reg.areas.overdrive_minutes * 60, reg.areas.overdrive_max_minutes * 60
+
+    def burn(data: dict) -> None:
+        old = data.get("overdrive")
+        now = time.time()
+        left = max(float(old["until"]) - now, 0) if isinstance(old, dict) and old.get("area") == idx else 0
+        data["overdrive"] = {"area": idx, "until": now + min(left + add, cap)}
+
+    try:
+        await community.update(_key(user.id), _DEFAULT, burn)
+    except Exception:
+        await payment.refund(user, 0, area.fuel)
         raise
     return area

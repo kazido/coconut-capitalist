@@ -1169,6 +1169,12 @@ it is meant for foragers who keep their rares for it. Lower the quantities or th
 
 **Selling keeps nothing back.** Sell all (and its craft-input and upgrade-material holds) was removed with the skill pages' bulk sell; selling is one item at a time in the Shop.
 
+## Fuel overdrive and auto-craft
+Each fuel recipe needs the previous fuel (Twilight is the base). Burning any held fuel (`areas.burn_fuel`, Travel page dropdown) for a reached area starts an overdrive:
+`[area.x].overdrive {xp, drop_amount}` in `configs/areas.toml`, `[overdrive] minutes/max_minutes` for the timer. State is `overdrive {area, until}` in the `ship:{id}` community doc.
+xp factor is in `party.xp_multiplier`, `drop_amount` is added in `equipment.equipped_stats`. `crafting.plan` expands missing craftable inputs (no level needed) when
+`settings.auto_craft` is on; one `payment.pay` takes the whole chain, so it is all or nothing. Tests: `tests/test_overdrive.py`.
+
 ## Double Hook (fishing): the first effect built with the "where does it belong" rule
 
 One stat, `double_hook`, two sources by the rule above: the **Double Hook rod enchant** (rod-only, 4% a level, 3 levels = 12%; scroll from chests and bosses) and the **Double Hook Mastery node** (Angler branch, level 20, 2 points; it replaced Lively Water's +15% bite speed and keeps +5% bite speed, so the branch stays about as strong). No tool ability and no pet: it is neither a tool's identity nor a passive.

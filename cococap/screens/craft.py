@@ -40,8 +40,9 @@ class CraftScreen(Screen):
                                                 description=(f"you can make {can:,}" if can else "missing something")[:100]))
         output = reg.item(recipe.output)
         made = f"**{recipe.quantity:,}** {output.display}" if recipe.quantity > 1 else output.display
+        cost = self._cost(reg, recipe, owned)
         lines = [f"### {emojis.icon('craft', '🛠️')} {reg.item(recipe.output).emoji or recipe.emoji or ''} {recipe.name}", f"Makes {made}", f"-# {output.description}" if output.description else "",
-                 "", needs_text(recipe.bits, self.user.purse, recipe.inputs, owned, reg)]
+                 "", needs_text(cost[0], self.user.purse, cost[1], owned, reg)]
         if recipe.min_level:
             lines.append(f"{emojis.icon('check', '✅') if not locked else emojis.icon('cross', '❌')} {recipe.skill.title()} level **{recipe.min_level}** (you are level {level})")
         lines.append(f"-# You can make **{count:,}** right now.")
@@ -50,6 +51,10 @@ class CraftScreen(Screen):
                     button("Craft 10", disabled=count < 10, on_click=self._craft(10)),
                     button(f"Craft max ({count:,})" if count else "Craft max", disabled=count < 1, on_click=self._craft(None)))]
         return Page("Workbench", body, accent=0xB8860B)
+
+    def _cost(self, reg, recipe, owned):
+        """(bits, items) shown as the cost: the full chain when auto-craft is on and a step is missing, else the recipe itself."""
+        return crafting.plan(reg, recipe, 1, owned, self.user.settings.auto_craft)
 
     async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.recipe_id = values[0]

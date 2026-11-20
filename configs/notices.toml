@@ -11,6 +11,12 @@
 #   body  = the message (Discord markdown, at most 1500 characters)
 
 [[notice]]
+id = "fuel_overdrive_2026_11"
+date = "2026-11-19"
+title = "Fuel recipes changed"
+body = "Each fuel now needs the fuel before it (Rust Fuel needs a Twilight Fuel, and so on). Fuel is no longer only for the first trip: burn it on the Travel page for a timed overdrive. If you do not want to craft every step by hand, turn on **Auto-craft missing steps** in Settings."
+
+[[notice]]
 id = "tools_reset_2026_11"
 date = 2026-11-19
 title = "Tools are smithed now"

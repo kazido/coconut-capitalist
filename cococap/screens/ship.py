@@ -66,6 +66,18 @@ class ShipScreen(Screen):
             if recipe is not None:
                 can = await crafting.craftable_count(self.user, recipe)
                 body.append(row(button("Craft fuel", emoji=emojis.icon('flame', '⛽'), disabled=can < 1, on_click=self._fuel(recipe.id))))
+        # Overdrive: burn a fuel you hold (area reached) for a timed boost in every skill.
+        running = await areas.overdrive_state(self.user, reg)
+        od_lines = [f"### {emojis.icon('flame', '⛽')} Overdrive"]
+        od_lines.append(f"{running[0].emoji} **{reg.item(next(iter(running[0].fuel))).name}**: +{running[0].overdrive.xp:.0%} skill xp, +{running[0].overdrive.drop_amount:.0%} drops, "
+                        f"{running[1] // 60 + 1} min left" if running else "Burn a fuel for a timed boost in every skill.")
+        body.append(text("\n".join(od_lines)))
+        burn = [discord.SelectOption(label=reg.item(next(iter(a.fuel))).name, value=a.id, emoji=a.emoji,
+                                     description=(f"+{a.overdrive.xp:.0%} xp, +{a.overdrive.drop_amount:.0%} drops; you have {owned.get(next(iter(a.fuel)), 0):,}"
+                                                  + (" (replaces the current one)" if running and running[0].id != a.id else ""))[:100])
+                for a in all_areas[: st.highest + 1] if a.fuel and owned.get(next(iter(a.fuel)), 0) > 0]
+        if burn:
+            body.append(row(select("Burn a fuel...", burn, self._burn)))
         return Page("Ship", body, accent=0x2E86C1, files=[("map.png", map_png)])
 
     async def _upgrade(self, interaction: discord.Interaction) -> None:
@@ -75,6 +87,10 @@ class ShipScreen(Screen):
     async def _sail(self, interaction: discord.Interaction, values: list[str]) -> None:
         area = await areas.travel(self.user, values[0])
         await self.refresh(interaction, f"{area.emoji} You sail to **{area.name}**.")
+
+    async def _burn(self, interaction: discord.Interaction, values: list[str]) -> None:
+        area = await areas.burn_fuel(self.user, values[0])
+        await self.refresh(interaction, f"{emojis.icon('flame', '⛽')} Overdrive burning: **{area.name}** fuel.")
 
     def _fuel(self, recipe_id: str):
         async def go(interaction: discord.Interaction) -> None:

@@ -11,6 +11,12 @@
 
 [[entry]]
 date = "2026-11-19"
+title = "Fuel overdrive and auto-craft"
+body = "- **Overdrive**: on the Travel page, burn any fuel you hold (from an area you have reached) for **1 hour** of bonus skill xp and bonus drops in every skill. Better fuels give bigger boosts. The same fuel adds time (up to 3 hours); a different fuel replaces the current one.\n- **Fuel chain**: each fuel's recipe now needs the fuel before it (Rust needs Twilight, and so on).\n- **Auto-craft missing steps** (Settings, off by default): the Workbench makes missing ingredients like the previous fuel for you, all or nothing."
+major = true
+
+[[entry]]
+date = "2026-11-19"
 title = "Smithing and pets upgrades"
 body = "- **Restricted parts**: a rare version of any part can drop. A tool can have one, and it lets the tool hold **one extra enchant**.\n- Replacing an enchant or salvaging a tool now **gives the scroll back**. At smithing level 20 you can remove an enchant from a tool (scroll back too).\n- New part traits: **Lucky Charm** (rare luck) and **Bountiful** (more drops).\n- Each tool now has one page, with its accessories on it.\n- Your pet's work is **banked automatically** when you open Home or Pets. Pets has a **Details** view with a bar per skill.\n- Fuel: each different crop in the tank adds **+2h** to its size (up to 4 kinds).\n- Skill food's buff is +50% **pet** xp for 30 minutes (now stated)."
 major = true
@@ -18,7 +24,7 @@ major = true
 [[entry]]
 date = "2026-11-19"
 title = "Fixes and tidier pages"
-body = "- Fixed: owning a tool you had not equipped (like a freshly smithed one) told you to claim a starter tool. It now equips itself.\n- Mining and lode claims show each drop's emoji.\n- Accessories: one Equip/Unequip button.\n- Light skills are now **Lesser skills**, with a cleaner page.\n- Reactor: gem slots on one line, a list of what each level unlocks, and a level-up tells you what you unlocked.\n- Smithing parts now show in your inventory."
+body = "- Fixed: owning a tool you had not equipped (like a freshly smithed one) told you to claim a starter tool. It now equips itself.\n- Mining and lode claims show each drop's emoji.\n- Accessories: one Equip/Unequip button.\n- Light skills are now **Lesser skills**, with a cleaner page.\n- Reactor: gem slots on one line, a list of what each level unlocks, and a level-up tells you what you unlocked.\n- Smithing parts now show in your inventory.\n- Wedges: the Gilded Wedge is now **Super Rare** and the Iron Wedge **Rare** (they were rated too high for crafted items)."
 major = false
 
 [[entry]]

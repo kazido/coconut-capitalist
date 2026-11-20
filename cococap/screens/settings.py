@@ -7,6 +7,7 @@ from cococap.ui.components import button, section, text
 # key -> (name, what it does)
 SETTINGS: dict[str, tuple[str, str]] = {
     "confirm_upgrades": ("Confirm tool upgrades", "Upgrading a tool takes a second press, so a costly or one-way (fork) upgrade is never an accident."),
+    "auto_craft": ("Auto-craft missing steps", "The Workbench also makes a missing ingredient (like the previous fuel) from raw materials, all or nothing."),
     "fishing_estimate": ("Fishing wait estimate", "Show how long your rod usually takes to get a bite on the Fishing page."),
 }
 
