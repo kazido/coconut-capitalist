@@ -1,4 +1,4 @@
-Status: APPROVED 2026-11-20. Steps 0-2 done on design; step 3 (engine) next.
+Status: APPROVED 2026-11-20. Steps 0-3 done on design; step 4 (zones + Explore + Combat page) next.
 
 
 ## Context

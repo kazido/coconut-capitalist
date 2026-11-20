@@ -17,16 +17,20 @@ from dataclasses import dataclass, field
 from cococap import emojis
 from cococap.errors import GameRuleError
 from cococap.registry import Registry, get_registry
-from cococap.registry.models import BUFFS, CombatRules, CombatSkill, Enemy, Phase, SkillEffect
+from cococap.registry.models import BUFFS, CombatRules, CombatSkill, Enemy, Phase, ResourceRules, SkillEffect
 from cococap.services import equipment, loot, tool_effects
 from cococap.user import User
 
-TIMED = frozenset({"attack_up", "attack_down", "defense_up", "defense_down", "speed_up", "speed_down", "stun", "bleed", "empower", "reveal"})
+TIMED = frozenset({"attack_up", "attack_down", "defense_up", "defense_down", "speed_up", "speed_down", "stun", "bleed", "empower", "reveal",
+                   "chill", "burn", "taunt", "counter", "reflect"})
+DOTS = ("bleed", "burn")  # damage every turn at the start of the unit's turn
 STAT_PAIRS = {"attack": ("attack_up", "attack_down"), "defense": ("defense_up", "defense_down"), "speed": ("speed_up", "speed_down")}
 _EFFECT_LABEL_PARTS = {  # effect -> (icon name, glyph fallback, label)
     "attack_up": ("up", "⬆️", "Attack"), "attack_down": ("down", "⬇️", "Attack"), "defense_up": ("shield", "🛡️", "Defense"),
     "defense_down": ("heart", "💔", "Defense"), "speed_up": ("bolt", "⚡", "Speed"), "speed_down": ("bug", "🐌", "Slow"),
     "stun": ("sparkle", "💫", "Stun"), "bleed": ("blood", "🩸", "Bleed"), "empower": ("flame", "🔥", "Primed"), "reveal": ("eye", "👁️", "Insight"),
+    "chill": ("snow", "❄️", "Chill"), "burn": ("fire", "🔥", "Burn"), "taunt": ("shield", "📢", "Taunt"),
+    "counter": ("sword", "⚔️", "Counter"), "reflect": ("mirror", "🪞", "Reflect"),
 }
 
 
@@ -42,6 +46,7 @@ class _EffectLabels:
 
 
 EFFECT_LABELS = _EffectLabels()
+_NO_RESOURCE = ResourceRules()  # bare hands and enemies: nothing fills
 
 
 class CombatError(GameRuleError):
@@ -86,6 +91,10 @@ class Unit:
     telegraph: bool = False  # bosses: the player can always see next_skill
     phases: list[Phase] = field(default_factory=list)  # bosses: changes of behaviour as hp drops
     phase: int = 0  # how many phases have already started
+    resource_kind: str | None = None  # players: the class resource (rage, focus, mana, guard); None = bare hands / enemies
+    resource: int = 0
+    resource_max: int = 0
+    hurt: bool = False  # a foe's hit landed since this unit's last turn (focus only builds while unhurt)
 
     def __post_init__(self):
         if not self.hp:
@@ -101,6 +110,8 @@ class Unit:
     def _stat(self, base: int, stat: str) -> float:
         up, down = STAT_PAIRS[stat]
         change = sum(e.value for e in self.effects if e.kind == up) - sum(e.value for e in self.effects if e.kind == down)
+        if stat == "speed":
+            change -= sum(e.value for e in self.effects if e.kind == "chill")
         return base * max(0.1, 1 + change)
 
     @property
@@ -194,19 +205,25 @@ class Battle:
         """Plan the enemies' first moves and run until it is the first player's turn."""
         for u in self.living("enemy"):
             u.next_skill = self._choose_skill(u)
+        for u in self.living("player"):
+            if u.resource_kind:
+                u.resource = max(u.resource, min(u.resource_max, self._resource_rules(u).start))
         self.log.append(f"{emojis.icon('sword', '⚔️')} The fight begins!")
         self._advance()
 
-    def play(self, skill_id: str, target_id: str | None = None) -> None:
-        """The active player unit uses a skill, then the fight runs on to the next player turn (or the end)."""
+    def play(self, skill_id: str, target_id: str | None = None, actor_id: str | None = None) -> None:
+        """The active player unit uses a skill, then the fight runs on to the next player turn (or the end).
+        In a party fight pass `actor_id` (the clicking player's unit) so nobody plays another member's turn."""
         actor = self.active
-        if self.outcome or actor is None or actor.side != "player":
+        if self.outcome or actor is None or actor.side != "player" or (actor_id is not None and actor.id != actor_id):
             raise CombatError("It isn't your turn.")
         if skill_id not in actor.skills:
             raise CombatError("You don't know that skill.")
         skill = self.skill(skill_id)
         if not actor.ready(skill_id):
             raise CombatError(f"{skill.name} is recharging ({actor.cooldowns[skill_id]} more turn(s)).")
+        if skill.cost and actor.resource < skill.cost:
+            raise CombatError(f"{skill.name} needs {skill.cost} {actor.resource_kind or 'resource'} (you have {actor.resource}).")
         pool = self.targets_for(actor, skill)
         if skill.target in {"enemy", "ally"}:
             target = next((u for u in pool if u.id == target_id), None) or (pool[0] if len(pool) == 1 else None)
@@ -254,14 +271,20 @@ class Battle:
     def _start_turn(self, actor: Unit) -> bool:
         """Damage over time and stuns. Returns True if the unit can act."""
         self.turns += 1
-        for e in [e for e in actor.effects if e.kind == "bleed"]:
+        for e in [e for e in actor.effects if e.kind in DOTS]:
             actor.hp = max(0, actor.hp - round(e.value))
-            self.log.append(f"{emojis.icon('blood', '🩸')} {actor.name} bleeds for **{round(e.value)}**.")
+            verb = "bleeds" if e.kind == "bleed" else "burns"
+            self.log.append(f"{EFFECT_LABELS[e.kind]} {actor.name} {verb} for **{round(e.value)}**.")
             self._check_phase(actor)
         if not actor.alive:
-            self.log.append(f"{emojis.icon('skull', '💀')} {actor.name} bled out.")
+            how = "bled out" if actor.has("bleed") else "burned up"
+            self.log.append(f"{emojis.icon('skull', '💀')} {actor.name} {how}.")
             actor.meter = 0
             return False
+        if actor.resource_kind:
+            res = self._resource_rules(actor)
+            self._gain(actor, res.per_turn + (0 if actor.hurt else res.per_unhurt_turn))
+        actor.hurt = False
         if actor.has("stun"):
             self.log.append(f"{emojis.icon('sparkle', '💫')} {actor.name} is stunned and loses the turn.")
             self._end_turn(actor)
@@ -294,7 +317,8 @@ class Battle:
         if skill.target == "ally":
             chosen = [min(pool, key=lambda u: u.hp / u.max_hp)]
         elif skill.target == "enemy":
-            chosen = [self.rng.choice(pool)]
+            taunters = [u for u in pool if u.has("taunt")]
+            chosen = [min(taunters or pool, key=lambda u: u.hp)]  # a taunt forces the hit, else the weakest gets it
         else:
             chosen = pool
         self._use(actor, skill, chosen)
@@ -311,7 +335,16 @@ class Battle:
             self.log.append(f"{emojis.icon('skull', '💀')} You were defeated.")
 
     # --- skills ----------------------------------------------------------------------------------
+    def _resource_rules(self, unit: Unit) -> ResourceRules:
+        return self.rules.resources.get(unit.resource_kind or "", _NO_RESOURCE)
+
+    def _gain(self, unit: Unit, amount: int) -> None:
+        if unit.resource_kind and amount:
+            unit.resource = min(unit.resource_max, unit.resource + amount)
+
     def _use(self, actor: Unit, skill: CombatSkill, targets: list[Unit]) -> None:
+        if skill.cost and actor.resource_kind:
+            actor.resource = max(0, actor.resource - skill.cost)
         if skill.cooldown:
             actor.cooldowns[skill.id] = skill.cooldown + 1  # +1: it counts down at the end of this very turn
         names = ", ".join(t.name for t in targets) if targets != [actor] else "itself"
@@ -324,34 +357,83 @@ class Battle:
                 actor.effects.remove(empower)
                 self.log.append(f"{emojis.icon('flame', '🔥')} The primed blade bites twice as deep!")
         for target in targets:
+            hit_power = self._shatter(skill, target, power)
             for _ in range(skill.hits):
-                if power and target.alive:
-                    self._hit(actor, target, power)
+                if hit_power and target.alive and actor.alive:
+                    self._hit(actor, target, hit_power)
+            if skill.element == "fire" and target.alive:
+                self._ignite(target)
             for effect in skill.effects:
                 if effect.on == "target" and target.alive:
                     self._apply(effect, actor, target)
         for effect in skill.effects:
             if effect.on == "self" and actor.alive:
                 self._apply(effect, actor, actor)
+        if skill.element == "storm" and skill.target == "enemy" and power and actor.alive:
+            others = [u for u in self.living(targets[0].side) if u not in targets]
+            if others:  # deterministic (no rng): the arc jumps to the weakest other foe
+                jump = min(others, key=lambda u: u.hp)
+                self.log.append(f"　{emojis.icon('bolt', '⚡')} The lightning arcs to {jump.name}!")
+                self._hit(actor, jump, power * self.rules.elements.chain)
+        self._gain(actor, skill.gain)
         self._check_end()
 
-    def _hit(self, actor: Unit, target: Unit, power: float) -> None:
+    # --- elements --------------------------------------------------------------------------------
+    def _shatter(self, skill: CombatSkill, target: Unit, power: float) -> float:
+        """A fire or storm hit on a chilled target deals extra damage and ends the chill."""
+        if power and skill.element in ("fire", "storm") and target.has("chill"):
+            target.effects = [e for e in target.effects if e.kind != "chill"]
+            self.log.append(f"　{emojis.icon('snow', '❄️')} **Shatter!** The ice on {target.name} breaks.")
+            return power * self.rules.elements.shatter
+        return power
+
+    def _ignite(self, target: Unit) -> None:
+        """A fire hit on a burning target sets off the whole burn at once (the skill's fresh burn then lands)."""
+        burn = next((e for e in target.effects if e.kind == "burn"), None)
+        if burn is None:
+            return
+        target.effects.remove(burn)
+        amount = round(burn.value * burn.turns)
+        self.log.append(f"　{emojis.icon('fire', '🔥')} **Ignite!** {target.name} takes **{amount}**.")
+        self._lose_hp(target, amount)
+
+    def _lose_hp(self, unit: Unit, amount: int) -> None:
+        unit.hp = max(0, unit.hp - amount)
+        if not unit.alive:
+            self.log.append(f"　{emojis.icon('skull', '💀')} {unit.name} falls.")
+            unit.meter = 0
+        else:
+            self._check_phase(unit)
+
+    def _hit(self, actor: Unit, target: Unit, power: float, reactive: bool = False) -> None:
+        """One hit. `reactive` = a counter-attack: it can't itself be countered or reflected (no ping-pong)."""
         raw = actor.eff_attack * power * self.rules.defense_scale / (self.rules.defense_scale + target.eff_defense)
-        crit = self.rng.random() * 100 < self.rules.crit_chance
+        crit_chance = self.rules.crit_chance + actor.resource * self._resource_rules(actor).crit_per_point
+        crit = self.rng.random() * 100 < crit_chance
         if crit:
             raw *= self.rules.crit_damage
         damage = max(1, round(raw))
         absorbed = min(target.shield, damage)
         target.shield -= absorbed
-        target.hp = max(0, target.hp - (damage - absorbed))
         tag = f" {emojis.icon('boom', '💥')} **CRIT**" if crit else ""
         shield = f" ({absorbed} absorbed)" if absorbed else ""
         self.log.append(f"　{emojis.icon('next', '→')} {target.name} takes **{damage}**{shield}{tag}.")
-        if not target.alive:
-            self.log.append(f"　{emojis.icon('skull', '💀')} {target.name} falls.")
-            target.meter = 0
-        else:
-            self._check_phase(target)
+        self._lose_hp(target, damage - absorbed)
+        if actor.side == target.side:
+            return
+        target.hurt = True
+        self._gain(target, self._resource_rules(target).on_hit_taken)
+        if reactive or not actor.alive:
+            return
+        reflect = next((e for e in target.effects if e.kind == "reflect"), None)
+        if reflect:
+            back = max(1, round(damage * reflect.value))
+            self.log.append(f"　{emojis.icon('mirror', '🪞')} {target.name} reflects **{back}** back at {actor.name}.")
+            self._lose_hp(actor, back)
+        counter = next((e for e in target.effects if e.kind == "counter"), None)
+        if counter and target.alive and actor.alive:
+            self.log.append(f"　{emojis.icon('sword', '⚔️')} {target.name} counters!")
+            self._hit(target, actor, counter.value, reactive=True)
 
     def _check_phase(self, unit: Unit) -> None:
         """A boss whose hp fell below the next phase's mark enters it (a big hit can skip several marks)."""
@@ -387,7 +469,7 @@ class Battle:
             target.meter = min(float(full), max(0.0, target.meter + full * effect.value))
             self.log.append(f"　{emojis.icon('next', '⏩') if effect.value > 0 else emojis.icon('prev', '⏪')} {target.name}'s turn meter {'fills' if effect.value > 0 else 'drains'}.")
         else:
-            value = round(caster.eff_attack * effect.value) if kind == "bleed" else effect.value
+            value = round(caster.eff_attack * effect.value) if kind in DOTS else effect.value
             fresh = target is caster and self.active is caster
             existing = next((e for e in target.effects if e.kind == kind), None)
             if existing:  # the same effect again refreshes it rather than stacking
@@ -404,7 +486,7 @@ def class_for(kind: str | None, registry: Registry | None = None):
     return next((c for c in reg.combat.classes.values() if c.weapon == kind), None)
 
 
-async def build_player(user: User, registry: Registry | None = None) -> Unit:
+async def build_player(user: User, registry: Registry | None = None, uid: str = "p1") -> Unit:
     """Turn a player's combat level and equipped weapon into a fighting unit (its kind picks the class kit)."""
     reg = registry or get_registry()
     rules = reg.combat.player
@@ -415,7 +497,7 @@ async def build_player(user: User, registry: Registry | None = None) -> Unit:
     skills = [k.skill for k in cls.kit if k.level <= level] if cls else list(reg.combat.kits["default"])
     w = tool_effects.power_stats(kind, equipment.effective_stats(instance, reg).power, reg) if cls else {}
     return Unit(
-        id="p1",
+        id=uid,
         name=user.name,
         side="player",
         max_hp=rules.base_hp + rules.hp_per_level * level + round(w.get("hp", 0)),
@@ -423,6 +505,8 @@ async def build_player(user: User, registry: Registry | None = None) -> Unit:
         defense=round(rules.base_defense + rules.defense_per_level * level + w.get("defense", 0)),
         speed=rules.speed + round(w.get("speed", 0)),
         skills=skills,
+        resource_kind=cls.resource if cls else None,
+        resource_max=cls.resource_max if cls else 0,
     )
 
 

@@ -282,9 +282,14 @@ EffectKind = Literal[
     "meter",  # turn meter: value = fraction of a full bar, negative pulls it back
     "empower",  # the unit's next damaging skill deals value x damage (once)
     "reveal",  # the player can see what each enemy will do next
+    "chill",  # frost: slower by value (a fraction); fire or storm hits on a chilled unit Shatter
+    "burn",  # fire: damage every turn like bleed (value = fraction of the caster's attack); a fire hit Ignites it
+    "taunt",  # enemies' single-target skills must hit this unit
+    "counter",  # when hit by a foe, strike back for value x attack
+    "reflect",  # when hit by a foe, send value x the damage back
 ]
 SkillTarget = Literal["enemy", "all_enemies", "self", "ally"]
-BUFFS = frozenset({"attack_up", "defense_up", "speed_up", "shield", "empower", "reveal"})
+BUFFS = frozenset({"attack_up", "defense_up", "speed_up", "shield", "empower", "reveal", "taunt", "counter", "reflect"})
 
 
 class SkillEffect(_Data):
@@ -299,7 +304,7 @@ class SkillEffect(_Data):
 
     @model_validator(mode="after")
     def _needs_value(self):
-        if self.kind not in {"stun", "reveal"} and self.value == 0:
+        if self.kind not in {"stun", "reveal", "taunt"} and self.value == 0:
             raise ValueError(f"effect '{self.kind}' needs a value")
         return self
 
@@ -316,7 +321,7 @@ class CombatSkill(_Data):
     cooldown: int = Field(default=0, ge=0)
     hits: int = Field(default=1, ge=1)
     effects: list[SkillEffect] = Field(default_factory=list)
-    cost: int = Field(default=0, ge=0)  # class resource spent (engine ignores for now)
+    cost: int = Field(default=0, ge=0)  # class resource spent; the skill can't be used without it
     gain: int = Field(default=0, ge=0)  # class resource gained
     element: Literal["frost", "fire", "storm"] | None = None
 
@@ -428,6 +433,21 @@ class KitSkill(_Data):
     level: int = Field(ge=0)  # combat level that unlocks it
 
 
+class ResourceRules(_Data):
+    """How a class resource (rage, focus, mana, guard) fills. Every field works for every resource; the config picks."""
+
+    start: int = Field(default=0, ge=0)  # at the start of a fight (capped by the class's resource_max)
+    per_turn: int = Field(default=0, ge=0)  # at the start of each own turn
+    per_unhurt_turn: int = Field(default=0, ge=0)  # at the start of an own turn, if not hurt since the last one
+    on_hit_taken: int = Field(default=0, ge=0)  # each time a foe's hit lands
+    crit_per_point: float = Field(default=0, ge=0)  # extra crit chance (percent) per point held
+
+
+class ElementRules(_Data):
+    shatter: float = Field(default=1.5, ge=1)  # a fire/storm hit on a chilled unit deals this x damage; the chill ends
+    chain: float = Field(default=0.5, ge=0, le=1)  # a single-target storm hit also hits one other foe for this x damage
+
+
 class CombatClass(_Data):
     """A fighting class, picked by the weapon in the combat slot."""
 
@@ -450,6 +470,8 @@ class CombatRules(_Data):
     skills: dict[str, CombatSkill]
     kits: dict[str, list[str]]  # only "default" (bare hands) -> skill ids, basic skill first
     classes: dict[str, CombatClass]
+    resources: dict[str, ResourceRules] = Field(default_factory=dict)  # by CombatClass.resource
+    elements: ElementRules = Field(default_factory=ElementRules)
     encounters: list[Encounter] = Field(min_length=1)
 
 

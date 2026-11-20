@@ -380,10 +380,12 @@ def _validate_combat(reg: "Registry", rules: CombatRules) -> list[str]:
             problems.append(f"combat.toml classes.{cid}: 1 to 5 skills (one row of buttons)")
             continue
         first = rules.skills.get(kit[0].skill)
-        if kit[0].level != 0 or (first and first.cooldown):
-            problems.append(f"combat.toml classes.{cid}: the first skill must be level 0 with no cooldown")
+        if kit[0].level != 0 or (first and (first.cooldown or first.cost)):
+            problems.append(f"combat.toml classes.{cid}: the first skill must be level 0 with no cooldown or cost")
         if any(a.level > b.level for a, b in zip(kit, kit[1:], strict=False)):
             problems.append(f"combat.toml classes.{cid}: kit levels must not go down")
+        if cls.resource not in rules.resources:
+            problems.append(f"combat.toml classes.{cid}: resource '{cls.resource}' has no [resources.{cls.resource}]")
     for enc in rules.encounters:
         problems += [f"combat.toml encounter '{enc.id}': unknown enemy '{e}'" for e in enc.enemies if e not in reg.enemies]
         if enc.key and (enc.key not in reg.items or reg.items[enc.key].category != "key_item"):

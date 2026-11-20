@@ -126,22 +126,22 @@ name = "Frost Bolt"
 description = "A bolt of ice that slows the target."
 power = 1.0
 element = "frost"
-effects = [{ kind = "speed_down", chance = 60, turns = 2, value = 0.2 }]
+effects = [{ kind = "chill", chance = 60, turns = 2, value = 0.2 }]
 
 [skills.fireball]
 name = "Fireball"
-description = "Burns the target for 3 turns."
+description = "Burns the target for 3 turns. Shatters a chilled target; Ignites a burning one."
 power = 1.2
 cooldown = 2
 cost = 20
 element = "fire"
-effects = [{ kind = "bleed", turns = 3, value = 0.3 }]
+effects = [{ kind = "burn", turns = 3, value = 0.3 }]
 
 [skills.chain_lightning]
 name = "Chain Lightning"
-description = "Lightning arcs through every enemy."
-power = 0.7
-target = "all_enemies"
+description = "Lightning that arcs on to a second enemy. Shatters a chilled target."
+power = 1.1
+target = "enemy"
 cooldown = 2
 cost = 30
 element = "storm"
@@ -154,7 +154,7 @@ target = "all_enemies"
 cooldown = 3
 cost = 40
 element = "frost"
-effects = [{ kind = "speed_down", chance = 80, turns = 2, value = 0.3 }]
+effects = [{ kind = "chill", chance = 80, turns = 2, value = 0.3 }]
 
 [skills.meteor]
 name = "Meteor"
@@ -172,18 +172,27 @@ gain = 10
 
 [skills.shield_wall]
 name = "Shield Wall"
-description = "Raise a shield worth 25% of your max hp. Spends guard."
-target = "self"
+description = "Shield yourself or an ally for 25% of your max hp. Spends guard."
+target = "ally"
 cooldown = 3
 cost = 30
-effects = [{ kind = "shield", on = "self", value = 0.25 }]
+effects = [{ kind = "shield", value = 0.25 }]
 
 [skills.retaliate]
 name = "Retaliate"
-description = "Strike back hard. Spends guard."
-power = 1.6
-cooldown = 2
+description = "A hard hit, then counter every foe that hits you for 2 turns. Spends guard."
+power = 1.2
+cooldown = 3
 cost = 40
+effects = [{ kind = "counter", on = "self", turns = 2, value = 0.6 }]
+
+[skills.taunt]
+name = "Taunt"
+description = "Make every enemy hit you for 2 turns, and send back some of the damage. Spends guard."
+target = "self"
+cooldown = 3
+cost = 20
+effects = [{ kind = "taunt", on = "self", turns = 2 }, { kind = "reflect", on = "self", turns = 2, value = 0.3 }]
 
 # enemy skills
 [skills.armor_slam]
@@ -220,6 +229,23 @@ effects = [{ kind = "speed_down", chance = 85, turns = 2, value = 0.3 }]
 
 # --- the four classes: the weapon in the combat slot picks one (bare hands use [kits].default) ------------------------------
 # Each kit lists skills in button order: the first is level 0 with no cooldown, the rest unlock at that combat level. TODO(balance)
+# --- class resources: how each fills (TODO(balance): all numbers) --------------------------------------------------------
+[resources.rage]       # Melee: skills with `gain` build it, and so does every hit you take
+on_hit_taken = 8
+[resources.focus]      # Archer: builds each turn you weren't hurt; every point is +crit chance
+per_unhurt_turn = 15
+crit_per_point = 0.3   # percent per point: full focus = +30% crit
+[resources.mana]       # Wizard: starts full and refills a bit every turn
+start = 100
+per_turn = 15
+[resources.guard]      # Tank: builds when you are hit (and from Bash/Brace)
+on_hit_taken = 12
+
+# --- elements: frost chills, fire burns, storm chains ---------------------------------------------------------------------
+[elements]
+shatter = 1.5          # a fire or storm hit on a chilled target deals x this and ends the chill
+chain = 0.5            # a single-target storm hit also hits one other enemy for x this
+
 [classes.melee]
 name = "Melee"
 weapon = "sword"
@@ -250,7 +276,7 @@ weapon = "shield"
 resource = "guard"
 resource_max = 100
 description = "Guard builds when you are hit or Brace; spend it on defensive and counter skills. Carries the party at the boss."
-kit = [{ skill = "bash", level = 0 }, { skill = "brace", level = 3 }, { skill = "shield_wall", level = 6 }, { skill = "retaliate", level = 10 }, { skill = "guard_break", level = 14 }]
+kit = [{ skill = "bash", level = 0 }, { skill = "brace", level = 3 }, { skill = "shield_wall", level = 6 }, { skill = "taunt", level = 10 }, { skill = "retaliate", level = 14 }]
 
 # --- bare hands (the first skill is the basic, with no cooldown) ------------------------------------------
 [kits]
