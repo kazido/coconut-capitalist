@@ -385,8 +385,8 @@ def _validate_combat(reg: "Registry", rules: CombatRules) -> list[str]:
     for cid, cls in rules.classes.items():
         kit = cls.kit
         problems += [f"combat.toml classes.{cid}: unknown skill '{k.skill}'" for k in kit if k.skill not in rules.skills]
-        if not kit or len(kit) > 5:
-            problems.append(f"combat.toml classes.{cid}: 1 to 5 skills (one row of buttons)")
+        if not kit or len(kit) > 25:
+            problems.append(f"combat.toml classes.{cid}: 1 to 25 skills (the pool; the loadout picker is one dropdown)")
             continue
         first = rules.skills.get(kit[0].skill)
         if kit[0].level != 0 or (first and (first.cooldown or first.cost)):

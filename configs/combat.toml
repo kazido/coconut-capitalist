@@ -52,6 +52,21 @@ cooldown = 4
 gain = 15
 effects = [{ kind = "defense_down", turns = 2, value = 0.5 }]
 
+[skills.guard_stance]
+name = "Guard Stance"
+description = "Plant your feet: double your defense for 2 turns. Builds rage."
+target = "self"
+cooldown = 2
+gain = 15
+effects = [{ kind = "defense_up", on = "self", turns = 2, value = 1.0 }]
+
+[skills.expose]
+name = "Expose"
+description = "Mark an enemy's weak spot: its defense is halved for 3 turns."
+cooldown = 3
+gain = 10
+effects = [{ kind = "defense_down", turns = 3, value = 0.5 }]
+
 [skills.quick_step]
 name = "Quick Step"
 description = "Move faster for 2 turns and take a step toward your next turn."
@@ -289,7 +304,7 @@ weapon = "sword"
 resource = "rage"
 resource_max = 100
 description = "Rage builds when you hit or get hit; finishers spend it. Burst on one target."
-kit = [{ skill = "slash", level = 0 }, { skill = "cleave", level = 0 }, { skill = "guard_break", level = 6 }, { skill = "quick_step", level = 10 }, { skill = "rampage", level = 15 }]
+kit = [{ skill = "slash", level = 0 }, { skill = "cleave", level = 0 }, { skill = "guard_stance", level = 0 }, { skill = "expose", level = 0 }, { skill = "guard_break", level = 6 }, { skill = "quick_step", level = 10 }, { skill = "rampage", level = 15 }]
 
 [classes.archer]
 name = "Archer"

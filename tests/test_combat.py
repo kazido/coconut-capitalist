@@ -278,7 +278,8 @@ def test_every_kit_fits_one_row_of_buttons():
     for name, kit in RULES.kits.items():
         assert len(kit) <= 5, name
     for cls in RULES.classes.values():
-        assert len(cls.kit) <= 5, cls.id
+        assert len(cls.kit) <= 25, cls.id  # a pool: the loadout picker is one dropdown
+    assert combat.LOADOUT_SIZE <= 5  # the loadout is the fight button row
 
 
 def test_you_get_the_first_turn_against_the_boss_and_see_the_death_knell_coming():
