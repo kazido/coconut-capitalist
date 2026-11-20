@@ -244,7 +244,7 @@ def test_reroll_part_traits_migration_redraws_traits_and_keeps_tier(tmp_path):
     icols = [(r[1], r[2]) for r in con.execute("PRAGMA table_info(item_instances)") if r[3] and r[4] is None and not r[5]]
     for template, rolled in (("part_base", '{"tier": 6, "restricted": 1}'), ("part_trim", '{"tier": 1}'), ("tool_pickaxe_starter", "{}")):
         values = {name: ("x" if "CHAR" in kind.upper() or kind.upper() == "TEXT" else 0) for name, kind in icols}
-        values.update(template_id=template, rolled=rolled, traits='["power_core"]')
+        values.update(template_id=template, rolled=rolled, traits='["power_core"]', parts="null")  # (the app stores JSON null as the text 'null')
         con.execute(f"INSERT INTO item_instances ({', '.join(values)}) VALUES ({', '.join('?' * len(values))})", list(values.values()))
     con.commit()
     con.close()

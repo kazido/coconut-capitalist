@@ -25,7 +25,7 @@ FRESH_TRAITS = [1, 1, 2, 2, 3, 3, 3, 3]  # by tier 1..8
 def reroll_parts(conn, rng: random.Random | None = None) -> None:
     rng = rng or random.Random()
     rows = conn.execute(sa.text(
-        "SELECT id, rolled FROM item_instances WHERE parts IS NULL AND template_id IN ('part_base', 'part_trim', 'part_accent')"
+        "SELECT id, rolled FROM item_instances WHERE (parts IS NULL OR parts = 'null') AND template_id IN ('part_base', 'part_trim', 'part_accent')"
     )).fetchall()
     for instance_id, rolled in rows:
         data = json.loads(rolled) if isinstance(rolled, str) else (rolled or {})
