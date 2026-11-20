@@ -155,7 +155,7 @@ async def test_equip_checks_kind_and_level(db):
     await user.add_xp("combat", User.level_to_xp(10) + 1)
     await equip(user, "combat", dream.id)
     assert (await equipped_stats(user, "combat")).power == get_registry().item("tool_dreamnail").tool.power
-    assert await equipped_stats(user, "mining") is None
+    assert await equipped_stats(user, "mining") is not None  # owned pickaxe gets auto-equipped
 
 
 async def test_add_enchant_rules(db):
@@ -170,3 +170,14 @@ async def test_add_enchant_rules(db):
         await add_enchant(user, sword.id, "soloist")  # axe-only enchant
     with pytest.raises(EquipmentError, match="own"):
         await add_enchant(user, 9999, "soloist")
+
+
+async def test_owned_but_unequipped_tool_is_auto_equipped(db):
+    # A tool you own but haven't equipped (e.g. freshly smithed) must not make screens say "claim your starter".
+    from cococap.services.equipment import equipped_stats
+
+    user = await User.get(9101)
+    assert await equipped_stats(user, "foraging") is None  # owns nothing: truly nothing to use
+    axe = await user.give_instance("tool_axe_starter")
+    assert await equipped_stats(user, "foraging") is not None
+    assert (await user.equipped_instance("foraging")).id == axe.id

@@ -110,9 +110,27 @@ async def equip(user: User, skill: str, instance_id: int, registry: Registry | N
     return instance
 
 
+async def auto_equip(user: User, skill: str, registry: Registry | None = None) -> ItemInstance | None:
+    """Equip the newest owned tool that fits `skill` (and its level requirement); None if there is none."""
+    reg = registry or get_registry()
+    wanted = TOOL_FOR_SKILL.get(skill)
+    for instance in reversed(await user.instances()):
+        tool = reg.item(instance.template_id).tool
+        if tool is None or tool.kind != wanted:
+            continue
+        try:
+            return await equip(user, skill, instance.id, reg)
+        except EquipmentError:
+            continue
+    return None
+
+
 async def equipped_stats(user: User, skill: str, registry: Registry | None = None) -> EffectiveStats | None:
-    """Stats of the tool equipped for `skill`, or None if nothing is equipped."""
-    instance = await user.equipped_instance(skill)
+    """Stats of the tool equipped for `skill`, or None if the player owns no usable tool for it.
+
+    If nothing is equipped but the player owns a fitting tool (e.g. a freshly smithed one), it is equipped
+    automatically, so screens never tell an owner to "claim" a tool they already have."""
+    instance = await user.equipped_instance(skill) or await auto_equip(user, skill, registry)
     if not instance:
         return None
     base = effective_stats(instance, registry)
