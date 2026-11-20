@@ -601,22 +601,6 @@ class User:
         await self.refresh()
         return result
 
-    async def transfer_instance(self, instance_id: int, to: "User") -> None:
-        """Give an instance to another player (and unequip it everywhere)."""
-        async with get_database().session() as session:
-            result = await session.execute(
-                update(ItemInstanceRow)
-                .where(ItemInstanceRow.id == instance_id, ItemInstanceRow.owner_id == self.id)
-                .values(owner_id=to.id)
-            )
-            if result.rowcount == 0:
-                raise ValueError("You don't own that item.")
-            await session.execute(
-                update(SkillRow)
-                .where(SkillRow.equipped_instance_id == instance_id)
-                .values(equipped_instance_id=None)
-            )
-
     async def equip(self, skill: str, instance_id: int | None) -> None:
         """Equip one of this player's instances for a skill (None unequips)."""
         async with get_database().session() as session:

@@ -111,17 +111,6 @@ async def test_two_identical_templates_are_independent_objects(db):
     assert (await user.instance(b.id)).enchants == {}
 
 
-async def test_transfer_moves_ownership_and_unequips(db):
-    alice, bob = await User.get(1), await User.get(2)
-    axe = await alice.give_instance("tool_axe_starter")
-    await alice.equip("foraging", axe.id)
-    await alice.transfer_instance(axe.id, bob)
-    assert await alice.instance(axe.id) is None and (await bob.instance(axe.id)).owner_id == 2
-    assert (await alice.skill("foraging")).equipped_instance_id is None
-    with pytest.raises(ValueError):
-        await alice.transfer_instance(axe.id, bob)  # no longer hers
-
-
 async def test_cannot_equip_someone_elses_instance(db):
     alice, bob = await User.get(1), await User.get(2)
     axe = await alice.give_instance("tool_axe_starter")
