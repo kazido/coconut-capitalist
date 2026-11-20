@@ -63,8 +63,10 @@ def select(
     on_select: Callable[[discord.Interaction, list[str]], Awaitable[None]],
     *,
     disabled: bool = False,
+    min_values: int = 1,
+    max_values: int = 1,
 ) -> ui.Select:
-    menu = ui.Select(placeholder=placeholder, options=options[:25], disabled=disabled)
+    menu = ui.Select(placeholder=placeholder, options=options[:25], disabled=disabled, min_values=min_values, max_values=max_values)
 
     async def callback(interaction: discord.Interaction) -> None:
         await on_select(interaction, list(menu.values))

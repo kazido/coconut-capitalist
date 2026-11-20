@@ -37,7 +37,7 @@ async def test_the_class_tab_shows_the_kit_of_the_equipped_weapon(db):
     await equipment.equip(nav.user, "combat", item.id)
     nav, inter = await hub("combat", tab="class")
     text = all_text(nav)
-    assert "Melee" in text and "Rage" in text and "Cleave" in text and "unlocks at combat level" in text
+    assert "Melee" in text and "Rage" in text and "Cleave" in text and "unlocks at class level" in text and "Loadout" in text
 
 
 async def test_with_several_enemies_a_skill_asks_for_a_target_and_can_be_cancelled(db):

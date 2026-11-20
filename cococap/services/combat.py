@@ -507,6 +507,37 @@ async def current_class(user: User, registry: Registry | None = None) -> tuple[s
     return key, User.xp_to_level((await user.skill("combat")).class_xp.get(key, 0))
 
 
+LOADOUT_SIZE = 4  # fight buttons
+
+
+async def loadout(user: User, registry: Registry | None = None) -> list[str]:
+    """Skills on your fight buttons: your saved picks that the class level has unlocked, else the first unlocked skills of the kit."""
+    reg = registry or get_registry()
+    key, class_level = await current_class(user, reg)
+    cls = reg.combat.classes.get(key)
+    if cls is None:
+        return list(reg.combat.kits["default"])
+    unlocked = [k.skill for k in cls.kit if k.level <= class_level]
+    saved = [s for s in (await user.skill("combat")).loadout.get(key, []) if s in unlocked]
+    return saved[:LOADOUT_SIZE] or unlocked[:LOADOUT_SIZE]
+
+
+async def set_loadout(user: User, skill_ids: list[str], registry: Registry | None = None) -> None:
+    """Save the skills for your current class (1 to 4, all unlocked)."""
+    reg = registry or get_registry()
+    key, class_level = await current_class(user, reg)
+    cls = reg.combat.classes.get(key)
+    if cls is None:
+        raise GameRuleError("Bare hands have no loadout to pick.")
+    unlocked = {k.skill for k in cls.kit if k.level <= class_level}
+    picks = list(dict.fromkeys(skill_ids))
+    if not 1 <= len(picks) <= LOADOUT_SIZE or not unlocked.issuperset(picks):
+        raise GameRuleError(f"Pick 1 to {LOADOUT_SIZE} skills you have unlocked.")
+    if all(reg.combat.skills[s].cooldown for s in picks):
+        raise GameRuleError("Keep at least one skill with no recharge, or you may have nothing to use.")
+    await user.update_skill("combat", lambda s: s.loadout.__setitem__(key, picks))
+
+
 async def best_weapons(user: User, registry: Registry | None = None) -> dict[str, ItemInstance]:
     """The strongest weapon (by tool power) the player owns of each class weapon kind."""
     reg = registry or get_registry()
@@ -543,8 +574,7 @@ async def build_player(user: User, registry: Registry | None = None, uid: str = 
     instance = await user.equipped_instance("combat")
     kind = reg.item(instance.template_id).tool.kind if instance is not None else None
     cls = class_for(kind, reg)
-    class_level = (await current_class(user, reg))[1]  # kit skills unlock with the CLASS level, not the combat level
-    skills = [k.skill for k in cls.kit if k.level <= class_level] if cls else list(reg.combat.kits["default"])
+    skills = await loadout(user, reg) if cls else list(reg.combat.kits["default"])
     w = tool_effects.power_stats(kind, equipment.effective_stats(instance, reg).power, reg) if cls else {}
     return Unit(
         id=uid,

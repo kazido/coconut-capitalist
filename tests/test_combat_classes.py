@@ -2,6 +2,7 @@
 
 import pytest
 
+from cococap.errors import GameRuleError
 from cococap.registry import get_registry
 from cococap.registry.loader import _validate_combat
 from cococap.registry.models import KitSkill
@@ -19,7 +20,7 @@ async def test_each_weapon_equips_into_combat_and_picks_its_class_kit(db):
         await equipment.equip(user, "combat", item.id)
         cls = REG.combat.classes[next(c for c, v in REG.combat.classes.items() if v.weapon == kind)]
         unit = await combat.build_player(user)
-        assert unit.skills == [cls.kit[0].skill]  # level 0 here: only the basic is open
+        assert unit.skills == [k.skill for k in cls.kit if k.level <= 1]  # class level 1 on a fresh account
         assert combat.class_for(kind) is cls
 
 
@@ -30,8 +31,23 @@ async def test_kit_skills_unlock_with_combat_level(db):
     kit = REG.combat.classes["archer"].kit
     unit = await combat.build_player(user)
     assert all(k.skill not in unit.skills for k in kit if k.level > 0)
-    await user.add_xp("combat", User.level_to_xp(max(k.level for k in kit)) + 1)  # +1: float rounding
-    assert (await combat.build_player(user)).skills == [k.skill for k in kit]
+    xp = User.level_to_xp(max(k.level for k in kit)) + 1  # +1: float rounding
+    await user.update_skill("combat", lambda s: s.class_xp.__setitem__("archer", xp))
+    assert (await combat.build_player(user)).skills == [k.skill for k in kit][: combat.LOADOUT_SIZE]
+
+
+async def test_loadout_picks_which_unlocked_skills_are_on_the_buttons(db):
+    user = await User.get(1)
+    await equipment.equip(user, "combat", (await user.give_instance(WEAPONS["bow"])).id)
+    kit = REG.combat.classes["archer"].kit
+    await user.update_skill("combat", lambda s: s.class_xp.__setitem__("archer", User.level_to_xp(max(k.level for k in kit)) + 1))
+    last = kit[-1].skill
+    await combat.set_loadout(user, [kit[0].skill, last])
+    assert (await combat.build_player(user)).skills == [kit[0].skill, last]
+    with pytest.raises(GameRuleError):
+        await combat.set_loadout(user, [])
+    with pytest.raises(GameRuleError):
+        await combat.set_loadout(user, ["not_a_skill"])
 
 
 async def test_bare_hands_use_the_default_kit(db):

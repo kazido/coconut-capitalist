@@ -3,6 +3,7 @@
 import discord
 
 from cococap import emojis
+from cococap.errors import GameRuleError
 from cococap.registry import get_registry
 from cococap.services import areas, combat, dungeon
 from cococap.services.party import Party
@@ -191,9 +192,23 @@ class ClassPane(Screen):
             lines.append(line if k.level <= class_level else f"{emojis.icon('lock', '🔒')} ~~{sk.name}~~ unlocks at class level {k.level}")
         body.append(sep())
         body.append(text("\n".join(lines)))
+        equipped = await combat.loadout(self.user, reg)
+        unlocked = [k.skill for k in cls.kit if k.level <= class_level]
+        body.append(text(f"**Loadout** (your fight buttons): {', '.join(rules.skills[s].name for s in equipped)}"))
+        body.append(row(select(f"Pick up to {combat.LOADOUT_SIZE} skills...",
+                               [discord.SelectOption(label=rules.skills[s].name, value=s, default=s in equipped) for s in unlocked],
+                               self._loadout, max_values=min(combat.LOADOUT_SIZE, len(unlocked)))))
         if switch:
             body.append(switch)
         return Page("Class", body, accent=0xC0392B)
+
+    async def _loadout(self, interaction: discord.Interaction, values: list[str]) -> None:
+        try:
+            await combat.set_loadout(self.user, values)
+        except GameRuleError as e:
+            await self.refresh(interaction, str(e))
+            return
+        await self.refresh(interaction)
 
     async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
         await combat.switch_class(self.user, None if values[0] == BARE else values[0])
