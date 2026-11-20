@@ -189,8 +189,13 @@ async def test_the_tab_toggle_equips_into_slot_one_and_unequips(db):
 
     user = await player()
     spare = await give(user, template_of("fishing", 1).id)
-    nav, inter = await hub("tools", tab="accessories")
-    await choose(nav, inter, select_named(nav, "Pick a skill"), "fishing")
+    from cococap.registry import get_registry
+    from cococap.services import shop
+    await shop.claim_starter_tools(user)
+    reg = get_registry()
+    rod = next(i for i in await user.instances() if (t := reg.find_item(i.template_id)) and t.tool and t.tool.kind == "rod")
+    nav, inter = await hub("tools")
+    await choose(nav, inter, select_named(nav, "See a tool"), str(rod.id))
     await choose(nav, inter, select_named(nav, "Pick an accessory"), str(spare.id))
     await click(nav, inter, "Equip")
     assert (await user.skill("fishing")).accessory_ids[0] == spare.id
