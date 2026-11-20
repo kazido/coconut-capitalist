@@ -78,7 +78,10 @@ Commits: aae9419 (1), 044d979 (2), e08be5c (3), 96cfa0e (4). Step 1 did not land
 - **Dungeons (step 5)**: `configs/dungeons.toml` (`[tiers.N]`, `[[buffs]]`) -> `CombatRules.dungeons`/`dungeon_buffs`; keys
   `key_dungeon_t1..t8` in items.toml (no drops yet: step 7). `services/dungeon.py`: `enter(users, tier)`, `move(run, user, dir)` ->
   moved/reward/buff/fight/boss, `finish_fight`, `finish_boss`, `leave`, `run_of(uid)`; `Run.version` bumps on every change (step 6 pokes on it);
-  `Run.lock` guards each call. Tests: `tests/test_dungeon.py`. Step 6 still owes: poke sync and the 30 s idle auto-basic in the boss fight.
+  `Run.lock` guards each call. Tests: `tests/test_dungeon.py`. Sync: `dungeon.add_listener` -> `ui/nav._on_dungeon_change` pokes every member on home/trade/combat/dungeon/fight.
+- **Dungeon UI (step 6)**: Combat -> Dungeons tab (`DungeonsPane`; the party leader takes the party in), `screens/dungeon.py` map
+  (7x7 viewport, arrows, Leave, Boss fight / Back to the fight), `screens/fight.py` dungeon mode (`run`, `me_id`, no Flee,
+  `dungeon.boss_play`, `auto_play` after 30 s idle, `finish_boss` is idempotent). Tests: `tests/test_dungeon_screen.py`.
 - **Open notes**: every new number is TODO(balance) (step 7). New weapons/enemies use plain unicode emoji (art later). One unidentified test
   failed once in the step-4 run and never again in 14 reruns: watch for a flaky test. Docs/changelog/DESIGN.md not written yet (step 7).
 

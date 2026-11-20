@@ -17,7 +17,7 @@ import discord
 from discord import ui
 
 from cococap.errors import CustomError, GameRuleError
-from cococap.services import community, trade
+from cococap.services import community, dungeon, trade
 from cococap.user import InsufficientFunds, User
 
 from .components import button, row, sep, text
@@ -39,9 +39,9 @@ def _menu_key(user_id: int) -> str:
 
 
 async def poke(user_id: int) -> None:
-    """Redraw a player's open menu right now if it is on a page that shows invitations (Home, Trade): so a trade request appears without them clicking."""
+    """Redraw a player's open menu right now if it is on a live page (Home, Trade, Combat, Dungeon, Fight): so a trade request or a party member's dungeon move shows without them clicking."""
     nav = _LIVE.get(user_id)
-    if nav is None or nav.message is None or nav.is_finished() or nav.screen is None or nav.screen.id not in ("home", "trade") or nav._lock.locked():
+    if nav is None or nav.message is None or nav.is_finished() or nav.screen is None or nav.screen.id not in ("home", "trade", "combat", "dungeon", "fight") or nav._lock.locked():
         return
     try:
         async with nav._lock:
@@ -59,6 +59,16 @@ def _on_trade_ask(recipient_id: int) -> None:
 
 
 trade.add_listener(_on_trade_ask)
+
+
+def _on_dungeon_change(member_id: int) -> None:
+    try:
+        asyncio.get_running_loop().create_task(poke(member_id))
+    except RuntimeError:  # no event loop (plain tests)
+        pass
+
+
+dungeon.add_listener(_on_dungeon_change)
 
 
 async def stop_all_tickers() -> None:

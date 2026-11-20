@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import asyncio
 import random
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from cococap.errors import GameRuleError
@@ -17,6 +19,7 @@ from cococap.services import combat, loot
 from cococap.user import User
 
 MAX_PARTY = 4
+IDLE_SECONDS = 30  # a boss-fight member who waits this long on their turn uses their basic skill by themselves
 MOVES = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}
 
 
@@ -54,6 +57,8 @@ class Run:
     outcome: str | None = None  # None while running, then "win" (boss slain) or "loss" (boss won / everyone out)
     version: int = 0
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    results: dict[int, combat.Settlement] = field(default_factory=dict)  # the boss fight's payout per member, once it is settled
+    turn_since: float = 0.0  # boss fight: when the current player's turn began (for the idle auto-play)
 
     @property
     def size(self) -> int:
@@ -79,6 +84,19 @@ class Run:
 
 
 _runs: dict[int, Run] = {}  # every member (in or out, until the run ends) -> their run
+_listeners: list[Callable[[int], None]] = []  # told the id of every member whenever a run changes (the UI redraws them)
+
+
+def add_listener(listener: Callable[[int], None]) -> None:
+    if listener not in _listeners:
+        _listeners.append(listener)
+
+
+def _changed(run: Run) -> None:
+    run.version += 1
+    for m in run.members:
+        for listener in _listeners:
+            listener(m.user_id)
 
 
 def run_of(user_id: int) -> Run | None:
@@ -172,21 +190,27 @@ async def move(run: Run, user: User, direction: str, registry: Registry | None =
                 raise DungeonError(f"The boss waits until everyone is free (still fighting: {', '.join(waiting)}).")
         m.pos = pos
         run._reveal(pos)
-        run.version += 1
-        if kind == "boss":
-            await _start_boss(run, reg)
-            return "boss"
-        if kind == "empty":
-            return "moved"
-        run.grid[pos[1]][pos[0]] = "empty"  # the first member to step here takes it
-        if kind == "reward":
-            await _reward(run, m, user, reg)
-        elif kind == "buff":
-            await _buff(run, m, user, reg)
-        else:
-            m.battle = combat.battle_with(await _unit(run, m, user, reg), _roll_foes(run), reg, run.rng)
-            return "fight"
-        return kind
+        try:
+            return await _resolve(run, m, user, kind, pos, reg)
+        finally:
+            _changed(run)  # after the tile is resolved, so the others never draw it half done
+
+
+async def _resolve(run: Run, m: Member, user: User, kind: str, pos: tuple[int, int], reg: Registry) -> str:
+    if kind == "boss":
+        await _start_boss(run, reg)
+        return "boss"
+    if kind == "empty":
+        return "moved"
+    run.grid[pos[1]][pos[0]] = "empty"  # the first member to step here takes it
+    if kind == "reward":
+        await _reward(run, m, user, reg)
+    elif kind == "buff":
+        await _buff(run, m, user, reg)
+    else:
+        m.battle = combat.battle_with(await _unit(run, m, user, reg), _roll_foes(run), reg, run.rng)
+        return "fight"
+    return kind
 
 
 async def _reward(run: Run, m: Member, user: User, reg: Registry) -> None:
@@ -215,6 +239,7 @@ async def _start_boss(run: Run, reg: Registry) -> None:
     boss = combat.enemy_unit(reg.enemies[run.tier.boss], "e1")
     run.boss_battle = combat.Battle(reg.combat, [*units, boss], run.rng)
     run.boss_battle.start()
+    run.turn_since = time.monotonic()
 
 
 async def finish_fight(run: Run, user: User, registry: Registry | None = None) -> combat.Settlement:
@@ -230,7 +255,7 @@ async def finish_fight(run: Run, user: User, registry: Registry | None = None) -
         m.battle = None
         m.hp = battle.unit(m.unit_id).hp
         m.out = battle.outcome != "win"
-        run.version += 1
+        _changed(run)
         _end_if_empty(run)
         return result
 
@@ -242,12 +267,14 @@ async def finish_boss(run: Run, registry: Registry | None = None) -> dict[int, c
         battle = run.boss_battle
         if battle is None or battle.outcome is None:
             raise DungeonError("The boss fight isn't over.")
-        results = {}
+        if run.outcome:  # another member's screen settled it first
+            return run.results
+        results = run.results
         for m in run.active():
             results[m.user_id] = await combat.settle(await User.get(m.user_id), battle, reg, run.rng)
             _tally(m, results[m.user_id])
         run.outcome = battle.outcome
-        run.version += 1
+        _changed(run)
         _end_if_empty(run)
         return results
 
@@ -267,5 +294,31 @@ async def leave(run: Run, user: User) -> None:
             raise DungeonError("Finish the fight first.")
         m.out = True
         _runs.pop(user.id, None)
-        run.version += 1
+        _changed(run)
         _end_if_empty(run)
+
+
+def boss_play(run: Run, user: User, skill_id: str, target_id: str | None = None) -> None:
+    """A member plays their turn in the shared boss fight (call finish_boss once battle.outcome is set)."""
+    battle = run.boss_battle
+    if battle is None:
+        raise DungeonError("There is no boss fight.")
+    battle.play(skill_id, target_id, run.member(user.id).unit_id)
+    run.turn_since = time.monotonic()
+    _changed(run)
+
+
+def auto_play(run: Run, now: float | None = None) -> bool:
+    """If the member whose boss-fight turn it is has been idle IDLE_SECONDS, play their basic skill on the weakest foe. True if it did."""
+    battle = run.boss_battle
+    now = time.monotonic() if now is None else now
+    if battle is None or battle.outcome or battle.active is None or now - run.turn_since < IDLE_SECONDS:
+        return False
+    actor = battle.active
+    skill = battle.skill(actor.skills[0])
+    pool = battle.targets_for(actor, skill)
+    target = min(pool, key=lambda u: u.hp).id if skill.target in {"enemy", "ally"} and pool else None
+    battle.play(actor.skills[0], target, actor.id)
+    run.turn_since = now
+    _changed(run)
+    return True

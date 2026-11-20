@@ -4,7 +4,8 @@ import discord
 
 from cococap import emojis
 from cococap.registry import get_registry
-from cococap.services import areas, combat
+from cococap.services import areas, combat, dungeon
+from cococap.services.party import Party
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, select, sep, text
 from cococap.ui.tabs import TabsScreen
@@ -86,6 +87,58 @@ class ExplorePane(Screen):
         await self.go(interaction, "bestiary")
 
 
+class DungeonsPane(Screen):
+    """Spend a tier key to walk a dungeon alone, or lead your whole party in."""
+
+    label = "Dungeons"
+    emoji = emojis.Lazy("ui_skull", "💀")
+    description = "Tier dungeons: walk the grid, fight, beat the boss"
+
+    def __init__(self, nav):
+        super().__init__(nav)
+        self.tier: int | None = None
+
+    async def build(self) -> Page:
+        reg = get_registry()
+        level = User.xp_to_level((await self.user.skill("combat")).xp)
+        owned = await self.user.items()
+        lines, held = [], []
+        for t in reg.combat.dungeons.values():
+            have = owned.get(t.key, 0)
+            lines.append(f"**T{t.tier}**  {reg.item(t.key).display} ×{have}" + (f"  ·  combat lv {t.min_level}" if t.min_level else ""))
+            if have:
+                held.append(t.tier)
+        body = [*self.note_block(), text("### Dungeons\n" + "\n".join(lines))]
+        if dungeon.run_of(self.user.id) is not None:
+            body.append(row(button("Back to the dungeon", style=discord.ButtonStyle.danger, on_click=self._to_dungeon)))
+            return Page("Dungeons", body, accent=0xC0392B)
+        if self.tier not in held:
+            self.tier = held[-1] if held else None
+        if held:
+            body.append(row(select("Which dungeon...", [discord.SelectOption(label=f"T{n}", value=str(n), default=n == self.tier) for n in held], self._pick)))
+        t = reg.combat.dungeons.get(self.tier)
+        body.append(row(button("Enter", style=discord.ButtonStyle.danger, disabled=t is None or level < t.min_level, on_click=self._enter)))
+        return Page("Dungeons", body, accent=0xC0392B)
+
+    async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
+        self.tier = int(values[0])
+        await self.refresh(interaction)
+
+    async def _enter(self, interaction: discord.Interaction) -> None:
+        users = [self.user]
+        party = await Party.for_user(self.user.id)
+        if party is not None and len(party.members) > 1:
+            if not party.is_owner(self.user.id):
+                await self.refresh(interaction, "Only the party leader can lead you in.")
+                return
+            users += [await User.get(i) for i in party.members if i != self.user.id]
+        await dungeon.enter(users, self.tier)
+        await self.go(interaction, "dungeon")
+
+    async def _to_dungeon(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "dungeon")
+
+
 class ClassPane(Screen):
     """What your weapon makes you: the class, its resource and its skills."""
 
@@ -123,5 +176,5 @@ class CombatScreen(TabsScreen):
     label = "Combat"
     emoji = emojis.Lazy("ui_sword", "⚔️")
     description = "Explore zones, fight monsters and pick a class"
-    links = ("bestiary", "fight")
-    panes = {"explore": ExplorePane, "class": ClassPane}
+    links = ("bestiary", "fight", "dungeon")
+    panes = {"explore": ExplorePane, "dungeons": DungeonsPane, "class": ClassPane}

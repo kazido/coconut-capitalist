@@ -12,6 +12,7 @@ from .bestiary import BestiaryScreen
 from .blackjack import BlackjackPane
 from .checkin import CheckInScreen
 from .craft import CraftScreen
+from .dungeon import DungeonScreen
 from .farm import FarmScreen
 from .combat import CombatScreen
 from .fight import FightScreen
@@ -60,6 +61,7 @@ SCREENS: dict[str, type[Screen]] = {
         FarmScreen,
         CombatScreen,
         FightScreen,
+        DungeonScreen,
         ForageScreen,
         ReleafScreen,
         FishScreen,

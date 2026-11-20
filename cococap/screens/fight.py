@@ -2,7 +2,7 @@ import discord
 
 from cococap import emojis
 from cococap.registry import get_registry
-from cococap.services import combat
+from cococap.services import combat, dungeon
 from cococap.services.combat import Battle, Unit
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bar, button, row, section, sep, text
@@ -32,6 +32,20 @@ class FightScreen(Screen):
         self.encounter: str | None = None  # the key fight being played, or None for a zone fight (so "Fight again" knows what to start)
         self.zone: str | None = None  # the zone being explored
         self.picking: str | None = None  # a skill waiting for the player to choose its target
+        self.run: dungeon.Run | None = None  # set when this fight is part of a dungeon run (a tile fight or the shared boss fight)
+
+    @property
+    def me_id(self) -> str:
+        return self.run.member(self.user.id).unit_id if self.run else "p1"
+
+    @property
+    def _boss(self) -> bool:
+        return self.run is not None and self.battle is not None and self.battle is self.run.boss_battle
+
+    @property
+    def refresh_every(self) -> float | None:  # type: ignore[override]
+        """The boss fight is shared: redraw every 3 s to see the others' turns."""
+        return 3 if self._boss and self.battle.outcome is None else None
 
     @property
     def locked(self) -> bool:
@@ -39,6 +53,10 @@ class FightScreen(Screen):
 
     # --- lobby -----------------------------------------------------------------------------------
     async def build(self) -> Page:
+        if self._boss:
+            dungeon.auto_play(self.run)  # an idle member's turn plays itself
+            if self.battle.outcome:  # someone else's click ended it: settle (idempotent) and show our result
+                await self._settle()
         if self.battle is not None:
             return self._battle_page(self.battle)
         return Page("Fight", [*self.note_block(), text("Pick a zone on the Combat page to start a fight."),
@@ -53,7 +71,7 @@ class FightScreen(Screen):
 
     # --- the fight ---------------------------------------------------------------------------------
     def _battle_page(self, battle: Battle) -> Page:
-        me = battle.unit("p1")
+        me = battle.unit(self.me_id)
         foes = [u for u in battle.units if u.side == "enemy"]
         reveal = me.has("reveal")
         body = [*self.note_block()]
@@ -68,6 +86,8 @@ class FightScreen(Screen):
             body.append(text(line))
         body.append(sep())
         body.append(text(f"### {me.emoji} {me.name}\n{hp_line(me)}" + (f"\n{effect_line(me)}" if effect_line(me) else "")))
+        for ally in (u for u in battle.units if u.side == "player" and u.id != me.id):
+            body.append(text(f"{ally.emoji} {ally.name}\n{hp_line(ally)}"))
         order = f" {emojis.icon('next', '→')} ".join(u.emoji for u in battle.turn_order(7)) if battle.outcome is None else ""
         if order:
             body.append(text(f"**Turn order:** {order}"))
@@ -80,6 +100,10 @@ class FightScreen(Screen):
         return Page("Fight", body, accent=0xC0392B)
 
     def _controls(self, battle: Battle, me: Unit) -> list:
+        if self._boss and battle.outcome is None and (battle.active is None or battle.active.id != me.id):
+            who = battle.active.name if battle.active else "the others"
+            waiting = [button(battle.skill(s).name, disabled=True, on_click=self._cancel) for s in me.skills]
+            return [text(f"Waiting for {who}..."), row(*waiting)]
         if self.picking:
             targets = battle.targets_for(me, battle.skill(self.picking))
             return [row(
@@ -94,13 +118,15 @@ class FightScreen(Screen):
             label = skill.name + (f" ({cd})" if cd else "") + (f" · {skill.cost}" if skill.cost else "")
             style = discord.ButtonStyle.primary if i == 0 else discord.ButtonStyle.secondary
             buttons.append(button(label, style=style, disabled=cd > 0 or me.resource < skill.cost, on_click=self._skill(skill_id)))
+        if self.run:  # no running away from a dungeon fight
+            return [row(*buttons)]
         return [row(*buttons), row(button("Flee", emoji=emojis.icon("people", "🏃"), on_click=self._flee))]
 
     def _skill(self, skill_id: str):
         async def use(interaction: discord.Interaction) -> None:
             battle = self.battle
             skill = battle.skill(skill_id)
-            pool = battle.targets_for(battle.unit("p1"), skill)
+            pool = battle.targets_for(battle.unit(self.me_id), skill)
             if skill.target in {"enemy", "ally"} and len(pool) > 1:
                 self.picking = skill_id
                 await self.refresh(interaction)
@@ -121,7 +147,10 @@ class FightScreen(Screen):
         await self.refresh(interaction)
 
     async def _act(self, interaction: discord.Interaction, skill_id: str, target_id: str | None) -> None:
-        self.battle.play(skill_id, target_id)
+        if self._boss:
+            dungeon.boss_play(self.run, self.user, skill_id, target_id)
+        else:
+            self.battle.play(skill_id, target_id, self.me_id)
         if self.battle.outcome:
             await self._finish(interaction)
         else:
@@ -132,18 +161,37 @@ class FightScreen(Screen):
         await self.refresh(interaction, "You ran away. Nothing gained, nothing lost.")
 
     async def _finish(self, interaction: discord.Interaction) -> None:
-        battle, self.battle, self.picking = self.battle, None, None
-        paid = await combat.settle(self.user, battle)
+        await self._settle()
+        await self.refresh(interaction)
+
+    async def _settle(self) -> None:
+        """Pay the finished battle and set the Victory/Defeated page (also called from build when another member ended the boss fight)."""
+        battle, boss, self.battle, self.picking = self.battle, self._boss, None, None
+        if boss:
+            paid = (await dungeon.finish_boss(self.run)).get(self.user.id)
+        elif self.run:
+            paid = await dungeon.finish_fight(self.run, self.user)
+        else:
+            paid = await combat.settle(self.user, battle)
         recap = "\n".join(battle.log[-6:])
-        if battle.outcome == "win":
+        won = battle.outcome == "win"
+        if won:
             reg = get_registry()
+            paid = paid or combat.Settlement()
             loot = [f"{reg.item(i).display} ×{q:,}" for i, q in paid.items.items()] + ([f"**{emojis.bits(paid.bits)}**"] if paid.bits else [])
             lines = [recap, f"**+{paid.xp:,}** combat xp  ·  {paid.kills} slain", f"{emojis.icon('gift', '🎁')} " + (", ".join(loot) if loot else "Nothing dropped this time.")]
-            self.result = Result("Victory!", lines, emoji=emojis.icon("record", "🏆"), accent=0x2ECC71, again=self._again, again_label="Fight again")
         else:
-            lines = [recap, "You wake up back at the camp, a little bruised. Nothing was lost but the time."]
-            self.result = Result("Defeated", lines, emoji=emojis.icon("skull", "💀"), accent=0xE74C3C, again=self._again, again_label="Try again")
-        await self.refresh(interaction)
+            lines = [recap, "The dungeon run is over for you." if self.run else "You wake up back at the camp, a little bruised. Nothing was lost but the time."]
+        kw = {"again": self._again, "again_label": "Fight again" if won else "Try again"}
+        if boss:
+            kw = {"back": self._to_combat, "back_label": "Done"}
+        elif self.run:
+            kw = {"back": self._to_dungeon, "back_label": "Back to the dungeon"}
+        title, emoji, accent = ("Victory!", emojis.icon("record", "🏆"), 0x2ECC71) if won else ("Defeated", emojis.icon("skull", "💀"), 0xE74C3C)
+        self.result = Result(title, lines, emoji=emoji, accent=accent, **kw)
+
+    async def _to_dungeon(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "dungeon")
 
     async def _again(self, interaction: discord.Interaction) -> None:
         if self.zone and not self.encounter:
