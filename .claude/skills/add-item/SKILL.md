@@ -5,7 +5,7 @@ description: Add a new item (material, tool, scroll, pet food, seed...) to Cocon
 
 # Add an item
 
-1. Read `CLAUDE.md` (data model facts) and look at one existing item of the same category in `configs/items.toml` to copy its shape.
+1. Read `.claude/rules/data-model.md` and look at one existing item of the same category in `configs/items.toml` to copy its shape.
 2. Add the `[id]` table: `name, description, wiki` (what it does in plain words, with numbers), `emoji` (required: pick any placeholder),
    `rarity` (1-7), `skill`, `category`, `price`, `sell_price`. Add sub-tables only if needed: `.drop` (`rate` = 1 in N per drop roll),
    `.tool`, `.scroll`, `.pet_food`, `.crop`, `.seed`. Mark guessed numbers `# TODO(balance)`.
