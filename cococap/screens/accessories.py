@@ -45,25 +45,26 @@ class AccessoriesPane(Screen):
             for n, inst in enumerate(worn, 1)
         )))
         template_ids = {t.id for t in rules.templates if t.skill == self.skill}
-        spares = [i for i in await self.user.instances() if i.template_id in template_ids and i.id not in worn_ids]
+        owned = [i for i in await self.user.instances() if i.template_id in template_ids]
         body.append(sep())
-        if not spares:
-            body.append(text(f"-# No spare {self.skill} accessories. Buy a basic one in the Shop or wait for a drop."))
-        else:
-            if self.picked not in {i.id for i in spares}:
-                self.picked = None
-            body.append(row(select("Pick a spare accessory...", [
-                discord.SelectOption(label=rules.template(i.template_id).name[:100], value=str(i.id), default=i.id == self.picked)
-                for i in spares
-            ], self._pick_spare)))
-        body.append(row(
-            button("Equip in slot 1", style=discord.ButtonStyle.primary, on_click=self._equip(0)),
-            button("Equip in slot 2", style=discord.ButtonStyle.primary, on_click=self._equip(1)),
-        ))
-        body.append(row(
-            button("Unequip 1", style=discord.ButtonStyle.secondary, on_click=self._unequip(0)),
-            button("Unequip 2", style=discord.ButtonStyle.secondary, on_click=self._unequip(1)),
-        ))
+        if not owned:
+            body.append(text(f"-# No {self.skill} accessories. Buy a basic one in the Shop or wait for a drop."))
+            return Page("Accessories", body, accent=0x8E44AD)
+        if self.picked not in {i.id for i in owned}:
+            self.picked = None
+        body.append(row(select("Pick an accessory...", [
+            discord.SelectOption(label=(rules.template(i.template_id).name + (" (worn)" if i.id in worn_ids else ""))[:100],
+                                 value=str(i.id), default=i.id == self.picked)
+            for i in owned
+        ], self._pick_spare)))
+        # One toggle: takes off a worn accessory, or wears a spare in the first empty slot.
+        wearing = self.picked in worn_ids
+        full = None not in worn
+        body.append(row(button("Unequip" if wearing else "Equip",
+                               style=discord.ButtonStyle.secondary if wearing else discord.ButtonStyle.primary,
+                               on_click=self._toggle, disabled=self.picked is None or (full and not wearing))))
+        if full and self.picked is not None and not wearing:
+            body.append(text("-# Both slots are full. Unequip one first."))
         return Page("Accessories", body, accent=0x8E44AD)
 
     async def _pick_skill(self, interaction: discord.Interaction, values: list[str]) -> None:
@@ -75,21 +76,16 @@ class AccessoriesPane(Screen):
         self.picked = int(values[0])
         await self.refresh(interaction)
 
-    def _equip(self, slot: int):
-        async def go(interaction: discord.Interaction) -> None:
-            if self.picked is None:
-                await self.refresh(interaction, "Pick a spare accessory first.")
-                return
-            instance = await accessories.equip(self.user, self.skill, self.picked, slot)
-            self.picked = None
-            name = get_registry().accessories.template(instance.template_id).name
-            await self.refresh(interaction, f"Wearing **{name}** in slot {slot + 1}.")
-
-        return go
-
-    def _unequip(self, slot: int):
-        async def go(interaction: discord.Interaction) -> None:
-            await accessories.unequip(self.user, self.skill, slot)
-            await self.refresh(interaction, f"Took off the accessory in slot {slot + 1}.")
-
-        return go
+    async def _toggle(self, interaction: discord.Interaction) -> None:
+        if self.picked is None:
+            return await self.refresh(interaction, "Pick an accessory first.")
+        reg = get_registry()
+        worn = await accessories.equipped(self.user, self.skill, reg)
+        worn_ids = [i.id if i is not None else None for i in worn]
+        if self.picked in worn_ids:
+            await accessories.unequip(self.user, self.skill, worn_ids.index(self.picked))
+            return await self.refresh(interaction, "Took it off.")
+        if None not in worn_ids:
+            return await self.refresh(interaction, "Both slots are full. Unequip one first.")
+        instance = await accessories.equip(self.user, self.skill, self.picked, worn_ids.index(None))
+        await self.refresh(interaction, f"Wearing **{reg.accessories.template(instance.template_id).name}**.")
