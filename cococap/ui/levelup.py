@@ -69,7 +69,7 @@ async def collect(user: User, seen: dict[str, int] | None) -> tuple[list[str], d
 
 # The skill a screen belongs to (for the "you and your pet" progress line on its result screens).
 SCREEN_SKILL = {"mining": "mining", "mine": "mining", "reactor": "mining", "fish": "fishing", "fishlog": "fishing", "fishpots": "fishing",
-                "forage": "foraging", "trees": "foraging", "farm": "farming"}
+                "forage": "foraging", "trees": "foraging", "farm": "farming", "fight": "combat", "combat": "combat"}
 
 
 async def tag_pet_xp(user: User, screen_id: str, lines: list[str]) -> list[str]:

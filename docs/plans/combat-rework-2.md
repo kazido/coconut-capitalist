@@ -17,9 +17,18 @@ Uses `ui/rewards.rewards_result` (drops + xp only). Continue goes to Combat.
 Fight screen plays a turn in steps with `asyncio.sleep` redraws: your move, pause, enemy telegraph + move, pause, what it did to you.
 The log shows only the latest round, split into "You" and "Enemy" blocks. Needs a step list from `Battle.play` (Battle stays Discord-free).
 
-## 3. Skills: 4 per weapon kind (unarmed, sword, bow, staff, shield)
-Each kind gets 4 buttons with different jobs: single hit, multi-hit, AOE, utility (buff, heal, guard, stun, mark). Data in the skills config,
-cooldowns/resource as today. A balance sim row per kind (`scripts/balance.py`). Design the 20 skills with the owner kind by kind.
+## 3. Skills: a loadout of 4 from ~20 per class (REDESIGNED by the owner, in progress)
+- Classes (unarmed, melee/sword, archer/bow, wizard/staff, tank/shield) each own a pool of ~20 skills. The player equips a LOADOUT of 4
+  (the fight buttons). Roles to cover across a loadout: single hit, multi-hit, AOE, utility (buff, heal, guard, stun, mark).
+- Start with 4 basic skills per class (choice from level 0); the rest unlock as the CLASS levels.
+- NEW: class level + class xp, separate from combat level (per class, stored in the player's combat skill doc). A fight pays class xp to the
+  class you fought with. Shown on the Class tab (level, xp bar, skill pool with lock levels, loadout picker).
+- Resources (rage/focus/mana/guard) and cooldowns stay as today. Today's kits are 5 skills with level unlocks: they become the seed of the pools.
+- A balance sim row per class (`scripts/balance.py`). Design the pools kind by kind with the owner (one question at a time).
+- Build order: (a) class xp/level model + award in `combat.settle` + Class tab display; (b) loadout storage + picker + fight uses the loadout;
+  (c) author pools kind by kind (4 basics first, then unlockables).
+- DONE already: Explore page has the XP bar line like other skills; `ui/levelup.SCREEN_SKILL` maps fight/combat so the victory screen shows the
+  combat + pet progress line and the pet xp tag.
 
 ## 4. Weapon parts (see `weapon-parts.md` questions)
 Weapons are smithed from weapon parts only; tool parts stay for tools. Parts carry combat traits (+damage, +speed, +hp, +crit).

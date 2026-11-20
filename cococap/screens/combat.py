@@ -7,7 +7,7 @@ from cococap.registry import get_registry
 from cococap.services import areas, combat, dungeon
 from cococap.services.party import Party
 from cococap.ui import Page, Screen
-from cococap.ui.components import button, row, select, sep, text
+from cococap.ui.components import button, row, select, sep, text, xp_bar
 from cococap.ui.tabs import TabsScreen
 from cococap.user import User
 
@@ -34,7 +34,9 @@ class ExplorePane(Screen):
 
     async def build(self) -> Page:
         reg = get_registry()
-        level = User.xp_to_level((await self.user.skill("combat")).xp)
+        xp = (await self.user.skill("combat")).xp
+        level = User.xp_to_level(xp)
+        overflow, needed = User.xp_for_next_level(xp)
         zones = await areas.open_location_list(self.user, "combat", reg)
         ids = [z.id for z in zones]
         if self.zone is None:
@@ -47,7 +49,8 @@ class ExplorePane(Screen):
         me = await combat.build_player(self.user)
         body = [
             *self.note_block(),
-            text(f"### {emojis.icon('sword', '⚔️')} Combat  ·  Lv {level}\n{emojis.icon('heart', '❤️')} **{me.max_hp}**  {emojis.icon('sword', '⚔️')} **{me.attack}**  "
+            text(f"**Level {level}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp"),
+            text(f"### {emojis.icon('sword', '⚔️')} Combat\n{emojis.icon('heart', '❤️')} **{me.max_hp}**  {emojis.icon('sword', '⚔️')} **{me.attack}**  "
                  f"{emojis.icon('shield', '🛡️')} **{me.defense}**  {emojis.icon('bolt', '⚡')} **{me.speed}**"),
             sep(),
             text(f"### {here.emoji} {here.name}\nUp to **{rules.max_foes}** at a time: {foes}"
