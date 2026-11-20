@@ -1,11 +1,11 @@
 import discord
 
 from cococap import emojis
-from cococap.registry import get_registry
 from cococap.services import combat, dungeon
 from cococap.services.combat import Battle, Unit
 from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bar, button, row, section, sep, text
+from cococap.ui.rewards import rewards_result
 from cococap.user import User
 
 
@@ -173,22 +173,20 @@ class FightScreen(Screen):
             paid = await dungeon.finish_fight(self.run, self.user)
         else:
             paid = await combat.settle(self.user, battle)
-        recap = "\n".join(battle.log[-6:])
         won = battle.outcome == "win"
-        if won:
-            reg = get_registry()
-            paid = paid or combat.Settlement()
-            loot = [f"{reg.item(i).display} ×{q:,}" for i, q in paid.items.items()] + ([f"**{emojis.bits(paid.bits)}**"] if paid.bits else [])
-            lines = [recap, f"**+{paid.xp:,}** combat xp  ·  {paid.kills} slain", f"{emojis.icon('gift', '🎁')} " + (", ".join(loot) if loot else "Nothing dropped this time.")]
-        else:
-            lines = [recap, "The dungeon run is over for you." if self.run else "You wake up back at the camp, a little bruised. Nothing was lost but the time."]
-        kw = {"again": self._again, "again_label": "Fight again" if won else "Try again"}
+        # "Continue" goes straight to Combat (the Fight lobby page it used to land on is pointless).
+        kw = {"again": self._again, "again_label": "Fight again" if won else "Try again", "back": self._to_combat}
         if boss:
             kw = {"back": self._to_combat, "back_label": "Done"}
         elif self.run:
             kw = {"back": self._to_dungeon, "back_label": "Back to the dungeon"}
-        title, emoji, accent = ("Victory!", emojis.icon("record", "🏆"), 0x2ECC71) if won else ("Defeated", emojis.icon("skull", "💀"), 0xE74C3C)
-        self.result = Result(title, lines, emoji=emoji, accent=accent, **kw)
+        if won:
+            paid = paid or combat.Settlement()
+            self.result = rewards_result("Victory!", items=paid.items, bits=paid.bits, xp=paid.xp, emoji=emojis.icon("record", "🏆"),
+                                         accent=0x2ECC71, notes=[] if paid.items or paid.bits or paid.xp else ["Nothing dropped this time."], **kw)
+        else:
+            lines = ["The dungeon run is over for you." if self.run else "You wake up back at the camp, a little bruised. Nothing was lost but the time."]
+            self.result = Result("Defeated", lines, emoji=emojis.icon("skull", "💀"), accent=0xE74C3C, **kw)
 
     async def _to_dungeon(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "dungeon")

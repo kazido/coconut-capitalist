@@ -71,7 +71,7 @@ async def test_winning_pays_xp_and_shows_the_result_then_fight_again_restarts(db
     skill = await nav.user.skill("combat")
     assert skill.xp == get_registry().enemies["zombie"].xp and skill.stats.monsters_slain == 1
     text = all_text(nav)
-    assert "Victory" in text and "combat xp" in text
+    assert "Victory" in text and "xp" in text
     await click(nav, inter, "Fight again")
     assert nav.screen.battle is not None and nav.screen.battle.unit("e1").hp == nav.screen.battle.unit("e1").max_hp
 
@@ -134,11 +134,11 @@ async def test_the_victory_page_lists_what_dropped(db, monkeypatch):
     await start(nav, inter)
     nav.screen.battle.unit("p1").attack = 10_000
     await click(nav, inter, "Slash")
-    assert "🎁" in all_text(nav) and "×3" in all_text(nav) and "Iron Ore" in all_text(nav)
+    assert "You got" in all_text(nav) and "+3" in all_text(nav) and "Iron Ore" in all_text(nav)
     assert await nav.user.item_quantity("material_iron_ore") == 3
 
 
-async def test_a_victory_with_no_drop_says_so(db, monkeypatch):
+async def test_a_victory_with_no_drop_shows_only_xp(db, monkeypatch):
     from cococap.services import loot
 
     monkeypatch.setattr(loot, "roll_kill", lambda *a, **k: None)
@@ -146,4 +146,4 @@ async def test_a_victory_with_no_drop_says_so(db, monkeypatch):
     await start(nav, inter)
     nav.screen.battle.unit("p1").attack = 10_000
     await click(nav, inter, "Slash")
-    assert "Nothing dropped" in all_text(nav)
+    assert "You got" not in all_text(nav) and "xp" in all_text(nav)
