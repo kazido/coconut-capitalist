@@ -144,7 +144,7 @@ class ToolsPane(Screen):
                 discord.SelectOption(label=reg.enchant(e).name[:100], value=e) for e in inst.enchants], self._remove_enchant)))
         if skill in ACCESSORY_SKILLS:
             body += await self._accessory_section(skill)
-        body += [sep(), row(button("Back to tools", emoji=emojis.icon("back", "↩️"), on_click=self._back))]
+        body += [sep(), row(button("Back to tools", emoji=emojis.icon("prev", "⬅️"), on_click=self._back))]
         return Page("Tools", body, accent=0xB8860B)
 
     async def _accessory_section(self, skill: str) -> list:

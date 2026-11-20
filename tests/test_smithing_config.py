@@ -7,6 +7,7 @@ import pytest
 
 from cococap.registry import RegistryError, get_registry, load_registry
 from cococap.registry.loader import CONFIG_DIR
+from cococap.registry.models import PART_TIERS
 
 KINDS = ("pickaxe", "rod", "axe", "can")
 
@@ -26,14 +27,14 @@ def test_tier_power_increases_across_all_seven_tiers():
 def test_every_part_type_shares_one_power_table():
     rules = get_registry().smithing
     assert list(rules.tiers) == ["power"]  # one table, so base, trim and accent can never differ
-    assert len({rules.tier_power(t) for t in range(1, 8)}) == 7
+    assert len({rules.tier_power(t) for t in range(1, PART_TIERS + 1)}) == PART_TIERS
 
 
 def test_max_tier_for_area_respects_area_plus_cap():
     rules = get_registry().smithing
     for row in rules.area_weights:
         area = row.area
-        assert rules.max_tier_for_area(area) == min(7, area + rules.area_cap)
+        assert rules.max_tier_for_area(area) == min(PART_TIERS, area + rules.area_cap)
         weights = rules.weights_for_area(area)
         cap = rules.max_tier_for_area(area)
         assert all(w == 0 for w in weights[cap:])  # weights above the cap are ignored
@@ -74,8 +75,10 @@ def _broken_registry(tmp_path: Path, old: str, new: str) -> None:
 
 
 def test_non_increasing_tier_power_fails_to_load(tmp_path):
+    power = get_registry().smithing.tiers["power"]
+    broken = [*power[:4], power[3] - 1, *power[5:]]  # tier 5 weaker than tier 4
     with pytest.raises(RegistryError):
-        _broken_registry(tmp_path, "power = [1, 2, 3, 5, 7, 10, 14]", "power = [1, 2, 3, 5, 4, 10, 14]")
+        _broken_registry(tmp_path, f"power = {power}", f"power = {broken}")
 
 
 def test_unknown_trait_stat_fails_to_load(tmp_path):
