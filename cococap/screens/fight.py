@@ -91,7 +91,7 @@ class FightScreen(Screen):
             foe_alive = snap(foe)[3] if snap(foe) else foe.alive
             line = f"### {foe.emoji} {foe.name}" if foe_alive else f"### {emojis.icon('skull', '💀')} ~~{foe.name}~~"
             if foe.alive:
-                line += f"\n{hp_line(foe)}"
+                line += f"\n{hp_line(foe, snap(foe))}"
                 if effect_line(foe):
                     line += f"\n{effect_line(foe)}"
                 if (reveal or foe.telegraph) and foe.next_skill:
