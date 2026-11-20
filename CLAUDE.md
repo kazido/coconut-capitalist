@@ -170,3 +170,9 @@ unique `id`; it pops up once for every player, then stays on More -> News -> Mes
 - `services/combat.py`, `screens/fight.py`, combat tests: combat is paused, not removed.
 - `scripts/import_mongo.py`: the one-time old-player migration, waiting on a working Mongo login.
 - `exts/economy/drops.py`: old channel-drop code (Mongo era), to be rebuilt on the drop tables.
+
+<!-- claude-reflect: learned rules (saved from the band; edit freely) -->
+## Learned rules
+- Abbreviate tiers as TX everywhere and omit rarity names from item labels, e.g. display 'Base Part (T1)'.
+- Show an emoji on every dropdown option whenever one applies to that option.
+<!-- end claude-reflect -->

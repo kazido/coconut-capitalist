@@ -24,6 +24,11 @@ def _tier(inst) -> int:
     return int(inst.rolled.get("tier", 1))
 
 
+def _part_emoji(slot: str, inst) -> str | None:
+    """The part's own emoji (per tier, else the generic part one) for dropdown options."""
+    return emojis.for_id("item", f"part_{slot}_t{_tier(inst)}", get_registry().item(inst.template_id).emoji) or None
+
+
 def _trait_names(inst, rules) -> str:
     """Trait glyphs for select text (custom emoji do not render there); message text uses smithing.trait_icons."""
     return smithing.trait_icons(inst.traits, rules, plain=True)
@@ -101,7 +106,7 @@ class SmithingPane(Screen):
         if self.sub == "trait":
             body.append(text(f"{smithing.part_label(slot, _tier(part), smithing.is_restricted(part))}\n"
                              "Choose the trait this part gives the tool:"))
-            trait_options = [discord.SelectOption(label="No trait", value="none", default=self.picks.get(part.id) is None)]
+            trait_options = [discord.SelectOption(label="No trait", value="none", emoji=emojis.icon("cross", "🚫"), default=self.picks.get(part.id) is None)]
             for t in part.traits:
                 if t in fitting:
                     tr = rules.trait(t)
@@ -119,8 +124,8 @@ class SmithingPane(Screen):
                          f"({idx + 1}/{len(mine_slot)})\n{self._trait_lines(part, rules, fitting)}"))
         start = idx // 25 * 25
         body.append(row(select(f"{slot.title()} part...", [
-            discord.SelectOption(label=f"T{_tier(i)} Tool {slot.title()} · {_trait_names(i, rules)}"[:100],
-                                 value=str(n), default=n == idx)
+            discord.SelectOption(label=f"{smithing.part_label(slot, _tier(i))} {_trait_names(i, rules)}"[:100],
+                                 value=str(n), default=n == idx, emoji=_part_emoji(slot, i))
             for n, i in enumerate(mine_slot) if start <= n < start + 25
         ], self._browse_to)))
         body.append(row(button("◀", on_click=self._step_part(-1)),
@@ -252,7 +257,8 @@ class PartsPane(Screen):
             if self.salvage_id not in {i.id for i in salvageable}:
                 self.salvage_id = None
             body.append(row(select("Pick a tool to salvage...", [
-                discord.SelectOption(label=instance_label(i)[:100], value=str(i.id), default=i.id == self.salvage_id)
+                discord.SelectOption(label=instance_label(i)[:100], value=str(i.id), default=i.id == self.salvage_id,
+                                     emoji=get_registry().item(i.template_id).emoji or None)
                 for i in salvageable
             ], self._pick_salvage)))
             body.append(row(button("Salvage", style=discord.ButtonStyle.danger, on_click=self._salvage)))

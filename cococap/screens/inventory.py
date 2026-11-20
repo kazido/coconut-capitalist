@@ -14,6 +14,9 @@ from utils.items.items import item_attributes
 PER_PAGE = 12
 
 
+_LEAD = re.compile(r"^(<a?:\w+:\d+>|[^\w\s<*#]+)\s*")  # a line's leading emoji (custom or unicode)
+
+
 class InventoryScreen(Screen):
     id = "inventory"
     label = "Inventory"
@@ -51,9 +54,13 @@ class InventoryScreen(Screen):
             )
         if self.picking:
             on_page = entries[self.page * PER_PAGE : (self.page + 1) * PER_PAGE]
-            # Custom emoji do not render in select text: strip them from the line.
-            options = [discord.SelectOption(label=(re.sub(r"<a?:\w+:\d+>\s*", "", line).strip(" ·") or key)[:100], value=key)
-                       for key, line in on_page]
+            # Custom emoji do not render in select text: the line's leading emoji goes in the option's emoji slot instead.
+            options = []
+            for key, line in on_page:
+                lead = _LEAD.match(line)
+                options.append(discord.SelectOption(
+                    label=(re.sub(r"<a?:\w+:\d+>\s*", "", line[lead.end():] if lead else line).strip(" ·") or key)[:100],
+                    value=key, emoji=lead.group(0).strip() if lead else None))
             body.append(row(select("Pick an item to inspect...", options, self._pick)))
         body += [sep(), row(button("Inspect", emoji=emojis.icon("search", "🔍"), style=discord.ButtonStyle.success, disabled=not lines, on_click=self._inspect),
                             button("Tools", emoji=emojis.icon("anvil", "🧰"), on_click=self._tools),

@@ -433,7 +433,7 @@ async def test_inspect_a_tool_part_shows_its_tier_and_traits(db):
     await click(nav, inter, "Inspect")
     await choose(nav, inter, select_named(nav, "Pick an item to inspect..."), f"part:{part.id}")
     text = all_text(nav)
-    assert "T3 Tool Base" in text and trait.name in text
+    assert "Base Part (T3)" in text and trait.name in text
 
 
 async def test_inspect_is_off_when_you_have_nothing(db):

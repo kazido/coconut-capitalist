@@ -79,12 +79,14 @@ def _part_rows(instances: list[ItemInstance]) -> list[tuple]:
         tier = int(inst.rolled.get("tier", 1))
         traits = smithing.trait_icons(inst.traits, reg.smithing)
         label = smithing.part_label(inst.template_id.removeprefix("part_"), tier, bool(inst.rolled.get("restricted")))
-        rows.append(((inst.template_id, -tier), f"part:{inst.id}", f"{label} · {traits}"))
+        slot = inst.template_id.removeprefix("part_")
+        icon = emojis.for_id("item", f"part_{slot}_t{tier}", reg.item(inst.template_id).emoji) or "🧩"
+        rows.append(((inst.template_id, -tier), f"part:{inst.id}", f"{icon} {label} {traits}"))
     return sorted(rows)
 
 
 def part_lines(instances: list[ItemInstance]) -> list[str]:
-    """Smithing parts (unique instances: base, trim, accent) as inventory lines, e.g. "T2 Tool Base · 💪"."""
+    """Smithing parts (unique instances: base, trim, accent) as inventory lines, e.g. "Base Part (T2) 💪"."""
     return [line for _, _, line in _part_rows(instances)]
 
 

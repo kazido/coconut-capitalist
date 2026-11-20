@@ -59,7 +59,7 @@ class WikiScreen(Screen):
 
     def _item_lookup(self, reg) -> list:
         parts = [row(select("Pick a skill...", [
-            discord.SelectOption(label=s.title(), value=s, default=s == self.skill) for s in wiki.SKILL_FILTERS], self._pick_skill))]
+            discord.SelectOption(label=s.title(), value=s, default=s == self.skill, emoji=emojis.skill(s) or None) for s in wiki.SKILL_FILTERS], self._pick_skill))]
         items = wiki.items_for(self.skill, reg)
         pages = max(1, -(-len(items) // PER_PAGE))
         self.page = min(self.page, pages - 1)

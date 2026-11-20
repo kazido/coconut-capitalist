@@ -97,7 +97,8 @@ class ToolsPane(Screen):
                          + "".join(f"  ·  {e}" for e in extra) + (f"  ·  {emojis.icon('sparkle', '✨')} {tool.ability_name}" if tool.ability_name else ""))
         if lines:
             body.append(text("\n".join(lines)))
-            options = [discord.SelectOption(label=f"{instance_label(i)} · {KIND_LABEL[reg.item(i.template_id).tool.kind]}"[:100], value=str(i.id))
+            options = [discord.SelectOption(label=f"{instance_label(i)} · {KIND_LABEL[reg.item(i.template_id).tool.kind]}"[:100], value=str(i.id),
+                                                emoji=reg.item(i.template_id).emoji or None)
                        for i in shown]
             body.append(row(select("See a tool's details...", options, self._view)))
         if await self._unclaimed():
@@ -141,7 +142,7 @@ class ToolsPane(Screen):
         skill = skill_for_tool(tool.kind)
         if inst.enchants and await smithing.smithing_level(self.user) >= reg.smithing.removal.enchant_unlock_level:
             body.append(row(select("Remove an enchant (returns its scroll)...", [
-                discord.SelectOption(label=reg.enchant(e).name[:100], value=e) for e in inst.enchants], self._remove_enchant)))
+                discord.SelectOption(label=reg.enchant(e).name[:100], value=e, emoji=reg.enchant(e).emoji or None) for e in inst.enchants], self._remove_enchant)))
         if skill in ACCESSORY_SKILLS:
             body += await self._accessory_section(skill)
         body += [sep(), row(button("Back to tools", emoji=emojis.icon("prev", "⬅️"), on_click=self._back))]
@@ -163,7 +164,8 @@ class ToolsPane(Screen):
             self.picked = None
         body.append(row(select("Pick an accessory...", [
             discord.SelectOption(label=(rules.template(i.template_id).name + (" (worn)" if i.id in worn_ids else ""))[:100],
-                                 value=str(i.id), default=i.id == self.picked) for i in owned], self._pick_spare)))
+                                 value=str(i.id), default=i.id == self.picked,
+                                 emoji=emojis.skill(skill) or None) for i in owned], self._pick_spare)))
         wearing = self.picked in worn_ids
         full = None not in worn
         body.append(row(button("Unequip" if wearing else "Equip",

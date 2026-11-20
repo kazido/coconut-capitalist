@@ -50,9 +50,9 @@ def part_emoji(slot: str, tier: int) -> str:
 
 
 def part_label(slot: str, tier: int, restricted: bool = False) -> str:
-    """How a part reads everywhere: "T8 Tool Base". The rarity is the tier, so it is not spelled out."""
+    """How a part reads everywhere: "Base Part (T8)". The rarity is the tier, so it is not spelled out."""
     mark = f" {emojis.icon('restricted', '🔺')}" if restricted else ""
-    return f"T{tier} Tool {slot.title()}{mark}"
+    return f"{slot.title()} Part (T{tier}){mark}"
 
 
 # Plain glyphs for button/select text and until the `ui_trait_<stat>` emoji load (art/gen/trait_icons.py, raven_magic.toml).
@@ -130,7 +130,7 @@ def part_line(part: ItemInstance, registry: Registry | None = None) -> str:
     rules = _rules(reg)
     slot = part.template_id.removeprefix("part_")
     named = f" {trait_icons(part.traits, rules)}" if part.traits else ""
-    return f"Found a **{part_label(slot, _part_tier(part), is_restricted(part))} part**{named}! Smith with it on Tools → Smithing."
+    return f"Found a **{part_label(slot, _part_tier(part), is_restricted(part))}**{named}! Smith with it on Tools → Smithing."
 
 
 async def maybe_drop_part(
