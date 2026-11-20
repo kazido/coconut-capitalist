@@ -10,6 +10,12 @@
 #   major = true for a big change (shown with a star), false for a grouped list of small ones
 
 [[entry]]
+date = "2026-11-20"
+title = "Combat is back: classes, zones and dungeons"
+body = "- **Your weapon is your class.** Smith a sword (Melee, Rage), bow (Archer, Focus), staff (Wizard, Mana) or shield (Tank, Guard). Each class has its own skills, and they unlock as your combat level rises.\n- **14 combat zones.** Pick a zone on Skills -> Combat and press Explore. A fight has one to three foes (usually one). A loss costs nothing.\n- **Dungeon keys T1-T8.** Keys drop from zone kills. A key opens a hidden tiled dungeon: move, find rewards, buffs and enemies, and reach the boss.\n- **Party dungeons.** Your party enters together and every move redraws for everyone. The boss is one shared fight.\n- **Runs keep your progress.** HP and buffs carry over between fights in a run. Losing keeps the loot you found.\n- Dungeon runs live in memory, so a bot restart ends them."
+major = true
+
+[[entry]]
 date = "2026-11-19"
 title = "Fuel overdrive and auto-craft"
 body = "- **Overdrive**: on the Travel page, burn any fuel you hold (from an area you have reached) for **1 hour** of bonus skill xp and bonus drops in every skill. Better fuels give bigger boosts. The same fuel adds time (up to 3 hours); a different fuel replaces the current one.\n- **Fuel chain**: each fuel's recipe now needs the fuel before it (Rust needs Twilight, and so on).\n- **Auto-craft missing steps** (Settings, off by default): the Workbench makes missing ingredients like the previous fuel for you, all or nothing."

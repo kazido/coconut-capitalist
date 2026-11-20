@@ -601,47 +601,41 @@ serialized transaction per change, like everything else):
 
 Not built yet (wiki): fish that appear in channels like drops.
 
-## Combat (`/fight`; first slice built)
+## Combat (classes, zones, dungeons)
 
-Modelled on Summoners War: **a turn-meter battle with cooldowns and no consumables.** Engine: `services/combat.py` (no Discord,
-seedable rng), data: `configs/combat.toml` + `configs/enemies.toml`, screen: `screens/fight.py`. All numbers `TODO(balance)`.
+Built on `design`, not merged yet (plan: `docs/plans/combat-rework.md`). Engine: `services/combat.py` (no Discord, seedable rng).
+Data: `configs/combat.toml`, `configs/dungeons.toml`, `configs/drops.toml`. Dungeon rules: `services/dungeon.py`. Screens: `screens/combat.py`, `screens/fight.py`, `screens/dungeon.py`. All numbers `TODO(balance)` unless noted.
 
-- **Turn meter.** Every unit has a speed; its meter fills by that much per tick and the first to reach 100 acts, then drops to 0.
-  The screen shows the next 7 turns, so speed, slows and meter pushes (`meter` effect) are real tactics.
-- **Skills, not items.** Each sword gives a *kit* (`[kits]`): skill 1 is always free, the rest have **cooldowns** (a cooldown of 3
-  means it is back on your 4th turn). Nothing is consumed. Bare hands only have Slash; swords (none exist right now) unlock more skills.
-- **Damage** = attack x skill power x 100 / (100 + defense), only crits are random (15%, x1.5). Shields soak damage first.
-- **Effects** last N of the *affected unit's own* turns: attack/defense/speed up or down, stun (skips the turn), bleed (ignores
-  defense), shield, heal, meter push/pull, empower (next damaging skill x2), reveal (see each enemy's next skill). `chance` is
-  rolled per target; an enemy's `immune` list (bosses: stun) blocks an effect outright. Re-applying refreshes, never stacks.
-- **Enemies** use the first of their `skills` that is off cooldown, so they are readable. Their next skill is planned ahead
-  (`next_skill`); only Enter the Mind shows it for now.
-- **Player stats** come from combat level and the equipped sword's power (`[player]`). A fight is a one-off: you start at full hp,
-  losing costs nothing, a win pays the enemies' combat xp and counts kills.
-- **A fight can last at most `max_rounds` turns** (a stalemate is a loss).
+**Class = weapon kind.** The weapon in your combat slot picks your class. Nothing is saved per class; bare hands use the default kit.
 
-### The final boss (the Gravewarden)
-A normal enemy plus three things (`configs/enemies.toml`): **telegraph** (you always see its next skill), **immune = ["stun"]**, and
-**phases** (`[[gravewarden.phases]]`): when its hp drops below a mark (60%, then 30%) it says a line, gives itself buffs and may swap
-skill lists (cooldowns reset). A big hit can skip a phase. Its **Death Knell** (x3 damage, every 5 turns) is the thing to plan for:
-**Brace** (every sword kit has it: x4 defense for 2 turns), slows, and killing it faster. The boss is a touch slower than a fresh
-player, so you always see the first knell before it lands. Locked to combat level 20 for now; numbers are placeholders (a strong sword
-at level ~25-30 was the intended first win). Its xp is 1,500. Keys and loot attach to this encounter later.
+| Class | Weapon | Resource | Feel |
+|---|---|---|---|
+| Melee | sword | Rage: builds when you hit or get hit; finishers spend it | burst on one target |
+| Archer | bow | Focus: builds each turn you stay unhurt or Aim; Power Shot spends it | crits, speed, meter pull |
+| Wizard | staff | Mana: refills each turn; spells cost it | frost chills, fire burns, storm chains; area and debuffs |
+| Tank | shield | Guard: builds when hit or Brace; spent on Counter, Reflect, Taunt | sustain; carries the party |
 
-### Drops and keys
-Drop tables live in `configs/drops.toml` and are shared by everything that drops things: a table is a list of weighted entries, each
-**bits (a range) or an item (a range, skewed low)**. An enemy names a table (`drops`) and a `drop_chance` (percent of kills that drop
-anything); the real odds of an entry are drop_chance x weight / total. The graveyard table is mostly bits and common materials with
-tiny weights for scrolls, Familiar Orbs and Land Deeds; the Gravewarden's table always drops and is better.
-Rolled in `services/loot.py` (`roll_kill`, `roll_drop_table`), paid by `combat.settle` (only for a win; a loss pays nothing, even if
-you killed something first).
+Kits (`[classes.*]`, at most 5 skills): the first skill is free with no cooldown. The rest unlock at combat levels 3, 6, 10 and 14-15.
 
-**Keys.** The Gravewarden's encounter has `key = "graveyard_key"`: you need level 20 and a key, and the key is **spent when you walk
-in**, win or lose (checked in `combat.start_fight`; a missing level never costs a key). Keys are just an entry in the graveyard table
-(about 1 kill in 30) and in the boss's own table, so winning can fund the next attempt.
+**Engine notes**
+- Turn meter: speed fills it, the first unit to 100 acts. Skills have cooldowns; nothing is consumed.
+- Skills can cost a resource (play is refused if you are short) and can gain some. Resources are set in `[resources.*]`.
+- Elements (`[elements]`): chill slows, burn hurts over time. Shatter hits a chilled target, Ignite a burning one. Storm chains.
+- Taunt makes enemies hit you. Counter and reflect answer hits. Enemies hit a taunter first, else the lowest-hp player.
+- Party battles: `Battle` takes several player units. Crits are 15% for x1.5. A fight lasts at most `max_rounds` turns (a stalemate is a loss).
 
-Planned: the **channel drops** (`exts/economy/drops.py`, still the old Mongo code) will roll the same tables, so a channel drop can be
-bits or any item; then party fights (several player units already work in the engine).
+**Zones and Explore.** 14 combat zones (`[combat.*]` in `configs/locations.toml`, `[zones.*]` in `combat.toml`). Areas use area = ceil(zone / 2) and the level gates in `areas.toml`. Each zone has an enemy pool, a drop table and a rare mini-boss. Explore rolls 1-4 foes (weights 60/32/8/3, cut at the zone's max_foes). A win pays xp and loot. A loss costs nothing, and the next fight starts at full hp.
+
+**Dungeons.** Keys `key_dungeon_t1`..`t8` drop about 1 in 50 zone kills: graveyard = T1, slime meadow = T2, area N's zones = T(N+1). The key is spent on entry. A tier in `configs/dungeons.toml` sets grid size, tile weights (reward, buff, enemy, empty), enemy pool, boss and loot.
+- The map is hidden. Reward tiles give loot, buff tiles heal or raise a stat for later fights, enemy tiles start a solo battle. Hp and buffs carry over within the run.
+- Party: members move separately. A member in a fight is shown as busy (frozen) on the others' maps.
+- The boss opens only when nobody is busy. All members join one shared boss battle.
+- A loss ends that player's run, but they keep the loot found so far. Losing the boss ends the run for everyone.
+- Runs live in memory. A bot restart loses the run and its key.
+
+**UI.** Skills -> Combat opens tabs: Explore (zone picker and Explore), Dungeons (keys, enter, party; the leader takes the party in), Class (weapon, kit, resource). The dungeon map is a 7x7 viewport with 4 arrows and one context button (Fight, Loot, Boss or Leave). The fight screen plays battles and dungeon fights, with a resource bar next to hp. In a shared boss fight, a member idle for 30 s auto-plays their basic skill. Every move redraws for every member.
+
+**Balance (2026-11 retune).** Player hp x2 (240 + 24 per level). Attack per weapon power: sword 3, bow 3.8, staff 2.6, shield 2.6. Enemy xp is fitted so Explore pays about 7k xp/hour in zone 1, rising to about 11k by zone 14 (mining 7.1k, fishing 8.5k). Win rate at a zone's opening level is about 80-90% in the first zone of an area and 67-85% in the second. Classes sit within about +-20% (Wizard slightly ahead, Tank safest but slowest).
 
 ## XP and the level curve (audit, `python -m scripts.balance`)
 
@@ -880,7 +874,7 @@ so the choice is also a choice of what you go out and collect.
 
 ## Combat paused, settings, upgrade paths
 
-- **Combat is paused** while it is redesigned: the Skills page shows a disabled "Paused" button, `/fight` says so, and nothing links to the fight screen (code and tests stay). Ideas for the rework: stance/counters, a resource/combo system, interrupts and targeting.
+- **Combat** is reworked on `design` (see the Combat section above). The old pause is gone once it merges.
 - **Settings** (Settings page, all saved per player): (`confirm_sell_all` and `keep_upgrade_materials` were removed with the Sell all buttons; old saved values are ignored) `confirm_upgrades` (off: upgrades take a second "Sure?" press), `fishing_estimate` (on). A test keeps the page's list equal to the `Settings` model.
 - **Upgrade paths**: a tool at a fork shows one path at a time, swapped with a "Pick a path" dropdown; tools are still one per page.
 - **Shipments cooldown**: deliberately none. Materials are the limit and shipping only pays a modest premium over selling.
