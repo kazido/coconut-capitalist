@@ -154,6 +154,7 @@ class Battle:
         self.active: Unit | None = None  # whose turn it is (a player, while the fight waits for input)
         self.outcome: str | None = None  # None while fighting, then "win" or "loss"
         self.steps: list[tuple[str, list[str]]] = []  # the last `play` as ("you" | "enemy", log lines) chunks, for the UI to pace out
+        self.snaps: list[dict[str, tuple[int, int, int, bool]]] = []  # per step: unit id -> (hp, shield, resource, alive) right after it, so bars move with the log
 
     # --- lookups -----------------------------------------------------------------------------
     def unit(self, uid: str) -> Unit:
@@ -238,14 +239,14 @@ class Battle:
             chosen = [target]
         else:
             chosen = pool
-        self.steps = []
+        self.steps, self.snaps = [], []
         if self.planned:
             self._play_planned(actor, skill, chosen)
             return
         mark = len(self.log)
         self._use(actor, skill, chosen)
         self._end_turn(actor)
-        self.steps.append(("you", self.log[mark:]))
+        self._step("you", mark)
         self._advance()
 
     # --- internals -------------------------------------------------------------------------------
@@ -270,11 +271,15 @@ class Battle:
             elif ok:
                 self._enemy_turn(actor)
             if len(self.log) > mark:
-                self.steps.append(("you" if actor.side == "player" else "enemy", self.log[mark:]))
+                self._step("you" if actor.side == "player" else "enemy", mark)
             self._check_end()
             if actor is player:
                 break
         self.active = None
+
+    def _step(self, side: str, mark: int) -> None:
+        self.steps.append((side, self.log[mark:]))
+        self.snaps.append({u.id: (u.hp, u.shield, u.resource, u.alive) for u in self.units})
 
     def _advance(self) -> None:
         """Run turns until a player must choose, or the fight is over."""
@@ -295,7 +300,7 @@ class Battle:
             if ok:
                 self._enemy_turn(actor)
             if len(self.log) > mark:
-                self.steps.append(("you" if actor.side == "player" else "enemy", self.log[mark:]))
+                self._step("you" if actor.side == "player" else "enemy", mark)
         self.active = None
 
     def _next_actor(self) -> Unit:

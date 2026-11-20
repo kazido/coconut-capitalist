@@ -14,10 +14,11 @@ from cococap.user import User
 PAUSE = 1.2  # seconds between the steps of a round (tests set it to 0)
 
 
-def hp_line(unit: Unit) -> str:
-    shield = f"  {emojis.icon('shield', '🔰')} {unit.shield}" if unit.shield else ""
-    res = f"  {bar(unit.resource / unit.resource_max, 8, 'meter')} **{unit.resource}**/{unit.resource_max} {unit.resource_kind}" if unit.resource_kind else ""
-    return f"{emojis.icon('heart', '❤️')} {bar(unit.hp / unit.max_hp, 8, 'hp')} **{unit.hp}**/{unit.max_hp}{shield}{res}"
+def hp_line(unit: Unit, snap: tuple | None = None) -> str:
+    hp, sh, rs, _ = snap or (unit.hp, unit.shield, unit.resource, unit.alive)
+    shield = f"  {emojis.icon('shield', '🔰')} {sh}" if sh else ""
+    res = f"  {bar(rs / unit.resource_max, 8, 'meter')} **{rs}**/{unit.resource_max} {unit.resource_kind}" if unit.resource_kind else ""
+    return f"{emojis.icon('heart', '❤️')} {bar(hp / unit.max_hp, 8, 'hp')} **{hp}**/{unit.max_hp}{shield}{res}"
 
 
 def effect_line(unit: Unit) -> str:
@@ -83,8 +84,12 @@ class FightScreen(Screen):
         foes = [u for u in battle.units if u.side == "enemy"]
         reveal = me.has("reveal")
         body = [*self.note_block()]
+        # while a round plays out, draw hp/alive as of the step on screen, not the end state
+        snaps = battle.snaps[len(self.shown) - 1] if self.animating and 0 < len(self.shown) <= len(battle.snaps) else {}
+        snap = lambda u: snaps.get(u.id)  # noqa: E731
         for foe in foes:
-            line = f"### {foe.emoji} {foe.name}" if foe.alive else f"### {emojis.icon('skull', '💀')} ~~{foe.name}~~"
+            foe_alive = snap(foe)[3] if snap(foe) else foe.alive
+            line = f"### {foe.emoji} {foe.name}" if foe_alive else f"### {emojis.icon('skull', '💀')} ~~{foe.name}~~"
             if foe.alive:
                 line += f"\n{hp_line(foe)}"
                 if effect_line(foe):
@@ -93,9 +98,9 @@ class FightScreen(Screen):
                     line += f"\n{emojis.icon('eye', '👁️')} Next: **{battle.skill(foe.next_skill).name}**"
             body.append(text(line))
         body.append(sep())
-        body.append(text(f"### {me.emoji} {me.name}\n{hp_line(me)}" + (f"\n{effect_line(me)}" if effect_line(me) else "")))
+        body.append(text(f"### {me.emoji} {me.name}\n{hp_line(me, snap(me))}" + (f"\n{effect_line(me)}" if effect_line(me) else "")))
         for ally in (u for u in battle.units if u.side == "player" and u.id != me.id):
-            body.append(text(f"{ally.emoji} {ally.name}\n{hp_line(ally)}"))
+            body.append(text(f"{ally.emoji} {ally.name}\n{hp_line(ally, snap(ally))}"))
         if battle.planned and battle.outcome is None and not self.animating:
             nxt = battle.turn_order(1)[0]  # only the next turn: you plan around who goes first
             body.append(text(f"**Next to act:** {nxt.emoji} {'you' if nxt.side == 'player' else nxt.name}"))
