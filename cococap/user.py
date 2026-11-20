@@ -470,6 +470,8 @@ class User:
     async def remove_item(self, item_id: str, quantity: int = 1) -> None:
         """Remove items. Atomically raises ValueError if there aren't enough."""
         self._check_item_id(item_id)
+        if quantity < 0:  # (a negative amount would pass the >= check below and ADD items)
+            raise ValueError("quantity must be non-negative")
         async with get_database().session() as session:
             result = await session.execute(
                 update(ItemRow)

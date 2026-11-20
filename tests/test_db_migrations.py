@@ -221,3 +221,13 @@ def test_star_tiers_migration_moves_each_starred_stack_down_one_tier(tmp_path):
     con = sqlite3.connect(tmp_path / "old.db")
     items = dict(con.execute("SELECT item_id, quantity FROM user_items"))
     assert items == {"material_iron_ore": 5, "material_iron_ore_s1": 3, "material_iron_ore_s2": 2}
+
+
+def test_upgrade_backs_up_an_existing_database_first(tmp_path):
+    url = f"sqlite:///{tmp_path / 'live.db'}"
+    upgrade_sync(url, "0001")  # brand-new file: nothing to lose, no backup
+    assert not (tmp_path / "backups").exists()
+    upgrade_sync(url)  # an existing, out-of-date file is copied before it changes
+    assert len(list((tmp_path / "backups").glob("live.pre-migrate-*.db"))) == 1
+    upgrade_sync(url)  # already current: no second copy
+    assert len(list((tmp_path / "backups").glob("live.pre-migrate-*.db"))) == 1
