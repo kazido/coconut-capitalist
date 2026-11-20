@@ -74,8 +74,9 @@ class ToolsPane(Screen):
 
     async def _mine(self, skill: str) -> list:
         reg = get_registry()
-        kind = TOOL_FOR_SKILL[skill]
-        return [i for i in await self.user.instances() if reg.item(i.template_id).tool and reg.item(i.template_id).tool.kind == kind]
+        # skill_for_tool, not one kind per skill: bows, staffs and shields share the combat slot with swords
+        return [i for i in await self.user.instances()
+                if reg.item(i.template_id).tool and skill_for_tool(reg.item(i.template_id).tool.kind) == skill]
 
     async def _home(self, skill: str) -> int:
         """Index of the tool you use for `skill` (the one to show first)."""
