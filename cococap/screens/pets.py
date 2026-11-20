@@ -208,6 +208,10 @@ class OrbScreen(Screen):
     emoji = emojis.Lazy("ui_orb", "🔮")
     description = "Open orbs to hatch pets, and hunt a pet you want"
 
+    def __init__(self, nav):
+        super().__init__(nav)
+        self.hunt_rarity: int | None = None  # which rarity the hunt dropdown lists
+
     async def build(self) -> Page:
         reg = get_registry()
         rules = reg.economy.pets
@@ -222,11 +226,20 @@ class OrbScreen(Screen):
             target = reg.pets[house.target]  # (no odds here: they differ per orb kind, see the wiki)
             body.append(text(f"{emojis.icon('target', '🎯')} **Hunting {target.emoji} {target.name}**  ·  ×{pets.target_boost(house.misses, reg):g} boost"
                              + (f"  ·  {house.misses} misses so far make it likelier" if house.misses else "")))
+        huntable = [p for p in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name))
+                    if not ((mine := house.pets.get(p.id)) and mine.stars >= rules.max_stars)]  # a pet with every star has nothing left to hunt
+        rarities = sorted({p.rarity for p in huntable})
+        if house.target in reg.pets and self.hunt_rarity is None:
+            self.hunt_rarity = reg.pets[house.target].rarity  # open on the target's own rarity
+        if self.hunt_rarity not in rarities:
+            self.hunt_rarity = rarities[0] if rarities else None
+        if rarities:  # a dropdown holds 25 options, so pick a rarity first: the pet list stays short however many pets there are
+            body.append(row(select("Hunt which rarity...", [
+                discord.SelectOption(label=Rarities.from_value(r).rarity_name, value=str(r), default=r == self.hunt_rarity,
+                                     description=f"{sum(p.rarity == r for p in huntable)} pets") for r in rarities], self._hunt_rarity)))
         hunt = [discord.SelectOption(label="No target", value="none", emoji=emojis.icon("cross", "🚫"), default=house.target is None)]
-        for pet in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)):
+        for pet in (p for p in huntable if p.rarity == self.hunt_rarity):
             mine = house.pets.get(pet.id)
-            if mine is not None and mine.stars >= rules.max_stars:
-                continue  # nothing left to hunt
             hunt.append(discord.SelectOption(label=pet.name + (f" ({mine.stars}/{rules.max_stars})" if mine else ""), value=pet.id, emoji=pet.emoji,
                                              description=Rarities.from_value(pet.rarity).rarity_name, default=pet.id == house.target))
         body.append(row(select("Hunt a pet (orbs favour it)...", hunt[:25], self._hunt)))
@@ -255,6 +268,10 @@ class OrbScreen(Screen):
     async def _purchase(self, interaction: discord.Interaction, item_id: str, quantity: int) -> None:
         purchase = await shop.buy(self.user, item_id, quantity)
         await self.refresh(interaction, f"Bought {purchase.quantity:,} × {get_registry().item(item_id).name} for {emojis.bits(purchase.total)}.")
+
+    async def _hunt_rarity(self, interaction: discord.Interaction, values: list[str]) -> None:
+        self.hunt_rarity = int(values[0])
+        await self.refresh(interaction)
 
     async def _hunt(self, interaction: discord.Interaction, values: list[str]) -> None:
         pet = await pets.set_target(self.user, None if values[0] == "none" else values[0])

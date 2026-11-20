@@ -35,17 +35,23 @@ def _materials(items: dict[str, int], reg: Registry) -> str:
 
 
 # A topic shown as several pages (the wiki screen pages through them with arrows). Each part is a `_PAGES` id.
-GROUPS: dict[str, list[str]] = {"fish": ["fish", "fish2"], "waters": ["waters", "waters2"], "tools": ["tools", "tools2", "tools3"], "pets": ["pets", "pets2"]}
+GROUPS: dict[str, list[str]] = {"fish": ["fish", "fish2"], "waters": ["waters", "waters2"], "tools": ["tools", "tools2", "tools3"]}
+PETS_PER_PAGE = 10  # pets listed per wiki page: new pets just add pages (custom emoji tokens make each line long)
 
 
-def parts(topic: str) -> list[str]:
-    """The `_PAGES` ids that make up a topic, in reading order."""
+def parts(topic: str, registry: Registry | None = None) -> list[str]:
+    """The page ids that make up a topic, in reading order. Pets: the intro, then one page per PETS_PER_PAGE pets ("pets2", "pets3", ...)."""
+    if topic == "pets":
+        reg = registry or get_registry()
+        return ["pets"] + [f"pets{i + 2}" for i in range(-(-len(reg.pets) // PETS_PER_PAGE))]
     return GROUPS.get(topic, [topic])
 
 
 def page(topic: str, registry: Registry | None = None) -> list[str]:
     reg = registry or get_registry()
     builder = _PAGES.get(topic)
+    if builder is None and topic in parts("pets", reg)[1:]:
+        return _pet_list(reg, int(topic.removeprefix("pets")) - 2)
     if builder is None:
         raise KeyError(topic)
     return builder(reg)
@@ -276,16 +282,21 @@ def _pets(reg: Registry) -> list[str]:
     ]
 
 
-def _pets2(reg: Registry) -> list[str]:
-    """The second pets page: levels and the full list (split so each page stays under Discord's text limit)."""
+def _pet_list(reg: Registry, chunk: int) -> list[str]:
+    """One page of the pet list (PETS_PER_PAGE pets, by rarity then name); the first one also explains levels."""
     rules = reg.economy.pets
     from cococap.services import pets as pet_service
 
     odds = pet_service.orb_odds(reg)
     lines = []
-    for pet in sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name)):
+    every = sorted(reg.pets.values(), key=lambda p: (p.rarity, p.name))
+    pages = -(-len(every) // PETS_PER_PAGE)
+    for pet in every[chunk * PETS_PER_PAGE:(chunk + 1) * PETS_PER_PAGE]:
         bonus = ", ".join(b.text.format(v=b.value) for b in pet.bonuses)
         lines.append(f"{pet.emoji} **{pet.name}** {pet_service.skill_emoji(pet)} ({Rarities.from_value(pet.rarity).rarity_name}, {odds[pet.id]:.1%} per orb): {bonus}")
+    listing = f"**All pets** ({chunk + 1}/{pages}; bonuses at max level, one star; the odds are for the standard orb)\n" + "\n".join(lines)
+    if chunk:
+        return [listing]
     return [
         "**Levels.** Common pets level up quickest and rare pets slowest: a level costs xp of "
         + ", ".join(f"{Rarities.from_value(r).rarity_name} x{s / rules.xp_scale[3]:.2g}" for r, s in sorted(rules.xp_scale.items())) + " (relative to a rarity-3 pet).",
@@ -341,7 +352,7 @@ def _crafting(reg: Registry) -> list[str]:
 
 
 _PAGES = {"start": _start, "mining": _mining, "farming": _farming, "foraging": _foraging, "fishing": _fishing, "fish": lambda reg: _fish(reg, 7, 4), "fish2": lambda reg: _fish(reg, 3, 1),
-          "waters": lambda reg: _waters(reg, 0, 7), "waters2": lambda reg: _waters(reg, 7), "pots": _pots, "crafting": _crafting, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "pets2": _pets2, "stars": _stars, "party": _party, "items": _items}
+          "waters": lambda reg: _waters(reg, 0, 7), "waters2": lambda reg: _waters(reg, 7), "pots": _pots, "crafting": _crafting, "tools": _tools, "tools2": lambda reg: _tools(reg, ("rod",), intro=False), "tools3": lambda reg: _tools(reg, ("pickaxe", "sword"), intro=False), "enchants": _enchants, "pets": _pets, "stars": _stars, "party": _party, "items": _items}
 
 SKILL_FILTERS = ["mining", "farming", "foraging", "fishing", "combat", "general"]
 

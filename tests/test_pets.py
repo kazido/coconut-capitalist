@@ -453,6 +453,7 @@ async def test_the_pet_house_lets_you_aim_and_shows_your_chances(db):
     user = await User.get(1)
     await user.add_item(pets.ORB, 1)
     nav, inter = await hub("pets", tab="orbs")
+    await choose(nav, inter, select_named(nav, "Hunt which rarity"), str(REG.pets["tempest"].rarity))
     await choose(nav, inter, select_named(nav, "Hunt a pet"), "tempest")
     await user.refresh()
     assert user.pethouse.target == "tempest"
@@ -810,3 +811,14 @@ def test_the_score_breakdown_has_a_value_per_skill():
     breakdown = pet_score.total(REG.pets["drizzle"], REG)
     assert set(breakdown.skills) == set(pet_score.SKILLS)
     assert breakdown.skills_total == sum(breakdown.skills.values()) and all(0 <= v <= pet_score.MAX_SKILL for v in breakdown.skills.values())
+
+
+async def test_every_pet_can_be_hunted_however_many_there_are(db):
+    """A dropdown holds 25 options: the rarity dropdown makes sure no pet is ever cut off the hunt list."""
+    await User.get(1)
+    nav, inter = await hub("pets", tab="orbs")
+    seen = set()
+    for option in select_named(nav, "Hunt which rarity").options:
+        await choose(nav, inter, select_named(nav, "Hunt which rarity"), option.value)
+        seen |= {o.value for o in select_named(nav, "Hunt a pet").options} - {"none"}
+    assert seen == set(REG.pets)
