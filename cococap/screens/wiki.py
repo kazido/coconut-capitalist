@@ -48,7 +48,7 @@ class WikiScreen(Screen):
         if self.topic == "items":
             body += self._item_lookup(reg)
         else:
-            parts = wiki.parts(self.topic)
+            parts = wiki.parts(self.topic, reg)
             self.part = min(self.part, len(parts) - 1)
             if len(parts) > 1:
                 body.append(row(button(emoji=emojis.icon('prev', '◀️'), disabled=self.part == 0, on_click=self._turn_part(-1)),

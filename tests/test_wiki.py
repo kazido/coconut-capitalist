@@ -11,8 +11,12 @@ def all_blocks(topic):
     return "\n".join(wiki.page(topic, REG))
 
 
+def all_pages(topic):
+    return "\n".join(all_blocks(part) for part in wiki.parts(topic, REG))
+
+
 def test_every_topic_has_a_page_that_fits_a_discord_message():
-    for topic, title, emoji in wiki.TOPICS:
+    for topic in (part for t, _, _ in wiki.TOPICS for part in wiki.parts(t, REG)):  # every page of every topic
         blocks = wiki.page(topic, REG)
         assert blocks and all(block.strip() for block in blocks), topic
         assert sum(len(b) for b in blocks) < 3600, (topic, sum(len(b) for b in blocks))  # leaves room for the panel around it
@@ -39,7 +43,7 @@ def test_the_fish_pages_list_every_fish_with_its_value_and_where_to_find_it():
 
 
 def test_the_pet_page_lists_every_pet_its_bonus_and_its_chance():
-    page = all_blocks("pets") + all_blocks("pets2")  # two pages, so each stays under Discord's text limit
+    page = all_pages("pets")  # several pages, so each stays under Discord's text limit
     for pet in REG.pets.values():
         assert pet.name in page
         for bonus in pet.bonuses:
@@ -79,7 +83,7 @@ def test_the_wiki_follows_the_data(monkeypatch):
     cat = REG.pets["drizzle"]
     stronger = cat.model_copy(update={"trait": cat.trait.model_copy(update={"value": 0.77})})
     monkeypatch.setitem(REG.pets, "drizzle", stronger)
-    assert "77%" in all_blocks("pets2")  # change the data and the wiki changes with it
+    assert "77%" in all_pages("pets")  # change the data and the wiki changes with it
 
 
 def test_every_item_can_be_found_by_browsing_its_skill():
@@ -194,3 +198,10 @@ def test_every_item_has_wiki_text():
 
     missing = [i.id for i in get_registry().items.values() if not i.wiki]
     assert not missing, f"items without wiki text: {missing}"
+
+
+def test_the_pet_list_pages_grow_with_the_pets():
+    pages = wiki.parts("pets", REG)
+    assert len(pages) == 1 + -(-len(REG.pets) // wiki.PETS_PER_PAGE)
+    with pytest.raises(KeyError):
+        wiki.page(f"pets{len(pages) + 1}", REG)  # past the last page
