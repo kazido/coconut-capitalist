@@ -16,6 +16,7 @@ class TabsScreen(Screen):
     # key -> pane class. Order is the dropdown order; the first is the default tab.
     panes: dict[str, type[Screen]] = {}
     tab_placeholder = "Choose a tab"
+    tab_menu = True  # False: the host switches panes itself (self.tab = ...) and shows no dropdown
 
     def __init__(self, nav):
         super().__init__(nav)
@@ -80,7 +81,7 @@ class TabsScreen(Screen):
     # ---- drawing ---------------------------------------------------------------------------------
     async def build(self) -> Page:
         page = await self.pane.build()
-        if len(self.panes) > 1 and not self.pane.locked:  # (mid-action the page cannot be left: no point drawing a dead dropdown)
+        if self.tab_menu and len(self.panes) > 1 and not self.pane.locked:  # (mid-action the page cannot be left: no point drawing a dead dropdown)
             options = [
                 discord.SelectOption(label=cls.label, value=key, emoji=cls.emoji or None, default=key == self._tab)
                 for key, cls in self.panes.items()

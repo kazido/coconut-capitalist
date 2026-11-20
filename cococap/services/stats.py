@@ -6,6 +6,7 @@ from cococap import emojis
 from cococap.user import User
 
 SKILL_ICONS = {"farming": "🌽", "foraging": "🌳", "fishing": "🐟", "mining": "⛏️", "combat": "⚔️"}
+SKILL_PAGE_ICONS = {**SKILL_ICONS, "smithing": "⚒️"}  # (SKILL_ICONS also drives the stats page, which has no smithing line)
 
 
 @dataclass(frozen=True)

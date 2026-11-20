@@ -104,6 +104,12 @@ _GROUPS: dict[str, str] = {
     "blood": "🩸",
     "eye": "👁️",
     "gem": "💎🔷🔹",
+    # Smithing trait icons (services/smithing.py TRAIT_GLYPHS): one distinct glyph each so they never swap to another icon.
+    "trait_power": "💪",
+    "trait_scholar": "🧾",
+    "trait_appraise": "🧐",
+    "trait_rare_luck": "☘️",
+    "trait_drop_amount": "👝",
     "bomb": "💣",
     "boom": "💥",
     "lifeline": "🛟",

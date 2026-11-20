@@ -176,6 +176,8 @@ SKILL_ICONS = {
 
 def skill(name: str, fallback: str = "") -> str:
     """The icon for a skill (mining, fishing, foraging, farming, combat): its starter tool's emoji, else the glyph."""
+    if name == "smithing":  # not a levelled player skill model: the anvil icon doubles as its skill icon
+        return ui("anvil", fallback or "⚒️")
     item_id, glyph = SKILL_ICONS.get(name, (None, fallback))
     return ui(item_id[3:], glyph or fallback) if item_id else (glyph or fallback)
 

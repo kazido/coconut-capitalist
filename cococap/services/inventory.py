@@ -3,16 +3,13 @@
 from cococap import emojis
 from cococap.models.instance import ItemInstance
 from cococap.registry import get_registry
+from cococap.services import smithing
 
 PER_PAGE = 15
 
 
-def inventory_lines(items: dict[str, int], filter: str | None = None) -> list[str]:
-    """One display line per stack in `items` ({item_id: quantity}), sorted by item name.
-
-    `filter` matches (case-insensitively) an item's name, id, skill or category. Ids missing from
-    the registry (renamed/removed items) are still listed, never crash the command.
-    """
+def _stack_rows(items: dict[str, int], filter: str | None = None) -> list[tuple]:
+    """(sort name, key "item:<id>", line) per stack. Ids missing from the registry are still listed, never crash."""
     reg = get_registry()
     needle = filter.lower() if filter else None
     rows = []
@@ -22,15 +19,23 @@ def inventory_lines(items: dict[str, int], filter: str | None = None) -> list[st
         item = reg.find_item(item_id)
         if item is None:
             if needle is None or needle in item_id.lower():
-                rows.append((item_id, f"{emojis.icon('unknown', '❔')} {quantity:,} {item_id} *(unknown item)*"))
+                rows.append((item_id, f"item:{item_id}", f"{emojis.icon('unknown', '❔')} {quantity:,} {item_id} *(unknown item)*"))
             continue
         if needle and not any(
             needle in field for field in (item.name.lower(), item.id, item.skill or "", item.category)
         ):
             continue
         line = f"{item.emoji or emojis.icon('pip', '▫️')} {quantity:,} {item.name}"
-        rows.append((item.name.lower(), line))
-    return [line for _, line in sorted(rows)]
+        rows.append((item.name.lower(), f"item:{item.id}", line))
+    return sorted(rows)
+
+
+def inventory_lines(items: dict[str, int], filter: str | None = None) -> list[str]:
+    """One display line per stack in `items` ({item_id: quantity}), sorted by item name.
+
+    `filter` matches (case-insensitively) an item's name, id, skill or category.
+    """
+    return [line for _, _, line in _stack_rows(items, filter)]
 
 
 def instance_label(instance: ItemInstance) -> str:
@@ -65,18 +70,42 @@ def instance_lines(instances: list[ItemInstance], equipped_ids: set[int], filter
 
 
 
-def part_lines(instances: list[ItemInstance]) -> list[str]:
-    """Smithing parts (unique instances: base, trim, accent) as inventory lines, e.g. "<emoji> Base part · Tier 2 · Sturdy"."""
+def _part_rows(instances: list[ItemInstance]) -> list[tuple]:
     reg = get_registry()
     rows = []
     for inst in instances:
-        if not inst.template_id.startswith("part_"):
-            continue
-        template = reg.find_item(inst.template_id)
-        if template is None:
+        if not inst.template_id.startswith("part_") or reg.find_item(inst.template_id) is None:
             continue
         tier = int(inst.rolled.get("tier", 1))
-        traits = ", ".join(reg.smithing.trait(t).name for t in inst.traits) or "no trait"
-        mark = f" {emojis.icon('restricted', '🔺')}" if inst.rolled.get("restricted") else ""
-        rows.append(((template.name, -tier), f"{template.emoji or ''} {template.name}{mark} · Tier {tier} · {traits}".strip()))
-    return [line for _, line in sorted(rows)]
+        traits = smithing.trait_icons(inst.traits, reg.smithing)
+        label = smithing.part_label(inst.template_id.removeprefix("part_"), tier, bool(inst.rolled.get("restricted")))
+        slot = inst.template_id.removeprefix("part_")
+        icon = emojis.for_id("item", f"part_{slot}_t{tier}", reg.item(inst.template_id).emoji) or "🧩"
+        rows.append(((inst.template_id, -tier), f"part:{inst.id}", f"{icon} {label} {traits}"))
+    return sorted(rows)
+
+
+def part_lines(instances: list[ItemInstance]) -> list[str]:
+    """Smithing parts (unique instances: base, trim, accent) as inventory lines, e.g. "Base Part (T2) 💪"."""
+    return [line for _, _, line in _part_rows(instances)]
+
+
+def _tool_rows(instances: list[ItemInstance], equipped_ids: set[int]) -> list[tuple]:
+    """Tools (equipped ones get a check mark), as ("tool:<instance id>") rows sorted by name."""
+    reg = get_registry()
+    rows = []
+    for inst in instances:
+        template = reg.find_item(inst.template_id)
+        if template is None or template.tool is None:
+            continue
+        label = instance_label(inst)
+        mark = f" {emojis.icon('check', '✅')}" if inst.id in equipped_ids else ""
+        rows.append((label.lower(), f"tool:{inst.id}", f"{template.emoji or emojis.icon('sword', '🗡️')} {label}{mark}"))
+    return sorted(rows)
+
+
+def inventory_entries(items: dict[str, int], instances: list[ItemInstance], equipped_ids: frozenset[int] | set[int] = frozenset()) -> list[tuple[str, str]]:
+    """(key, line) for everything the Inventory page lists, in page order: stacks ("item:<id>"), tools ("tool:<instance id>",
+    equipped ones checked), then parts ("part:<instance id>")."""
+    return [(key, line) for _, key, line in _stack_rows(items)] + [(key, line) for _, key, line in _tool_rows(instances, set(equipped_ids))] \
+        + [(key, line) for _, key, line in _part_rows(instances)]

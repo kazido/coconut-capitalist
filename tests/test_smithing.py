@@ -85,14 +85,10 @@ async def test_smith_refuses_a_part_of_the_wrong_type():
         await smith_with(user, swapped)
 
 
-async def test_smith_refuses_a_part_above_the_level_max_tier():
+async def test_level_1_can_smith_with_any_part_tier():
     user = await player(level=1)
-    too_high = max(1, smithing.max_part_tier(1, RULES) + 1)
-    if too_high > PART_TIERS:
-        pytest.skip("no tier above the level-1 cap")
-    ids = await three_parts(user, tiers=(too_high, 1, 1))
-    with pytest.raises(GameRuleError):
-        await smith_with(user, ids)
+    ids = await three_parts(user, tiers=(PART_TIERS, 2, 1))
+    assert await smith_with(user, ids) is not None
 
 
 async def test_smith_consumes_parts_and_records_smith_id_parts_and_quality():
@@ -274,7 +270,7 @@ def test_part_rarity_is_its_tier_and_celestial_is_incredibly_rare():
         assert share < 1 / 500
         if row.area + RULES.area_cap < PART_TIERS:
             assert weights[-1] == 0
-    assert "Celestial" in smithing.part_label("base", 8)
+    assert "T8" in smithing.part_label("base", 8)
 
 
 def test_tier_pace():
@@ -294,19 +290,17 @@ def test_tier_pace():
 
 
 async def test_tool_detail_page_lists_parts_tiers_traits_and_smith():
-    """Tools tab: pick a tool from the dropdown to see its parts (tier + rarity), the picked traits and who smithed it."""
-    from tests.test_hub import all_text, choose, click, hub, select_named
+    """Tools page: the tool on screen lists its parts (tier + rarity), the picked traits and who smithed it."""
+    from tests.test_hub import all_text, hub
 
     user = await player()
     trait = RULES.trait_pool[0]
     tool = await smithed_pickaxe(user, RULES.grades[0].name, traits=(trait.id, None, None), tiers=(8, 3, 1))
-    nav, inter = await hub("tools")
-    await choose(nav, inter, select_named(nav, "See a tool's details"), str(tool.id))
+    nav, _ = await hub("tools", skill="mining")
     page = all_text(nav)
-    assert "Celestial" in page and "Rare" in page and "Common" in page
-    assert trait.name in page and f"<@{user.id}>" in page and "<t:" in page
-    await click(nav, inter, "Back to tools")
-    assert select_named(nav, "See a tool's details")
+    assert "T8" in page and "T3" in page and "T1" in page
+    assert smithing.trait_icons([trait.id], RULES) in page and f"<@{user.id}>" in page and "<t:" in page
+    assert nav.screen.id == "tools"
 
 
 async def test_parts_show_in_the_inventory(db):
@@ -316,7 +310,7 @@ async def test_parts_show_in_the_inventory(db):
     await give_part(user, "trim", 2)
     nav, _ = await hub("inventory")
     text = all_text(nav)
-    assert get_registry().item("part_trim").name in text and "Tier 2" in text
+    assert "Trim Part (T2)" in text
 
 
 # ---- restricted parts, enchant refunds, enchant removal ----

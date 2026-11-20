@@ -44,21 +44,37 @@ async def add_smithing_xp(user: User, amount: int) -> None:
         await user.stat_add(XP_STAT, amount)
 
 
-def max_part_tier(level: int, rules: SmithingRules) -> int:
-    """The highest part tier a player of this smithing level may work with."""
-    tier = 1
-    for needed_level, max_tier in rules.levels.max_tier_by_level:
-        if level >= needed_level:
-            tier = max(tier, max_tier)
-    return min(tier, PART_TIERS)
+def part_emoji(slot: str, tier: int) -> str:
+    """The part's tier emoji (framed in its rarity). The item template's own emoji id has no art, so never use it."""
+    return emojis.get(f"part_{slot}_t{tier}", "🧩")
 
 
 def part_label(slot: str, tier: int, restricted: bool = False) -> str:
-    """How a part reads everywhere: its tier emoji (framed in its rarity) + "Tier 8 Celestial Base".
-    A part's rarity is its tier (SmithingRules.part_rarity)."""
-    rarity = Rarities.from_value(SmithingRules.part_rarity(tier)).rarity_name
+    """How a part reads everywhere: "Base Part (T8)". The rarity is the tier, so it is not spelled out."""
     mark = f" {emojis.icon('restricted', '🔺')}" if restricted else ""
-    return f"{emojis.get(f'part_{slot}_t{tier}', '🧩')} Tier {tier} {rarity} {slot.title()}{mark}"
+    return f"{slot.title()} Part (T{tier}){mark}"
+
+
+# Plain glyphs for button/select text and until the `ui_trait_<stat>` emoji load (art/gen/trait_icons.py, raven_magic.toml).
+TRAIT_GLYPHS = {"power": "💪", "scholar": "🧾", "appraise": "🧐", "rare_luck": "☘️", "drop_amount": "👝"}
+
+
+def trait_icons(trait_ids, rules: SmithingRules, plain: bool = False) -> str:
+    """Traits as icons ("no trait" if none). `plain` = unicode glyphs only, for button/select text where custom emoji do not render."""
+    icons = []
+    for t in trait_ids:
+        stat = rules.trait(t).stat
+        glyph = TRAIT_GLYPHS.get(stat, "✨")
+        icons.append(glyph if plain else emojis.ui(f"trait_{stat}", glyph))
+    return " ".join(icons) or "no trait"
+
+
+def trait_effect(trait_id: str, rules: SmithingRules) -> str:
+    """What a trait does, e.g. "+1 to +4 power" or "+3% to +10% rare luck" (the amount grows with the tool's quality)."""
+    t = rules.trait(trait_id)
+    lo, hi = min(t.amounts), max(t.amounts)
+    fmt = (lambda v: f"{v:.0%}") if hi < 1 else (lambda v: f"{v:g}")
+    return f"+{fmt(lo)} to +{fmt(hi)} {t.stat.replace('_', ' ')}"
 
 
 def is_restricted(part) -> bool:
@@ -121,9 +137,8 @@ def part_line(part: ItemInstance, registry: Registry | None = None) -> str:
     reg = registry or get_registry()
     rules = _rules(reg)
     slot = part.template_id.removeprefix("part_")
-    names = [rules.trait(t).name for t in part.traits]
-    named = f" ({', '.join(names)})" if names else ""
-    return f"Found a **{part_label(slot, _part_tier(part), is_restricted(part))} part**{named}! Smith with it on Tools → Smithing."
+    named = f" {trait_icons(part.traits, rules)}" if part.traits else ""
+    return f"Found a **{part_label(slot, _part_tier(part), is_restricted(part))}**{named}! Smith with it on Tools → Smithing."
 
 
 async def maybe_drop_part(
@@ -183,9 +198,6 @@ async def smith(
     ids = {"base": base_id, "trim": trim_id, "accent": accent_id}
     parts = {slot: await _owned_part(user, pid, slot) for slot, pid in ids.items()}
     level = await smithing_level(user)
-    cap = max_part_tier(level, rules)
-    if any(_part_tier(p) > cap for p in parts.values()):
-        raise GameRuleError("Your smithing level is too low for a part that high.")
 
     if sum(1 for p in parts.values() if is_restricted(p)) > 1:
         raise RestrictedPartError("A tool can hold only one restricted part.")
@@ -292,8 +304,6 @@ async def swap_part(
         raise GameRuleError(f"Swapping parts unlocks at smithing level {rules.levels.swap_unlock_level}.")
     tool, kind = await _smithed_tool(user, tool_id, registry)
     new_part = await _owned_part(user, part_id, slot)
-    if _part_tier(new_part) > max_part_tier(level, rules):
-        raise GameRuleError("Your smithing level is too low for a part that high.")
 
     parts = {s: dict(tool.parts[s]) for s in PART_TYPES}
     others = sum(1 for s in PART_TYPES if s != slot and parts[s].get("trait"))

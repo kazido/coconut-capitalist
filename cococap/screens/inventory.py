@@ -1,11 +1,21 @@
+import re
+
 import discord
 
 from cococap import emojis
-from cococap.services.inventory import inventory_lines, part_lines
+from cococap.constants import Rarities
+from cococap.registry import get_registry
+from cococap.services import smithing
+from cococap.services.equipment import TOOL_FOR_SKILL, skill_for_tool
+from cococap.services.inventory import inventory_entries
 from cococap.ui import Page, Screen
-from cococap.ui.components import button, row, sep, text
+from cococap.ui.components import button, row, section_art, select, sep, text
+from utils.items.items import item_attributes
 
 PER_PAGE = 12
+
+
+_LEAD = re.compile(r"^(<a?:\w+:\d+>|[^\w\s<*#]+)\s*")  # a line's leading emoji (custom or unicode)
 
 
 class InventoryScreen(Screen):
@@ -13,15 +23,24 @@ class InventoryScreen(Screen):
     label = "Inventory"
     emoji = emojis.Lazy("ui_bag", "🎒")
     description = "Your items"
-    links = ("tools", "shop", "trade", "craft")
+    links = ("tools", "shop", "trade")
 
     def __init__(self, nav):
         super().__init__(nav)
         self.page = 0
+        self.picking = False  # the Inspect dropdown is showing
+        self.inspecting: str | None = None  # "item:<id>" or "part:<instance id>" while its detail page is open
 
     async def build(self) -> Page:
         # Stacked items, then smithing parts (unique, so listed one per line). Tools live on the Tools page.
-        lines = inventory_lines(await self.user.items()) + part_lines(await self.user.instances())
+        items = await self.user.items()
+        equipped = {(await self.user.skill(s)).equipped_instance_id for s in TOOL_FOR_SKILL}
+        entries = inventory_entries(items, await self.user.instances(), equipped)
+        if self.inspecting:
+            if detail := await self._detail(self.inspecting, items):
+                return Page("Inventory", [*self.note_block(), *detail, row(button("Back", on_click=self._back))], accent=0x99B0A2)
+            self.inspecting = None  # it is gone (sold, smithed away): fall back to the list
+        lines = [line for _, line in entries]
         body = [*self.note_block()]
         pages = max(1, -(-len(lines) // PER_PAGE))
         self.page = min(self.page, pages - 1)
@@ -35,10 +54,20 @@ class InventoryScreen(Screen):
                     button(emoji=emojis.icon("next", "▶️"), on_click=self._turn(1), disabled=self.page >= pages - 1),
                 )
             )
-        body += [sep(), row(button("Sell", emoji=emojis.icon("sell", "💰"), style=discord.ButtonStyle.success, disabled=not lines, on_click=self._sell),
+        if self.picking:
+            on_page = entries[self.page * PER_PAGE : (self.page + 1) * PER_PAGE]
+            # Custom emoji do not render in select text: the line's leading emoji goes in the option's emoji slot instead.
+            options = []
+            for key, line in on_page:
+                lead = _LEAD.match(line)
+                options.append(discord.SelectOption(
+                    label=(re.sub(r"<a?:\w+:\d+>\s*", "", line[lead.end():] if lead else line).strip(" ·") or key)[:100],
+                    value=key, emoji=lead.group(0).strip() if lead else None))
+            body.append(row(select("Pick an item to inspect...", options, self._pick)))
+        body += [sep(), row(button("Inspect", emoji=emojis.icon("search", "🔍"), style=discord.ButtonStyle.success, disabled=not lines, on_click=self._inspect),
                             button("Tools", emoji=emojis.icon("anvil", "🧰"), on_click=self._tools),
                             button("Trade", emoji=emojis.icon("trade", "🤝"), on_click=self._trade),
-                            button("Workbench", emoji=emojis.icon("craft", "🛠️"), on_click=self._craft))]
+                            )]
         return Page("Inventory", body, accent=0x99B0A2)
 
     def _turn(self, step: int):
@@ -48,8 +77,55 @@ class InventoryScreen(Screen):
 
         return turn
 
-    async def _sell(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "shop", mode="sell")
+    async def _inspect(self, interaction: discord.Interaction) -> None:
+        self.picking = not self.picking
+        await self.refresh(interaction)
+
+    async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
+        if values[0].startswith("tool:"):  # a tool opens on the Tools page, on that very tool
+            reg = get_registry()
+            inst = await self.user.instance(int(values[0].partition(":")[2]))
+            if inst is not None and (tool := reg.item(inst.template_id).tool):
+                skill = skill_for_tool(tool.kind)
+                mine = [i for i in await self.user.instances() if reg.item(i.template_id).tool and reg.item(i.template_id).tool.kind == tool.kind]
+                return await self.go(interaction, "tools", skill=skill, idx=next(n for n, i in enumerate(mine) if i.id == inst.id))
+        self.inspecting = values[0]
+        await self.refresh(interaction)
+
+    async def _back(self, interaction: discord.Interaction) -> None:
+        self.inspecting = None
+        await self.refresh(interaction)
+
+    async def _detail(self, key: str, items: dict[str, int]) -> list | None:
+        """The detail page for one inventory entry: big picture, details and (for a part) its traits. None if it is gone."""
+        reg = get_registry()
+        kind, _, ident = key.partition(":")
+        if kind == "item":
+            item = reg.find_item(ident)
+            qty = items.get(ident, 0)
+            if item is None or qty <= 0:
+                return None
+            head = f"### {item.display}\n×{qty:,}  ·  {emojis.bits(item.sell_price)} each\n"
+            return [section_art(head + item_attributes(item), emojis.image_url("item", item.id))]
+        inst = await self.user.instance(int(ident))
+        if inst is None or not inst.template_id.startswith("part_"):
+            return None
+        rules = reg.smithing
+        slot, tier = inst.template_id.removeprefix("part_"), int(inst.rolled.get("tier", 1))
+        lines = [f"### {smithing.part_label(slot, tier, smithing.is_restricted(inst))}",
+                 f"**Rarity**: *{Rarities.from_value(rules.part_rarity(tier)).rarity_name}*  ·  **Type**: *Tool {slot.title()}*"]
+        if smithing.is_restricted(inst):
+            lines.append("**Restricted**: a tool may hold only one restricted part; it adds a second enchant slot.")
+        if inst.traits:
+            lines.append("**Traits** (the amount depends on the tool's quality):")
+            for t in inst.traits:
+                trait = rules.trait(t)
+                lines.append(f"· {smithing.trait_icons([t], rules)} **{trait.name}**: {smithing.trait_effect(t, rules)}")
+        else:
+            lines.append("**Traits**: none")
+        if template := reg.find_item(inst.template_id):
+            lines.append(f"-# {template.wiki}")
+        return [section_art("\n".join(lines), emojis.image_url("item", f"part_{slot}_t{tier}"))]
 
     async def _tools(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "tools")
@@ -57,5 +133,4 @@ class InventoryScreen(Screen):
     async def _trade(self, interaction: discord.Interaction) -> None:
         await self.go(interaction, "trade")
 
-    async def _craft(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "craft")
+

@@ -116,3 +116,7 @@ enchant_bounty = {cell = [3, 5], framed = false}
 enchant_fertile = {cell = [58, 10], framed = false}
 enchant_seedkeeper = {cell = [28, 1], framed = false}
 ui_rock_rich = {cell = [12, 3], ramp = ["#1a1a44", "#2c44a0", "#4e86e8", "#bce0ff"], framed = false}
+
+# Smithing trait icons borrowed from the pack (power/scholar/appraise are drawn in art/gen/trait_icons.py)
+ui_trait_rare_luck = {cell = [41, 11], framed = false}
+ui_trait_drop_amount = {cell = [9, 13], framed = false}

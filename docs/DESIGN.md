@@ -867,7 +867,7 @@ so the choice is also a choice of what you go out and collect.
 
 ## Shop selling, accomplishments, shipments (latest)
 
-- **Selling is one item at a time, in the Shop** (Sell mode: pick an item, then Sell 1x, Sell 10x or Sell custom; custom is prefilled with what you own and clamped to it). The per-skill Sell all button and its page were removed, and so was the Fish page's Sell fish: no skill page has a sell button (the Farmer's Market is its own market page).
+- **Selling is one item at a time, in the Shop** (Sell mode: pick an item, then Sell 1x, Sell 10x or Sell custom; custom is prefilled with what you own and clamped to it). The per-skill Sell all button and its page were removed, and so was the Fish page's Sell fish: no skill page has a sell button, and the Inventory has Inspect (pick an item for its thumbnail, stats and, for parts, traits) instead of Sell (the Farmer's Market is its own market page).
 - **Bits come mainly from selling.** Daily interest and some accomplishments still pay bits, but big accomplishments (quests, books, community goals, bosses) now pay much more *xp*. The double-tree jackpot pays foraging xp (`double_xp`) instead of a million bits.
 - **Shipments** (`configs/shipments.toml`, `services/shipments.py`): tasks you fill with materials from several skills, then ship for bits (1.3x their sell value) and xp in the skills involved. Each player has 3 crates: two themed on a skill (a few of its materials plus others) and one mixed. Shipping replaces the crate in the same slot. A weekly *community* shipment is filled by everyone; once full, everyone who gave at least 2% of it claims 1.5x what they gave plus xp. State lives in the community store (`shipments:{uid}`, `shipment_community`), so there are no migrations.
 - **Settings audit** and **combat redesign** are still open (see STATUS.md).
@@ -1139,7 +1139,7 @@ Stats are the shared currency (`equipped_stats` adds tool + enchants + Mastery; 
 
 ## Crafting
 
-The **Workbench** (Inventory > Workbench, `screens/craft.py`, rules in `services/crafting.py`, data in `configs/recipes.toml`) makes things from
+The **Workbench** (Skills > Smithing > Workbench tab, `screens/craft.py` `WorkbenchPane`; each craft earns smithing xp `levels.xp_per_craft`, rules in `services/crafting.py`, data in `configs/recipes.toml`) makes things from
 materials instead of buying them. A recipe is `id, name, emoji, output + quantity, inputs {item: qty}, bits` and optionally `skill` + `min_level`.
 `Registry` validates them (`models.Recipe`, `Registry._validate_recipes`): the output and every input exist, nothing is a tool, quantities are above 0,
 and no recipe consumes its own output. `craft(user, recipe_id, times)` takes bits and items together or nothing (`services/payment.py`, shared with

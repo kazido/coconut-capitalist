@@ -832,7 +832,7 @@ class FishPotsScreen(Screen):
         if len(skill.pots) > 1:
             body.append(row(select("Pick a pot...", [
                 discord.SelectOption(label=f"Pot {i + 1} · Lv {p.level}", value=str(i), default=i == self.index,
-                                     description=fishing.water_by_id(reg, p.water).name) for i, p in enumerate(skill.pots)], self._pick)))
+                                     emoji=emojis.skill("fishing") or None, description=fishing.water_by_id(reg, p.water).name) for i, p in enumerate(skill.pots)], self._pick)))
         buttons = [button("Collect all", emoji=emojis.icon("haul", "🧺"), style=discord.ButtonStyle.success,
                           disabled=not any(pots.ready(p, here, reg, pet) for p in skill.pots), on_click=self._collect)]
         if skill.pots:

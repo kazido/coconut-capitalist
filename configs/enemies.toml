@@ -327,7 +327,7 @@ drop_chance = 65
 
 [void_hound]
 name = "Void Hound"
-emoji = "🐕‍🦺"
+emoji = "🦮"
 attack = 75
 hp = 731
 speed = 115

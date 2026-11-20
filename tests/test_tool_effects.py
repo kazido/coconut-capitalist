@@ -44,10 +44,9 @@ async def test_the_tools_page_shows_each_tool_with_its_power(db):
     for kind, item in STARTERS.items():
         await equip(user, {"pickaxe": "mining", "axe": "foraging", "rod": "fishing", "can": "farming"}[kind],
                     (await user.give_instance(item)).id)
-    nav, _ = await hub("tools")
-    lines = all_text(nav).split("\n")
     for skill in ("Mining", "Foraging", "Fishing", "Farming"):
-        assert sum(skill in line and "power **" in line for line in lines) == 1, skill  # one compact line per skill
+        nav, _ = await hub("tools", skill=skill.lower())  # one tool at a time; the skill picks which
+        assert skill in all_text(nav) and "power **" in all_text(nav), skill
 
 
 # ---- every upgrade changes several things at once -------------------------------------------------------------------------------------
