@@ -53,12 +53,29 @@ def max_part_tier(level: int, rules: SmithingRules) -> int:
     return min(tier, PART_TIERS)
 
 
+def part_emoji(slot: str, tier: int) -> str:
+    """The part's tier emoji (framed in its rarity). The item template's own emoji id has no art, so never use it."""
+    return emojis.get(f"part_{slot}_t{tier}", "🧩")
+
+
 def part_label(slot: str, tier: int, restricted: bool = False) -> str:
-    """How a part reads everywhere: its tier emoji (framed in its rarity) + "Tier 8 Celestial Base".
-    A part's rarity is its tier (SmithingRules.part_rarity)."""
-    rarity = Rarities.from_value(SmithingRules.part_rarity(tier)).rarity_name
+    """How a part reads everywhere: its tier emoji + "T8 Base". The rarity is the tier, so it is not spelled out."""
     mark = f" {emojis.icon('restricted', '🔺')}" if restricted else ""
-    return f"{emojis.get(f'part_{slot}_t{tier}', '🧩')} Tier {tier} {rarity} {slot.title()}{mark}"
+    return f"{part_emoji(slot, tier)} T{tier} {slot.title()}{mark}"
+
+
+# Plain glyphs until the `trait_<stat>` emoji are uploaded (art/sprites/traits.toml).
+TRAIT_GLYPHS = {"power": "💪", "scholar": "📚", "appraise": "🔍", "rare_luck": "🍀", "drop_amount": "📦"}
+
+
+def trait_icons(trait_ids, rules: SmithingRules, plain: bool = False) -> str:
+    """Traits as icons ("no trait" if none). `plain` = unicode glyphs only, for button/select text where custom emoji do not render."""
+    icons = []
+    for t in trait_ids:
+        stat = rules.trait(t).stat
+        glyph = TRAIT_GLYPHS.get(stat, "✨")
+        icons.append(glyph if plain else emojis.get(f"trait_{stat}", glyph))
+    return " ".join(icons) or "no trait"
 
 
 def is_restricted(part) -> bool:
@@ -121,8 +138,7 @@ def part_line(part: ItemInstance, registry: Registry | None = None) -> str:
     reg = registry or get_registry()
     rules = _rules(reg)
     slot = part.template_id.removeprefix("part_")
-    names = [rules.trait(t).name for t in part.traits]
-    named = f" ({', '.join(names)})" if names else ""
+    named = f" {trait_icons(part.traits, rules)}" if part.traits else ""
     return f"Found a **{part_label(slot, _part_tier(part), is_restricted(part))} part**{named}! Smith with it on Tools → Smithing."
 
 

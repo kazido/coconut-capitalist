@@ -1,7 +1,6 @@
 import discord
 
 from cococap import emojis
-from cococap.constants import Rarities
 from cococap.errors import CustomError
 from cococap.registry import get_registry
 from cococap.services import farming, market, shop, smithing
@@ -236,7 +235,7 @@ class MarketPane(Screen):
         rules = smithing._rules(reg)
         lines = []
         for o in offers:
-            names = ", ".join(rules.trait(t).name for t in o.traits) or "no traits"
+            names = smithing.trait_icons(o.traits, rules)
             status = " · **sold**" if o.bought else ""
             lines.append(f"**{o.slot + 1}.** {smithing.part_label(o.part_type, o.tier)} part · {names} · {emojis.bits(o.price)}{status}")
         body.append(text("\n".join(lines)))
@@ -248,7 +247,7 @@ class MarketPane(Screen):
             self.picked = open_offers[0].slot
         options = [
             discord.SelectOption(
-                label=f"Slot {o.slot + 1}: Tier {o.tier} {Rarities.from_value(o.tier).rarity_name} {o.part_type.title()}", value=str(o.slot),
+                label=f"Slot {o.slot + 1}: T{o.tier} {o.part_type.title()} {smithing.trait_icons(o.traits, rules, plain=True)}", value=str(o.slot),
                 description=f"{bits(o.price)} bits", default=o.slot == self.picked,
             )
             for o in open_offers

@@ -3,6 +3,7 @@
 from cococap import emojis
 from cococap.models.instance import ItemInstance
 from cococap.registry import get_registry
+from cococap.services import smithing
 
 PER_PAGE = 15
 
@@ -76,7 +77,8 @@ def part_lines(instances: list[ItemInstance]) -> list[str]:
         if template is None:
             continue
         tier = int(inst.rolled.get("tier", 1))
-        traits = ", ".join(reg.smithing.trait(t).name for t in inst.traits) or "no trait"
+        slot = inst.template_id.removeprefix("part_")
+        traits = smithing.trait_icons(inst.traits, reg.smithing)
         mark = f" {emojis.icon('restricted', '🔺')}" if inst.rolled.get("restricted") else ""
-        rows.append(((template.name, -tier), f"{template.emoji or ''} {template.name}{mark} · Tier {tier} · {traits}".strip()))
+        rows.append(((template.name, -tier), f"{smithing.part_emoji(slot, tier)} T{tier} {slot.title()}{mark} · {traits}"))
     return [line for _, line in sorted(rows)]

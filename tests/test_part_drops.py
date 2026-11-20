@@ -132,8 +132,8 @@ async def test_part_line_names_tier_type_and_traits(db, monkeypatch):
     user = await User.get(1)
     part = await smithing.maybe_drop_part(user, 1, Random(1), REG)
     line = smithing.part_line(part, REG)
-    assert "Tier 3" in line and "Trim part" in line
-    assert RULES.trait_pool[0].name in line
+    assert "T3" in line and "Trim part" in line
+    assert smithing.trait_icons([RULES.trait_pool[0].id], RULES) in line
     assert "Smith with it" in line
 
 
@@ -154,7 +154,7 @@ async def test_mining_result_screen_shows_the_part(db, monkeypatch):
     mine._show_loot()
     await mine.refresh(inter)
     text = all_text(nav)
-    assert "Tier 3" in text and "Trim part" in text
+    assert "T3" in text and "Trim part" in text
 
 
 async def test_farm_harvest_screen_shows_the_part(db, monkeypatch):
@@ -169,4 +169,4 @@ async def test_farm_harvest_screen_shows_the_part(db, monkeypatch):
     nav, inter = await hub("farm")
     await click(nav, inter, "Harvest all")
     text = all_text(nav)
-    assert "Tier 2" in text and "Accent part" in text
+    assert "T2" in text and "Accent part" in text

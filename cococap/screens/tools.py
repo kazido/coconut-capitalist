@@ -127,7 +127,7 @@ class ToolsPane(Screen):
                 part = inst.parts.get(slot, {})
                 trait = part.get("trait")
                 lines.append(f"· {smithing.part_label(slot, int(part.get('tier', 1)), smithing.is_restricted(part))}  ·  "
-                             + (f"**{reg.smithing.trait(trait).name}**" if trait else "no trait"))
+                             + smithing.trait_icons([trait] if trait else [], reg.smithing))
             body.append(text("\n".join(lines)))
         extra = []
         if tool.stats:

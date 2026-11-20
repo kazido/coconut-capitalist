@@ -39,7 +39,7 @@ async def test_smithing_tab_builds_a_tool_from_three_parts(db):
     await click(nav, inter, "Next")
     await choose(nav, inter, select_named(nav, "Accent part"), str(accent.id))
     await click(nav, inter, "Next")
-    assert "Preview" in all_text(nav) and "Power" in all_text(nav)
+    assert "Preview" in all_text(nav) and "power" in all_text(nav)
     await click(nav, inter, "Smith")
 
     tools = [i for i in await user_1.instances() if i.smith_id == user_1.id]
@@ -104,7 +104,7 @@ async def test_parts_tab_lists_parts_by_type(db):
     await _give_part(user_1, "base", 2, [trait])
     nav, _ = await hub("tools", tab="parts")
     text = all_text(nav)
-    assert "Base" in text and "Tier 2" in text and RULES.trait(trait).name in text
+    assert "Base" in text and "T2" in text and smithing.trait_icons([trait], RULES, plain=True) in text
     assert "Only tools smithed by someone else" in text
 
 

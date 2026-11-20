@@ -267,7 +267,7 @@ def test_part_rarity_is_its_tier_and_celestial_is_incredibly_rare():
         assert share < 1 / 500
         if row.area + RULES.area_cap < PART_TIERS:
             assert weights[-1] == 0
-    assert "Celestial" in smithing.part_label("base", 8)
+    assert "T8" in smithing.part_label("base", 8)
 
 
 def test_tier_pace():
@@ -296,8 +296,8 @@ async def test_tool_detail_page_lists_parts_tiers_traits_and_smith():
     nav, inter = await hub("tools")
     await choose(nav, inter, select_named(nav, "See a tool's details"), str(tool.id))
     page = all_text(nav)
-    assert "Celestial" in page and "Rare" in page and "Common" in page
-    assert trait.name in page and f"<@{user.id}>" in page and "<t:" in page
+    assert "T8" in page and "T3" in page and "T1" in page
+    assert smithing.trait_icons([trait.id], RULES) in page and f"<@{user.id}>" in page and "<t:" in page
     await click(nav, inter, "Back to tools")
     assert select_named(nav, "See a tool's details")
 
@@ -309,7 +309,7 @@ async def test_parts_show_in_the_inventory(db):
     await give_part(user, "trim", 2)
     nav, _ = await hub("inventory")
     text = all_text(nav)
-    assert get_registry().item("part_trim").name in text and "Tier 2" in text
+    assert "T2 Trim" in text
 
 
 # ---- restricted parts, enchant refunds, enchant removal ----

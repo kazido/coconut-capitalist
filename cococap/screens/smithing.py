@@ -8,7 +8,6 @@ import random
 import discord
 
 from cococap import emojis
-from cococap.constants import Rarities
 from cococap.registry import get_registry
 from cococap.services import smithing
 from cococap.services.equipment import TOOL_FOR_SKILL
@@ -25,14 +24,9 @@ def _tier(inst) -> int:
     return int(inst.rolled.get("tier", 1))
 
 
-def _rarity(inst) -> str:
-    """A part's rarity name: its tier is its rarity."""
-    return Rarities.from_value(_tier(inst)).rarity_name
-
-
 def _trait_names(inst, rules) -> str:
-    names = [rules.trait(t).name for t in inst.traits]
-    return ", ".join(names) if names else "no trait"
+    """Trait glyphs for select text (custom emoji do not render there); message text uses smithing.trait_icons."""
+    return smithing.trait_icons(inst.traits, rules, plain=True)
 
 
 class SmithingPane(Screen):
@@ -93,7 +87,7 @@ class SmithingPane(Screen):
         body.append(text(f"-# {summary}"))
         body.append(text(f"**Step {self.step}/3 · {slot.title()}**"))
         options = [
-            discord.SelectOption(label=f"Tier {_tier(i)} {_rarity(i)} · {_trait_names(i, rules)}"[:100], value=str(i.id),
+            discord.SelectOption(label=f"T{_tier(i)} {slot.title()} · {_trait_names(i, rules)}"[:100], value=str(i.id),
                                  default=i.id == self.chosen[slot])
             for i in parts[slot]
         ]
@@ -121,7 +115,7 @@ class SmithingPane(Screen):
         if inst is None:
             return "-"
         trait = self.picks.get(inst.id)
-        return f"T{_tier(inst)}" + (f" {rules.trait(trait).name}" if trait else "")
+        return f"T{_tier(inst)}" + (f" {smithing.trait_icons([trait], rules)}" if trait else "")
 
     def _preview(self, body: list, parts: dict, rules) -> Page:
         picked = {slot: next(i for i in parts[slot] if i.id == self.chosen[slot]) for slot in smithing.PART_TYPES}
@@ -130,8 +124,8 @@ class SmithingPane(Screen):
         for slot in smithing.PART_TYPES:
             inst = picked[slot]
             trait = self.picks.get(inst.id)
-            name = rules.trait(trait).name if trait else "no trait"
-            body.append(text(f"· {smithing.part_label(slot, _tier(inst), smithing.is_restricted(inst))} · {name}"))
+            icon = smithing.trait_icons([trait] if trait else [], rules)
+            body.append(text(f"· {smithing.part_label(slot, _tier(inst), smithing.is_restricted(inst))} · {icon}"))
         kind = self.kind.title() if self.kind else "-"
         body.append(text(f"Kind **{kind}** · power **{power:g}** before quality"))
         body.append(text("-# Quality is rolled on smithing."))
@@ -205,7 +199,7 @@ class PartsPane(Screen):
         body = [*self.note_block()]
         for slot in smithing.PART_TYPES:
             ps = [i for i in mine if _slot_of(i) == slot]
-            lines = [f"· {smithing.part_label(slot, _tier(i), smithing.is_restricted(i))} · {_trait_names(i, rules)}" for i in ps] or ["· none"]
+            lines = [f"· {smithing.part_label(slot, _tier(i), smithing.is_restricted(i))} · {smithing.trait_icons(i.traits, rules)}" for i in ps] or ["· none"]
             body.append(text("\n".join([f"**{slot.title()}** ({len(ps)})", *lines])))
 
         body += [sep(), text("**Salvage**")]
