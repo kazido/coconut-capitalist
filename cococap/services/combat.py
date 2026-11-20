@@ -494,6 +494,19 @@ def class_for(kind: str | None, registry: Registry | None = None):
     return next((c for c in reg.combat.classes.values() if c.weapon == kind), None)
 
 
+UNARMED = "unarmed"
+
+
+async def current_class(user: User, registry: Registry | None = None) -> tuple[str, int]:
+    """(class id, class level) of the weapon you hold now; bare hands are the "unarmed" class."""
+    reg = registry or get_registry()
+    instance = await user.equipped_instance("combat")
+    kind = reg.item(instance.template_id).tool.kind if instance is not None else None
+    cls = class_for(kind, reg)
+    key = next((cid for cid, c in reg.combat.classes.items() if c is cls), UNARMED)
+    return key, User.xp_to_level((await user.skill("combat")).class_xp.get(key, 0))
+
+
 async def best_weapons(user: User, registry: Registry | None = None) -> dict[str, ItemInstance]:
     """The strongest weapon (by tool power) the player owns of each class weapon kind."""
     reg = registry or get_registry()
@@ -530,7 +543,8 @@ async def build_player(user: User, registry: Registry | None = None, uid: str = 
     instance = await user.equipped_instance("combat")
     kind = reg.item(instance.template_id).tool.kind if instance is not None else None
     cls = class_for(kind, reg)
-    skills = [k.skill for k in cls.kit if k.level <= level] if cls else list(reg.combat.kits["default"])
+    class_level = (await current_class(user, reg))[1]  # kit skills unlock with the CLASS level, not the combat level
+    skills = [k.skill for k in cls.kit if k.level <= class_level] if cls else list(reg.combat.kits["default"])
     w = tool_effects.power_stats(kind, equipment.effective_stats(instance, reg).power, reg) if cls else {}
     return Unit(
         id=uid,
@@ -637,8 +651,10 @@ async def settle(user: User, battle: Battle, registry: Registry | None = None, r
             result.bits += drop.bits
             if drop.item_id:
                 result.items[drop.item_id] = result.items.get(drop.item_id, 0) + drop.quantity
+    class_key = (await current_class(user, reg))[0]
     if result.xp:
         await user.add_xp("combat", result.xp)
+        await user.update_skill("combat", lambda s: s.class_xp.__setitem__(class_key, s.class_xp.get(class_key, 0) + result.xp))
     for item_id, quantity in result.items.items():
         await user.add_item(item_id, quantity)
     if result.bits:

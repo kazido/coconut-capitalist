@@ -27,6 +27,7 @@ The log shows only the latest round, split into "You" and "Enemy" blocks. Needs 
 - A balance sim row per class (`scripts/balance.py`). Design the pools kind by kind with the owner (one question at a time).
 - Build order: (a) class xp/level model + award in `combat.settle` + Class tab display; (b) loadout storage + picker + fight uses the loadout;
   (c) author pools kind by kind (4 basics first, then unlockables).
+- 3a DONE: `Combat.class_xp` (class id, "unarmed" for bare hands), paid in `combat.settle`; kit unlocks and the Class tab use the class level.
 - DONE already: Explore page has the XP bar line like other skills; `ui/levelup.SCREEN_SKILL` maps fight/combat so the victory screen shows the
   combat + pet progress line and the pet xp tag.
 

@@ -173,19 +173,22 @@ class ClassPane(Screen):
                     for cid, c in rules.classes.items() if c.weapon in have]
         switch = row(select("Change class...", options, self._pick)) if len(options) > 1 else None
         if cls is None:
-            body.append(text("### Bare hands\nEquip a sword, bow, staff or shield to pick a class. Weapons are smithed in **Smithing**.\n"
+            body.append(text(f"### Bare hands  ·  class level {(await combat.current_class(self.user, reg))[1]}\nEquip a sword, bow, staff or shield to pick a class. Weapons are smithed in **Smithing**.\n"
                              + "\n".join(f"**{rules.skills[s].name}**: {rules.skills[s].description}" for s in rules.kits["default"])))
             if switch:
                 body.append(switch)
             return Page("Class", body, accent=0xC0392B)
         res = cls.resource.title()
-        body.append(text(f"### {cls.name}  ·  {kind}\n{cls.description}\n**{res}** (max {cls.resource_max})"))
+        key, class_level = await combat.current_class(self.user, reg)
+        overflow, needed = User.xp_for_next_level((await self.user.skill("combat")).class_xp.get(key, 0))
+        body.append(text(f"### {cls.name}  ·  {kind}\n**Class level {class_level}**  {xp_bar(overflow / needed if needed else 0)}  {overflow:,}/{needed:,} xp\n"
+                         f"{cls.description}\n**{res}** (max {cls.resource_max})"))
         lines = []
         for k in cls.kit:
             sk = rules.skills[k.skill]
             facts = [f"{sk.cost} {res.lower()}" if sk.cost else None, f"recharge {sk.cooldown}" if sk.cooldown else None]
             line = f"**{sk.name}**: {sk.description}" + (f" *({', '.join(f for f in facts if f)})*" if any(facts) else "")
-            lines.append(line if k.level <= level else f"{emojis.icon('lock', '🔒')} ~~{sk.name}~~ unlocks at combat level {k.level}")
+            lines.append(line if k.level <= class_level else f"{emojis.icon('lock', '🔒')} ~~{sk.name}~~ unlocks at class level {k.level}")
         body.append(sep())
         body.append(text("\n".join(lines)))
         if switch:

@@ -261,6 +261,9 @@ async def test_settle_pays_xp_and_counts_kills(db):
     b.play("slash", "e1")
     assert (await combat.settle(user, b)).xp == 40
     assert (await user.skill("combat")).xp == 40 and (await user.skill("combat")).stats.monsters_slain == 1
+    # bare hands earn the "unarmed" class xp, and kit unlocks follow the class level
+    assert (await user.skill("combat")).class_xp == {combat.UNARMED: 40}
+    assert await combat.current_class(user) == (combat.UNARMED, User.xp_to_level(40))
 
 
 # ---- the final boss ------------------------------------------------------------------------------------------------------------
