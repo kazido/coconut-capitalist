@@ -28,7 +28,11 @@ code changed since the last build. Commands (all print `file:Lline`):
 - `graphify affected "<func or Class>" --depth 1` = every caller/importer/test (who breaks if this changes). Depth 2 only if needed.
 - `graphify explain "<name>"` = a node and its neighbours; `graphify path "A" "B"` = how two systems connect.
 - `graphify query "<question>" --budget 800` for "where does X happen" when you do not know a name yet.
-Graph misses config links (TOML ids, emoji names, changelog): add a quick `Grep` for the item/stat id. Then read only the few hunks you need.
+**Config routing** (the graph stops at the registry, since code reads configs as attributes like `reg.farming.free_plots`):
+- A key in `configs/<name>.toml` -> its model via `_build(<Model>, "<name>", ...)` in `load_registry()` (`cococap/registry/loader.py`) -> field on that
+  model in `registry/models.py` -> readers: `Grep -n "\.<key>\b" cococap tests` (one call). Cross-file checks: `Grep "<name>.toml" loader.py`.
+- An item/stat/enchant id -> `Grep -n "<id>" configs cococap tests art` (TOML tables, code, tests, sprites, emoji all in one).
+Then read only the few hunks you need.
 
 **Choosing the model:** Haiku `worker`/`tester`/`writer` for anything the impact map fully pins down (most bugs with a known cause,
 UI tweaks, config + test, art from a known recipe). Sonnet (`model: "sonnet"` on the Agent call) for a bounded change that still needs some judgment
