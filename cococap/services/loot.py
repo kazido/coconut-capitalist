@@ -11,6 +11,14 @@ def skewed_roll(rng: random.Random, low: int, high: int) -> int:
     return low + round((rng.random() ** 3) * (high - low))
 
 
+def scale_amount(rng: random.Random, quantity: int, bonus: float) -> int:
+    """`quantity` made `bonus` bigger (0.10 = +10%), the fraction rounded at random. With no bonus the dice are left alone."""
+    if not bonus:
+        return quantity
+    more = quantity * bonus
+    return quantity + int(more) + (1 if rng.random() < more - int(more) else 0)
+
+
 def roll_drop(item: Item, rng: random.Random) -> int | None:
     """Roll `item`'s own drop table once: the quantity dropped, or None."""
     if item.drop is None or rng.randint(1, item.drop.rate) != 1:

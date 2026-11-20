@@ -13,7 +13,7 @@ Accessories are where the STAT bonuses live now (enchants are abilities only; pa
   - fishing: Lure (bite_speed), Deepcall (rare_luck)
   - farming: Fertile Blade (crop_yield), Gleaner (drop_luck)
   - all skills: Scholar (xp) as a rarer trait
-  Part traits keep only the generic ones (power_core, scholar_edge, appraiser_eye); more generic part traits come later.
+  Part traits keep only the generic ones (power_core, scholar_edge, appraiser_eye, lucky_charm = rare_luck, bountiful = drop_amount); more can come later.
 - **Getting them:**
   - Basic accessories (no traits, small fixed stat) in the Shop, one or two per skill. Bought with bits.
   - Rarer ones (rolled traits, 1 to 3 by rarity) drop from that skill's actions, rolled where the part roll is (`maybe_drop_part`'s callers),

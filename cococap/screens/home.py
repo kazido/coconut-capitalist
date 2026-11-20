@@ -3,7 +3,7 @@ import discord
 from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services.party import Party
-from cococap.services import economy, party_invites, trade
+from cococap.services import economy, party_invites, pets, trade
 from cococap.ui import Page, Screen
 from cococap.ui.components import bits, button, row, section, sep, text
 from cococap.user import Cooldowns

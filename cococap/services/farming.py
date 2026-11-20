@@ -24,7 +24,7 @@ from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
 from cococap.services import accessories, areas, pets, scrolls, smithing, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
-from cococap.services.loot import roll_drop
+from cococap.services.loot import roll_drop, scale_amount
 from cococap.services.party import xp_multiplier
 from cococap.user import Cooldowns, User
 
@@ -490,14 +490,17 @@ def drop_rolls(cycles: int, rules, rng: random.Random, luck: float = 0.0) -> int
     return min(rules.max_drop_rolls, whole + (1 if rng.random() < expected - whole else 0))
 
 
-def harvest_extras(rng: random.Random, registry: Registry, cycles: int = 4, luck: float = 0.0, zone: int = 1) -> Counter:
+def harvest_extras(rng: random.Random, registry: Registry, cycles: int = 4, luck: float = 0.0, zone: int = 1, rare_luck: float = 0.0, amount: float = 0.0) -> Counter:
     """Materials that come along with a harvest (the planted zone's own table): longer crops roll more."""
     found: Counter = Counter()
     materials = zone_materials(zone, registry) + [i for i in registry.items_for_skill("farming") if i.category == "pet_food" and i.drop]
     for _ in range(drop_rolls(cycles, registry.farming, rng, luck)):
         for item in materials:
-            if quantity := roll_drop(item, rng):
-                found[item.id] += quantity
+            quantity = roll_drop(item, rng)
+            if not quantity and rare_luck and item.rarity >= pets.RARE_FROM and rng.random() < rare_luck:  # Lucky Charm: a missed rare gets a free second roll
+                quantity = roll_drop(item, rng)
+            if quantity:
+                found[item.id] += scale_amount(rng, quantity, amount)  # Bountiful: bigger drops
     return found
 
 
@@ -550,7 +553,8 @@ async def harvest(
         await user.update_skill("farming", restore)  # the crop never arrived: the plot is still ripe
         raise
     await user.inc_stat(f"harvested:{taken['crop']}", taken["amount"])  # stats page: harvests by crop
-    extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0, taken["zone"])
+    extras = harvest_extras(rng, reg, reg.item(taken["seed"]).seed.cycles, can.stats.get("drop_luck", 0.0) if can else 0.0, taken["zone"],
+                            can.stats.get("rare_luck", 0.0) if can else 0.0, can.stats.get("drop_amount", 0.0) if can else 0.0)
     extras = stars.apply(extras, stars.progress(taken["zone"], len(reg.farming.field_seeds)), rng, reg)  # starred materials: the further the field, the better the star
     part = await smithing.maybe_drop_part(user, taken["zone"], rng, reg)  # one part roll per harvest
     accessory = await accessories.maybe_drop_accessory(user, "farming", rng, reg)  # one accessory roll per harvest

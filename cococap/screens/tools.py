@@ -4,13 +4,14 @@ import discord
 
 from cococap import emojis
 from cococap.constants import STARTER_TOOLS
+from cococap.errors import GameRuleError
 from cococap.registry import get_registry
-from cococap.services.equipment import TOOL_FOR_SKILL, effective_stats
-from cococap.services import shop, smithing
+from cococap.registry.models import ACCESSORY_SKILLS
+from cococap.services.equipment import TOOL_FOR_SKILL, effective_stats, skill_for_tool
+from cococap.services import accessories, shop, smithing
 from cococap.services.inventory import instance_label
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, select, sep, text
-from cococap.screens.accessories import AccessoriesPane
 from cococap.screens.enchant import EnchantPane
 from cococap.screens.smithing import PartsPane, SmithingPane
 from cococap.ui.tabs import TabsScreen
@@ -43,12 +44,21 @@ def tool_emoji(inst, item) -> str:
 KIND_LABEL = {"pickaxe": "Mining", "axe": "Foraging", "sword": "Combat", "rod": "Fishing", "can": "Farming"}
 
 
+def _describe(inst, rules) -> str:
+    """"Work Gloves (Vein Sense) · ore yield +0.02": the name, its traits and its stat bonuses."""
+    template = rules.template(inst.template_id)
+    traits = ", ".join(rules.trait(t).name for t in inst.traits)
+    stats = ", ".join(f"{stat.replace('_', ' ')} +{amount:g}" for stat, amount in accessories.stats_of(inst).items())
+    return f"**{template.name}**" + (f" ({traits})" if traits else "") + (f" · {stats}" if stats else "")
+
+
 class ToolsPane(Screen):
     """Your tool for each skill, as a compact list. Enchant, Smithing and Parts are the other tabs."""
 
     label = "Tools"
     emoji = emojis.Lazy("ui_anvil", "🧰")
     viewing: int | None = None  # instance id of the tool whose detail page is open
+    picked: int | None = None  # the accessory chosen in the detail page's dropdown
 
     async def _equipped_ids(self) -> set[int]:
         ids = set()
@@ -64,7 +74,7 @@ class ToolsPane(Screen):
         equipped = await self._equipped_ids()
         viewed = next((i for i in instances if i.id == self.viewing), None)
         if viewed is not None:
-            return self._detail(viewed, viewed.id in equipped)
+            return await self._detail(viewed, viewed.id in equipped)
         self.viewing = None
         body = [*self.note_block()]
         shown = []
@@ -95,7 +105,7 @@ class ToolsPane(Screen):
         body += [sep(), row(button("Inventory", emoji=emojis.icon("bag", "🎒"), on_click=self._inventory))]
         return Page("Tools", body, accent=0xB8860B)
 
-    def _detail(self, inst, equipped: bool) -> Page:
+    async def _detail(self, inst, equipped: bool) -> Page:
         """Everything about one tool: the big picture (a smithed tool is drawn from its three parts' tiers), its numbers,
         when and by whom it was smithed, and each part with its tier/rarity and the trait picked from it."""
         reg = get_registry()
@@ -116,7 +126,7 @@ class ToolsPane(Screen):
             for slot in smithing.PART_TYPES:
                 part = inst.parts.get(slot, {})
                 trait = part.get("trait")
-                lines.append(f"· {smithing.part_label(slot, int(part.get('tier', 1)))}  ·  "
+                lines.append(f"· {smithing.part_label(slot, int(part.get('tier', 1)), smithing.is_restricted(part))}  ·  "
                              + (f"**{reg.smithing.trait(trait).name}**" if trait else "no trait"))
             body.append(text("\n".join(lines)))
         extra = []
@@ -128,8 +138,66 @@ class ToolsPane(Screen):
             extra.append("Enchants: " + ", ".join(reg.enchant(e).name + (f" {lvl}" if lvl > 1 else "") for e, lvl in inst.enchants.items()))
         if extra:
             body.append(text("\n".join(extra)))
+        skill = skill_for_tool(tool.kind)
+        if inst.enchants and await smithing.smithing_level(self.user) >= reg.smithing.removal.enchant_unlock_level:
+            body.append(row(select("Remove an enchant (returns its scroll)...", [
+                discord.SelectOption(label=reg.enchant(e).name[:100], value=e) for e in inst.enchants], self._remove_enchant)))
+        if skill in ACCESSORY_SKILLS:
+            body += await self._accessory_section(skill)
         body += [sep(), row(button("Back to tools", emoji=emojis.icon("back", "↩️"), on_click=self._back))]
         return Page("Tools", body, accent=0xB8860B)
+
+    async def _accessory_section(self, skill: str) -> list:
+        """The skill's two accessory slots, a dropdown of the ones you own (worn ones marked) and one Equip/Unequip toggle."""
+        reg = get_registry()
+        rules = reg.accessories
+        worn = await accessories.equipped(self.user, skill, reg)
+        worn_ids = {i.id for i in worn if i is not None}
+        slots = [f"Slot {n}: " + (_describe(inst, rules) if inst is not None else "empty") for n, inst in enumerate(worn, 1)]
+        body = [sep(), text("\n".join(["**Accessories**", *slots]))]
+        template_ids = {t.id for t in rules.templates if t.skill == skill}
+        owned = [i for i in await self.user.instances() if i.template_id in template_ids]
+        if not owned:
+            return body + [text(f"-# No {skill} accessories. Buy a basic one in the Shop or wait for a drop.")]
+        if self.picked not in {i.id for i in owned}:
+            self.picked = None
+        body.append(row(select("Pick an accessory...", [
+            discord.SelectOption(label=(rules.template(i.template_id).name + (" (worn)" if i.id in worn_ids else ""))[:100],
+                                 value=str(i.id), default=i.id == self.picked) for i in owned], self._pick_spare)))
+        wearing = self.picked in worn_ids
+        full = None not in worn
+        body.append(row(button("Unequip" if wearing else "Equip",
+                               style=discord.ButtonStyle.secondary if wearing else discord.ButtonStyle.primary,
+                               on_click=self._toggle, disabled=self.picked is None or (full and not wearing))))
+        if full and self.picked is not None and not wearing:
+            body.append(text("-# Both slots are full. Unequip one first."))
+        return body
+
+    async def _remove_enchant(self, interaction: discord.Interaction, values: list[str]) -> None:
+        try:
+            await smithing.remove_enchant(self.user, self.viewing, values[0])
+        except GameRuleError as err:
+            return await self.refresh(interaction, str(err))
+        await self.refresh(interaction, f"Removed **{get_registry().enchant(values[0]).name}**. Its scroll is back in your inventory.")
+
+    async def _pick_spare(self, interaction: discord.Interaction, values: list[str]) -> None:
+        self.picked = int(values[0])
+        await self.refresh(interaction)
+
+    async def _toggle(self, interaction: discord.Interaction) -> None:
+        reg = get_registry()
+        inst = next((i for i in await self.user.instances() if i.id == self.viewing), None)
+        skill = skill_for_tool(reg.item(inst.template_id).tool.kind) if inst else None
+        if self.picked is None or skill is None:
+            return await self.refresh(interaction, "Pick an accessory first.")
+        worn_ids = [i.id if i is not None else None for i in await accessories.equipped(self.user, skill, reg)]
+        if self.picked in worn_ids:
+            await accessories.unequip(self.user, skill, worn_ids.index(self.picked))
+            return await self.refresh(interaction, "Took it off.")
+        if None not in worn_ids:
+            return await self.refresh(interaction, "Both slots are full. Unequip one first.")
+        instance = await accessories.equip(self.user, skill, self.picked, worn_ids.index(None))
+        await self.refresh(interaction, f"Wearing **{reg.accessories.template(instance.template_id).name}**.")
 
     async def _view(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.viewing = int(values[0])
@@ -164,4 +232,4 @@ class ToolsScreen(TabsScreen):
     emoji = emojis.Lazy("ui_anvil", "🧰")
     description = "Your tools: smith, enchant and salvage them"
     links = ("inventory",)
-    panes = {"tools": ToolsPane, "enchant": EnchantPane, "smithing": SmithingPane, "parts": PartsPane, "accessories": AccessoriesPane}
+    panes = {"tools": ToolsPane, "enchant": EnchantPane, "smithing": SmithingPane, "parts": PartsPane}

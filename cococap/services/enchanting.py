@@ -7,6 +7,7 @@ used up and the enchant added together, or neither happens.
 from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Item, Registry, get_registry
+from cococap.services import smithing
 from cococap.services.equipment import add_enchant
 from cococap.user import User
 
@@ -49,8 +50,11 @@ async def apply_scroll(user: User, scroll_id: str, instance_id: int, registry: R
         raise EnchantError(f"You don't have a {scroll.name}.") from None
     try:
         result = await add_enchant(user, instance_id, scroll.scroll.enchant, registry=reg)
-        if instance.parts:  # a smithed tool holds at most one enchant: the newer one replaces the old
-            for other in [e for e in result.enchants if e != scroll.scroll.enchant]:
+        if instance.parts:  # a smithed tool holds one enchant (two with a restricted part): the oldest are replaced
+            cap = smithing.enchant_cap_of(instance.parts)
+            others = [e for e in result.enchants if e != scroll.scroll.enchant]
+            for other in others[: max(0, len(result.enchants) - cap)]:
+                await smithing.refund_enchant(user, other, result.enchants[other], reg)
                 result = await user.set_enchant_level(instance_id, other, 0)
         return result
     except Exception:

@@ -30,6 +30,7 @@ class PetScreen(Screen):
 
     def __init__(self, nav):
         super().__init__(nav)
+        self.details = False  # the per-skill score breakdown is showing
         self.focus: str | None = None  # the pet you are looking at and looking after (the active one until you pick another)
 
     def focus_id(self, house) -> str | None:
@@ -49,6 +50,9 @@ class PetScreen(Screen):
         rules = reg.economy.pets
         house = self.user.pethouse
         owned_items = await self.user.items()
+        if house.pets and (banked := await pets.bank_idle_haul(self.user)):  # the idle haul banks itself when the page opens
+            self.note = f"{emojis.icon('sparkle', '✨')} {banked}" + (f"\n{self.note}" if self.note else "")
+            house = self.user.pethouse
         body = [*self.note_block()]
 
         if not house.pets:
@@ -95,12 +99,14 @@ class PetScreen(Screen):
         return Page("Pets", body, accent=0x27AE60)
 
     async def _sidekick_block(self, body: list, pet, mine, house, owned_items: dict, reg) -> None:
-        """The active pet's mini-you: score, sidekick bonus from the pets resting, the fuel tank, and Collect / Fuel."""
+        """The active pet's mini-you: score, sidekick bonus from the pets resting, the fuel tank, and Details / Fuel."""
         rules = reg.pet_score
         others = [(reg.pets[k], o) for k, o in house.pets.items() if k != house.active]
         side = pet_score.sidekick_bonus(others, reg)
         score = pet_score.score(pet, mine, registry=reg)
-        cap = pets.tank_cap_seconds(reg)
+        kinds = len(house.fuel_kinds)
+        cap = pets.tank_cap_seconds(reg, kinds)
+        plural = "s" if kinds != 1 else ""
         now = time.time()
         fuel = house.fuel_seconds
         working = max(0.0, min(fuel, now - house.last_collect)) if house.last_collect else 0.0  # idle time waiting to be collected
@@ -111,24 +117,23 @@ class PetScreen(Screen):
             "**Sidekick work** (idle while you are away)",
             f"{nxt} Score **{breakdown.total}/1000**  ·  skills {breakdown.skills_total}, mastery {breakdown.mastery}, gear {breakdown.gear}, ability {breakdown.ability}",
             f"{nxt} Sidekicks: **+{side:.0%}** from your resting pets (max +{rules.sidekick_cap:.0%})",
-            f"{nxt} Tank {xp_bar(fuel / cap if cap else 0)} {fuel / 3600:.1f}/{cap / 3600:.0f} h  ·  hauls about {hourly:,.0f} xp/h",
-            f"-# {working / 3600:.1f} h of work waiting to collect" if working > 0 else "-# Fill the tank with crops: it only works while it has fuel.",
+            f"{nxt} Tank {xp_bar(fuel / cap if cap else 0)} {fuel / 3600:.1f}/{cap / 3600:.0f} h  ·  {kinds} crop kind{plural} (+{rules.tank_hours_per_kind:g}h each, max {rules.tank_max_kinds})  ·  hauls about {hourly:,.0f} xp/h",
+            f"-# {working / 3600:.1f} h of work is banked when you next open this page" if working > 0 else "-# Fill the tank with crops: it only works while it has fuel.",
         ]
         body.append(text("\n".join(lines)))
         crops = [(reg.item(i), q) for i, q in owned_items.items() if q > 0 and (it := reg.find_item(i)) and it.crop is not None and it.sell_price > 0]
         crops.sort(key=lambda e: e[0].sell_price)
-        body.append(row(button("Collect", style=discord.ButtonStyle.primary, on_click=self._collect, disabled=working <= 0)))
+        body.append(row(button("Hide details" if self.details else "Details", on_click=self._toggle_details)))
+        if self.details:
+            body.append(text("\n".join(f"{name.title()} {xp_bar(pts / pet_score.MAX_SKILL)} {pts}/{pet_score.MAX_SKILL}" for name, pts in breakdown.skills.items())))
         if crops:
             body.append(row(select("Fuel the tank with crops...", [
                 discord.SelectOption(label=f"{c.name} ×{q:,}", value=c.id, emoji=c.emoji, description=f"{c.sell_price * rules.fuel_minutes_per_value:.1f} min of fuel each")
                 for c, q in crops][:25], self._fuel)))
 
-    async def _collect(self, interaction: discord.Interaction) -> None:
-        skill, xp, hours, drops = await pets.collect(self.user)
-        if xp <= 0 or not skill:
-            await self.refresh(interaction, "Nothing to collect yet.")
-            return
-        await self.refresh(interaction, f"{emojis.icon('sparkle', '✨')} Your pet worked {hours:.1f} h and brought back **{xp:,}** {skill} xp." + ("\n" + self._drop_lines(drops) if drops else ""))
+    async def _toggle_details(self, interaction: discord.Interaction) -> None:
+        self.details = not self.details
+        await self.refresh(interaction)
 
     def _drop_lines(self, drops: dict[str, int]) -> str:
         """What the haul found, each marked with the active pet's emoji (like its xp bonus on result screens)."""
@@ -181,6 +186,8 @@ class PetScreen(Screen):
                 raise pets.PetError("Enter a whole number, or 'all'.") from None
             fed = await pets.feed(self.user, crop_id, quantity, pet_id=pet_id)
             note = f"{emojis.icon('apple', '🍎')} {fed.pet.name} ate {fed.quantity:,} {reg.item(crop_id).display}  ·  +{fed.xp:,} pet xp" + (f" (x{fed.multiplier:g})" if fed.multiplier != 1 else "")
+            if reg.item(crop_id).pet_food is not None:
+                note += f"\n+{reg.pet_score.food_buff_bonus:.0%} pet xp for {reg.pet_score.food_buff_minutes:g} min"
             if fed.level_after > fed.level_before:
                 note += f"\n{emojis.icon('party', '🎉')} **{fed.pet.name} reached level {fed.level_after}!**"
             await self.refresh(modal_interaction, note)

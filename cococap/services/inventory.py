@@ -63,3 +63,20 @@ def instance_lines(instances: list[ItemInstance], equipped_ids: set[int], filter
     return [line for _, line in sorted(rows)]
 
 
+
+
+def part_lines(instances: list[ItemInstance]) -> list[str]:
+    """Smithing parts (unique instances: base, trim, accent) as inventory lines, e.g. "<emoji> Base part · Tier 2 · Sturdy"."""
+    reg = get_registry()
+    rows = []
+    for inst in instances:
+        if not inst.template_id.startswith("part_"):
+            continue
+        template = reg.find_item(inst.template_id)
+        if template is None:
+            continue
+        tier = int(inst.rolled.get("tier", 1))
+        traits = ", ".join(reg.smithing.trait(t).name for t in inst.traits) or "no trait"
+        mark = f" {emojis.icon('restricted', '🔺')}" if inst.rolled.get("restricted") else ""
+        rows.append(((template.name, -tier), f"{template.emoji or ''} {template.name}{mark} · Tier {tier} · {traits}".strip()))
+    return [line for _, line in sorted(rows)]

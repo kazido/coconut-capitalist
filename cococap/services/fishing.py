@@ -152,9 +152,9 @@ def extra_fish_boost(rarity: int, rules: FishingRules) -> float:
     return 1.0 + (rod.low_rarity_boost - 1.0) * (rod.low_rarity_cutoff - rarity) / (rod.low_rarity_cutoff - 1)
 
 
-def extra_fish(power: int, rules: FishingRules, rng: random.Random, rarity: int = 99) -> int:
+def extra_fish(power: int, rules: FishingRules, rng: random.Random, rarity: int = 99, bonus: float = 0.0) -> int:
     """How many more fish than one this catch brings: a stronger rod hauls in more (more still of common fish), with a fractional part rolled as a chance."""
-    expected = rules.rod.extra_fish_per_power * max(0, power - 3) * extra_fish_boost(rarity, rules)
+    expected = rules.rod.extra_fish_per_power * max(0, power - 3) * extra_fish_boost(rarity, rules) + bonus  # (bonus: Bountiful's drop_amount)
     whole = int(expected)
     if expected == whole:
         return whole  # (no roll: a starter rod leaves the dice alone)
@@ -422,7 +422,7 @@ def cast_line(stats: EffectiveStats, rng: random.Random, now: float | None = Non
         grace=rules.bite.grace,
         echo_window=rules.reel.echo_window,
         size=roll_size(fish, rng),
-        extra_fish=extra_fish(stats.power, rules, rng, fish.rarity),
+        extra_fish=extra_fish(stats.power, rules, rng, fish.rarity, stats.stats.get("drop_amount", 0.0)),
         xp=water.xp if water else 0,
         auto_steps=int(stats.stats.get("auto_reel", 0)),
         bycatch=stats.stats.get("bycatch", 0.0),

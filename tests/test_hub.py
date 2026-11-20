@@ -1011,8 +1011,8 @@ async def test_the_reactor_has_its_own_page_reachable_from_mining(db):
     await click(nav, inter, "Reactor")
     assert nav.screen.id == "reactor"
     text = all_text(nav)
-    assert "Reactor Level 1" in text and "Auto-miner" in text and "Sanity" in text and "empty" not in text
-    assert "**1** column" in text and "wyrmhole **1 in" in text
+    assert "Reactor Level 1" in text and "Auto-miner" in text and "Unlocks" in text
+    assert "Sanity" not in text and "wyrmhole" not in text and "pressure" not in text  # no gem names, odds or pressure
     assert {b.label for b in buttons(nav)} >= {"Claim lodes", "Insert gems", "Prestige"}
     assert find_button(nav, "Back")  # Back returns to Mining
     await click(nav, inter, "Back")

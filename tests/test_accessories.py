@@ -184,16 +184,21 @@ def test_the_shop_price_in_items_toml_matches_accessories_toml():
         assert REG.item(t.id).price == t.shop_price, t.id
 
 
-async def test_the_tab_equips_into_slot_one_and_unequips(db):
+async def test_the_tab_toggle_equips_into_slot_one_and_unequips(db):
     from tests.test_hub import choose, click, hub, select_named
 
     user = await player()
     spare = await give(user, template_of("fishing", 1).id)
-    nav, inter = await hub("tools", tab="accessories")
-    await choose(nav, inter, select_named(nav, "Pick a skill"), "fishing")
-    await choose(nav, inter, select_named(nav, "Pick a spare"), str(spare.id))
-    await click(nav, inter, "Equip in slot 1")
+    from cococap.registry import get_registry
+    from cococap.services import shop
+    await shop.claim_starter_tools(user)
+    reg = get_registry()
+    rod = next(i for i in await user.instances() if (t := reg.find_item(i.template_id)) and t.tool and t.tool.kind == "rod")
+    nav, inter = await hub("tools")
+    await choose(nav, inter, select_named(nav, "See a tool"), str(rod.id))
+    await choose(nav, inter, select_named(nav, "Pick an accessory"), str(spare.id))
+    await click(nav, inter, "Equip")
     assert (await user.skill("fishing")).accessory_ids[0] == spare.id
 
-    await click(nav, inter, "Unequip 1")
+    await click(nav, inter, "Unequip")
     assert (await user.skill("fishing")).accessory_ids[0] is None

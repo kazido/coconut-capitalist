@@ -11,6 +11,18 @@
 
 [[entry]]
 date = "2026-11-19"
+title = "Smithing and pets upgrades"
+body = "- **Restricted parts**: a rare version of any part can drop. A tool can have one, and it lets the tool hold **one extra enchant**.\n- Replacing an enchant or salvaging a tool now **gives the scroll back**. At smithing level 20 you can remove an enchant from a tool (scroll back too).\n- New part traits: **Lucky Charm** (rare luck) and **Bountiful** (more drops).\n- Each tool now has one page, with its accessories on it.\n- Your pet's work is **banked automatically** when you open Home or Pets. Pets has a **Details** view with a bar per skill.\n- Fuel: each different crop in the tank adds **+2h** to its size (up to 4 kinds).\n- Skill food's buff is +50% **pet** xp for 30 minutes (now stated)."
+major = true
+
+[[entry]]
+date = "2026-11-19"
+title = "Fixes and tidier pages"
+body = "- Fixed: owning a tool you had not equipped (like a freshly smithed one) told you to claim a starter tool. It now equips itself.\n- Mining and lode claims show each drop's emoji.\n- Accessories: one Equip/Unequip button.\n- Light skills are now **Lesser skills**, with a cleaner page.\n- Reactor: gem slots on one line, a list of what each level unlocks, and a level-up tells you what you unlocked.\n- Smithing parts now show in your inventory."
+major = false
+
+[[entry]]
+date = "2026-11-19"
 title = "Pets work while you are away"
 body = "- Your active pet now has a **score** and works while you are away, as long as its fuel tank has crops in it. Press **Collect** on the Pets page to bring home its skill xp.\n- **Fuel the tank** with crops (the better the crop, the longer it runs). Crops no longer feed pets xp: pets level on skill food, which also gives a **+50% pet xp buff for 30 minutes**.\n- Pets you are not using add a **sidekick bonus** (up to +50%) to your active pet's work.\n- New foods: **Pet Biscuit** (shop, any pet), the **Burger** (found while playing, any pet) and farming foods (Harvest Mash, Garden Stew, Golden Ear).\n- Every pet now has a **score out of 1000** and one named **trait** (its effect). Murk now only boosts ore, not mine pressure.\n- Level-ups, rare finds and your pet's xp now show on the result screen, with a **Share** button."
 major = true

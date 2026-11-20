@@ -1631,3 +1631,13 @@ def test_a_mine_with_its_own_tables_digs_only_from_them():
     run = make_run(site=site)
     cells = [c for d in range(D.floor) for c in run.row(d)]
     assert all(c is None or c[0] == "material_gold_ore" for c in cells)
+
+
+def test_reactor_unlocks_name_each_extra_column_and_brace():
+    from cococap.services.mining import columns_dug, reactor_unlocks
+
+    rules = get_registry().mining
+    assert reactor_unlocks(1, rules) == []
+    for lvl in range(2, rules.reactor.max_prestige + 1):
+        gained_column = columns_dug(lvl, rules) > columns_dug(lvl - 1, rules)
+        assert any("column" in u for u in reactor_unlocks(lvl, rules)) == gained_column

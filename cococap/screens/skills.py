@@ -65,37 +65,36 @@ class SmithingLightPane(Screen):
             next_line = f"Next unlock: Lv {lvl}, {what}"
         else:
             next_line = "Everything unlocked."
+        # One compact block per lesser skill: name + level, a bar, then one quiet line of facts.
         body = [
-            text(f"### Smithing  ·  Lv {level}\n{bar(overflow / needed if needed else 0, 10)}"),
-            text(f"Max part tier: **{cap}**\n{next_line}"),
-            sep(),
-            text("Smith tools on Tools -> Smithing."),
+            text(f"### {self.emoji} Smithing  ·  Lv {level}\n{bar(overflow / needed if needed else 0, 10)}\n"
+                 f"Max part tier **{cap}**  ·  {next_line}\n-# Smith tools on Tools -> Smithing."),
         ]
-        return Page("Light skills", body, accent=0x9E492F)
+        return Page("Lesser skills", body, accent=0x9E492F)
 
 
-# The light skills (small skills that sit beside the main four). Later ones are added here and show up as rows on the Light tab.
+# The lesser skills (small skills that sit beside the main four). Later ones are added here and show up as rows on the Lesser tab.
 LIGHT_SKILLS: list[type[Screen]] = [SmithingLightPane]
 
 
 class LightSkillsPane(Screen):
-    label = "Light skills"
+    label = "Lesser skills"
     emoji = emojis.Lazy("ui_skills", "📈")
 
     async def build(self) -> Page:
         body: list = [*self.note_block()]
         for pane_cls in LIGHT_SKILLS:
             body.extend((await pane_cls(self.nav).build()).body)
-            body.append(sep(large=True))
-        return Page("Light skills", body[:-1] if LIGHT_SKILLS else [text("No light skills yet.")], accent=0x9E492F)
+            body.append(sep())
+        return Page("Lesser skills", body[:-1] if LIGHT_SKILLS else [text("No lesser skills yet.")], accent=0x9E492F)
 
 
 class SkillsScreen(TabsScreen):
-    """The Skills page: the main skills, and a Light tab for the small skills (smithing)."""
+    """The Skills page: the main skills, and a Lesser tab for the small skills (smithing)."""
 
     id = "skills"
     label = "Skills"
     emoji = emojis.Lazy("ui_skills", "📈")
-    description = "Mining, farming, foraging, fishing and combat; light skills like smithing"
+    description = "Mining, farming, foraging, fishing and combat; lesser skills like smithing"
     links = ("mining", "farm", "forage", "fish")
     panes = {"skills": SkillsPane, "light": LightSkillsPane}

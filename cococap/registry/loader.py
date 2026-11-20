@@ -14,7 +14,7 @@ CONFIG_DIR = Path(__file__).resolve().parents[2] / "configs"
 
 # Stats the engines read that no enchant gives any more (their scrolls were retired; smithing part traits give them now).
 TRAIT_ONLY_STATS = frozenset({"power", "scholar", "appraise", "rich_chance", "ore_yield", "good_chop", "crop_yield", "danger_reduction",
-                              "bite_speed", "wear_slow", "rare_luck", "drop_luck"})  # the last four: accessory traits (configs/accessories.toml)
+                              "bite_speed", "wear_slow", "rare_luck", "drop_luck", "drop_amount"})  # the last four: accessory traits (configs/accessories.toml)
 
 
 class RegistryError(Exception):

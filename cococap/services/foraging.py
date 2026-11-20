@@ -32,7 +32,7 @@ from cococap.registry.models import ForagingRules, Grain, Species, Wedge
 from cococap.services import accessories, releaf, smithing, stars
 from cococap.services.equipment import EffectiveStats, equipped_stats
 from cococap.services import pets
-from cococap.services.loot import roll_drop, skewed_roll
+from cococap.services.loot import roll_drop, scale_amount, skewed_roll
 from cococap.services.party import xp_multiplier
 from cococap.user import User
 
@@ -391,10 +391,11 @@ def _roll_boosted(item, rng: random.Random, boost: float) -> int | None:
     return skewed_roll(rng, item.drop.min, item.drop.max)
 
 
-def roll_drops(rolls: int, rng: random.Random, registry: Registry, rare_reroll: float = 0.0, species: str = "", boost: float = 0.0) -> Counter[str]:
+def roll_drops(rolls: int, rng: random.Random, registry: Registry, rare_reroll: float = 0.0, species: str = "", boost: float = 0.0, amount: float = 0.0) -> Counter[str]:
     """Roll the forest's drops `rolls` times. `rare_reroll` (a Fox): each rare item (rarity 4+) that misses has this chance of one free second roll.
     `species` (a tree's species id): its signature drops are rolled on every roll too, on top of the normal pool.
-    `boost` (a Releaf Bloom): every drop chance, signature ones too, is multiplied by 1 + boost (0.10 = +10%)."""
+    `boost` (a Releaf Bloom): every drop chance, signature ones too, is multiplied by 1 + boost (0.10 = +10%).
+    `amount` (Bountiful): every drop is that much bigger."""
     pool, found = drop_pool(registry), Counter()
     signature = sp.drops if (sp := registry.foraging.species_of(species)) else []
     for _ in range(rolls):
@@ -404,13 +405,13 @@ def roll_drops(rolls: int, rng: random.Random, registry: Registry, rare_reroll: 
             if not hit and rare_reroll and registry.item(d.item).rarity >= pets.RARE_FROM and rng.random() < rare_reroll:
                 hit = rng.random() < chance
             if hit:
-                found[d.item] += skewed_roll(rng, d.min, d.max)
+                found[d.item] += scale_amount(rng, skewed_roll(rng, d.min, d.max), amount)
         for item in pool:
             quantity = _roll_boosted(item, rng, boost)
             if not quantity and rare_reroll and item.rarity >= pets.RARE_FROM and rng.random() < rare_reroll:
                 quantity = _roll_boosted(item, rng, boost)
             if quantity:
-                found[item.id] += quantity
+                found[item.id] += scale_amount(rng, quantity, amount)
     return found
 
 
@@ -497,9 +498,9 @@ async def fell_private(user: User, tree: Tree, rng: random.Random, registry: Reg
     final_cut = axe.stats.get("final_cut", 0.0) if axe else 0.0  # Final Cut (Mastery): a tree you fell yourself pays more
     timber_chance = axe.stats.get("timber", 0.0) if axe else 0.0  # Timber! (an axe enchant): it may topple into the next tree
     timber = bool(timber_chance) and rng.random() < timber_chance
-    fox = (await pets.bonuses(user, reg)).get("rare_reroll", 0.0)
+    fox = (await pets.bonuses(user, reg)).get("rare_reroll", 0.0) + (axe.stats.get("rare_luck", 0.0) if axe else 0.0)  # (Lucky Charm adds to the Fox)
     drops = roll_drops(whole_rolls(expected_rolls(tree.max_hp, rules, tree.zone) * (1 + tree.bonus + final_cut), rng), rng, reg, fox, tree.species,
-                       await releaf.drop_boost(reg))
+                       await releaf.drop_boost(reg), axe.stats.get("drop_amount", 0.0) if axe else 0.0)
     drops = stars.apply(drops, stars.progress(tree.zone, rules.zones), rng, reg)  # starred materials: how deep the forest is
     part = await smithing.maybe_drop_part(user, tree.zone, rng, reg)  # one part roll per tree felled
     accessory = await accessories.maybe_drop_accessory(user, "foraging", rng, reg)  # one accessory roll per tree felled

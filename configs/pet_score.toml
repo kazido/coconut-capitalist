@@ -21,7 +21,9 @@ haul_active_share = 0.15      # a fully fueled MAX pet earns at most this share 
 haul_xp_per_score_hour = 3   # skill xp per hour for each point of score (before the cap)
 
 # ---- Fuel tank (crops fuel the ACTIVE pet; online play never needs fuel) -----------------------------------------------------------------
-tank_cap_hours = 8            # the tank holds this many hours of work
+tank_cap_hours = 8            # the tank holds this many hours of work...
+tank_hours_per_kind = 2       # ...plus this many for each DISTINCT crop kind in the tank (TODO(balance))
+tank_max_kinds = 4            # kinds counted at most (the haul per hour never changes, only how long it can run)
 fuel_minutes_per_value = 0.02 # minutes of fuel per bit of crop sell price
 
 # ---- Skill food buff ---------------------------------------------------------------------------------------------------------------------

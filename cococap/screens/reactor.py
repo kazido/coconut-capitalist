@@ -26,32 +26,23 @@ class ReactorScreen(Screen):
 
     async def build(self) -> Page:
         reg = get_registry()
-        rules, d = reg.mining, reg.mining.descent
+        rules = reg.mining
         status = await mining.reactor_status(self.user)
         self._owned = await self.user.items()
         skill, level = status["mining"], status["level"]
         reactor = skill.reactor
         cores = (reactor.core_1, reactor.core_2, reactor.core_3, reactor.core_4)
 
-        slots = []
-        for number, (core, wanted) in enumerate(zip(cores, rules.reactor.core_gems, strict=True), start=1):
-            if core.gem_id:
-                slots.append(f"{number}. {reg.item(core.gem_id).display}")
-            else:
-                slots.append(f"{number}. {emojis.get('cell_empty', '▫️')} *{reg.item(wanted).name}*")
+        # The four gem slots on one line: the gem's emoji, or an empty square.
+        slots = " ".join((reg.item(core.gem_id).emoji or "💎") if core.gem_id else emojis.icon("square", "⬜") for core in cores)
         if not status["gem_slots_open"]:
-            slots.append(f"-# Gem slots unlock at mining level {rules.reactor.gem_slot_level}.")
-
-        slowdown = min(d.max_reduction, d.reactor_reduction * (reactor.level - 1))
-        braces = d.braces_base + (reactor.level - 1) // d.braces_per_reactor_levels
-        odds = mining.wyrmhole_odds(mining.gems_placed(skill), rules)
-        columns = status["columns_dug"]
-        per = rules.reactor.prestige_per_extra_column
-        next_column = f" (next: Lv {((reactor.level - 1) // per + 1) * per + 1})" if columns < rules.columns else ""
-        perks = (
-            f"{emojis.skill('mining', '⛏️')} **{columns}** column(s){next_column}  ·  **{braces}** brace(s)\n"
-            f"**{slowdown:.0%}** slower pressure  ·  {emojis.get('wyrmhole', '🕳️')} wyrmhole **1 in {odds:,}**"
-        )
+            slots += f"\n-# Gem slots unlock at mining level {rules.reactor.gem_slot_level}."
+        # What reactor levels unlock: every one reached (ticked), then the next two ahead, so the list stays short.
+        unlocks = [(lvl, what) for lvl in range(2, rules.reactor.max_prestige + 1) if (what := mining.reactor_unlocks(lvl, rules))]
+        done = [u for u in unlocks if u[0] <= reactor.level]
+        ahead = [u for u in unlocks if u[0] > reactor.level][:2]
+        unlock_lines = [f"{'✅' if lvl <= reactor.level else '▫️'} Lv {lvl}: {', '.join(what)}" for lvl, what in done + ahead]
+        perks = "**Unlocks**\n" + "\n".join(unlock_lines) if unlock_lines else ""
 
         tool = await equipped_stats(self.user, "mining")
         speed, extra_hours = (tool.stats.get("auto_speed", 0.0), tool.stats.get("auto_hours", 0.0)) if tool else (0.0, 0.0)
@@ -70,7 +61,7 @@ class ReactorScreen(Screen):
 
         body = [
             *self.note_block(),
-            text(f"### {emojis.icon('reactor', '⚙️')} Reactor Level {reactor.level} / {rules.reactor.max_prestige}\n" + "\n".join(slots) + "\n" + perks),
+            text(f"### {emojis.icon('reactor', '⚙️')} Reactor Level {reactor.level} / {rules.reactor.max_prestige}\n" + slots + ("\n" + perks if perks else "")),
             sep(),
             text(auto + "\n-# " + prestige),
         ]
@@ -90,7 +81,7 @@ class ReactorScreen(Screen):
         fed: Counter[str] = Counter()
         lodes, loot = await mining.claim_lodes(self.user, random.Random(), fed_out=fed)
         reg = get_registry()
-        found = ", ".join(f"{q:,} {reg.item(i).name}" for i, q in loot.items()) or "nothing"
+        found = ", ".join(f"{reg.item(i).emoji or ''} {q:,} {reg.item(i).name}".strip() for i, q in loot.items()) or "nothing"
         into = f" {sum(mining.magnet_value(i, reg) * q for i, q in fed.items()):,} meter went into the magnet ({', '.join(f'{q:,} {reg.item(i).name}' for i, q in fed.items())})." if fed else ""
         await self.refresh(interaction, f"Claimed {lodes:,} lodes: {found}.{into}")
 
@@ -108,7 +99,8 @@ class ReactorScreen(Screen):
 
     async def _prestige(self, interaction: discord.Interaction) -> None:
         level = await mining.prestige(self.user)
-        await self.refresh(interaction, f"Your reactor is now level {level}!")
+        unlocked = mining.reactor_unlocks(level, get_registry().mining)
+        await self.refresh(interaction, f"Your reactor is now level {level}!" + (f" Unlocked: {', '.join(unlocked)}." if unlocked else ""))
 
     def _magnet_parts(self, reg, skill, tool) -> list:
         """The magnet: how full it is (in rows it can still mark), what to feed it with and exactly what that does, and its two switches."""

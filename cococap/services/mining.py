@@ -44,6 +44,18 @@ def columns_dug(reactor_level: int, rules: MiningRules) -> int:
     return min(rules.columns, 1 + (reactor_level - 1) // rules.reactor.prestige_per_extra_column)
 
 
+def reactor_unlocks(level: int, rules: MiningRules) -> list[str]:
+    """What reaching reactor `level` unlocks (an extra column, an extra brace), in plain words. Empty if nothing discrete.
+    (Every level also adds auto-miner lodes and slows pressure a bit; those are steady, not unlocks.)"""
+    d = rules.descent
+    found = []
+    if level > 1 and columns_dug(level, rules) > columns_dug(level - 1, rules):
+        found.append("+1 column dug per swing")
+    if level > 1 and (level - 1) // d.braces_per_reactor_levels > (level - 2) // d.braces_per_reactor_levels:
+        found.append("+1 brace")
+    return found
+
+
 def gems_placed(mining: Mining) -> int:
     reactor = mining.reactor
     return sum(1 for core in (reactor.core_1, reactor.core_2, reactor.core_3, reactor.core_4) if core.gem_id)
@@ -780,7 +792,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         cursors=_start_cursors(columns_dug(mining.reactor.level, rules), rules.columns),
         bombs=bombs,
         growth_factor=(1 - min(d.max_reduction, reduction)) * (1 - min(0.5, pet.get("dig_shave", 0.0))) * kind.pressure_mult,  # (a Mole shaves every dug row's pressure on top; a Quiet Shaft creaks less, after the cap)
-        yield_factor=(1 + d.power_yield_bonus * max(0, power - d.power_base)) * (1 + pet.get("ore_yield", 0.0) + tool.stats.get("ore_yield", 0.0)),
+        yield_factor=(1 + d.power_yield_bonus * max(0, power - d.power_base)) * (1 + pet.get("ore_yield", 0.0) + tool.stats.get("ore_yield", 0.0) + tool.stats.get("drop_amount", 0.0)),
         braces=d.braces_base + (mining.reactor.level - 1) // d.braces_per_reactor_levels + int(tool.stats.get("braces", 0)),
         magnet=magnet,
         magnet_points=mining.magnet_meter if magnet else None,
@@ -798,7 +810,7 @@ async def start_run(user: User, rng: random.Random, registry: Registry | None = 
         lifeline=int(tool.stats.get("lifeline", 0)),
         gold_rush=int(tool.stats.get("gold_rush", 0)),
         geode=tool.stats.get("geode", 0.0),
-        rare_reroll=pet.get("rare_reroll", 0.0),
+        rare_reroll=pet.get("rare_reroll", 0.0) + tool.stats.get("rare_luck", 0.0),  # (Lucky Charm adds to the Fox)
         mine_type=kind,
         wyrmhole_bonus=tool.stats.get("wyrmhole_chance", 0.0),
         site=site,

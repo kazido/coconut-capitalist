@@ -17,6 +17,7 @@ class Pethouse(BaseModel):
     target: str | None = None  # the pet you are hunting: orbs are likelier to give it
     misses: int = 0  # orbs opened since that missed it (makes the next one likelier)
     fuel_seconds: float = 0.0  # the ONE tank, for the active pet: seconds of idle work left (crops fill it, capped by pet_score.toml)
+    fuel_kinds: list[str] = Field(default_factory=list)  # crop kinds in the tank now (each widens the cap); cleared when it runs empty
     last_collect: float = 0.0  # unix time the idle haul was last collected or the tank last topped up (0 = never)
     curve_version: int = CURVE_VERSION  # which xp curve the stored xp is on (see CURVE_VERSION)
 
