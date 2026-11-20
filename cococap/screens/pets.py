@@ -104,7 +104,9 @@ class PetScreen(Screen):
         others = [(reg.pets[k], o) for k, o in house.pets.items() if k != house.active]
         side = pet_score.sidekick_bonus(others, reg)
         score = pet_score.score(pet, mine, registry=reg)
-        cap = pets.tank_cap_seconds(reg)
+        kinds = len(house.fuel_kinds)
+        cap = pets.tank_cap_seconds(reg, kinds)
+        plural = "s" if kinds != 1 else ""
         now = time.time()
         fuel = house.fuel_seconds
         working = max(0.0, min(fuel, now - house.last_collect)) if house.last_collect else 0.0  # idle time waiting to be collected
@@ -115,7 +117,7 @@ class PetScreen(Screen):
             "**Sidekick work** (idle while you are away)",
             f"{nxt} Score **{breakdown.total}/1000**  ·  skills {breakdown.skills_total}, mastery {breakdown.mastery}, gear {breakdown.gear}, ability {breakdown.ability}",
             f"{nxt} Sidekicks: **+{side:.0%}** from your resting pets (max +{rules.sidekick_cap:.0%})",
-            f"{nxt} Tank {xp_bar(fuel / cap if cap else 0)} {fuel / 3600:.1f}/{cap / 3600:.0f} h  ·  hauls about {hourly:,.0f} xp/h",
+            f"{nxt} Tank {xp_bar(fuel / cap if cap else 0)} {fuel / 3600:.1f}/{cap / 3600:.0f} h  ·  {kinds} crop kind{plural} (+{rules.tank_hours_per_kind:g}h each, max {rules.tank_max_kinds})  ·  hauls about {hourly:,.0f} xp/h",
             f"-# {working / 3600:.1f} h of work is banked when you next open this page" if working > 0 else "-# Fill the tank with crops: it only works while it has fuel.",
         ]
         body.append(text("\n".join(lines)))

@@ -75,7 +75,7 @@ async def test_crops_fill_the_tank_up_to_its_cap_and_the_haul_burns_it(db):
     crop = _crop()
     await user.add_item(crop.id, 100000)
     added = await pets.fuel(user, crop.id, 100000, now=1000.0)
-    assert 0 < added <= pets.tank_cap_seconds(REG)
+    assert 0 < added <= pets.tank_cap_seconds(REG, 1)
     assert user.pethouse.fuel_seconds == added
     # an hour later: the haul only counts the fuel that lasted
     skill, xp, hours, drops = await pets.collect(user, now=1000.0 + 10 * 3600)
@@ -130,3 +130,31 @@ async def test_the_haul_finds_only_common_drops_of_its_skill(db):
     assert xp > 0 and drops and set(drops) <= {i.id for i in pool}
     for item_id, quantity in drops.items():
         assert await user.item_quantity(item_id) >= quantity
+
+
+@pytest.mark.asyncio
+async def test_tank_cap_grows_per_distinct_crop_kind_caps_and_resets_when_empty(db):
+    rules = REG.pet_score
+    crops = [i for i in REG.items.values() if i.crop and i.sell_price > 0][: rules.tank_max_kinds + 1]
+    assert len(crops) > rules.tank_max_kinds
+    user = await with_pet("drizzle")
+    for c in crops:
+        await user.add_item(c.id, 100000)
+    base = rules.tank_cap_hours * 3600
+    per = rules.tank_hours_per_kind * 3600
+    assert pets.tank_cap_seconds(REG, 2) == base + 2 * per
+    assert pets.tank_cap_seconds(REG, 99) == base + rules.tank_max_kinds * per
+    await pets.fuel(user, crops[0].id, 100000, now=1000.0)
+    assert user.pethouse.fuel_seconds == base + per  # one kind
+    await pets.fuel(user, crops[1].id, 100000, now=1000.0)
+    assert user.pethouse.fuel_seconds == base + 2 * per
+    assert len(user.pethouse.fuel_kinds) == 2
+    for c in crops[2:]:
+        try:
+            await pets.fuel(user, c.id, 100000, now=1000.0)
+        except pets.PetError:
+            pass  # the last kind past the max finds a full tank
+    assert user.pethouse.fuel_seconds == base + rules.tank_max_kinds * per  # extra kind past the max adds nothing
+    # run it dry: the kinds are forgotten
+    await pets.collect(user, now=1000.0 + 24 * 3600)
+    assert user.pethouse.fuel_seconds == 0 and user.pethouse.fuel_kinds == []

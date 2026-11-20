@@ -214,8 +214,10 @@ def buff_multiplier(owned: OwnedPet, registry: Registry | None = None, now: floa
     return 1 + reg.pet_score.food_buff_bonus if owned.buff_until > (time.time() if now is None else now) else 1.0
 
 
-def tank_cap_seconds(registry: Registry | None = None) -> float:
-    return (registry or get_registry()).pet_score.tank_cap_hours * 3600
+def tank_cap_seconds(registry: Registry | None = None, kinds: int = 0) -> float:
+    """The tank size: a base plus a bonus for each distinct crop kind in it (up to `tank_max_kinds`)."""
+    rules = (registry or get_registry()).pet_score
+    return (rules.tank_cap_hours + rules.tank_hours_per_kind * min(kinds, rules.tank_max_kinds)) * 3600
 
 
 def _settle(house: Pethouse, now: float, reg: Registry) -> float:
@@ -224,6 +226,8 @@ def _settle(house: Pethouse, now: float, reg: Registry) -> float:
     worked = min(elapsed, house.fuel_seconds)
     house.fuel_seconds -= worked
     house.last_collect = now
+    if house.fuel_seconds <= 0:
+        house.fuel_kinds = []  # an empty tank forgets its kinds
     return worked
 
 
@@ -237,17 +241,19 @@ async def fuel(user: User, crop_id: str, quantity: int, registry: Registry | Non
         raise PetError("Only crops work as fuel.")
     await _pet_to_look_after(user, None, reg)
     per_crop = crop.sell_price * reg.pet_score.fuel_minutes_per_value * 60
-    cap = tank_cap_seconds(reg)
     have = await user.item_quantity(crop_id)
     used = {}
 
     def pour(house: Pethouse) -> None:
         _settle(house, now, reg)
+        cap = tank_cap_seconds(reg, len(set(house.fuel_kinds) | {crop_id}))
         room = max(0.0, cap - house.fuel_seconds)
         n = min(quantity, have, int(room // per_crop) + (1 if room % per_crop else 0))
         used["n"] = n
         used["added"] = min(room, n * per_crop)
         house.fuel_seconds += used["added"]
+        if used["n"] >= 1 and crop_id not in house.fuel_kinds:
+            house.fuel_kinds.append(crop_id)
 
     await user.update_pethouse(pour)
     if used["n"] < 1:
