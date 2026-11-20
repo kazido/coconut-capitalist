@@ -69,13 +69,13 @@ kinds = ["pickaxe", "rod", "axe", "can"]
 id = "scholar_edge"
 name = "Scholar's Edge"
 stat = "scholar"
-amounts = [1, 2, 3, 4]                    # TODO(balance)
+amounts = [0.02, 0.04, 0.06, 0.08]                    # TODO(balance)
 kinds = ["pickaxe", "rod", "axe", "can"]
 [[trait]]
 id = "appraiser_eye"
 name = "Appraiser's Eye"
 stat = "appraise"
-amounts = [1, 2, 3, 4]                    # TODO(balance)
+amounts = [0.02, 0.04, 0.06, 0.08]                    # TODO(balance)
 kinds = ["pickaxe", "rod", "axe", "can"]
 [[trait]]
 id = "lucky_charm"
