@@ -1,21 +1,9 @@
-from typing import Any
 import discord
 
 from discord import Interaction, ButtonStyle
 from logging import getLogger
 
 log = getLogger(__name__)
-
-
-class Button(discord.ui.Button):
-    def __init__(self, interaction: Interaction, menu: "Menu"):
-        self.interaction = interaction
-        self.menu = menu
-        super().__init__(label=menu.name, emoji=menu.emoji, style=discord.ButtonStyle.blurple)
-
-    async def callback(self, interaction: Interaction) -> Any:
-        menu = self.menu.handler.move_to(self.menu.custom_id)
-        await interaction.response.edit_message(embed=menu.embed, view=menu)
 
 
 class CloseButton(discord.ui.Button):
@@ -35,14 +23,6 @@ class MenuHandler:
         self.interaction: Interaction = interaction
         self.menus: list[Menu] = []  # Our list of menus we can view
         self.current: int = 0  # The index of our currently selected menu
-
-    def add_menu(self, menu: "Menu"):
-        # Adds a menu to the handler for navigation
-        self.menus.append(menu)
-        menu.handler = self
-
-    def _generate_button(self, menu: "Menu"):
-        return Button(self.interaction, menu)
 
     def move_forward(self) -> "Menu":
         # Should be called whenever we move forward a menu
@@ -67,12 +47,6 @@ class MenuHandler:
         for i, menu in enumerate(self.menus):
             if menu.custom_id == menu_id:
                 self.current = i
-        return self.get_current()
-
-    def move_home(self) -> "Menu":
-        # Can be called to take the menu to the original menu (main menu)
-        log.debug("Menu handler moved home.")
-        self.current = 0
         return self.get_current()
 
     def get_current(self) -> "Menu":
@@ -123,52 +97,3 @@ class PaginationMenu(Menu):
         menu = self.handler.move_forward()
         await interaction.response.edit_message(embed=menu.embed, view=menu)
 
-
-class DirectMenu(Menu):
-    """
-    A DirectMenu allows direct navigation to any menu via buttons or a select menu.
-    No forward/backward, just direct access to any menu in the handler.
-    """
-
-    def __init__(
-        self, embed: discord.Embed, emoji: discord.PartialEmoji = None, use_select: bool = False
-    ):
-        super().__init__(embed=embed, emoji=emoji)
-        self.use_select = use_select
-
-    def update_buttons(self):
-        # Call this after handler is set and menus are added
-        if self.use_select:
-            self.add_item(MenuSelect(self))
-        else:
-            for menu in self.handler.menus:
-                if menu is not self:
-                    self.add_item(DirectNavButton(self, menu))
-
-
-class DirectNavButton(discord.ui.Button):
-    def __init__(self, parent: DirectMenu, target_menu: Menu):
-        super().__init__(
-            label=target_menu.name, emoji=target_menu.emoji, style=discord.ButtonStyle.blurple
-        )
-        self.parent = parent
-        self.target_menu = target_menu
-
-    async def callback(self, interaction: Interaction):
-        menu = self.parent.handler.move_to(self.target_menu.custom_id)
-        await interaction.response.edit_message(embed=menu.embed, view=menu)
-
-
-class MenuSelect(discord.ui.Select):
-    def __init__(self, parent: DirectMenu):
-        options = [
-            discord.SelectOption(label=menu.name, value=menu.custom_id)
-            for menu in parent.handler.menus
-            if menu is not parent
-        ]
-        super().__init__(placeholder="Select a menu...", options=options, row=0)
-        self.parent = parent
-
-    async def callback(self, interaction: Interaction):
-        menu = self.parent.handler.move_to(self.values[0])
-        await interaction.response.edit_message(embed=menu.embed, view=menu)

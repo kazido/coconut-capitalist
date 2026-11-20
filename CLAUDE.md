@@ -20,21 +20,49 @@ decision) before building on. Do NOT do bounded work yourself: delegate it, then
   then fix it yourself. Never loop. Then commit (workers do not commit).
 - Briefs live in the prompt, not in files. Plans for bigger work go in `docs/plans/`.
 
+### Impact map first, then a precise brief (graphify)
+
+Before ANY feature, bug fix, screen redesign or art task, the lead maps what it touches with the code graph, so workers never dig.
+The graph is code-only and free (no LLM): `graphify update .` rebuilds `graphify-out/` (git-ignored, per worktree) in ~1 min; run it when
+code changed since the last build. Commands (all print `file:Lline`):
+- `graphify affected "<func or Class>" --depth 1` = every caller/importer/test (who breaks if this changes). Depth 2 only if needed.
+- `graphify explain "<name>"` = a node and its neighbours; `graphify path "A" "B"` = how two systems connect.
+- `graphify query "<question>" --budget 800` for "where does X happen" when you do not know a name yet.
+**Config routing** (the graph stops at the registry, since code reads configs as attributes like `reg.farming.free_plots`):
+- A key in `configs/<name>.toml` -> its model via `_build(<Model>, "<name>", ...)` in `load_registry()` (`cococap/registry/loader.py`) -> field on that
+  model in `registry/models.py` -> readers: `Grep -n "\.<key>\b" cococap tests` (one call). Cross-file checks: `Grep "<name>.toml" loader.py`.
+- An item/stat/enchant id -> `Grep -n "<id>" configs cococap tests art` (TOML tables, code, tests, sprites, emoji all in one).
+Then read only the few hunks you need.
+
+**Choosing the model:** Haiku `worker`/`tester`/`writer` for anything the impact map fully pins down (most bugs with a known cause,
+UI tweaks, config + test, art from a known recipe). Sonnet (`model: "sonnet"` on the Agent call) for a bounded change that still needs some judgment
+(e.g. 3+ callers to adapt, a new screen pane copying an existing one). Lead does design, unknown causes, cross-system changes.
+
+**Brief template** (keep it under ~40 lines; no project background, no history):
+```
+Goal: <one sentence, the player-visible behaviour>
+Change: <file:line> <function> - what to do (exact names, values from which config key)
+Also update (from graphify affected): <file:line> - why ... ; tests: <tests/file::test> to update or add
+Reuse: <helper(s) with file:line>; copy the pattern in <file:line>
+Do not touch: <files>. Done = the listed test files + ruff pass (pytest -q <files>; ruff check <changed files>).
+```
+
 ## Hard rules (the user set these; do not break them)
 
 - **Branches (3 total, no others without asking).** `master` = stable and public; its checkout (`C:\Users\Bryson\Documents\Coding\coconut-capitalist`) is the
   integration point and the ONLY place the bot runs and `data/` lives. `design` (game features, systems, balance, configs, services; worktree
   `..\coconut-capitalist-design`) and `ops` (Discord server upkeep: channel cleanup, janitor jobs, bot startup hooks; worktree `..\coconut-capitalist-ops`) are the work branches. ART (emoji, sprites, the art pipeline) has no branch: art work is done directly on `master` (small, easy-to-see changes); the owner still approves a sprite before it is committed. One Claude
   session per folder, never two in the same folder. `history/pre-ai` is never changed. Only `master` is ever pushed, and only when the user says so.
-- **Landing work:** in your worktree `git merge master` often (small diffs). To land: merge master in, run the FULL tests and ruff, show the user
+- **Landing work:** in your worktree `git merge master` often (small diffs). To land: merge master in, run the affected tests (below) for every changed function plus ruff (FULL suite only if the user asks or the registry/loader shape changed), show the user
   the summary, and on their yes run `git merge --no-ff <branch>` in the master checkout. A change that removes/renames item ids or changes the
   registry shape lands on `master` FIRST and alone, then the other branch syncs. Art may PROPOSE removing items; design decides.
 - **Ownership:** art work on `master` owns `art/` and emoji files; `ops` owns the janitor/cleanup code and its startup hook; `design` owns everything else. `configs/items.toml` is shared: keep edits small and land them soon.
 - **Commit after every commit-worthy change without asking.** Detailed messages. End them with the attribution line the harness gives you.
 - **Never push unless the user says so.** Push only `master`: `git push origin master`.
 - **Design before big features** (use plan mode: explore, write the plan, get approval, then build). Small fixes: just do them.
-- **Tests, cheaply (the user is on a usage limit):** after a change run `python -m scripts.quick_tests` (picks only the test files related to what
-  changed and prints a few lines). Run the FULL suite only when the user asks (never after ordinary changes, and never put it in a brief for another session or agent; say "targeted tests + ruff only"): `python -m scripts.full_tests`
+- **Tests, cheaply (the user is on a usage limit):** run only the tests the graph links to the change: the `tests/` lines of
+  `graphify affected "<changed func>" --depth 2` (plus tests found by the config-routing Grep), as `pytest -q -p no:cacheprovider --tb=line <files>`.
+  The lead puts that exact test list in every brief. `python -m scripts.quick_tests` (file-name match) is the backup when no map was made. Run the FULL suite only when the user asks (never after ordinary changes, and never put it in a brief for another session or agent; say "targeted tests + ruff only"): `python -m scripts.full_tests`
   with `run_in_background: true`, then read its few-line summary (`.full_tests_last.txt`) ONCE when it finishes. Never poll with sleep loops and
   never paste long test output. If something fails on `master` too, say so and do not chase it.
 - Never write secrets (tokens, DB logins) into files, docs or commits.

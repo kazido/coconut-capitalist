@@ -135,12 +135,6 @@ class PetScreen(Screen):
         self.details = not self.details
         await self.refresh(interaction)
 
-    def _drop_lines(self, drops: dict[str, int]) -> str:
-        """What the haul found, each marked with the active pet's emoji (like its xp bonus on result screens)."""
-        reg = get_registry()
-        pet = reg.pets[self.user.pethouse.active]
-        return "  ".join(f"{reg.item(i).emoji} {q:,} × {reg.item(i).name} ({pet.emoji})" for i, q in drops.items())
-
     async def _fuel(self, interaction: discord.Interaction, values: list[str]) -> None:
         crop_id = values[0]
         reg = get_registry()

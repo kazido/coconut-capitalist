@@ -8,7 +8,6 @@ from sqlalchemy import delete, insert, select, update
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.exc import IntegrityError
 
-from cococap import emojis
 from cococap.db import get_database
 from cococap.db.tables import ItemInstanceRow, ItemRow, SkillRow, StatRow, UserRow
 from cococap.models.instance import ItemInstance
@@ -602,34 +601,6 @@ class User:
         await self.refresh()
         return result
 
-    async def change_template(self, instance_id: int, old: str, new: str) -> bool:
-        """Turn one of this player's tools into another kind (an upgrade), keeping its enchants and rolls.
-        Only happens if it is still `old`, so a double click can't upgrade twice. Returns whether it changed."""
-        async with get_database().session() as session:
-            result = await session.execute(
-                update(ItemInstanceRow)
-                .where(ItemInstanceRow.id == instance_id, ItemInstanceRow.owner_id == self.id,
-                       ItemInstanceRow.template_id == old)
-                .values(template_id=new)
-            )
-            return result.rowcount == 1
-
-    async def transfer_instance(self, instance_id: int, to: "User") -> None:
-        """Give an instance to another player (and unequip it everywhere)."""
-        async with get_database().session() as session:
-            result = await session.execute(
-                update(ItemInstanceRow)
-                .where(ItemInstanceRow.id == instance_id, ItemInstanceRow.owner_id == self.id)
-                .values(owner_id=to.id)
-            )
-            if result.rowcount == 0:
-                raise ValueError("You don't own that item.")
-            await session.execute(
-                update(SkillRow)
-                .where(SkillRow.equipped_instance_id == instance_id)
-                .values(equipped_instance_id=None)
-            )
-
     async def equip(self, skill: str, instance_id: int | None) -> None:
         """Equip one of this player's instances for a skill (None unequips)."""
         async with get_database().session() as session:
@@ -702,14 +673,3 @@ class User:
         xp_between_levels = next_level_xp - level_xp
         return int(overflow_xp_at_level), int(xp_between_levels)
 
-    @staticmethod
-    def create_xp_bar(xp: int) -> str:
-        overflow_xp, xp_needed = User.xp_for_next_level(xp)
-        ratio = overflow_xp / xp_needed if xp_needed else 0
-        xp_bar = emojis.get("xp_bar_left")
-        xp_bar_size = 10
-        filled = int(ratio * xp_bar_size)
-        xp_bar += emojis.get("xp_bar_full", "🟩") * filled
-        xp_bar += emojis.get("xp_bar_empty", "⬛") * (xp_bar_size - filled)
-        xp_bar += emojis.get("xp_bar_right")
-        return xp_bar

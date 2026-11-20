@@ -39,12 +39,6 @@ class TabsScreen(Screen):
             self._live[self._tab] = self.panes[self._tab](self.nav)
         return self._live[self._tab]
 
-    def pane_for(self, key: str) -> Screen:
-        """The pane of tab `key` (created on demand), e.g. to hand it state before showing it."""
-        if key not in self._live:
-            self._live[key] = self.panes[key](self.nav)
-        return self._live[key]
-
     # The hub hands a pane its state (open the Tree tab on tree X) by setting it on the host, and tests read it back: anything the host
     # does not own is the active pane's. "_"-names, `nav`, `tab` and `result` (which has its own pass-through) stay on the host.
     def __getattr__(self, name: str):

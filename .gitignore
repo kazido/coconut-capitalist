@@ -159,3 +159,6 @@ art/downloaded/
 
 # Cut from the third-party Pixel UI pack by art/bars_from_pack.py (the pack stays local, like the other downloaded packs)
 art/sources/ui_bar_*/
+
+# graphify code graph (rebuild: graphify update .)
+graphify-out/
