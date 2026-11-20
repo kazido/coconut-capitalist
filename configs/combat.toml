@@ -227,6 +227,39 @@ power = 0.6
 cooldown = 4
 effects = [{ kind = "speed_down", chance = 85, turns = 2, value = 0.3 }]
 
+[skills.sand_blast]
+name = "Sand Blast"
+description = "Blinds and slows the target for 2 turns."
+power = 0.7
+cooldown = 4
+effects = [{ kind = "speed_down", chance = 80, turns = 2, value = 0.25 }]
+
+[skills.venom_spit]
+name = "Venom Spit"
+power = 0.7
+cooldown = 3
+effects = [{ kind = "bleed", turns = 3, value = 0.3 }]
+
+[skills.rust_bite]
+name = "Rust Bite"
+description = "Corrodes the target's defense for 3 turns."
+power = 0.9
+cooldown = 3
+effects = [{ kind = "defense_down", turns = 3, value = 0.25 }]
+
+[skills.static_shock]
+name = "Static Shock"
+power = 0.8
+cooldown = 4
+effects = [{ kind = "stun", chance = 35 }]
+
+[skills.star_burn]
+name = "Star Burn"
+description = "Searing light that saps the target's attack for 2 turns."
+power = 1.0
+cooldown = 3
+effects = [{ kind = "attack_down", turns = 2, value = 0.25 }]
+
 # --- the four classes: the weapon in the combat slot picks one (bare hands use [kits].default) ------------------------------
 # Each kit lists skills in button order: the first is level 0 with no cooldown, the rest unlock at that combat level. TODO(balance)
 # --- class resources: how each fills (TODO(balance): all numbers) --------------------------------------------------------
@@ -283,22 +316,80 @@ kit = [{ skill = "bash", level = 0 }, { skill = "brace", level = 3 }, { skill = 
 default = ["slash"]  # bare hands
 
 # --- fights you can pick -------------------------------------------------------------------------------------------------
-[encounters.graveyard_lone]
-name = "A lone zombie"
-enemies = ["zombie"]
-
-[encounters.graveyard_pair]
-name = "Zombie and skeleton"
-enemies = ["zombie", "skeleton"]
-min_level = 3
-
-[encounters.graveyard_horde]
-name = "The graveyard shift"
-enemies = ["armored_zombie", "skeleton", "zombie"]
-min_level = 8
-
 [encounters.gravewarden]
 name = "The Gravewarden (boss)"
 enemies = ["gravewarden"]
 min_level = 20
 key = "key_graveyard"
+
+# --- combat zones (one per combat location, in order): the pool a fight draws 1..max_foes from. The area's second zone may roll its mini-boss alone. ---
+
+[zones.graveyard]
+enemies = ["zombie", "armored_zombie", "skeleton"]
+max_foes = 3
+
+[zones.slime_meadow]
+enemies = ["jelly_slime", "gumdrop_golem"]
+max_foes = 3
+rare = "king_slime"
+rare_chance = 8  # TODO(balance)
+
+[zones.dusk_dunes]
+enemies = ["sand_scorpion", "dust_wraith"]
+max_foes = 3
+
+[zones.mirage_ruins]
+enemies = ["mirage_jackal", "sunken_mummy"]
+max_foes = 3
+rare = "dune_pharaoh"
+rare_chance = 8  # TODO(balance)
+
+[zones.scrapyard]
+enemies = ["scrap_rat", "rust_bot"]
+max_foes = 3
+
+[zones.rusted_foundry]
+enemies = ["slag_crawler", "foundry_brute"]
+max_foes = 3
+rare = "scrap_titan"
+rare_chance = 8  # TODO(balance)
+
+[zones.canal_alleys]
+enemies = ["canal_gator", "alley_cutpurse"]
+max_foes = 3
+
+[zones.clockwork_district]
+enemies = ["brass_automaton", "gear_sprite"]
+max_foes = 3
+rare = "clockwork_regent"
+rare_chance = 8  # TODO(balance)
+
+[zones.cloud_ridge]
+enemies = ["cloud_harpy", "mist_elemental"]
+max_foes = 3
+
+[zones.storm_garden]
+enemies = ["storm_wisp", "thorn_bloom"]
+max_foes = 3
+rare = "storm_roc"
+rare_chance = 8  # TODO(balance)
+
+[zones.comet_fields]
+enemies = ["comet_imp", "meteor_hound"]
+max_foes = 3
+
+[zones.starfall_temple]
+enemies = ["star_sentinel", "moon_moth"]
+max_foes = 3
+rare = "star_warden"
+rare_chance = 8  # TODO(balance)
+
+[zones.hollow_gate]
+enemies = ["hollow_shade", "void_hound"]
+max_foes = 3
+
+[zones.the_unmade]
+enemies = ["unmade_horror", "null_knight"]
+max_foes = 3
+rare = "the_hollow_king"
+rare_chance = 8  # TODO(balance)

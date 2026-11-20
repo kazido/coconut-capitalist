@@ -129,7 +129,7 @@ async def test_a_missing_level_does_not_cost_a_key(db):
 
 async def test_ordinary_fights_need_no_key(db):
     user = await User.get(1)
-    battle = await combat.start_fight(user, "graveyard_lone")
+    battle = await combat.explore(user, "graveyard")
     assert battle.living("enemy") and await user.item_quantity("key_graveyard") == 0
 
 

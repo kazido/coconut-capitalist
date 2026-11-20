@@ -1,4 +1,4 @@
-Status: APPROVED 2026-11-20. Steps 0-3 done on design; step 4 (zones + Explore + Combat page) next.
+Status: APPROVED 2026-11-20. Steps 0-4 done on design; step 5 (dungeon service) next.
 
 
 ## Context

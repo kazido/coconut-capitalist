@@ -190,7 +190,7 @@ class Registry:
     def _validate_locations(self, rules: AreaRules) -> list[str]:
         problems = []
         per_skill = LOCATIONS_PER_AREA * len(rules.areas)
-        for skill in ("mining", "fishing", "foraging", "farming"):
+        for skill in ("mining", "fishing", "foraging", "farming", "combat"):
             locs = self.locations.get(skill)
             if not locs:
                 problems.append(f"locations.toml: no locations for '{skill}'")
@@ -386,6 +386,12 @@ def _validate_combat(reg: "Registry", rules: CombatRules) -> list[str]:
             problems.append(f"combat.toml classes.{cid}: kit levels must not go down")
         if cls.resource not in rules.resources:
             problems.append(f"combat.toml classes.{cid}: resource '{cls.resource}' has no [resources.{cls.resource}]")
+    if list(rules.zones) != [loc.id for loc in reg.locations.get("combat", [])]:
+        problems.append("combat.toml: [zones.*] must be one per combat location in locations.toml, in the same order")
+    for zone in rules.zones.values():
+        for e in [*zone.enemies, *([zone.rare] if zone.rare else [])]:
+            if e not in reg.enemies:
+                problems.append(f"combat.toml zone '{zone.id}': unknown enemy '{e}'")
     for enc in rules.encounters:
         problems += [f"combat.toml encounter '{enc.id}': unknown enemy '{e}'" for e in enc.enemies if e not in reg.enemies]
         if enc.key and (enc.key not in reg.items or reg.items[enc.key].category != "key_item"):
@@ -493,6 +499,7 @@ def load_registry(config_dir: Path = CONFIG_DIR) -> Registry:
     raw["skills"] = {k: {"id": k, **v} for k, v in raw.get("skills", {}).items()}
     raw["classes"] = {k: {"id": k, **v} for k, v in raw.get("classes", {}).items()}
     raw["encounters"] = [{"id": k, **v} for k, v in raw.get("encounters", {}).items()]
+    raw["zones"] = {k: {"id": k, **v} for k, v in raw.get("zones", {}).items()}
     combat = _build(CombatRules, "combat", [("combat", raw)])[0]
     drops = _build(DropTable, "drops", ((k, {"id": k, **v}) for k, v in _read(config_dir, "drops").items()))
     bestiary = _build(BestiaryRules, "bestiary", [("bestiary", _read(config_dir, "bestiary"))])[0]

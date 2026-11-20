@@ -3,45 +3,46 @@
 import pytest
 
 from cococap.registry import get_registry
-from cococap.services import combat
+from cococap.services import combat, equipment
 from tests.test_hub import all_text, buttons, click, find_button, hub
 
 
-async def start(nav, inter, label="Fight", index=0):
-    button = [b for b in buttons(nav) if b.label == label][index]
-    inter.response.edit_message.reset_mock()
-    await button.callback(inter)
+async def start(nav, inter, enemies=("zombie",)):
+    """Put a battle against these enemies on the fight screen (Explore draws random foes, so tests pin them)."""
+    nav.screen.zone = "graveyard"
+    nav.screen.battle = combat.battle_with(await combat.build_player(nav.user), list(enemies))
+    await nav.refresh(inter)
 
 
-async def test_lobby_shows_stats_skills_and_locks_fights_above_your_level(db):
-    nav, _ = await hub("fight")
-    text = all_text(nav)
-    assert "Slash" in text and "A lone zombie" in text and "Combat level 3" in text
-    fights = [b for b in buttons(nav) if b.label == "Fight"]
-    assert [b.disabled for b in fights] == [False, True, True, True]
-
-
-async def test_a_locked_fight_cannot_be_started(db):
-    nav, inter = await hub("fight")
-    with pytest.raises(combat.CombatError, match="combat level"):  # a stale button, clicked anyway (the hub shows the message)
-        await nav.screen._starter("graveyard_horde")(inter)
-    assert nav.screen.battle is None
-
-
-async def test_starting_a_fight_shows_the_battle_and_locks_navigation(db):
-    nav, inter = await hub("fight")
-    await start(nav, inter)
+async def test_explore_starts_a_battle_and_locks_navigation(db):
+    nav, inter = await hub("combat")
+    assert "Graveyard" in all_text(nav)
+    await click(nav, inter, "Explore")
     screen = nav.screen
+    assert screen.id == "fight" and screen.battle is not None and screen.locked
+    assert "Turn order" in all_text(nav) and "Slash" in [b.label for b in buttons(nav)]
+
+
+async def test_the_fight_page_without_a_battle_points_to_the_combat_page(db):
+    nav, inter = await hub("fight")
+    assert "Pick a zone" in all_text(nav)
+    await click(nav, inter, "Combat")
+    assert nav.screen.id == "combat"
+
+
+async def test_the_class_tab_shows_the_kit_of_the_equipped_weapon(db):
+    nav, inter = await hub("combat", tab="class")
+    assert "Bare hands" in all_text(nav)
+    item = await nav.user.give_instance("tool_sword_starter")
+    await equipment.equip(nav.user, "combat", item.id)
+    nav, inter = await hub("combat", tab="class")
     text = all_text(nav)
-    assert screen.battle is not None and screen.locked
-    assert "Zombie" in text and "Turn order" in text and "Slash" in [b.label for b in buttons(nav)]
+    assert "Melee" in text and "Rage" in text and "Cleave" in text and "unlocks at combat level" in text
 
 
 async def test_with_several_enemies_a_skill_asks_for_a_target_and_can_be_cancelled(db):
     nav, inter = await hub("fight")
-    nav.screen.encounter = "graveyard_pair"
-    nav.screen.battle = combat.new_battle(await combat.build_player(nav.user), "graveyard_pair")
-    await nav.refresh(inter)
+    await start(nav, inter, ("zombie", "skeleton"))
     await click(nav, inter, "Slash")
     assert nav.screen.picking == "slash" and "pick a target" in all_text(nav)
     await click(nav, inter, "Cancel")
@@ -107,24 +108,20 @@ async def test_the_boss_shows_its_next_move_and_the_controls_fit_discord_rows(db
     assert {"Slash", "Flee"} <= {b.label for b in buttons(nav)}
 
 
-async def test_the_boss_fight_is_locked_until_level_20(db):
-    nav, _ = await hub("fight")
-    fights = [(b.disabled) for b in buttons(nav) if b.label == "Fight"]
-    assert fights == [False, True, True, True] and "Combat level 20" in all_text(nav)
-
-
-async def test_the_boss_button_needs_level_20_and_a_key_and_spends_it(db):
-    user = (await hub("fight"))[0].user
+async def test_the_boss_fight_is_locked_until_level_20_and_needs_a_key_and_spends_it(db):
+    nav, inter = await hub("combat")
+    boss = [b for b in buttons(nav) if b.label == "Fight"][-1]
+    assert boss.disabled and "Combat level 20" in all_text(nav)
+    user = nav.user
     await user.add_xp("combat", 73_674)  # level 20
-    nav, inter = await hub("fight")
+    nav, inter = await hub("combat")
     boss = [b for b in buttons(nav) if b.label == "Fight"][-1]
     assert boss.disabled and "needs a key" in all_text(nav)
     await user.add_item("key_graveyard", 1)
-    nav, inter = await hub("fight")
+    nav, inter = await hub("combat")
     assert "Graveyard Key" in all_text(nav) and "×1" in all_text(nav)
     boss = [b for b in buttons(nav) if b.label == "Fight"][-1]
     assert not boss.disabled
-    inter.response.edit_message.reset_mock()
     await boss.callback(inter)
     assert nav.screen.battle is not None and await user.item_quantity("key_graveyard") == 0
 

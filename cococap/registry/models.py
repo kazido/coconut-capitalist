@@ -460,6 +460,16 @@ class CombatClass(_Data):
     kit: list[KitSkill]
 
 
+class CombatZone(_Data):
+    """What a combat location (zone) throws at you: Explore draws 1..max_foes from `enemies`; `rare` (a mini-boss) fights alone."""
+
+    id: str
+    enemies: list[str] = Field(min_length=1)
+    max_foes: int = Field(default=3, ge=1, le=4)
+    rare: str | None = None
+    rare_chance: int = Field(default=0, ge=0, le=100)  # percent per Explore
+
+
 class CombatRules(_Data):
     meter_full: int = Field(ge=1)  # a unit acts when its turn meter reaches this
     defense_scale: int = Field(ge=1)  # damage = attack x power x scale / (scale + defense)
@@ -473,6 +483,7 @@ class CombatRules(_Data):
     resources: dict[str, ResourceRules] = Field(default_factory=dict)  # by CombatClass.resource
     elements: ElementRules = Field(default_factory=ElementRules)
     encounters: list[Encounter] = Field(min_length=1)
+    zones: dict[str, CombatZone] = Field(default_factory=dict)  # by combat location id, in order
 
 
 class Rank(_Data):

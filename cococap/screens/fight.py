@@ -11,7 +11,8 @@ from cococap.user import User
 
 def hp_line(unit: Unit) -> str:
     shield = f"  {emojis.icon('shield', '🔰')} {unit.shield}" if unit.shield else ""
-    return f"{bar(unit.hp / unit.max_hp, 8, 'hp')} **{unit.hp}**/{unit.max_hp}{shield}"
+    res = f"  {bar(unit.resource / unit.resource_max, 8, 'meter')} **{unit.resource}**/{unit.resource_max} {unit.resource_kind}" if unit.resource_kind else ""
+    return f"{bar(unit.hp / unit.max_hp, 8, 'hp')} **{unit.hp}**/{unit.max_hp}{shield}{res}"
 
 
 def effect_line(unit: Unit) -> str:
@@ -28,7 +29,8 @@ class FightScreen(Screen):
     def __init__(self, nav):
         super().__init__(nav)
         self.battle: Battle | None = None
-        self.encounter: str | None = None  # the fight being played (so "Fight again" knows what to start)
+        self.encounter: str | None = None  # the key fight being played, or None for a zone fight (so "Fight again" knows what to start)
+        self.zone: str | None = None  # the zone being explored
         self.picking: str | None = None  # a skill waiting for the player to choose its target
 
     @property
@@ -39,43 +41,11 @@ class FightScreen(Screen):
     async def build(self) -> Page:
         if self.battle is not None:
             return self._battle_page(self.battle)
-        reg = get_registry()
-        level = User.xp_to_level((await self.user.skill("combat")).xp)
-        me = await combat.build_player(self.user)
-        body = [
-            *self.note_block(),
-            text(f"### {emojis.icon('sword', '⚔️')} Combat  ·  Lv {level}\n{emojis.icon('heart', '❤️')} **{me.max_hp}**  {emojis.icon('sword', '⚔️')} **{me.attack}**  {emojis.icon('shield', '🛡️')} **{me.defense}**  {emojis.icon('bolt', '⚡')} **{me.speed}**"),
-            text("\n".join(f"**{reg.combat.skills[s].name}** — {reg.combat.skills[s].description}"
-                           + (f" *(recharge {reg.combat.skills[s].cooldown})*" if reg.combat.skills[s].cooldown else "")
-                           for s in me.skills)),
-            sep(),
-        ]
-        owned = await self.user.items()
-        for enc in reg.combat.encounters:
-            foes = ", ".join(reg.enemies[e].emoji + " " + reg.enemies[e].name for e in enc.enemies)
-            has_key = not enc.key or owned.get(enc.key, 0) > 0
-            open_ = level >= enc.min_level and has_key
-            line = f"**{enc.name}**\n{foes}"
-            if level < enc.min_level:
-                line += f"\n{emojis.icon('lock', '🔒')} Combat level {enc.min_level}"
-            if enc.key:
-                key = reg.item(enc.key)
-                line += f"\n{key.display} ×{owned.get(enc.key, 0)}" + ("" if has_key else " · needs a key (monsters drop them)")
-            body.append(section(line, accessory=button("Fight", style=discord.ButtonStyle.danger, disabled=not open_,
-                                                       on_click=self._starter(enc.id))))
-        body.append(sep())
-        body.append(row(button("Bestiary", emoji=emojis.icon("book", "📖"), on_click=self._to_bestiary)))
-        return Page("Fight", body, accent=0xC0392B)
+        return Page("Fight", [*self.note_block(), text("Pick a zone on the Combat page to start a fight."),
+                              row(button("Combat", emoji=emojis.icon("sword", "⚔️"), on_click=self._to_combat))], accent=0xC0392B)
 
-    async def _to_bestiary(self, interaction: discord.Interaction) -> None:
-        await self.go(interaction, "bestiary")
-
-    def _starter(self, encounter_id: str):
-        async def start(interaction: discord.Interaction) -> None:
-            await self._begin(encounter_id)
-            await self.refresh(interaction)
-
-        return start
+    async def _to_combat(self, interaction: discord.Interaction) -> None:
+        await self.go(interaction, "combat")
 
     async def _begin(self, encounter_id: str) -> None:
         self.encounter, self.picking = encounter_id, None
@@ -121,9 +91,9 @@ class FightScreen(Screen):
         for i, skill_id in enumerate(me.skills):
             skill = battle.skill(skill_id)
             cd = me.cooldowns.get(skill_id, 0)
-            label = skill.name + (f" ({cd})" if cd else "")
+            label = skill.name + (f" ({cd})" if cd else "") + (f" · {skill.cost}" if skill.cost else "")
             style = discord.ButtonStyle.primary if i == 0 else discord.ButtonStyle.secondary
-            buttons.append(button(label, style=style, disabled=cd > 0, on_click=self._skill(skill_id)))
+            buttons.append(button(label, style=style, disabled=cd > 0 or me.resource < skill.cost, on_click=self._skill(skill_id)))
         return [row(*buttons), row(button("Flee", emoji=emojis.icon("people", "🏃"), on_click=self._flee))]
 
     def _skill(self, skill_id: str):
@@ -176,5 +146,8 @@ class FightScreen(Screen):
         await self.refresh(interaction)
 
     async def _again(self, interaction: discord.Interaction) -> None:
-        await self._begin(self.encounter)
+        if self.zone and not self.encounter:
+            self.battle, self.picking = await combat.explore(self.user, self.zone), None
+        else:
+            await self._begin(self.encounter)
         await self.refresh(interaction)

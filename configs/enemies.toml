@@ -63,3 +63,391 @@ xp = 8000  # about one whole level at combat level 20 (7,959). Keys keep it rare
     below = 0.3
     message = "The Gravewarden roars, and the crypt shakes: it is enraged!"
     buffs = [{ kind = "attack_up", turns = 99, value = 0.6 }, { kind = "speed_up", turns = 99, value = 0.25 }]
+
+# --- enemies of the other zones (TODO(balance): all numbers; stats grow with the zone's level) ---
+
+[jelly_slime]
+name = "Jelly Slime"
+emoji = "🟢"
+attack = 15
+hp = 134
+speed = 100
+skills = ["strike"]
+xp = 116
+drops = "slime_meadow"
+drop_chance = 65
+
+[gumdrop_golem]
+name = "Gumdrop Golem"
+emoji = "🍬"
+attack = 14
+hp = 188
+defense = 1
+speed = 85
+skills = ["armor_slam", "strike"]
+xp = 139
+drops = "slime_meadow"
+drop_chance = 65
+
+[sand_scorpion]
+name = "Sand Scorpion"
+emoji = "🦂"
+attack = 25
+hp = 159
+speed = 115
+skills = ["sand_blast", "strike"]
+xp = 256
+drops = "dusk_dunes"
+drop_chance = 65
+
+[dust_wraith]
+name = "Dust Wraith"
+emoji = "👻"
+attack = 20
+hp = 244
+speed = 100
+skills = ["rattle", "strike"]
+xp = 256
+drops = "dusk_dunes"
+drop_chance = 65
+
+[mirage_jackal]
+name = "Mirage Jackal"
+emoji = "🐺"
+attack = 34
+hp = 259
+speed = 115
+skills = ["strike"]
+xp = 452
+drops = "mirage_ruins"
+drop_chance = 65
+
+[sunken_mummy]
+name = "Sunken Mummy"
+emoji = "🧟"
+attack = 24
+hp = 557
+defense = 4
+speed = 85
+skills = ["armor_slam", "strike"]
+xp = 542
+drops = "mirage_ruins"
+drop_chance = 65
+
+[scrap_rat]
+name = "Scrap Rat"
+emoji = "🐀"
+attack = 39
+hp = 316
+speed = 115
+skills = ["rust_bite", "strike"]
+xp = 564
+drops = "scrapyard"
+drop_chance = 65
+
+[rust_bot]
+name = "Rust Bot"
+emoji = "🤖"
+attack = 28
+hp = 680
+defense = 6
+speed = 85
+skills = ["armor_slam", "strike"]
+xp = 677
+drops = "scrapyard"
+drop_chance = 65
+
+[slag_crawler]
+name = "Slag Crawler"
+emoji = "🐛"
+attack = 35
+hp = 574
+speed = 100
+skills = ["rust_bite", "strike"]
+xp = 676
+drops = "rusted_foundry"
+drop_chance = 65
+
+[foundry_brute]
+name = "Foundry Brute"
+emoji = "🦾"
+attack = 32
+hp = 804
+defense = 7
+speed = 85
+skills = ["armor_slam", "strike"]
+xp = 811
+drops = "rusted_foundry"
+drop_chance = 65
+
+[canal_gator]
+name = "Canal Gator"
+emoji = "🐊"
+attack = 39
+hp = 662
+speed = 100
+skills = ["rattle", "strike"]
+xp = 788
+drops = "canal_alleys"
+drop_chance = 65
+
+[alley_cutpurse]
+name = "Alley Cutpurse"
+emoji = "🥷"
+attack = 49
+hp = 430
+speed = 115
+skills = ["venom_spit", "strike"]
+xp = 788
+drops = "canal_alleys"
+drop_chance = 65
+
+[brass_automaton]
+name = "Brass Automaton"
+emoji = "⚙️"
+attack = 39
+hp = 1050
+defense = 9
+speed = 85
+skills = ["armor_slam", "strike"]
+xp = 1080
+drops = "clockwork_district"
+drop_chance = 65
+
+[gear_sprite]
+name = "Gear Sprite"
+emoji = "🧚"
+attack = 54
+hp = 488
+speed = 115
+skills = ["static_shock", "strike"]
+xp = 900
+drops = "clockwork_district"
+drop_chance = 65
+
+[cloud_harpy]
+name = "Cloud Harpy"
+emoji = "🦅"
+attack = 59
+hp = 545
+speed = 115
+skills = ["sand_blast", "strike"]
+xp = 1012
+drops = "cloud_ridge"
+drop_chance = 65
+
+[mist_elemental]
+name = "Mist Elemental"
+emoji = "🌫️"
+attack = 47
+hp = 838
+speed = 100
+skills = ["grave_chill", "strike"]
+xp = 1012
+drops = "cloud_ridge"
+drop_chance = 65
+
+[storm_wisp]
+name = "Storm Wisp"
+emoji = "⚡"
+attack = 64
+hp = 602
+speed = 115
+skills = ["static_shock", "strike"]
+xp = 1124
+drops = "storm_garden"
+drop_chance = 65
+
+[thorn_bloom]
+name = "Thorn Bloom"
+emoji = "🌹"
+attack = 51
+hp = 926
+speed = 100
+skills = ["venom_spit", "strike"]
+xp = 1124
+drops = "storm_garden"
+drop_chance = 65
+
+[comet_imp]
+name = "Comet Imp"
+emoji = "😈"
+attack = 68
+hp = 645
+speed = 115
+skills = ["star_burn", "strike"]
+xp = 1208
+drops = "comet_fields"
+drop_chance = 65
+
+[meteor_hound]
+name = "Meteor Hound"
+emoji = "🐕"
+attack = 54
+hp = 992
+speed = 100
+skills = ["strike", "bone_strike"]
+xp = 1208
+drops = "comet_fields"
+drop_chance = 65
+
+[star_sentinel]
+name = "Star Sentinel"
+emoji = "🗿"
+attack = 51
+hp = 1481
+defense = 14
+speed = 85
+skills = ["armor_slam", "star_burn"]
+xp = 1550
+drops = "starfall_temple"
+drop_chance = 65
+
+[moon_moth]
+name = "Moon Moth"
+emoji = "🦋"
+attack = 71
+hp = 688
+speed = 115
+skills = ["star_burn", "strike"]
+xp = 1292
+drops = "starfall_temple"
+drop_chance = 65
+
+[hollow_shade]
+name = "Hollow Shade"
+emoji = "👤"
+attack = 60
+hp = 1124
+speed = 100
+skills = ["soul_drain", "strike"]
+xp = 1376
+drops = "hollow_gate"
+drop_chance = 65
+
+[void_hound]
+name = "Void Hound"
+emoji = "🐕‍🦺"
+attack = 75
+hp = 731
+speed = 115
+skills = ["rust_bite", "strike"]
+xp = 1376
+drops = "hollow_gate"
+drop_chance = 65
+
+[unmade_horror]
+name = "Unmade Horror"
+emoji = "👁️"
+attack = 62
+hp = 1168
+speed = 100
+skills = ["soul_drain", "death_knell"]
+xp = 1432
+drops = "the_unmade"
+drop_chance = 65
+
+[null_knight]
+name = "Null Knight"
+emoji = "🛡️"
+attack = 56
+hp = 1635
+defense = 15
+speed = 85
+skills = ["armor_slam", "soul_drain"]
+xp = 1718
+drops = "the_unmade"
+drop_chance = 65
+
+# --- one mini-boss per area: a rare fight on the area's second zone (fights alone) ---
+
+[king_slime]
+name = "King Slime"
+emoji = "🫧"
+attack = 20
+hp = 804
+defense = 6
+speed = 95
+skills = ["armor_slam", "strike"]
+xp = 928
+boss = true
+drops = "slime_meadow"
+drop_chance = 100
+
+[dune_pharaoh]
+name = "Dune Pharaoh"
+emoji = "👑"
+attack = 35
+hp = 2388
+defense = 30
+speed = 95
+skills = ["rattle", "sand_blast", "strike"]
+xp = 3616
+boss = true
+drops = "mirage_ruins"
+drop_chance = 100
+
+[scrap_titan]
+name = "Scrap Titan"
+emoji = "🦿"
+attack = 46
+hp = 3444
+defense = 46
+speed = 95
+skills = ["armor_slam", "rust_bite", "strike"]
+xp = 5408
+boss = true
+drops = "rusted_foundry"
+drop_chance = 100
+
+[clockwork_regent]
+name = "Clockwork Regent"
+emoji = "🤴"
+attack = 56
+hp = 4500
+defense = 62
+speed = 95
+skills = ["static_shock", "armor_slam", "strike"]
+xp = 7200
+boss = true
+drops = "clockwork_district"
+drop_chance = 100
+
+[storm_roc]
+name = "Storm Roc"
+emoji = "🦅"
+attack = 66
+hp = 5556
+defense = 78
+speed = 95
+skills = ["static_shock", "sand_blast", "strike"]
+xp = 8992
+boss = true
+drops = "storm_garden"
+drop_chance = 100
+
+[star_warden]
+name = "Star Warden"
+emoji = "🌟"
+attack = 74
+hp = 6348
+defense = 90
+speed = 95
+skills = ["star_burn", "soul_drain", "strike"]
+xp = 10336
+boss = true
+drops = "starfall_temple"
+drop_chance = 100
+
+[the_hollow_king]
+name = "The Hollow King"
+emoji = "💀"
+attack = 81
+hp = 7008
+defense = 100
+speed = 95
+skills = ["death_knell", "soul_drain", "star_burn"]
+xp = 11456
+boss = true
+drops = "the_unmade"
+drop_chance = 100

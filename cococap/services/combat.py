@@ -510,15 +510,44 @@ async def build_player(user: User, registry: Registry | None = None, uid: str = 
     )
 
 
+def battle_with(player: Unit, enemy_ids: list[str], registry: Registry | None = None, rng: random.Random | None = None) -> Battle:
+    """Start a battle against these enemies (ids from enemies.toml, in order) at full hp."""
+    reg = registry or get_registry()
+    foes = [enemy_unit(reg.enemies[eid], f"e{i + 1}") for i, eid in enumerate(enemy_ids)]
+    battle = Battle(reg.combat, [player, *foes], rng)
+    battle.start()
+    return battle
+
+
 def new_battle(player: Unit, encounter_id: str, registry: Registry | None = None, rng: random.Random | None = None) -> Battle:
     reg = registry or get_registry()
     encounter = next((e for e in reg.combat.encounters if e.id == encounter_id), None)
     if encounter is None:
         raise CombatError("That fight doesn't exist.")
-    foes = [enemy_unit(reg.enemies[eid], f"e{i + 1}") for i, eid in enumerate(encounter.enemies)]
-    battle = Battle(reg.combat, [player, *foes], rng)
-    battle.start()
-    return battle
+    return battle_with(player, encounter.enemies, reg, rng)
+
+
+def roll_foes(zone_id: str, registry: Registry | None = None, rng: random.Random | None = None) -> list[str]:
+    """Who you meet in a zone: the mini-boss alone when its roll hits, else 1..max_foes picks from the pool."""
+    reg = registry or get_registry()
+    rng = rng or random.Random()
+    zone = reg.combat.zones.get(zone_id)
+    if zone is None:
+        raise CombatError("That zone doesn't exist.")
+    if zone.rare and rng.randint(1, 100) <= zone.rare_chance:
+        return [zone.rare]
+    return [rng.choice(zone.enemies) for _ in range(rng.randint(1, zone.max_foes))]
+
+
+async def explore(user: User, zone_id: str, registry: Registry | None = None, rng: random.Random | None = None) -> Battle:
+    """Walk into an open combat zone and fight whatever turns up. A loss costs nothing."""
+    from cococap.services import areas
+
+    reg = registry or get_registry()
+    if zone_id not in {loc.id for loc in await areas.open_location_list(user, "combat", reg)}:
+        raise CombatError("That zone is not open to you yet.")
+    rng = rng or random.Random()
+    return battle_with(await build_player(user, reg), roll_foes(zone_id, reg, rng), reg, rng)
 
 
 @dataclass

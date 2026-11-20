@@ -233,7 +233,7 @@ def test_xp_is_paid_only_for_a_win():
 
 def test_a_seeded_fight_is_reproducible():
     def run():
-        b = combat.new_battle(hero(), "graveyard_horde", rng=random.Random(7))
+        b = combat.battle_with(hero(), ["armored_zombie", "skeleton", "zombie"], rng=random.Random(7))
         while not b.outcome:
             b.play("slash", b.living("enemy")[0].id)
         return b.log

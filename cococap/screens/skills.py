@@ -11,7 +11,7 @@ from cococap.ui.tabs import TabsScreen
 from cococap.user import User
 
 # skill -> the screen that plays it
-SKILL_SCREENS: dict[str, str | None] = {"mining": "mining", "farming": "farm", "foraging": "forage", "fishing": "fish", "combat": None}  # combat is paused while it is redesigned (the fight screen still exists)
+SKILL_SCREENS: dict[str, str | None] = {"mining": "mining", "farming": "farm", "foraging": "forage", "fishing": "fish", "combat": "combat"}
 
 
 class SkillsPane(Screen):
@@ -19,7 +19,7 @@ class SkillsPane(Screen):
 
     label = "Skills"
     emoji = emojis.Lazy("ui_skills", "📈")
-    links = ("mining", "farm", "forage", "fish")
+    links = ("mining", "farm", "forage", "fish", "combat")
 
     async def build(self) -> Page:
         body = [*self.note_block()]
@@ -96,5 +96,5 @@ class SkillsScreen(TabsScreen):
     label = "Skills"
     emoji = emojis.Lazy("ui_skills", "📈")
     description = "Mining, farming, foraging, fishing and combat; lesser skills like smithing"
-    links = ("mining", "farm", "forage", "fish")
+    links = ("mining", "farm", "forage", "fish", "combat")
     panes = {"skills": SkillsPane, "light": LightSkillsPane}
