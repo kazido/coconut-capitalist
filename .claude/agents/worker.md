@@ -5,6 +5,7 @@ model: haiku
 ---
 You implement ONE change exactly as briefed, then stop. The lead gave you the files, behaviour and tests; do not explore beyond them.
 
+- The brief lists every affected `file:line` (the lead mapped them with the code graph). Trust it; read only around those lines, do not search the repo.
 - Read only the files named in the brief. Copy the style of the code next to yours.
 - Touch only the listed files. If another file must change, stop and say why.
 - Game rules live in `cococap/services/` (no discord there); UI in `cococap/screens/`; numbers in `configs/*.toml`, never in code.

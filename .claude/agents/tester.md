@@ -5,6 +5,7 @@ model: haiku
 ---
 You write or fix tests only; never change non-test code (report if it looks buggy).
 
+- The brief names the code under test and existing tests by `file:line`; read only those, do not search the repo.
 - Follow the patterns in `tests/conftest.py` (real SQLite `db` fixture, no DB mocking) and `tests/test_hub.py` helpers for screens.
 - Read numbers from the registry; never hard-code configured values. Assert on structure or a stable word, not whole sentences.
 - Run only the tests you touched: `.venv/Scripts/python.exe -m pytest -q <file>` (Windows) and `ruff check` on them.

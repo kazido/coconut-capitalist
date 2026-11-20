@@ -20,6 +20,29 @@ decision) before building on. Do NOT do bounded work yourself: delegate it, then
   then fix it yourself. Never loop. Then commit (workers do not commit).
 - Briefs live in the prompt, not in files. Plans for bigger work go in `docs/plans/`.
 
+### Impact map first, then a precise brief (graphify)
+
+Before ANY feature, bug fix, screen redesign or art task, the lead maps what it touches with the code graph, so workers never dig.
+The graph is code-only and free (no LLM): `graphify update .` rebuilds `graphify-out/` (git-ignored, per worktree) in ~1 min; run it when
+code changed since the last build. Commands (all print `file:Lline`):
+- `graphify affected "<func or Class>" --depth 1` = every caller/importer/test (who breaks if this changes). Depth 2 only if needed.
+- `graphify explain "<name>"` = a node and its neighbours; `graphify path "A" "B"` = how two systems connect.
+- `graphify query "<question>" --budget 800` for "where does X happen" when you do not know a name yet.
+Graph misses config links (TOML ids, emoji names, changelog): add a quick `Grep` for the item/stat id. Then read only the few hunks you need.
+
+**Choosing the model:** Haiku `worker`/`tester`/`writer` for anything the impact map fully pins down (most bugs with a known cause,
+UI tweaks, config + test, art from a known recipe). Sonnet (`model: "sonnet"` on the Agent call) for a bounded change that still needs some judgment
+(e.g. 3+ callers to adapt, a new screen pane copying an existing one). Lead does design, unknown causes, cross-system changes.
+
+**Brief template** (keep it under ~40 lines; no project background, no history):
+```
+Goal: <one sentence, the player-visible behaviour>
+Change: <file:line> <function> - what to do (exact names, values from which config key)
+Also update (from graphify affected): <file:line> - why ... ; tests: <tests/file::test> to update or add
+Reuse: <helper(s) with file:line>; copy the pattern in <file:line>
+Do not touch: <files>. Done = scripts/verify.sh passes (or the named tests + ruff).
+```
+
 ## Hard rules (the user set these; do not break them)
 
 - **Branches (3 total, no others without asking).** `master` = stable and public; its checkout (`C:\Users\Bryson\Documents\Coding\coconut-capitalist`) is the
