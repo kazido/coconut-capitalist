@@ -100,6 +100,8 @@ async def test_items_add_remove_are_atomic(db):
     assert await user.items() == {}  # emptied stacks are deleted
     with pytest.raises(ValueError):
         await user.remove_item("pear", 1)
+    with pytest.raises(ValueError):
+        await user.remove_item("crop_apple", -5)  # must never add items
 
 
 async def test_concurrent_item_removals_cannot_go_negative(db):
