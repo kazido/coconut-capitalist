@@ -77,5 +77,6 @@ def part_lines(instances: list[ItemInstance]) -> list[str]:
             continue
         tier = int(inst.rolled.get("tier", 1))
         traits = ", ".join(reg.smithing.trait(t).name for t in inst.traits) or "no trait"
-        rows.append(((template.name, -tier), f"{template.emoji or ''} {template.name} · Tier {tier} · {traits}".strip()))
+        mark = f" {emojis.icon('restricted', '🔺')}" if inst.rolled.get("restricted") else ""
+        rows.append(((template.name, -tier), f"{template.emoji or ''} {template.name}{mark} · Tier {tier} · {traits}".strip()))
     return [line for _, line in sorted(rows)]

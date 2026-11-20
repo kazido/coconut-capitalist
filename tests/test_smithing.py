@@ -310,3 +310,89 @@ async def test_parts_show_in_the_inventory(db):
     nav, _ = await hub("inventory")
     text = all_text(nav)
     assert get_registry().item("part_trim").name in text and "Tier 2" in text
+
+
+# ---- restricted parts, enchant refunds, enchant removal ----
+
+def scrolls_for(kind: str) -> list[str]:
+    return [i.id for i in REG.items.values() if i.scroll and kind in REG.enchant(i.scroll.enchant).applies_to]
+
+
+async def restricted_part(user: User, slot: str, tier: int = 1):
+    return await user.give_instance(f"part_{slot}", rolled={"tier": tier, "restricted": 1}, traits=[])
+
+
+async def smithed(user: User, restricted: bool = False):
+    ids = await three_parts(user)
+    if restricted:
+        await user.delete_instance(ids["base"])
+        ids["base"] = (await restricted_part(user, "base")).id
+    return await smith_with(user, ids)
+
+
+async def test_restricted_roll_follows_the_configured_chance(monkeypatch):
+    user = await player()
+    always = RULES.model_copy(update={"restricted": RULES.restricted.model_copy(update={"chance": 1.0})})
+    never = RULES.model_copy(update={"restricted": RULES.restricted.model_copy(update={"chance": 0.0})})
+    monkeypatch.setattr(REG, "smithing", always, raising=False)
+    part = await smithing.roll_part(user, 1, random.Random(1), "base", registry=REG)
+    assert part.rolled["restricted"] == 1 and smithing.is_restricted(part)
+    monkeypatch.setattr(REG, "smithing", never, raising=False)
+    part = await smithing.roll_part(user, 1, random.Random(1), "base", registry=REG)
+    assert not smithing.is_restricted(part)
+
+
+async def test_two_restricted_parts_cannot_be_smithed_or_swapped_into_one_tool():
+    user = await player(level=RULES.levels.swap_unlock_level)
+    a, b = await restricted_part(user, "base"), await restricted_part(user, "trim")
+    c = await give_part(user, "accent")
+    with pytest.raises(smithing.RestrictedPartError):
+        await smithing.smith(user, "pickaxe", a.id, b.id, c.id, {}, random.Random(0), registry=REG)
+    tool = await smithed(user, restricted=True)
+    assert smithing.enchant_cap_of(tool.parts) == 2
+    with pytest.raises(smithing.RestrictedPartError):
+        await smithing.swap_part(user, tool.id, "trim", b.id, registry=REG)
+
+
+async def test_restricted_tool_holds_one_more_enchant_and_replace_returns_the_scroll():
+    from cococap.services import enchanting
+
+    s = scrolls_for("pickaxe")
+    assert len(s) >= 3
+    user = await player()
+    plain, rest = await smithed(user), await smithed(user, restricted=True)
+    for sid in s[:3]:
+        await user.add_item(sid, 1)
+    await enchanting.apply_scroll(user, s[0], plain.id, REG)
+    await enchanting.apply_scroll(user, s[1], plain.id, REG)  # replaces s[0]
+    assert len((await user.instance(plain.id)).enchants) == 1
+    assert (await user.items()).get(s[2]) == 1 and (await user.items()).get(s[0]) == 1
+    await user.add_item(s[1], 1)
+    await enchanting.apply_scroll(user, s[0], rest.id, REG)
+    await enchanting.apply_scroll(user, s[1], rest.id, REG)
+    assert len((await user.instance(rest.id)).enchants) == 2
+
+
+async def test_salvage_returns_a_scroll_per_enchant():
+    user = await player()
+    sid = scrolls_for("pickaxe")[0]
+    enchant = REG.item(sid).scroll.enchant
+    parts = {s: {"tier": 1, "trait": None} for s in PARTS}
+    tool = await user.give_instance("tool_pickaxe_rookie", smith_id=user.id + 1000, parts=parts, quality="Crude")
+    await user.set_enchant_level(tool.id, enchant, 1)
+    await smithing.salvage(user, tool.id, registry=REG)
+    assert (await user.items()).get(sid) == 1
+
+
+async def test_remove_enchant_is_gated_by_level_and_returns_the_scroll():
+    user = await player()
+    sid = scrolls_for("pickaxe")[0]
+    enchant = REG.item(sid).scroll.enchant
+    tool = await smithed(user)
+    await user.set_enchant_level(tool.id, enchant, 1)
+    with pytest.raises(GameRuleError):
+        await smithing.remove_enchant(user, tool.id, enchant, REG)
+    await smithing.add_smithing_xp(user, User.level_to_xp(RULES.removal.enchant_unlock_level) + 50)
+    await smithing.remove_enchant(user, tool.id, enchant, REG)
+    assert not (await user.instance(tool.id)).enchants
+    assert (await user.items()).get(sid) == 1

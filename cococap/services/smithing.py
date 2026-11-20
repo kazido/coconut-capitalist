@@ -15,6 +15,10 @@ from cococap.registry.models import PART_TIERS, SmithingRules
 from cococap.services.equipment import skill_for_tool
 from cococap.user import User
 
+class RestrictedPartError(GameRuleError):
+    """A tool would end up with two restricted parts."""
+
+
 PART_TYPES = ("base", "trim", "accent")
 KINDS = ("pickaxe", "rod", "axe", "can")
 XP_STAT = "smithing_xp"  # per-user counter; no migration needed
@@ -49,11 +53,38 @@ def max_part_tier(level: int, rules: SmithingRules) -> int:
     return min(tier, PART_TIERS)
 
 
-def part_label(slot: str, tier: int) -> str:
+def part_label(slot: str, tier: int, restricted: bool = False) -> str:
     """How a part reads everywhere: its tier emoji (framed in its rarity) + "Tier 8 Celestial Base".
     A part's rarity is its tier (SmithingRules.part_rarity)."""
     rarity = Rarities.from_value(SmithingRules.part_rarity(tier)).rarity_name
-    return f"{emojis.get(f'part_{slot}_t{tier}', '🧩')} Tier {tier} {rarity} {slot.title()}"
+    mark = f" {emojis.icon('restricted', '🔺')}" if restricted else ""
+    return f"{emojis.get(f'part_{slot}_t{tier}', '🧩')} Tier {tier} {rarity} {slot.title()}{mark}"
+
+
+def is_restricted(part) -> bool:
+    """A part instance (rolled flag) or a tool's part dict (key) that is restricted."""
+    data = part.rolled if isinstance(part, ItemInstance) else part
+    return bool(data.get("restricted"))
+
+
+def _flag(part) -> dict:
+    return {"restricted": 1} if is_restricted(part) else {}
+
+
+def enchant_cap_of(parts: dict) -> int:
+    """How many different enchants a smithed tool holds: one, plus one for a restricted part."""
+    return 1 + int(any(is_restricted(p) for p in (parts or {}).values()))
+
+
+def scroll_for(enchant_id: str, reg: Registry):
+    return next((i for i in reg.items.values() if i.scroll and i.scroll.enchant == enchant_id), None)
+
+
+async def refund_enchant(user: User, enchant_id: str, levels: int, reg: Registry) -> None:
+    """Give back the scroll(s) of an enchant that left a tool (nothing if no scroll exists for it)."""
+    scroll = scroll_for(enchant_id, reg)
+    if scroll is not None and levels > 0:
+        await user.add_item(scroll.id, levels)
 
 
 def _part_tier(part: ItemInstance) -> int:
@@ -79,7 +110,10 @@ async def roll_part(
     tier = rng.choices(range(1, PART_TIERS + 1), weights=rules.weights_for_area(area))[0]
     pool = [t.id for t in rules.trait_pool]
     traits = rng.sample(pool, min(rules.fresh_trait_count(tier), len(pool)))
-    return await user.give_instance(f"part_{part_type}", rolled={"tier": tier}, traits=traits)
+    rolled = {"tier": tier}
+    if rng.random() < rules.restricted.chance:
+        rolled["restricted"] = 1
+    return await user.give_instance(f"part_{part_type}", rolled=rolled, traits=traits)
 
 
 def part_line(part: ItemInstance, registry: Registry | None = None) -> str:
@@ -89,7 +123,7 @@ def part_line(part: ItemInstance, registry: Registry | None = None) -> str:
     slot = part.template_id.removeprefix("part_")
     names = [rules.trait(t).name for t in part.traits]
     named = f" ({', '.join(names)})" if names else ""
-    return f"Found a **{part_label(slot, _part_tier(part))} part**{named}! Smith with it on Tools → Smithing."
+    return f"Found a **{part_label(slot, _part_tier(part), is_restricted(part))} part**{named}! Smith with it on Tools → Smithing."
 
 
 async def maybe_drop_part(
@@ -153,6 +187,9 @@ async def smith(
     if any(_part_tier(p) > cap for p in parts.values()):
         raise GameRuleError("Your smithing level is too low for a part that high.")
 
+    if sum(1 for p in parts.values() if is_restricted(p)) > 1:
+        raise RestrictedPartError("A tool can hold only one restricted part.")
+
     slot_trait: dict[str, str | None] = {slot: None for slot in PART_TYPES}
     slot_of = {pid: slot for slot, pid in ids.items()}
     for pid, value in picks.items():
@@ -180,7 +217,7 @@ async def smith(
         if open_slots and candidates:
             slot_trait[rng.choice(open_slots)] = rng.choice(candidates)
 
-    tool_parts = {slot: {"tier": _part_tier(parts[slot]), "trait": slot_trait[slot]} for slot in PART_TYPES}
+    tool_parts = {slot: {"tier": _part_tier(parts[slot]), "trait": slot_trait[slot], **_flag(parts[slot])} for slot in PART_TYPES}
     quality = _roll_quality(rules, level, rng)
     cosmetic = {"rolled": True} if rng.random() < rules.cosmetic_chance else {}
     template = next(i for i in STARTER_TOOLS if reg.item(i).tool.kind == kind)
@@ -225,8 +262,13 @@ async def salvage(user: User, tool_id: int, registry: Registry | None = None) ->
         info = tool.parts[slot]
         trait = info.get("trait")
         given.append(
-            await user.give_instance(f"part_{slot}", rolled={"tier": info["tier"]}, traits=[trait] if trait else [])
+            await user.give_instance(
+                f"part_{slot}", rolled={"tier": info["tier"], **_flag(info)}, traits=[trait] if trait else []
+            )
         )
+    reg = registry or get_registry()
+    for enchant_id, lvl in tool.enchants.items():
+        await refund_enchant(user, enchant_id, lvl, reg)
     await user.delete_instance(tool.id)
     await add_smithing_xp(user, rules.levels.xp_per_salvage)
     return given
@@ -264,11 +306,40 @@ async def swap_part(
             raise GameRuleError("A tool holds at most three traits.")
 
     old = parts[slot]
+    if is_restricted(new_part) and any(is_restricted(p) for s, p in parts.items() if s != slot):
+        raise RestrictedPartError("A tool can hold only one restricted part.")
     old_trait = old.get("trait")
     returned = await user.give_instance(
-        f"part_{slot}", rolled={"tier": old["tier"]}, traits=[old_trait] if old_trait else []
+        f"part_{slot}", rolled={"tier": old["tier"], **_flag(old)}, traits=[old_trait] if old_trait else []
     )
     await user.delete_instance(new_part.id)
-    parts[slot] = {"tier": _part_tier(new_part), "trait": trait_id}
+    parts[slot] = {"tier": _part_tier(new_part), "trait": trait_id, **_flag(new_part)}
     await user.set_instance_parts(tool.id, parts)
+    # Losing the restricted part loses the extra enchant slot: the oldest enchant over the cap comes off.
+    reg = registry or get_registry()
+    cap = enchant_cap_of(parts)
+    fresh = await user.instance(tool.id)
+    for e in list(fresh.enchants)[: max(0, len(fresh.enchants) - cap)]:
+        await refund_enchant(user, e, fresh.enchants[e], reg)
+        await user.set_enchant_level(tool.id, e, 0)
     return returned
+
+
+async def remove_enchant(user: User, tool_id: int, enchant_id: str, registry: Registry | None = None) -> None:
+    """Take an enchant off a tool and get its scroll(s) back. Needs removal.enchant_unlock_level."""
+    rules = _rules(registry)
+    reg = registry or get_registry()
+    if await smithing_level(user) < rules.removal.enchant_unlock_level:
+        raise GameRuleError(f"Removing enchants unlocks at smithing level {rules.removal.enchant_unlock_level}.")
+    tool = await user.instance(tool_id)
+    if tool is None or tool.owner_id != user.id:
+        raise GameRuleError("That tool isn't yours.")
+    item = reg.find_item(tool.template_id)
+    skill = skill_for_tool(item.tool.kind) if item and item.tool else None
+    if skill and (eq := await user.equipped_instance(skill)) and eq.id == tool.id:
+        raise GameRuleError("Unequip the tool before you change it.")
+    lvl = tool.enchants.get(enchant_id, 0)
+    if lvl <= 0:
+        raise GameRuleError("That enchant isn't on this tool.")
+    await user.set_enchant_level(tool_id, enchant_id, 0)
+    await refund_enchant(user, enchant_id, lvl, reg)

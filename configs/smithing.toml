@@ -77,6 +77,18 @@ name = "Appraiser's Eye"
 stat = "appraise"
 amounts = [1, 2, 3, 4]                    # TODO(balance)
 kinds = ["pickaxe", "rod", "axe", "can"]
+[[trait]]
+id = "lucky_charm"
+name = "Lucky Charm"
+stat = "rare_luck"                        # fishing: rare fish likelier; mining, foraging, farming: a missed rare drop may roll again
+amounts = [0.03, 0.05, 0.07, 0.10]        # TODO(balance)
+kinds = ["pickaxe", "rod", "axe", "can"]
+[[trait]]
+id = "bountiful"
+name = "Bountiful"
+stat = "drop_amount"                      # bigger drops: ore (mining), tree drops, farm byproducts, extra fish (+ per catch)
+amounts = [0.03, 0.05, 0.07, 0.10]        # TODO(balance)
+kinds = ["pickaxe", "rod", "axe", "can"]
 
 
 # Quality grades a smithed tool can get. `mult` scales the tool's power and every trait amount.
@@ -122,3 +134,11 @@ traits = 3
 step = "fork_up"
 tier = 4                                  # TODO(balance)
 traits = 3
+
+# RESTRICTED parts: a rare variant of any part. A tool holds at most ONE; it gets one extra enchant slot.
+[restricted]
+chance = 0.02                             # chance a dropped part is restricted    TODO(balance)
+
+# Taking an enchant off a tool (you get its scroll back).
+[removal]
+enchant_unlock_level = 20                 # smithing level that unlocks "Remove enchant"

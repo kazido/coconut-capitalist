@@ -242,6 +242,8 @@ class PetScoreRules(_Data):
     haul_xp_per_score_hour: float = Field(ge=0)
     haul_drop_rolls_per_score_hour: float = Field(ge=0)  # each hour of work rolls the skill's COMMON drop table this many times per point of score
     tank_cap_hours: float = Field(gt=0)
+    tank_hours_per_kind: float = Field(ge=0)
+    tank_max_kinds: int = Field(ge=1)
     fuel_minutes_per_value: float = Field(gt=0)
     food_buff_bonus: float = Field(ge=0)  # skill food gives the pet this much extra xp rate...
     food_buff_minutes: float = Field(gt=0)  # ...for this long (feeding again refreshes it, it never stacks)
@@ -1703,6 +1705,14 @@ class LegacyTool(_Data):
     step: Literal["starter", "plain", "fork", "fork_up"]
 
 
+class RestrictedRules(_Data):
+    chance: float = Field(0.02, ge=0, le=1)
+
+
+class RemovalRules(_Data):
+    enchant_unlock_level: int = Field(20, ge=1)
+
+
 class SmithingRules(_Data):
     part_types: list[str] = Field(min_length=3, max_length=3)
     area_cap: int = Field(ge=0)
@@ -1717,6 +1727,8 @@ class SmithingRules(_Data):
     grades: list[Quality] = Field(alias="quality", min_length=1)
     levels: SmithLevels
     legacy_grants: list[LegacyGrant] = Field(alias="legacy_grant", min_length=3, max_length=3)
+    restricted: RestrictedRules = RestrictedRules()
+    removal: RemovalRules = RemovalRules()
     legacy_scroll_cap: int = Field(2, ge=0)  # most scrolls the one-time reset gives back per player
 
     @model_validator(mode="after")

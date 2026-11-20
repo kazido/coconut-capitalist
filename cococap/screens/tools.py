@@ -4,6 +4,7 @@ import discord
 
 from cococap import emojis
 from cococap.constants import STARTER_TOOLS
+from cococap.errors import GameRuleError
 from cococap.registry import get_registry
 from cococap.registry.models import ACCESSORY_SKILLS
 from cococap.services.equipment import TOOL_FOR_SKILL, effective_stats, skill_for_tool
@@ -125,7 +126,7 @@ class ToolsPane(Screen):
             for slot in smithing.PART_TYPES:
                 part = inst.parts.get(slot, {})
                 trait = part.get("trait")
-                lines.append(f"· {smithing.part_label(slot, int(part.get('tier', 1)))}  ·  "
+                lines.append(f"· {smithing.part_label(slot, int(part.get('tier', 1)), smithing.is_restricted(part))}  ·  "
                              + (f"**{reg.smithing.trait(trait).name}**" if trait else "no trait"))
             body.append(text("\n".join(lines)))
         extra = []
@@ -138,6 +139,9 @@ class ToolsPane(Screen):
         if extra:
             body.append(text("\n".join(extra)))
         skill = skill_for_tool(tool.kind)
+        if inst.enchants and await smithing.smithing_level(self.user) >= reg.smithing.removal.enchant_unlock_level:
+            body.append(row(select("Remove an enchant (returns its scroll)...", [
+                discord.SelectOption(label=reg.enchant(e).name[:100], value=e) for e in inst.enchants], self._remove_enchant)))
         if skill in ACCESSORY_SKILLS:
             body += await self._accessory_section(skill)
         body += [sep(), row(button("Back to tools", emoji=emojis.icon("back", "↩️"), on_click=self._back))]
@@ -168,6 +172,13 @@ class ToolsPane(Screen):
         if full and self.picked is not None and not wearing:
             body.append(text("-# Both slots are full. Unequip one first."))
         return body
+
+    async def _remove_enchant(self, interaction: discord.Interaction, values: list[str]) -> None:
+        try:
+            await smithing.remove_enchant(self.user, self.viewing, values[0])
+        except GameRuleError as err:
+            return await self.refresh(interaction, str(err))
+        await self.refresh(interaction, f"Removed **{get_registry().enchant(values[0]).name}**. Its scroll is back in your inventory.")
 
     async def _pick_spare(self, interaction: discord.Interaction, values: list[str]) -> None:
         self.picked = int(values[0])
