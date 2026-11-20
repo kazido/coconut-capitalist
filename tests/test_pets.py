@@ -779,7 +779,7 @@ async def test_the_pets_page_shows_the_tank_and_fuels_and_collects(db):
     await user.add_item(crop.id, 50)
     nav, inter = await hub("pets")
     assert "Sidekick work" in all_text(nav) and "Tank" in all_text(nav)
-    assert find_button(nav, "Collect").disabled  # nothing worked yet
+    assert not any(b.label == "Collect" for b in buttons(nav))  # no Collect button: the haul banks itself
     await choose(nav, inter, select_named(nav, "Fuel the tank"), crop.id)
     modal = inter.response.send_modal.await_args.args[0]
     await modal._handler(inter, "5")
@@ -787,7 +787,26 @@ async def test_the_pets_page_shows_the_tank_and_fuels_and_collects(db):
     assert user.pethouse.fuel_seconds > 0 and await user.item_quantity(crop.id) < 50
     user.pethouse.last_collect = 1.0  # long ago: the whole tank has been worked
     await user.update_pethouse(lambda h: setattr(h, "last_collect", 1.0))
-    nav, inter = await hub("pets")
-    await click(nav, inter, "Collect")
+    nav, inter = await hub("pets")  # opening the page banks the haul
     await user.refresh()
     assert user.pethouse.fuel_seconds == 0
+    assert "brought home" in all_text(nav)
+
+
+async def test_the_details_button_shows_one_bar_per_skill(db):
+    from cococap.services import pet_score
+
+    await with_pet("drizzle", xp=0)
+    nav, inter = await hub("pets")
+    await click(nav, inter, "Details")
+    text = all_text(nav)
+    assert all(skill.title() in text for skill in pet_score.SKILLS)
+    assert find_button(nav, "Hide details")
+
+
+def test_the_score_breakdown_has_a_value_per_skill():
+    from cococap.services import pet_score
+
+    breakdown = pet_score.total(REG.pets["drizzle"], REG)
+    assert set(breakdown.skills) == set(pet_score.SKILLS)
+    assert breakdown.skills_total == sum(breakdown.skills.values()) and all(0 <= v <= pet_score.MAX_SKILL for v in breakdown.skills.values())

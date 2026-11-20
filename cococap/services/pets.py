@@ -548,3 +548,14 @@ async def give_spirit(user: User, spirit_id: str, registry: Registry | None = No
         await user.add_item(spirit_id, 1)
         raise PetError("That Spirit can't be given right now.")
     return reg.pets[outcome["pet"]], spirit.skill
+
+
+async def bank_idle_haul(user: User, registry: Registry | None = None) -> str | None:
+    """Bank the active pet's idle haul when a page opens (no button needed). Returns a short note if anything came in, else None."""
+    if not user.pethouse.active:
+        return None
+    try:
+        skill, xp, _hours, _drops = await collect(user, registry)
+    except PetError:
+        return None
+    return f"Your pet brought home {xp:,} {skill} xp." if xp > 0 and skill else None
