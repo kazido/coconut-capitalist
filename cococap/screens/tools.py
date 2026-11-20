@@ -41,7 +41,7 @@ def tool_emoji(inst, item) -> str:
     return emojis.get(f"tool_{item.tool.kind}", fallback) if inst.parts else fallback
 
 
-KIND_LABEL = {"pickaxe": "Mining", "axe": "Foraging", "sword": "Combat", "rod": "Fishing", "can": "Farming"}
+KIND_LABEL = {"pickaxe": "Mining", "axe": "Foraging", "sword": "Combat", "bow": "Combat", "staff": "Combat", "shield": "Combat", "rod": "Fishing", "can": "Farming"}
 
 
 def _describe(inst, rules) -> str:

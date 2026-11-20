@@ -194,7 +194,7 @@ def combat_xp_per_hour(encounter_id: str, level: int, power: int, kit: str) -> t
     wins, clicks, xp = 0, 0, 0
     for seed in range(200):
         me = c.Unit(id="p1", name="Hero", side="player", max_hp=p.base_hp + p.hp_per_level * level,
-                    attack=p.base_attack + p.attack_per_power * power + p.attack_per_level * level,
+                    attack=p.base_attack + REG.tools.sword.attack * power + p.attack_per_level * level,
                     defense=p.base_defense + p.defense_per_level * level, speed=p.speed, skills=list(rules.kits[kit]))
         b = c.new_battle(me, encounter_id, rng=Random(seed))
         while not b.outcome:

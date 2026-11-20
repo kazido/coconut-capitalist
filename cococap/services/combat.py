@@ -398,26 +398,31 @@ class Battle:
 
 
 # --- building a fight ----------------------------------------------------------------------------
+def class_for(kind: str | None, registry: Registry | None = None):
+    """The combat class a weapon kind makes you (None for bare hands)."""
+    reg = registry or get_registry()
+    return next((c for c in reg.combat.classes.values() if c.weapon == kind), None)
+
+
 async def build_player(user: User, registry: Registry | None = None) -> Unit:
-    """Turn a player's combat level and equipped sword into a fighting unit."""
+    """Turn a player's combat level and equipped weapon into a fighting unit (its kind picks the class kit)."""
     reg = registry or get_registry()
     rules = reg.combat.player
     level = User.xp_to_level((await user.skill("combat")).xp)
     instance = await user.equipped_instance("combat")
-    power, kit = 0, "default"
-    if instance is not None:
-        power = equipment.effective_stats(instance, reg).power
-        kit = instance.template_id if instance.template_id in reg.combat.kits else "default"
-    extra_hp, extra_defense = tool_effects.sword_stats(power, reg) if instance is not None else (0, 0.0)
+    kind = reg.item(instance.template_id).tool.kind if instance is not None else None
+    cls = class_for(kind, reg)
+    skills = [k.skill for k in cls.kit if k.level <= level] if cls else list(reg.combat.kits["default"])
+    w = tool_effects.power_stats(kind, equipment.effective_stats(instance, reg).power, reg) if cls else {}
     return Unit(
         id="p1",
         name=user.name,
         side="player",
-        max_hp=rules.base_hp + rules.hp_per_level * level + extra_hp,
-        attack=rules.base_attack + rules.attack_per_power * power + rules.attack_per_level * level,
-        defense=round(rules.base_defense + rules.defense_per_level * level + extra_defense),
-        speed=rules.speed,
-        skills=list(reg.combat.kits[kit]),
+        max_hp=rules.base_hp + rules.hp_per_level * level + round(w.get("hp", 0)),
+        attack=rules.base_attack + round(w.get("attack", 0)) + rules.attack_per_level * level,
+        defense=round(rules.base_defense + rules.defense_per_level * level + w.get("defense", 0)),
+        speed=rules.speed + round(w.get("speed", 0)),
+        skills=skills,
     )
 
 

@@ -28,11 +28,11 @@ def test_the_effect_numbers_are_the_ones_the_game_uses():
         mean = sum(fishing.extra_fish(power, rules, Random(i)) for i in range(4000)) / 4000
         assert float(extra.value) == pytest.approx(mean, abs=0.06)
     assert tool_effects.effects("axe", 12)[0].value == "12" and tool_effects.effects("can", 7)[0].value == "7"
-    assert tool_effects.effects("sword", 5)[0].value == f"+{REG.combat.player.attack_per_power * 5}"
+    assert tool_effects.effects("sword", 5)[0].value == f"+{REG.tools.sword.attack * 5:.0f}"
 
 
 def test_every_kind_has_a_plain_sentence_about_what_power_is_for_and_a_better_tool_never_does_less():
-    assert set(tool_effects.HOW) - {"sword"} == set(STARTERS)  # sword kept, no template yet
+    assert set(tool_effects.HOW) - set(tool_effects.WEAPON_KINDS) == set(STARTERS)  # weapons have their own templates
     for kind in STARTERS:
         assert tool_effects.HOW[kind] and tool_effects.effects(kind, 3)
     assert tool_effects.compare("pickaxe", 3, 9)[0] == "Ore per lode: ×1.00 → **×2.50**"
@@ -62,7 +62,10 @@ def test_every_kind_of_tool_changes_at_least_three_things_when_it_gets_better():
 def test_a_starter_tool_gets_none_of_the_extras_so_nothing_changed_at_the_start():
     for kind in ("pickaxe", "axe", "can"):
         assert all(v == 0 for v in tool_effects.power_stats(kind, 3).values()), kind
-    assert tool_effects.sword_stats(3) == (0, 0.0)
+    for kind in tool_effects.WEAPON_KINDS:  # a weapon's attack counts every point; the rest only the points above 3
+        stats = tool_effects.power_stats(kind, 3)
+        assert stats["attack"] == getattr(REG.tools, kind).attack * 3
+        assert stats["hp"] == stats["defense"] == stats["speed"] == 0
 
 
 def test_more_power_never_gives_less_of_anything():

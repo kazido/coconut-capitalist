@@ -9,8 +9,7 @@ max_rounds = 150     # total turns (everyone's) before a fight counts as lost
 [player]
 base_hp = 120
 hp_per_level = 12
-base_attack = 8                   # (a sword starts at power 3 like every tool: 8 + 3 x 3 = the 17 the old power-1 sword gave)
-attack_per_power = 3
+base_attack = 8                   # (a weapon adds its own attack per power point, see configs/tools.toml; bare hands add none)
 attack_per_level = 1
 base_defense = 10
 defense_per_level = 1
@@ -29,8 +28,9 @@ power = 1.0
 
 [skills.slash]
 name = "Slash"
-description = "A clean cut."
+description = "A clean cut. Builds rage."
 power = 1.0
+gain = 10
 
 [skills.cleave]
 name = "Cleave"
@@ -38,12 +38,14 @@ description = "Hit every enemy for a little less."
 power = 0.7
 target = "all_enemies"
 cooldown = 3
+gain = 10
 
 [skills.guard_break]
 name = "Guard Break"
 description = "A heavy blow that leaves the enemy's guard down for 2 turns."
 power = 1.3
 cooldown = 4
+gain = 15
 effects = [{ kind = "defense_down", turns = 2, value = 0.5 }]
 
 [skills.quick_step]
@@ -58,6 +60,7 @@ name = "Brace"
 description = "Quadruple your defense for 2 turns: hits hurt about half as much. Use it when you can see a big one coming."
 target = "self"
 cooldown = 3
+gain = 20
 effects = [{ kind = "defense_up", on = "self", turns = 2, value = 3.0 }]
 
 [skills.sanguine_priming]
@@ -80,6 +83,107 @@ description = "Strike, then heal yourself for 25% of your max hp."
 power = 1.2
 cooldown = 3
 effects = [{ kind = "heal", on = "self", value = 0.25 }]
+
+# --- class skills (cost/gain/element are stored for the resource engine; TODO(balance): all numbers) ---------------------
+[skills.rampage]
+name = "Rampage"
+description = "A furious finisher. Spends rage."
+power = 2.2
+cooldown = 2
+cost = 50
+
+[skills.quick_shot]
+name = "Quick Shot"
+description = "A fast arrow. Builds focus."
+power = 1.0
+gain = 5
+
+[skills.aim]
+name = "Aim"
+description = "Line up the shot: faster for 2 turns and your next hit lands harder."
+target = "self"
+cooldown = 3
+gain = 20
+effects = [{ kind = "speed_up", on = "self", turns = 2, value = 0.2 }, { kind = "empower", on = "self", turns = 3, value = 1.3 }]
+
+[skills.power_shot]
+name = "Power Shot"
+description = "A heavy arrow. Spends focus."
+power = 1.9
+cooldown = 2
+cost = 40
+
+[skills.volley]
+name = "Volley"
+description = "Rain arrows on every enemy."
+power = 0.6
+target = "all_enemies"
+cooldown = 3
+cost = 20
+
+[skills.frost_bolt]
+name = "Frost Bolt"
+description = "A bolt of ice that slows the target."
+power = 1.0
+element = "frost"
+effects = [{ kind = "speed_down", chance = 60, turns = 2, value = 0.2 }]
+
+[skills.fireball]
+name = "Fireball"
+description = "Burns the target for 3 turns."
+power = 1.2
+cooldown = 2
+cost = 20
+element = "fire"
+effects = [{ kind = "bleed", turns = 3, value = 0.3 }]
+
+[skills.chain_lightning]
+name = "Chain Lightning"
+description = "Lightning arcs through every enemy."
+power = 0.7
+target = "all_enemies"
+cooldown = 2
+cost = 30
+element = "storm"
+
+[skills.blizzard]
+name = "Blizzard"
+description = "A freezing storm: hits everyone and slows them."
+power = 0.5
+target = "all_enemies"
+cooldown = 3
+cost = 40
+element = "frost"
+effects = [{ kind = "speed_down", chance = 80, turns = 2, value = 0.3 }]
+
+[skills.meteor]
+name = "Meteor"
+description = "A huge fiery blow."
+power = 2.4
+cooldown = 4
+cost = 60
+element = "fire"
+
+[skills.bash]
+name = "Bash"
+description = "A shield bash. Builds guard."
+power = 0.9
+gain = 10
+
+[skills.shield_wall]
+name = "Shield Wall"
+description = "Raise a shield worth 25% of your max hp. Spends guard."
+target = "self"
+cooldown = 3
+cost = 30
+effects = [{ kind = "shield", on = "self", value = 0.25 }]
+
+[skills.retaliate]
+name = "Retaliate"
+description = "Strike back hard. Spends guard."
+power = 1.6
+cooldown = 2
+cost = 40
 
 # enemy skills
 [skills.armor_slam]
@@ -114,7 +218,41 @@ power = 0.6
 cooldown = 4
 effects = [{ kind = "speed_down", chance = 85, turns = 2, value = 0.3 }]
 
-# --- what each sword lets you do (the first skill is the basic, with no cooldown) ------------------------------------------
+# --- the four classes: the weapon in the combat slot picks one (bare hands use [kits].default) ------------------------------
+# Each kit lists skills in button order: the first is level 0 with no cooldown, the rest unlock at that combat level. TODO(balance)
+[classes.melee]
+name = "Melee"
+weapon = "sword"
+resource = "rage"
+resource_max = 100
+description = "Rage builds when you hit or get hit; finishers spend it. Burst on one target."
+kit = [{ skill = "slash", level = 0 }, { skill = "cleave", level = 3 }, { skill = "guard_break", level = 6 }, { skill = "quick_step", level = 10 }, { skill = "rampage", level = 15 }]
+
+[classes.archer]
+name = "Archer"
+weapon = "bow"
+resource = "focus"
+resource_max = 100
+description = "Focus builds each turn you stay unhurt or Aim; Power Shot spends it. Crits, speed and meter pull."
+kit = [{ skill = "quick_shot", level = 0 }, { skill = "aim", level = 3 }, { skill = "power_shot", level = 6 }, { skill = "volley", level = 10 }, { skill = "quick_step", level = 14 }]
+
+[classes.wizard]
+name = "Wizard"
+weapon = "staff"
+resource = "mana"
+resource_max = 100
+description = "Mana refills each turn; spells cost it. Frost chills, fire burns, storm chains. Area damage and debuffs."
+kit = [{ skill = "frost_bolt", level = 0 }, { skill = "fireball", level = 3 }, { skill = "chain_lightning", level = 6 }, { skill = "blizzard", level = 10 }, { skill = "meteor", level = 15 }]
+
+[classes.tank]
+name = "Tank"
+weapon = "shield"
+resource = "guard"
+resource_max = 100
+description = "Guard builds when you are hit or Brace; spend it on defensive and counter skills. Carries the party at the boss."
+kit = [{ skill = "bash", level = 0 }, { skill = "brace", level = 3 }, { skill = "shield_wall", level = 6 }, { skill = "retaliate", level = 10 }, { skill = "guard_break", level = 14 }]
+
+# --- bare hands (the first skill is the basic, with no cooldown) ------------------------------------------
 [kits]
 default = ["slash"]  # bare hands
 

@@ -6,6 +6,7 @@ from cococap.errors import GameRuleError
 from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
 from cococap.services import accessories
+from cococap.services.tool_effects import WEAPON_KINDS  # all of these go in the combat slot
 from cococap.user import User
 
 # Which kind of tool each skill uses.
@@ -14,6 +15,8 @@ TOOL_FOR_SKILL = {"mining": "pickaxe", "foraging": "axe", "combat": "sword", "fi
 
 def skill_for_tool(kind: str) -> str | None:
     """Inverse of TOOL_FOR_SKILL: which skill uses this kind of tool."""
+    if kind in WEAPON_KINDS:
+        return "combat"
     return next((skill for skill, k in TOOL_FOR_SKILL.items() if k == kind), None)
 
 
@@ -100,8 +103,7 @@ async def equip(user: User, skill: str, instance_id: int, registry: Registry | N
     if instance is None:
         raise EquipmentError("You don't own that item.")
     template = reg.item(instance.template_id)
-    wanted = TOOL_FOR_SKILL.get(skill)
-    if template.tool is None or template.tool.kind != wanted:
+    if template.tool is None or skill_for_tool(template.tool.kind) != skill:
         raise EquipmentError(f"{template.name} can't be used for {skill}.")
     level = User.xp_to_level((await user.skill(skill)).xp)
     if level < template.tool.requirement:
@@ -113,10 +115,9 @@ async def equip(user: User, skill: str, instance_id: int, registry: Registry | N
 async def auto_equip(user: User, skill: str, registry: Registry | None = None) -> ItemInstance | None:
     """Equip the newest owned tool that fits `skill` (and its level requirement); None if there is none."""
     reg = registry or get_registry()
-    wanted = TOOL_FOR_SKILL.get(skill)
     for instance in reversed(await user.instances()):
         tool = reg.item(instance.template_id).tool
-        if tool is None or tool.kind != wanted:
+        if tool is None or skill_for_tool(tool.kind) != skill:
             continue
         try:
             return await equip(user, skill, instance.id, reg)

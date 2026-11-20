@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from cococap import emojis
 from cococap.registry import Registry, get_registry
 
+WEAPON_KINDS = ("sword", "bow", "staff", "shield")  # equipment.py has the same list; it imports this module, so it lives here too
+
 BASE_POWER = 3  # every tool starts here; the extras count only the points above it
 
 # one line on what power means for each kind (shown on the upgrade page)
@@ -16,7 +18,10 @@ HOW = {
     "axe": f"{emojis.icon('chop', '🪓')} Power = a bigger bite out of a tree, more good chops, and spots that last longer.",
     "rod": f"{emojis.icon('rod', '🎣')} Power = faster bites, more forgiven arrows, and rarer and extra fish.",
     "can": f"{emojis.icon('can', '🚿')} Power = more plots watered an hour, bigger harvests, more drops, and seeds that come back.",
-    "sword": f"{emojis.icon('sword', '⚔️')} Power = a harder hit, and a tougher you: more hp and defense in a fight.",
+    "sword": f"{emojis.icon('sword', '⚔️')} Power = a harder hit, and a tougher you: more hp and defense in a fight. Makes you Melee.",
+    "bow": "🏹 Power = a harder hit and a quicker you in a fight. Makes you an Archer.",
+    "staff": "🪄 Power = a much harder hit, but a frailer you. Makes you a Wizard.",
+    "shield": "🛡️ Power = a lot more hp and defense, but a lighter hit. Makes you a Tank.",
 }
 
 
@@ -44,14 +49,10 @@ def power_stats(kind: str, power: int, registry: Registry | None = None, path: s
         w = r.can.paths.get(path or "", {})
         return {"crop_yield": r.can.crop_yield * above * w.get("crop_yield", 1.0), "drop_luck": r.can.drop_luck * above * w.get("drop_luck", 1.0),
                 "seed_back": min(1.0, r.can.seed_back * above * w.get("seed_back", 1.0))}
+    if kind in WEAPON_KINDS:
+        w = getattr(r, kind)
+        return {"attack": w.attack * power, "hp": w.hp * above, "defense": w.defense * above, "speed": w.speed * above}
     return {}
-
-
-def sword_stats(power: int, registry: Registry | None = None) -> tuple[int, float]:
-    """(extra max hp, extra defense) a sword of this power gives in a fight."""
-    reg = registry or get_registry()
-    above = max(0, power - BASE_POWER)
-    return round(reg.tools.sword.hp * above), reg.tools.sword.defense * above
 
 
 def effects(kind: str, power: int, registry: Registry | None = None, path: str | None = None, stats: dict[str, float] | None = None) -> list[Effect]:
@@ -76,11 +77,11 @@ def effects(kind: str, power: int, registry: Registry | None = None, path: str |
                 Effect("Bigger harvests", f"+{extra['crop_yield']:.0%}"),
                 Effect("More drops", f"+{extra['drop_luck']:.0%}"),
                 Effect("Seed comes back", f"{extra['seed_back']:.0%}")]
-    if kind == "sword":
-        hp, defense = sword_stats(power, reg)
-        return [Effect("Attack from the sword", f"+{reg.combat.player.attack_per_power * power}"),
-                Effect("Extra max hp", f"+{hp}"),
-                Effect("Extra defense", f"+{defense:.1f}")]
+    if kind in WEAPON_KINDS:
+        return [Effect("Attack from the weapon", f"+{extra['attack']:.0f}"),
+                Effect("Extra max hp", f"+{extra['hp']:.0f}"),
+                Effect("Extra defense", f"+{extra['defense']:.1f}"),
+                Effect("Extra speed", f"+{extra['speed']:.0f}")]
     if kind == "rod":
         rules = reg.fishing
         more = rules.rod.extra_fish_per_power * max(0, power - 3)

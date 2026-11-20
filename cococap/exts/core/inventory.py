@@ -7,7 +7,7 @@ from cococap.errors import CustomError
 from cococap.models.instance import ItemInstance
 from cococap.registry import get_registry
 from cococap.screens import open_screen
-from cococap.services.equipment import TOOL_FOR_SKILL, EquipmentError, equip
+from cococap.services.equipment import EquipmentError, equip, skill_for_tool
 from cococap.user import User
 from utils.custom_embeds import CustomEmbed
 from utils.items.items import item_autocomplete
@@ -39,7 +39,7 @@ class InventoryCog(commands.Cog, name="Inventory"):
         if instance is None:
             raise CustomError("You don't own a tool with that id.")
         kind = get_registry().item(instance.template_id).tool
-        skill = next((s for s, k in TOOL_FOR_SKILL.items() if kind and k == kind.kind), None)
+        skill = skill_for_tool(kind.kind) if kind else None
         if skill is None:
             raise CustomError("That can't be equipped.")
         try:

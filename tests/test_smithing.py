@@ -112,6 +112,13 @@ async def test_smith_consumes_parts_and_records_smith_id_parts_and_quality():
     assert await smithing.smithing_xp(user) > 0
 
 
+async def test_a_bow_can_be_smithed():
+    user = await player(level=10)
+    ids = await three_parts(user)
+    tool = await smith_with(user, ids, kind="bow")
+    assert REG.item(tool.template_id).tool.kind == "bow"
+
+
 async def test_bonus_trait_only_when_fewer_than_max_traits_are_picked():
     kinds = traits_fitting("pickaxe")
     user = await player(level=10)

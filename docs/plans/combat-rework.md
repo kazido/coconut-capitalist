@@ -1,4 +1,4 @@
-Status: APPROVED 2026-11-20. Not built. Step 0 done.
+Status: APPROVED 2026-11-20. Steps 0-2 done on design; step 3 (engine) next.
 
 
 ## Context

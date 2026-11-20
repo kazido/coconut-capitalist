@@ -14,7 +14,7 @@ from cococap import emojis
 
 Skill = Literal["farming", "foraging", "fishing", "mining", "combat", "shepherding"]
 Category = Literal["material", "tool", "key_item", "pet_item", "pet_food", "crop", "seed", "fish", "scroll", "bait", "part", "accessory"]
-ToolKind = Literal["pickaxe", "axe", "sword", "rod", "can"]
+ToolKind = Literal["pickaxe", "axe", "sword", "bow", "staff", "shield", "rod", "can"]
 
 ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 
@@ -316,6 +316,9 @@ class CombatSkill(_Data):
     cooldown: int = Field(default=0, ge=0)
     hits: int = Field(default=1, ge=1)
     effects: list[SkillEffect] = Field(default_factory=list)
+    cost: int = Field(default=0, ge=0)  # class resource spent (engine ignores for now)
+    gain: int = Field(default=0, ge=0)  # class resource gained
+    element: Literal["frost", "fire", "storm"] | None = None
 
     _id = field_validator("id")(check_id)
 
@@ -402,7 +405,6 @@ class PlayerRules(_Data):
     base_hp: int = Field(ge=1)
     hp_per_level: int = Field(ge=0)
     base_attack: int = Field(ge=1)
-    attack_per_power: int = Field(ge=0)  # per point of sword power
     attack_per_level: int = Field(ge=0)
     base_defense: int = Field(ge=0)
     defense_per_level: int = Field(ge=0)
@@ -421,6 +423,23 @@ class Encounter(_Data):
     _id = field_validator("id")(check_id)
 
 
+class KitSkill(_Data):
+    skill: str
+    level: int = Field(ge=0)  # combat level that unlocks it
+
+
+class CombatClass(_Data):
+    """A fighting class, picked by the weapon in the combat slot."""
+
+    id: str
+    name: str
+    weapon: ToolKind
+    resource: str
+    resource_max: int = Field(ge=1)
+    description: str
+    kit: list[KitSkill]
+
+
 class CombatRules(_Data):
     meter_full: int = Field(ge=1)  # a unit acts when its turn meter reaches this
     defense_scale: int = Field(ge=1)  # damage = attack x power x scale / (scale + defense)
@@ -429,7 +448,8 @@ class CombatRules(_Data):
     max_rounds: int = Field(ge=1)  # a fight this long is a loss (stops stalemates)
     player: PlayerRules
     skills: dict[str, CombatSkill]
-    kits: dict[str, list[str]]  # sword item id (or "default") -> skill ids, basic skill first
+    kits: dict[str, list[str]]  # only "default" (bare hands) -> skill ids, basic skill first
+    classes: dict[str, CombatClass]
     encounters: list[Encounter] = Field(min_length=1)
 
 
@@ -1457,16 +1477,21 @@ class CanPower(_Data):
     paths: dict[str, dict[str, float]] = Field(default_factory=dict)  # by road name (Sprinkler, Alchemist): a factor on each stat above (missing = 1)
 
 
-class SwordPower(_Data):
-    hp: float = Field(ge=0)
+class WeaponProfile(_Data):
+    attack: float = Field(ge=0)  # per power point
+    hp: float = Field(ge=0)  # per power point above base
     defense: float = Field(ge=0)
+    speed: float = Field(ge=0)
 
 
 class ToolRules(_Data):
     pickaxe: PickaxePower
     axe: AxePower
     can: CanPower
-    sword: SwordPower
+    sword: WeaponProfile
+    bow: WeaponProfile
+    staff: WeaponProfile
+    shield: WeaponProfile
 
 
 # ---- Shipments (configs/shipments.toml) ------------------------------------------------------------------------------------------------
