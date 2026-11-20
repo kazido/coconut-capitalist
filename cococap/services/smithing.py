@@ -64,8 +64,8 @@ def part_label(slot: str, tier: int, restricted: bool = False) -> str:
     return f"T{tier} Tool {slot.title()}{mark}"
 
 
-# Plain glyphs until the `trait_<stat>` emoji are uploaded (art/sprites/traits.toml).
-TRAIT_GLYPHS = {"power": "💪", "scholar": "📚", "appraise": "🔍", "rare_luck": "🍀", "drop_amount": "📦"}
+# Plain glyphs for button/select text and until the `ui_trait_<stat>` emoji load (art/gen/trait_icons.py, raven_magic.toml).
+TRAIT_GLYPHS = {"power": "💪", "scholar": "🧾", "appraise": "🧐", "rare_luck": "☘️", "drop_amount": "👝"}
 
 
 def trait_icons(trait_ids, rules: SmithingRules, plain: bool = False) -> str:
@@ -74,7 +74,7 @@ def trait_icons(trait_ids, rules: SmithingRules, plain: bool = False) -> str:
     for t in trait_ids:
         stat = rules.trait(t).stat
         glyph = TRAIT_GLYPHS.get(stat, "✨")
-        icons.append(glyph if plain else emojis.get(f"trait_{stat}", glyph))
+        icons.append(glyph if plain else emojis.ui(f"trait_{stat}", glyph))
     return " ".join(icons) or "no trait"
 
 
