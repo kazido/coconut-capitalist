@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 
 from cococap import emojis
 from cococap.errors import GameRuleError
+from cococap.models.instance import ItemInstance
 from cococap.registry import Registry, get_registry
 from cococap.registry.models import BUFFS, CombatRules, CombatSkill, Enemy, Phase, ResourceRules, SkillEffect
 from cococap.services import equipment, loot, tool_effects
@@ -484,6 +485,34 @@ def class_for(kind: str | None, registry: Registry | None = None):
     """The combat class a weapon kind makes you (None for bare hands)."""
     reg = registry or get_registry()
     return next((c for c in reg.combat.classes.values() if c.weapon == kind), None)
+
+
+async def best_weapons(user: User, registry: Registry | None = None) -> dict[str, ItemInstance]:
+    """The strongest weapon (by tool power) the player owns of each class weapon kind."""
+    reg = registry or get_registry()
+    kinds = {c.weapon for c in reg.combat.classes.values()}
+    best: dict[str, tuple[int, ItemInstance]] = {}
+    for inst in await user.instances():
+        tool = reg.item(inst.template_id).tool
+        if tool is None or tool.kind not in kinds:
+            continue
+        power = equipment.effective_stats(inst, reg).power
+        if tool.kind not in best or power > best[tool.kind][0]:
+            best[tool.kind] = (power, inst)
+    return {k: inst for k, (_, inst) in best.items()}
+
+
+async def switch_class(user: User, class_id: str | None, registry: Registry | None = None) -> None:
+    """Become a class by equipping the best weapon you own for it (None = bare hands). Needs a weapon of that kind."""
+    reg = registry or get_registry()
+    if class_id is None:
+        await user.equip("combat", None)
+        return
+    cls = reg.combat.classes[class_id]
+    weapon = (await best_weapons(user, reg)).get(cls.weapon)
+    if weapon is None:
+        raise GameRuleError(f"You need a {cls.weapon} to become a {cls.name}.")
+    await user.equip("combat", weapon.id)
 
 
 async def build_player(user: User, registry: Registry | None = None, uid: str = "p1") -> Unit:

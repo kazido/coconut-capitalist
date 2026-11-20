@@ -4,7 +4,7 @@ from cococap import emojis
 from cococap.registry import get_registry
 from cococap.services import bestiary
 from cococap.ui import Page, Screen
-from cococap.ui.components import row, select, sep, text
+from cococap.ui.components import button, row, select, sep, text
 
 
 class BestiaryScreen(Screen):
@@ -19,25 +19,26 @@ class BestiaryScreen(Screen):
     def __init__(self, nav):
         super().__init__(nav)
         self.group = "combat"
-        self.zone: str | None = None  # combat: which zone's monsters to show (all of them would overflow one message)
+        self.page = 0  # combat: which monster's page
 
     async def build(self) -> Page:
         reg = get_registry()
         every = bestiary.creatures(await bestiary.load(self.user), reg)
         mine = [c for c in every if c.group == self.group]
         blocks = [*self.note_block()]
-        zone_select = None
+        pager = None
         if self.group == "combat":
-            zones = {loc.id: loc for loc in reg.locations.get("combat", [])}
-            if self.zone not in zones:
-                self.zone = next(iter(zones), None)
-            here = set(self._zone_enemies(reg).get(self.zone, []))
-            for c in mine:
-                if c.id in here:
-                    blocks.append(text(self._combat_entry(c, reg) if c.count else f"### {emojis.icon('unknown', '❓')} Unknown\n-# Slay one to learn about it."))
-            zone_select = row(select("Zone...", [
-                discord.SelectOption(label=loc.name, value=loc.id, emoji=loc.emoji, default=loc.id == self.zone) for loc in zones.values()
-            ], self._pick_zone))
+            # One monster per page, in zone order (a page per enemy keeps the message small however many monsters there are).
+            order = list(dict.fromkeys(e for ids in self._zone_enemies(reg).values() for e in ids))
+            by_id = {c.id: c for c in mine}
+            pages = [by_id[e] for e in order if e in by_id]
+            self.page = max(0, min(self.page, len(pages) - 1))
+            if pages:
+                c = pages[self.page]
+                blocks.append(text(self._combat_entry(c, reg) if c.count else f"### {emojis.icon('unknown', '❓')} Unknown\n-# Slay one to learn about it."))
+                pager = row(button("Prev", emoji=emojis.icon("prev", "◀️"), disabled=self.page == 0, on_click=self._turn(-1)),
+                            button(f"{self.page + 1} / {len(pages)}", disabled=True, on_click=self._turn(0)),
+                            button("Next", emoji=emojis.icon("next", "▶️"), disabled=self.page >= len(pages) - 1, on_click=self._turn(1)))
         else:
             blocks.append(text(f"### {emojis.icon('fish', '🐟')} Fish\n" + "\n".join(self._line(c) for c in mine if not c.boss)))
             blocks.append(text(f"### {emojis.icon('crown', '👑')} Sea bosses\n" + "\n".join(self._line(c) for c in mine if c.boss)))
@@ -46,8 +47,8 @@ class BestiaryScreen(Screen):
         blocks.append(row(select("Show...", [
             discord.SelectOption(label=name, value=key, emoji=emojis.skill(key, "⚔️" if key == "combat" else "🎣"), default=key == self.group) for key, name in bestiary.GROUPS.items()
         ], self._pick)))
-        if zone_select:
-            blocks.append(zone_select)
+        if pager:
+            blocks.append(pager)
         return Page("Bestiary", blocks, accent=0x8E44AD)
 
     @staticmethod
@@ -59,9 +60,12 @@ class BestiaryScreen(Screen):
             out[next(iter(out))] += [e for e in reg.enemies if e not in placed]
         return out
 
-    async def _pick_zone(self, interaction: discord.Interaction, values: list[str]) -> None:
-        self.zone = values[0]
-        await self.refresh(interaction)
+    def _turn(self, step: int):
+        async def go(interaction: discord.Interaction) -> None:
+            self.page += step
+            await self.refresh(interaction)
+
+        return go
 
     @staticmethod
     def _goal(c: bestiary.Creature) -> str:
@@ -82,5 +86,5 @@ class BestiaryScreen(Screen):
         return "\n".join(lines)
 
     async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
-        self.group = values[0]
+        self.group, self.page = values[0], 0
         await self.refresh(interaction)

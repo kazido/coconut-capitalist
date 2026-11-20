@@ -142,15 +142,15 @@ async def test_the_combat_page_and_the_more_page_lead_to_the_bestiary(db):
     assert "Bestiary" in all_text(nav)
 
 
-async def test_every_bestiary_zone_fits_discord_limits_with_every_monster_met(db):
+async def test_every_monster_has_its_own_bestiary_page_that_fits_discord_limits(db):
     user = await User.get(1)
     await user.update_skill("combat", lambda s: s.kills.update({e: 10**6 for e in REG.enemies}))
     nav, inter = await hub("bestiary")
-    for loc in REG.locations["combat"]:
-        await choose(nav, inter, select_named(nav, "Zone..."), loc.id)
+    seen = set()
+    for _ in REG.enemies:
         nav.to_components()
-        assert nav.total_children_count <= 40 and nav.content_length() <= 4000, loc.id
-    shown = set()
-    for zone in REG.combat.zones:
-        shown |= set(BestiaryScreen._zone_enemies(REG)[zone])
-    assert shown == set(REG.enemies)  # every monster is on some zone's page
+        assert nav.total_children_count <= 40 and nav.content_length() <= 4000
+        seen.add(nav.screen.page)
+        if nav.screen.page < len(REG.enemies) - 1:
+            await click(nav, inter, "Next")
+    assert seen == set(range(len(REG.enemies)))

@@ -387,7 +387,7 @@ class Enemy(_Data):
     skills: list[str] = Field(default_factory=lambda: ["strike"], min_length=1)
     immune: list[EffectKind] = Field(default_factory=list)  # effects it can never receive (bosses shrug off stuns)
     xp: int = Field(default=0, ge=0)
-    emoji: str = "👾"
+    emoji_raw: str = Field(default="👾", alias="emoji")
     drops: str | None = None  # id of its table in drops.toml
     drop_chance: int = Field(default=100, ge=0, le=100)  # percent chance a kill drops anything at all
     boss: bool = False  # shown as a boss in the Bestiary and counted in bosses_slain
@@ -395,6 +395,11 @@ class Enemy(_Data):
     phases: list[Phase] = Field(default_factory=list)  # in the order they happen (highest `below` first)
 
     _id = field_validator("id")(check_id)
+
+    @property
+    def emoji(self) -> str:
+        """The bot's emoji named `enemy_<id>` if uploaded, else the one in the data file (see `cococap.emojis`)."""
+        return emojis.for_id("enemy", self.id, self.emoji_raw)
 
     @model_validator(mode="after")
     def _phases_in_order(self):

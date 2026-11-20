@@ -289,7 +289,7 @@ weapon = "sword"
 resource = "rage"
 resource_max = 100
 description = "Rage builds when you hit or get hit; finishers spend it. Burst on one target."
-kit = [{ skill = "slash", level = 0 }, { skill = "cleave", level = 3 }, { skill = "guard_break", level = 6 }, { skill = "quick_step", level = 10 }, { skill = "rampage", level = 15 }]
+kit = [{ skill = "slash", level = 0 }, { skill = "cleave", level = 0 }, { skill = "guard_break", level = 6 }, { skill = "quick_step", level = 10 }, { skill = "rampage", level = 15 }]
 
 [classes.archer]
 name = "Archer"
@@ -297,7 +297,7 @@ weapon = "bow"
 resource = "focus"
 resource_max = 100
 description = "Focus builds each turn you stay unhurt or Aim; Power Shot spends it. Crits, speed and meter pull."
-kit = [{ skill = "quick_shot", level = 0 }, { skill = "aim", level = 3 }, { skill = "power_shot", level = 6 }, { skill = "volley", level = 10 }, { skill = "quick_step", level = 14 }]
+kit = [{ skill = "quick_shot", level = 0 }, { skill = "aim", level = 0 }, { skill = "power_shot", level = 6 }, { skill = "volley", level = 10 }, { skill = "quick_step", level = 14 }]
 
 [classes.wizard]
 name = "Wizard"
@@ -305,7 +305,7 @@ weapon = "staff"
 resource = "mana"
 resource_max = 100
 description = "Mana refills each turn; spells cost it. Frost chills, fire burns, storm chains. Area damage and debuffs."
-kit = [{ skill = "frost_bolt", level = 0 }, { skill = "fireball", level = 3 }, { skill = "chain_lightning", level = 6 }, { skill = "blizzard", level = 10 }, { skill = "meteor", level = 15 }]
+kit = [{ skill = "frost_bolt", level = 0 }, { skill = "fireball", level = 0 }, { skill = "chain_lightning", level = 6 }, { skill = "blizzard", level = 10 }, { skill = "meteor", level = 15 }]
 
 [classes.tank]
 name = "Tank"
@@ -313,7 +313,7 @@ weapon = "shield"
 resource = "guard"
 resource_max = 100
 description = "Guard builds when you are hit or Brace; spend it on defensive and counter skills. Carries the party at the boss."
-kit = [{ skill = "bash", level = 0 }, { skill = "brace", level = 3 }, { skill = "shield_wall", level = 6 }, { skill = "taunt", level = 10 }, { skill = "retaliate", level = 14 }]
+kit = [{ skill = "bash", level = 0 }, { skill = "brace", level = 0 }, { skill = "shield_wall", level = 6 }, { skill = "taunt", level = 10 }, { skill = "retaliate", level = 14 }]
 
 # --- bare hands (the first skill is the basic, with no cooldown) ------------------------------------------
 [kits]

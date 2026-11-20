@@ -12,6 +12,15 @@ from cococap.ui.tabs import TabsScreen
 from cococap.user import User
 
 
+BARE = "bare"
+WEAPON_GLYPHS = {"sword": "⚔️", "bow": "🏹", "staff": "🪄", "shield": "🛡️", None: "👊"}
+
+
+def weapon_emoji(kind: str | None) -> str:
+    """The icon for a weapon kind (None = bare hands): its ui_weapon_<kind> emoji, else a plain glyph."""
+    return emojis.icon(f"weapon_{kind or 'unarmed'}", WEAPON_GLYPHS[kind])
+
+
 class ExplorePane(Screen):
     """Pick an open zone and fight what turns up; key fights (the Gravewarden) are listed below."""
 
@@ -154,9 +163,17 @@ class ClassPane(Screen):
         kind = reg.item(instance.template_id).tool.kind if instance is not None else None
         cls = combat.class_for(kind, reg)
         body = [*self.note_block()]
+        # Quick class switch: bare hands, plus every class you own a weapon for (picking one equips your best weapon of that kind).
+        have = await combat.best_weapons(self.user, reg)
+        options = [discord.SelectOption(label="Bare hands", value=BARE, emoji=weapon_emoji(None), default=cls is None)]
+        options += [discord.SelectOption(label=f"{c.name} ({c.weapon})", value=cid, emoji=weapon_emoji(c.weapon), default=c is cls)
+                    for cid, c in rules.classes.items() if c.weapon in have]
+        switch = row(select("Change class...", options, self._pick)) if len(options) > 1 else None
         if cls is None:
             body.append(text("### Bare hands\nEquip a sword, bow, staff or shield to pick a class. Weapons are smithed in **Smithing**.\n"
                              + "\n".join(f"**{rules.skills[s].name}**: {rules.skills[s].description}" for s in rules.kits["default"])))
+            if switch:
+                body.append(switch)
             return Page("Class", body, accent=0xC0392B)
         res = cls.resource.title()
         body.append(text(f"### {cls.name}  ·  {kind}\n{cls.description}\n**{res}** (max {cls.resource_max})"))
@@ -168,7 +185,13 @@ class ClassPane(Screen):
             lines.append(line if k.level <= level else f"{emojis.icon('lock', '🔒')} ~~{sk.name}~~ unlocks at combat level {k.level}")
         body.append(sep())
         body.append(text("\n".join(lines)))
+        if switch:
+            body.append(switch)
         return Page("Class", body, accent=0xC0392B)
+
+    async def _pick(self, interaction: discord.Interaction, values: list[str]) -> None:
+        await combat.switch_class(self.user, None if values[0] == BARE else values[0])
+        await self.refresh(interaction)
 
 
 class CombatScreen(TabsScreen):

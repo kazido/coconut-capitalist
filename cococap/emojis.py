@@ -23,6 +23,7 @@ server). At startup ``refresh(bot)`` fetches them, so data files and code only n
   location     ``location_<id>`` ``location_slimewood_thicket``
   area         ``area_<id>``     ``area_rust_belt``
   ship tier    ``ship_<slug>``   ``ship_dune_skiff`` (slug = the tier's name)
+  enemy        ``enemy_<id>``    ``enemy_zombie``
   ui icon      ``ui_<name>``     ``ui_releaf``
   ===========  ================  ===========================
 
@@ -48,7 +49,7 @@ LEGACY = (
 # Every custom-emoji name the bot's own code or data may mention.
 KNOWN = LEGACY
 
-KINDS = ("item", "pet", "species", "enchant", "mine", "water", "rank", "location", "area", "ship", "ui")
+KINDS = ("item", "pet", "species", "enchant", "mine", "water", "rank", "location", "area", "ship", "enemy", "ui")
 NAME_RE = re.compile(r"^[a-z0-9_]{2,32}$")  # Discord's rule for application emoji names
 
 _TOKEN = re.compile(r"<a?:(\w+):\d+>")
