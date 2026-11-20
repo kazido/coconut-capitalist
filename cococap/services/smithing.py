@@ -69,6 +69,14 @@ def trait_icons(trait_ids, rules: SmithingRules, plain: bool = False) -> str:
     return " ".join(icons) or "no trait"
 
 
+def trait_effect(trait_id: str, rules: SmithingRules) -> str:
+    """What a trait does, e.g. "+1 to +4 power" or "+3% to +10% rare luck" (the amount grows with the tool's quality)."""
+    t = rules.trait(trait_id)
+    lo, hi = min(t.amounts), max(t.amounts)
+    fmt = (lambda v: f"{v:.0%}") if hi < 1 else (lambda v: f"{v:g}")
+    return f"+{fmt(lo)} to +{fmt(hi)} {t.stat.replace('_', ' ')}"
+
+
 def is_restricted(part) -> bool:
     """A part instance (rolled flag) or a tool's part dict (key) that is restricted."""
     data = part.rolled if isinstance(part, ItemInstance) else part

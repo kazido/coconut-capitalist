@@ -231,3 +231,26 @@ def test_upgrade_backs_up_an_existing_database_first(tmp_path):
     assert len(list((tmp_path / "backups").glob("live.pre-migrate-*.db"))) == 1
     upgrade_sync(url)  # already current: no second copy
     assert len(list((tmp_path / "backups").glob("live.pre-migrate-*.db"))) == 1
+
+
+def test_reroll_part_traits_migration_redraws_traits_and_keeps_tier(tmp_path):
+    """Migration 0015: every unsmithed part gets fresh distinct traits (count by tier); tier and restricted stay."""
+    import json
+    import sqlite3
+
+    url = f"sqlite:///{tmp_path / 'old.db'}"
+    upgrade_sync(url, "0014")
+    con = sqlite3.connect(tmp_path / "old.db")
+    icols = [(r[1], r[2]) for r in con.execute("PRAGMA table_info(item_instances)") if r[3] and r[4] is None and not r[5]]
+    for template, rolled in (("part_base", '{"tier": 6, "restricted": 1}'), ("part_trim", '{"tier": 1}'), ("tool_pickaxe_starter", "{}")):
+        values = {name: ("x" if "CHAR" in kind.upper() or kind.upper() == "TEXT" else 0) for name, kind in icols}
+        values.update(template_id=template, rolled=rolled, traits='["power_core"]')
+        con.execute(f"INSERT INTO item_instances ({', '.join(values)}) VALUES ({', '.join('?' * len(values))})", list(values.values()))
+    con.commit()
+    con.close()
+    upgrade_sync(url)
+    con = sqlite3.connect(tmp_path / "old.db")
+    rows = [(json.loads(t), json.loads(r)) for t, r in con.execute("SELECT traits, rolled FROM item_instances ORDER BY id")]
+    assert len(rows[0][0]) == 3 and len(set(rows[0][0])) == 3 and rows[0][1] == {"tier": 6, "restricted": 1}
+    assert len(rows[1][0]) == 1
+    assert rows[2][0] == ["power_core"]  # not a part: untouched

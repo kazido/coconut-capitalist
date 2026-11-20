@@ -111,9 +111,10 @@ class SmithingPane(Screen):
                 if t in fitting:
                     tr = rules.trait(t)
                     glyph = smithing.TRAIT_GLYPHS.get(tr.stat, "✨")
-                    body.append(text(f"· {smithing.trait_icons([t], rules)} **{tr.name}**"))
+                    body.append(text(f"· {smithing.trait_icons([t], rules)} **{tr.name}**: {smithing.trait_effect(t, rules)}"))
                     trait_options.append(discord.SelectOption(
                         label=tr.name[:100], value=t, default=self.picks.get(part.id) == t,
+                        description=smithing.trait_effect(t, rules)[:100],
                         emoji=emojis.ui(f"trait_{tr.stat}", glyph)))
             body.append(row(select(f"{slot.title()} trait...", trait_options, self._trait_handler(part.id))))
             body.append(row(button("Back", on_click=self._back)))
@@ -136,7 +137,7 @@ class SmithingPane(Screen):
 
     @staticmethod
     def _trait_lines(part, rules, fitting: set) -> str:
-        lines = [f"· {smithing.trait_icons([t], rules)} {rules.trait(t).name}" + ("" if t in fitting else " *(not for this tool)*")
+        lines = [f"· {smithing.trait_icons([t], rules)} **{rules.trait(t).name}**: {smithing.trait_effect(t, rules)}" + ("" if t in fitting else " *(not for this tool)*")
                  for t in part.traits]
         return "\n".join(lines) or "· no traits"
 

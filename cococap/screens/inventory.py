@@ -111,8 +111,7 @@ class InventoryScreen(Screen):
             lines.append("**Traits** (the amount depends on the tool's quality):")
             for t in inst.traits:
                 trait = rules.trait(t)
-                lines.append(f"· {smithing.trait_icons([t], rules)} **{trait.name}**: {trait.stat.replace('_', ' ')} "
-                             f"+{min(trait.amounts):g} to +{max(trait.amounts):g}")
+                lines.append(f"· {smithing.trait_icons([t], rules)} **{trait.name}**: {smithing.trait_effect(t, rules)}")
         else:
             lines.append("**Traits**: none")
         if template := reg.find_item(inst.template_id):
