@@ -10,6 +10,12 @@
 #   major = true for a big change (shown with a star), false for a grouped list of small ones
 
 [[entry]]
+date = "2026-11-20"
+title = "Inventory Inspect and part names"
+body = "- **Inspect** replaces the Sell button on your Inventory: pick an item to see its big picture, stats and details. For tool parts that includes the tier and each **trait**. (Selling is still in the Shop.)\n- Tool parts now read **T2 Tool Base / Tool Trim / Tool Accent** (the tier is the rarity, so no rarity word).\n- Part traits show as **icons** instead of words.\n- Fixed tool parts not showing their picture in your inventory."
+major = false
+
+[[entry]]
 date = "2026-11-19"
 title = "Fuel overdrive and auto-craft"
 body = "- **Overdrive**: on the Travel page, burn any fuel you hold (from an area you have reached) for **1 hour** of bonus skill xp and bonus drops in every skill. Better fuels give bigger boosts. The same fuel adds time (up to 3 hours); a different fuel replaces the current one.\n- **Fuel chain**: each fuel's recipe now needs the fuel before it (Rust needs Twilight, and so on).\n- **Auto-craft missing steps** (Settings, off by default): the Workbench makes missing ingredients like the previous fuel for you, all or nothing."
