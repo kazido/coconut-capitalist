@@ -12,16 +12,11 @@ from tests.conftest import set_columns
 from tests.test_hub import all_text, buttons, click, hub
 
 REG = get_registry()
-STARTERS = {"pickaxe": "tool_pickaxe_rookie", "axe": "tool_axe_starter", "rod": "tool_rod_starter", "can": "tool_can_tin", "sword": "tool_largebranch"}
+STARTERS = {"pickaxe": "tool_pickaxe_rookie", "axe": "tool_axe_starter", "rod": "tool_rod_starter", "can": "tool_can_tin"}
 
 
 def test_every_kind_of_tool_starts_at_power_three():
     assert {kind: REG.item(item).tool.power for kind, item in STARTERS.items()} == {kind: 3 for kind in STARTERS}
-
-
-def test_a_starter_sword_hits_as_hard_as_it_did_when_it_started_at_power_one():
-    p = REG.combat.player
-    assert p.base_attack + p.attack_per_power * REG.item("tool_largebranch").tool.power == 17  # (14 + 3 x 1 before)
 
 
 def test_the_effect_numbers_are_the_ones_the_game_uses():
@@ -37,7 +32,7 @@ def test_the_effect_numbers_are_the_ones_the_game_uses():
 
 
 def test_every_kind_has_a_plain_sentence_about_what_power_is_for_and_a_better_tool_never_does_less():
-    assert set(tool_effects.HOW) == set(STARTERS)
+    assert set(tool_effects.HOW) - {"sword"} == set(STARTERS)  # sword kept, no template yet
     for kind in STARTERS:
         assert tool_effects.HOW[kind] and tool_effects.effects(kind, 3)
     assert tool_effects.compare("pickaxe", 3, 9)[0] == "Ore per lode: ×1.00 → **×2.50**"
@@ -47,11 +42,11 @@ def test_every_kind_has_a_plain_sentence_about_what_power_is_for_and_a_better_to
 async def test_the_tools_page_shows_each_tool_with_its_power(db):
     user = await User.get(1)
     for kind, item in STARTERS.items():
-        await equip(user, {"pickaxe": "mining", "axe": "foraging", "rod": "fishing", "can": "farming", "sword": "combat"}[kind],
+        await equip(user, {"pickaxe": "mining", "axe": "foraging", "rod": "fishing", "can": "farming"}[kind],
                     (await user.give_instance(item)).id)
     nav, _ = await hub("tools")
     lines = all_text(nav).split("\n")
-    for skill in ("Mining", "Foraging", "Fishing", "Farming", "Combat"):
+    for skill in ("Mining", "Foraging", "Fishing", "Farming"):
         assert sum(skill in line and "power **" in line for line in lines) == 1, skill  # one compact line per skill
 
 
@@ -74,18 +69,3 @@ def test_more_power_never_gives_less_of_anything():
     for kind in ("pickaxe", "axe", "can"):
         low, high = tool_effects.power_stats(kind, 9), tool_effects.power_stats(kind, 71)
         assert all(high[k] >= low[k] for k in low) and any(high[k] > low[k] for k in low), kind
-
-
-async def test_a_better_sword_makes_you_tougher_not_only_stronger_and_a_starter_is_as_before(db):
-    from cococap.services import combat
-
-    user = await User.get(1)
-    await user.add_xp("combat", User.level_to_xp(10) + 1)
-    bare = await combat.build_player(user, REG)
-    await equip(user, "combat", (await user.give_instance("tool_largebranch")).id)
-    starter = await combat.build_player(user, REG)
-    assert (starter.max_hp, starter.defense) == (bare.max_hp, bare.defense)  # (a power 3 sword adds no hp or defense)
-    await equip(user, "combat", (await user.give_instance("tool_dreamnail")).id)
-    dream = await combat.build_player(user, REG)
-    assert dream.max_hp > starter.max_hp and dream.defense > starter.defense and dream.attack > starter.attack
-

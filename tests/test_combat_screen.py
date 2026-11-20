@@ -97,8 +97,6 @@ async def test_fleeing_ends_the_fight_without_xp(db):
 
 async def test_the_boss_shows_its_next_move_and_the_controls_fit_discord_rows(db):
     nav, inter = await hub("fight")
-    sword = await nav.user.give_instance("tool_shiningsilver")  # five skills: the widest kit
-    await nav.user.equip("combat", sword.id)
     nav.screen.battle = combat.new_battle(await combat.build_player(nav.user), "gravewarden")
     nav.screen.encounter = "gravewarden"
     await nav.refresh(inter)
@@ -106,7 +104,7 @@ async def test_the_boss_shows_its_next_move_and_the_controls_fit_discord_rows(db
     assert "Gravewarden" in text and "Next: **Death Knell**" in text
     rows = [r for r in nav.walk_children() if r.__class__.__name__ == "ActionRow"]
     assert all(len(r.children) <= 5 for r in rows)
-    assert {"Slash", "Brace", "Flee"} <= {b.label for b in buttons(nav)}
+    assert {"Slash", "Flee"} <= {b.label for b in buttons(nav)}
 
 
 async def test_the_boss_fight_is_locked_until_level_20(db):

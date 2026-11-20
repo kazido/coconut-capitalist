@@ -10,7 +10,6 @@ food_geode_feast = [29, 12]
 food_golden_sap = {cell = [7, 9], hue = 85, val = 1.1}
 food_sea_feast = [32, 14]
 spirit_of_the_fields = {cell = [69, 8], sat = 0.6, val = 0.95}
-spirit_of_the_sword = {cell = [69, 12], sat = 0.6, val = 0.95}
 spirit_of_the_sea = {cell = [69, 8], hue = 100, sat = 0.5, val = 0.95}
 spirit_of_the_forest = {cell = [69, 8], hue = -85, sat = 0.5, val = 0.9}
 spirit_of_the_mines = {cell = [69, 8], ramp = ["#241c20", "#5a5058", "#9a9094", "#e6dede"]}

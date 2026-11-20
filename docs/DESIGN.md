@@ -417,8 +417,8 @@ itself. (Swords are the exception for now: combat has no materials yet.) The too
 and it keeps its enchants and rolled bonuses. Money, materials and the change happen together or not at all, and a
 double click upgrades once. The chains and costs are in `configs/items.toml` under each tool's `[x.tool.upgrade]`
 (`TODO(balance)`): axes Starter -> Thornwhip -> Reinforced -> Bastard's Broadaxe -> Masterwork -> Sovereign Hatchet ->
-Wilted; pickaxes Rookie -> Reinforced -> Masterwork; rods Starter -> Reinforced -> Masterwork; swords Large Branch ->
-Rusted Broadsword -> Dreamnail -> Shining Silver (combat isn't playable yet; their level requirements still apply).
+Wilted; pickaxes Rookie -> Reinforced -> Masterwork; rods Starter -> Reinforced -> Masterwork.
+(Swords were removed; a new sword comes with the combat rework.)
 
 ## Enchants from play: scrolls
 
@@ -609,8 +609,7 @@ seedable rng), data: `configs/combat.toml` + `configs/enemies.toml`, screen: `sc
 - **Turn meter.** Every unit has a speed; its meter fills by that much per tick and the first to reach 100 acts, then drops to 0.
   The screen shows the next 7 turns, so speed, slows and meter pushes (`meter` effect) are real tactics.
 - **Skills, not items.** Each sword gives a *kit* (`[kits]`): skill 1 is always free, the rest have **cooldowns** (a cooldown of 3
-  means it is back on your 4th turn). Nothing is consumed. Swords unlock more skills (Rusted Broadsword: Sanguine Priming,
-  Dreamnail: Enter the Mind, Shining Silver: Glistening Haven); bare hands only have Slash.
+  means it is back on your 4th turn). Nothing is consumed. Bare hands only have Slash; swords (none exist right now) unlock more skills.
 - **Damage** = attack x skill power x 100 / (100 + defense), only crits are random (15%, x1.5). Shields soak damage first.
 - **Effects** last N of the *affected unit's own* turns: attack/defense/speed up or down, stun (skips the turn), bleed (ignores
   defense), shield, heal, meter push/pull, empower (next damaging skill x2), reveal (see each enemy's next skill). `chance` is
@@ -626,14 +625,14 @@ A normal enemy plus three things (`configs/enemies.toml`): **telegraph** (you al
 **phases** (`[[gravewarden.phases]]`): when its hp drops below a mark (60%, then 30%) it says a line, gives itself buffs and may swap
 skill lists (cooldowns reset). A big hit can skip a phase. Its **Death Knell** (x3 damage, every 5 turns) is the thing to plan for:
 **Brace** (every sword kit has it: x4 defense for 2 turns), slows, and killing it faster. The boss is a touch slower than a fresh
-player, so you always see the first knell before it lands. Locked to combat level 20 for now; numbers are placeholders (a Dreamnail
-at level ~25-30 is the intended first win). Its xp is 1,500. Keys and loot attach to this encounter later.
+player, so you always see the first knell before it lands. Locked to combat level 20 for now; numbers are placeholders (a strong sword
+at level ~25-30 was the intended first win). Its xp is 1,500. Keys and loot attach to this encounter later.
 
 ### Drops and keys
 Drop tables live in `configs/drops.toml` and are shared by everything that drops things: a table is a list of weighted entries, each
 **bits (a range) or an item (a range, skewed low)**. An enemy names a table (`drops`) and a `drop_chance` (percent of kills that drop
 anything); the real odds of an entry are drop_chance x weight / total. The graveyard table is mostly bits and common materials with
-tiny weights for scrolls, Familiar Orbs, Land Deeds and the Spirit of the Sword; the Gravewarden's table always drops and is better.
+tiny weights for scrolls, Familiar Orbs and Land Deeds; the Gravewarden's table always drops and is better.
 Rolled in `services/loot.py` (`roll_kill`, `roll_drop_table`), paid by `combat.settle` (only for a win; a loss pays nothing, even if
 you killed something first).
 

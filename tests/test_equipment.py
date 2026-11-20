@@ -20,8 +20,9 @@ def inst(template_id, enchants=None, rolled=None, id=1):
 
 # ---- effective_stats is pure ---------------------------------------------------------------
 def test_plain_tool_uses_template_stats():
-    stats = effective_stats(inst("tool_dreamnail"))
-    assert (stats.power, stats.requirement, stats.ability) == (get_registry().item("tool_dreamnail").tool.power, 10, "enter_the_mind")
+    tool = get_registry().item("tool_axe_starter").tool
+    stats = effective_stats(inst("tool_axe_starter"))
+    assert (stats.power, stats.requirement, stats.ability) == (tool.power, tool.requirement, tool.ability)
     assert stats.flags == frozenset()
 
 
@@ -62,14 +63,14 @@ amount = 0.5
 
 def test_adds_apply_before_multipliers_and_scale_with_level(stat_registry):
     # base + sharp III (+15), then mighty (x1.5); order of dict must not matter
-    base = get_registry().item("tool_dreamnail").tool.power
-    a = effective_stats(inst("tool_dreamnail", {"sharp": 3, "mighty": 1}), stat_registry)
-    b = effective_stats(inst("tool_dreamnail", {"mighty": 1, "sharp": 3}), stat_registry)
+    base = get_registry().item("tool_axe_starter").tool.power
+    a = effective_stats(inst("tool_axe_starter", {"sharp": 3, "mighty": 1}), stat_registry)
+    b = effective_stats(inst("tool_axe_starter", {"mighty": 1, "sharp": 3}), stat_registry)
     assert a.power == b.power == round((base + 15) * 1.5)
 
 
 def test_levels_above_the_maximum_are_clamped(stat_registry):
-    assert effective_stats(inst("tool_dreamnail", {"sharp": 99}), stat_registry).power == get_registry().item("tool_dreamnail").tool.power + 5 * 3
+    assert effective_stats(inst("tool_axe_starter", {"sharp": 99}), stat_registry).power == get_registry().item("tool_axe_starter").tool.power + 5 * 3
 
 
 def test_non_tools_have_no_stats():
@@ -95,7 +96,7 @@ def test_shipped_enchants_apply_to_real_tool_kinds():
 # ---- instances in the database ---------------------------------------------------------------
 async def test_give_list_and_ownership(db):
     alice, bob = await User.get(1), await User.get(2)
-    sword = await alice.give_instance("tool_dreamnail", enchants={"x": 1}, rolled={"power": 2})
+    sword = await alice.give_instance("tool_axe_starter", enchants={"x": 1}, rolled={"power": 2})
     assert [i.id for i in await alice.instances()] == [sword.id]
     assert await alice.instance(sword.id) == sword
     assert await bob.instance(sword.id) is None  # not yours
@@ -133,24 +134,18 @@ async def test_equip_checks_kind_and_level(db):
     user = await User.get(1)
     axe = await user.give_instance("tool_axe_starter")
     pick = await user.give_instance("tool_pickaxe_rookie")
-    dream = await user.give_instance("tool_dreamnail")  # sword, needs combat level 10
 
     await equip(user, "foraging", axe.id)
     assert (await equipped_stats(user, "foraging")).power == get_registry().item("tool_axe_starter").tool.power
     with pytest.raises(EquipmentError, match="can't be used"):
         await equip(user, "foraging", pick.id)  # wrong kind
-    with pytest.raises(EquipmentError, match="level 10"):
-        await equip(user, "combat", dream.id)
-    await user.add_xp("combat", User.level_to_xp(10) + 1)
-    await equip(user, "combat", dream.id)
-    assert (await equipped_stats(user, "combat")).power == get_registry().item("tool_dreamnail").tool.power
     assert await equipped_stats(user, "mining") is not None  # owned pickaxe gets auto-equipped
 
 
 async def test_add_enchant_rules(db):
     user = await User.get(1)
     axe = await user.give_instance("tool_axe_starter")
-    sword = await user.give_instance("tool_largebranch")
+    sword = await user.give_instance("tool_pickaxe_rookie")
     updated = await add_enchant(user, axe.id, "soloist")
     assert updated.enchants == {"soloist": 1} and effective_stats(updated).has("soloist")
     with pytest.raises(EquipmentError, match="maximum"):

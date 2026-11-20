@@ -1,27 +1,5 @@
 # Hand-drawn dreamnail, scarab bomb and tree/nature drops (16x16, plum outline). 
 
-[tool_dreamnail]
-rarity = 5
-palette = { w = "#ffffff", v = "#c9b8ff", c = "#7fd6ff", y = "#ffe6a0", Y = "#e8a838", z = "#a8641c", a = "#7a5cb8", b = "#4a3584", o = "#2e1c2c" }
-rows = [
-  "............oooo",
-  "..........ooowco",
-  ".........oovvcoo",
-  "........oovwcoo.",
-  ".......oovwcoo..",
-  "......oovwcoo...",
-  ".....oovwcoo....",
-  "oooooovwcoo.....",
-  "ozyYovwcoo......",
-  "oozyYwcoo.......",
-  ".oozyYoo........",
-  "..ooabYoo.......",
-  "oooabzyYo.......",
-  "oaabooooo.......",
-  "obboo...........",
-  "oooo............",
-]
-
 [material_compost]
 rarity = 1
 palette = { w = "#ffffff", h = "#6c4a3c", m = "#4a3028", s = "#35201f", d = "#241418", x = "#8a6a48", l = "#7cc04c", L = "#3f8a3c", v = "#2f6a38", o = "#2e1c2c", O = "#e0701c", e = "#f4ecd8", E = "#c8bca0" }

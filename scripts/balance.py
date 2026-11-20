@@ -218,8 +218,8 @@ def xp_report() -> None:
         "fishing L1 rod": fishing_xp_per_minute(rod[0].tool.power) * 60,
         "fishing L8 rod": fishing_xp_per_minute(rod[-1].tool.power) * 60,
     }
-    for label, enc, lv, pw, kit in (("combat lv1 lone zombie", "graveyard_lone", 1, 1, "tool_largebranch"),
-                                    ("combat lv8 horde", "graveyard_horde", 8, 20, "tool_dreamnail")):
+    for label, enc, lv, pw, kit in (("combat lv1 lone zombie", "graveyard_lone", 1, 1, "default"),
+                                    ("combat lv8 horde", "graveyard_horde", 8, 20, "default")):
         rows[label], win = combat_xp_per_hour(enc, lv, pw, kit)
     print(f"  {'':24}{'xp/hour':>10}  " + "".join(f"{'to L' + str(lv):>9}" for lv in (20, 50, 90)) + "   (hours of play from level 1)")
     for label, xp in rows.items():
