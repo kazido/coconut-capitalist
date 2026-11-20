@@ -50,20 +50,19 @@ class SmithingPane(Screen):
         reg = get_registry()
         rules = reg.smithing
         level = await smithing.smithing_level(self.user)
-        cap = smithing.max_part_tier(level, rules)
         mine = await self.user.instances()
         parts = {slot: [] for slot in smithing.PART_TYPES}
         for inst in mine:
-            if _slot_of(inst) in parts and _tier(inst) <= cap:
+            if _slot_of(inst) in parts:
                 parts[_slot_of(inst)].append(inst)
 
         body = [*self.note_block()]
-        body.append(text(f"Smithing level **{level}** · parts up to tier **{cap}**"))
+        body.append(text(f"Smithing level **{level}**"))
         if not any(parts.values()):
             body.append(text("You have no parts yet. Parts drop from skill actions: mining, fishing, foraging and farming."))
             return Page("Smithing", body, accent=0xB8860B)
 
-        # Forget picks whose part was used up or is now above the cap.
+        # Forget picks whose part was used up.
         for slot in smithing.PART_TYPES:
             if self.chosen[slot] not in {i.id for i in parts[slot]}:
                 self.chosen[slot] = None

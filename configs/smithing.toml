@@ -115,8 +115,6 @@ xp_per_smith = 40                         # smithing xp per tool smithed    TODO
 xp_per_salvage = 15                       # smithing xp per tool salvaged
 quality_shift_per_level = 0.5             # percent points moved off Crude per smithing level (TODO(balance))
 swap_unlock_level = 10                    # smithing level that unlocks swapping one part of an existing tool
-# Max part tier you can smith with, by smithing level: [level, tier] steps (the highest step reached counts).
-max_tier_by_level = [[1, 1], [5, 2], [10, 3], [15, 4], [20, 5], [30, 6], [40, 7], [50, 8]]   # TODO(balance)
 
 # One-time reset of OLD upgrade-chain tools (services/legacy_tools.py). Each tool kind gets ONE grant: the best step the
 # player reached on that kind's chain. Each grant is one base, one trim and one accent part of `tier`, each rolling `traits`

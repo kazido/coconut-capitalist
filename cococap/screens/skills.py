@@ -54,21 +54,15 @@ class SmithingLightPane(Screen):
         xp = await smithing.smithing_xp(self.user)
         level = User.xp_to_level(xp)
         overflow, needed = User.xp_for_next_level(xp)
-        cap = smithing.max_part_tier(level, rules)
-        # The next unlock is whichever comes first: a higher part tier, or the part-swap level.
-        unlocks = [(lvl, f"parts up to tier {tier}") for lvl, tier in rules.levels.max_tier_by_level if lvl > level]
         swap = rules.levels.swap_unlock_level
         if swap > level:
-            unlocks.append((swap, "swapping one part of a tool"))
-        if unlocks:
-            lvl, what = min(unlocks)
-            next_line = f"Next unlock: Lv {lvl}, {what}"
+            next_line = f"Next unlock: Lv {swap}, swapping one part of a tool"
         else:
             next_line = "Everything unlocked."
         # One compact block per lesser skill: name + level, a bar, then one quiet line of facts.
         body = [
             text(f"### {self.emoji} Smithing  ·  Lv {level}\n{bar(overflow / needed if needed else 0, 10)}\n"
-                 f"Max part tier **{cap}**  ·  {next_line}\n-# Smith tools on Tools -> Smithing."),
+                 f"{next_line}\n-# Smith tools on Tools -> Smithing."),
         ]
         return Page("Lesser skills", body, accent=0x9E492F)
 

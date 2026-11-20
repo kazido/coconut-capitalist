@@ -85,14 +85,10 @@ async def test_smith_refuses_a_part_of_the_wrong_type():
         await smith_with(user, swapped)
 
 
-async def test_smith_refuses_a_part_above_the_level_max_tier():
+async def test_level_1_can_smith_with_any_part_tier():
     user = await player(level=1)
-    too_high = max(1, smithing.max_part_tier(1, RULES) + 1)
-    if too_high > PART_TIERS:
-        pytest.skip("no tier above the level-1 cap")
-    ids = await three_parts(user, tiers=(too_high, 1, 1))
-    with pytest.raises(GameRuleError):
-        await smith_with(user, ids)
+    ids = await three_parts(user, tiers=(PART_TIERS, 2, 1))
+    assert await smith_with(user, ids) is not None
 
 
 async def test_smith_consumes_parts_and_records_smith_id_parts_and_quality():

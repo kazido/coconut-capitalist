@@ -44,15 +44,6 @@ async def add_smithing_xp(user: User, amount: int) -> None:
         await user.stat_add(XP_STAT, amount)
 
 
-def max_part_tier(level: int, rules: SmithingRules) -> int:
-    """The highest part tier a player of this smithing level may work with."""
-    tier = 1
-    for needed_level, max_tier in rules.levels.max_tier_by_level:
-        if level >= needed_level:
-            tier = max(tier, max_tier)
-    return min(tier, PART_TIERS)
-
-
 def part_emoji(slot: str, tier: int) -> str:
     """The part's tier emoji (framed in its rarity). The item template's own emoji id has no art, so never use it."""
     return emojis.get(f"part_{slot}_t{tier}", "🧩")
@@ -199,9 +190,6 @@ async def smith(
     ids = {"base": base_id, "trim": trim_id, "accent": accent_id}
     parts = {slot: await _owned_part(user, pid, slot) for slot, pid in ids.items()}
     level = await smithing_level(user)
-    cap = max_part_tier(level, rules)
-    if any(_part_tier(p) > cap for p in parts.values()):
-        raise GameRuleError("Your smithing level is too low for a part that high.")
 
     if sum(1 for p in parts.values() if is_restricted(p)) > 1:
         raise RestrictedPartError("A tool can hold only one restricted part.")
@@ -308,8 +296,6 @@ async def swap_part(
         raise GameRuleError(f"Swapping parts unlocks at smithing level {rules.levels.swap_unlock_level}.")
     tool, kind = await _smithed_tool(user, tool_id, registry)
     new_part = await _owned_part(user, part_id, slot)
-    if _part_tier(new_part) > max_part_tier(level, rules):
-        raise GameRuleError("Your smithing level is too low for a part that high.")
 
     parts = {s: dict(tool.parts[s]) for s in PART_TYPES}
     others = sum(1 for s in PART_TYPES if s != slot and parts[s].get("trait"))
