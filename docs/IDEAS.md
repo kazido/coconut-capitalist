@@ -13,16 +13,5 @@ WOULD LIKE TO AVOID LINEAR SKILLS. I want skills to tie into each other somehow.
 
 ## Testing notes (2026-11-19)
 
-Tools / smithing:
-- Second look at part traits.
-- Restricted parts: just an emoji next to the name.
-- One page per tool (the detail page) that also opens its accessories; drop the separate accessories page.
-- Enchants: today a smithed tool holds ONE enchant and a new scroll replaces (destroys) the old one. Owner does not want to hoard scrolls for the best tool. Later: a way to remove parts or enchants.
-- Art: smithing icon; icons for all accessories.
-
-Pets:
-- Score breakdown: a pet detail page with a bar per skill.
-- Offline work: the active pet DOES haul while away (needs fuel), but it only banks when Collect is pressed on the Pets page; inactive pets only add a % bonus. Owner expected sidekicks to work offline: decide auto-collect and/or sidekicks hauling.
-- Food buff: works, but it is 1.5x PET xp for a while, not skill xp. Make that clear (or change it).
-- Fuel: still no reason to make more than one fuel per location (see the fuel line above).
+- Art (master): smithing icon; icons for all accessories; a `ui_restricted` icon (restricted parts use the fallback glyph for now).
 
