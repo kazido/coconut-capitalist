@@ -93,6 +93,7 @@ ui_door = {cell = [1, 7], framed = false}
 ui_sword = {cell = [45, 0], framed = false}
 ui_shield = {cell = [41, 8], framed = false}
 ui_fist = {cell = [41, 6], framed = false}
+ui_weapon_unarmed = {cell = [41, 6], framed = false}  # same fist art: the bare-hands entry in the combat Class dropdown
 ui_medal = {cell = [8, 14], framed = false}
 ui_medal_gold = {cell = [8, 11], framed = false}
 ui_medal_silver = {cell = [8, 10], framed = false}
