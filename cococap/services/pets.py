@@ -459,10 +459,6 @@ class Fed:
     multiplier: float = 1.0
 
 
-def crop_pet_xp(item: Item) -> int:
-    return item.crop.pet_xp if item.crop else 0
-
-
 async def _pet_to_look_after(user: User, pet_id: str | None, reg: Registry) -> str:
     await user.refresh()
     house = user.pethouse
