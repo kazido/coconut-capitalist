@@ -49,6 +49,14 @@ def _no_legacy_reset_in_ui_tests(request, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _no_fight_pauses(monkeypatch):
+    """The fight screen sleeps between the steps of a round; tests don't wait."""
+    from cococap.screens import fight
+
+    monkeypatch.setattr(fight, "PAUSE", 0)
+
+
+@pytest.fixture(autouse=True)
 def _no_leftover_invites():
     """Pending party invites live in memory: never let one test's invite show up in the next."""
     from cococap.services import party_invites

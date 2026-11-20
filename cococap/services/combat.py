@@ -150,6 +150,7 @@ class Battle:
         self.turns = 0  # turns taken so far
         self.active: Unit | None = None  # whose turn it is (a player, while the fight waits for input)
         self.outcome: str | None = None  # None while fighting, then "win" or "loss"
+        self.steps: list[tuple[str, list[str]]] = []  # the last `play` as ("you" | "enemy", log lines) chunks, for the UI to pace out
 
     # --- lookups -----------------------------------------------------------------------------
     def unit(self, uid: str) -> Unit:
@@ -233,8 +234,11 @@ class Battle:
             chosen = [target]
         else:
             chosen = pool
+        self.steps = []
+        mark = len(self.log)
         self._use(actor, skill, chosen)
         self._end_turn(actor)
+        self.steps.append(("you", self.log[mark:]))
         self._advance()
 
     # --- internals -------------------------------------------------------------------------------
@@ -250,11 +254,14 @@ class Battle:
                 break
             actor = self._next_actor()
             self.active = actor
-            if not self._start_turn(actor):  # died to bleed or was stunned
-                continue
-            if actor.side == "player":
+            mark = len(self.log)
+            ok = self._start_turn(actor)  # False: died to bleed or was stunned
+            if ok and actor.side == "player":
                 return
-            self._enemy_turn(actor)
+            if ok:
+                self._enemy_turn(actor)
+            if len(self.log) > mark:
+                self.steps.append(("you" if actor.side == "player" else "enemy", self.log[mark:]))
         self.active = None
 
     def _next_actor(self) -> Unit:

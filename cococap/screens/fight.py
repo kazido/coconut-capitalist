@@ -1,3 +1,5 @@
+import asyncio
+
 import discord
 
 from cococap import emojis
@@ -7,6 +9,9 @@ from cococap.ui import Page, Result, Screen
 from cococap.ui.components import bar, button, row, section, sep, text
 from cococap.ui.rewards import rewards_result
 from cococap.user import User
+
+
+PAUSE = 1.2  # seconds between the steps of a round (tests set it to 0)
 
 
 def hp_line(unit: Unit) -> str:
@@ -32,6 +37,8 @@ class FightScreen(Screen):
         self.encounter: str | None = None  # the key fight being played, or None for a zone fight (so "Fight again" knows what to start)
         self.zone: str | None = None  # the zone being explored
         self.picking: str | None = None  # a skill waiting for the player to choose its target
+        self.animating = False  # a round is being played out: no buttons until it ends
+        self.shown: list[tuple[str, list[str]]] = []  # the round being played out (empty = show the log tail)
         self.run: dungeon.Run | None = None  # set when this fight is part of a dungeon run (a tile fight or the shared boss fight)
 
     @property
@@ -66,7 +73,7 @@ class FightScreen(Screen):
         await self.go(interaction, "combat")
 
     async def _begin(self, encounter_id: str) -> None:
-        self.encounter, self.picking = encounter_id, None
+        self.encounter, self.picking, self.shown = encounter_id, None, []
         self.battle = await combat.start_fight(self.user, encounter_id)
 
     # --- the fight ---------------------------------------------------------------------------------
@@ -92,7 +99,11 @@ class FightScreen(Screen):
         if order:
             body.append(text(f"**Turn order:** {order}"))
         body.append(sep())
-        body.append(text("\n".join(battle.log[-9:])))
+        if self.shown:
+            for side, lines in self.shown:
+                body.append(text(f"**{'You' if side == 'you' else 'Enemy'}**\n" + "\n".join(lines)))
+        else:
+            body.append(text("\n".join(battle.log[-9:])))
         body.append(sep())
         body.extend(self._controls(battle, me))
         if self.picking:
@@ -100,6 +111,8 @@ class FightScreen(Screen):
         return Page("Fight", body, accent=0xC0392B)
 
     def _controls(self, battle: Battle, me: Unit) -> list:
+        if self.animating:
+            return [text(f"{emojis.icon('timer', '⌛')} ...")]
         if self._boss and battle.outcome is None and (battle.active is None or battle.active.id != me.id):
             who = battle.active.name if battle.active else "the others"
             waiting = [button(battle.skill(s).name, disabled=True, on_click=self._cancel) for s in me.skills]
@@ -147,10 +160,28 @@ class FightScreen(Screen):
         await self.refresh(interaction)
 
     async def _act(self, interaction: discord.Interaction, skill_id: str, target_id: str | None) -> None:
+        self.shown = []
         if self._boss:
             dungeon.boss_play(self.run, self.user, skill_id, target_id)
         else:
             self.battle.play(skill_id, target_id, self.me_id)
+            steps = self.battle.steps
+            if len(steps) > 1:  # your move first, then pause, then the enemy's reply (the bars already show the end state)
+                self.shown, self.animating = steps[:1], True
+                await self.refresh(interaction)
+                try:
+                    for i in range(1, len(steps)):
+                        await asyncio.sleep(PAUSE)
+                        self.shown = steps[: i + 1]
+                        await self.nav.update(interaction)
+                    await asyncio.sleep(PAUSE)
+                finally:
+                    self.animating = False
+                if self.battle.outcome:
+                    await self._settle()
+                await self.nav.update(interaction)
+                return
+            self.shown = steps
         if self.battle.outcome:
             await self._finish(interaction)
         else:
@@ -166,7 +197,7 @@ class FightScreen(Screen):
 
     async def _settle(self) -> None:
         """Pay the finished battle and set the Victory/Defeated page (also called from build when another member ended the boss fight)."""
-        battle, boss, self.battle, self.picking = self.battle, self._boss, None, None
+        battle, boss, self.battle, self.picking, self.shown = self.battle, self._boss, None, None, []
         if boss:
             paid = (await dungeon.finish_boss(self.run)).get(self.user.id)
         elif self.run:
@@ -193,7 +224,7 @@ class FightScreen(Screen):
 
     async def _again(self, interaction: discord.Interaction) -> None:
         if self.zone and not self.encounter:
-            self.battle, self.picking = await combat.explore(self.user, self.zone), None
+            self.battle, self.picking, self.shown = await combat.explore(self.user, self.zone), None, []
         else:
             await self._begin(self.encounter)
         await self.refresh(interaction)

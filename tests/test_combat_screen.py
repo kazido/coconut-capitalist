@@ -147,3 +147,14 @@ async def test_a_victory_with_no_drop_shows_only_xp(db, monkeypatch):
     nav.screen.battle.unit("p1").attack = 10_000
     await click(nav, inter, "Slash")
     assert "You got" not in all_text(nav) and "xp" in all_text(nav)
+
+
+async def test_a_round_is_shown_as_you_then_enemy_blocks(db):
+    nav, inter = await hub("fight")
+    await start(nav, inter)
+    nav.screen.battle.unit("p1").max_hp = nav.screen.battle.unit("p1").hp = 10_000  # survive the reply
+    await click(nav, inter, "Slash")
+    steps = nav.screen.battle.steps
+    assert [side for side, _ in steps][0] == "you" and not nav.screen.animating
+    if len(steps) > 1:
+        assert steps[1][0] == "enemy" and "Enemy" in all_text(nav)

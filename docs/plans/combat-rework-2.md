@@ -1,4 +1,4 @@
-Status: PLANNED. Step 0 (victory screen) is done. Build one phase per session, in order. Supersedes the idea in `weapon-parts.md` (fold it in here when phase 2 starts).
+Status: PLANNED. Steps 0 (victory screen), 1 (UI pass) and 2 (turn pacing) are done. Build one phase per session, in order. Supersedes the idea in `weapon-parts.md` (fold it in here when phase 2 starts).
 
 # Combat rework 2
 
@@ -13,7 +13,7 @@ Uses `ui/rewards.rewards_result` (drops + xp only). Continue goes to Combat.
 - Class tab: dropdown of classes with emoji. Only classes you own a weapon for; picking one auto-equips the best weapon (tool power) of that class.
 - Bestiary paginated, one enemy per page, with its emoji.
 
-## 2. Turn pacing
+## 2. Turn pacing (DONE)
 Fight screen plays a turn in steps with `asyncio.sleep` redraws: your move, pause, enemy telegraph + move, pause, what it did to you.
 The log shows only the latest round, split into "You" and "Enemy" blocks. Needs a step list from `Battle.play` (Battle stays Discord-free).
 
