@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: How the lead maps a change with graphify and hands bounded work to worker/tester/writer subagents (which model, brief template, review, tests to list). Use before ANY feature, bug fix, screen redesign or art task, and whenever writing a brief for a subagent.
+description: How the lead maps a change with graphify and hands bounded work to worker/tester/writer subagents (which model, brief template, review, tests to list). Use only for big, multi-file work or when writing a subagent brief; small changes (<= ~3 files) are done inline without it.
 ---
 
 # Lead workflow: impact map, brief, review
@@ -10,8 +10,8 @@ You are the **lead** of your branch: design, planning, tricky bugs, review, comm
 design decision) before building on. Use LOW effort for routine steps (state it when you start a session or subagent).
 Subagents in `.claude/agents/`: `worker` (bounded code change), `tester` (tests), `writer` (docs/prose).
 
-- **Delegate** when the change is well-specified and bounded (<= ~3 files, a clear behaviour, known tests), or tests/docs are needed for
-  finished code. Write the brief yourself. Independent pieces can run in parallel.
+- **Delegate** only when the work is large AND self-contained (each subagent starts cold and re-pays the whole baseline context, so a
+  small task costs more delegated than inline). Default is to do it yourself. Write the brief yourself. Independent pieces can run in parallel.
 - **Do it yourself** when it is small (a few lines), needs a design decision, touches many files at once, is a subtle bug, or the cause is unknown.
 - **Model split:** Opus (lead) = design, engines, unknown causes, cross-system changes; Sonnet (`model: "sonnet"`) = bounded writing/screens
   needing some judgment (3+ callers, a new pane copying one); Haiku `worker`/`tester`/`writer` = routine work the impact map fully pins down.

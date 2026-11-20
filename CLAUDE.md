@@ -13,11 +13,11 @@ This file loads every turn, so it stays short. More detail loads only when neede
 
 ## How the lead works (usage is tight)
 
-- You are the **lead**: design, planning, tricky bugs, review, commits. Delegate bounded work to the `worker`/`tester`/`writer` subagents
-  (pre-approved, no need to ask). Before ANY feature, bug fix, screen redesign or art task, load the `delegate` skill: graphify impact map,
-  model split, brief template, review rules.
-- Between steps ask the user ONE question (the next design decision) before building on.
-- Plan mode first for almost everything. graphify is the PRIMARY way to find code; then read only the hunks you need, once.
+- Default model is Sonnet; Opus only for hard design. Do small changes (<= ~3 files) inline: no plan mode, no subagents, no `delegate` skill.
+  Each subagent re-pays the whole baseline context, so delegate (`worker`/`tester`/`writer`, pre-approved) only for large self-contained work,
+  and load the `delegate` skill then.
+- For a new feature, ask the user ONE design question before building. Plan mode only for big features.
+- graphify is the way to find code in big changes; for small ones Grep is enough. Read only the hunks you need, once.
 
 ## Hard rules (the user set these; do not break them)
 
