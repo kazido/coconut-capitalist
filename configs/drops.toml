@@ -17,6 +17,7 @@ entries = [
     { weight = 45, item = "key_graveyard" },
     { weight = 4, item = "key_orb_familiar" },
     { weight = 2, item = "key_land_deed" },
+    { weight = 30, item = "key_dungeon_t1" },  # TODO(balance) about 1 in 50 kills
 ]
 
 # The Gravewarden always drops something, and it is good.
@@ -38,6 +39,7 @@ entries = [
     { weight = 140, item = "material_hardwood", min = 2, max = 5 },
     { weight = 100, item = "material_plant_fiber", min = 2, max = 5 },
     { weight = 80, item = "material_compost", min = 2, max = 5 },
+    { weight = 22, item = "key_dungeon_t2" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [dusk_dunes]
@@ -46,6 +48,7 @@ entries = [
     { weight = 140, item = "material_clay", min = 2, max = 6 },
     { weight = 100, item = "material_tin_ore", min = 2, max = 6 },
     { weight = 80, item = "material_dewdrop", min = 2, max = 6 },
+    { weight = 22, item = "key_dungeon_t3" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [mirage_ruins]
@@ -54,6 +57,7 @@ entries = [
     { weight = 140, item = "material_tin_ore", min = 2, max = 6 },
     { weight = 100, item = "material_dewdrop", min = 2, max = 6 },
     { weight = 80, item = "material_amber", min = 2, max = 6 },
+    { weight = 22, item = "key_dungeon_t3" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [scrapyard]
@@ -62,6 +66,7 @@ entries = [
     { weight = 140, item = "material_coal", min = 2, max = 7 },
     { weight = 100, item = "material_iron_ore", min = 2, max = 7 },
     { weight = 80, item = "material_silver_ore", min = 2, max = 7 },
+    { weight = 22, item = "key_dungeon_t4" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [rusted_foundry]
@@ -70,6 +75,7 @@ entries = [
     { weight = 140, item = "material_iron_ore", min = 2, max = 7 },
     { weight = 100, item = "material_silver_ore", min = 2, max = 7 },
     { weight = 80, item = "material_beeswax", min = 2, max = 7 },
+    { weight = 22, item = "key_dungeon_t4" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [canal_alleys]
@@ -78,6 +84,7 @@ entries = [
     { weight = 140, item = "material_silver_ore", min = 2, max = 8 },
     { weight = 100, item = "material_gold_ore", min = 2, max = 8 },
     { weight = 80, item = "material_fine_bark", min = 2, max = 8 },
+    { weight = 22, item = "key_dungeon_t5" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [clockwork_district]
@@ -86,6 +93,7 @@ entries = [
     { weight = 140, item = "material_gold_ore", min = 2, max = 8 },
     { weight = 100, item = "material_fine_bark", min = 2, max = 8 },
     { weight = 80, item = "material_living_vine", min = 2, max = 8 },
+    { weight = 22, item = "key_dungeon_t5" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [cloud_ridge]
@@ -94,6 +102,7 @@ entries = [
     { weight = 140, item = "material_platinum_ore", min = 2, max = 9 },
     { weight = 100, item = "material_garnet", min = 2, max = 9 },
     { weight = 80, item = "material_maple_leaf", min = 2, max = 9 },
+    { weight = 22, item = "key_dungeon_t6" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [storm_garden]
@@ -102,6 +111,7 @@ entries = [
     { weight = 140, item = "material_garnet", min = 2, max = 9 },
     { weight = 100, item = "material_maple_leaf", min = 2, max = 9 },
     { weight = 80, item = "material_gilded_wedge", min = 2, max = 9 },
+    { weight = 22, item = "key_dungeon_t6" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [comet_fields]
@@ -110,6 +120,7 @@ entries = [
     { weight = 140, item = "material_sapphire", min = 2, max = 10 },
     { weight = 100, item = "material_emerald", min = 2, max = 10 },
     { weight = 80, item = "material_aged_feather", min = 2, max = 10 },
+    { weight = 22, item = "key_dungeon_t7" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [starfall_temple]
@@ -118,6 +129,7 @@ entries = [
     { weight = 140, item = "material_emerald", min = 2, max = 10 },
     { weight = 100, item = "material_aged_feather", min = 2, max = 10 },
     { weight = 80, item = "material_living_vine", min = 2, max = 10 },
+    { weight = 22, item = "key_dungeon_t7" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [hollow_gate]
@@ -126,6 +138,7 @@ entries = [
     { weight = 140, item = "material_obsidian", min = 2, max = 11 },
     { weight = 100, item = "material_sapphire", min = 2, max = 11 },
     { weight = 80, item = "material_emerald", min = 2, max = 11 },
+    { weight = 22, item = "key_dungeon_t8" },  # TODO(balance) about 1 in 50 kills
 ]
 
 [the_unmade]
@@ -134,4 +147,5 @@ entries = [
     { weight = 140, item = "material_sapphire", min = 2, max = 11 },
     { weight = 100, item = "material_emerald", min = 2, max = 11 },
     { weight = 80, item = "material_aged_feather", min = 2, max = 11 },
+    { weight = 22, item = "key_dungeon_t8" },  # TODO(balance) about 1 in 50 kills
 ]
