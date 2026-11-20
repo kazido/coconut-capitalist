@@ -309,7 +309,7 @@ async def test_parts_show_in_the_inventory(db):
     await give_part(user, "trim", 2)
     nav, _ = await hub("inventory")
     text = all_text(nav)
-    assert "T2 Trim" in text
+    assert "T2 Tool Trim" in text
 
 
 # ---- restricted parts, enchant refunds, enchant removal ----

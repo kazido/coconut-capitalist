@@ -394,7 +394,7 @@ async def test_shop_sell_mode_sells_the_full_stack_by_default(db):
     assert (await User.get(1)).purse == 1000 + 4 * get_registry().item("material_gold_ore").sell_price and await user.items() == {}
 
 
-async def test_inventory_lists_items_only_and_has_sell_and_tools_buttons(db):
+async def test_inventory_lists_items_only_and_has_inspect_and_tools_buttons(db):
     from cococap.services.equipment import equip
 
     user = await User.get(1)
@@ -405,23 +405,40 @@ async def test_inventory_lists_items_only_and_has_sell_and_tools_buttons(db):
     text = all_text(nav)
     assert "7 Copper Ore" in text and "Starter Axe" not in text and "Watering Can" not in text  # tools are on the Tools page
     labels = {b.label for b in buttons(nav)}
-    assert {"Sell", "Tools"} <= labels and "Enchant" not in labels and "Upgrade tools" not in labels
+    assert {"Inspect", "Tools"} <= labels and "Sell" not in labels and "Enchant" not in labels and "Upgrade tools" not in labels
     await click(nav, inter, "Tools")
     assert nav.screen.id == "tools"
 
 
-async def test_the_sell_button_opens_the_shop_in_sell_mode(db):
+async def test_inspect_shows_an_item_page_and_back_returns(db):
     user = await User.get(1)
     await user.add_item("material_copper_ore", 7)
     nav, inter = await hub("inventory")
-    await click(nav, inter, "Sell")
-    assert nav.screen.id == "shop" and nav.screen.mode == "sell" and "Copper Ore" in all_text(nav)
-    assert find_button(nav, "Sell 1x")  # (the picked stack has its own sell buttons)
+    await click(nav, inter, "Inspect")
+    await choose(nav, inter, select_named(nav, "Pick an item to inspect..."), "item:material_copper_ore")
+    text = all_text(nav)
+    assert "Copper Ore" in text and "7" in text and not any(b.label == "Inspect" for b in buttons(nav))
+    await click(nav, inter, "Back")
+    assert find_button(nav, "Inspect")
 
 
-async def test_the_sell_button_is_off_when_you_have_nothing(db):
+async def test_inspect_a_tool_part_shows_its_tier_and_traits(db):
+    from cococap.registry import get_registry
+
+    rules = get_registry().smithing
+    trait = rules.trait_pool[0]
+    user = await User.get(1)
+    part = await user.give_instance("part_base", rolled={"tier": 3}, traits=[trait.id])
+    nav, inter = await hub("inventory")
+    await click(nav, inter, "Inspect")
+    await choose(nav, inter, select_named(nav, "Pick an item to inspect..."), f"part:{part.id}")
+    text = all_text(nav)
+    assert "T3 Tool Base" in text and trait.name in text
+
+
+async def test_inspect_is_off_when_you_have_nothing(db):
     nav, _ = await hub("inventory")
-    assert "don't have any items" in all_text(nav) and find_button(nav, "Sell").disabled
+    assert "don't have any items" in all_text(nav) and find_button(nav, "Inspect").disabled
 
 
 async def test_the_tools_page_lists_one_tool_per_skill_including_the_can(db):

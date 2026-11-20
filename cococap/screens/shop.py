@@ -247,7 +247,7 @@ class MarketPane(Screen):
             self.picked = open_offers[0].slot
         options = [
             discord.SelectOption(
-                label=f"Slot {o.slot + 1}: T{o.tier} {o.part_type.title()} {smithing.trait_icons(o.traits, rules, plain=True)}", value=str(o.slot),
+                label=f"Slot {o.slot + 1}: T{o.tier} Tool {o.part_type.title()} {smithing.trait_icons(o.traits, rules, plain=True)}", value=str(o.slot),
                 description=f"{bits(o.price)} bits", default=o.slot == self.picked,
             )
             for o in open_offers

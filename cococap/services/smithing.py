@@ -59,9 +59,9 @@ def part_emoji(slot: str, tier: int) -> str:
 
 
 def part_label(slot: str, tier: int, restricted: bool = False) -> str:
-    """How a part reads everywhere: its tier emoji + "T8 Base". The rarity is the tier, so it is not spelled out."""
+    """How a part reads everywhere: "T8 Tool Base". The rarity is the tier, so it is not spelled out."""
     mark = f" {emojis.icon('restricted', '🔺')}" if restricted else ""
-    return f"{part_emoji(slot, tier)} T{tier} {slot.title()}{mark}"
+    return f"T{tier} Tool {slot.title()}{mark}"
 
 
 # Plain glyphs until the `trait_<stat>` emoji are uploaded (art/sprites/traits.toml).

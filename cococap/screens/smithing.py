@@ -87,7 +87,7 @@ class SmithingPane(Screen):
         body.append(text(f"-# {summary}"))
         body.append(text(f"**Step {self.step}/3 · {slot.title()}**"))
         options = [
-            discord.SelectOption(label=f"T{_tier(i)} {slot.title()} · {_trait_names(i, rules)}"[:100], value=str(i.id),
+            discord.SelectOption(label=f"T{_tier(i)} Tool {slot.title()} · {_trait_names(i, rules)}"[:100], value=str(i.id),
                                  default=i.id == self.chosen[slot])
             for i in parts[slot]
         ]
