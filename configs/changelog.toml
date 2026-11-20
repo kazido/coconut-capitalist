@@ -18,7 +18,7 @@ major = true
 [[entry]]
 date = "2026-11-19"
 title = "Fixes and tidier pages"
-body = "- Fixed: owning a tool you had not equipped (like a freshly smithed one) told you to claim a starter tool. It now equips itself.\n- Mining and lode claims show each drop's emoji.\n- Accessories: one Equip/Unequip button.\n- Light skills are now **Lesser skills**, with a cleaner page.\n- Reactor: gem slots on one line, a list of what each level unlocks, and a level-up tells you what you unlocked.\n- Smithing parts now show in your inventory."
+body = "- Fixed: owning a tool you had not equipped (like a freshly smithed one) told you to claim a starter tool. It now equips itself.\n- Mining and lode claims show each drop's emoji.\n- Accessories: one Equip/Unequip button.\n- Light skills are now **Lesser skills**, with a cleaner page.\n- Reactor: gem slots on one line, a list of what each level unlocks, and a level-up tells you what you unlocked.\n- Smithing parts now show in your inventory.\n- Wedges: the Gilded Wedge is now **Super Rare** and the Iron Wedge **Rare** (they were rated too high for crafted items)."
 major = false
 
 [[entry]]
