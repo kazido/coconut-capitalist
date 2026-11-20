@@ -7,7 +7,8 @@ async def test_light_tab_shows_smithing_and_its_level(db):
     assert "Smithing" in text
     assert "Lv 1" in text
     assert "Max part tier" in text
-    assert "Smith tools on Tools -> Smithing." in text
+    assert "Light skills" not in text
+    assert "Smith tools on Tools -> Smithing" in text
 
 
 async def test_old_skills_tab_still_renders_the_main_skills(db):
