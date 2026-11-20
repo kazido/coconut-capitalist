@@ -300,3 +300,13 @@ async def test_tool_detail_page_lists_parts_tiers_traits_and_smith():
     assert trait.name in page and f"<@{user.id}>" in page and "<t:" in page
     await click(nav, inter, "Back to tools")
     assert select_named(nav, "See a tool's details")
+
+
+async def test_parts_show_in_the_inventory(db):
+    from tests.test_hub import all_text, hub
+
+    user = await User.get(1)
+    await give_part(user, "trim", 2)
+    nav, _ = await hub("inventory")
+    text = all_text(nav)
+    assert get_registry().item("part_trim").name in text and "Tier 2" in text

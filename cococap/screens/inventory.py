@@ -1,7 +1,7 @@
 import discord
 
 from cococap import emojis
-from cococap.services.inventory import inventory_lines
+from cococap.services.inventory import inventory_lines, part_lines
 from cococap.ui import Page, Screen
 from cococap.ui.components import button, row, sep, text
 
@@ -20,7 +20,8 @@ class InventoryScreen(Screen):
         self.page = 0
 
     async def build(self) -> Page:
-        lines = inventory_lines(await self.user.items())  # (tools live on the Tools page)
+        # Stacked items, then smithing parts (unique, so listed one per line). Tools live on the Tools page.
+        lines = inventory_lines(await self.user.items()) + part_lines(await self.user.instances())
         body = [*self.note_block()]
         pages = max(1, -(-len(lines) // PER_PAGE))
         self.page = min(self.page, pages - 1)
